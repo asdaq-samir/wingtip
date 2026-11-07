@@ -5,7 +5,7 @@ import type { FlightSummary } from "./api/types";
  *  runways (and which were picked into the wind, `auto`, to follow it
  *  still), procedures and crossing altitudes, the times on the ground,
  *  the holds, the Class B avoided and its detour, the IFR alternate and a
- *  local flight's time aloft. A saved flight (springboot's
+ *  local flight's time aloft. A saved flight (the gateway's
  *  SaveFlightRequest.PICK, the same keys) and a recent route keep them, so
  *  one opened again is planned as it was: they kept the route alone, and
  *  its totals differed from the ones filed (the 20 Oct audit). */

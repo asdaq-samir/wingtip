@@ -95,17 +95,17 @@ target "planner" {
   context    = "."
   dockerfile = "services/planner/Dockerfile"
   contexts   = { wingtip-base = "target:base" }
-  tags       = image("planning-service").tags
-  cache-from = image("planning-service").cache-from
-  cache-to   = image("planning-service").cache-to
-  output     = image("planning-service").output
+  tags       = image("planner").tags
+  cache-from = image("planner").cache-from
+  cache-to   = image("planner").cache-to
+  output     = image("planner").output
 }
 
 target "gateway" {
   context    = "."
   dockerfile = "services/gateway/Dockerfile"
-  tags       = image("webapp").tags
-  cache-from = image("webapp").cache-from
-  cache-to   = image("webapp").cache-to
-  output     = image("webapp").output
+  tags       = image("gateway").tags
+  cache-from = image("gateway").cache-from
+  cache-to   = image("gateway").cache-to
+  output     = image("gateway").output
 }

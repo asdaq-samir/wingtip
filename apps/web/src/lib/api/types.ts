@@ -5,17 +5,17 @@
  * document by `npm run types` -- the Python planner's from
  * services/planner/openapi.json into ./schema.d.ts, this app's Spring
  * Boot endpoints from services/gateway/openapi.json into
- * ./webapp-schema.d.ts -- and re-exported here under the names the pages
+ * ./gateway-schema.d.ts -- and re-exported here under the names the pages
  * use, so a field renamed in services/planner/app/schemas.py or in a
  * Java DTO is a compile error at every call site rather than a silent
  * `undefined` at runtime. What is written by hand below is only what
  * no server schema describes: the page's own compositions.
  */
 import type { components } from "./schema";
-import type { components as WebappComponents } from "./webapp-schema";
+import type { components as GatewayComponents } from "./gateway-schema";
 
 type Schemas = components["schemas"];
-type Webapp = WebappComponents["schemas"];
+type Gateway = GatewayComponents["schemas"];
 
 // ---------------------------------------------------------------------
 // The planner.
@@ -269,14 +269,14 @@ export function isEndpoint(p: Point): p is Endpoint {
  *  whether the training workspace and the developer console are theirs:
  *  granted with an UPDATE on the pilots table, never inherited -- see
  *  the V7 migration. */
-export type Pilot = Webapp["PilotDto"];
+export type Pilot = Gateway["PilotDto"];
 /** `PUT /api/me/contact`: their telephone number and home base, for a
  *  flight plan's item 19. */
-export type PilotContactRequest = Webapp["PilotContactRequest"];
+export type PilotContactRequest = Gateway["PilotContactRequest"];
 
 /** How this deployment is reached -- SIGN_IN, OPEN or CLOSED -- asked
  *  before anyone has signed in (`/api/auth/capabilities`). */
-export type SignInCapabilities = Webapp["Capabilities"];
+export type SignInCapabilities = Gateway["Capabilities"];
 /** Who has the features Claude writes where no subscription is sold. */
 export type ClaudeFeatures = SignInCapabilities["claudeFeatures"];
 /** `GET /api/subscription`: the signed-in pilot's subscription to the
@@ -284,72 +284,72 @@ export type ClaudeFeatures = SignInCapabilities["claudeFeatures"];
  *  COMPED, until when, whether the free month is still theirs to start,
  *  and this month's uses of each Claude-written feature against its cap.
  *  For showing: the server checks it again on every paid call. */
-export type Subscription = Webapp["SubscriptionDto"];
+export type Subscription = Gateway["SubscriptionDto"];
 /** What the subscription unlocks: NARRATIVE, CHECKPOINT_NOTES, ORAL, ASSISTANT, WORDS, DEBRIEF. */
 export type PaidFeature = Subscription["uses"][number]["feature"];
 /** The iOS app's Apple sign-in, done: where to go next. */
-export type AppleSignedIn = Webapp["SignedIn"];
+export type AppleSignedIn = Gateway["SignedIn"];
 /** A TV's code to be signed in with from a phone (DeviceSignInController). */
-export type DeviceCode = Webapp["DeviceCode"];
+export type DeviceCode = Gateway["DeviceCode"];
 
 /** A pilot's own airplane, from `/api/aircraft`. `usableFuelGal` is
  *  null when the owner has not said, and then the nav log makes no
  *  fuel check. */
-export type Aircraft = Webapp["AircraftDto"];
-export type AircraftRequest = Webapp["AircraftRequest"];
+export type Aircraft = Gateway["AircraftDto"];
+export type AircraftRequest = Gateway["AircraftRequest"];
 /** A VOR check for IFR as the pilot records it (14 CFR 91.171(d)). */
-export type VorCheckRequest = Webapp["VorCheckRequest"];
-export type InspectionsRequest = Webapp["InspectionsRequest"];
-export type Inspections = Webapp["InspectionsDto"];
-export type ChecklistDto = Webapp["ChecklistDto"];
-export type Squawk = Webapp["SquawkDto"];
-export type SquawkRequest = Webapp["SquawkRequest"];
-export type Reminders = Webapp["RemindersDto"];
-export type LogbookImportResult = Webapp["LogbookImportResult"];
-export type FlightPlanFilingRequest = Webapp["FlightPlanFilingRequest"];
-export type FlightServiceStatus = Webapp["FlightServiceStatus"];
-export type FlightPlanFiled = Webapp["FlightPlanFiled"];
+export type VorCheckRequest = Gateway["VorCheckRequest"];
+export type InspectionsRequest = Gateway["InspectionsRequest"];
+export type Inspections = Gateway["InspectionsDto"];
+export type ChecklistDto = Gateway["ChecklistDto"];
+export type Squawk = Gateway["SquawkDto"];
+export type SquawkRequest = Gateway["SquawkRequest"];
+export type Reminders = Gateway["RemindersDto"];
+export type LogbookImportResult = Gateway["LogbookImportResult"];
+export type FlightPlanFilingRequest = Gateway["FlightPlanFilingRequest"];
+export type FlightServiceStatus = Gateway["FlightServiceStatus"];
+export type FlightPlanFiled = Gateway["FlightPlanFiled"];
 /** One day of one speed metric from one source and kind of device (SpeedController). */
-export type SpeedDay = Webapp["SpeedDay"];
+export type SpeedDay = Gateway["SpeedDay"];
 /** A page's Core Web Vitals from this browser (SpeedController, lib/speed). */
-export type SpeedFieldReport = Webapp["FieldReport"];
+export type SpeedFieldReport = Gateway["FieldReport"];
 
 /** One row of "My Flights" -- totals only; `Flight` carries the full
  *  filed nav log, fetched one flight at a time. */
-export type FlightSummary = Webapp["FlightSummaryDto"];
-export type Flight = Webapp["FlightDto"];
+export type FlightSummary = Gateway["FlightSummaryDto"];
+export type Flight = Gateway["FlightDto"];
 /** A flight's flown track as saved to the account (lib/track). */
-export type SavedTrack = Webapp["TrackDto"];
+export type SavedTrack = Gateway["TrackDto"];
 /** POST /api/flights body -- files (replacing any previous one) a nav
  *  log for a route this pilot planned. */
-export type SaveFlightRequest = Webapp["SaveFlightRequest"];
+export type SaveFlightRequest = Gateway["SaveFlightRequest"];
 
 /** A flight in the pilot's logbook, from `/api/logbook`. */
-export type LogbookEntry = Webapp["LogbookEntryDto"];
-export type LogbookEntryRequest = Webapp["LogbookEntryRequest"];
+export type LogbookEntry = Gateway["LogbookEntryDto"];
+export type LogbookEntryRequest = Gateway["LogbookEntryRequest"];
 /** Where the pilot stands -- passengers by day and at night, the flight
  *  review, the medical -- and the logbook's totals. */
-export type Currency = Webapp["CurrencyDto"];
-export type CurrencyDatesRequest = Webapp["CurrencyDatesRequest"];
+export type Currency = Gateway["CurrencyDto"];
+export type CurrencyDatesRequest = Gateway["CurrencyDatesRequest"];
 /** A student's way to the checkride: 61.109's experience from the
  *  logbook, the knowledge test report's ACS codes, the endorsements. */
-export type Training = Webapp["TrainingDto"];
-export type ExperienceItem = Webapp["ExperienceItemDto"];
+export type Training = Gateway["TrainingDto"];
+export type ExperienceItem = Gateway["ExperienceItemDto"];
 /** One of the student endorsements, AC 61-65K's words with its blanks. */
-export type EndorsementKind = Webapp["EndorsementKindDto"];
+export type EndorsementKind = Gateway["EndorsementKindDto"];
 /** An endorsement an instructor signed in the app. */
-export type SignedEndorsement = Webapp["SignedEndorsementDto"];
+export type SignedEndorsement = Gateway["SignedEndorsementDto"];
 /** A solo cross-country put to an instructor (14 CFR 61.93(c)(3)). */
-export type CrossCountryReview = Webapp["CrossCountryReviewDto"];
+export type CrossCountryReview = Gateway["CrossCountryReviewDto"];
 /** A pilot as a flight instructor: certificate, students, reviews, record. */
-export type Instructor = Webapp["InstructorDto"];
-export type InstructorRequest = Webapp["InstructorRequest"];
-export type StudentRow = Webapp["StudentDto"];
+export type Instructor = Gateway["InstructorDto"];
+export type InstructorRequest = Gateway["InstructorRequest"];
+export type StudentRow = Gateway["StudentDto"];
 /** One of a student's instructors, asked or taken. */
-export type InstructorLink = Webapp["InstructorLinkDto"];
-export type SignRequest = Webapp["SignRequest"];
+export type InstructorLink = Gateway["InstructorLinkDto"];
+export type SignRequest = Gateway["SignRequest"];
 /** An approach an instructor set a student to learn, and how far along they are. */
-export type ApproachLesson = Webapp["ApproachLessonDto"];
-export type AssignLessonRequest = Webapp["AssignLessonRequest"];
-export type LessonProgressRequest = Webapp["LessonProgressRequest"];
-export type QuizAnswer = Webapp["QuizAnswerDto"];
+export type ApproachLesson = Gateway["ApproachLessonDto"];
+export type AssignLessonRequest = Gateway["AssignLessonRequest"];
+export type LessonProgressRequest = Gateway["LessonProgressRequest"];
+export type QuizAnswer = Gateway["QuizAnswerDto"];

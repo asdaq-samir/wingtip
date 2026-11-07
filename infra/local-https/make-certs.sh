@@ -9,7 +9,7 @@
 #
 # Writes into infra/local-https/certs/ (ignored by git):
 #   ca.pem       the authority's certificate -- install this on the phone
-#   webapp.p12   the server certificate and key, PKCS12, for the gateway
+#   gateway.p12  the server certificate and key, PKCS12, for the gateway
 #
 # The authority's own key is kept out of the repo, in
 # ~/.config/wingtip-local-ca (WINGTIP_LOCAL_CA_DIR to change it). The repo is
@@ -72,17 +72,17 @@ docker run --rm --entrypoint sh -v "$out:/certs" -v "$ca_dir:/ca" -w /certs \
     cp ca.pem /ca/ca.pem   # an authority from before the key moved: its certificate is still here
   fi
   cp /ca/ca.pem ca.pem
-  openssl req -newkey rsa:2048 -nodes -keyout webapp.key -out webapp.csr -subj "/CN=wingtip local"
+  openssl req -newkey rsa:2048 -nodes -keyout gateway.key -out gateway.csr -subj "/CN=wingtip local"
   printf "subjectAltName=IP:%s,IP:127.0.0.1,DNS:localhost\nextendedKeyUsage=serverAuth\n" "$ADDRESS" > san.cnf
-  openssl x509 -req -in webapp.csr -CA /ca/ca.pem -CAkey /ca/ca.key -CAserial /ca/ca.srl -CAcreateserial \
-    -days 365 -sha256 -extfile san.cnf -out webapp.pem
-  openssl pkcs12 -export -inkey webapp.key -in webapp.pem -certfile ca.pem -name webapp \
-    -passout "pass:$PASSWORD" -out webapp.p12
-  rm -f webapp.csr san.cnf
-  chmod 644 webapp.p12 ca.pem
+  openssl x509 -req -in gateway.csr -CA /ca/ca.pem -CAkey /ca/ca.key -CAserial /ca/ca.srl -CAcreateserial \
+    -days 365 -sha256 -extfile san.cnf -out gateway.pem
+  openssl pkcs12 -export -inkey gateway.key -in gateway.pem -certfile ca.pem -name gateway \
+    -passout "pass:$PASSWORD" -out gateway.p12
+  rm -f gateway.csr san.cnf
+  chmod 644 gateway.p12 ca.pem
   if ! openssl x509 -in ca.pem -noout -ext nameConstraints 2>/dev/null | grep -qi permitted; then
     echo "note: this authority has no name constraints -- run again with --new-ca to replace it" >&2
   fi
 '
-echo "wrote $out/ca.pem (install on the phone) and $out/webapp.p12 (the gateway reads it)"
+echo "wrote $out/ca.pem (install on the phone) and $out/gateway.p12 (the gateway reads it)"
 echo "now: docker compose up -d gateway, then open https://$address:8443/app/plan on the phone"

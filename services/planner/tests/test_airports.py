@@ -225,7 +225,7 @@ def test_the_search_may_be_kept_and_the_fields_in_view_with_their_weather_may_no
     # The search is the same for every pilot until the tables change, so
     # a browser and the CDN may keep it; the fields in view carry each
     # one's METAR, which changes within the hour, so they say nothing
-    # (and the webapp marks them no-store).
+    # (and the gateway marks them no-store).
     monkeypatch.setattr(airports, "places_in", lambda *args, **kwargs: [{**DULUTH}])
     monkeypatch.setattr(weather, "reporting_idents", lambda: {"KDLH"})
     monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {"KDLH": {"flight_category": "VFR"}})

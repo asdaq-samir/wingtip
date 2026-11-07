@@ -6,7 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Entry point for webapp -- the public-facing route-planning API. See
+ * Entry point for the gateway -- the public-facing route-planning API. See
  * {@link com.northflyers.wingtip.controller.PlannerProxyController} for the
  * planning surface (proxied to planner) and the other
  * controllers in that package for pilots, aircraft and flights; this
