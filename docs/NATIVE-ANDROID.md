@@ -17,7 +17,7 @@ owner's word. Its package is `app.wingtipmaps.android.native`.
 - `app/src/main/cpp`: the JNI shim round the engine, in C
   (`wingtip_jni.c`), and the CMake file that links the engine's static
   library for each ABI. The engine itself is built by
-  `native/ffi/build-android.sh` into `app/engine/` (not committed; the
+  `engine/bindings/ffi/build-android.sh` into `app/engine/` (not committed; the
   twin of `build-xcframework.sh`).
 - `app/src/main/kotlin/app/wingtipmaps/android`:
   - `engine/Engine.kt`: the engine's one way in, `Engine.call(name,
@@ -49,16 +49,16 @@ owner's word. Its package is `app.wingtipmaps.android.native`.
 ## Rules
 
 - A rule the pilot needs offline in flight is computed on the phone by
-  the shared engine (`native/engine`), the same Rust the web app, the
+  the shared engine (`engine/facade`), the same Rust the web app, the
   planner and the iOS app run, asked by name through `Engine.call`
-  (`native/engine/src/call.rs` lists every name, and
-  `native/contract/engine.schema.json` types each input and answer). An
+  (`engine/facade/src/call.rs` lists every name, and
+  `engine/contract/engine.schema.json` types each input and answer). An
   answer the app decodes can use a class generated from that contract,
   `engine/EngineContract.kt` (`scripts/engine-contract-apps.sh`,
   committed), rather than an `@Serializable` written by hand; callers
   move over one name at a time. The Kotlin keeps the words and the
   formatting, not the rule. This app is one of the four layers
-  native/README.md describes: the planner works out the flight, the
+  engine/README.md describes: the planner works out the flight, the
   gateway (Spring Boot) holds the pilot's account and records, and the
   engine answers every rule. Every other
   figure comes from the planner; the app shows the server's answer and
@@ -104,9 +104,9 @@ happens in `.github/workflows/native-android.yml` on GitHub's Linux
 runner:
 
 - a pull request, a push to `main` or to a `claude/native-*` branch that
-  touches `android/`, the engine (`native/engine`, `native/ffi`), the
+  touches `android/`, the engine (`engine/facade`, `engine/bindings/ffi`), the
   shared fixtures or the workflow: the engine is built for the three
-  ABIs (`native/ffi/build-android.sh`), then
+  ABIs (`engine/bindings/ffi/build-android.sh`), then
   `testDebugUnitTest lintDebug assembleDebug`, with the debug APK kept
   with the run (`wingtip-native-debug-apk`: it installs on any Android
   phone with "Install unknown apps" allowed), then

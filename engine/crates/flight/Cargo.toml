@@ -1,0 +1,13 @@
+[package]
+name = "wingtip-flight"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "The flight's own rules: the wind triangle, 14 CFR 91.159's cruising altitudes, 91.151's reserve and the atmosphere"
+
+[lib]
+name = "wingtip_flight"
+
+# None: a rule module with no other crate under it (engine/README.md),
+# plain Rust, so the phones carry it as it is.
+[dependencies]

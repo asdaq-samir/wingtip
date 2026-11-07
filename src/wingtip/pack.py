@@ -1,6 +1,6 @@
 """The cycle pack: one file per FAA cycle holding what wingtip-engine
-(native/engine) reads, so the planner and, later, the phones answer from
-the same bytes. Its format is set out in native/crates/airspace/src/pack.rs; this
+(engine/facade) reads, so the planner and, later, the phones answer from
+the same bytes. Its format is set out in engine/crates/airspace/src/pack.rs; this
 module writes it and reads it in place.
 
 What it holds:

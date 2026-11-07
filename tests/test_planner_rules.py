@@ -1,7 +1,7 @@
 """The planner's rules that moved into the engine (#482 phase 0), asked
 through wingtip's own functions, held to the answers its Python gave
 before the move: the shared fixture web/src/lib/fixtures/plannerRules.json,
-which native/engine/tests/planner_rules.rs holds the engine to by name."""
+which engine/facade/tests/planner_rules.rs holds the engine to by name."""
 import json
 from datetime import datetime, timezone
 from pathlib import Path

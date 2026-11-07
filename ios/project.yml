@@ -47,7 +47,7 @@ targets:
       - path: ../web/src/lib/acs.json
         buildPhase: resources
     dependencies:
-      # The engine (native/ffi/build-xcframework.sh, built on the runner
+      # The engine (engine/bindings/ffi/build-xcframework.sh, built on the runner
       # before this project is made): the airspace at a point from the
       # phone's cycle packs, with no network. A static library, linked in.
       - framework: Frameworks/WingtipEngine.xcframework

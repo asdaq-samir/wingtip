@@ -1,4 +1,4 @@
-"""The Rust extension (native/, wingtip_native) held to references it does not
+"""The Rust extension (engine/, wingtip_native) held to references it does not
 share code with:
 
 - route options' straight lines against the Python they were until
@@ -13,7 +13,7 @@ share code with:
   there; and the same from the cycle pack (wingtip.pack) made of that file.
 
 The route grids and the Chicago taps are shared with the engine's own
-tests (native/engine/tests/fixtures.rs).
+tests (engine/facade/tests/fixtures.rs).
 
 The wheel is built into the planner's image; CI builds it for these."""
 import gzip

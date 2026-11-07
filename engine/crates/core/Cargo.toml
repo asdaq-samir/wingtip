@@ -1,0 +1,13 @@
+[package]
+name = "wingtip-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "The ground the engine's other crates stand on: great-circle sums, magnetic variation, the grid's straight lines, UTC dates, and the small JSON and XML readers"
+
+[lib]
+name = "wingtip_core"
+
+# None: the bottom of the engine's crates (engine/README.md), plain Rust,
+# so the phones carry it as it is.
+[dependencies]

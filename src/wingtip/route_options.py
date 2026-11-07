@@ -55,7 +55,7 @@ import logging
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import dijkstra
-# The straight lines over the grid are Rust's (native/, built into the
+# The straight lines over the grid are Rust's (engine/, built into the
 # planner's image): a long route's straightening was 58% of its options'
 # seconds, Python and numpy's cost of a call on a dozen cells
 # (2026-11-01). tests/test_native.py holds them to the Python they were.

@@ -39,16 +39,16 @@ is docs/NATIVE-ANDROID.md.
 ## Rules
 
 - A rule the pilot needs offline in flight is computed on the phone by
-  the shared engine (`native/engine`), the same Rust the web app and the
+  the shared engine (`engine/facade`), the same Rust the web app and the
   planner run, asked by name through `Engine.call` (`wt_call`;
-  `native/engine/src/call.rs` lists every name, and
-  `native/contract/engine.schema.json` types each input and answer). An
+  `engine/facade/src/call.rs` lists every name, and
+  `engine/contract/engine.schema.json` types each input and answer). An
   answer the app decodes can use a type generated from that contract,
   `ios/Wingtip/Engine/EngineContract.swift` (`scripts/engine-contract-apps.sh`,
   committed), rather than a Decodable written by hand; callers move over
   one name at a time. The Swift keeps the words and the formatting, not
   the rule, and each screen's state is one observable model the view
-  draws. This app is one of the four layers native/README.md describes:
+  draws. This app is one of the four layers engine/README.md describes:
   the planner works out the flight, the gateway (Spring Boot) holds the
   pilot's account and records, and the engine answers every rule. The shared fixtures
   in `web/src/lib/fixtures` are read by the web's vitest tests and by

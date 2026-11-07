@@ -1,6 +1,6 @@
 # The JNI shim round the engine (wingtip_jni.c), one shared library the
 # app loads (Engine.kt), with the engine's static library linked in for
-# the ABI being built. The engine comes from native/ffi/build-android.sh,
+# the ABI being built. The engine comes from engine/bindings/ffi/build-android.sh,
 # which puts each ABI's libwingtip_ffi.a and the header under app/engine/
 # (not committed; the workflow builds it first).
 cmake_minimum_required(VERSION 3.22.1)

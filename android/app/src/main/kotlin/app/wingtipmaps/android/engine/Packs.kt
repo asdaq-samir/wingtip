@@ -3,7 +3,7 @@ package app.wingtipmaps.android.engine
 import java.nio.ByteBuffer
 
 /**
- * The engine's readers of the cycle packs (native/ffi's wt_airspace_at,
+ * The engine's readers of the cycle packs (engine/bindings/ffi's wt_airspace_at,
  * wt_ahead and the in-view functions), through the JNI shim's second
  * part (src/main/cpp/wingtip_jni.c, "The packs kept on the phone"). A
  * pack is a direct ByteBuffer over its memory-mapped file (CyclePacks

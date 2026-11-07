@@ -10,13 +10,13 @@ Functional core, imperative shell: one core every app shares, and a thin
 shell per app round it (the owner, 2026-11-03). Four layers, each with
 one job (the owner kept both server languages on this split, 2026-11-06):
 
-- **The Rust engine** (`native/engine`, wingtip-engine, a facade over
-  nine domain crates in `native/crates`, layered as native/README.md
+- **The Rust engine** (`engine/facade`, wingtip-engine, a facade over
+  ten domain crates in `engine/crates`, layered as engine/README.md
   says). Every aviation rule or figure lives there once: altitudes,
   winds, runways, fuel, weather limits, Go / No-Go, holds, procedures,
   the clearance reader, the debrief (currency is to join them, #482). No network, no screen, no
-  clock of its own. Each rule is a name in `native/engine/src/call.rs`,
-  JSON in and out, typed in `native/contract/engine.schema.json`.
+  clock of its own. Each rule is a name in `engine/facade/src/call.rs`,
+  JSON in and out, typed in `engine/contract/engine.schema.json`.
 - **The planner** (FastAPI, `planning-service` over `src/wingtip`) works
   out a flight: it fetches the FAA and weather data, runs the chart
   model and the assistant, and asks the engine every rule
@@ -106,17 +106,17 @@ them). The table is what it runs:
 | `web/` | `npm run types && npx tsc --noEmit && npx eslint . && npx vitest run` |
 | `planning-service/` | `ruff check app tests && pytest tests/` |
 | `src/wingtip`, `tests/` | `ruff check src/wingtip tests && pytest tests/` (repo root) |
-| `native/` (Rust, `wingtip_native`) | the engine's `cargo test --profile ci` (`ci.yml`'s line); `maturin build -m native/Cargo.toml` and install the wheel, then `pytest tests/test_native.py` (repo root); every image that copies `src/` is built FROM `docker/Dockerfile.base`, which builds and installs it once (`tests/test_dockerfiles.py`), and none of them starts without it |
+| `engine/` (Rust, `wingtip_native`) | the engine's `cargo test --profile ci` (`ci.yml`'s line); `maturin build -m engine/Cargo.toml` and install the wheel, then `pytest tests/test_native.py` (repo root); every image that copies `src/` is built FROM `docker/Dockerfile.base`, which builds and installs it once (`tests/test_dockerfiles.py`), and none of them starts without it |
 | `springboot-app/` | `mvn -B test` (needs Docker, for Testcontainers) |
 | other services | `ruff check app tests && pytest tests/` in that service |
 | `ios/` (the native app) | On the Mac mini (Xcode and XcodeGen are there): `xcodegen` in `ios/`, then `xcodebuild -project ios/Wingtip.xcodeproj -scheme Wingtip -destination "platform=iOS Simulator,name=<newest iPhone>" test` through `scripts/one-at-a-time.sh`; `native-ios.yml` runs the same, iPad included (docs/NATIVE.md) |
-| `android/` (the native app) | On the Mac mini: `./gradlew testDebugUnitTest lintDebug assembleDebug` in `android/` with JetBrains' JDK 21, after `native/ffi/build-android.sh`; `native-android.yml` builds the engine for each ABI, runs the unit tests, lint and a debug APK, then the instrumented tests on an emulator (docs/NATIVE-ANDROID.md) |
+| `android/` (the native app) | On the Mac mini: `./gradlew testDebugUnitTest lintDebug assembleDebug` in `android/` with JetBrains' JDK 21, after `engine/bindings/ffi/build-android.sh`; `native-android.yml` builds the engine for each ABI, runs the unit tests, lint and a debug APK, then the instrumented tests on an emulator (docs/NATIVE-ANDROID.md) |
 
 Python wants `pip install -r requirements-dev.txt` in that directory first.
 
 A pre-push hook runs the quick ones for what a push changes against
 origin/main: `tsc` and ESLint for `web/`, ruff for Python, `cargo check`
-for `native/` (each skipped with a note where its tool is missing). Install
+for `engine/` (each skipped with a note where its tool is missing). Install
 it once per clone with `scripts/install-hooks.sh`; skip it with `git push
 --no-verify` or `SKIP_HOOKS=1`. It runs outside the lock and is no
 substitute for the table above.

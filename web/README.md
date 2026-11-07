@@ -234,11 +234,11 @@ had already named. The component then finds the answer already in
 committed, since this build has no Rust) and `callEngine(name, input)`
 asks it a rule, JSON in and out. The names and the shapes of their
 inputs and answers come from the engine's contract
-(`native/contract/engine.schema.json`), generated into
+(`engine/contract/engine.schema.json`), generated into
 `lib/engine/contract.ts` by `npm run types`, so `callEngine` is typed by
 name and a field renamed in the Rust is a compile error here. How a
 figure is written on the screen stays here; the figure is the engine's.
-Adding a rule is native/README.md's list.
+Adding a rule is engine/README.md's list.
 
 **State.** A screen is a view and a view model: Plan and Train each
 have one hook (`usePlan`, `useTraining`) holding the page's state as a

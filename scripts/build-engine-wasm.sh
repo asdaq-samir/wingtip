@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Builds the engine's WebAssembly (native/wasm, wingtip-wasm) into
+# Builds the engine's WebAssembly (engine/bindings/wasm, wingtip-wasm) into
 # web/src/lib/engine/wingtip-engine.wasm, which is committed: the web
 # app's build and CI's web jobs have no Rust. Run it after any change
-# under native/engine, native/crates or native/wasm, and commit the .wasm
+# under engine/facade, engine/crates or engine/bindings/wasm, and commit the .wasm
 # with it; CI's `test` job runs it again and fails where the committed
 # file differs.
 #
@@ -36,7 +36,7 @@ tarball=binaryen-$binaryen-x86_64-linux.tar.gz
 curl -fsSL -o "$tools/$tarball" "https://github.com/WebAssembly/binaryen/releases/download/$binaryen/$tarball"
 
 docker run --rm --platform linux/amd64 -m 3g \
-  -v "$here/native:/src/native" \
+  -v "$here/engine:/src/engine" \
   -v "$here/web/src/lib/engine:/out" \
   -v "$tools:/tools:ro" \
   -e CARGO_TARGET_DIR=/tmp/target \
@@ -44,7 +44,7 @@ docker run --rm --platform linux/amd64 -m 3g \
   -e SOURCE_DATE_EPOCH=0 \
   -e TARBALL="$tarball" \
   -e BINARYEN_SHA256="$binaryen_sha256" \
-  -w /src/native \
+  -w /src/engine \
   "$image" sh -ec '
     rustup target add wasm32-unknown-unknown >/dev/null 2>&1
     cargo build --locked -p wingtip-wasm --target wasm32-unknown-unknown --profile wasm 2>&1 | tail -3

@@ -26,8 +26,8 @@
 # last, so the same commit could build on a different Python or Rust from
 # one day to the next, and the cache keyed on it would miss.
 #
-# wingtip's Rust extension (native/py, over wingtip-engine in
-# native/engine), which wingtip imports at module level since the shared
+# wingtip's Rust extension (engine/bindings/py, over wingtip-engine in
+# engine/facade), which wingtip imports at module level since the shared
 # engine (2026-11-03): built here, with Rust copied in from its own image,
 # so the base carries the wheel and none of the toolchain.
 FROM python:3.14-slim@sha256:af8a5aa14780025dbfbcfbc81bd8a91ebd87711dd5b0f48ed71090949dd7cb1d AS native
@@ -39,14 +39,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean \
     && apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
 RUN --mount=type=cache,target=/root/.cache/pip pip install maturin==1.9.4
-COPY native /native
+COPY engine /engine
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    maturin build --release --compatibility linux -m /native/py/Cargo.toml -o /wheels
+    maturin build --release --compatibility linux -m /engine/bindings/py/Cargo.toml -o /wheels
 
 FROM python:3.14-slim@sha256:af8a5aa14780025dbfbcfbc81bd8a91ebd87711dd5b0f48ed71090949dd7cb1d AS base
 
 # wingtip's own list, before the wheel: it changes far less often than
-# native/, so an engine change rebuilds one small layer, not this one.
+# engine/, so an engine change rebuilds one small layer, not this one.
 COPY src/requirements.txt /tmp/wingtip-requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r /tmp/wingtip-requirements.txt \
     && rm /tmp/wingtip-requirements.txt

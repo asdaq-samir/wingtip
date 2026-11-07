@@ -22,12 +22,12 @@ The project is four layers, each with one job:
 
 - **Aviation rules and figures** (altitudes, winds, fuel, weather minimums,
   Go / No-Go, holds, procedures; currency is still to move, #482) live once, in the Rust engine:
-  [`native/engine`](native/engine), a facade over the domain crates in
-  [`native/crates`](native/crates). A new rule goes into the lowest crate
-  that can hold it, gets a name in `native/engine/src/call.rs` and an
-  entry in the contract (`native/contract/engine.schema.json`), and then
+  [`engine/facade`](engine/facade), a facade over the domain crates in
+  [`engine/crates`](engine/crates). A new rule goes into the lowest crate
+  that can hold it, gets a name in `engine/facade/src/call.rs` and an
+  entry in the contract (`engine/contract/engine.schema.json`), and then
   the generated types, a fixture test and the WebAssembly build follow;
-  [native/README.md](native/README.md) has the steps.
+  [engine/README.md](engine/README.md) has the steps.
 - **Working out a flight** (fetching FAA and weather data, the chart and
   its model, the assistant) is the planner: [`planning-service`](planning-service)
   over [`src/wingtip`](src). It asks the engine every rule.
@@ -53,7 +53,7 @@ Run the checks for the part you changed, from that directory:
 | `web/` | `npm run types && npx tsc --noEmit && npx eslint . && npx vitest run` |
 | `planning-service/`, other Python services | `ruff check app tests && pytest tests/` |
 | `src/wingtip`, `tests/` | `ruff check src/wingtip tests && pytest tests/` (repo root) |
-| `native/` | `maturin build -m native/Cargo.toml`, install the wheel, then `pytest tests/test_native.py` |
+| `engine/` | `maturin build -m engine/Cargo.toml`, install the wheel, then `pytest tests/test_native.py` |
 | `springboot-app/` | `mvn -B test` (needs Docker, for Testcontainers) |
 | `ios/`, `android/` | CI only |
 

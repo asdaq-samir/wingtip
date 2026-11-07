@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 // The native Android app (docs/NATIVE-ANDROID.md): Jetpack Compose and
 // Material 3 over the same planner and gateway the website uses, with the
-// shared Rust engine (native/engine) linked in through a C shim
+// shared Rust engine (engine/facade) linked in through a C shim
 // (src/main/cpp). Nothing of the owner's is kept here: the host and the
 // package name come in from outside, as the shell's build takes them.
 plugins {
@@ -47,7 +47,7 @@ android {
         // Read by Config at run time, and by the manifest's App Links filter.
         buildConfigField("String", "WINGTIP_HOST", "\"$wingtipHost\"")
         manifestPlaceholders["wingtipHost"] = wingtipHost
-        // The ABIs the engine is built for (native/ffi/build-android.sh):
+        // The ABIs the engine is built for (engine/bindings/ffi/build-android.sh):
         // the phones Play serves, and the emulator CI tests on.
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")

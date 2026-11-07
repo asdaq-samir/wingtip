@@ -3,7 +3,7 @@ import WingtipEngine
 import os
 
 /// wingtip-engine, the planner's own Rust, through its C functions
-/// (native/ffi): the same figures the planner works out, here with no
+/// (engine/bindings/ffi): the same figures the planner works out, here with no
 /// network. Each pack is handed over mapped for the call alone.
 enum Engine {
     /// The coders every call shares, made once: a JSONEncoder and a

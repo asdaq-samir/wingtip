@@ -5,7 +5,7 @@ import Testing
 /// The engine through this app's own bridge (Engine.callText: the input
 /// written by Engine.written, wt_call, the answer taken back as a Swift
 /// string) held to the shared fixtures the engine's Rust tests
-/// (native/engine/tests) and the web's vitest tests (through the .wasm)
+/// (engine/facade/tests) and the web's vitest tests (through the .wasm)
 /// hold it to: web/src/lib/fixtures, bundled into this target in place by
 /// project.yml. The Rust and web tests never pass through this bridge, so
 /// a bridge that changed a key's case, wrote a number as a string, dropped

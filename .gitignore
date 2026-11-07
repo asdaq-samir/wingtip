@@ -70,14 +70,14 @@ ios/Wingtip/Wingtip.entitlements
 ios/WingtipWatch/Info.plist
 ios/WingtipWidgets/Info.plist
 ios/WingtipWidgets/WingtipWidgets.entitlements
-# The engine for the app, built on the runner (native/ffi/build-xcframework.sh).
+# The engine for the app, built on the runner (engine/bindings/ffi/build-xcframework.sh).
 ios/Frameworks/
 
-# The Rust extension's build output (native/, built by maturin)
-native/target/
+# The Rust extension's build output (engine/, built by maturin)
+engine/target/
 
 # The native Android app (android/, docs/NATIVE-ANDROID.md): the engine
-# built for it on the runner (native/ffi/build-android.sh), Gradle's own
+# built for it on the runner (engine/bindings/ffi/build-android.sh), Gradle's own
 # state and output, and the SDK path a machine writes for itself.
 android/app/engine/
 android/.gradle/

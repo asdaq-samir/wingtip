@@ -114,17 +114,17 @@ jobs:
           python-version: "3.14"
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
-      # wingtip's Rust extension (native/), which wingtip.route_options and
+      # wingtip's Rust extension (engine/), which wingtip.route_options and
       # wingtip.airspace_at import: built with the runner's own Rust, in the
       # light `ci` profile (the image's is the release one; the sums are
       # the same either way, as nothing here is built for fast maths).
       # The runner's own temp, not /tmp: the Mac mini's runners share one
       # machine, and two jobs building into /tmp/native would install each
       # other's wheel.
-      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m native/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
+      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
       # The engine's own tests, on the shared fixtures the Python reads too:
-      # the facade's and each of its crates' (native/crates).
-      - run: cargo test --profile ci --manifest-path native/Cargo.toml -p wingtip-engine -p wingtip-geo -p wingtip-weather -p wingtip-figures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot
+      # the facade's and each of its crates' (engine/crates).
+      - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot
       # The web app's copy of the engine (web/src/lib/engine), committed
       # because the web build has no Rust: built again in the script's
       # pinned image, it must be the committed file byte for byte, or the
@@ -133,7 +133,7 @@ jobs:
         run: |
           scripts/build-engine-wasm.sh
           git diff --exit-code --stat web/src/lib/engine/wingtip-engine.wasm || {
-            echo "::error title=Engine wasm out of date::web/src/lib/engine/wingtip-engine.wasm is not what native/ builds: run scripts/build-engine-wasm.sh and commit the file."
+            echo "::error title=Engine wasm out of date::web/src/lib/engine/wingtip-engine.wasm is not what engine/ builds: run scripts/build-engine-wasm.sh and commit the file."
             exit 1
           }
       # tippecanoe, for tests/test_vector_tiles.py's archive tests (the
@@ -295,8 +295,8 @@ jobs:
           python-version: "3.14"
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
-      # The planner imports wingtip's Rust extension (native/), as in the test job.
-      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m ../native/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
+      # The planner imports wingtip's Rust extension (engine/), as in the test job.
+      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m ../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
       - run: ruff check app tests
       - run: pytest tests/ -v
 
@@ -388,7 +388,7 @@ jobs:
               - conftest.py
             test-root:
               - src/**
-              - native/**
+              - engine/**
               - scripts/build-engine-wasm.sh
               - web/src/lib/engine/wingtip-engine.wasm
               - tests/**
@@ -411,7 +411,7 @@ jobs:
               - .nvmrc
               - planning-service/openapi.json
               - springboot-app/openapi.json
-              - native/contract/**
+              - engine/contract/**
               # The phones' models of the two documents, checked there.
               - scripts/api-models-apps.*
               - ios/Wingtip/API/Generated/**
@@ -423,7 +423,7 @@ jobs:
             test-planning-service:
               - planning-service/**
               - src/**
-              - native/**
+              - engine/**
             # The two APIs the phones call, for api-compat.
             api:
               - planning-service/openapi.json
@@ -436,20 +436,20 @@ jobs:
               - docker-compose.prod.yml
             # The phone apps, each by what it builds from: its own tree
             # (with its API models, scripts/api-models-apps.* makes them),
-            # the engine it links (native/**), the shared fixtures its
+            # the engine it links (engine/**), the shared fixtures its
             # tests read and its build's workflow. On a pull request only
             # (the plan, below): main's pushes and the nights run them in
             # native-android.yml and native-ios.yml.
             android:
               - android/**
-              - native/**
+              - engine/**
               - web/src/lib/fixtures/**
               - scripts/api-models-apps.*
               - .github/workflows/native-android-build.yml
             # And the web's files ios/project.yml bundles.
             ios:
               - ios/**
-              - native/**
+              - engine/**
               - web/src/lib/fixtures/**
               - web/src/lib/acs.json
               - tests/fixtures/native/**
@@ -459,35 +459,35 @@ jobs:
             docs:
               - springboot-app/**
             # The images, each by what its Dockerfile reads: the base
-            # (docker/Dockerfile.base, wingtip's requirements and native/)
+            # (docker/Dockerfile.base, wingtip's requirements and engine/)
             # for every one built FROM it.
             base:
               - docker/Dockerfile.base
               - src/requirements.txt
-              - native/**
+              - engine/**
             ml:
               - docker/Dockerfile.ml
               - docker/Dockerfile.base
               - docker/requirements-ml*.txt
               - src/**
-              - native/**
+              - engine/**
             pipeline-processing:
               - docker/Dockerfile.processing
               - docker/Dockerfile.base
               - docker/requirements-processing.txt
               - src/**
-              - native/**
+              - engine/**
             pipeline-training:
               - docker/Dockerfile.training
               - docker/Dockerfile.base
               - docker/requirements-training.txt
               - src/**
-              - native/**
+              - engine/**
             planning-service:
               - planning-service/**
               - docker/Dockerfile.base
               - src/**
-              - native/**
+              - engine/**
             # web/** rather than the files the Dockerfile copies: a file
             # left off a hand-made list would leave the image stale, and
             # a change the image does not read (a spec) is a cache hit.
@@ -495,7 +495,7 @@ jobs:
               - web/**
               - springboot-app/**
               - planning-service/openapi.json
-              - native/contract/**
+              - engine/contract/**
       - name: What this run builds and tests
         id: plan
         env:
@@ -1830,7 +1830,7 @@ jobs:
           python-version: "3.14"
       - run: pip install uv
       - run: uv pip install --system -r ${{ matrix.suite == 'root' && '.' || matrix.suite }}/requirements-dev.txt
-      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m native/py/Cargo.toml -o /tmp/native && uv pip install --system /tmp/native/*.whl
+      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o /tmp/native && uv pip install --system /tmp/native/*.whl
       # Each run's seed is at the top of its output ("Using --randomly-seed=N").
       - name: Five runs in random order
         working-directory: ${{ matrix.suite == 'root' && '.' || matrix.suite }}

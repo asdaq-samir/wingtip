@@ -1,7 +1,7 @@
 name: Native Android build
 
 # The native Android app's build (android/, docs/NATIVE-ANDROID.md): the
-# shared Rust engine for the three ABIs (native/ffi/build-android.sh),
+# shared Rust engine for the three ABIs (engine/bindings/ffi/build-android.sh),
 # then the unit tests, lint and a debug APK a tester can install by hand
 # (the run's artifact). Called, not triggered: by ci.yml on a pull request
 # that touches what the app builds from, so "CI passed" -- the one check
@@ -51,12 +51,12 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: android/app/engine
-          key: engine-android-${{ hashFiles('native/engine/**', 'native/crates/**', 'native/ffi/**', 'native/Cargo.*') }}
+          key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
       - name: The engine, for the app
-        # wingtip-engine through its C functions (native/ffi), for each
+        # wingtip-engine through its C functions (engine/bindings/ffi), for each
         # ABI, with the runner's own rustup and NDK, where the engine changed.
         if: steps.engine.outputs.cache-hit != 'true'
-        run: native/ffi/build-android.sh
+        run: engine/bindings/ffi/build-android.sh
       # Kept at once, not at the job's end, so the device job has it
       # whatever the unit tests and lint say.
       - name: The engine, kept
@@ -64,7 +64,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: android/app/engine
-          key: engine-android-${{ hashFiles('native/engine/**', 'native/crates/**', 'native/ffi/**', 'native/Cargo.*') }}
+          key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
       - name: The site's host
         id: site
         run: echo "host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")" >> "$GITHUB_OUTPUT"

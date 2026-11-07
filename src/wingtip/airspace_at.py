@@ -9,7 +9,7 @@ from the file itself: holding every Class E shape in memory was 8 million
 vertices and 200 MB for a question asked a tap at a time. What is held is
 each volume's box, fields and place in the file, read once
 (_volumes_index); a tap reads only the shapes whose box holds the point,
-straight from the mapped file, and asks the Rust extension (native/)
+straight from the mapped file, and asks the Rust extension (engine/)
 whether each holds it. The file's own bbox filter read every shape's
 header from the top for each tap, 15 to 56 seconds on the live planner
 (2026-10-28); pyshp parsing each candidate's vertices and shapely

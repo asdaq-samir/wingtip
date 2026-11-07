@@ -4,7 +4,7 @@ The planner: it works out a flight, over HTTP. Fetches the FAA's data
 and the weather, reads FAA sectional tiles, scores the checkpoints with
 the chart model in its own process, puts the nav log together and runs
 the AI assistant, and asks the Rust engine every aviation rule by name
-(`wingtip_native.call`; [`native/README.md`](../native/README.md)). It
+(`wingtip_native.call`; [`engine/README.md`](../engine/README.md)). It
 is one of four layers: under it the engine, beside it Spring Boot
 (accounts and saved records, which asks this service when it needs a
 figure), above it the apps. Rules still written in Python here or in

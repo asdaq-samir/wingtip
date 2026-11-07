@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import { compile, type JSONSchema } from "json-schema-to-typescript";
 import { describe, expect, it } from "vitest";
 
-// The engine's contract (native/contract/engine.schema.json) and the
+// The engine's contract (engine/contract/engine.schema.json) and the
 // types made from it (contract.ts, by `npm run types`). The engine's own
-// check, native/engine/tests/contract.rs, holds the engine to the schema;
+// check, engine/facade/tests/contract.rs, holds the engine to the schema;
 // this holds the web's types to it, so the three never drift apart.
-const schema = JSON.parse(readFileSync(new URL("../../../../native/contract/engine.schema.json", import.meta.url), "utf8")) as JSONSchema & {
+const schema = JSON.parse(readFileSync(new URL("../../../../engine/contract/engine.schema.json", import.meta.url), "utf8")) as JSONSchema & {
   properties: Record<string, unknown>;
   required: string[];
 };

@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Wingtip
 
-/// The engine through its C functions (Engine, native/ffi), on the
+/// The engine through its C functions (Engine, engine/bindings/ffi), on the
 /// Chicago cut's phone packs: at each real tap -- O'Hare, KDPA, Midway and
 /// its shelf, Wheeling under O'Hare's shelf -- the planner's own answer,
 /// band for band (tests/fixtures/native/phone, bundled by project.yml;

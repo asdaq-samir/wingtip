@@ -38,7 +38,7 @@ def test_wingtip_reaches_every_python_that_imports_it():
 
 
 def test_an_engine_rule_reaches_every_shell_of_it():
-    assert areas("native/engine/src/call.rs") == [
+    assert areas("engine/facade/src/call.rs") == [
         "py", "planner", "engine", "ios", "android"]
 
 

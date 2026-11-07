@@ -31,9 +31,9 @@ jobs when its `changes` job finds the pull request touches what the app
 builds from:
 
 - **Android:** `android/**` (its generated API models included),
-  `native/**`, `web/src/lib/fixtures/**`, `scripts/api-models-apps.*`,
+  `engine/**`, `web/src/lib/fixtures/**`, `scripts/api-models-apps.*`,
   `native-android-build.yml`.
-- **iOS:** `ios/**` (its API models included), `native/**`,
+- **iOS:** `ios/**` (its API models included), `engine/**`,
   `web/src/lib/fixtures/**`, `web/src/lib/acs.json`,
   `tests/fixtures/native/**`, `scripts/api-models-apps.*`,
   `native-ios-test.yml`.

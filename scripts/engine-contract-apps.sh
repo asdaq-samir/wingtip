@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The phones' types for the engine's answers, generated from its contract
-# (native/contract/engine.schema.json) by quicktype, as the web's are by
+# (engine/contract/engine.schema.json) by quicktype, as the web's are by
 # json-schema-to-typescript (`npm run types`): the iPhone's
 # ios/Wingtip/Engine/EngineContract.swift and Android's
 # android/app/src/main/kotlin/app/wingtipmaps/android/engine/EngineContract.kt,
@@ -16,7 +16,7 @@ set -euo pipefail
 
 here=$(cd "$(dirname "$0")/.." && pwd)
 docker=${DOCKER:-docker}
-schema=native/contract/engine.schema.json
+schema=engine/contract/engine.schema.json
 ANSWERS=(traffic_marks alert_fires altitude_lines)
 
 sources=()

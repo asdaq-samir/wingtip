@@ -88,13 +88,13 @@ explicit path to production on AWS.
 
 Four layers, each with one job:
 
-- **The engine** ([`native/`](../native), Rust): every aviation rule and
+- **The engine** ([`engine/`](../engine), Rust): every aviation rule and
   figure, once. No network, no screen, no clock of its own. A facade,
-  `wingtip-engine`, over nine domain crates in `native/crates` (geo,
-  weather, figures, radio, pilot, brief, route, airspace, wording), each
-  of which may use only the ones under it. Each rule is a name in
-  `native/engine/src/call.rs`, JSON in and JSON out, and its input and
-  answer are typed in `native/contract/engine.schema.json`, from which
+  `wingtip-engine`, over ten domain crates in `engine/crates` (core,
+  flight, weather, procedures, radio, pilot, brief, route, airspace,
+  wording), each of which may use only the ones under it. Each rule is a
+  name in `engine/facade/src/call.rs`, JSON in and JSON out, and its
+  input and answer are typed in `engine/contract/engine.schema.json`, from which
   the web's and the phones' types are generated.
 - **The planner** (`planning-service` over `src/wingtip`, FastAPI):
   works out a flight. It fetches the FAA's and the weather's data, reads

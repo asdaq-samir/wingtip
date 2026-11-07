@@ -18,7 +18,7 @@
 #   ESLint all find by walking up from /repo/web. Built when the lock
 #   changes; npm's downloads in BuildKit's cache (id wingtip-npm).
 # - wingtip-check-py-<dir>:<hash>: python with that directory's
-#   requirements-dev and the wingtip_native wheel built from this native/
+#   requirements-dev and the wingtip_native wheel built from this engine/
 #   (CI's `ci` profile). Built when either changes; uv's downloads and the
 #   wheel's Rust in BuildKit's caches.
 # - Volumes: wingtip-cargo-registry and wingtip-cargo-git (Cargo's
@@ -47,28 +47,28 @@ areas_for() {
   while IFS= read -r path; do
     [ -n "$path" ] || continue
     case "$path" in
-      web/*|.nvmrc|planning-service/openapi.json|springboot-app/openapi.json|native/contract/*|scripts/api-models-apps.*)
+      web/*|.nvmrc|planning-service/openapi.json|springboot-app/openapi.json|engine/contract/*|scripts/api-models-apps.*)
         found+="web " ;;
     esac
     case "$path" in
-      src/*|native/*|tests/*|requirements-dev.txt|planning-service/requirements*.txt|docker/requirements*.txt|scripts/build-engine-wasm.sh|web/src/lib/engine/wingtip-engine.wasm|pyproject.toml)
+      src/*|engine/*|tests/*|requirements-dev.txt|planning-service/requirements*.txt|docker/requirements*.txt|scripts/build-engine-wasm.sh|web/src/lib/engine/wingtip-engine.wasm|pyproject.toml)
         found+="py " ;;
     esac
     case "$path" in
-      planning-service/*|src/*|native/*) found+="planner " ;;
+      planning-service/*|src/*|engine/*) found+="planner " ;;
     esac
     case "$path" in
-      native/*|web/src/lib/fixtures/*|tests/fixtures/native/*) found+="engine " ;;
+      engine/*|web/src/lib/fixtures/*|tests/fixtures/native/*) found+="engine " ;;
     esac
     case "$path" in
       springboot-app/*) found+="java " ;;
     esac
     case "$path" in
-      ios/*|web/src/lib/fixtures/*|web/src/lib/acs.json|native/engine/*|native/crates/*|native/ffi/*|native/Cargo.*|tests/fixtures/native/*)
+      ios/*|web/src/lib/fixtures/*|web/src/lib/acs.json|engine/facade/*|engine/crates/*|engine/bindings/ffi/*|engine/Cargo.*|tests/fixtures/native/*)
         found+="ios " ;;
     esac
     case "$path" in
-      android/*|web/src/lib/fixtures/*|native/engine/*|native/crates/*|native/ffi/*|native/Cargo.*)
+      android/*|web/src/lib/fixtures/*|engine/facade/*|engine/crates/*|engine/bindings/ffi/*|engine/Cargo.*)
         found+="android " ;;
     esac
   done
@@ -139,7 +139,7 @@ py_image() {
     mkdir -p "$ctx/reqs/$(dirname "$req")"
     cp "$here/$req" "$ctx/reqs/$req"
   done
-  (cd "$here" && git ls-files -z -co --exclude-standard -- native | xargs -0 tar cf - 2>/dev/null) | tar xf - -C "$ctx"
+  (cd "$here" && git ls-files -z -co --exclude-standard -- engine | xargs -0 tar cf - 2>/dev/null) | tar xf - -C "$ctx"
   cat > "$ctx/Dockerfile" <<EOF
 # The wheel's stage: the same for every directory, so BuildKit builds it once.
 FROM python:3.14-slim AS native
@@ -151,13 +151,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\
     rm -f /etc/apt/apt.conf.d/docker-clean \\
     && apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
 RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv pip install -q uv && uv pip install --system -q maturin==1.9.4
-COPY native /native
+COPY engine /engine
 # Touched, so a shared target dir never takes an older worktree's crate for
 # this one's: the third-party crates stay built, ours compile again.
 RUN --mount=type=cache,id=wingtip-cargo-registry,target=/usr/local/cargo/registry \\
     --mount=type=cache,id=wingtip-check-wheel-target,target=/target,sharing=locked \\
-    find /native -type f -exec touch {} + \\
-    && CARGO_TARGET_DIR=/target maturin build --profile ci --compatibility linux -m /native/py/Cargo.toml -o /wheels
+    find /engine -type f -exec touch {} + \\
+    && CARGO_TARGET_DIR=/target maturin build --profile ci --compatibility linux -m /engine/bindings/py/Cargo.toml -o /wheels
 
 FROM python:$py-slim
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -176,7 +176,7 @@ RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv \\
 EOF
   tag=$name:$( (cd "$ctx" && find . -type f | LC_ALL=C sort | xargs shasum -a 256) | sha)
   if ! docker image inspect "$tag" >/dev/null 2>&1; then
-    echo "check: building $tag ($dir's requirements or native/ changed)" >&2
+    echo "check: building $tag ($dir's requirements or engine/ changed)" >&2
     docker build -q -t "$tag" "$ctx" >/dev/null
     prune_tags "$name"
   fi
@@ -208,7 +208,7 @@ print(sorted(ds, key=lambda d: d["name"])[-1]["udid"] if ds else "")'
 # the same engine copies it instead of compiling three targets again.
 phone_engine() {
   local kind=$1 out=$2 script=$3 key cache
-  key=$(cd "$here" && git ls-files -z -co --exclude-standard -- native/engine native/crates native/ffi 'native/Cargo.*' \
+  key=$(cd "$here" && git ls-files -z -co --exclude-standard -- engine/facade engine/crates engine/bindings/ffi 'engine/Cargo.*' \
     | xargs -0 shasum -a 256 | sha)
   cache=$HOME/Library/Caches/wingtip-checks/engine-$kind-$key
   if [ ! -d "$cache" ]; then
@@ -251,7 +251,7 @@ run_area() {
       ;;
     ios)
       local sim
-      phone_engine ios ios/Frameworks/WingtipEngine.xcframework native/ffi/build-xcframework.sh
+      phone_engine ios ios/Frameworks/WingtipEngine.xcframework engine/bindings/ffi/build-xcframework.sh
       xcodegen generate --spec "$here/ios/project.yml" --project "$here/ios" --quiet
       sim=$(newest_iphone)
       [ -n "$sim" ] || { echo "check: no iPhone simulator in this Xcode" >&2; return 1; }
@@ -265,7 +265,7 @@ run_area() {
       export JAVA_HOME=${JAVA_HOME:-$(ls -d "$HOME"/Library/Java/JavaVirtualMachines/jbr-21*/Contents/Home | tail -1)}
       export ANDROID_HOME=${ANDROID_HOME:-$sdk}
       export ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)}
-      phone_engine android android/app/engine native/ffi/build-android.sh
+      phone_engine android android/app/engine engine/bindings/ffi/build-android.sh
       (cd "$here/android" && ./gradlew --quiet testDebugUnitTest lintDebug assembleDebug)
       ;;
     *) echo "check: no area '$1' (one of: $AREAS, all-changed)" >&2; return 64 ;;

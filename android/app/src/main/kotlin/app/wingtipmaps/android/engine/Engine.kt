@@ -6,7 +6,7 @@ import kotlinx.serialization.json.Json
 
 /**
  * wingtip-engine, the planner's own Rust, through its C functions
- * (native/ffi) and the JNI shim round them (src/main/cpp/wingtip_jni.c):
+ * (engine/bindings/ffi) and the JNI shim round them (src/main/cpp/wingtip_jni.c):
  * the same figures the planner works out, here with no network. The twin
  * of the iOS app's Engine.swift.
  *

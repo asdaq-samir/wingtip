@@ -13,7 +13,7 @@
 #                     (docker-compose.ci.yml).
 #   planning-service  its packages: the Dockerfile, the base it is built
 #                     FROM (docker/Dockerfile.base), the requirements it
-#                     installs and native/, the engine the base builds
+#                     installs and engine/, the engine the base builds
 #                     into the image (a rule added there is missing from
 #                     an image keyed without it: the planner answered "the
 #                     engine has no rule called data_cycle"). Not its
@@ -29,6 +29,6 @@
 set -euo pipefail
 key() { { echo "zstd"; git ls-tree -r HEAD -- "$@"; } | git hash-object --stdin | cut -c1-16; }
 echo "webapp $(key springboot-app/Dockerfile springboot-app/pom.xml springboot-app/src/main)"
-echo "planning-service $(key planning-service/Dockerfile docker/Dockerfile.base planning-service/requirements.txt src/requirements.txt src/requirements-charts.txt native)"
+echo "planning-service $(key planning-service/Dockerfile docker/Dockerfile.base planning-service/requirements.txt src/requirements.txt src/requirements-charts.txt engine)"
 echo "page $(git ls-tree -r HEAD -- web planning-service/openapi.json springboot-app/openapi.json .nvmrc \
   | grep -v $'\tweb/e2e/' | git hash-object --stdin | cut -c1-16)"

@@ -5,7 +5,7 @@ obstacle file every 56 -- and an old one reads as if nothing were wrong:
 a frequency changed, an airspace redrawn, a procedure amended. Where a
 refresh is off (production draws no charts, CHARTS_AUTO_REFRESH=0) or
 fails, only this says so. The rule -- the cycles and their dates -- is the engine's
-(`data_cycle`, native/crates/weather/src/cycles.rs, from the FAA's "28 and
+(`data_cycle`, engine/crates/weather/src/cycles.rs, from the FAA's "28 and
 56 Day Product Schedule" and its DOF page); this module only finds what
 edition each file on disk is.
 

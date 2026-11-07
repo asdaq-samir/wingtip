@@ -1,8 +1,8 @@
-// The engine's C functions (native/ffi, wingtip_engine.h) for the
+// The engine's C functions (engine/bindings/ffi, wingtip_engine.h) for the
 // Android app's Kotlin (Engine.kt), through JNI: one way in, wt_call, a
 // rule by name with its input as JSON and its answer as JSON, and the
 // region a point's pack is named by. In C rather than a Rust JNI crate,
-// as native/ffi keeps to a plain C interface: nothing to add to the
+// as engine/bindings/ffi keeps to a plain C interface: nothing to add to the
 // engine's build for a second phone, and nothing the iPhone's shim does
 // not do too. A string the engine returns is given back to it with
 // wt_string_free either way.

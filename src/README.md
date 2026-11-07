@@ -7,12 +7,12 @@ the training pipeline and the model registry, and putting a flight
 together from them.
 
 The aviation rules themselves belong to the Rust engine
-([`native/`](../native/README.md)), the lowest of the project's four
+([`engine/`](../engine/README.md)), the lowest of the project's four
 layers, which this package reaches through `wingtip_native.call` by a
 rule's name. Some rules are still written here -- the cruise altitude,
 the nav log's legs and fuel, the weather's reading along a route, route
 options -- and issue #482 moves them into the engine, in that order;
-a new rule goes into the engine, not here (native/README.md says how).
+a new rule goes into the engine, not here (engine/README.md says how).
 
 Nothing here serves HTTP, and nothing here imports a web framework.
 `planning-service`, the pipeline containers and the training run are

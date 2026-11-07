@@ -25,7 +25,7 @@ Read it top to bottom the first time; come back to individual sections
 later as a refresher while you build.
 
 The project has four layers, each with one job. The Rust engine
-(`native/`) holds every aviation rule and figure once, with no network,
+(`engine/`) holds every aviation rule and figure once, with no network,
 no screen and no clock. The planner (`planning-service` over
 `src/wingtip`, FastAPI) works out a flight: it fetches the data, runs the
 chart model and the assistant, and asks the engine every rule. Spring
@@ -503,15 +503,15 @@ and what they saved). Under both, and under every app, is the engine.
 
 ### Four layers, and why
 
-- **The engine** ([`native/`](../native/README.md)) is a Rust library
+- **The engine** ([`engine/`](../engine/README.md)) is a Rust library
   with no network, no screen and no clock: give it JSON by a rule's
-  name (`native/engine/src/call.rs`), get JSON back. It is a facade over
-  nine crates, each allowed to use only the ones under it, so the
+  name (`engine/facade/src/call.rs`), get JSON back. It is a facade over
+  ten crates, each allowed to use only the ones under it, so the
   compiler keeps geography from reaching for the Go / No-Go. The same
   bytes run in the planner (PyO3), in the browser (WebAssembly) and on
   both phones (a C interface), so a pilot's figure is the same offline
   in the air as on the planner's desk. A JSON Schema per name
-  (`native/contract/engine.schema.json`) types the boundary, and each
+  (`engine/contract/engine.schema.json`) types the boundary, and each
   app's types are generated from it.
 - **The planner** does what needs the network and the big data: the
   FAA's files, the weather, the chart tiles, the chart model, Claude.

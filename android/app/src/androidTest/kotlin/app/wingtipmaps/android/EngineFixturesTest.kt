@@ -59,7 +59,7 @@ private fun difference(got: JsonElement?, want: JsonElement?, path: String = "$"
 /**
  * The engine through this app's own bridge (Engine.callNative, the JNI
  * shim in wingtip_jni.c over wt_call) held to the shared fixtures the
- * engine's Rust tests (native/engine/tests) and the web's vitest tests
+ * engine's Rust tests (engine/facade/tests) and the web's vitest tests
  * (through the .wasm) hold it to: web/src/lib/fixtures, this test APK's
  * assets by build.gradle.kts. The Rust and web tests never pass through
  * JNI, so a shim that changed a key's case, wrote a number as a string,
