@@ -68,7 +68,7 @@ public class PlannerClient {
             .build();
     private final String plannerBaseUrl;
 
-    public PlannerClient(@Value("${planner-service.base-url:http://planning-service:8000}") String plannerBaseUrl) {
+    public PlannerClient(@Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl) {
         this.plannerBaseUrl = plannerBaseUrl.replaceAll("/+$", "");
     }
 

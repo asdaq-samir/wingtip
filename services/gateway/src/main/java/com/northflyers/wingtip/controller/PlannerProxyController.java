@@ -316,7 +316,7 @@ public class PlannerProxyController {
 
     public PlannerProxyController(
             StreamingProxy proxy,
-            @Value("${planner-service.base-url:http://planning-service:8000}") String plannerBaseUrl,
+            @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
             PilotService pilots,
             SubscriptionService subscriptions,
             @Value("${app.paid-calls.per-day:40}") int paidCallsPerDay,
