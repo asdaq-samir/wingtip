@@ -179,6 +179,9 @@ export function useFlightBriefing({
   const setAssessment = useRisk(s => s.setAssessment);
   const margins = [totals?.fuel_margin_gal, ...(totals?.hops ?? []).map(h => h.totals.fuel_margin_gal)]
     .filter((n): n is number => n != null);
+  // The least margin of the route's flights: one figure, for the risk
+  // assessment, the Go / No-Go's fuel and the glance alike.
+  const leastMarginGal = margins.length ? Math.min(...margins) : null;
   // Under IFR, in cloud at or above the freezing level (lib/icing).
   const icing = ifr && nav && briefing ? icingAtAltitude(nav.altitude_selection, legs.map(l => l.altitude_ft), briefing.pireps) : null;
   const hazardNames = briefing ? [...briefing.hazards.map(h => sigmetHazard(h.hazard, h.type ?? "SIGMET")), ...briefing.gairmets.map(gairmetTitle)] : [];
@@ -188,7 +191,7 @@ export function useFlightBriefing({
     tfrOnRoute: tfrsCrossed.length > 0,
     hazards: unchecked("hazards") && unchecked("gairmets") ? 0 : hazardNames.length,
     night: totals?.night === true,
-    fuelMarginGal: margins.length ? Math.min(...margins) : null,
+    fuelMarginGal: leastMarginGal,
     ifr,
     vorCheck: flownOwn === undefined ? undefined : flownOwn.vorCheck
       ? { goodThrough: flownOwn.vorCheck.goodThrough, withinLimit: flownOwn.vorCheck.withinLimit } : null,
@@ -255,7 +258,7 @@ export function useFlightBriefing({
     },
     fuel: {
       pending: !totals,
-      marginGal: margins.length ? Math.min(...margins) : null,
+      marginGal: leastMarginGal,
       requiredGal: totals?.fuel_required_gal ?? (hops.length ? Math.max(...hops.map(h => h.totals.fuel_required_gal ?? 0)) : null),
       reserveMin: totals?.reserve_min ?? hops[0]?.totals.reserve_min ?? null,
       ifr,
@@ -264,6 +267,8 @@ export function useFlightBriefing({
       pending: !nav || !briefing, worked: !nav || (!!nav.aircraft.takeoff && !!nav.aircraft.landing),
       short: [...new Set(checks.filter(c => c.distances.some(d => d.over)).map(c => c.field.ident))],
       crosswind: [...new Set(checks.filter(c => c.crosswindOver).map(c => c.field.ident))],
+      beyond: [...new Set(checks.filter(c => c.distances.some(d => d.beyond)).map(c => c.field.ident))],
+      unchecked: [...new Set(checks.filter(c => c.unchecked || c.distances.some(d => d.unknown)).map(c => c.field.ident))],
     },
     balance: {
       pending: !nav, worked: !!loading && !!loaded,
@@ -311,7 +316,11 @@ export function useFlightBriefing({
         wind: said === "calm" ? "Calm" : said ? `${said.dir.replace(/T$/, "")}/${said.speed}` : null,
         crosswindKt: check ? Math.round(check.crosswindKt) : null,
         radio: call ? { to: call.to, mhz: call.mhz! } : null,
-        finding: !check ? "unknown" : distance?.over ? "stop" : check.crosswindOver ? "caution" : "ok",
+        // A field not checked (no elevation, no runway length) is not known,
+        // never fine; one past the POH's tables is a caution (the engine's
+        // runways finding says the same).
+        finding: !check || check.unchecked || !distance || distance.unknown ? "unknown" : distance.over ? "stop"
+          : check.crosswindOver || distance.beyond ? "caution" : "ok",
       };
     };
     const byKey = (keys: VerdictItem["key"][]) => worstOf(items.filter(i => keys.includes(i.key)).map(i => i.finding));
@@ -319,7 +328,7 @@ export function useFlightBriefing({
     return {
       before: {
         risk: assessment ? { score: assessment.score, level: assessment.level } : null,
-        spareGal: margins.length ? Math.min(...margins) : null,
+        spareGal: leastMarginGal,
         balance: loaded ? { within: loaded.problems.length === 0, problem: loaded.problems[0] ?? null } : null,
         finding: byKey(["risk", "fuel", "balance", "airspace"]),
       },

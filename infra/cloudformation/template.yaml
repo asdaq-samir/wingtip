@@ -196,14 +196,20 @@ Resources:
             Prefix: tiles/
             ExpirationInDays: 120
 
-  # The nightly backups (backups/, kept 14 days) and the chart
-  # model the planner ranks checkpoints with (models/, uploaded by hand).
-  # Kept if the stack goes: it is what a new server is restored from.
+  # The nightly backups (backups/, kept 14 days), the ground grid a
+  # server builds once (ground_grid/) and the chart model the planner
+  # ranks checkpoints with (models/, uploaded by hand). Kept if the stack
+  # goes: it is what a new server is restored from. Versioned, so a
+  # server that is compromised, or a deploy gone wrong, cannot destroy a
+  # backup by writing over it or deleting it: the old copy stays a
+  # noncurrent version for 30 days, which is how long there is to notice.
   ServerBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
+      VersioningConfiguration:
+        Status: Enabled
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -215,6 +221,12 @@ Resources:
             Status: Enabled
             Prefix: backups/
             ExpirationInDays: 14
+          - Id: OverwrittenAndDeleted
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+            # A delete leaves only a marker once its versions are gone.
+            ExpiredObjectDeleteMarker: true
 
   # ---------------------------------------------------------------------
   # Secrets: two the stack generates, one the owner fills in
@@ -281,9 +293,18 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: [!Ref DbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
+              # Reads anything (models/ comes from the owner); writes only
+              # where it keeps things: backup.sh's backups/ and the ground
+              # grid deploy.sh builds once (ground_grid/). So a server
+              # cannot replace the chart model the next server loads.
               - Effect: Allow
-                Action: [s3:GetObject, s3:PutObject]
+                Action: s3:GetObject
                 Resource: !Sub "${ServerBucket.Arn}/*"
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  - !Sub "${ServerBucket.Arn}/backups/*"
+                  - !Sub "${ServerBucket.Arn}/ground_grid/*"
               - Effect: Allow
                 Action: s3:ListBucket
                 Resource: !GetAtt ServerBucket.Arn
@@ -709,6 +730,21 @@ Resources:
             CachedMethods: [GET, HEAD]
             Compress: true
             CachePolicyId: !Ref SharedAnswersCachePolicy
+          # The map's FAA overlays as vector tiles (the planner's
+          # /api/overlay-tiles and /api/overlay-tiles/{name}.pmtiles): the
+          # index for the hour it says, the archive -- its build in its
+          # name -- a day at the edge and its cycle in the browser. The map
+          # reads the archive in byte ranges, which CloudFront answers from
+          # what it holds (the Range header is never part of the key); not
+          # compressed, since its tiles are gzipped inside and a range of
+          # a compressed answer would not be the archive's bytes.
+          - PathPattern: api/planner/overlay-tiles*
+            TargetOriginId: server
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            Compress: false
+            CachePolicyId: !Ref SharedAnswersCachePolicy
         # A server error is passed on, never kept: CloudFront would hold
         # one for ten seconds by default, and a planner restarting would
         # then outlast itself at the edge.
@@ -794,7 +830,8 @@ Resources:
       NetworkMode: awsvpc
       # Two workers drawing tiles, and the country's sheets plus their
       # pyramid on the task's own disk: 6 GB of sheets and 7.4 GB of
-      # tiles (1.5 million of them) for the 09-03-2026 cycle.
+      # tiles (1.5 million of them) for the 09-03-2026 cycle, and about
+      # 25 GB more of the 512-pixel "@2x" tiles from the 12-24-2026 cycle.
       Cpu: "2048"
       Memory: "8192"
       EphemeralStorage: { SizeInGiB: 60 }
@@ -909,7 +946,7 @@ Resources:
   DeployRole:
     Type: AWS::IAM::Role
     Properties:
-      Description: GitHub Actions on main pushes the images and runs deploy.sh on the server.
+      Description: GitHub Actions in the production environment (promote.yml) pushes the images and runs deploy.sh on the server.
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -920,8 +957,14 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-              StringLike:
-                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:ref:refs/heads/main"
+                # Only a job in the `production` environment: promote.yml's
+                # push-ecr and deploy. Not "any workflow on main" -- the
+                # workflow_run workflows (ci-autofix.yml) run as main too,
+                # with id-token for the Claude app, while running a
+                # branch's code. The environment allows only main to
+                # deploy (docs/README-AWS.md), so a branch's workflow that
+                # names it is refused before it gets a token.
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:environment:production"
       Policies:
         - PolicyName: PushAndDeploy
           PolicyDocument:

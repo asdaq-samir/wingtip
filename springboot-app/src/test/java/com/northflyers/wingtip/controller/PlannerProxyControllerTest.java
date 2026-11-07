@@ -194,6 +194,8 @@ class PlannerProxyControllerTest {
     @Test
     void theRouteTableCoversWhatTheBrowserCalls() {
         assertThat(PlannerProxyController.isForwarded("GET", "/api/chart-tile/sectional/10/262/380.png")).isTrue();
+        // The 512-pixel tile for a 2x or 3x screen, by the same route.
+        assertThat(PlannerProxyController.isForwarded("GET", "/api/chart-tile/sec/10/262/380@2x.png")).isTrue();
         assertThat(PlannerProxyController.isForwarded("POST", "/api/dev/services/ml/start")).isTrue();
         assertThat(PlannerProxyController.isForwarded("GET", "/api/chart")).isTrue();
         assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KBUR/procedures")).isTrue();
@@ -397,6 +399,33 @@ class PlannerProxyControllerTest {
                 .andExpect(request().asyncStarted())
                 .andReturn();
         mockMvc.perform(asyncDispatch(course)).andExpect(header().doesNotExist("Content-Disposition"));
+    }
+
+    @Test
+    void theOverlayTilesArchiveIsReadInRangesAndKeptForItsCycle() throws Exception {
+        assertThat(PlannerProxyController.isForwarded("GET", "/api/overlay-tiles")).isTrue();
+        assertThat(PlannerProxyController.isForwarded("GET", "/api/overlay-tiles/2026-10-29-v1-0badf00d.pmtiles")).isTrue();
+        assertThat(PlannerProxyController.isForwarded("GET", "/api/overlay-tiles/a/b.pmtiles")).isFalse();
+        responseStatus = 206;
+        responseHeaders.put("Cache-Control", "public, max-age=2419200, immutable");
+        responseHeaders.put("Content-Range", "bytes 0-1/2");
+        responseHeaders.put("Accept-Ranges", "bytes");
+        responseHeaders.put("ETag", "\"abc\"");
+        MvcResult started = mockMvc.perform(get("/api/planner/overlay-tiles/2026-10-29-v1-0badf00d.pmtiles")
+                        .header("Range", "bytes=0-1"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        // The map's PMTiles reader asks a range at a time: the range went
+        // to the planner, and the part, its range and its ETag came back,
+        // kept by the browser and CloudFront as an airport diagram is.
+        mockMvc.perform(asyncDispatch(started))
+                .andExpect(status().is(206))
+                .andExpect(header().string("Content-Length", "2"))
+                .andExpect(header().string("Content-Range", "bytes 0-1/2"))
+                .andExpect(header().string("Accept-Ranges", "bytes"))
+                .andExpect(header().string("ETag", "\"abc\""))
+                .andExpect(header().string("Cache-Control", "public, max-age=2419200, immutable"));
+        assertThat(received).contains("range=bytes=0-1");
     }
 
     @Test

@@ -1,21 +1,21 @@
 """Live weather for VFR altitude selection and dead-reckoning nav-log math:
 winds/temps aloft (freezing level for icing avoidance, and wind_at_altitude
 for wind-correction-angle math), forecast ceiling/visibility along the
-route, current METARs, and SIGMET hazard advisories -- all from
-aviationweather.gov.
+route, current METARs, and SIGMET hazard advisories -- from
+aviationweather.gov, but for the winds and temperatures aloft, which are
+the GFS model's (wingtip.modelwinds) since the FB ended with the NAM (NWS
+Service Change Notice 26-47).
 
 METARs, TAFs and SIGMETs come from the site's cache files -- the complete
 current national dataset, gzipped, regenerated every minute (TAFs every
 ten) -- rather than per-route API queries. That is what their API terms
 ask heavy users to do: a bounding-box query per route is exactly the
 "large query" the rate limit and the results cap exist for, and one
-download every few minutes replaces all of them. The winds/temps product
-is small and stays a direct request, one per forecast period. Every one
-of them is a source in _SOURCES, held by one rule (see _dataset): parsed
-as it is fetched, kept for its own time, a failed refresh serving the
-previous copy for as long as that product itself is still valid (a TAF
-to the end of its valid period, a winds forecast to the end of its for-
-use window) -- so an outage degrades to "the last forecast issued"
+download every few minutes replaces all of them. Every one of them is a
+source in _SOURCES, held by one rule (see _dataset): parsed as it is
+fetched, kept for its own time, a failed refresh serving the previous
+copy for as long as that product itself is still valid (a TAF to the end
+of its valid period, an advisory to the end of its own) -- so an outage degrades to "the last forecast issued"
 rather than a failure per request, and the copy's fetch time
 (dataset_status) tells the page how old it is -- and a failure with
 nothing to serve remembered for a minute rather than tried again by
@@ -32,6 +32,7 @@ import re
 import threading
 import time
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from itertools import pairwise
 from typing import NamedTuple
@@ -47,7 +48,6 @@ from .units import M_TO_FT
 
 log = logging.getLogger(__name__)
 
-WINDTEMP_URL = "https://aviationweather.gov/api/data/windtemp"
 CACHE_BASE_URL = "https://aviationweather.gov/data/cache"
 
 
@@ -62,16 +62,30 @@ class WeatherServiceError(RuntimeError):
     """
 
 
+#: The client errors that can pass: 408 Request Timeout, 429 Too Many Requests.
+RETRIED_CLIENT_ERRORS = (408, 429)
+
+
 def _get(url: str, params: dict, retries: int = 3, validators: dict | None = None) -> requests.Response:
     """A transient blip (a slow bbox query 504ing, seen 2026-09-18) used
     to raise WeatherServiceError on the first and only attempt instead of
     quietly succeeding on a retry a few seconds later. `validators`, the
     held copy's ETag and Last-Modified, ask for it only if it has changed
-    (a 304 otherwise)."""
+    (a 304 otherwise).
+
+    A request refused as asked (a 4xx but a time-out or too many
+    requests) is not tried again: it is refused the same way each time.
+    The windtemp API answered 400 on 2026-11-06, its tables discontinued
+    with the NAM (NWS Service Change Notice 26-47), and three tries and
+    their back-off put 6.5 s on a plan once a minute before the modelled
+    winds were read (the planner's log, freezing_level 6.46 s)."""
     headers = {**HEADERS, **(validators or {})}
 
     def attempt() -> requests.Response:
         resp = requests.get(url, params=params, headers=headers, timeout=30)
+        status = getattr(resp, "status_code", None)
+        if isinstance(status, int) and 400 <= status < 500 and status not in RETRIED_CLIENT_ERRORS:
+            raise WeatherServiceError(f"aviationweather.gov request to {url} refused: {status} {str(resp.text)[:200]}")
         resp.raise_for_status()
         return resp
 
@@ -80,73 +94,38 @@ def _get(url: str, params: dict, retries: int = 3, validators: dict | None = Non
     )
 
 
-# --- Temperatures and the freezing level, from the winds/temps-aloft ("FD") text product ---
+# --- Winds and temperatures aloft, and the freezing level, from the GFS ---
 
 
 def _fd_stations(fcst_hr: str = "06") -> dict:
-    """The winds/temps product for one forecast period, parsed: the three
-    altitude plans look the winds up at every legal altitude of every leg
-    -- well over a hundred lookups for one route -- so it is fetched and
-    parsed once and held (the "winds-NN" sources below), not per lookup.
-    Where the FB cannot be had and no copy of it is held, the GFS's winds
-    at the FB's stations (wingtip.modelwinds), marked `modelled`, rather than
-    a plan in still air."""
-    try:
-        return _dataset(f"winds-{fcst_hr}")
-    except WeatherServiceError as err:
-        from . import modelwinds
+    """The winds and temperatures aloft for one period, read once and held
+    (wingtip.modelwinds): the GFS's levels at the old FB stations. The
+    three altitude plans look the winds up at every legal altitude of
+    every leg -- well over a hundred lookups for one route -- so it is
+    never read per lookup. The FB itself is gone (NWS Service Change
+    Notice 26-47: its bulletins ended with the NAM at 1200Z on 3 Nov
+    2026), so these are the winds aloft, said to be modelled wherever
+    they are shown. WeatherServiceError, in a pilot's words, where no
+    copy inside its own window is held and NOMADS gives none."""
+    from . import modelwinds
 
-        try:
-            return modelwinds.stations(fcst_hr)
-        except modelwinds.ModelWindsUnavailable as model_err:
-            log.warning("no modelled winds either: %s", model_err)
-            raise err from None
+    try:
+        return modelwinds.stations(fcst_hr)
+    except modelwinds.ModelWindsUnavailable as err:
+        log.warning("modelled winds for the %s-hour period unavailable: %s", fcst_hr, err)
+        raise WeatherServiceError("Winds aloft (GFS model) unavailable from NOAA just now") from err
 
 
 class FdStations(dict):
-    """A winds/temps product's stations (parse_fd_text), and the period it
-    is for: `period` is {"valid_at", "use_from", "use_to"}, ISO UTC, from
-    its header ("VALID 200600Z FOR USE 0200-0900Z"), or None where the
-    header does not say."""
+    """The winds and temperatures aloft at each station ({station_id:
+    {altitude_ft: {"wind_dir_true_deg", "wind_speed_kt", "temp_c"}}}), and
+    the period they are for: `period` is {"valid_at", "use_from",
+    "use_to", "run", "forecast_hour"}, ISO UTC and the GFS forecast hour
+    (wingtip.modelwinds.period_of)."""
 
     period: dict | None = None
-    #: The GFS's winds standing in for the FB (wingtip.modelwinds).
+    #: Model output, not an issued forecast: always so since the FB ended.
     modelled: bool = False
-
-
-def parse_fd_text(text: str, now: datetime | None = None) -> FdStations:
-    """{station_id: {altitude_ft: {"wind_dir_true_deg", "wind_speed_kt", "temp_c"}}}
-    for every station/altitude group in the FD text with a decodable wind
-    (temp_c is None for wind-only groups, e.g. the 3000ft column near a
-    station's own elevation), and the period it is for (FdStations): valid
-    at "VALID ddhhmmZ", for use "FOR USE hhmm-hhmmZ" round it, the day's
-    month the one nearest `now`.
-
-    Read by the engine (wingtip_engine::winds), the phones' same reader,
-    as AC 00-45H codes the product: DDFF wind in tens of degrees true and
-    knots, 50 added to the direction at 100 kt and over, 9900 light and
-    variable (no direction, calm); a signed temperature to 24,000 ft and
-    an unsigned, negative one above ("TEMPS NEG ABV 24000"); a group
-    under a station's own height left out, so each group is placed by the
-    nearest column of the "FT" header.
-    """
-    now = now or datetime.now(timezone.utc)
-    got = wingtip_native.winds_json(text, int(now.timestamp()))
-    if got is None:
-        # A body with no altitude header -- an error page, a truncated
-        # answer -- is not a product.
-        raise WeatherServiceError("the winds/temps product has no altitude header")
-    product = json.loads(got)
-    stations = FdStations()
-    stations.period = product["period"]
-    as_float = lambda v: None if v is None else float(v)  # noqa: E731
-    for ident, levels in product["stations"].items():
-        stations[ident] = {
-            int(alt): {"wind_dir_true_deg": as_float(g["wind_dir_true_deg"]), "wind_speed_kt": float(g["wind_speed_kt"]),
-                       "temp_c": as_float(g["temp_c"])}
-            for alt, g in levels.items()
-        }
-    return stations
 
 
 # The FD stations' own rows of the airports table, per set of station
@@ -185,9 +164,9 @@ def _nearest_station(lat: float, lon: float, station_ids, airports_df) -> str | 
 
 def temperatures_aloft(lat: float, lon: float, fcst_hr: str = "06") -> list:
     """The nearest station's forecast temperatures, [(altitude_ft,
-    temp_c)] from the lowest reported altitude up -- 6,000 ft, since the
-    product gives none at 3,000. Empty where no station is found or it
-    reports no temperature."""
+    temp_c)] from the lowest level up -- the GFS's 925 hPa, about 2,500 ft
+    (wingtip.modelwinds), each at its own height. Empty where no station
+    is found or it reports no temperature."""
     from . import airports
 
     stations = _fd_stations(fcst_hr)
@@ -229,8 +208,7 @@ def freezing_level(lat: float, lon: float, fcst_hr: str = "06") -> dict | None:
     level in range", not "unknown".
 
     `at_or_below` is true when it is already at or below 0 degC at the
-    lowest reported altitude -- 6,000 ft, since the winds-aloft product
-    gives no temperature at 3,000 -- so the freezing level is that
+    lowest level (the GFS's 925 hPa) -- so the freezing level is that
     altitude or lower, somewhere the data cannot say. This used to return
     the lowest altitude as though it were the freezing level and call it
     conservative, which let everything under it pass as above freezing on
@@ -259,8 +237,9 @@ def _interp_circular_deg(d1: float, d2: float, frac: float) -> float:
 
 
 def winds_period(fcst_hr: str = "06") -> dict | None:
-    """The period the winds a plan flies are for (FdStations.period): None
-    where the product cannot be had or does not say."""
+    """The period the winds a plan flies are for (FdStations.period), with
+    `modelled`, for the screens to say whose winds they are: None where
+    they cannot be had."""
     try:
         stations = _fd_stations(fcst_hr)
     except WeatherServiceError:
@@ -336,16 +315,9 @@ def wind_in_levels(levels: dict, altitude_ft: float) -> dict | None:
 _DATASET_TTL_S = 300
 # How old a copy may be and still be served when a refresh fails, for a
 # product whose copy says nothing of its own validity (an empty set of
-# advisories, a winds product with no FOR USE line): what every source
+# advisories): what every source
 # was held to before each was held to its own (2026-11-04).
 _DATASET_STALE_MAX_S = 3 * 3600
-# The winds are issued a few times a day and fetched again this often,
-# so a new issue is taken up soon after it is out. A refresh that fails
-# serves the held copy to the end of its for-use window (_winds_until):
-# on 2026-11-04 aviationweather.gov's windtemp API answered 204 with no
-# body for every request, and a copy held only 15 minutes left the
-# planner with no winds at all for the afternoon.
-_WINDS_TTL_S = 900
 # How long to wait before trying a failed refresh again -- every weather
 # call during an outage must not be a fresh download attempt, with its
 # own retries and time-outs. Holds whether or not a copy is being served.
@@ -360,14 +332,13 @@ _DATASET_WAIT_S = 120
 # kept on its _Record: a TAF set's is a pass over every station's periods.
 
 
-def _winds_until(stations, fetched: float) -> float:
-    """A winds and temperatures aloft forecast is for use only in the
-    window its header gives, "FOR USE 0200-0900Z" (AC 00-45H, Winds and
-    Temperatures Aloft Forecast (FB)): served to its end, and no further,
-    since the next period's product is the one for after it. A product
-    with no such line is held as any other source."""
-    use_to = _unix((getattr(stations, "period", None) or {}).get("use_to"))
-    return use_to if use_to is not None else fetched + _DATASET_STALE_MAX_S
+def _expires_at(product: str, valid_to: float | None) -> float | None:
+    """When a forecast stops counting, from the end of its valid time: the
+    engine's (validity.rs, `weather_expires_at`), the rule the web's and
+    the phones' readers ask."""
+    if valid_to is None:
+        return None
+    return json.loads(wingtip_native.call("weather_expires_at", json.dumps({"product": product, "valid_to": valid_to})))
 
 
 def _metars_until(metars, fetched: float) -> float:
@@ -388,7 +359,7 @@ def _tafs_until(stations, fetched: float) -> float:
     period covering the time it asks about (_current_forecast_period,
     _periods_in_window), so a station whose own TAF has run out says
     nothing rather than reading an expired forecast as current."""
-    ends = [p["timeTo"] for s in stations for p in s.get("fcsts", ()) if p.get("timeTo") is not None]
+    ends = [_expires_at("taf", p["timeTo"]) for s in stations for p in s.get("fcsts", ()) if p.get("timeTo") is not None]
     return max(ends) if ends else fetched + _DATASET_STALE_MAX_S
 
 
@@ -400,7 +371,7 @@ def _airsigmets_until(advisories, fetched: float) -> float:
     is served to the latest of them. hazards_along_route leaves out each
     one past its own end. A set with none in force says nothing of how
     long that holds, so is held as any other source."""
-    ends = [a["valid_to"] for a in advisories if a.get("valid_to") is not None]
+    ends = [_expires_at("advisory", a["valid_to"]) for a in advisories if a.get("valid_to") is not None]
     return max(ends) if ends else fetched + _DATASET_STALE_MAX_S
 
 
@@ -424,19 +395,10 @@ def _gairmets_until(advisories, fetched: float) -> float:
     return max(valid) + GAIRMET_SNAPSHOT_S if valid else fetched + _DATASET_STALE_MAX_S
 
 
-def _winds_source(fcst_hr: str) -> tuple:
-    return (WINDTEMP_URL, {"region": "us", "level": "low", "fcst": fcst_hr},
-            # Its day of the month placed by the same clock the held copy is
-            # timed by, so the for-use window it is served to is that day's.
-            lambda resp: parse_fd_text(resp.text, datetime.fromtimestamp(time.time(), timezone.utc)),
-            _WINDS_TTL_S, _winds_until)
-
-
 # Each source as a pilot knows it, for the line said when it cannot be had.
 _PRODUCT_WORDS = {
     "metars": "METARs", "tafs": "TAFs", "airsigmets": "AIRMETs and SIGMETs", "pireps": "PIREPs",
-    "gairmets": "G-AIRMETs", "winds-06": "Winds aloft (6-hour forecast)",
-    "winds-12": "Winds aloft (12-hour forecast)", "winds-24": "Winds aloft (24-hour forecast)",
+    "gairmets": "G-AIRMETs",
 }
 
 
@@ -453,7 +415,6 @@ _SOURCES = {
                lambda resp: _parse_pireps(gzip.decompress(resp.content)), _DATASET_TTL_S, _pireps_until),
     "gairmets": (f"{CACHE_BASE_URL}/gairmets.cache.xml.gz", {},
                  lambda resp: _parse_gairmets(gzip.decompress(resp.content)), _DATASET_TTL_S, _gairmets_until),
-    **{f"winds-{hr}": _winds_source(hr) for hr in ("06", "12", "24")},
 }
 
 
@@ -577,8 +538,7 @@ def _dataset(name: str, force: bool = False):
         force = False
 
     # Asked only if it has changed since the copy held: an unchanged one
-    # (the SIGMETs and G-AIRMETs most of the time, the winds between
-    # issues) is a 304, neither downloaded nor parsed again.
+    # (the SIGMETs and G-AIRMETs most of the time) is a 304, neither downloaded nor parsed again.
     held = record if record is not None and record.at is not None else None
     try:
         resp = _get(url, params=params, validators=held.validators if held else None)
@@ -622,8 +582,16 @@ def dataset_status() -> dict[str, float | None]:
     """When each source's held copy was fetched, None for one not held --
     what the Dev console (/api/status) and the map's layer ages
     (/api/map/ages) show as the weather's age. A copy served on through
-    an outage keeps its own fetch time, so the age said grows with it."""
-    return {name: (record.at if (record := _DATASETS.get(name)) else None) for name in _SOURCES}
+    an outage keeps its own fetch time, so the age said grows with it. The
+    winds aloft, the GFS's (wingtip.modelwinds), are "winds-06", "winds-12"
+    and "winds-24", by period."""
+    from . import modelwinds
+
+    out = {name: (record.at if (record := _DATASETS.get(name)) else None) for name in _SOURCES}
+    for hr in modelwinds.PERIODS:
+        held = modelwinds.held(hr)
+        out[f"winds-{hr}"] = held[0] if held else None
+    return out
 
 
 def sources_status() -> list[dict]:
@@ -645,9 +613,16 @@ def sources_status() -> list[dict]:
         })
     from . import modelwinds
 
-    # The GFS's winds, where they have stood in for the FB.
-    if (at := modelwinds.held_at()) is not None:
-        out.append({"name": "Winds aloft, modelled (GFS)", "fetched_at": at, "kept_until": None, "failing": False})
+    # The winds aloft, the GFS's, each period held to the end of its own
+    # window (wingtip.modelwinds).
+    for hr in modelwinds.PERIODS:
+        held = modelwinds.held(hr)
+        out.append({
+            "name": f"Winds aloft, modelled (GFS), {int(hr)}-hour",
+            "fetched_at": held[0] if held else None,
+            "kept_until": _unix(held[1]["use_to"]) if held else None,
+            "failing": modelwinds.failing(hr),
+        })
     return out
 
 
@@ -688,23 +663,41 @@ def _period(el) -> dict:
     }
 
 
-def _ceiling_ft(period: dict) -> float | None:
-    """The lowest broken, overcast or obscured layer -- FEW/SCT don't count
-    as a ceiling by the FAA's own definition.
+def _sky_ceiling(period: dict) -> tuple[float | None, bool]:
+    """The ceiling and whether it is not known: the lowest broken,
+    overcast or obscured layer -- FEW/SCT don't count as a ceiling by the
+    FAA's own definition (14 CFR 1.1) -- an obscured sky's at its vertical
+    visibility: the engine's (metar.rs `sky_ceiling_of`, its
+    `sky_ceiling`). The feed marks an obscured layer `OVX`, with the
+    height as the layer's base in a METAR and only as `vert_vis_ft` in a
+    TAF.
 
-    An obscured sky is a ceiling at its vertical visibility (14 CFR 1.1).
-    The feed marks it `OVX`, with the height as the layer's base in a
-    METAR and only as `vert_vis_ft` in a TAF; counting BKN and OVC alone
-    left fog at the surface -- VV002, the lowest ceiling there is -- as
-    no ceiling at all.
-    """
-    bases = [
-        c["base"] for c in period.get("clouds", [])
-        if c.get("cover") in ("BKN", "OVC", "OVX") and c.get("base") is not None
-    ]
-    if period.get("vert_vis") is not None:
-        bases.append(period["vert_vis"])
-    return min(bases) if bases else None
+    A layer the station could not measure ("OVC///", "VV///") comes in
+    the AWC's data API with no base (its `sky_condition` has no
+    `cloud_base_ft_agl`; the JSON gives `"base": null`). Where that is
+    the lowest broken, overcast or obscured layer the ceiling is not
+    known -- it could be on the ground -- so it is (None, True), never
+    (None, False), which would read as no ceiling at all and let an
+    "OVC/// 10SM" station pass as VFR."""
+    layers = [{"cover": c.get("cover"), "base_ft": c.get("base")} for c in period.get("clouds", [])]
+    found = json.loads(wingtip_native.call("sky_ceiling", json.dumps({"layers": layers, "vert_vis_ft": period.get("vert_vis")})))
+    ceiling = found["ceiling_ft"]
+    # A base as the feed gives it, whole feet.
+    return (int(ceiling) if isinstance(ceiling, float) and ceiling.is_integer() else ceiling), found["ceiling_unknown"]
+
+
+def _ceiling_ft(period: dict) -> float | None:
+    """The ceiling (_sky_ceiling), None where there is none or it is not
+    known."""
+    return _sky_ceiling(period)[0]
+
+
+def _report_category(ceiling_ft: float | None, ceiling_unknown: bool, visibility_sm: float | None) -> str | None:
+    """A report's flight category, the engine's (AC 00-45H; metar.rs
+    `flight_category_of`): with the ceiling not known only what the
+    visibility settles -- LIFR under a mile -- else None."""
+    return json.loads(wingtip_native.call("report_flight_category", json.dumps(
+        {"ceiling_ft": ceiling_ft, "ceiling_unknown": ceiling_unknown, "visibility_sm": visibility_sm})))
 
 
 def _visibility_sm(period: dict) -> float | None:
@@ -731,19 +724,31 @@ def _parse_metars(xml_bytes: bytes) -> dict:
         if ident in latest and latest[ident][0] >= observed:
             continue
         period = _period(el)
+        ceiling, ceiling_unknown = _sky_ceiling(period)
+        visibility = _visibility_sm(period)
+        category = el.findtext("flight_category")
+        if ceiling_unknown:
+            # The AWC's own category takes a layer it has no height for as
+            # no ceiling, and calls "OVC/// 10SM" VFR; the ceiling is not
+            # known (14 CFR 1.1), so the category is only what the
+            # visibility settles.
+            category = _report_category(None, True, visibility)
         latest[ident] = (observed, {
             "raw": el.findtext("raw_text"),
             # When the report was made, so a page can say how old it is:
             # the server keeps serving a copy for hours when a refresh
             # fails, and a colour alone says nothing about its age.
             "observed_at": observed or None,
-            "flight_category": el.findtext("flight_category"),
+            "flight_category": category,
             # The weather itself, "-TSRA BR", as reported: a thunderstorm
             # at or near the field (TS, VCTS) is one to keep away from
             # (wingtip.route_options).
             "wx": el.findtext("wx_string") or "",
-            "ceiling_ft": _ceiling_ft(period),
-            "visibility_sm": _visibility_sm(period),
+            "ceiling_ft": ceiling,
+            # A broken or overcast layer reported with no height is the
+            # lowest: the ceiling is not known, not absent (_sky_ceiling).
+            "ceiling_unknown": ceiling_unknown,
+            "visibility_sm": visibility,
             # "VRB" is a direction the arithmetic can't use.
             "wind_dir_true_deg": _float(el.findtext("wind_dir_degrees")),
             "wind_speed_kt": _float(el.findtext("wind_speed_kt")),
@@ -940,6 +945,7 @@ def taf_for_idents(idents: list) -> dict:
         answer[ident] = None if station is None else {
             "raw": station.get("raw"),
             "ceiling_ft": worst["ceiling_ft"] if worst else None,
+            "ceiling_unknown": bool(worst and worst["ceiling_unknown"]),
             "visibility_sm": worst["visibility_sm"] if worst else None,
             "change": (period or {}).get("change") or "",
             "valid_from": (period or {}).get("timeFrom"),
@@ -1019,14 +1025,18 @@ def _worst_in_window(fcsts: list, start: float, end: float) -> dict | None:
     [start, end], TEMPO and PROB groups included: a go/no-go read is the
     worst the forecast allows, and taking only the base forecast let
     `TEMPO 1/2SM FG` read as VFR. None when the TAF says nothing about
-    the window at all."""
+    the window at all. `ceiling_unknown` where any period forecasts a
+    ceiling with no height (_sky_ceiling): the lowest known ceiling is
+    then not the worst the forecast allows."""
     periods = _periods_in_window(fcsts, start, end)
     if not periods:
         return None
-    ceilings = [c for c in (_ceiling_ft(p) for p in periods) if c is not None]
+    skies = [_sky_ceiling(p) for p in periods]
+    ceilings = [c for c, _ in skies if c is not None]
     visibilities = [v for v in (_visibility_sm(p) for p in periods) if v is not None]
     return {
         "ceiling_ft": min(ceilings) if ceilings else None,
+        "ceiling_unknown": any(unknown for _, unknown in skies),
         "visibility_sm": min(visibilities) if visibilities else None,
     }
 
@@ -1046,9 +1056,11 @@ def ceiling_visibility_along_route(
     elsewhere in this project -- a small departure/destination field
     often has no TAF of its own at all.
 
-    Returns {"min_ceiling_ft", "min_visibility_sm", "stations"} -- the
-    first two are the worst (most restrictive) values found nearby, for
-    a conservative go/no-go read; "stations" is the per-station detail,
+    Returns {"min_ceiling_ft", "min_visibility_sm", "ceiling_unknown_at",
+    "stations"} -- the first two are the worst (most restrictive) values
+    found nearby, for a conservative go/no-go read; "ceiling_unknown_at"
+    the stations forecasting a ceiling with no height, where the worst is
+    not known (_sky_ceiling); "stations" is the per-station detail,
     where each is and its field's elevation with its own worst ceiling
     and visibility, which wingtip.altitude keeps each leg's altitudes under
     the clouds with (14 CFR 91.155).
@@ -1065,7 +1077,7 @@ def ceiling_visibility_along_route(
     ]
 
     start, end = window if window else (time.time(), time.time())
-    per_station, ceilings, visibilities = [], [], []
+    per_station, ceilings, visibilities, unknown_at = [], [], [], []
     for station in stations:
         worst = _worst_in_window(station["fcsts"], start, end)
         if worst is None:
@@ -1074,8 +1086,11 @@ def ceiling_visibility_along_route(
         visibility = worst["visibility_sm"]
         per_station.append({
             "icaoId": station["icaoId"], "lat": station["lat"], "lon": station["lon"],
-            "elevation_ft": station.get("elevation_ft"), "ceiling_ft": ceiling, "visibility_sm": visibility,
+            "elevation_ft": station.get("elevation_ft"), "ceiling_ft": ceiling,
+            "ceiling_unknown": worst["ceiling_unknown"], "visibility_sm": visibility,
         })
+        if worst["ceiling_unknown"]:
+            unknown_at.append(station["icaoId"])
         if ceiling is not None:
             ceilings.append(ceiling)
         if visibility is not None:
@@ -1084,6 +1099,7 @@ def ceiling_visibility_along_route(
     return {
         "min_ceiling_ft": min(ceilings) if ceilings else None,
         "min_visibility_sm": min(visibilities) if visibilities else None,
+        "ceiling_unknown_at": unknown_at,
         "stations": per_station,
     }
 
@@ -1091,7 +1107,7 @@ def ceiling_visibility_along_route(
 def tafs_over(windows: dict) -> dict:
     """Each station's TAF read over a window of its own -- {icaoId:
     (start, end)} in unix seconds, around when the flight gets there --
-    as {icaoId: {"ceiling_ft", "visibility_sm", "raw"}}: the worst it
+    as {icaoId: {"ceiling_ft", "ceiling_unknown", "visibility_sm", "raw"}}: the worst it
     forecasts then (TEMPO and PROB groups included, as _worst_in_window
     reads them) and the forecast as issued. The route's forecast reads
     every station over the whole flight, the right read for go/no-go; a
@@ -1105,7 +1121,8 @@ def tafs_over(windows: dict) -> dict:
         window = windows.get(station["icaoId"])
         if window is None:
             continue
-        worst = _worst_in_window(station["fcsts"], *window) or {"ceiling_ft": None, "visibility_sm": None}
+        worst = _worst_in_window(station["fcsts"], *window) or {
+            "ceiling_ft": None, "ceiling_unknown": False, "visibility_sm": None}
         found[station["icaoId"]] = {**worst, "raw": station.get("raw")}
     return found
 
@@ -1114,11 +1131,13 @@ def tafs_over(windows: dict) -> dict:
 
 # 14 CFR 91.155(c) and (d): below a 1,000 ft ceiling or 3 statute miles'
 # visibility in a surface area of controlled airspace,
-# VFR flight is not the default answer. The one place these numbers
-# live -- wingtip.altitude's go/no-go flag and the briefing's "VFR flight not
-# recommended" both read them, and the page shows what they decided.
-VFR_MIN_CEILING_FT = 1000
-VFR_MIN_VISIBILITY_SM = 3
+# VFR flight is not the default answer. The figures are the engine's
+# (rules.rs, `vfr_basic_minimums`); wingtip.altitude's go/no-go flag, the
+# briefing's "VFR flight not recommended" and the route options all read
+# them from here, and the page shows what they decided.
+_VFR_MINIMUMS = json.loads(wingtip_native.call("vfr_basic_minimums", "{}"))
+VFR_MIN_CEILING_FT = int(_VFR_MINIMUMS["ceiling_ft"])
+VFR_MIN_VISIBILITY_SM = int(_VFR_MINIMUMS["visibility_sm"])
 
 
 def below_vfr_minimums(ceiling_ft: float | None, visibility_sm: float | None) -> bool:
@@ -1137,15 +1156,26 @@ def vfr_not_recommended_reasons(idents: list, metars: dict, forecast: dict) -> l
     route currently reporting IFR or LIFR, then the along-route forecast
     ceiling or visibility under the basic VFR minimums. `metars` is
     metar_for_idents()'s answer, `forecast`
-    ceiling_visibility_along_route()'s. Empty when nothing warrants it."""
+    ceiling_visibility_along_route()'s. Empty when nothing warrants it.
+
+    A ceiling reported or forecast with no height ("OVC///") is said too:
+    it could be at any height, the ground included, which is a condition
+    that makes VFR flight doubtful (AIM 7-1-5), and saying nothing would
+    pass it as no ceiling."""
     reasons = []
     for ident in idents:
-        category = (metars.get(ident) or {}).get("flight_category")
+        metar = metars.get(ident) or {}
+        category = metar.get("flight_category")
         if category in ("IFR", "LIFR"):
             reasons.append(f"{ident} currently reporting {category}")
+        elif metar.get("ceiling_unknown"):
+            reasons.append(f"{ident} currently reporting a ceiling of unknown height")
     ceiling, visibility = forecast.get("min_ceiling_ft"), forecast.get("min_visibility_sm")
     if ceiling is not None and ceiling < VFR_MIN_CEILING_FT:
         reasons.append(f"forecast ceiling as low as {ceiling:,.0f} ft along the route")
+    unknown_at = forecast.get("ceiling_unknown_at") or []
+    if unknown_at:
+        reasons.append(f"forecast ceiling of unknown height at {', '.join(unknown_at)}")
     if visibility is not None and visibility < VFR_MIN_VISIBILITY_SM:
         reasons.append(f"forecast visibility as low as {visibility:g} sm along the route")
     return reasons
@@ -1384,50 +1414,90 @@ def gairmet_snapshots_along_route(path: list, window: tuple) -> list:
 
 
 def _fetch_each(names, force: bool = False) -> None:
-    """Every one of `names` attempted, then the first failure raised --
-    one source down must not keep the others from being fetched."""
-    first = None
-    for name in names:
+    """Every one of `names` attempted, all at once, then the first failure
+    (in `names`' order) raised -- one source down must not keep the others
+    from being fetched. At once, not one after another: they are
+    separate files, and a route's read ahead (read_ahead) waits on the
+    slowest of them rather than on their sum."""
+    def fetch(name: str) -> WeatherServiceError | None:
         try:
             _dataset(name, force=force)
         except WeatherServiceError as err:
-            first = first or err
+            return err
+        return None
+
+    with ThreadPoolExecutor(max_workers=max(1, len(names))) as pool:
+        failures = list(pool.map(fetch, names))
+    first = next((err for err in failures if err is not None), None)
     if first is not None:
         raise first
 
 
-#: Every winds forecast period, held and refreshed whether asked for yet or
-#: not: a plan for later in the day reads the 12- or 24-hour product, and
-#: the first such plan after a restart waited on its download (5.9 s of a
-#: route's altitudes, 2026-10-23). Three small text files.
-WIND_PERIODS = ("winds-06", "winds-12", "winds-24")
+#: The reports and advisories, each a cache file of aviationweather.gov's.
+_CACHE_SOURCES = ("metars", "tafs", "airsigmets", "pireps", "gairmets")
 
 
 def preload() -> None:
-    """Fetches the cache files and the current winds now -- a
-    briefing's worth of data for every route -- so a service's first
-    pilot after a restart doesn't wait on the downloads."""
-    _fetch_each(("metars", "tafs", "airsigmets", "pireps", "gairmets", *WIND_PERIODS))
+    """Fetches the cache files and the winds aloft now -- a briefing's
+    worth of data for every route -- so a service's first pilot after a
+    restart doesn't wait on the downloads. The winds for every period,
+    whether asked for yet or not: a plan for later in the day reads the
+    12- or 24-hour period, and the first such plan after a restart waited
+    on its download (5.9 s of a route's altitudes, 2026-10-23)."""
+    _warm_winds(force=True)
+    _fetch_each(_CACHE_SOURCES)
 
 
 def refresh() -> None:
-    """The same fetched again now, whatever their age -- the winds for
-    every forecast period -- for the server's own periodic
-    refresh, so the held copies never expire on a pilot's request: the
-    first plan after an expiry used to pay for the downloads, on a slow
-    aviationweather.gov day close to a minute. A fetch that fails leaves
-    the held copy in place, to be served stale as before; the winds used
-    to be written here by hand, and had no such fallback."""
-    _fetch_each(("metars", "tafs", "airsigmets", "pireps", "gairmets", *WIND_PERIODS), force=True)
+    """The same fetched again now, whatever their age, for the server's
+    own periodic refresh, so the held copies never expire on a pilot's
+    request: the first plan after an expiry used to pay for the
+    downloads, on a slow aviationweather.gov day close to a minute. The
+    winds are read again once their copy nears its hour (modelwinds.warm).
+    A fetch that fails leaves the held copy in place, to be served while
+    its product is still valid."""
+    _warm_winds(force=False)
+    _fetch_each(_CACHE_SOURCES, force=True)
+
+
+def _warm_winds(force: bool) -> None:
+    from . import modelwinds
+
+    modelwinds.warm(force=force)
+
+
+def read_ahead(fcst_hr: str = "06") -> threading.Thread:
+    """What a route's plan reads, fetched now on a thread of its own where
+    a held copy has run out -- the reports and advisories, and the winds
+    for `fcst_hr`, the GFS's (_fd_stations) -- and nothing where none has. Asked for as the route
+    is entered (app.prefetch), so a planner left alone past in_use's
+    quarter of an hour, which its own refresh then leaves alone too,
+    downloads them while the chart is read along the route rather than
+    after it, on the plan's way. Each is held by its own rule as ever
+    (_dataset); this only starts the download sooner."""
+    def run() -> None:
+        try:
+            _fetch_each(_CACHE_SOURCES)
+        except WeatherServiceError:
+            pass  # the plan's own reads say what could not be had
+        try:
+            _fd_stations(fcst_hr)
+        except WeatherServiceError:
+            pass  # the plan's own reads say what could not be had
+
+    thread = threading.Thread(target=run, name="weather-read-ahead", daemon=True)
+    thread.start()
+    return thread
 
 
 def forecast_hour(hours_ahead: float | None) -> str:
-    """Which FD forecast period fits a departure `hours_ahead` hours from
-    now: the 6-hour product up to nine hours out, the 12-hour product
-    to eighteen, the 24-hour product beyond -- each period's own valid
-    time sits mid-way to the next. None (no departure time) is now."""
-    if hours_ahead is None or hours_ahead <= 9:
+    """Which winds period fits a departure `hours_ahead` hours from now,
+    where no period's window can be read to say: the 6-hour period up to
+    six hours out, the 12-hour period to fifteen, the 24-hour period
+    beyond -- where their windows end (wingtip.modelwinds' _PERIODS).
+    None (no departure time) is now."""
+    if hours_ahead is None or hours_ahead <= 6:
         return "06"
-    if hours_ahead <= 18:
+    if hours_ahead <= 15:
         return "12"
     return "24"

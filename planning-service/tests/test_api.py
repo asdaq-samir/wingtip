@@ -101,6 +101,9 @@ def test_status_reports_every_service_and_the_data_on_disk(monkeypatch):
     }
     for corridor in body["corridors"]:
         assert corridor["departure_ident"].isupper() and "by_rating" in corridor["labels"]
+    # Each FAA data set on disk, with whether it is in its cycle.
+    for cycle in body["data_cycles"]:
+        assert cycle["state"] in {"in_force", "expired", "not_yet", "unknown"} and cycle["current"]
 
 
 class FakeSidecar:
@@ -246,6 +249,33 @@ def test_the_briefing_says_why_vfr_is_not_recommended(monkeypatch):
 
     assert resp.status_code == 200
     assert resp.json()["vfr_not_recommended"] == ["forecast ceiling as low as 800 ft along the route"]
+
+
+def test_the_briefing_carries_a_ceiling_of_unknown_height_through(monkeypatch):
+    """OVC/// reported at the departure and forecast at the destination
+    (wingtip.weather._sky_ceiling): not known, not none, so the briefing
+    says so where it would say no ceiling."""
+    monkeypatch.setattr(weather, "hazards_along_route", lambda start, end: [])
+    monkeypatch.setattr(weather, "ceiling_visibility_along_route", lambda start, end, window=None: {
+        "min_ceiling_ft": None, "min_visibility_sm": 10.0, "ceiling_unknown_at": ["KDLH"], "stations": [
+            {"icaoId": "KDLH", "lat": 46.8421, "lon": -92.1936, "elevation_ft": 1424, "ceiling_ft": None,
+             "ceiling_unknown": True, "visibility_sm": 10.0}]})
+    monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {ident: (
+        {"raw": "KC81 251755Z AUTO 10SM OVC///", "flight_category": None, "ceiling_ft": None, "ceiling_unknown": True,
+         "visibility_sm": 10.0} if ident in ("C81", "KC81") else None) for ident in idents})
+    monkeypatch.setattr(weather, "tafs_over", lambda asked: {
+        "KDLH": {"ceiling_ft": None, "ceiling_unknown": True, "visibility_sm": 10.0, "raw": "TAF KDLH ..."}})
+    monkeypatch.setattr(airports, "get_runways", lambda ident: [])
+    monkeypatch.setattr(airports, "get_frequencies", lambda ident: [])
+
+    body = client.get("/api/briefing", params={"dep": "C81", "dest": "KDLH"}).json()
+
+    assert body["forecast"]["ceiling_unknown_at"] == ["KDLH"]
+    station = body["forecast"]["stations"][0]
+    assert (station["ceiling_unknown"], station["eta_ceiling_unknown"]) == (True, True)
+    assert body["metars"]["C81"]["ceiling_unknown"] is True
+    assert body["vfr_not_recommended"] == [
+        "C81 currently reporting a ceiling of unknown height", "forecast ceiling of unknown height at KDLH"]
 
 
 def test_the_briefing_forecast_is_read_over_the_flight(monkeypatch):
@@ -407,13 +437,23 @@ def test_a_chart_tile_no_sheet_covers_is_an_empty_204_kept_as_long_as_a_drawn_on
     # It was a 404: an error in the browser's console for every tile of sea
     # or Canada round the country as the planner opens.
     from wingtip import charts
-    monkeypatch.setattr(charts, "tile_png", lambda x, y, z, kind: None)
+    monkeypatch.setattr(charts, "tile_png", lambda x, y, z, kind, scale=1: None)
     empty = client.get("/api/chart-tile/sec/4/1/8.png")
     assert empty.status_code == 204 and empty.content == b""
-    monkeypatch.setattr(charts, "tile_png", lambda x, y, z, kind: b"\x89PNG")
+    monkeypatch.setattr(charts, "tile_png", lambda x, y, z, kind, scale=1: b"\x89PNG")
     drawn = client.get("/api/chart-tile/sec/4/3/6.png")
     assert drawn.status_code == 200 and drawn.headers["content-type"] == "image/png"
     assert empty.headers["cache-control"] == drawn.headers["cache-control"]
     # Outside the chart's zooms, and a kind there is none of, are still 404s.
     assert client.get("/api/chart-tile/sec/2/0/0.png").status_code == 404
     assert client.get("/api/chart-tile/wac/4/3/6.png").status_code == 404
+
+
+def test_the_512_pixel_tile_is_the_same_address_with_at_2x(monkeypatch):
+    from wingtip import charts
+    asked = []
+    monkeypatch.setattr(charts, "tile_png", lambda x, y, z, kind, scale=1: asked.append((kind, z, x, y, scale)) or b"\x89PNG")
+    assert client.get("/api/chart-tile/sec/4/3/6@2x.png").status_code == 200
+    assert client.get("/api/chart-tile/tac/11/522/757.png").status_code == 200
+    assert asked == [("sec", 4, 3, 6, 2), ("tac", 11, 522, 757, 1)]
+    assert client.get("/api/chart-tile/sec/4/3/6@3x.png").status_code == 422
