@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { ProcedureDrawing } from "./api/types";
 import {
-  attemptsAt, debriefApproach, findApproaches, LOCALIZER_DEG, withMinimums, withTransition,
+  attemptsAt, debriefApproach, findApproaches, withMinimums, withTransition,
 } from "./approachDebrief";
 import { bearingDeg, destination, distanceNm, FT_PER_NM, rad } from "./geo";
 import { callEngine } from "./engine/engine";
