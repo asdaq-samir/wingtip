@@ -37,7 +37,7 @@ import { TEXT } from "../../lib/text";
 import { altFt, feet, nm } from "../../lib/units";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../lib/frat";
 import { localDay } from "../../lib/clock";
-import { FINDING_TONE } from "../../lib/status";
+import { FINDING_TONE } from "../../lib/findings";
 import { EditToggle, ListPageHead, RemoveMinus } from "../../components/Favorites";
 import { aircraftListQuery, aircraftProfilesQuery, flightsQuery } from "../../lib/queryClient";
 import QueryState from "../../components/QueryState";

@@ -11,7 +11,7 @@ import { Input } from "../../../../components/ui/input";
 import type { Leg } from "../../../../lib/api/types";
 import { ANSWERS, checks, typedNumber, workingsOf, written, type AnswerKey, type Workings } from "../../../../lib/workings";
 import { TEXT } from "../../../../lib/text";
-import { FINDING_TONE } from "../../../../lib/status";
+import { FINDING_TONE } from "../../../../lib/findings";
 
 function Worked({ workings }: { workings: Workings }) {
   return (

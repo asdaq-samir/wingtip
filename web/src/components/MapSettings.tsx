@@ -13,7 +13,7 @@ import { USGS_URL } from "../lib/map/imagery";
 import { useGoogleSession } from "../lib/map/googleSession";
 import { OWN_SHIP_LOOKS, ownShipSvg, type OwnShipLook } from "../lib/map/ownShipLook";
 import { tileUrl } from "../lib/map/tiles";
-import { cn } from "../lib/utils";
+import { cn } from "cn";
 import { GROUP_HEADING, TEXT } from "../lib/text";
 import { chartQuery, googleMapsQuery } from "../lib/queryClient";
 import { useDataCycles, useLayerAges } from "../lib/map/layerAges";

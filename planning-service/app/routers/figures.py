@@ -3,7 +3,7 @@ out here for the native app so the phone computes no aviation figure
 (docs/NATIVE.md; app.figures): the debrief of a flown track, the
 diversion drill, a hold's entry and wind, and lost communications'
 altitudes. The web app works them out with the same engine, in the
-browser (lib/debrief, lib/diversion, lib/holding, lib/lostComms, through
+browser (lib/debrief, lib/diversion, lib/holdEntry, lib/lostComms, through
 its WebAssembly)."""
 import logging
 from datetime import datetime
@@ -127,7 +127,7 @@ def holding(
     wind_kt: Annotated[float | None, Query(ge=0, le=300)] = None,
     altitude_ft: Annotated[float | None, Query(ge=0, le=60_000)] = None,
 ) -> Holding:
-    """A hold's entry (web/src/lib/holding, AIM 5-3-8): for an airplane
+    """A hold's entry (web/src/lib/holdEntry, AIM 5-3-8): for an airplane
     heading `heading` to the fix of a hold on the inbound course `inbound`
     with `turns`, the entry by the AIM's sectors and its steps in words,
     and the other entry where the heading is within 5 degrees of a

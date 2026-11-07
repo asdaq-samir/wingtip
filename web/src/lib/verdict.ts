@@ -16,7 +16,7 @@
  */
 import { create } from "zustand";
 import { callEngine } from "./engine/engine";
-import type { Finding } from "./status";
+import type { Finding } from "./findings";
 
 /** Where a finding is shown in full: a tab of the planning panel, and a
  *  section of it by its title. */

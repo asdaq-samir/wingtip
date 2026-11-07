@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { holdingEntry, holdingWind, legMinutes } from "./holding";
+import { holdingEntry, holdingWind, legMinutes } from "./holdEntry";
 
 describe("holding entries, by AIM 5-3-8's sectors", () => {
   test("a standard hold on 360: direct from the south and west, teardrop and parallel from beyond the fix", () => {

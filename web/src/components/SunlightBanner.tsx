@@ -2,7 +2,7 @@ import { Sun } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
 import { TEXT } from "../lib/text";
-import { unseen, useTips } from "../lib/tips";
+import { unseen, useTips } from "../lib/firstRunTips";
 import { usePreferences } from "../lib/preferences";
 import { useSunlight, useSunlightSensor } from "../lib/sunlight";
 

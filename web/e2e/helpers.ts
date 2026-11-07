@@ -9,7 +9,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 
 export const PAGES = ["/app/plan", "/app/dev"] as const;
 
-/** The first-run tips (lib/tips) marked seen, every one, in the page's
+/** The first-run tips (lib/firstRunTips) marked seen, every one, in the page's
  *  storage: for page.evaluate, or page.addInitScript where a spec starts
  *  with none of the suite's saved session. */
 export function noTips() {

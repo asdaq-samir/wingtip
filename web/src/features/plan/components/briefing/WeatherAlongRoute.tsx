@@ -14,7 +14,7 @@ import CategoryBadge from "./CategoryBadge";
 import Observed from "../../../../components/Observed";
 import { phasesOf, type Phase } from "./sections";
 import { categoryAt, NEAREST_TAF_NM, nearestStation, ownStation, placesOf, type Station } from "./fieldWeather";
-import { FINDING_TONE } from "../../../../lib/status";
+import { FINDING_TONE } from "../../../../lib/findings";
 import OnRouteRow from "./OnRouteRow";
 
 type Pirep = Briefing["pireps"][number];

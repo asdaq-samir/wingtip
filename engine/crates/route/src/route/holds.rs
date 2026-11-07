@@ -3,7 +3,7 @@
 //! inbound course (magnetic), its turns, its legs by time or distance and
 //! how long it is held, written as the address has it --
 //! "VPBNG/090/30:270:R:1M:2T" -- and the minutes flying it takes, which
-//! the planner adds to the flight's time and fuel. The web app's lib/holds,
+//! the planner adds to the flight's time and fuel. The web app's lib/routeHolds,
 //! wingtip.holds' parse and figures, and the iPhone's Hold; the entry and the
 //! legs' minutes by altitude are crate::figures::holding's.
 //!

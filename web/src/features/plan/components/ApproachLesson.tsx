@@ -18,7 +18,7 @@ import { bearingDeg } from "../../../lib/geo";
 import { NO_FOCUS, endLessonMap, useLessonMap } from "../../../lib/map/lessonMap";
 import type { PickedProcedure } from "../../../lib/procedures";
 import { airportQuery, procedureQuery } from "../../../lib/queryClient";
-import { FINDING_TONE } from "../../../lib/status";
+import { FINDING_TONE } from "../../../lib/findings";
 import { GROUP_HEADING, TEXT, TEXT_POINTS } from "../../../lib/text";
 import { altFt } from "../../../lib/units";
 

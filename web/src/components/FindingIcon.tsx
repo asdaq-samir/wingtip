@@ -1,11 +1,11 @@
 import { CircleCheck, CircleHelp, Loader2, OctagonAlert, TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import { FINDING_TONE, type Finding } from "../lib/status";
+import { FINDING_TONE, type Finding } from "../lib/findings";
 
 const ICONS = { ok: CircleCheck, caution: TriangleAlert, stop: OctagonAlert, unknown: CircleHelp, pending: Loader2 };
 
 /**
- * A check's finding as a mark (lib/status): a tick in green, a triangle in
+ * A check's finding as a mark (lib/findings): a tick in green, a triangle in
  * amber, an octagon in red -- a stop sign's shape, so the two warnings
  * differ by more than colour -- a question in grey, a spinner while it
  * is worked out. Each tab's rows start with one, as the briefing's

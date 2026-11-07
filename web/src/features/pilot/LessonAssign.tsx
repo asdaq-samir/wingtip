@@ -11,7 +11,7 @@ import { dueWords, lessonPicked, lessonStatus, notableFixes, notesToSend } from 
 import { localDay } from "../../lib/clock";
 import { said } from "../../lib/endorsements";
 import { procedureQuery } from "../../lib/queryClient";
-import { FINDING_TONE } from "../../lib/status";
+import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 
 // Its own chunk, as on a flight's page: drawn only where a track came.

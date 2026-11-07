@@ -13,7 +13,7 @@ import { pilotQuery, trainingQuery } from "../../../../lib/queryClient";
 import type { Candidate, Course, Leg, NavLogAltitude, SaveFlightRequest, Totals } from "../../../../lib/api/types";
 import { withoutAltitude } from "../../../../lib/identSchema";
 import { navLogRows, savedCheckpoints } from "../navlog/rows";
-import { FINDING_TONE } from "../../../../lib/status";
+import { FINDING_TONE } from "../../../../lib/findings";
 import { useRisk } from "../../../../lib/frat";
 import { Spinner } from "../../../../components/ui/spinner";
 

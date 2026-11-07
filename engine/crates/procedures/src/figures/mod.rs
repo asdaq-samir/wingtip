@@ -5,10 +5,10 @@
 //! drill's wind triangle (ACS PA.VI.C), a hold's entry and its legs in the
 //! wind (AIM 5-3-8), and the altitude flown on each segment after a
 //! two-way radio failure (14 CFR 91.185). Each was app.figures' Python,
-//! itself the web app's lib/debrief, lib/diversion, lib/holding and
+//! itself the web app's lib/debrief, lib/diversion, lib/holdEntry and
 //! lib/lostComms ported line for line with the same words and sources. The
 //! web app asks these too, through the engine's WebAssembly (crate::call,
-//! engine/bindings/wasm), so its lib/holding, lib/lostComms, lib/diversion and
+//! engine/bindings/wasm), so its lib/holdEntry, lib/lostComms, lib/diversion and
 //! lib/debrief only shape the answers for its pages.
 
 pub mod debrief;

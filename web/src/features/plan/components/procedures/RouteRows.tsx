@@ -9,7 +9,7 @@ import CardIdent from "../CardIdent";
 import { CARD_GAP, CardMark, CardThread, EmptyMark, POINT_CARD } from "../routeCard";
 import { TEXT } from "../../../../lib/text";
 import type { Detour, LegHold } from "../../../../lib/api/types";
-import { holdWords, type Hold } from "../../../../lib/holds";
+import { holdWords, type Hold } from "../../../../lib/routeHolds";
 import { pointName } from "../../../../lib/identSchema";
 
 // The rows down FPL's route list (ProceduresRoute) other than a field's

@@ -14,7 +14,7 @@ import { ALLOWANCES, divert, reasonable, stopwatch, type Diversion, type Estimat
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
 import { bearing, grouped, windCorrection } from "../../../../lib/units";
-import { FINDING_TONE } from "../../../../lib/status";
+import { FINDING_TONE } from "../../../../lib/findings";
 import { typedNumber, written } from "../../../../lib/workings";
 import { nearestQuery } from "../../../../lib/queryClient";
 

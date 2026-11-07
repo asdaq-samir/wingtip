@@ -19,7 +19,7 @@ import { keepAddressThroughReload, startFresh } from "./lib/freshLoad";
 import { installErrorReports, reportOf, sendReport } from "./lib/errorReports";
 import { startSpeedReports } from "./lib/speed";
 import { startLoadLog } from "./lib/loadLog";
-import MapPage from "./features/page/MapPage";
+import MapPage from "./features/shell/MapPage";
 import { prefetchRouteMap } from "./features/plan/routeMapChunk";
 import { prefetchRouteBox } from "./features/plan/routeBoxChunk";
 import "./index.css";

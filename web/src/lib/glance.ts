@@ -10,7 +10,7 @@
  * that publishes), and published here, as the Go / No-Go is (lib/verdict).
  */
 import { create } from "zustand";
-import type { Finding } from "./status";
+import type { Finding } from "./findings";
 import type { VerdictItem } from "./verdict";
 
 /** A field's: the departure's, or the destination's. */

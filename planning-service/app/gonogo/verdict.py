@@ -11,7 +11,7 @@ The rules are the engine's (wingtip_engine::gonogo::verdict), asked by
 name through wingtip_native.call, the one copy the planner, the web app
 (web/src/lib/verdict.ts) and the phones share.
 
-A finding (lib/status) is "ok", "caution", "stop", "unknown" or
+A finding (lib/findings) is "ok", "caution", "stop", "unknown" or
 "pending"; the input is the web's VerdictInput in snake case."""
 from . import ask
 

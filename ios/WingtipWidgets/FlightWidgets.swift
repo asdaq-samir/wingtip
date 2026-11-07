@@ -244,7 +244,7 @@ private struct WeatherLine: View {
 
 /// The Brief's verdict in the widget's word, mark and colour: Go,
 /// Caution and No-Go, as the feature is named; the marks and colours
-/// the Brief's own (the app's FindingStyle, the web's lib/status).
+/// the Brief's own (the app's FindingStyle, the web's lib/findings).
 enum VerdictMark {
     static func word(_ verdict: String?) -> String {
         switch verdict {

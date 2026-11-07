@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Lightbulb } from "lucide-react";
 import { RowBadge } from "../../components/RowBadge";
 import { SETTING_BADGE } from "../../lib/rowBadges";
-import { useTips } from "../../lib/tips";
+import { useTips } from "../../lib/firstRunTips";
 import { cn } from "cn";
 import { ConsolePages, PageRow, StepRow } from "../../components/ConsolePages";
 import DrillPage from "./DrillPage";
@@ -115,7 +115,7 @@ export default function PilotGuide() {
   );
 }
 
-/** The first-run tips (lib/tips), offered again from the start: the
+/** The first-run tips (lib/firstRunTips), offered again from the start: the
  *  guide's short version, at its top, at the owner's ask (2026-10-27,
  *  "Tips can move to guide"), where they were a group of the Settings
  *  page. */

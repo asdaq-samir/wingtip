@@ -360,7 +360,7 @@ export default defineConfig({
   ],
   base: "/app/",
   // Mirrors tsconfig.json's own "@/*" path -- shadcn's generated
-  // components import from "@/lib/utils" etc., and Vite needs this
+  // components import from "@/components/ui" etc., and Vite needs this
   // independently of TypeScript's own (type-check-only) path mapping.
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   build: {

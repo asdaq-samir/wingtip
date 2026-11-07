@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { holdOf, holdText, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./holds";
-import { legMinutes } from "./holding";
+import { holdOf, holdText, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./routeHolds";
+import { legMinutes } from "./holdEntry";
 import holdsFixture from "./fixtures/holds.json";
 
 describe("the pilot's holds in the address", () => {

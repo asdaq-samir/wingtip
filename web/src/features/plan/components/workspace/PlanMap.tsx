@@ -62,7 +62,7 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
           <AssignedLesson key={lessonOpen} id={lessonOpen} aircraft={fitAircraft} onClose={closeLesson} />
         </Suspense>
       )}
-      {/* What to look for, a tip at a time, the first times (lib/tips). */}
+      {/* What to look for, a tip at a time, the first times (lib/firstRunTips). */}
       <TipHost />
       <FirstFlight routed={routed} onPlan={setRoute} onPlanned={openNavLogCard} />
     </div>

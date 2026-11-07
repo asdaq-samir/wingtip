@@ -20,7 +20,7 @@ import { z } from "../../lib/formSchema";
 import type { CrossCountryReview, EndorsementKind, Instructor, InstructorRequest, StudentRow } from "../../lib/api/types";
 import { planHrefOf } from "../../lib/flightLink";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../lib/frat";
-import { FINDING_TONE, type Finding } from "../../lib/status";
+import { FINDING_TONE, type Finding } from "../../lib/findings";
 import { studentLines, type StudentLine } from "../../lib/students";
 import { TEXT } from "../../lib/text";
 import { localDay } from "../../lib/clock";

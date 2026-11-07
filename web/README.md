@@ -37,8 +37,8 @@ component (`MapPage`) in two modes:
   redirects to Plan, where everything it used to hold now lives in the
   pilot console.
 
-Both pages are one `MapPage` component (`features/page/MapPage.tsx`)
-around a different `WorkspacePieces` (`features/page/workspace.ts`):
+Both pages are one `MapPage` component (`features/shell/MapPage.tsx`)
+around a different `WorkspacePieces` (`features/shell/workspace.ts`):
 the workspace owns its own data and hands back a map, a sidebar, a
 console and a submit action; the page owns the shell around them — the
 header, the sidebar panel, the console sheet — so the two pages cannot
@@ -193,10 +193,10 @@ src/
     preferences.ts             What's remembered per browser (zustand + localStorage): charts, aeroplane, filters
     queryClient.ts             The react-query client; a failed query becomes one toast, keyed by its message
   features/
-    page/MapPage.tsx, workspace.ts   The shell both pages mount into, and the contract a workspace hands it
+    shell/MapPage.tsx, workspace.ts  The shell both pages mount into, and the contract a workspace hands it
     plan/PlanWorkspace.tsx           The pilot's workspace: hooks/usePlan.ts (state), components/: RouteMap,
                                       BuildNotice, AltitudeReasoning, navlog/, briefing/
-    train/TrainWorkspace.tsx         The developer's workspace: hooks/useTraining.ts (state), logic.ts (pure,
+    chart-labels/TrainWorkspace.tsx  The developer's workspace: hooks/useTraining.ts (state), logic.ts (pure,
                                       tested), components/: ChartMap, WaypointPanel, PointPopup, FilterBar
     pilot/PilotPanel.tsx             The pilot console: AccountPanels.tsx (sign-in, aircraft, flights), SignInModal.tsx
     dev/DevPanel.tsx, DevButton.tsx  The dev console (its own chunk — see Architecture) and the header button that opens it
@@ -345,7 +345,7 @@ card over the map: a destination from the same airport search the
 route's box uses (`useAirportSearch`, through `PanelCapsule`'s field and
 results), and Plan it, which plans from own ship's nearest field, else
 the last departure or Home, else asks where from. Planned, the nav log
-opens, the card is marked seen in the tips store (`lib/tips`,
+opens, the card is marked seen in the tips store (`lib/firstRunTips`,
 `FIRST_FLIGHT`) and never comes back, and one tip (`brief`, gated
 `after` that key) points at the Brief.
 

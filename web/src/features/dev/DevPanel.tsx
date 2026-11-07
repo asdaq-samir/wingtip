@@ -14,7 +14,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { api, errorMessage } from "../../lib/api/client";
 import { statusQuery } from "../../lib/queryClient";
 import type { Status } from "../../lib/api/types";
-import RatingGuide from "../train/components/RatingGuide";
+import RatingGuide from "../chart-labels/components/RatingGuide";
 import { TEXT } from "../../lib/text";
 import { useRetrain } from "./useRetrain";
 import SpeedPage from "./SpeedPage";

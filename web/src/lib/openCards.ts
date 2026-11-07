@@ -1,7 +1,7 @@
 /**
  * The cards open in the map's panel (CardHead's), and the lists in full
  * (ListPageHead's), the last opened on top: a device's own Back --
- * Android's, a TV remote's (lib/back) -- closes the top one, as its close
+ * Android's, a TV remote's (lib/backNavigation) -- closes the top one, as its close
  * or its Back does, before the panel is lowered. A card over a list (an
  * airport's over Nearest's) is closed first, then the list.
  */

@@ -23,7 +23,7 @@ setup("the developer signs in from the pilot console, and lands in dev mode", as
   await page.keyboard.press("Escape");
   await consolePage(page.getByTestId("console-sheet"), "Guide");
   await page.keyboard.press("Escape");
-  // The first-run tips (lib/tips) seen, every one: a tip over a control
+  // The first-run tips (lib/firstRunTips) seen, every one: a tip over a control
   // takes the click a spec meant for it. tips.spec offers them afresh.
   await page.evaluate(noTips);
   // FPL's fields opened at first (ProceduresRoute's fieldsOpenAtFirst): the
