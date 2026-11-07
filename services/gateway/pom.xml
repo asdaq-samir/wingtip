@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.16</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.northflyers</groupId>
+    <artifactId>wingtip</artifactId>
+    <version>0.1.0</version>
+    <name>wingtip</name>
+    <description>VFR route planning API -- proxies planner, persists saved routes.</description>
+
+    <properties>
+        <!-- 25, not 26: spring-boot-maven-plugin 3.5.3's bundled ASM can't
+             parse a Java 26 class file yet ("Unsupported class file major
+             version 70" at repackage). 25 is the newest it supports. -->
+        <java.version>25</java.version>
+    </properties>
+
+    <dependencies>
+        <!-- Generates the entities' getters. Compile-time only: the
+             annotations are not on the runtime classpath and the jar
+             below excludes it. -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <!-- Bean Validation (@NotBlank/@Pattern on RouteRequest) and the
+             @RestControllerAdvice global exception handler's use of
+             MethodArgumentNotValidException; neither works without this. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- Health/readiness for ALB target-group + ECS container health
+             checks; see application.yml for the exposed groups. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Traces, to an OTLP collector, where management.tracing is on. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+        <!-- Versioned schema migrations, replacing ddl-auto: update now that
+             this is more than a stub; see db/migration/. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <!-- Sign-in with Google/Apple. Pulls in spring-boot-starter-security
+             transitively, which is what secures the pilot-scoped
+             endpoints; sessions are the servlet container's, so there is
+             no token handling of our own to get wrong. Also the source
+             of the Nimbus JOSE+JWT library OAuthClientsConfig uses to
+             sign Apple's own client-secret JWT, a transitive dependency
+             of spring-security-oauth2-jose, not declared separately. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
+        <!-- Sessions kept in Postgres rather than the JVM's memory, so a
+             sign-in survives a webapp restart (every rebuild used to sign
+             everyone out) and can last the 30 days application.yml sets.
+             The tables are Flyway's (V8), not created at startup. -->
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-jdbc</artifactId>
+        </dependency>
+        <!-- The magic-link email flow's own sender. Configured, or left
+             unconfigured (see application.yml's MAIL_HOST default), the
+             same way Google/Apple's credentials are: present and working,
+             or absent and failing closed, never a build-time requirement. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- oidcLogin() and csrf() request post-processors, so the
+             security rules are tested as rules rather than trusted. -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Drives a real Postgres for the migration/persistence tests, so
+             Flyway and the JPA mappings are verified against the database
+             they actually run on rather than an in-memory substitute whose
+             SQL dialect differs. Versions come from Spring Boot's parent. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Generates an OpenAPI spec + Swagger UI (/swagger-ui.html,
+             /v3/api-docs) from the existing controller/DTO annotations;
+             no hand-written spec to keep in sync. planner (FastAPI)
+             already gets this for free at /docs; this gives webapp the
+             same thing. -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.6</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <!-- Named explicitly, not picked up off the
+                         classpath: from JDK 23 javac no longer runs
+                         annotation processors it merely finds there,
+                         and without this every Lombok-generated getter
+                         is simply absent at compile time. -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <!-- The planner's answers this app reads itself (PlannerClient),
+                 generated at build time from the planner's committed
+                 OpenAPI document rather than written out by hand, so a
+                 field the planner renames or drops fails this build
+                 instead of reading as null in production. Models only:
+                 PlannerClient asks with java.net.http, pinned to
+                 HTTP/1.1 for the reason StreamingProxy gives, which a
+                 generated client would replace. Only the schemas read
+                 here are generated (modelsToGenerate), prefixed Planner
+                 so "Source" and "Sentence" do not read as this app's own;
+                 the browser's pass-through proxies read nothing and need
+                 none. The Dockerfile copies the document to the same
+                 place relative to the pom. -->
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.26.0</version>
+                <executions>
+                    <execution>
+                        <id>planner-models</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/../planner/openapi.json</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <modelPackage>com.northflyers.wingtip.planner.model</modelPackage>
+                            <modelNamePrefix>Planner</modelNamePrefix>
+                            <modelsToGenerate>ChangesWords,Sentence,Source</modelsToGenerate>
+                            <generateApis>false</generateApis>
+                            <generateSupportingFiles>false</generateSupportingFiles>
+                            <generateModelTests>false</generateModelTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <!-- FastAPI writes an optional field as anyOf
+                                 [type, null] (OpenAPI 3.1): read as a plain
+                                 nullable field, not a wrapper type. -->
+                            <openapiNormalizer>SIMPLIFY_ONEOF_ANYOF=true</openapiNormalizer>
+                            <configOptions>
+                                <useSpringBoot3>true</useSpringBoot3>
+                                <openApiNullable>false</openApiNullable>
+                                <useBeanValidation>false</useBeanValidation>
+                                <documentationProvider>none</documentationProvider>
+                                <annotationLibrary>none</annotationLibrary>
+                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <!-- Generated, and documented by the planner's own
+                         document instead. -->
+                    <excludePackageNames>com.northflyers.wingtip.planner.model</excludePackageNames>
+                    <!-- Still catches malformed {@link}s, bad HTML, and
+                         unknown tags; just doesn't demand a comment on
+                         every trivial getter/DI constructor, where one
+                         would be filler ("returns the id") rather than
+                         real documentation. `mvn javadoc:javadoc`, output
+                         in target/reports/apidocs. -->
+                    <doclint>all,-missing</doclint>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

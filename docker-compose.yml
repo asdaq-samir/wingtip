@@ -1,11 +1,11 @@
 # The project's name, which its images, containers and volumes carry
-# (wingtip-webapp, wingtip_pgdata): fixed here, not taken from the folder
+# (wingtip-gateway, wingtip_pgdata): fixed here, not taken from the folder
 # it is run from, so a checkout under another name -- a worktree -- runs
 # the same stack (the owner renamed the app Wingtip, 2026-11-06).
 name: wingtip
 
 # Shared, not copy-pasted into each service below -- the Python
-# services (planning-service and, once, model-service and the agents) had
+# services (planner and, once, model-service and the agents) had
 # byte-identical healthcheck timing and the identical required-env
 # line for ANTHROPIC_API_KEY, which meant a change to either (say, a
 # longer start_period, or a reworded failure message) only actually
@@ -22,7 +22,7 @@ x-python-healthcheck: &python-healthcheck
 # `:-` rather than `:?`, which this was until it was tried from a clean
 # checkout. Compose interpolates the whole file before it decides what to
 # start, so a required-variable marker anywhere in it fails every command
-# -- `docker compose up webapp`, and even `docker compose config`. That
+# -- `docker compose up gateway`, and even `docker compose config`. That
 # put an Anthropic key in front of the map, the planner and the chart
 # tiles, none of which call an LLM at all. The planner's Claude features
 # (the narrative, checkpoint notes, the assistant, the words) answer
@@ -43,7 +43,7 @@ x-anthropic-api-key: &anthropic-api-key ${ANTHROPIC_API_KEY:-}
 # from .env (or the shell), so the stack is whatever .env says it is:
 #
 #   The phone, over the Wi-Fi (https://<this Mac's LAN address>:8443):
-#     PUBLISH_ADDRESS=0.0.0.0     webapp's two ports and the sign-in inbox
+#     PUBLISH_ADDRESS=0.0.0.0     gateway's two ports and the sign-in inbox
 #                                 on every interface, not loopback
 #     PHONE_BASE_URL=https://<this Mac's LAN address>:8443
 #                                 where the emailed sign-in link points
@@ -62,18 +62,18 @@ x-anthropic-api-key: &anthropic-api-key ${ANTHROPIC_API_KEY:-}
 #                                 published beyond loopback.
 #   Front-end work without rebuilding the image:
 #     COMPOSE_PROFILES=web-dev    starts web-build (vite --watch into
-#                                 web/dist)
+#                                 apps/web/dist)
 #     WEB_DIST_MOUNT=/app/static/app
-#                                 and the webapp serves web/dist in place
+#                                 and the gateway serves apps/web/dist in place
 #                                 of the bundle in its image
 #
-# Unset, every port is on 127.0.0.1 and the webapp serves its own bundle.
+# Unset, every port is on 127.0.0.1 and the gateway serves its own bundle.
 
 services:
-  # wingtip's Python base (docker/Dockerfile.base): Python, wingtip's own
+  # wingtip's Python base (services/Dockerfile.base): Python, wingtip's own
   # requirements and its Rust extension, built once and named by every
   # image that imports wingtip as its `wingtip-base` context
-  # (`service:base` below), so `docker compose build planning-service`
+  # (`service:base` below), so `docker compose build planner`
   # builds it first, from this checkout, with nothing pulled from a
   # registry. Never run: scaled to zero, so `up` starts none of it. Not
   # behind a profile, because compose leaves a profiled service out of the
@@ -83,7 +83,7 @@ services:
     scale: 0
     build:
       context: .
-      dockerfile: docker/Dockerfile.base
+      dockerfile: services/Dockerfile.base
       target: base
 
   # Jupyter, for the notebooks: on demand, behind its own profile, so a
@@ -95,13 +95,13 @@ services:
     profiles: ["notebooks"]
     build:
       context: .
-      dockerfile: docker/Dockerfile.ml
+      dockerfile: ml/Dockerfile.ml
       additional_contexts:
         wingtip-base: service:base
     ports:
-      # 127.0.0.1-bound, not 0.0.0.0 -- this and every other non-webapp
+      # 127.0.0.1-bound, not 0.0.0.0 -- this and every other non-gateway
       # port below are local-debugging conveniences, not a public surface
-      # (webapp is the only intended front door, see
+      # (gateway is the only intended front door, see
       # PlannerProxyController.java's own docstring). Binding to
       # localhost keeps `docker compose up` safe to run on a shared or
       # internet-reachable host without also publishing an
@@ -120,7 +120,7 @@ services:
   pipeline-processing:
     build:
       context: .
-      dockerfile: docker/Dockerfile.processing
+      dockerfile: ml/Dockerfile.processing
       additional_contexts:
         wingtip-base: service:base
     profiles: ["pipeline"]
@@ -130,7 +130,7 @@ services:
   pipeline-training:
     build:
       context: .
-      dockerfile: docker/Dockerfile.training
+      dockerfile: ml/Dockerfile.training
       additional_contexts:
         wingtip-base: service:base
     profiles: ["pipeline"]
@@ -149,7 +149,7 @@ services:
   retrain:
     build:
       context: .
-      dockerfile: docker/Dockerfile.training
+      dockerfile: ml/Dockerfile.training
       additional_contexts:
         wingtip-base: service:base
     profiles: ["pipeline"]
@@ -183,9 +183,9 @@ services:
       # convention) makes the 18 entrypoint refuse to start.
       - pgdata_pg18:/var/lib/postgresql
 
-  # The developer console's one door onto Docker (docker/dev-services):
+  # The developer console's one door onto Docker (infra/dev-services):
   # which of the services it may start are running, and starting one.
-  # It holds the socket so planning-service doesn't, and answers those
+  # It holds the socket so planner doesn't, and answers those
   # two requests for those names in this project, nothing else --
   # no create, no exec, no other container.
   #
@@ -194,12 +194,12 @@ services:
   # /containers path, `POST /containers/create` included: a privileged
   # container with the host's / mounted, from anything that could reach
   # it. And everything could, because every service shared one network.
-  # This one sits on `docker-control` alone, which only planning-service
-  # also joins; webapp, ml and the rest cannot resolve it.
+  # This one sits on `docker-control` alone, which only planner
+  # also joins; gateway, ml and the rest cannot resolve it.
   dev-services:
     build:
       context: .
-      dockerfile: docker/Dockerfile.dev-services
+      dockerfile: infra/dev-services/Dockerfile
     environment:
       DEV_SERVICES: ml,retrain
     volumes:
@@ -207,19 +207,19 @@ services:
     networks: [docker-control]
     restart: unless-stopped
 
-  planning-service:
+  planner:
     restart: unless-stopped
     # Planning and chart vision: reads FAA sectional tiles, walks the great
     # circle, selects checkpoints and computes the dead-reckoning nav log.
-    # Serves no pages -- the front end is built into webapp's jar, and the
-    # browser reaches this only through webapp's /api/planner/* proxy.
+    # Serves no pages -- the front end is built into gateway's jar, and the
+    # browser reaches this only through gateway's /api/planner/* proxy.
     # Mounts the project so it can write a new corridor's candidates and
     # features into data/processed, and read the chart model a retrain
     # promotes into data/models/chart/current, which it scores with
     # in-process (app.chart_scorer) and reads again when it changes.
     build:
       context: .
-      dockerfile: planning-service/Dockerfile
+      dockerfile: services/planner/Dockerfile
       additional_contexts:
         wingtip-base: service:base
     ports:
@@ -230,13 +230,13 @@ services:
     volumes:
       - .:/workspace
     environment:
-      PYTHONPATH: /workspace/src
+      PYTHONPATH: /workspace/services/planner
       # Not the host's Docker socket -- the dev-services sidecar above,
       # which routers/devservices.py asks which services are up and to
       # start one, the training run (retrain) among them.
       DEV_SERVICES_URL: http://dev-services:8000
       # The clock the chart refresh's night-time window (see
-      # planning-service/app/main.py) is read against: the desk this
+      # services/planner/app/main.py) is read against: the desk this
       # runs on, not UTC.
       TZ: ${TZ:-America/Chicago}
       # The planner's Claude calls: /api/checkpoint-notes (one per
@@ -286,7 +286,7 @@ services:
       # The inbox's password, required once PUBLISH_ADDRESS opens it to
       # the network (the inner :? is read only then); none on loopback.
       MP_UI_AUTH: ${PUBLISH_ADDRESS:+${MAILPIT_UI_AUTH:?set MAILPIT_UI_AUTH=<user>:<password> in .env -- the inbox holds sign-in links}}
-      # The webapp always authenticates to its mail host
+      # The gateway always authenticates to its mail host
       # (application.yml): take whatever it sends, over the plain
       # connection, since nothing leaves this machine.
       MP_SMTP_AUTH_ACCEPT_ANY: "true"
@@ -309,13 +309,13 @@ services:
       MP_SMTP_RELAY_MATCHING: ${MAILPIT_RELAY_TO:-}
       MP_SMTP_RELAY_ALLOWED_RECIPIENTS: ${MAILPIT_RELAY_TO:-}
 
-  webapp:
+  gateway:
     restart: unless-stopped
-    # Context is the repo root: the image builds web/ and bakes the
+    # Context is the repo root: the image builds apps/web/ and bakes the
     # bundle into the jar, so this one service serves both.
     build:
       context: .
-      dockerfile: springboot-app/Dockerfile
+      dockerfile: services/gateway/Dockerfile
     # This machine only, like everything else here, unless
     # PUBLISH_ADDRESS (the top of this file) publishes these two on
     # every interface for a phone on the LAN, and the inbox behind a
@@ -327,17 +327,17 @@ services:
       # (see HttpsConnectorConfig); otherwise the port is simply closed.
       - "${PUBLISH_ADDRESS:-127.0.0.1}:8443:8443"
     volumes:
-      - webapp-cds:/cds
+      - gateway-cds:/cds
       - ./infra/local-https/certs:/certs:ro
-      # The bundle vite builds into web/dist, served in place of the
+      # The bundle vite builds into apps/web/dist, served in place of the
       # image's where WEB_DIST_MOUNT=/app/static/app (the web-dev
       # profile's web-build keeps it built); otherwise mounted aside,
-      # where the webapp never reads it.
-      - ./web/dist:${WEB_DIST_MOUNT:-/web-dist}:ro
+      # where the gateway never reads it.
+      - ./apps/web/dist:${WEB_DIST_MOUNT:-/web-dist}:ro
     depends_on:
       db:
         condition: service_healthy
-      planning-service:
+      planner:
         condition: service_healthy
       mailpit:
         condition: service_started
@@ -367,17 +367,17 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-wingtip}
       PLANNER_SERVICE_URL: http://planning-service:8000
       # Traces to Jaeger with TRACING=1, the planner's calls under the
-      # webapp's (see the jaeger service); off otherwise.
+      # gateway's (see the jaeger service); off otherwise.
       MANAGEMENT_TRACING_ENABLED: ${TRACING:-false}
       MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
       MANAGEMENT_OTLP_TRACING_ENDPOINT: http://jaeger:4318/v1/traces
       # Local start-up time, not a production setting. The class-data
-      # archive (kept on the webapp-cds volume, see the Dockerfile) lets
+      # archive (kept on the gateway-cds volume, see the Dockerfile) lets
       # a restart of the same jar skip the class loading and
       # verification it already did; C1-only JIT starts faster and
       # this proxy never runs hot enough locally to miss C2. The AWS
       # task definition sets neither.
-      JAVA_TOOL_OPTIONS: -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=/cds/webapp.jsa -XX:TieredStopAtLevel=1
+      JAVA_TOOL_OPTIONS: -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=/cds/gateway.jsa -XX:TieredStopAtLevel=1
       # Sign-in with Google/Apple, optional unlike ANTHROPIC_API_KEY
       # above: `docker compose up` must still work with none of these
       # set (the `oauth` Spring profile stays inactive and OIDC sign-in
@@ -403,15 +403,15 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD:-local}
       MAIL_FROM: ${MAIL_FROM:-no-reply@northflyers.com}
       # Where the emailed sign-in link points. Required once a mail host
-      # is set -- the webapp will not start without it -- because a link
+      # is set -- the gateway will not start without it -- because a link
       # built from the request's own Host header points wherever the
       # caller said. PHONE_BASE_URL points it at this Mac's LAN address
       # so the link opens on the phone, and is required once
-      # PUBLISH_ADDRESS publishes the webapp (the :? inside is read
+      # PUBLISH_ADDRESS publishes the gateway (the :? inside is read
       # only then).
       APP_PUBLIC_BASE_URL: ${PHONE_BASE_URL:-${PUBLISH_ADDRESS:+${PHONE_BASE_URL:?set PHONE_BASE_URL=https://<this Mac's LAN address>:8443 in .env}}${APP_PUBLIC_BASE_URL:-http://localhost:8080}}
       # Whose pilot is a developer: the address the e2e suite signs in
-      # as (web/e2e/auth.setup.ts), and whichever APP_DEVELOPER_EMAILS in
+      # as (apps/web/e2e/auth.setup.ts), and whichever APP_DEVELOPER_EMAILS in
       # .env adds -- yours, comma-separated.
       APP_DEVELOPER_EMAILS: developer@example.com,${APP_DEVELOPER_EMAILS:-}
       # The speed lab's token, for a lab run sent to this stack (SpeedController).
@@ -435,13 +435,13 @@ services:
       # the certificate infra/local-https/make-certs.sh writes, read
       # only once that file exists. HSTS off: this machine's plain port
       # must keep working after the HTTPS one has been used once.
-      # Opened with the webapp's default password, which is the one
+      # Opened with the gateway's default password, which is the one
       # make-certs.sh writes it with.
       APP_HTTPS_KEYSTORE: ${APP_HTTPS_KEYSTORE:-/certs/webapp.p12}
       APP_HSTS: "false"
 
-  # Front-end work without the image: vite in watch mode keeping web/dist
-  # built as the source changes, which the webapp serves where
+  # Front-end work without the image: vite in watch mode keeping apps/web/dist
+  # built as the source changes, which the gateway serves where
   # WEB_DIST_MOUNT=/app/static/app (above) -- read per request
   # (APP_STATIC_LOCATION, see WebMvcConfig), so a build is served the
   # moment vite has written it, no image, no restart. A saved file is
@@ -456,20 +456,20 @@ services:
     image: node:26-slim@sha256:5adad64f9a1fca2d51972caa65983634c8a774eb300d72b20f7f2a0f60368072
     working_dir: /w
     volumes:
-      - ./web:/w
+      - ./apps/web:/w
     # VITE_KEEP_OUTDIR (read by vite.config.ts): watch mode would
-    # otherwise clear the directory the webapp is serving from at every
+    # otherwise clear the directory the gateway is serving from at every
     # rebuild, and a page loading that instant would get nothing.
     environment:
       VITE_KEEP_OUTDIR: "1"
     command: ["npx", "--no-install", "vite", "build", "--watch", "--outDir", "dist"]
     restart: unless-stopped
 
-  # Traces of a request from the webapp down through the planner to every
+  # Traces of a request from the gateway down through the planner to every
   # source it asks (aviationweather.gov, the FAA, the USGS),
   # in Jaeger's UI on http://localhost:16686:
   #
-  #   TRACING=true docker compose --profile tracing up -d jaeger webapp planning-service
+  #   TRACING=true docker compose --profile tracing up -d jaeger gateway planner
   #
   # Without TRACING neither service sends a span.
   jaeger:
@@ -480,12 +480,12 @@ services:
     restart: unless-stopped
 
 networks:
-  # dev-services and planning-service only (see dev-services above).
+  # dev-services and planner only (see dev-services above).
   # Internal: nothing on it needs to reach outside the host.
   docker-control:
     internal: true
 
 volumes:
   pgdata_pg18:
-  # webapp's JVM class-data archive -- see JAVA_TOOL_OPTIONS on webapp.
-  webapp-cds:
+  # gateway's JVM class-data archive -- see JAVA_TOOL_OPTIONS on gateway.
+  gateway-cds:

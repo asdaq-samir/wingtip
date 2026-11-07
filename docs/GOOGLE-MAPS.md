@@ -43,6 +43,6 @@ How the Google overlay works:
    - On the server: `GOOGLE_MAPS_API_KEY` in the stack's AppSecret
      (`infra/server/env.example`), then run `deploy.sh`.
    - At home: `GOOGLE_MAPS_API_KEY=...` in `.env`, then
-     `docker compose up -d planning-service`.
+     `docker compose up -d planner`.
 
    The map's settings offer Google from the next page load.

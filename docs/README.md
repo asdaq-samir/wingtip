@@ -88,27 +88,27 @@ explicit path to production on AWS.
 
 Four layers, each with one job:
 
-- **The engine** ([`native/`](../native), Rust): every aviation rule and
+- **The engine** ([`engine/`](../engine), Rust): every aviation rule and
   figure, once. No network, no screen, no clock of its own. A facade,
-  `wingtip-engine`, over nine domain crates in `native/crates` (geo,
-  weather, figures, radio, pilot, brief, route, airspace, wording), each
-  of which may use only the ones under it. Each rule is a name in
-  `native/engine/src/call.rs`, JSON in and JSON out, and its input and
-  answer are typed in `native/contract/engine.schema.json`, from which
+  `wingtip-engine`, over ten domain crates in `engine/crates` (core,
+  flight, weather, procedures, radio, pilot, brief, route, airspace,
+  wording), each of which may use only the ones under it. Each rule is a
+  name in `engine/facade/src/call.rs`, JSON in and JSON out, and its
+  input and answer are typed in `engine/contract/engine.schema.json`, from which
   the web's and the phones' types are generated.
-- **The planner** (`planning-service` over `src/wingtip`, FastAPI):
+- **The planner** (`planner` over `services/planner/wingtip`, FastAPI):
   works out a flight. It fetches the FAA's and the weather's data, reads
   the chart and scores the checkpoints with the chart model in its own
   process, runs the AI features (the assistant, the written briefing) with the
   Anthropic SDK, and asks the engine every rule through
   `wingtip_native.call`.
-- **Spring Boot** (`springboot-app`, the `webapp` service): who the pilot
+- **Spring Boot** (`services/gateway`, the `gateway` service): who the pilot
   is and what they saved -- accounts, sign-in, aircraft, flights,
   logbook and endorsements, the public API, scheduled mail. It holds no
   aviation logic: where it needs a figure, such as currency for a
   reminder email, it asks the planner over HTTP (`PlannerClient`), and
   the planner asks the engine.
-- **The apps** (`web/`, `ios/`, `android/`): get the data, keep the
+- **The apps** (`apps/web/`, `apps/ios/`, `apps/android/`): get the data, keep the
   state and draw, with one view model per screen (a hook on the web, an
   observable model on the phones), and ask the engine the rest by name:
   the web through `callEngine` (the engine built to WebAssembly), the
@@ -120,7 +120,7 @@ give a pilot nothing, and Spring is good at identity and persistence;
 the aviation belongs in the engine, not in either server.
 
 That is the target. Some rules still live outside the engine -- about
-7,000 lines in `src/wingtip`, the currency and endorsement rules in the
+7,000 lines in `services/planner/wingtip`, the currency and endorsement rules in the
 Java, and some in the web and phone apps -- and issue #482 moves them
 in, in phases: copies the engine already has, small rules, weather parsing,
 altitude selection, the nav log, then route options.
@@ -129,11 +129,11 @@ The system runs today as six Docker services (`retrain` is the training image ru
 
 | Service | Role |
 |---|---|
-| `webapp` | Spring Boot — accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React app and proxies the planner |
+| `gateway` | Spring Boot — accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React app and proxies the planner |
 | `db` | PostgreSQL — application data |
 | `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and model training, run as one-off jobs; `retrain` is the whole training run (`python -m wingtip.pipeline run`) in the training image, the container the developer console's Retrain starts |
 | `ml` | Jupyter environment for model development and experimentation -- on demand, behind the `notebooks` profile: `docker compose up ml` |
-| `planning-service` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather, and the Claude features (the written briefing, checkpoint notes, words, the assistant) -- with the engine inside it for every rule |
+| `planner` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather, and the Claude features (the written briefing, checkpoint notes, words, the assistant) -- with the engine inside it for every rule |
 
 ![Current local architecture](architecture-current.svg)
 
@@ -189,27 +189,27 @@ for the tabular feature pipeline.
 
 ### Services in detail
 
-**`planning-service`** — chart vision, checkpoint selection, the nav log
+**`planner`** — chart vision, checkpoint selection, the nav log
 and the assistant; it asks the engine (`wingtip_native`) for the rules
 the engine holds, and #482 moves the rest of its Python rules there.
-Serves no pages: the front end lives in [`web/`](../web) and is built
-into `webapp`'s jar, which proxies here for every computation. Publishes no
-port on AWS either — it sits behind `webapp` in a private subnet, found by
-service discovery at `planning-service.wingtip.internal`.
+Serves no pages: the front end lives in [`apps/web/`](../apps/web) and is built
+into `gateway`'s jar, which proxies here for every computation. Publishes no
+port on AWS either — it sits behind `gateway` in a private subnet, found by
+service discovery at `planner.wingtip.internal`.
 
 - `/api/course`, `/api/checkpoints`, `/api/navlog`, `/api/detect/stream`,
   `/api/picks`, `/api/chart-tile/{kind}` — reached by the
-  browser as `/api/planner/*` on `webapp`, never directly. The tile
+  browser as `/api/planner/*` on `gateway`, never directly. The tile
   endpoint renders the FAA's own chart GeoTIFFs (`wingtip.charts`, one
   download per sheet per 56-day cycle into `data/raw/charts/`), so the
   map depends on no hosted chart service. Its own OpenAPI page is at
   [`localhost:8084/docs`](http://localhost:8084/docs); the full endpoint
-  list is in [`planning-service/README.md`](../planning-service/README.md)
+  list is in [`services/planner/README.md`](../services/planner/README.md)
 - `/api/overlay-tiles`, `/api/overlay-tiles/{name}.pmtiles` — the map's
   FAA overlays as vector tiles for MapLibre (`wingtip.vector_tiles`): one
   PMTiles archive a cycle, built after the cycle pack by tippecanoe (in
   the planner's image, a pinned tag) and read by the map in byte ranges
-  (the `pmtiles` protocol; `web/src/lib/map/overlayTiles.ts` registers it
+  (the `pmtiles` protocol; `apps/web/src/lib/map/overlayTiles.ts` registers it
   and makes the source; Android's and iOS's MapLibre read `pmtiles://`
   themselves). Zooms 4 to 12, lines within `tolerance_m` (4.1 m) of the
   FAA's, nothing dropped for size. A sample of the 29 Oct 2026 cycle,
@@ -235,7 +235,7 @@ service discovery at `planning-service.wingtip.internal`.
   told in plain prose by one streamed Claude call (the Anthropic SDK's
   `messages.stream`, model `NARRATIVE_MODEL`, Haiku by default), as
   newline-delimited JSON — `delta` lines as it is written, then `done`
-  or `error`. A paid feature: `webapp` checks the subscription and the
+  or `error`. A paid feature: `gateway` checks the subscription and the
   day's allowance before it forwards the call
 - `/api/assistant` — the pilot's assistant (`app/assistant.py`): a
   question about the flight in the pilot's own words, answered by Claude
@@ -245,10 +245,10 @@ service discovery at `planning-service.wingtip.internal`.
   and the model only chooses the tools and writes the words; streamed as
   newline-delimited JSON with the raw sources the answer rests on
 - `/api/words/{notams,weather,risk,debrief,changes}` — short readings in
-  words (`app/words.py`): each sentence cites the raw source it rests on
+  words (`app/ai_words.py`): each sentence cites the raw source it rests on
   by id (a METAR, a NOTAM, a finding), and a sentence with none is
   dropped; `changes` diffs two briefings first and asks the model only
-  where something moved, for `webapp`'s flight watch
+  where something moved, for `gateway`'s flight watch
   (`/api/flights/{id}/watch`: a saved flight re-briefed every half hour
   up to departure, what changed mailed to the pilot)
 - `/api/model-comparison` — the scikit-learn models the last retrain
@@ -295,12 +295,12 @@ service discovery at `planning-service.wingtip.internal`.
   one call, until 2026-11-06; scikit-learn and joblib are now pinned in
   the planner's requirements, exactly as the training image pins them
 
-**`springboot-app` (webapp)** — accounts, sign-in and the pilot's saved records, and the public API. No aviation logic: a figure it needs comes from the planner.
+**`services/gateway` (gateway)** — accounts, sign-in and the pilot's saved records, and the public API. No aviation logic: a figure it needs comes from the planner.
 
 - Schema owned by Flyway migrations; JPA's `ddl-auto` only validates against them
 - Actuator health probes at `/actuator/health/liveness` and `/actuator/health/readiness`
 - Bean Validation on request bodies (`AircraftRequest`, `SaveFlightRequest`) + a global exception handler turn a bad request into a clean `400`, a wrong method into `405` and a duplicate tail number into `409`, not an opaque `500`
-- Never scores anything itself: scoring belongs to `planning-service`, which it proxies (`/api/planner/*`). Reads through that proxy are public; writes (checkpoint notes, corridor builds) need a session as soon as the deployment offers a way to sign in (OIDC credentials or a mail host), and the developer's work (picks, a retrain, a chart refresh, the stack's status and services) needs the developer role as well. All of it stays open locally where neither is set
+- Never scores anything itself: scoring belongs to `planner`, which it proxies (`/api/planner/*`). Reads through that proxy are public; writes (checkpoint notes, corridor builds) need a session as soon as the deployment offers a way to sign in (OIDC credentials or a mail host), and the developer's work (picks, a retrain, a chart refresh, the stack's status and services) needs the developer role as well. All of it stays open locally where neither is set
 - Sign-in with Google or Apple (OIDC), or a passwordless email magic
   link — OIDC is inactive by default; activate with the `oauth` Spring
   profile once `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` or all four
@@ -316,7 +316,7 @@ service discovery at `planning-service.wingtip.internal`.
 
 ### Database & migrations
 
-The webapp owns the `db` Postgres container's `public` schema, managed by
+The gateway owns the `db` Postgres container's `public` schema, managed by
 Flyway's versioned SQL migrations rather than an ORM auto-generating
 schema from code. A database made before 2026-11-06 also holds a
 `nav_log_agent` schema (`route_briefings`, `schema_migrations`): the
@@ -367,15 +367,15 @@ erDiagram
     }
 ```
 
-- **`webapp`** (`pilots`/`aircraft`/`flights`/`flight_checkpoints`)
+- **`gateway`** (`pilots`/`aircraft`/`flights`/`flight_checkpoints`)
   — Flyway. One pilot's own data, populated once they sign in (see
   [Services in detail](#services-in-detail)) — `aircraft_id` on
   `flights` is nullable and `ON DELETE SET NULL` rather than `CASCADE`,
   since a flown flight is a record that must survive selling the
   aeroplane. Scored corridors are not persisted here at all: they come
-  from `planning-service` on demand and are the same for everyone. Add
+  from `planner` on demand and are the same for everyone. Add
   a migration as
-  `springboot-app/src/main/resources/db/migration/V<N>__description.sql`
+  `services/gateway/src/main/resources/db/migration/V<N>__description.sql`
   and it runs automatically on next startup. `ddl-auto` is `validate`, so
   drift between the JPA entities and the actual schema fails loudly at
   startup instead of silently altering a table.
@@ -391,7 +391,7 @@ $29 a month) and the runbook.
 
 | Local component | AWS target |
 |---|---|
-| `webapp`, `planning-service` | One EC2 server (`docker-compose.prod.yml`), behind Caddy and CloudFront |
+| `gateway`, `planner` | One EC2 server (`infra/docker-compose.prod.yml`), behind Caddy and CloudFront |
 | `db` | Postgres on the same server, dumped to S3 nightly |
 | Chart tiles | A Fargate Spot task per 56-day cycle, published to S3, served by CloudFront |
 | Mailpit | Amazon SES |
@@ -480,17 +480,25 @@ Nothing else to install natively; every service builds its own image.
 **Repository layout:**
 
 ```
-data/             raw/processed/labels/aircraft/models — see Appendix for detail
-notebooks/        numbered, run-in-order exploratory notebooks (01-08)
-src/wingtip/          shared Python package — pipeline.py, model_registry.py, navlog.py, altitude.py, etc.
-docker/           Dockerfiles + requirements for ml / pipeline-processing / pipeline-training,
-                  and Dockerfile.base, the Python base (wingtip's requirements and its
-                  Rust extension) every image that imports wingtip is built FROM
-                  (each including wingtip's own list, src/requirements.txt)
-springboot-app/   Spring Boot API (webapp) — routes, DB, proxies planning-service
-infra/            CloudFormation template and the production server's files
-tests/            pytest suite for src/wingtip
-docs/             this file, README-AWS.md, LEARNING-GUIDE.md, architecture diagrams
+apps/web/              the web app (React, TypeScript, MapLibre)
+apps/ios/              the native iOS app (SwiftUI)
+apps/android/          the native Android app (Kotlin, Compose)
+engine/                the shared Rust engine: facade/, crates/, contract/, bindings/{py,ffi,wasm}
+services/planner/      the planner: app/ (FastAPI), wingtip/ (the shared Python package --
+                       pipeline.py, model_registry.py, navlog.py, altitude.py, etc.),
+                       tests/ and tests_wingtip/ (their suites), its Dockerfile and requirements
+services/gateway/      Spring Boot API (gateway) — accounts, records, proxies the planner
+services/Dockerfile.base
+                       the Python base (wingtip's requirements and its Rust extension)
+                       every image that imports wingtip is built FROM
+ml/                    notebooks/ (numbered, run-in-order, 01-08) and the images of ml,
+                       pipeline-processing and pipeline-training with their requirements
+                       (each including wingtip's own list, services/planner/requirements-wingtip.txt)
+infra/                 CloudFormation, the production server's files and compose file,
+                       CI's compose file, local HTTPS, the rehearsal, dev-services, load-tests
+scripts/               build/, ci/, dev/
+data/                  raw/processed/labels/aircraft/models — see Appendix for detail
+docs/                  this file, README-AWS.md, LEARNING-GUIDE.md, architecture diagrams
 ```
 
 **Running the stack:** each service is a `docker-compose.yml` entry —
@@ -498,21 +506,21 @@ bring up only what you need. Full command reference is in the
 [Appendix](#appendix); the essentials:
 
 ```bash
-docker compose up webapp                           # UI + API at :8080; brings up db, planning-service
+docker compose up gateway                           # UI + API at :8080; brings up db, planner
 docker compose up ml                               # Jupyter at :8888 (token "wingtip")
 ```
 
-**On a phone, on the same Wi-Fi:** the webapp's ports are on this
+**On a phone, on the same Wi-Fi:** the gateway's ports are on this
 machine's loopback by default, because with no sign-in configured every
 planner write is open to whoever can reach them. `PUBLISH_ADDRESS=0.0.0.0`
-in `.env` publishes webapp (and the sign-in inbox, behind
+in `.env` publishes gateway (and the sign-in inbox, behind
 `MAILPIT_UI_AUTH`'s password) on every interface, for as long as you are
 testing on a network you trust; `PHONE_BASE_URL` points the emailed
 sign-in link at the phone's address, and compose refuses to start
 without either once the ports are open. `http://<your Mac's address>:8080/app/plan`
 then works for planning, but the two things a pilot wants in the air --
 their own position on the chart, and the route's charts with no
-connection -- the browser grants only to a secure origin. So the webapp
+connection -- the browser grants only to a secure origin. So the gateway
 also listens on HTTPS once it has a certificate:
 
 ```bash
@@ -521,7 +529,7 @@ cat >> .env <<'EOF'
 PUBLISH_ADDRESS=0.0.0.0
 PHONE_BASE_URL=https://192.168.1.42:8443
 MAILPIT_UI_AUTH=<user>:<password>
-# and, for front-end work, web/dist served as vite rebuilds it:
+# and, for front-end work, apps/web/dist served as vite rebuilds it:
 COMPOSE_PROFILES=web-dev
 WEB_DIST_MOUNT=/app/static/app
 EOF
@@ -561,32 +569,32 @@ stack. Anything not listed here does not exist.
 
 | What | URL | Needs |
 |---|---|---|
-| **Route planner** — the map with the flight planning drawer beside it: the nav log, walked with the arrow keys or a click, and under it the FAA-sequence briefing with its written briefing (Claude, streamed) and Print. Also the app's homepage, bare `/app` redirects here | [`localhost:8080/app/plan`](http://localhost:8080/app/plan) | `webapp` + `planning-service` |
-| **Dev** — the developer's page: the labeling page above, with the developer's console (model registry and retrain, corridors and their labels, service and data status) in a drawer over the chart. `/app/label` and `/app/settings` redirect to Dev and Plan | [`localhost:8080/app/dev`](http://localhost:8080/app/dev) | `webapp` + `planning-service` |
-| Spring Boot API docs | [`localhost:8080/swagger-ui/index.html`](http://localhost:8080/swagger-ui/index.html) | `webapp` |
-| Spring Boot OpenAPI spec | [`localhost:8080/v3/api-docs`](http://localhost:8080/v3/api-docs) | `webapp` |
-| Health / readiness | [`localhost:8080/actuator/health`](http://localhost:8080/actuator/health) | `webapp` |
-| Planning + chart-vision API docs | [`localhost:8084/docs`](http://localhost:8084/docs) | `planning-service` |
+| **Route planner** — the map with the flight planning drawer beside it: the nav log, walked with the arrow keys or a click, and under it the FAA-sequence briefing with its written briefing (Claude, streamed) and Print. Also the app's homepage, bare `/app` redirects here | [`localhost:8080/app/plan`](http://localhost:8080/app/plan) | `gateway` + `planner` |
+| **Dev** — the developer's page: the labeling page above, with the developer's console (model registry and retrain, corridors and their labels, service and data status) in a drawer over the chart. `/app/label` and `/app/settings` redirect to Dev and Plan | [`localhost:8080/app/dev`](http://localhost:8080/app/dev) | `gateway` + `planner` |
+| Spring Boot API docs | [`localhost:8080/swagger-ui/index.html`](http://localhost:8080/swagger-ui/index.html) | `gateway` |
+| Spring Boot OpenAPI spec | [`localhost:8080/v3/api-docs`](http://localhost:8080/v3/api-docs) | `gateway` |
+| Health / readiness | [`localhost:8080/actuator/health`](http://localhost:8080/actuator/health) | `gateway` |
+| Planning + chart-vision API docs | [`localhost:8084/docs`](http://localhost:8084/docs) | `planner` |
 | Jupyter | [`localhost:8888`](http://localhost:8888) (token `wingtip`) | `ml` |
 
-All three pages are served by `webapp`, not by `planning-service`: the
-React app in [`web/`](../web) is built into the Spring Boot jar, and the
-browser reaches the Python service only through `webapp`'s
-`/api/planner/*` proxy. `docker compose up webapp` starts
-`planning-service` with it. Hitting port 8084 directly works and is
+All three pages are served by `gateway`, not by `planner`: the
+React app in [`apps/web/`](../apps/web) is built into the Spring Boot jar, and the
+browser reaches the Python service only through `gateway`'s
+`/api/planner/*` proxy. `docker compose up gateway` starts
+`planner` with it. Hitting port 8084 directly works and is
 useful when debugging, but nothing in the front end does it.
 
 A request crosses three services, each with one job, and the engine
 answers the rules on either side:
 
 ```
-browser (web/)   the map, the keyboard, the rows; asks the engine (WebAssembly) for what it draws
-  -> webapp        :8080  serves the page, proxies /api/planner/*, owns auth and the database
-  -> planning-service    :8084  reads sectional tiles, scores them with the chart model, checkpoint selection, nav log; asks the engine every rule
+browser (apps/web/)   the map, the keyboard, the rows; asks the engine (WebAssembly) for what it draws
+  -> gateway        :8080  serves the page, proxies /api/planner/*, owns auth and the database
+  -> planner    :8084  reads sectional tiles, scores them with the chart model, checkpoint selection, nav log; asks the engine every rule
   -> db            :5432  pilots, flights
 ```
 
-Despite its name, `planning-service` serves no pages; see [Services in detail](#services-in-detail).
+Despite its name, `planner` serves no pages; see [Services in detail](#services-in-detail).
 
 ### Notebooks
 
@@ -602,27 +610,27 @@ compose up ml`. Full per-notebook breakdown is in the
 ### Testing & CI
 
 ```bash
-# Python (src/wingtip). The pipeline images carry no test tooling -- this
-# runs what CI runs, from requirements-dev.txt.
+# Python (services/planner/wingtip). The pipeline images carry no test tooling -- this
+# runs what CI runs, from requirements-dev-wingtip.txt.
 # libexpat1 is the one system library rasterio's wheel needs that the
 # slim image leaves out.
-docker run --rm -v "$PWD":/w -w /w -e PYTHONPATH=/w/src python:3.14-slim \
-  sh -c "apt-get update -qq && apt-get install -y -qq libexpat1 && pip install -q -r requirements-dev.txt && ruff check src/wingtip tests && pytest tests/ -q"
+docker run --rm -v "$PWD":/w -w /w/services/planner python:3.14-slim \
+  sh -c "apt-get update -qq && apt-get install -y -qq libexpat1 && pip install -q -r requirements-dev-wingtip.txt && ruff check wingtip tests_wingtip && pytest tests_wingtip/ -q"
 
-# planning-service (its own FastAPI-layer suite, separate from the one
+# planner (its own FastAPI-layer suite, separate from the one
 # above since it needs the service's own requirements on top of pytest)
-docker run --rm -v "$PWD":/w -w /w/planning-service python:3.14-slim \
+docker run --rm -v "$PWD":/w -w /w/services/planner python:3.14-slim \
   sh -c "pip install -q -r requirements-dev.txt && ruff check app tests && pytest tests/ -q"
 
-# Web front end (web/): typecheck plus unit tests. No browser needed:
+# Web front end (apps/web/): typecheck plus unit tests. No browser needed:
 # the filters, ordering, rating and nav-log rules are pure functions.
-docker run --rm -v "$PWD":/w -w /w/web node:26-slim \
+docker run --rm -v "$PWD":/w -w /w/apps/web node:26-slim \
   sh -c "npm ci && npm run types && npx tsc --noEmit && npx vitest run"
 
-# Java (webapp). No native Maven needed, matching the rest of this
+# Java (gateway). No native Maven needed, matching the rest of this
 # project; the Docker socket is mounted through so Testcontainers can
 # start its Postgres as a sibling container.
-docker run --rm -v "$PWD/springboot-app":/build -w /build \
+docker run --rm -v "$PWD/services/gateway":/build -w /build \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --add-host=host.docker.internal:host-gateway \
   -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
@@ -634,21 +642,21 @@ local Docker daemon, so it needs none of the socket/host plumbing above.)
 
 Four suites, split by what each can actually prove:
 
-- **`tests/`** (pytest) — the pure-logic parts of `src/wingtip`: geo math,
+- **`services/planner/tests_wingtip/`** (pytest) — the pure-logic parts of `services/planner/wingtip`: geo math,
   engineered features, dead-reckoning, the model registry, the
   remote-URI guards, plus (mocked, no live network) `wingtip.weather`'s
   METAR parsing and `wingtip.airports`' runway/frequency lookups.
-- **`planning-service/tests/`** (pytest, its own suite) — the HTTP
+- **`services/planner/tests/`** (pytest, its own suite) — the HTTP
   contract for the endpoints with no coverage anywhere else
   (`/api/model-comparison`, `/api/checkpoints`' error translation):
   status codes, response shape, and that a `WeatherServiceError`
   anywhere underneath reaches the caller as a clean `502`, not a raw
   `500`; plus that the committed `openapi.json`
-  (which `web/` generates its API types from) matches the app, and the
+  (which `apps/web/` generates its API types from) matches the app, and the
   chart model's scores and the reload of a newly promoted model against
   real joblib files in a temporary directory.
-- **`springboot-app/src/test/`** (JUnit) — that the committed
-  `springboot-app/openapi.json`, which `web/` generates its types for
+- **`services/gateway/src/test/`** (JUnit) — that the committed
+  `services/gateway/openapi.json`, which `apps/web/` generates its types for
   this app's endpoints from, is the document the app serves
   (`OpenApiDocumentTest`; regenerate with `WRITE_OPENAPI=1`); the HTTP contract via
   `@WebMvcTest` (validation `400`s, `405` for a wrong method, the `409`
@@ -675,14 +683,14 @@ CI job breakdown is in the [Appendix](#appendix).
 | Command | What it does | Port |
 |---|---|---|
 | `docker compose up db` | PostgreSQL | `5432` |
-| `docker compose up webapp` | Spring Boot API and the three browser pages; brings up `db` and `planning-service` too | `8080` |
+| `docker compose up gateway` | Spring Boot API and the three browser pages; brings up `db` and `planner` too | `8080` |
 | `docker compose up ml` | Jupyter, for notebooks 01-03 and 08 | `8888` (token `wingtip`) |
 | `docker compose run --rm pipeline-processing collect` | Runs `pipeline.collect()`: downloads a corridor's candidates once, and again only with `--refresh` | — |
 | `docker compose run --rm pipeline-processing engineer-features` | Runs `pipeline.engineer_features()` | — |
 | `docker compose run --rm pipeline-training retrain` | Runs `pipeline.retrain()` | — |
 | `docker compose run --rm pipeline-training python -m wingtip.model_registry evaluate` | Runs `evaluate`/`promote` | — |
 | `docker compose run --rm pipeline-training run` | The whole training run, every stage in order (`pipeline.run()`); each model promoted only if it beats the one serving. The console's Retrain starts the same thing as the `retrain` container (`docker compose create retrain` once) | — |
-| `docker compose up planning-service` | Planning + chart-vision API; `webapp` proxies to it and starts it | `8084` |
+| `docker compose up planner` | Planning + chart-vision API; `gateway` proxies to it and starts it | `8084` |
 
 Notes:
 
@@ -695,9 +703,9 @@ Notes:
   `data/models/run.json`, which the planner reads, beside the `retrain`
   container's state from the dev-services sidecar, for the console's
   Training group. One run at a time: a second waits on the first's lock.
-- Full port list: `webapp` 8080, `db` 5432
+- Full port list: `gateway` 8080, `db` 5432
   (`wingtip`/`wingtip`/`wingtip`),
-  `planning-service` 8084, `ml` 8888. Addresses are in
+  `planner` 8084, `ml` 8888. Addresses are in
   [Where things live](#where-things-live).
 
 ### Repository layout, in full
@@ -737,15 +745,15 @@ empty commit:
 
 | Job | What it does |
 |---|---|
-| `test` | ruff + pytest over `src/wingtip` |
+| `test` | ruff + pytest over `services/planner/wingtip` |
 | `changes` | A path filter (`dorny/paths-filter`) telling both `build-images` and `docs` which service images a change could have touched. Runs on pull requests (where `build-images` uses it to build only the touched images) and on pushes to `main` (where `build-images` ignores it on purpose — main's images stay fully in sync with every dependency bump — but `docs` uses it to skip the three heavy `pdoc` steps below when nothing they document changed). |
-| `test-web` | `tsc --noEmit`, `vitest` and a production build over `web/` — filters, ordering, what counts as rated, and which leg leaves a checkpoint, all pure functions needing no browser |
-| `test-webapp` | `mvn test` — webapp's JUnit suite, including the Testcontainers Postgres test |
-| `e2e` | The browser suite (`web/e2e`, Playwright) against the stack a pilot uses — the webapp and the planner built from the commit, Postgres and Mailpit — under `docker-compose.ci.yml`, with the planner's reference data (about a gigabyte it fetches for itself) kept in the Actions cache between runs. Run on every push, and on a pull request that touches anything the stack is built from. Its images and the page are built once for each content key by `build (e2e)` and pulled by all eight shards, on a push and on a pull request from one of this repository's branches; only a fork's or Dependabot's pull request, whose token cannot push, has each shard build its own. |
-| `test-planning-service` | ruff + pytest over `planning-service/tests/` — its own dependency set (`planning-service/requirements-dev.txt`), separate from `test`'s unrelated `src/wingtip` ones |
+| `test-web` | `tsc --noEmit`, `vitest` and a production build over `apps/web/` — filters, ordering, what counts as rated, and which leg leaves a checkpoint, all pure functions needing no browser |
+| `test-gateway` | `mvn test` — gateway's JUnit suite, including the Testcontainers Postgres test |
+| `e2e` | The browser suite (`apps/web/e2e`, Playwright) against the stack a pilot uses — the gateway and the planner built from the commit, Postgres and Mailpit — under `infra/docker-compose.ci.yml`, with the planner's reference data (about a gigabyte it fetches for itself) kept in the Actions cache between runs. Run on every push, and on a pull request that touches anything the stack is built from. Its images and the page are built once for each content key by `build (e2e)` and pulled by all eight shards, on a push and on a pull request from one of this repository's branches; only a fork's or Dependabot's pull request, whose token cannot push, has each shard build its own. |
+| `test-planner` | ruff + pytest over `services/planner/tests/` — its own dependency set (`services/planner/requirements-dev.txt`), separate from `test`'s unrelated `services/planner/wingtip` ones |
 | `docs` | Regenerates Javadoc + godoc on every push/PR. wingtip's `pdoc` is made by the `test` job from the packages its tests have just installed, and uploaded as `pdoc-wingtip`. Output uploads as a `documentation` artifact. |
 | `build-images` | Builds every service Dockerfile, publishes each to GHCR on push to `main`. Every Python image's last build step imports that service's own code and the packages it imports lazily (`import app.main, rasterio.vrt, …`, `import wingtip.pipeline, …`), so a missing dependency fails the build -- here and in a local `docker compose build` alike -- the check that would have caught 2026-09-22's missing `pyproj` in four images |
-| `push-ecr` | Copies the two images the CloudFormation stack deploys (`webapp`, `planning-service`) from GHCR to ECR as `sha-<commit>` and `latest` via OIDC, the images CI tested rather than a rebuild, in the `production` environment the deploy role trusts; activates automatically once `AWS_ROLE_ARN`/`AWS_REGION` repo variables exist |
+| `push-ecr` | Copies the two images the CloudFormation stack deploys (`gateway`, `planner`) from GHCR to ECR as `sha-<commit>` and `latest` via OIDC, the images CI tested rather than a rebuild, in the `production` environment the deploy role trusts; activates automatically once `AWS_ROLE_ARN`/`AWS_REGION` repo variables exist |
 
 `build-images` gates on the test jobs, so a failing test never produces a
 published image. A cold run (every cache empty, every path filter
@@ -759,7 +767,7 @@ Non-obvious things worth knowing up front:
 - **`Path("s3://bucket/x")` silently collapses to `"s3:/bucket/x"`**
   under `pathlib` normalization. Code rejecting a remote URI must check
   the raw string for `"://"` *before* wrapping it in `Path(...)`. See
-  `_reject_remote_uri()` in `src/wingtip/model_registry.py`, which `src/wingtip/pipeline.py` uses too.
+  `_reject_remote_uri()` in `services/planner/wingtip/model_registry.py`, which `services/planner/wingtip/pipeline.py` uses too.
 - **`docker compose up <service>` reuses a stale container** if the image
   was rebuilt but the container wasn't recreated. Use
   `docker compose up -d --force-recreate <service>`.
@@ -773,10 +781,10 @@ Non-obvious things worth knowing up front:
   `~/Documents`) accumulates conflict copies**, named `<file> 2.<ext>`
   or `<file> 3.<ext>` beside the original, whenever two processes (or a
   disk-full write racing a sync) touch the same file. Seen for real in
-  `springboot-app/target` (breaks Flyway's migration versioning),
+  `services/gateway/target` (breaks Flyway's migration versioning),
   `data/raw` (an airport CSV, and once the whole pickled Class B
   airspace cache — the real filename ends up absent, the conflict copy
-  holds the actual data), and `web/src` (a stale duplicate of a
+  holds the actual data), and `apps/web/src` (a stale duplicate of a
   component, imported by nothing, silently out of date). None of them
   are a code problem; deleting the conflict copy and, for a derived
   cache, letting the code regenerate the real file is always the fix.

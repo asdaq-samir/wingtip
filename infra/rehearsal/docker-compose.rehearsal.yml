@@ -1,5 +1,5 @@
 # The production stack, rehearsed on this machine before anything goes to
-# AWS: docker-compose.prod.yml as the server runs it -- the images CI
+# AWS: infra/docker-compose.prod.yml as the server runs it -- the images CI
 # would push, no source mounted, Caddy demanding CloudFront's secret
 # header -- with stand-ins for the three things only AWS has:
 #
@@ -31,13 +31,13 @@ services:
     volumes: !override
       - postgres:/var/lib/postgresql
 
-  planning-service:
+  planner:
     logging: !override { driver: json-file, options: { max-size: "20m", max-file: "5" } }
     volumes: !override
       - ${REHEARSAL_DIR:?}/data:/workspace/data
-      - ./data/aircraft:/workspace/data/aircraft:ro
+      - ../data/aircraft:/workspace/data/aircraft:ro
 
-  webapp:
+  gateway:
     logging: !override { driver: json-file, options: { max-size: "20m", max-file: "5" } }
     environment:
       # The browser suite signs in and asks for notes more often in a run
@@ -56,7 +56,7 @@ services:
       ORIGIN_HOST: ${ORIGIN_HOST}
       ORIGIN_SECRET: ${ORIGIN_SECRET:?}
     volumes:
-      - ./infra/rehearsal/Caddyfile.cdn:/etc/caddy/Caddyfile:ro
+      - ./rehearsal/Caddyfile.cdn:/etc/caddy/Caddyfile:ro
       - ${TILES_DIR:?}:/srv/tiles:ro
       - cdn-data:/data
     depends_on: [caddy]

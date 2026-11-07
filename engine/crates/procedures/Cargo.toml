@@ -1,0 +1,15 @@
+[package]
+name = "wingtip-procedures"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "The four pilot pages' figures and their words: the debrief, the diversion drill, a hold and lost communications"
+
+[lib]
+name = "wingtip_procedures"
+
+# Only the engine's own crates, below this one (engine/README.md):
+# plain Rust, so the phones carry it as it is.
+[dependencies]
+wingtip-core = { path = "../core" }
+wingtip-flight = { path = "../flight" }

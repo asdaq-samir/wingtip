@@ -1,0 +1,419 @@
+import { useEffect, useMemo, useState } from "react";
+import { experimental_streamedQuery as streamedQuery, keepPreviousData, useQuery } from "@tanstack/react-query";
+import { ApiError, api, describeError } from "../../../lib/api/client";
+import { checkpointsQuery, courseQuery } from "../../../lib/queryClient";
+import { identOf, routeOf } from "../../../lib/identSchema";
+import { ended, inBatches } from "../../../lib/api/streams";
+import type {
+  AircraftChoice, AltitudeChoice, Briefing, Candidate, Detour, Leg, NavLogAltitude, NavLogMessage, Totals,
+} from "../../../lib/api/types";
+import type { FlightRules } from "../../../lib/preferences";
+import { useCheckpointNotes } from "./useCheckpointNotes";
+import { useNarrative } from "./useNarrative";
+import { briefingLegs } from "./briefingLegs";
+
+/**
+ * The plan as TanStack Query sees it: one query per stage, keyed on
+ * what that stage depends on, so a change re-runs exactly the stages
+ * it touches and nothing else. The course and its scored checkpoints
+ * are chart-reading and a model inference over a fixed corridor --
+ * the same answer today as an hour ago -- and are kept for the
+ * session; the nav log is live winds and streams in leg by leg, keyed
+ * on the airplane, the altitude and the departure time as well. The
+ * briefing, the checkpoint descriptions and the narrative are
+ * asked for when a pilot opens or clicks for them. Every failure is
+ * the query client's to report (queryClient.ts). A route had first to
+ * be collected, which the page offered; its checkpoints come off the
+ * chart now, for any route it covers.
+ *
+ * Checkpoint notes and the narrative are hooks of their own
+ * (useCheckpointNotes, useNarrative),
+ * which this one composes into the page's one plan: each changes for
+ * its own reasons, and this file used to change for all of them.
+ */
+
+/** No plan has a legal altitude: the planner's headline (where along the
+ *  route), its reasons, and what to do (app.planning.no_altitude). */
+export interface Unflyable {
+  title: string;
+  /** All of it in a few words, for the one line under the route. */
+  brief: string;
+  reasons: string[];
+  advice: string | null;
+  /** Class B airspace is what stops it: a clearance, or a waypoint to
+   *  fly via -- `detours`, the ones round it, best first -- are the ways on. */
+  classB: boolean;
+  detours: Detour[];
+}
+
+export interface PlanParams {
+  dep: string;
+  dest: string;
+  /** The airports landed at on the way, in order: [] for a route flown
+   *  straight. */
+  stops: string[];
+  /** The pilot's own cruise altitude, or "" for the planner's plan. */
+  altitudeFt: string;
+  /** `altitudeFt` was picked on the altitude wheel: each leg flown at its
+   *  nearest legal altitude, as the wheel's figures were (AltitudeProfile). */
+  altitudeNearest?: boolean;
+  altitudeChoice: AltitudeChoice;
+  /** The departure time as an ISO instant, or "" for about now. */
+  depart: string;
+  aircraft: AircraftChoice;
+  /** Load pressed again for the same route: a fresh nav log, fresh winds. */
+  load: number;
+  /** The pilot will have a Class B clearance: planned through it. */
+  classBClearance?: boolean;
+  /** Points' own altitudes, as the address has them ("VPBNG:4500,KMSN:1900"):
+   *  a waypoint's flown to it, an airport's its pattern (RouteBox). */
+  altitudes?: string;
+  /** The procedures picked at the route's fields ("KDLH:I09:ANDOE,
+   *  KORD:BENKY6:BYLAW"): a leg flown by them is the longer by their path,
+   *  and a flight landing by an approach comes down to its first fix's
+   *  altitude. */
+  procedures?: string;
+  /** The runway each departure picked is left from ("KSTL:30R"), its
+   *  runway transition the one flown. */
+  runways?: string;
+  /** The runway each field is landed on ("KUGN:5"): with no approach
+   *  there, the leg in is flown by its traffic pattern. */
+  patterns?: string;
+  /** Altitudes given to cross the procedures' fixes at ("BXCMB:3000"),
+   *  each in place of the chart's there. */
+  crossings?: string;
+  /** Minutes on the ground at the stops ("KJVL:45"); one not named, the
+   *  planner's 30. */
+  ground?: string;
+  /** The pilot's holds ("VPBNG:270:R:1M:2T", lib/routeHolds). */
+  holds?: string;
+  /** Checkpoints between the route's points, as the map shows them (the
+   *  settings' Waypoints): without, the nav log runs point to point and
+   *  none are asked for. */
+  checkpoints?: boolean;
+  /** A local flight's time aloft, in minutes (one airport to itself). */
+  localMin?: number;
+  /** The flight rules it is planned under: IFR's minimum altitudes,
+   *  thousands and reserve, or VFR's (the default). */
+  rules?: FlightRules;
+  /** Under IFR, the alternate filed (its fuel in the totals). */
+  alternate?: string;
+}
+
+/** Where the route's briefing stands -- one value, read by the map's
+ *  airport chips and the drawer alike. It used to be three (the data,
+ *  the error, whether it was loading), which each reader combined its
+ *  own way: after a failed five-minute refresh the map greyed the two
+ *  airports out as unavailable while the drawer showed the same METARs
+ *  as current with nothing to say the refresh had failed. Now both show
+ *  the last briefing, with when it was fetched and that a refresh
+ *  failed. "waiting" is a briefing with no course yet to ask about --
+ *  it read "Loading…" for ever when the course failed. */
+export type BriefingState =
+  | { state: "waiting" }
+  | { state: "loading" }
+  | { state: "ready"; data: Briefing; fetchedAt: number; refreshError: string | null }
+  | { state: "failed"; detail: string };
+
+/** How long the checkpoints' nav log may go without legs before the
+ *  route as entered is asked for beside it: longer than a planned route
+ *  takes to answer (0.1 s), much shorter than a new one's chart read (3
+ *  to 6 s) -- which no longer slows the planner's other answers, being
+ *  read in a process of its own (app.chart_model). */
+const AS_ENTERED_AFTER_MS = 600;
+
+/** How long the nav log's legs hold before the briefing is asked for with
+ *  them: the ETE and the legs come a render or two apart. */
+const BRIEF_SETTLE_MS = 250;
+
+// No checkpoints, one array for good: a new [] at every render was a new
+// list to everything drawn from it, the nav log's rows and its profile
+// chart drawn again at every render of the page.
+const NONE: Candidate[] = [];
+
+/** Where the runways left from are in a plan's key (planKeyOf). */
+const PLAN_KEY_RUNWAYS = 21;
+
+/** Everything the nav log is computed from -- the narrative is keyed
+ *  on the same, so a narrative is always about the log on screen. */
+function planKeyOf(
+  { dep, dest, stops, altitudeFt, altitudeChoice, depart, aircraft, load, classBClearance = false, altitudes = "", checkpoints = true,
+    rules = "vfr", alternate = "", procedures = "", runways = "", crossings = "", ground = "", holds = "", altitudeNearest = false, patterns = "" }: PlanParams,
+) {
+  return [
+    dep, dest, stops.join(","), altitudeFt, altitudeChoice, depart, load, classBClearance, altitudes, checkpoints,
+    aircraft.profile, aircraft.cruiseTasKt ?? null, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null,
+    aircraft.climbTasKt ?? null, aircraft.climbFuelBurnGph ?? null, aircraft.cruisePowerPct ?? null, aircraft.serviceCeilingFt ?? null, rules,
+    rules === "ifr" ? alternate : "", procedures, runways, crossings, ground, holds, altitudeNearest, patterns,
+  ];
+}
+
+/** A plan's nav log, with its checkpoints or point to point: the page's
+ *  own (usePlan), and Fly Here's, asked for at the tap before the page
+ *  has drawn the route (PlanWorkspace). */
+export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = false) {
+  const {
+    dep, dest, stops, altitudeFt, altitudeChoice, depart, aircraft, classBClearance = false, altitudes = "", rules = "vfr", alternate = "",
+    procedures = "", runways = "", crossings = "", ground = "", holds = "", altitudeNearest = false, patterns = "",
+  } = plan;
+  const planKey = planKeyOf(plan);
+  return {
+    // The same key as the checkpoints' with them off, so the route as
+    // entered and a plan with Waypoints off are one answer.
+    // Asked for ahead of the pilot (`ahead`), a key of its own: a pilot's
+    // own ask is never the low-priority one already on its way.
+    queryKey: [ahead ? "navlog-ahead" : "navlog", ...planKey.slice(0, 9), checkpointsToo, ...planKey.slice(10)],
+    // In batches (inBatches): one render for the lines that come together.
+    queryFn: streamedQuery({
+      streamFn: ({ signal }: { signal: AbortSignal }) => inBatches(ended(
+        api.navlog(dep, dest, altitudeFt || undefined, aircraft, altitudeChoice, depart || undefined, signal, stops, classBClearance, altitudes, checkpointsToo,
+          rules, alternate, procedures, crossings, ground, holds, altitudeNearest, runways, patterns, ahead),
+        "nav log",
+      )),
+      reducer: (lines: NavLogMessage[], batch: NavLogMessage[]) => [...lines, ...batch],
+      initialValue: [] as NavLogMessage[],
+    }),
+    staleTime: Infinity,
+    // No legal altitude is the page's to say, with what can be done about
+    // it (PlanWorkspace): not the query client's plain toast.
+    meta: { silent: (error: unknown) => error instanceof ApiError && error.advice !== null },
+  };
+}
+
+export function usePlan(
+  {
+    dep, dest, stops, altitudeFt, altitudeChoice, depart, aircraft, load, classBClearance = false, altitudes = "",
+    checkpoints: withCheckpoints = true, localMin = 60, rules = "vfr", alternate = "", procedures = "", runways = "", crossings = "", ground = "", holds = "",
+    altitudeNearest = false, patterns = "",
+  }: PlanParams,
+) {
+  const routeKnown = routeOf(dep, dest, stops) !== null;
+  // An airport to itself with no stop between: a local flight -- the
+  // pattern, practice approaches. No course or legs to plan; the field's
+  // briefing, and the time aloft with its fuel check (localFlight). It
+  // was refused, the page asking for two different airports.
+  const local = !!identOf(dep) && dep === dest && stops.length === 0;
+  const briefable = routeKnown || local;
+  const via = stops.join(",");
+
+  // The previous route's course stays on the map until the new one is
+  // charted, so the map is never taken down between routes.
+  const course = useQuery({ ...courseQuery(dep, dest, stops), enabled: briefable, placeholderData: keepPreviousData });
+  const localFlight = useQuery({
+    queryKey: ["localFlight", dep, localMin, depart, aircraft.profile, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null, rules],
+    queryFn: () => api.localFlight(dep, localMin, aircraft, depart || undefined, rules),
+    enabled: local, placeholderData: keepPreviousData,
+  });
+
+  // Asked for with the course, not after it, and the nav log with them
+  // both, at the pilot's ask for a fast route to nav log: each waited on
+  // the one before, three round trips in a row, where the planner works
+  // out the checkpoints for the nav log itself (and once for both:
+  // app.checkpoint_scoring) -- and starts on the chart's read and the ground under
+  // the route as the course is asked for (app.prefetch).
+  const checkpoints = useQuery({ ...checkpointsQuery(dep, dest, stops), enabled: routeKnown && withCheckpoints });
+
+  const plan = {
+    dep, dest, stops, altitudeFt, altitudeChoice, depart, aircraft, load, classBClearance, altitudes, checkpoints: withCheckpoints, rules,
+    alternate, procedures, runways, crossings, ground, holds, altitudeNearest, patterns,
+  };
+  const planKey = planKeyOf(plan);
+  const navlog = useQuery({ ...navlogQuery(plan, withCheckpoints), enabled: routeKnown });
+  const fullIn = (navlog.data ?? []).some(m => m.type === "leg" || m.type === "done") || !!navlog.error;
+  // The route as entered first, point to point, at the pilot's ask for a
+  // fast route to nav log: no chart read before it, so its legs are in a
+  // second or two -- and the checkpoints' nav log in its place as soon as
+  // its own legs come. Asked for only once the checkpoints' has been a
+  // moment without legs (a route new to the planner): one it has planned
+  // before answers in a tenth of a second, and asking for both doubled
+  // the planner's work on every route. And once the course has answered,
+  // as it says (Course.checkpoints_ready): at once where the chart along
+  // the route is still to be read, not at all where it is -- the wait
+  // was 0.6 s on every new route, and a planned one asked for both all
+  // the same when the course came after it (measured at a phone's speed,
+  // 2026-10-07).
+  const routeId = planKey.join("|");
+  const [slowFor, setSlowFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!routeKnown || !withCheckpoints || fullIn) return;
+    const timer = window.setTimeout(() => setSlowFor(routeId), AS_ENTERED_AFTER_MS);
+    return () => window.clearTimeout(timer);
+  }, [routeId, routeKnown, withCheckpoints, fullIn]);
+  const ready = course.isPlaceholderData ? undefined : course.data?.checkpoints_ready;
+  const asEntered = useQuery({
+    ...navlogQuery(plan, false), enabled: routeKnown && withCheckpoints && !fullIn && (ready === undefined ? slowFor === routeId : !ready),
+  });
+  const pointToPoint = withCheckpoints && !fullIn && !!asEntered.data?.some(m => m.type === "leg");
+  const streamed = useMemo(
+    () => (pointToPoint ? asEntered.data : navlog.data) ?? [], [pointToPoint, asEntered.data, navlog.data]);
+  // The log before an altitude is asked for, kept on the page till the new
+  // one is in whole: the pilot commanded the altitude, and is not to wait
+  // on it (the owner, 2026-10-20) -- the stream starts over, and the log,
+  // its figures and the altitude beside the airplane went blank, "Planning
+  // altitudes…" over them, for the half second to seconds a re-plan takes.
+  // Only over the same flight with another altitude (typed, picked on the
+  // wheel, or one of the four plans): a new route, airplane or time is a
+  // log of its own; nor once the planner says no altitude is legal. And
+  // over another runway, left from (`runways`) as landed on (`patterns`,
+  // the key's last): the runways picked into the wind as the field's report
+  // comes in are the ones the first plan already flew (the planner's
+  // wind_picks), and the figures went to ≈ and back to the same for the
+  // re-plan's second or so.
+  const holdKey = planKey.filter((_, i) => i < 3 || (i >= 5 && i !== PLAN_KEY_RUNWAYS && i < planKey.length - 1)).join("|");
+  const whole = streamed.some(m => m.type === "done");
+  const [held, setHeld] = useState<{ key: string; planKey: ReturnType<typeof planKeyOf>; messages: NavLogMessage[] } | null>(null);
+  if (whole && !pointToPoint && (held?.messages !== streamed || held.key !== holdKey)) {
+    setHeld({ key: holdKey, planKey, messages: streamed });
+  }
+  const holding = !whole && !navlog.error && navlog.isFetching && held?.key === holdKey;
+  const messages = holding ? held.messages : streamed;
+  // Each message narrowed by its own `type`, not cast: the "altitude"
+  // line was cast to a hand-written copy of its shape, whose comments had
+  // gone stale while the cast kept compiling.
+  const legs = useMemo(() => messages.flatMap((m): Leg[] => (m.type === "leg" ? [stripType(m)] : [])), [messages]);
+  const nav = useMemo<NavLogAltitude | null>(() => {
+    const altitude = messages.find((m): m is Extract<NavLogMessage, { type: "altitude" }> => m.type === "altitude");
+    return altitude ? stripType(altitude) : null;
+  }, [messages]);
+  const totals = useMemo<Totals | null>(() => {
+    const done = messages.find(m => m.type === "done");
+    return done && done.type === "done" ? done.totals : null;
+  }, [messages]);
+  const unflyable = useMemo<Unflyable | null>(() => {
+    const error = navlog.error;
+    return error instanceof ApiError && error.advice !== null
+      ? {
+        title: error.message, brief: error.brief ?? "No legal altitude", reasons: error.reasons, advice: error.advice,
+        classB: error.classB, detours: error.detours,
+      } : null;
+  }, [navlog.error]);
+  // What the checkpoints' nav log is working on, while it is, over the
+  // route as entered too.
+  const stages = (navlog.data ?? []).filter(m => m.type === "stage");
+  const navStage = navlog.isFetching && !holding ? (stages.at(-1) as { detail?: string } | undefined)?.detail ?? null : null;
+
+  // Which stage is outstanding, for the progress toast.
+  const stage: "course" | "checkpoints" | "navlog" | null =
+    course.isLoading ? "course" : checkpoints.isLoading ? "checkpoints" : navlog.isFetching && !holding ? "navlog" : null;
+
+  // The briefing's own data -- hazards, METAR, forecast, runways and
+  // frequencies. Fetched as soon as the course is, not only once a
+  // pilot opens the drawer that shows it -- the map's own departure
+  // and destination markers read its METARs too, the same as a Class
+  // B airport reads one, so it can't wait on that drawer opening.
+  //
+  // And asked again every five minutes while the page is open and in
+  // front of the pilot. Being always enabled took away the refetch the
+  // drawer used to get each time it opened; with refetch-on-focus off
+  // app-wide, the briefing then stayed whatever it was when the route
+  // loaded, for as long as the page stayed up. `load` is in the key for
+  // the same reason as the nav log's: Load again means fresh weather.
+  //
+  // Its forecast is for the flight -- from the departure time to past
+  // arrival -- so it is asked again once the nav log's totals give the
+  // ETE; the previous answer stays up meanwhile, so the map's chips do
+  // not flash back to "checking".
+  //
+  // Only the log the checkpoints' own make, not the route as entered's on
+  // the way to it: that one asked for the briefing again a second or two
+  // before the checkpoints' log asked once more, three briefings for every
+  // route where one waited on the chart's read (the requests of a route's
+  // load, 2026-10-28) -- the first, with the course, has the METARs the map
+  // wants at once. Unless the checkpoints' log failed: then the route as
+  // entered's is the log there is.
+  const finalLog = !pointToPoint || !!navlog.error;
+  const eteMin = (local ? localMin : finalLog ? totals?.ete_min : undefined) ?? undefined;
+  // And with the nav log's legs once they are all in, for the planner to
+  // place each hazard on the legs the pilot sees and time it by their
+  // ETEs (briefingLegs): the planner's own legs of the route until then.
+  const logLegs = useMemo(
+    () => (totals && !local && finalLog ? briefingLegs(course.data ?? null, withCheckpoints && !pointToPoint ? checkpoints.data?.selected ?? NONE : NONE, legs) : null),
+    [totals, local, finalLog, course.data, withCheckpoints, pointToPoint, checkpoints.data, legs]);
+  // Asked for with the legs once they have held a moment, and the last
+  // ones kept while the same route is planned again: the runway picked into
+  // the wind re-plans it as the first briefing lands, its log empty till
+  // the new one is in, and the briefing went back to the route alone, then
+  // on with the ETE alone, then with the legs -- four briefings for one
+  // route's load, one abandoned half way (KOSH-KGRB on the phone project,
+  // 2026-10-28).
+  const briefRoute = [dep, dest, via, depart, load].join("|");
+  const briefWanted = JSON.stringify([eteMin ?? null, logLegs]);
+  const [briefAsked, setBriefAsked] = useState<{ route: string; key: string; eteMin: number | undefined; legs: typeof logLegs } | null>(null);
+  const sameBriefRoute = briefAsked?.route === briefRoute;
+  useEffect(() => {
+    if (sameBriefRoute && (briefAsked?.key === briefWanted || eteMin === undefined)) return;
+    const timer = window.setTimeout(
+      () => setBriefAsked({ route: briefRoute, key: briefWanted, eteMin, legs: logLegs }), sameBriefRoute ? BRIEF_SETTLE_MS : 0);
+    return () => window.clearTimeout(timer);
+  }, [sameBriefRoute, briefAsked, briefWanted, briefRoute, eteMin, logLegs]);
+  const briefEte = sameBriefRoute ? briefAsked?.eteMin : undefined;
+  const briefLegs = sameBriefRoute ? briefAsked?.legs ?? null : null;
+  const briefing = useQuery({
+    queryKey: ["briefing", dep, dest, via, depart, briefEte ?? null, load, briefLegs?.fixes ?? null, briefLegs?.legMin ?? null, briefLegs?.groundMin ?? null],
+    // Given up when the route changes, as the checkpoints are (checkpointsQuery).
+    queryFn: ({ signal }) => api.briefing(dep, dest, depart || undefined, briefEte, stops, signal, briefLegs),
+    // Not on the previous route's placeholder course once the route is
+    // closed: asked for two empty idents, it toasted "Airport identifier
+    // '' not found".
+    enabled: briefable && !!course.data, staleTime: 5 * 60_000, refetchInterval: 5 * 60_000,
+    // The answer before kept up only while the route is the same -- a new
+    // departure time, ETE or Load again -- not under a new route, where the
+    // old route's hazards and TFRs showed for a moment (the audit's finding).
+    placeholderData: (previous, previousQuery) =>
+      previousQuery && sameRoute(previousQuery.queryKey, [dep, dest, via]) ? previous : undefined,
+  });
+
+  // The same object while the briefing is: a new one at every render drew
+  // every tab of the panel again with it.
+  const hasCourse = !!course.data;
+  const briefingState = useMemo((): BriefingState => {
+    if (!briefable || !hasCourse) return { state: "waiting" };
+    if (briefing.data) {
+      return {
+        state: "ready", data: briefing.data, fetchedAt: briefing.dataUpdatedAt,
+        refreshError: briefing.error ? describeError(briefing.error, "could not refresh the briefing") : null,
+      };
+    }
+    if (briefing.error) return { state: "failed", detail: describeError(briefing.error, "could not load the briefing") };
+    return { state: "loading" };
+  }, [briefable, hasCourse, briefing.data, briefing.dataUpdatedAt, briefing.error]);
+
+  const notes = useCheckpointNotes(dep, dest, stops);
+  // Written from the checkpoints' nav log, not the route as entered.
+  // The held log's narrative while it is held: it is about it.
+  const narrative = useNarrative({ dep, dest, planKey: holding ? held.planKey : planKey, nav, legs, whole: !!totals && !pointToPoint });
+
+  return {
+    // Not the previous route's, kept as a placeholder, once the route is
+    // closed (the capsule's X): the map is the chart alone then.
+    course: briefable ? course.data ?? null : null,
+    candidates: withCheckpoints ? checkpoints.data?.candidates ?? NONE : NONE,
+    selected: withCheckpoints ? checkpoints.data?.selected ?? NONE : NONE,
+    // The nav log's own rows' checkpoints: none while it is the route as
+    // entered, whose legs run point to point.
+    logSelected: withCheckpoints && !pointToPoint ? checkpoints.data?.selected ?? NONE : NONE,
+    legs, nav, navStage, stage, unflyable,
+    // The log on screen is the one before the altitude asked for, whose
+    // own is still coming.
+    replanning: holding,
+    // The nav log on screen is the route as entered, its checkpoints' own
+    // still to come in its place.
+    pointToPoint,
+    totals: local ? localFlight.data ?? null : totals,
+    local,
+    briefing: briefingState,
+    ...notes,
+    ...narrative,
+  };
+}
+
+/** Whether a briefing's query key ("briefing", dep, dest, via, …) is for
+ *  this route. */
+function sameRoute(key: readonly unknown[], route: [string, string, string]): boolean {
+  return route.every((part, i) => key[i + 1] === part);
+}
+
+function stripType<T extends { type: string }>(message: T): Omit<T, "type"> {
+  const { type: _type, ...rest } = message;
+  return rest;
+}

@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1
+# SageMaker-Training-Job-shaped: retrain only. See requirements-training.txt
+# for why this is a separate image from Dockerfile.processing.
+
+# wingtip's base (services/Dockerfile.base): Python, wingtip's own
+# requirements, its Rust extension and the appuser, built once for every
+# image that imports wingtip. The build context `wingtip-base` names it.
+FROM wingtip-base
+
+WORKDIR /workspace
+
+# Copied at the paths they have in the repo, so the image's list finds
+# wingtip's own through its -r ../services/planner/requirements-wingtip.txt.
+COPY services/planner/requirements-wingtip.txt services/planner/
+COPY ml/requirements-training.txt ml/
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r ml/requirements-training.txt
+
+COPY services/planner/wingtip ./services/planner/wingtip
+
+USER appuser
+
+ENV PYTHONPATH=/workspace/services/planner
+# The build fails here if a package this image's code imports is
+# missing, rather than the container on its next start: on 2026-09-22 a
+# new import in wingtip left both agents and both pipeline stages unable to
+# start, and every build passed. The lazy imports are named too, as
+# importing the entry module does not reach them.
+RUN python -B -c "import wingtip.pipeline, wingtip.model_registry, sklearn.ensemble, sklearn.linear_model, sklearn.model_selection, sklearn.dummy, sklearn.metrics, joblib"
+ENTRYPOINT ["python3", "-m", "wingtip.pipeline"]
+# SageMaker Training Jobs always run a container's own ENTRYPOINT/CMD
+# unchanged (no argument-override mechanism, unlike Processing Jobs) --
+# this default makes the image work as a Training Job's image as-is.
+# Doesn't change local usage: `docker compose run ... pipeline-training
+# retrain` already passes this explicitly, which still overrides CMD.
+CMD ["retrain"]

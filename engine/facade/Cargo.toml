@@ -1,0 +1,36 @@
+[package]
+name = "wingtip-engine"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "The planner's figures in Rust, with no network and no Python: route options' straight lines, the airspace at a point, the cycle pack"
+
+[lib]
+name = "wingtip_engine"
+
+# Only the engine's own crates (engine/crates, engine/README.md): the
+# engine is plain Rust, so the phone can carry it as it is.
+[dependencies]
+wingtip-airspace = { path = "../crates/airspace" }
+wingtip-brief = { path = "../crates/brief" }
+wingtip-procedures = { path = "../crates/procedures" }
+wingtip-core = { path = "../crates/core" }
+wingtip-flight = { path = "../crates/flight" }
+wingtip-pilot = { path = "../crates/pilot" }
+wingtip-radio = { path = "../crates/radio" }
+wingtip-route = { path = "../crates/route" }
+wingtip-weather = { path = "../crates/weather" }
+wingtip-wording = { path = "../crates/wording" }
+
+# The shared fixtures (services/planner/tests_wingtip/fixtures/native) are gzip and JSON, which the
+# Python reads as well.
+[dev-dependencies]
+flate2 = "1.1"
+# The parsers' fuzz tests (tests/fuzz.rs): stable Rust, where cargo-fuzz
+# needs nightly.
+proptest = { version = "1.7", default-features = false, features = ["std"] }
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
+# The calls held to their contract (tests/contract.rs,
+# engine/contract/engine.schema.json): JSON Schema's own validator, with
+# no fetching of remote schemas, which the contract has none of.
+jsonschema = { version = "0.30", default-features = false }

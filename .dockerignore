@@ -1,22 +1,23 @@
-# An allow-list: nothing at the top of the repository reaches a build
-# context but the six directories a Dockerfile copies from. The
+# An allow-list: nothing in the repository reaches a build context but
+# the directories a Dockerfile copies from. The
 # exclusions below it came one leak at a time -- data/raw tarred into
 # every build, a conflict copy of a Java class, a spec edit rebuilding
 # the bundle -- and every new top-level folder was in every context
 # until someone noticed: .claude/worktrees (whole copies of the repo),
 # data/labels (the owner's ratings), .env (the keys),
-# infra/local-https/certs (the phone's certificate key), ios/, android/.
+# infra/local-https/certs (the phone's certificate key), apps/ios/, apps/android/.
 # None of them is read by a Dockerfile; now none of them is sent.
 *
-!src/
-!native/
-!planning-service/
-!docker/
-!web/
-!springboot-app/
+!engine/
+!services/planner/
+!services/gateway/
+!apps/web/
+!ml/requirements-*.txt
+!infra/dev-services/
 
 # Inside those: what no Dockerfile reads.
-planning-service/tests/
+services/planner/tests/
+services/planner/tests_wingtip/
 **/__pycache__/
 **/*.pyc
 **/node_modules/
@@ -29,7 +30,7 @@ planning-service/tests/
 data/raw/
 # Same reasoning as data/raw/ above -- generated/large, not needed at
 # build time, and was still being tarred into the build context for
-# every service using `context: .` (webapp, ml, the planner...).
+# every service using `context: .` (gateway, ml, the planner...).
 data/processed/
 data/models/
 # Build output/dependency dirs for the two toolchains built *inside*
@@ -38,8 +39,8 @@ data/models/
 # and without this they'd get copied into the build context on every
 # `context: .` build even though the Dockerfile never reads them (it
 # does its own npm ci/mvn package from source instead).
-web/node_modules/
-springboot-app/target/
+apps/web/node_modules/
+services/gateway/target/
 # Tool caches and a local venv from running things outside Docker --
 # host-only, never read by any Dockerfile (every image installs its own
 # dependencies from a requirements.txt/package.json), small on their own
@@ -48,19 +49,19 @@ springboot-app/target/
 .venv/
 .pytest_cache/
 .ruff_cache/
-web/test-results/
+apps/web/test-results/
 # The browser suite, its reports and a host build of the bundle: none
-# read by springboot-app/Dockerfile, and an edited spec used to
-# invalidate `COPY web/` and rebuild the bundle for nothing.
-web/e2e/
-web/playwright-report/
-web/dist/
-# The webapp's own tests: the image is built with -DskipTests, and a
+# read by services/gateway/Dockerfile, and an edited spec used to
+# invalidate `COPY apps/web/` and rebuild the bundle for nothing.
+apps/web/e2e/
+apps/web/playwright-report/
+apps/web/dist/
+# The gateway's own tests: the image is built with -DskipTests, and a
 # test edit used to rebuild the jar for nothing.
-springboot-app/src/test/
+services/gateway/src/test/
 # iCloud's numbered conflict copies ("UnverifiedEmailException 2.java"),
 # which .gitignore already hides from git but which still reached the
 # build context: a copy of a Java class compiled as a duplicate and
-# broke the webapp image on 2026-09-24. Never wanted in an image.
+# broke the gateway image on 2026-09-24. Never wanted in an image.
 **/* [0-9].*
-native/target/
+engine/target/

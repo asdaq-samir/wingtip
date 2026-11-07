@@ -33,9 +33,9 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                                             │ origin.app.example.com:443, with X-Origin-Secret
                                             ▼
                         EC2 t3a.medium on Spot, a group of one (Amazon Linux 2023,
-                        docker-compose.prod.yml), its fixed address and data disk
+                        infra/docker-compose.prod.yml), its fixed address and data disk
                         taken over by whichever server is running
-                          caddy ─▶ webapp ─▶ planning-service (the chart model and the engine in-process) ─▶ Anthropic
+                          caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process) ─▶ Anthropic
                                      │
                                      └──▶ db (Postgres 18, on the data disk)
                           nightly pg_dump ─▶ S3 server bucket (14 days)
@@ -46,14 +46,14 @@ EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: python -m wingtip.charts 
    serving.json last, so every browser moves to the new cycle at once
 ```
 
-- **One domain for everything** (`PublicHost`), so the webapp's Secure
+- **One domain for everything** (`PublicHost`), so the gateway's Secure
   session cookies work as they do locally and the map's tile requests
   are same-origin.
 - **What the edge keeps is what is the same for every pilot.** Besides
   the tiles and the app's files, three answers: the chart the map draws
   (a minute), the airport search as a pilot types, and the stock
-  aircraft (an hour each). Each says so itself (`app.common` in the
-  planner), the webapp passes the header on for those paths alone
+  aircraft (an hour each). Each says so itself (`app.router_basics` in the
+  planner), the gateway passes the header on for those paths alone
   (`PlannerProxyController`), and CloudFront keys them by path and query
   string, never by cookie. Everything with weather in it (the fields in
   view, an airport's card, the Class B list, the airspace at a point), a
@@ -91,7 +91,7 @@ EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: python -m wingtip.charts 
 
 Every resource is in [`infra/cloudformation/template.yaml`](../infra/cloudformation/template.yaml);
 the server's own files are in [`infra/server/`](../infra/server/) and
-[`docker-compose.prod.yml`](../docker-compose.prod.yml).
+[`infra/docker-compose.prod.yml`](../infra/docker-compose.prod.yml).
 
 ### What is left out
 
@@ -135,7 +135,7 @@ The template's `BudgetEmail` sets an alarm at 80% of $50 a month.
 ## Rehearse it locally
 
 [`infra/rehearsal/run.sh`](../infra/rehearsal/run.sh) runs the production stack on this machine before anything goes to AWS. It is
-`docker-compose.prod.yml` as the server runs it: the two images built
+`infra/docker-compose.prod.yml` as the server runs it: the two images built
 from this checkout, no source mounted, and Caddy demanding CloudFront's
 secret header. Stand-ins replace what only AWS has:
 
@@ -159,7 +159,7 @@ development stack, on the rehearsal's own network with Caddy's local
 certificate accepted (`ignoreHTTPSErrors`):
 
 ```bash
-docker run --rm --network wingtip-prod_default -v "$PWD/web:/w" -w /w \
+docker run --rm --network wingtip-prod_default -v "$PWD/apps/web:/w" -w /w \
   -e BASE_URL=https://cdn:9443 -e MAILPIT_URL=http://mailpit:8025 \
   mcr.microsoft.com/playwright:v1.55.1-noble \
   npx playwright test --config playwright.rehearsal.config.ts --workers=2
@@ -308,7 +308,7 @@ Mac is promoted the same way.
 A pull request merged to `main` deploys itself once CI passes: Promote
 copies the images CI tested to ECR and runs `deploy.sh <commit>` over
 SSM, and the job fails if it does. The server checks out that commit,
-for `docker-compose.prod.yml` and the Caddyfile, and runs its images
+for `infra/docker-compose.prod.yml` and the Caddyfile, and runs its images
 (`IMAGE_TAG=sha-<commit>`), so files and images always match whatever
 has merged since. A deploy restarts only the services whose image
 changed. `deploy.sh` with no commit, by hand, takes `main` and `latest`.
@@ -324,8 +324,8 @@ SERVER=$(aws ec2 describe-instances --region us-east-1 \
 aws ssm start-session --region us-east-1 --target "$SERVER"
 sudo -i
 cd /srv/wingtip/repo
-docker compose --env-file /srv/wingtip/.env -f docker-compose.prod.yml ps
-docker compose --env-file /srv/wingtip/.env -f docker-compose.prod.yml logs -f --tail 100 webapp
+docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml ps
+docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml logs -f --tail 100 gateway
 ```
 
 `/srv/wingtip` is the data disk: `data` the planner's data folder,
@@ -344,10 +344,10 @@ docker compose --env-file /srv/wingtip/.env -f docker-compose.prod.yml logs -f -
   a stream per container, kept a month:
 
   ```bash
-  aws logs tail /wingtip/server --region us-east-1 --follow --log-stream-name-prefix wingtip-webapp
+  aws logs tail /wingtip/server --region us-east-1 --follow --log-stream-name-prefix wingtip-gateway
   ```
 
-- **Errors on pilots' phones** are in the webapp's stream as `client
+- **Errors on pilots' phones** are in the gateway's stream as `client
   error [...]` lines (`ClientErrorController`, `lib/errorReports`): the
   message, the stack and the page's path, nothing of the pilot's.
 
@@ -377,10 +377,10 @@ restore one, on the server:
 cd /srv/wingtip/repo
 B=s3://<ServerBucketName>/backups/<date>
 aws s3 cp $B/postgres.dump - | \
-  docker compose --env-file /srv/wingtip/.env -f docker-compose.prod.yml \
+  docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml \
   exec -T db pg_restore -U wingtip -d wingtip --clean --if-exists
 aws s3 cp $B/labels.tar.gz - | tar -xz -C /srv/wingtip/data
-docker compose --env-file /srv/wingtip/.env -f docker-compose.prod.yml restart webapp planning-service
+docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml restart gateway planner
 ```
 
 Everything else in the data folder (the FAA's files, the chart sheets)

@@ -9,7 +9,7 @@
 #
 # To restore (docs/README-AWS.md, "Backups and restore"):
 #   aws s3 cp s3://$SERVER_BUCKET/backups/<date>/postgres.dump - | \
-#     docker compose --env-file /srv/wingtip/.env -f docker-compose.prod.yml \
+#     docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml \
 #     exec -T db pg_restore -U wingtip -d wingtip --clean --if-exists
 #   aws s3 cp s3://$SERVER_BUCKET/backups/<date>/labels.tar.gz - | tar -xz -C /srv/wingtip/data
 set -euo pipefail
@@ -32,7 +32,7 @@ alert() {
 }
 trap 'rm -f "$file"' EXIT
 trap alert ERR
-compose=(docker compose --env-file /srv/wingtip/.env -f docker-compose.prod.yml)
+compose=(docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml)
 "${compose[@]}" exec -T db pg_dump -U wingtip -d wingtip --format=custom > "$file"
 "${compose[@]}" exec -T db pg_restore --list < "$file" > /dev/null
 aws s3 cp "$file" "$to/postgres.dump" --region "$AWS_REGION" --only-show-errors

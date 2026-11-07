@@ -1,5 +1,10 @@
 # The TV apps
 
+Parked: the TV shells (`tv/`: the page, `package.sh`, the Tizen and webOS
+files) were deleted on 2026-11-07, as nothing built them. Git keeps them:
+`git checkout a8015833 -- tv` brings them back, and the paths below are
+theirs. The site's own TV mode (`apps/web/src/lib/tv.ts`) is still here.
+
 Wingtip Maps on Samsung's TVs (Tizen) and LG's (webOS) is the site in the
 TV's own web engine. It is for planning on the big screen: the chart, the
 route, the nav log, the weather and the brief.
@@ -9,7 +14,7 @@ route, the nav log, the weather and the brief.
 - **The app is one page** (`tv/shell/index.html`). It goes to the site
   with `?tv=tizen` or `?tv=webos` in the address. If the TV is offline, it
   says so and offers Try again, focused for the remote's OK.
-- **The site makes itself for the remote** (`web/src/lib/tv.ts`):
+- **The site makes itself for the remote** (`apps/web/src/lib/tv.ts`):
   - **Scale.** It is drawn as at 1280 by 720, so on a 1920 screen
     everything is half again as large, to be read from the sofa. LG's app
     also asks for this (`resolution` in its `appinfo.json`).

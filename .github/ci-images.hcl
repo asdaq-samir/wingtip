@@ -19,12 +19,12 @@ variable "REGISTRY" {
 # first, for the layers a new key's image will share with it. Pushed
 # with their cache inline, so the next build finds its own last layers
 # too. Empty (a pull request's shard
-# building one itself): tagged the name docker-compose.ci.yml runs it
+# building one itself): tagged the name infra/docker-compose.ci.yml runs it
 # by, and loaded, not pushed.
-variable "WEBAPP_KEY" {
+variable "GATEWAY_KEY" {
   default = ""
 }
-variable "PLANNING_SERVICE_KEY" {
+variable "PLANNER_KEY" {
   default = ""
 }
 
@@ -33,9 +33,13 @@ function "cache" {
   result = REGISTRY == "" ? [] : ["type=registry,ref=${REGISTRY}/${image}:buildcache", "type=registry,ref=${REGISTRY}/${image}:e2e"]
 }
 
+# The registry keeps the images' names from before the 2026-11-07 reorg
+# (webapp, planning-service): GHCR lets the workflow push only to packages
+# already linked to the repository. Only the local tag takes the compose
+# service's name (wingtip-gateway:ci, wingtip-planner:ci).
 function "tags" {
-  params = [image, key]
-  result = key == "" ? ["wingtip-${image}:ci"] : ["${REGISTRY}/${image}:e2e-${key}", "${REGISTRY}/${image}:e2e"]
+  params = [image, name, key]
+  result = key == "" ? ["wingtip-${name}:ci"] : ["${REGISTRY}/${image}:e2e-${key}", "${REGISTRY}/${image}:e2e"]
 }
 
 # Pushed (with a key) with every layer zstd rather than gzip, the base
@@ -50,36 +54,36 @@ function "pushed" {
 }
 
 group "ci" {
-  targets = ["webapp", "planning-service"]
+  targets = ["gateway", "planner"]
 }
 
-target "webapp" {
+target "gateway" {
   context    = "."
-  dockerfile = "springboot-app/Dockerfile"
-  tags       = tags("webapp", WEBAPP_KEY)
+  dockerfile = "services/gateway/Dockerfile"
+  tags       = tags("webapp", "gateway", GATEWAY_KEY)
   cache-from = cache("webapp")
-  cache-to   = WEBAPP_KEY == "" ? [] : ["type=inline"]
-  output     = pushed(WEBAPP_KEY)
+  cache-to   = GATEWAY_KEY == "" ? [] : ["type=inline"]
+  output     = pushed(GATEWAY_KEY)
 }
 
 # wingtip's Python base, which the planner is built FROM
-# (docker/Dockerfile.base): built in the same bake, from images.hcl's
+# (services/Dockerfile.base): built in the same bake, from images.hcl's
 # cache of it.
 target "base" {
   context    = "."
-  dockerfile = "docker/Dockerfile.base"
+  dockerfile = "services/Dockerfile.base"
   target     = "base"
   cache-from = cache("base")
 }
 
-target "planning-service" {
+target "planner" {
   context    = "."
-  dockerfile = "planning-service/Dockerfile"
+  dockerfile = "services/planner/Dockerfile"
   contexts   = { wingtip-base = "target:base" }
-  tags       = tags("planning-service", PLANNING_SERVICE_KEY)
+  tags       = tags("planning-service", "planner", PLANNER_KEY)
   cache-from = cache("planning-service")
-  cache-to   = PLANNING_SERVICE_KEY == "" ? [] : ["type=inline"]
-  output     = pushed(PLANNING_SERVICE_KEY)
+  cache-to   = PLANNER_KEY == "" ? [] : ["type=inline"]
+  output     = pushed(PLANNER_KEY)
 }
 
 # The image the suite's tests run in: the Playwright image (PLAYWRIGHT_FROM,

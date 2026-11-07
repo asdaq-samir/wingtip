@@ -3,7 +3,7 @@
 # (docker-compose.rehearsal.yml): builds the two images the server runs
 # (the planner on wingtip's base),
 # seeds a data folder as deploy.sh does, writes a .env of its own and
-# starts docker-compose.prod.yml with the rehearsal's stand-ins for
+# starts infra/docker-compose.prod.yml with the rehearsal's stand-ins for
 # CloudFront and SES, as the project "wingtip-prod" beside the
 # development stack. Then:
 #   https://localhost:9443/app/plan   the app, through the CDN stand-in
@@ -23,11 +23,11 @@ export REHEARSAL_DIR=${REHEARSAL_DIR:-$HOME/.wingtip-rehearsal}
 export TILES_DIR=${TILES_DIR:-$PWD/data/raw/chart_tiles.nosync}
 
 if [ "${SKIP_BUILD:-}" != 1 ]; then
-  # The planner is built FROM wingtip's base (docker/Dockerfile.base).
-  docker build -t wingtip-local/base:rehearsal -f docker/Dockerfile.base --target base .
-  docker build -t wingtip-local/planning-service:rehearsal -f planning-service/Dockerfile \
+  # The planner is built FROM wingtip's base (services/Dockerfile.base).
+  docker build -t wingtip-local/base:rehearsal -f services/Dockerfile.base --target base .
+  docker build -t wingtip-local/planning-service:rehearsal -f services/planner/Dockerfile \
     --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
-  docker build -t wingtip-local/webapp:rehearsal -f springboot-app/Dockerfile .
+  docker build -t wingtip-local/webapp:rehearsal -f services/gateway/Dockerfile .
 fi
 
 # deploy.sh's seeds: the notes so far and the corridor the planner warms
@@ -69,5 +69,5 @@ CONF
 fi
 
 docker compose -p wingtip-prod --env-file "$env_file" \
-  -f docker-compose.prod.yml -f infra/rehearsal/docker-compose.rehearsal.yml up -d
+  -f infra/docker-compose.prod.yml -f infra/rehearsal/docker-compose.rehearsal.yml up -d
 echo "Up: https://localhost:9443/app/plan (the planner fetches its FAA data first; give it a few minutes), mail at http://localhost:9025"

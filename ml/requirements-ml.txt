@@ -1,0 +1,16 @@
+# The notebooks' list (01-03 and 08), Jupyter included (previously only in the native macOS venv).
+# Moved in here 2026-09-07: recent PyPI releases of numpy/pandas/scipy/
+# pyarrow/matplotlib stopped shipping Intel-macOS wheels (same pattern that
+# had forced pins before), so the native venv can no
+# longer track "latest" for this set without periodic version-pin surgery.
+# Linux x86_64 (manylinux) wheels stay current for all of these, so running
+# them in this container sidesteps the problem entirely instead of chasing
+# it package by package. The native `.venv` (see top-level requirements.txt)
+# still works if pinned to the last Intel-Mac-compatible versions, but this
+# container is now the primary, low-maintenance way to run notebooks 01-03.
+-r ../services/planner/requirements-wingtip.txt   # wingtip's own list, so the notebooks import it the way the services do
+scikit-learn
+matplotlib
+pillow
+folium
+jupyter

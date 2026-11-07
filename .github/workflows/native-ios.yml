@@ -1,7 +1,7 @@
 name: Native iOS
 
-# The native app (ios/, docs/NATIVE.md). Its build and tests -- the Xcode
-# project made by XcodeGen from ios/project.yml, the tests on a
+# The native app (apps/ios/, docs/NATIVE.md). Its build and tests -- the Xcode
+# project made by XcodeGen from apps/ios/project.yml, the tests on a
 # simulator, on MAC_RUNNER or GitHub's macOS runner -- are
 # native-ios-test.yml, which ci.yml calls on a pull request that touches
 # the app, so "CI passed" covers it. Here, those again on main and on
@@ -22,12 +22,12 @@ on:
     # the engine it links, with the fixtures its tests read; and what
     # makes its API models.
     paths:
-      - ios/**
-      - web/src/lib/fixtures/**
-      - web/src/lib/acs.json
-      - native/**
-      - tests/fixtures/native/**
-      - scripts/api-models-apps.*
+      - apps/ios/**
+      - apps/web/src/lib/fixtures/**
+      - apps/web/src/lib/acs.json
+      - engine/**
+      - services/planner/tests_wingtip/fixtures/native/**
+      - scripts/build/api-models-apps.*
       - .github/workflows/native-ios.yml
       - .github/workflows/native-ios-test.yml
   workflow_dispatch:
@@ -70,19 +70,19 @@ jobs:
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          path: ios/Frameworks/WingtipEngine.xcframework
-          key: engine-ios-${{ hashFiles('native/engine/**', 'native/crates/**', 'native/ffi/**', 'native/Cargo.*') }}
+          path: apps/ios/Frameworks/WingtipEngine.xcframework
+          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
       - name: The engine, for the app
-        # wingtip-engine through its C functions (native/ffi), which the app
+        # wingtip-engine through its C functions (engine/bindings/ffi), which the app
         # answers the airspace from with no network. The runner's own
         # rustup, where the engine changed.
         if: steps.engine.outputs.cache-hit != 'true'
-        run: native/ffi/build-xcframework.sh
+        run: engine/bindings/ffi/build-xcframework.sh
       - name: The Xcode project, from project.yml
         run: |
           # The Mac mini's runner has xcodegen already, and no Homebrew.
           command -v xcodegen >/dev/null || brew install xcodegen
-          xcodegen generate --spec ios/project.yml --project ios
+          xcodegen generate --spec apps/ios/project.yml --project apps/ios
       - name: The newest Xcode on the runner
         run: |
           # iPhone Duo's own layout (to the screen's edge, bars down the
@@ -101,7 +101,7 @@ jobs:
           printf '%s' "$KEY_P8" > "$key"
           host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")
           auth=(-allowProvisioningUpdates -authenticationKeyPath "$key" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
-          xcodebuild -project ios/Wingtip.xcodeproj -scheme Wingtip -configuration Release \
+          xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Wingtip.xcarchive" "${auth[@]}" \
             DEVELOPMENT_TEAM="$TEAM" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" WINGTIP_HOST="$host" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" archive | tail -40

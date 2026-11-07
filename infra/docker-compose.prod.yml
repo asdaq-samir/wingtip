@@ -1,0 +1,181 @@
+# The production stack: one EC2 server behind CloudFront
+# (infra/cloudformation/template.yaml, docs/README-AWS.md). A file of its
+# own rather than an overlay on docker-compose.yml, which is the
+# development stack -- source mounted, Mailpit, the training run, the dev
+# ports -- none of which a production server should inherit by accident.
+#
+# What is not here, on purpose:
+# - Mailpit: sign-in mail goes through Amazon SES (MAIL_* below).
+# - The pipelines and the training run: retraining runs on the owner's machine.
+# - web-build and dev-services: development tools.
+# - Chart tile drawing: CHARTS_AUTO_REFRESH=0. A scheduled Fargate Spot
+#   task draws each 56-day cycle once and publishes it to S3, and the
+#   map fetches tiles from CloudFront (CHART_TILES_URL), so this 4 GB
+#   server never draws the whole country. The FAA's NASR and obstacle
+#   files are still fetched as each edition comes out
+#   (FAA_DATA_AUTO_REFRESH, on).
+#
+# Run on the server, from /srv/wingtip with its .env beside this
+# file (infra/server/env.example lists every key):
+#   docker compose -f infra/docker-compose.prod.yml up -d
+
+# Every service's log to CloudWatch (the stack's ServerLogGroup), a
+# stream per container: the server's own disk keeps none, and what went
+# wrong is read in the console or with `aws logs tail`.
+x-restart: &restart
+  restart: unless-stopped
+  logging:
+    driver: awslogs
+    options:
+      # deploy.sh writes both; the rehearsal's overlay logs locally instead,
+      # so they are not demanded here.
+      awslogs-region: ${AWS_REGION:-}
+      awslogs-group: ${LOG_GROUP:-}
+      # A CloudWatch or IAM fault then drops log lines; the default,
+      # blocking, would fail a container's start.
+      mode: non-blocking
+      max-buffer-size: 4m
+      tag: "{{.Name}}"
+
+services:
+  # TLS for the origin, and the only door in: CloudFront reaches the
+  # server over HTTPS, with a secret header Caddy checks (the security
+  # group admits only CloudFront's addresses as well).
+  caddy:
+    <<: *restart
+    image: caddy:2.10-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    ports: ["80:80", "443:443"]
+    environment:
+      ORIGIN_HOST: ${ORIGIN_HOST}
+      PUBLIC_HOST: ${PUBLIC_HOST}
+      ORIGIN_SECRET: ${ORIGIN_SECRET:?set ORIGIN_SECRET in .env}
+    volumes:
+      - ./server/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on: [gateway]
+
+  db:
+    <<: *restart
+    image: pgvector/pgvector:pg18@sha256:c29f30688a9ad961691bdf0ec1650717cc132a5814619d80f80463d6e4c42e47
+    environment:
+      POSTGRES_DB: wingtip
+      POSTGRES_USER: wingtip
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wingtip -d wingtip"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - /srv/wingtip/postgres:/var/lib/postgresql
+
+  planner:
+    <<: *restart
+    image: ${IMAGE_REGISTRY}/planning-service:${IMAGE_TAG:-latest}
+    # No access log: its lines carry each request's query, and the
+    # Nearest list asks with the pilot's own position, which would then
+    # sit in CloudWatch for a month (docs/privacy-inventory.md). The
+    # planner's own log says what it did.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+    # FAA data, the corridor's chart sheets for reading checkpoints, the
+    # chart model deploy.sh syncs into data/models (scored in-process,
+    # app.chart_scorer), and the planner's caches: on the server's disk,
+    # kept across deploys.
+    volumes:
+      - /srv/wingtip/data:/workspace/data
+      # The stock aircraft profiles are the repository's, so they follow
+      # each deploy; the image has none, and the data folder above is the
+      # server's own.
+      - ../data/aircraft:/workspace/data/aircraft:ro
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      # The map's Google overlay (routers/basemaps), where the owner has a key.
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
+      # adsb.fi's open data is for personal, non-commercial use only
+      # (github.com/adsbfi/opendata): off for the public app until adsb.fi
+      # agrees to it (wingtip.traffic).
+      ADSBFI_OPEN_DATA: "0"
+      # The FAA's SWIM feeds (app.swim): STDDS's terminal radar tracks; off
+      # without them. The owner's SCDS subscription's login and queue.
+      SWIM_HOST: ${SWIM_HOST:-}
+      SWIM_USERNAME: ${SWIM_USERNAME:-}
+      SWIM_PASSWORD: ${SWIM_PASSWORD:-}
+      SWIM_VPN_STDDS: ${SWIM_VPN_STDDS:-}
+      SWIM_QUEUE_STDDS: ${SWIM_QUEUE_STDDS:-}
+      SWIM_VPN_FNS: ${SWIM_VPN_FNS:-}
+      SWIM_QUEUE_FNS: ${SWIM_QUEUE_FNS:-}
+      SWIM_HOST_TFMS: ${SWIM_HOST_TFMS:-}
+      SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
+      SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
+      CHARTS_AUTO_REFRESH: "0"
+      # But the NASR files (airports, frequencies, navaids, Class B/C/D)
+      # and the obstacle file are fetched again as each new edition comes
+      # out (app.main check_faa_editions): their own switch, on.
+      FAA_DATA_AUTO_REFRESH: "1"
+      CHART_TILES_URL: https://${PUBLIC_HOST}/tiles
+      TZ: America/Chicago
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+
+  gateway:
+    <<: *restart
+    image: ${IMAGE_REGISTRY}/webapp:${IMAGE_TAG:-latest}
+    depends_on:
+      db:
+        condition: service_healthy
+      planner:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/8080 &&
+          printf 'GET /actuator/health/readiness HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3 &&
+          grep -q '"status":"UP"' <&3
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/wingtip
+      SPRING_DATASOURCE_USERNAME: wingtip
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      PLANNER_SERVICE_URL: http://planning-service:8000
+      # The gateway is reached only through Caddy over the server's own
+      # network: plain HTTP inside, TLS at Caddy and at CloudFront.
+      APP_PUBLIC_BASE_URL: https://${PUBLIC_HOST}
+      APP_HSTS: "true"
+      APP_DEVELOPER_EMAILS: ${APP_DEVELOPER_EMAILS:-}
+      # The nightly speed lab's token (SpeedController; CI's SPEED_LAB_TOKEN).
+      APP_SPEED_LAB_TOKEN: ${APP_SPEED_LAB_TOKEN:-}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      APPLE_KEY_ID: ${APPLE_KEY_ID:-}
+      APPLE_SERVICES_ID: ${APPLE_SERVICES_ID:-}
+      APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
+      # The iOS app's bundle id, with APPLE_TEAM_ID: links to the site open
+      # in the app (AppSiteAssociationController).
+      APP_IOS_BUNDLE_ID: ${APP_IOS_BUNDLE_ID:-}
+      # The Android app's package and the SHA-256 fingerprints of the
+      # certificates that sign it: links open in that app too
+      # (AssetLinksController).
+      APP_ANDROID_PACKAGE: ${APP_ANDROID_PACKAGE:-}
+      APP_ANDROID_CERT_SHA256: ${APP_ANDROID_CERT_SHA256:-}
+      # "oauth" turns on Sign in with Google and Apple (OAuthClientsConfig).
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=40 -XX:TieredStopAtLevel=1
+
+volumes:
+  caddy-data:

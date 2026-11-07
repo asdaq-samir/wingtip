@@ -1,6 +1,6 @@
 # The native iOS app
 
-Wingtip Maps as a pure SwiftUI app (`ios/`), with no web view: the same
+Wingtip Maps as a pure SwiftUI app (`apps/ios/`), with no web view: the same
 planner and gateway as the website, and only the screens on the phone.
 The plan, its phases and gates are in the owner's doc "Native iOS
 Transition Plan" (24 October 2026). It is the iOS app: the Capacitor
@@ -10,13 +10,13 @@ is docs/NATIVE-ANDROID.md.
 
 ## What is here
 
-- `ios/project.yml`: the Xcode project, made by XcodeGen on the runner.
-  Nothing under `ios/` is a generated file; the project is never
+- `apps/ios/project.yml`: the Xcode project, made by XcodeGen on the runner.
+  Nothing under `apps/ios/` is a generated file; the project is never
   committed.
-- `ios/Wingtip/API`: the planner's and the gateway's calls, the app's
+- `apps/ios/Wingtip/API`: the planner's and the gateway's calls, the app's
   own thin client (`Planner`, `Gateway`). The answers' shapes are
   generated from the servers' OpenAPI documents, as the web's types are:
-  `scripts/api-models-apps.sh` runs quicktype (models only, plain
+  `scripts/build/api-models-apps.sh` runs quicktype (models only, plain
   Codable, no runtime library) into `API/Generated` (the planner's types
   prefixed `API`, the gateway's `GW`), committed, and CI fails when they
   are not what the documents give, so a field a server renames fails the
@@ -30,29 +30,29 @@ is docs/NATIVE-ANDROID.md.
   AirportPin and AheadAlert (the engine writes them from the cycle packs
   too), and the gateway's answers (their names and dates differ from the
   app's models), each a switch of its own.
-- `ios/Wingtip`: the app. `Config` (the host), `Session` (who is signed
+- `apps/ios/Wingtip`: the app. `Config` (the host), `Session` (who is signed
   in), `Charts` (which chart, from `/api/chart`, kept for offline),
   `Tiles` (the tile address, the store on disk, the MapKit overlay) and
   `Views` (the map under the system sheet with the four tabs).
-- `ios/WingtipTests`: Swift Testing.
+- `apps/ios/WingtipTests`: Swift Testing.
 
 ## Rules
 
 - A rule the pilot needs offline in flight is computed on the phone by
-  the shared engine (`native/engine`), the same Rust the web app and the
+  the shared engine (`engine/facade`), the same Rust the web app and the
   planner run, asked by name through `Engine.call` (`wt_call`;
-  `native/engine/src/call.rs` lists every name, and
-  `native/contract/engine.schema.json` types each input and answer). An
+  `engine/facade/src/call.rs` lists every name, and
+  `engine/contract/engine.schema.json` types each input and answer). An
   answer the app decodes can use a type generated from that contract,
-  `ios/Wingtip/Engine/EngineContract.swift` (`scripts/engine-contract-apps.sh`,
+  `apps/ios/Wingtip/Engine/EngineContract.swift` (`scripts/build/engine-contract-apps.sh`,
   committed), rather than a Decodable written by hand; callers move over
   one name at a time. The Swift keeps the words and the formatting, not
   the rule, and each screen's state is one observable model the view
-  draws. This app is one of the four layers native/README.md describes:
+  draws. This app is one of the four layers engine/README.md describes:
   the planner works out the flight, the gateway (Spring Boot) holds the
   pilot's account and records, and the engine answers every rule. The shared fixtures
-  in `web/src/lib/fixtures` are read by the web's vitest tests and by
-  `ios/WingtipTests/SharedFixturesTests.swift` (project.yml bundles the
+  in `apps/web/src/lib/fixtures` are read by the web's vitest tests and by
+  `apps/ios/WingtipTests/SharedFixturesTests.swift` (project.yml bundles the
   folder into the test target by its path, not a copy), and
   `BridgeFixturesTests.swift` holds the engine's raw JSON answers to
   them through the phone's own bridge (`Engine.callText` over
@@ -62,7 +62,7 @@ is docs/NATIVE-ANDROID.md.
   them into the engine. Every other figure
   comes from the planner; the app shows the server's answer, with its
   date when offline.
-- The ACS table (`AcsTable`) is the web's own `web/src/lib/acs.json`,
+- The ACS table (`AcsTable`) is the web's own `apps/web/src/lib/acs.json`,
   bundled by project.yml as `acs.json`.
 - Judge every screen on the phone against Apple's Human Interface
   Guidelines first, as CLAUDE.md says for the web app; here the system's
@@ -109,7 +109,7 @@ writes the sentences, and never a figure of its own:
 
 - `WordsFor` asks the planner first (`PlannerWords`: `POST
   /api/words/{weather,risk}` through the gateway's proxy, Claude on the
-  planner, app.words), then this iPhone when the planner fails or
+  planner, app.ai_words), then this iPhone when the planner fails or
   cannot be reached (`OnDeviceWords`: Apple's on-device model,
   FoundationModels on iOS 26 with Apple Intelligence on), and says why
   in plain words when neither can (an older iOS, the model still
@@ -123,7 +123,7 @@ writes the sentences, and never a figure of its own:
   wrote the sentence. The instructions forbid any figure not in the
   input.
 - Every sentence is checked on the phone (`Words.checked`, the
-  planner's app.words.checked again): one citing an id it was not
+  planner's app.ai_words.checked again): one citing an id it was not
   given, or nothing, is dropped, since a model can cite wrongly, and
   at most ten are kept. `WingtipTests/WordsTests` holds the order of
   the providers and the guard.
@@ -186,7 +186,7 @@ owner, 2026-11-03):
 
 ## The Apple Watch app
 
-`ios/WingtipWatch/` (the owner's ask, 2026-11-03) is a companion of the
+`apps/ios/WingtipWatch/` (the owner's ask, 2026-11-03) is a companion of the
 iOS app, bundle id `app.wingtipmaps.ios.watchkitapp`, watchOS 10 and
 later, embedded in the phone's app and installed with it: three pages,
 Timers (a flight timer and a hold/approach timer, each a `Stopwatch`
@@ -254,8 +254,8 @@ The owner's Mac cannot run a current Xcode, so everything happens in
 public repository):
 
 - a pull request, a push to `main` or to a `claude/native-*` branch that
-  touches `ios/`, the web files the app bundles (`web/src/lib/fixtures`,
-  `web/src/lib/acs.json`) or the workflow: XcodeGen, then `xcodebuild test` on
+  touches `apps/ios/`, the web files the app bundles (`apps/web/src/lib/fixtures`,
+  `apps/web/src/lib/acs.json`) or the workflow: XcodeGen, then `xcodebuild test` on
   the newest iPhone simulator the runner has and on an iPad (a Pro
   where there is one), for the iPad's own layout, with a picture of
   each one's first screen kept with the run (`native-ios-screens`);

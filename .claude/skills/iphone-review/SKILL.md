@@ -12,7 +12,7 @@ The planner is becoming an iOS app, and the user tests it on an iPhone. Judge ev
 4. Desktop, last.
 
 ## 1. Measure
-- **Run the iOS audit** (`web/e2e/ios`; how to run it is in the `checks` skill). Each rule there is a measurement on iOS's own geometries with a touch pointer. A new screen or state gets an entry in `e2e/ios/screens.ts`.
+- **Run the iOS audit** (`apps/web/e2e/ios`; how to run it is in the `checks` skill). Each rule there is a measurement on iOS's own geometries with a touch pointer. A new screen or state gets an entry in `e2e/ios/screens.ts`.
 - **Take screenshots** on the phone project with a scratch script in the Playwright image, and look at them before and after.
 - **Report numbers:** sizes, contrast ratios and overflow in pixels, not "looks fine".
 
@@ -23,10 +23,10 @@ The planner is becoming an iOS app, and the user tests it on an iPhone. Judge ev
    - Verify with `document.elementFromPoint` at ±((44 − size) / 2 − 1) px outside the box, never by size alone.
    - The one exception is switches, drawn at iOS's 51 × 31 on a touch pointer.
 2. **Everything tappable is the blue tint.** Filled buttons use `--primary`. The words and glyphs of every other tappable thing use `text-tint`: outline, ghost and link buttons, action rows, checkmarks, chevrons and select values. Destructive stays red. Plain text, field-like pickers and list choices stay in the text colour. The map's Map and Flown track buttons stay black, as Apple Maps draws its own map buttons: the owner's pick on 2026-10-20, so it isn't a finding.
-3. **Type sizes come from `web/src/lib/text.ts` (`TEXT`),** never raw `text-sm`/`text-xs`. On touch that's 17 for rows and titles, 15 for detail and prose, 13 for notes. Nothing goes below 11 pt, and text must survive Larger Text at 125%.
+3. **Type sizes come from `apps/web/src/lib/text.ts` (`TEXT`),** never raw `text-sm`/`text-xs`. On touch that's 17 for rows and titles, 15 for detail and prose, 13 for notes. Nothing goes below 11 pt, and text must survive Larger Text at 125%.
 4. **Panels are Liquid Glass sheets with detents, like Apple Maps:** a pill, half and full. The map follows the sheet. **Never move a panel or a control to another part of the screen** unless the owner said so in the issue.
 5. **Discrete settings are a menu or a segmented control,** never a slider.
-6. **Errors show where they happen,** through `web/src/lib/problems.ts`, not in a toast.
+6. **Errors show where they happen,** through `apps/web/src/lib/problems.ts`, not in a toast.
 7. **Use stock components first** (shadcn/ui, Radix), and delete a hand-rolled one once nothing uses it.
 8. **Fit:**
    - safe-area insets respected;
@@ -34,7 +34,7 @@ The planner is becoming an iOS app, and the user tests it on an iPhone. Judge ev
    - text contrast at least 4.5:1;
    - Reduce Motion honoured;
    - every icon-only button has a name VoiceOver can read.
-9. **Words:** "airplane", the FAA's own word. FAA capitals go to sentence case with their codes kept (`faaWords` in `web/src/lib/advisories.ts`). Raw reports (METAR, TAF, NOTAM) stay exactly as sent.
+9. **Words:** "airplane", the FAA's own word. FAA capitals go to sentence case with their codes kept (`faaWords` in `apps/web/src/lib/advisories.ts`). Raw reports (METAR, TAF, NOTAM) stay exactly as sent.
 10. **Safari:**
     - Anything that sends requests, stores data, asks for the position or uses the service worker gets a WebKit run (the `webkit-iphone` project, or a WebKit repro).
     - The phone is served the working tree as saved, but its service worker shows the previous build for one more load. Compare a phone screenshot with the code before acting on it.
@@ -50,16 +50,16 @@ The planner is becoming an iOS app, and the user tests it on an iPhone. Judge ev
 | WCAG 2.2 AA 2.5.8 | Targets of at least 24 × 24 CSS px | Covered by P1's stricter 44 pt; axe's own rule is off, as it can't see the `::after` hit areas |
 | Core Web Vitals (web.dev) | LCP ≤ 2.5 s, CLS ≤ 0.1, INP ≤ 200 ms at the 75th percentile | Lighthouse nightly (TBT ≤ 200 ms stands in for INP); a miss opens a "standards" issue |
 | Lighthouse | 90+ for performance, accessibility and best practices | Nightly, same issue route |
-| Size | First-load JavaScript within 1.10 MB | `web/scripts/first-load.mjs`, every run |
+| Size | First-load JavaScript within 1.10 MB | `apps/web/scripts/first-load.mjs`, every run |
 
 A change a pilot sees should keep every row green. A "standards" issue is fixed like any other: measure, change, measure again, with the numbers in the pull request.
 
 **Style in the source** (the design audit runs these):
 - Raw text sizes outside the type scale, which should be `TEXT.*`:
-  `grep -rn -E '\btext-(xs|sm|base|lg|xl|2xl|3xl)\b' web/src --include='*.tsx' --include='*.ts' | grep -v -E 'src/lib/text\.ts|src/components/ui/|\.test\.'`
+  `grep -rn -E '\btext-(xs|sm|base|lg|xl|2xl|3xl)\b' apps/web/src --include='*.tsx' --include='*.ts' | grep -v -E 'src/lib/text\.ts|src/components/ui/|\.test\.'`
   There were 29 on 2026-10-08. The allowed exceptions are SVG chart labels, print-only styles and the screen-reader skip link; say why in a comment.
 - Controls grown to 44 px, which should use a pseudo-element hit area instead:
-  `grep -rn -E 'min-(h|w)-(11|\[44px\])|\bh-11\b|\bsize-11\b' web/src --include='*.tsx' | grep -v 'src/components/ui/'`
+  `grep -rn -E 'min-(h|w)-(11|\[44px\])|\bh-11\b|\bsize-11\b' apps/web/src --include='*.tsx' | grep -v 'src/components/ui/'`
   There were 10 on 2026-10-08.
 
 ## 4. Report

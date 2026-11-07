@@ -30,12 +30,12 @@ their build is a reusable workflow -- `native-android-build.yml`,
 jobs when its `changes` job finds the pull request touches what the app
 builds from:
 
-- **Android:** `android/**` (its generated API models included),
-  `native/**`, `web/src/lib/fixtures/**`, `scripts/api-models-apps.*`,
+- **Android:** `apps/android/**` (its generated API models included),
+  `engine/**`, `apps/web/src/lib/fixtures/**`, `scripts/build/api-models-apps.*`,
   `native-android-build.yml`.
-- **iOS:** `ios/**` (its API models included), `native/**`,
-  `web/src/lib/fixtures/**`, `web/src/lib/acs.json`,
-  `tests/fixtures/native/**`, `scripts/api-models-apps.*`,
+- **iOS:** `apps/ios/**` (its API models included), `engine/**`,
+  `apps/web/src/lib/fixtures/**`, `apps/web/src/lib/acs.json`,
+  `services/planner/tests_wingtip/fixtures/native/**`, `scripts/build/api-models-apps.*`,
   `native-ios-test.yml`.
 - **Both:** a change to `ci.yml` itself, or anything in its `global`
   filter, as for every other job.
@@ -96,8 +96,8 @@ npx playwright test --project=mobile --grep @smoke
 
 The iPhone app in the App Store keeps calling the servers for months
 after each release, from every phone that has not updated. So a pull
-request that changes `planning-service/openapi.json` or
-`springboot-app/openapi.json` runs `api-compat` ("API compatibility"):
+request that changes `services/planner/openapi.json` or
+`services/gateway/openapi.json` runs `api-compat` ("API compatibility"):
 [oasdiff](https://github.com/oasdiff/oasdiff)'s `breaking` check, its
 Docker image pinned by digest, compares each document with main's and
 fails on an ERR-level break -- an endpoint, a response field or an enum
@@ -122,7 +122,7 @@ The lines stay after the merge, as the record of what was broken when.
 To see the breaks before pushing:
 
 ```sh
-git show origin/main:planning-service/openapi.json > /tmp/base.json
+git show origin/main:services/planner/openapi.json > /tmp/base.json
 docker run --rm -v /tmp:/base -v "$PWD:/head" tufin/oasdiff:v1.34.1 \
   breaking /base/base.json /head/planning-service/openapi.json --format singleline
 ```
@@ -152,7 +152,7 @@ mini for free:
   jobs take from GitHub's image: Docker CE with Compose and Buildx, gh,
   jq, shellcheck, Temurin 25 and Maven, rustup's tools on the PATH,
   Docker Hub through mirror.gcr.io, and amd64 through Rosetta for
-  `scripts/build-engine-wasm.sh`. A job-started hook gives each runner
+  `scripts/build/build-engine-wasm.sh`. A job-started hook gives each runner
   back a clean Python before every job, as a fresh GitHub machine would;
   the jobs write to `$RUNNER_TEMP`, not `/tmp`, since three runners share
   the VM, and `hub-mirror` leaves its Docker alone when the mirror is
@@ -174,41 +174,40 @@ A flaky test passes and fails on the same code. Each one costs a rerun and
 an hour of someone deciding whether it was their change, so the suites are
 set up to make them show early and in the test that causes them
 (2026-11-06, after a debounce timer in `useAirportSearch.test.tsx` fired
-after its test, and test doubles in `tests/test_traffic.py` leaked into
+after its test, and test doubles in `services/planner/tests_wingtip/test_traffic.py` leaked into
 the tests after them, #494).
 
 **Random order, every run.** pytest runs with pytest-randomly
-(`requirements-dev.txt` in each Python directory) and vitest with
-`sequence.shuffle` (`web/vite.config.ts`), so a test that passes only after
+(both of `services/planner`'s `requirements-dev*.txt`) and vitest with
+`sequence.shuffle` (`apps/web/vite.config.ts`), so a test that passes only after
 another one fails here, not one day in CI. The order comes from a seed
 printed at the top of the run: `pytest --randomly-seed=N` and
 `npx vitest run --sequence.seed=N` repeat it, and `pytest -p no:randomly` runs
 in file order. A test that cannot yet run in any order is marked
 `@pytest.mark.order_dependent` (it runs after the rest, in file order;
-`conftest.py`) or `describe(name, { shuffle: false }, ...)`, and listed to
+`services/planner/conftest.py`) or `describe(name, { shuffle: false }, ...)`, and listed to
 be fixed.
 
 **Guards for the usual causes.**
-- Python (`pyproject.toml` of the root and planning-service, each its own
-  rootdir so each repeats the settings, and
-  their `conftest.py`, which all import `pytest_guards.py`): no cache of the last run (`-p no:cacheprovider`), unknown
+- Python (`services/planner/pyproject.toml`, the one rootdir of both
+  suites, and its `conftest.py`, which imports `pytest_guards.py`): no cache of the last run (`-p no:cacheprovider`), unknown
   marks are errors (`--strict-markers`), and a test that leaves one of
   wingtip's or an app's functions replaced -- a test double put on a module
   by assignment rather than `monkeypatch.setattr` -- fails at its own
   teardown, naming it.
-- Web (`web/src/test/guards.ts`, before every test file): what Testing
+- Web (`apps/web/src/test/guards.ts`, before every test file): what Testing
   Library rendered is unmounted after each test (vitest's globals are off,
   so it was not), the real timers a jsdom file leaves still to fire are
   cleared as it ends (one firing after its jsdom is gone was an unhandled
   error), a test that leaves fake timers on fails, and an unhandled error
   or rejection fails the run (`dangerouslyIgnoreUnhandledErrors: false`).
-- ESLint (`web/eslint.config.js`): `@vitest/eslint-plugin`'s recommended
+- ESLint (`apps/web/eslint.config.js`): `@vitest/eslint-plugin`'s recommended
   rules and no `.only` in the unit tests, eslint-plugin-testing-library's
   for the `*.test.tsx` files (async queries awaited, no side effects in
   `waitFor`), and no
   `.only` in the browser specs; Playwright's `forbidOnly` in CI as well.
 
-**Browser tests retry once, in CI only** (`web/playwright.config.ts`). A
+**Browser tests retry once, in CI only** (`apps/web/playwright.config.ts`). A
 test that passes on its retry is flaky: the run passes, the `github`
 reporter marks it on the commit's checks, and it goes to the nightly issue
 below. A real regression fails both goes.
@@ -220,7 +219,7 @@ that failed at least once and passed at least once is flaky. With the
 browser tests that passed only on their retry (that night's run and the
 last day's pull requests), the list goes into one standing issue, "Flaky
 tests (nightly)", kept 14 days after a test was last seen
-(`scripts/flaky_tests.py`). The script makes one GitHub write a night at
+(`scripts/ci/flaky_tests.py`). The script makes one GitHub write a night at
 most -- the issue created, or its body edited, never a comment -- and none
 when the list has not changed.
 

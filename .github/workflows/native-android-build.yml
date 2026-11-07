@@ -1,7 +1,7 @@
 name: Native Android build
 
-# The native Android app's build (android/, docs/NATIVE-ANDROID.md): the
-# shared Rust engine for the three ABIs (native/ffi/build-android.sh),
+# The native Android app's build (apps/android/, docs/NATIVE-ANDROID.md): the
+# shared Rust engine for the three ABIs (engine/bindings/ffi/build-android.sh),
 # then the unit tests, lint and a debug APK a tester can install by hand
 # (the run's artifact). Called, not triggered: by ci.yml on a pull request
 # that touches what the app builds from, so "CI passed" -- the one check
@@ -20,7 +20,7 @@ permissions:
 env:
   # The site the app talks to and whose links open it (App Links): the
   # repo variable once it exists, a stand-in before; its host is the
-  # build's WINGTIP_HOST (android/app/build.gradle.kts).
+  # build's WINGTIP_HOST (apps/android/app/build.gradle.kts).
   WINGTIP_URL: ${{ vars.WINGTIP_URL || 'https://wingtipmaps.app/app/plan' }}
 
 jobs:
@@ -50,39 +50,39 @@ jobs:
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          path: android/app/engine
-          key: engine-android-${{ hashFiles('native/engine/**', 'native/crates/**', 'native/ffi/**', 'native/Cargo.*') }}
+          path: apps/android/app/engine
+          key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
       - name: The engine, for the app
-        # wingtip-engine through its C functions (native/ffi), for each
+        # wingtip-engine through its C functions (engine/bindings/ffi), for each
         # ABI, with the runner's own rustup and NDK, where the engine changed.
         if: steps.engine.outputs.cache-hit != 'true'
-        run: native/ffi/build-android.sh
+        run: engine/bindings/ffi/build-android.sh
       # Kept at once, not at the job's end, so the device job has it
       # whatever the unit tests and lint say.
       - name: The engine, kept
         if: steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          path: android/app/engine
-          key: engine-android-${{ hashFiles('native/engine/**', 'native/crates/**', 'native/ffi/**', 'native/Cargo.*') }}
+          path: apps/android/app/engine
+          key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
       - name: The site's host
         id: site
         run: echo "host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")" >> "$GITHUB_OUTPUT"
       - name: Tested, linted and built, a debug APK
-        working-directory: android
+        working-directory: apps/android
         env:
           WINGTIP_HOST: ${{ steps.site.outputs.host }}
         run: ./gradlew --no-daemon --stacktrace testDebugUnitTest lintDebug assembleDebug
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: wingtip-native-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: apps/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
       - name: The lint report, on failure
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: wingtip-native-lint
-          path: android/app/build/reports/lint-results-debug.html
+          path: apps/android/app/build/reports/lint-results-debug.html
           if-no-files-found: ignore
           retention-days: 7

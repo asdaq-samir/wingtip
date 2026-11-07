@@ -1,0 +1,13 @@
+# Ruff's settings for every Python file in the repository: the planner's
+# and wingtip's, and the few scripts outside them (scripts/ci,
+# infra/dev-services, apps/web/scripts). Hidden at the root so the root
+# keeps only its few files, and found from any of them, as Ruff looks up
+# from each file for the nearest settings.
+line-length = 140
+extend-exclude = ["*.ipynb"]
+
+[lint]
+# Default (E/F: pyflakes + pycodestyle errors) is enough for CI to catch
+# real bugs (unused imports, undefined names, syntax issues) without also
+# relitigating this codebase's existing style choices on day one of CI.
+select = ["E", "F"]

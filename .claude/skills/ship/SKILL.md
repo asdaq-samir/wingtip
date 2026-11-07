@@ -19,7 +19,7 @@ git status --short && git diff --cached --stat
 - Never `git add -A` or `git add .`.
 - Never stage `data/labels/` or `data/processed/`. They hold the owner's ratings and features, changed locally on purpose.
 - Never stage `.env`, `infra/local-https/certs/`, `data/raw/` or anything else the user keeps locally.
-- If generated files changed (OpenAPI documents, `web/src/lib/api/*.d.ts`), commit them with the change that caused them.
+- If generated files changed (OpenAPI documents, `apps/web/src/lib/api/*.d.ts`), commit them with the change that caused them.
 
 ## 3. The message
 One paragraph, in plain sentences:
@@ -37,7 +37,7 @@ gh pr create --base main --fill   # once, for the branch's first push
 To bring the branch up to date, `git merge origin/main` (never rebase a pushed branch). auto-merge-agents.yml turns auto-merge on as the pull request opens, and it merges by itself once the "CI passed" check is green; Claude's review runs only when the "review" label is put on it (the owner, 2026-11-06), so run the covering checks and the aviation-check skill before pushing. Nothing merges red.
 
 ## 5. Follow CI
-- **One push at a time when it matters.** On a pull request, ci.yml cancels the running CI on the same branch when a new push arrives (main's runs queue instead), and the cancelled run's path-filtered jobs (image builds, pdoc) never run again. If a push touched `src/`, a requirements file or a Dockerfile, wait for its run to finish before pushing again.
+- **One push at a time when it matters.** On a pull request, ci.yml cancels the running CI on the same branch when a new push arrives (main's runs queue instead), and the cancelled run's path-filtered jobs (image builds, pdoc) never run again. If a push touched `services/planner/wingtip`, a requirements file or a Dockerfile, wait for its run to finish before pushing again.
 - **In CI,** `gh` is installed and signed in, so use `gh run view`, `gh pr checks` and the rest.
 - **On the owner's Mac there's no `gh` CLI.** Use the public API with `curl`, every three minutes at most (CI takes about two): it allows 60 requests an hour unauthenticated, and a poller that runs while you wait on something else is still polling. Don't use Python's `urllib`, because the host's Python has no CA bundle.
   ```sh
@@ -45,7 +45,7 @@ To bring the branch up to date, `git merge origin/main` (never rebase a pushed b
   curl -s "https://api.github.com/repos/asdaq-samir/wingtip/actions/runs/<run id>/jobs"                       # its jobs
   curl -s "https://api.github.com/repos/asdaq-samir/wingtip/check-runs/<job id>/annotations"                 # why one failed
   ```
-- **Read the annotations before guessing.** test-webapp turns each failing Java test into an annotation, and e2e posts one per failed test plus the planner's data and log. Job logs themselves need authentication.
+- **Read the annotations before guessing.** test-gateway turns each failing Java test into an annotation, and e2e posts one per failed test plus the planner's data and log. Job logs themselves need authentication.
 - **Rerunning a failed job** needs the GitHub login that git keeps in the keychain (`git credential fill`): `POST /actions/runs/<id>/rerun-failed-jobs`. The user has allowed this. Never print the token.
 - **Write to GitHub gently.** GitHub suspended the owner's account in October 2026, most likely for nine issues opened through the API in ten seconds. With the owner's login, through the API or `gh`:
   - one write at a time, at least ten seconds apart, never in a loop or several calls in one command;

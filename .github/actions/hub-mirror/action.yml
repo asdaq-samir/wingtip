@@ -5,7 +5,7 @@ description: >
   mirror.gcr.io, first, falling back to Docker Hub where the mirror lacks
   one. Docker Hub's limit on pulls from a runner's address refused them
   -- 429 Too Many Requests, then its token service failing -- and with
-  them every e2e shard, test-webapp and infra, on every pull request of
+  them every e2e shard, test-gateway and infra, on every pull request of
   the evening of 2026-10-09. The image builds have the same mirror in
   BuildKit's config (ci.yml's build jobs).
 runs:

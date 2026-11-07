@@ -1,7 +1,7 @@
 #!/bin/bash
 # Brings the production server up to the latest images and settings:
 # writes /srv/wingtip/.env from the stack's secrets, logs in to ECR,
-# pulls and (re)starts docker-compose.prod.yml. Run by the server's first
+# pulls and (re)starts infra/docker-compose.prod.yml. Run by the server's first
 # boot (the stack's UserData) and by every deploy after it -- by hand over
 # SSM Session Manager, or by the GitHub deploy role with ssm send-command.
 # Safe to run again: compose only restarts what changed.
@@ -66,7 +66,7 @@ mv "$ENV_FILE.new" "$ENV_FILE"
 # notes written so far, and the corridor the planner warms its charts up
 # on. After that the server's copies are the live ones -- pilots add notes
 # to them -- and are never overwritten. (The stock aircraft profiles are
-# mounted from the repository instead, docker-compose.prod.yml, so they
+# mounted from the repository instead, infra/docker-compose.prod.yml, so they
 # follow each deploy.)
 for dir in labels processed; do
   install -d -o 1000 -g 1000 "/srv/wingtip/data/$dir"
@@ -79,7 +79,7 @@ aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS 
 
 # The chart model the planner ranks checkpoints with, if one has been
 # uploaded (s3://SERVER_BUCKET/models/chart/current/); without it the
-# planner ranks by its own rules (planning-service/app/chart_model.py).
+# planner ranks by its own rules (services/planner/app/chart_model.py).
 aws s3 sync --quiet "s3://$SERVER_BUCKET/models/" /srv/wingtip/data/models/ || true
 
 # The ground under the lower 48 (wingtip.ground_grid), which a plan's floor is
@@ -90,8 +90,8 @@ install -d -o 1000 -g 1000 "$GRID"
 aws s3 sync --quiet "s3://$SERVER_BUCKET/ground_grid/" "$GRID/" || true
 
 cd "$REPO"
-docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml pull --quiet
-docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml up -d --remove-orphans
+docker compose --env-file "$ENV_FILE" -f infra/docker-compose.prod.yml pull --quiet
+docker compose --env-file "$ENV_FILE" -f infra/docker-compose.prod.yml up -d --remove-orphans
 docker image prune -f > /dev/null
 
 # No grid yet: built once in the background (some forty minutes, a row of
@@ -102,7 +102,7 @@ docker image prune -f > /dev/null
 # Its files are named for how the tiles were read (wingtip.ground_grid VERSION):
 # a server with only an older grid builds this one.
 if [ ! -f "$GRID/high_ft.v2.npy" ] || [ -f "$GRID/rows_done.v2.json" ]; then
-  nohup sh -c "docker compose --env-file '$ENV_FILE' -f docker-compose.prod.yml run --rm --no-deps --entrypoint python planning-service -m wingtip.ground_grid \
+  nohup sh -c "docker compose --env-file '$ENV_FILE' -f infra/docker-compose.prod.yml run --rm --no-deps --entrypoint python planner -m wingtip.ground_grid \
     && aws s3 sync --quiet '$GRID/' 's3://$SERVER_BUCKET/ground_grid/'" > /var/log/ground_grid.log 2>&1 &
 fi
-echo "deployed: $(docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml ps --format '{{.Service}} {{.Status}}' | tr '\n' ';')"
+echo "deployed: $(docker compose --env-file "$ENV_FILE" -f infra/docker-compose.prod.yml ps --format '{{.Service}} {{.Status}}' | tr '\n' ';')"
