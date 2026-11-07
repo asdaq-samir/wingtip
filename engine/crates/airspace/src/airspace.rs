@@ -2,7 +2,7 @@
 //! its bytes: a shapefile Polygon record, as the FAA's NASR Class Airspace
 //! shapefile has it, or the same rings as WKB, as the cycle pack keeps
 //! them (crate::pack). Both give the same answer at every point, as pyshp
-//! and shapely gave it, which tests/test_native.py holds them to.
+//! and shapely gave it, which services/planner/tests_wingtip/test_native.py holds them to.
 
 fn i32_at(b: &[u8], o: usize) -> Option<i32> {
     b.get(o..o + 4).map(|s| i32::from_le_bytes(s.try_into().unwrap()))

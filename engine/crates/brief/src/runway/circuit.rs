@@ -1,4 +1,4 @@
-//! A runway's traffic pattern drawn and flown (web/src/lib/trafficPattern.ts,
+//! A runway's traffic pattern drawn and flown (apps/web/src/lib/trafficPattern.ts,
 //! wingtip.pattern's circuits): the rectangle flown round the runway for the
 //! end landed on, the side its traffic is flown on, and the 45° entry to
 //! the downwind abeam midfield -- as the FAA's Airplane Flying Handbook

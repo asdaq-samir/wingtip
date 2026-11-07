@@ -1,5 +1,5 @@
-//! The engine against the shared fixtures (tests/fixtures/native), which
-//! tests/test_native.py reads as well: two real routes' grids with the
+//! The engine against the shared fixtures (services/planner/tests_wingtip/fixtures/native), which
+//! services/planner/tests_wingtip/test_native.py reads as well: two real routes' grids with the
 //! turns, minutes and cells the Python gave on them, and the Chicago
 //! airspace with the records shapely found holding real taps.
 
@@ -15,7 +15,7 @@ use wingtip_engine::grid::{line_cells, straightened, Cell, Costs, Geom, Point, S
 const CELL_DEG: f64 = 0.25;
 
 fn fixtures() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/native")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../services/planner/tests_wingtip/fixtures/native")
 }
 
 fn gunzip(name: &str) -> Vec<u8> {

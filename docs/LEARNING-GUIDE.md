@@ -26,10 +26,10 @@ later as a refresher while you build.
 
 The project has four layers, each with one job. The Rust engine
 (`engine/`) holds every aviation rule and figure once, with no network,
-no screen and no clock. The planner (`planning-service` over
-`src/wingtip`, FastAPI) works out a flight: it fetches the data, runs the
+no screen and no clock. The planner (`planner` over
+`services/planner/wingtip`, FastAPI) works out a flight: it fetches the data, runs the
 chart model and the assistant, and asks the engine every rule. Spring
-Boot (`webapp`) is who the pilot is and what they saved, with no aviation
+Boot (`gateway`) is who the pilot is and what they saved, with no aviation
 logic of its own. The apps (web, iOS, Android) get data, keep state and
 draw, and ask the engine the rest. §4 says why it is cut this way.
 
@@ -47,19 +47,19 @@ flowchart LR
     end
     run["§3 retrain<br/>(the training run: the row above, in order)"] -.-> collect
 
-    registry --> planner[("planning-service<br/>scores with the promoted model")]
+    registry --> planner[("planner<br/>scores with the promoted model")]
 
-    webapp["§4 webapp<br/>(Spring Boot: accounts, records)"] --> planner
-    webapp --> db[("db<br/>Postgres")]
+    gateway["§4 gateway<br/>(Spring Boot: accounts, records)"] --> planner
+    gateway --> db[("db<br/>Postgres")]
     planner --> engine[["§4 engine (Rust)<br/>every aviation rule"]]
-    apps([web · iOS · Android]) --> webapp
+    apps([web · iOS · Android]) --> gateway
     apps --> engine
 
     planner -->|"§5 the written briefing<br/>(Anthropic SDK)"| claude([Claude API])
 
 ```
 
-Everything above `db`/`planning-service` runs today exactly as drawn; the
+Everything above `db`/`planner` runs today exactly as drawn; the
 `§7` CloudFormation template re-provisions this same picture on AWS,
 service for service — see `docs/README-AWS.md`.
 
@@ -85,7 +85,7 @@ install` almost always comes *before* `COPY app ./app` in this repo's
 Dockerfiles: your application code changes constantly, your dependency
 list doesn't, so putting the slow, cacheable step (`pip install`) first
 means it's skipped on rebuild unless `requirements.txt` itself changed.
-Look at [`planning-service/Dockerfile`](../planning-service/Dockerfile) — that
+Look at [`services/planner/Dockerfile`](../services/planner/Dockerfile) — that
 ordering is deliberate, not incidental.
 
 **Volumes vs. the image filesystem.** Anything `COPY`'d into an image is
@@ -94,7 +94,7 @@ your host machine into the running container, live. This repo uses bind
 mounts heavily — `.:/workspace` shows up in several services in
 [`docker-compose.yml`](../docker-compose.yml) — specifically so you can
 edit Python source on your host and rerun the container without rebuilding
-the image. Compare that to `webapp`, which has *no*
+the image. Compare that to `gateway`, which has *no*
 bind mount: its code is `COPY`'d into the image at build time, so you
 must rebuild the image to pick up a change. That split is a real decision:
 interpreted-language dev containers favor mount-and-iterate; compiled/
@@ -105,7 +105,7 @@ they'd actually ship.
 **Networking.** Docker Compose puts every service in the same file on one
 private network, and each service is reachable from any other by its
 *service name* as a hostname — not `localhost`. That's why
-[`docker-compose.yml`](../docker-compose.yml)'s `planning-service` has
+[`docker-compose.yml`](../docker-compose.yml)'s `planner` has
 `DEV_SERVICES_URL: http://dev-services:8000`, not
 `http://localhost:8000` — `dev-services` is DNS-resolvable to the right
 container only inside that private network. From your host machine
@@ -132,20 +132,20 @@ arguments to it. `CMD` is the *whole* default command, fully overridable.
 This repo uses `ENTRYPOINT` for the pipeline images specifically so
 `docker compose run --rm pipeline-training retrain` can pass `retrain` as
 an argument to a fixed `python3 -m wingtip.pipeline` — see
-[`docker/Dockerfile.training`](../docker/Dockerfile.training).
+[`ml/Dockerfile.training`](../ml/Dockerfile.training).
 
 ### Multi-stage builds
 
-[`springboot-app/Dockerfile`](../springboot-app/Dockerfile) is the one
+[`services/gateway/Dockerfile`](../services/gateway/Dockerfile) is the one
 multi-stage build in this repo, trimmed here to its shape:
 
 ```dockerfile
 FROM node:26-slim AS web
-COPY web/ ./
+COPY apps/web/ ./
 RUN npx vite build --outDir /web/dist
 
 FROM maven:3.9.16-eclipse-temurin-25 AS build
-COPY springboot-app/src ./src
+COPY services/gateway/src ./src
 RUN mvn -q package -DskipTests
 
 FROM eclipse-temurin:25-jre
@@ -171,12 +171,12 @@ from its cache.
 
 | Dockerfile | Base | Why it looks like this |
 |---|---|---|
-| [`docker/Dockerfile.base`](../docker/Dockerfile.base) | `python:3.14-slim` (by digest) | The base the four below are built FROM: wingtip's own requirements (`src/requirements.txt`) and its Rust extension (`wingtip_native`, compiled in a stage of its own with Rust copied in, so the base carries the wheel and no toolchain), installed once. Each image names it as the build context `wingtip-base`: compose's `base` service, a bake's `target:base`. Before it, each image built the engine and installed the same requirements itself, the same layers four times over on disk. |
-| [`docker/Dockerfile.ml`](../docker/Dockerfile.ml) | `wingtip-base` | Jupyter and scikit-learn over `wingtip`'s own list, for notebooks 01–03 and 08, and nothing else: the PyTorch, TensorFlow, Spark and sentence-transformers comparison notebooks, and the JDK and CUDA-free torch wheel they needed, went on 2026-11-06, since only scikit-learn reaches a pilot. Carries no source; compose bind-mounts the checkout. |
-| [`docker/Dockerfile.processing`](../docker/Dockerfile.processing) | `wingtip-base` | Deliberately thin: pandas/requests/pyarrow only, no scikit-learn. Mirrors what a SageMaker *Processing Job* container needs. |
-| [`docker/Dockerfile.training`](../docker/Dockerfile.training) | `wingtip-base` | Adds scikit-learn/joblib on top, so it can run every stage: the training run (`python -m wingtip.pipeline run`, compose's `retrain`) runs in it. Kept as a *separate* image from `.processing` rather than one shared image, because Processing and Training are different constructs on AWS with different container contracts — see [Section 2](#2-the-ml-pipeline). |
-| [`planning-service/Dockerfile`](../planning-service/Dockerfile) | `wingtip-base` | FastAPI plus the chart-vision stack (numpy, Pillow, shapely), and the chart model's scikit-learn, pinned to the training image's. Bind-mounts the repo, so a `src/wingtip` edit needs a restart, not a rebuild. |
-| [`springboot-app/Dockerfile`](../springboot-app/Dockerfile) | `node:26-slim` → `maven:...` → `eclipse-temurin:25-jre` | Multi-stage, see above. |
+| [`services/Dockerfile.base`](../services/Dockerfile.base) | `python:3.14-slim` (by digest) | The base the four below are built FROM: wingtip's own requirements (`services/planner/requirements-wingtip.txt`) and its Rust extension (`wingtip_native`, compiled in a stage of its own with Rust copied in, so the base carries the wheel and no toolchain), installed once. Each image names it as the build context `wingtip-base`: compose's `base` service, a bake's `target:base`. Before it, each image built the engine and installed the same requirements itself, the same layers four times over on disk. |
+| [`ml/Dockerfile.ml`](../ml/Dockerfile.ml) | `wingtip-base` | Jupyter and scikit-learn over `wingtip`'s own list, for notebooks 01–03 and 08, and nothing else: the PyTorch, TensorFlow, Spark and sentence-transformers comparison notebooks, and the JDK and CUDA-free torch wheel they needed, went on 2026-11-06, since only scikit-learn reaches a pilot. Carries no source; compose bind-mounts the checkout. |
+| [`ml/Dockerfile.processing`](../ml/Dockerfile.processing) | `wingtip-base` | Deliberately thin: pandas/requests/pyarrow only, no scikit-learn. Mirrors what a SageMaker *Processing Job* container needs. |
+| [`ml/Dockerfile.training`](../ml/Dockerfile.training) | `wingtip-base` | Adds scikit-learn/joblib on top, so it can run every stage: the training run (`python -m wingtip.pipeline run`, compose's `retrain`) runs in it. Kept as a *separate* image from `.processing` rather than one shared image, because Processing and Training are different constructs on AWS with different container contracts — see [Section 2](#2-the-ml-pipeline). |
+| [`services/planner/Dockerfile`](../services/planner/Dockerfile) | `wingtip-base` | FastAPI plus the chart-vision stack (numpy, Pillow, shapely), and the chart model's scikit-learn, pinned to the training image's. Bind-mounts the repo, so a `services/planner/wingtip` edit needs a restart, not a rebuild. |
+| [`services/gateway/Dockerfile`](../services/gateway/Dockerfile) | `node:26-slim` → `maven:...` → `eclipse-temurin:25-jre` | Multi-stage, see above. |
 
 ### The images those Dockerfiles produce
 
@@ -184,8 +184,8 @@ A Dockerfile is a recipe; an image is the baked result sitting on your
 disk. `docker images` on a working copy of this repo shows two kinds.
 
 **The ones built from this repo**, named after the project
-(`wingtip-webapp`, `wingtip-ml`, and so on). Only three of them run the application — `webapp`,
-`planning-service` and the database's own image below;
+(`wingtip-gateway`, `wingtip-ml`, and so on). Only three of them run the application — `gateway`,
+`planner` and the database's own image below;
 the rest exist for building, training or testing.
 
 **The ones pulled, not built.** These look like clutter and are not;
@@ -205,7 +205,7 @@ repo can reproduce, so deleting one costs rebuild time, never data. The
 thing you must not delete is the named Postgres volume (`pgdata_pg18` in
 `docker-compose.yml`), which holds the application rows — and `docker system prune --volumes`, the command everyone
 reaches for when a disk fills, takes it with everything else.
-[`docker/tidy.sh`](../docker/tidy.sh) is the safe version: by default it
+[`scripts/dev/docker-tidy.sh`](../scripts/dev/docker-tidy.sh) is the safe version: by default it
 removes stopped containers and build-cache entries unused for seven
 days, never volumes or images; `--aggressive` also removes unused images.
 
@@ -223,19 +223,19 @@ Per service, four keys matter most:
 
 - `build:` — where the Dockerfile is and what directory is the *build
   context* (everything `COPY` can see). Some services build from `.` (the
-  repo root, needed when the Dockerfile has to `COPY src ./src` from
+  repo root, needed when the Dockerfile has to `COPY services/planner/wingtip ./wingtip` from
   outside its own directory); a fully self-contained one could build from
   its own subdirectory instead.
 - `ports: ["8080:8080"]` — `host:container`. The left side is what you
   type into your browser; the right side is what the app inside actually
   binds to.
 - `environment:` — env vars injected into the container. Notice
-  `${ANTHROPIC_API_KEY:-}` on `planning-service`: `:-` means
+  `${ANTHROPIC_API_KEY:-}` on `planner`: `:-` means
   "empty if unset". Its sibling `${VAR:?message}` means "fail immediately
   with this message if unset", and this file used that until it was tried
   from a clean checkout — Compose interpolates the *whole* file before it
   decides which services to start, so one required-variable marker failed
-  every command, including `docker compose up webapp` and even
+  every command, including `docker compose up gateway` and even
   `docker compose config`. A worked lesson in where a check belongs: the
   planner's Claude features now find the key missing when they are used,
   and say so, so the failure reaches only the people using them.
@@ -244,8 +244,8 @@ Per service, four keys matter most:
   service directly enables its profile too.
 - `depends_on:` — controls **start order** only (Compose waits for the
   dependency's container to start, not for the app inside it to be
-  ready). It does not retry connections — if `webapp` starts faster than
-  `db` accepts connections, that's on `webapp`'s own connection-retry
+  ready). It does not retry connections — if `gateway` starts faster than
+  `db` accepts connections, that's on `gateway`'s own connection-retry
   logic (Spring Boot's, in this case), not Compose.
 
 ---
@@ -254,9 +254,9 @@ Per service, four keys matter most:
 
 This is the automatable subset of what a data scientist does by hand,
 turned into three plain functions in
-[`src/wingtip/pipeline.py`](../src/wingtip/pipeline.py): `collect`,
+[`services/planner/wingtip/pipeline.py`](../services/planner/wingtip/pipeline.py): `collect`,
 `engineer_features`, `retrain`. Plus two more in
-[`src/wingtip/model_registry.py`](../src/wingtip/model_registry.py): `evaluate`,
+[`services/planner/wingtip/model_registry.py`](../services/planner/wingtip/model_registry.py): `evaluate`,
 `promote`. Five functions, five pipeline stages, one per notebook (01, 02,
 03, 03, 03).
 
@@ -287,7 +287,7 @@ dropped, unnamed lakes dropped because one blue shape among identical
 blue shapes cannot be confirmed as the right one. Each was a real
 discovery, and each was a patch over the same mismatch.
 
-[`src/wingtip/chartvision.py`](../src/wingtip/chartvision.py) removes the
+[`services/planner/wingtip/chartvision.py`](../services/planner/wingtip/chartvision.py) removes the
 mismatch by reading the chart. A sectional is a cartographic product with
 a fixed palette, so the tiles can be segmented directly: pale blue is
 water, a saturated dark blue line is a watercourse, yellow is a town,
@@ -320,7 +320,7 @@ and writes them to `data/processed/candidates_c81_kdlh.csv`. If you're new
 to geospatial code, the two ideas worth understanding here are
 **cross-track distance** (how far off the direct line a point is) and
 **along-track distance** (how far along the line, projected) — both live
-in [`src/wingtip/geo.py`](../src/wingtip/geo.py) and are standard great-circle
+in [`services/planner/wingtip/geo.py`](../services/planner/wingtip/geo.py) and are standard great-circle
 navigation math, not anything ML-specific.
 
 Which categories are collected is itself a data-quality decision, and the
@@ -338,7 +338,7 @@ the FAA's `APT_BASE.csv` rather than OSM or OurAirports, because being
 FAA-registered is what tracks with being drawn: two unregistered private
 strips had nothing at all at their coordinates, while a registered
 private field is drawn as a circled magenta "R". See `CANDIDATE_SPECS` in
-[`src/wingtip/osm.py`](../src/wingtip/osm.py), where every exclusion is recorded
+[`services/planner/wingtip/osm.py`](../services/planner/wingtip/osm.py), where every exclusion is recorded
 next to the ones that stayed.
 
 ### Engineer features → a model-ready table
@@ -359,7 +359,7 @@ individually). Result: `data/processed/features_c81_kdlh.parquet`.
 ### Retrain → model selection
 
 This is the part worth slowing down on if machine learning is new to you.
-`retrain()` ([`src/wingtip/pipeline.py`](../src/wingtip/pipeline.py))
+`retrain()` ([`services/planner/wingtip/pipeline.py`](../services/planner/wingtip/pipeline.py))
 does five things, in order, and each is a standard ML pattern you'll see
 in any serious project:
 
@@ -407,7 +407,7 @@ itself by quietly matching the mean.
 
 ### Evaluate/promote → a tiny model registry
 
-[`src/wingtip/model_registry.py`](../src/wingtip/model_registry.py) implements the
+[`services/planner/wingtip/model_registry.py`](../services/planner/wingtip/model_registry.py) implements the
 **champion/challenger pattern**: `evaluate()` compares the freshly-trained
 "candidate" model against whatever's currently "current" (serving), and
 returns `True` only if the candidate wins (or nothing has been promoted
@@ -450,7 +450,7 @@ The five stages run in order, every time, from one command:
 docker compose run --rm pipeline-training run    # python -m wingtip.pipeline run
 ```
 
-Open `run()` in [`src/wingtip/pipeline.py`](../src/wingtip/pipeline.py).
+Open `run()` in [`services/planner/wingtip/pipeline.py`](../services/planner/wingtip/pipeline.py).
 It is a list of stages per model -- the landmark model's
 `landmarks_ready`, `collect`, `feature_engineer`, `retrain`, `evaluate`,
 `promote`, then the chart model's `chart_retrain`, `chart_evaluate`,
@@ -497,8 +497,8 @@ when they are set.
 
 ## 4. The serving layer
 
-Two services answer real HTTP requests: `planning-service` (working out
-a flight, and the model's predictions) and `webapp` (who the pilot is
+Two services answer real HTTP requests: `planner` (working out
+a flight, and the model's predictions) and `gateway` (who the pilot is
 and what they saved). Under both, and under every app, is the engine.
 
 ### Four layers, and why
@@ -531,7 +531,7 @@ yet, in the order it moves.
 
 ### Scoring in the planner
 
-[`planning-service/app/chart_scorer.py`](../planning-service/app/chart_scorer.py)
+[`services/planner/app/chart_scorer.py`](../services/planner/app/chart_scorer.py)
 is deliberately minimal: one function, `score_detections`, the chart
 model's score for each detection the planner reads off the chart. The
 model loads from `data/models/chart/current` and is read again when a
@@ -545,7 +545,7 @@ to the training image's.
 ### Select → the checkpoints actually flown
 
 A scored ranking is not a flight plan.
-[`src/wingtip/checkpoints.py`](../src/wingtip/checkpoints.py) is the step between
+[`services/planner/wingtip/checkpoints.py`](../services/planner/wingtip/checkpoints.py) is the step between
 them: `select_checkpoints()` walks the model's candidates highest-score
 first and takes each one that sits at least `min_spacing_nm` from
 everything already chosen. On C81→KDLH that turns 206 scored candidates
@@ -568,19 +568,19 @@ tidy up spacing elsewhere. And a minimum score means a barren stretch
 yields a genuinely long leg instead of a checkpoint the pilot will look
 for and fail to see.
 
-### webapp (Spring Boot)
+### gateway (Spring Boot)
 
 Standard Spring Boot layering, and worth knowing even outside this
 project since it's close to an industry-default shape:
 
-- **Controller** ([`AircraftController.java`](../springboot-app/src/main/java/com/northflyers/wingtip/controller/AircraftController.java)) —
+- **Controller** ([`AircraftController.java`](../services/gateway/src/main/java/com/northflyers/wingtip/controller/AircraftController.java)) —
   the HTTP boundary. `@RestController` + `@RequestMapping("/api/aircraft")`;
   each method maps to one route+verb (`@GetMapping`, `@PostMapping`,
   `@PutMapping("/{id}")`, `@DeleteMapping("/{id}")`). Controllers should
   stay thin — this one resolves the signed-in pilot, calls into
   `AircraftService` and wraps the result in a `ResponseEntity`, no
   business logic.
-- **Service** ([`AircraftService.java`](../springboot-app/src/main/java/com/northflyers/wingtip/service/AircraftService.java)) —
+- **Service** ([`AircraftService.java`](../services/gateway/src/main/java/com/northflyers/wingtip/service/AircraftService.java)) —
   the actual logic, and where pilot-scoping lives: every lookup goes
   through `findByIdAndPilotId`, so one pilot can never read or edit
   another's aeroplane by guessing an id.
@@ -640,11 +640,11 @@ classDiagram
 ```
 
 Where the model gets called is worth noticing by its absence: nowhere in
-this service. Scoring a route belongs to `planning-service`, which
-`webapp` only proxies (`PlannerProxyController`, `/api/planner/*`), and
-planning-service scores in its own process
-([`app/chart_scorer.py`](../planning-service/app/chart_scorer.py)), and the
-written briefing is planning-service's too, told from the nav log the
+this service. Scoring a route belongs to `planner`, which
+`gateway` only proxies (`PlannerProxyController`, `/api/planner/*`), and
+planner scores in its own process
+([`app/chart_scorer.py`](../services/planner/app/chart_scorer.py)), and the
+written briefing is planner's too, told from the nav log the
 page already shows, so there is one place a nav log is built.
 
 **Schema ownership**: this app does *not* let Hibernate auto-generate or
@@ -671,7 +671,7 @@ endpoints, on purpose.
 
 ## 5. The Gen AI layer
 
-Every Claude call in this project is made from `planning-service` with the
+Every Claude call in this project is made from `planner` with the
 Anthropic Python SDK directly — no agent framework in between. The
 project once had two (a LangGraph agent served over MCP, with a pgvector
 memory of past briefings, and the same task again in CrewAI, to compare
@@ -681,7 +681,7 @@ offered was one SDK call.
 
 ### What "an agent" actually means here
 
-The written briefing ([`app/narrative.py`](../planning-service/app/narrative.py),
+The written briefing ([`app/narrative.py`](../services/planner/app/narrative.py),
 `POST /api/briefing/narrative`) is the clearest case. Everything a pilot
 reads in it — the checkpoints, each leg's legal cruising altitude from
 real terrain/airspace/weather constraints, the dead-reckoning legs with
@@ -703,7 +703,7 @@ whole.
 
 ### When the model does choose: the tool runner
 
-The pilot's assistant ([`app/assistant.py`](../planning-service/app/assistant.py))
+The pilot's assistant ([`app/assistant.py`](../services/planner/app/assistant.py))
 is the one place the model decides what to do next. It is given the
 planner's own functions as tools (the plan, the weather at a field, the
 briefing, the Go / No-Go, a hold's entry, a diversion) and the SDK's
@@ -718,9 +718,9 @@ the SDK does it in one call.
 
 ## 6. Database migrations
 
-The webapp owns the schema of the one `db` Postgres container:
+The gateway owns the schema of the one `db` Postgres container:
 
-**`webapp` uses Flyway** — an industry-standard migration tool. You add a
+**`gateway` uses Flyway** — an industry-standard migration tool. You add a
 new file, `V<N>__description.sql`, and Flyway applies any files newer than
 what it's already tracked (in a `flyway_schema_history` table) on next
 startup, in version order, once each, forever. Never edit an already-applied
@@ -838,8 +838,8 @@ Most projects this shape have a testing story that's either "everything is
 mocked" or "there are no tests." This one draws the line by asking what a
 given test would actually prove.
 
-**Pure logic gets unit tests.** `tests/` (pytest) covers the
-parts of `src/wingtip` that are functions of their inputs and nothing else:
+**Pure logic gets unit tests.** `services/planner/tests_wingtip/` (pytest) covers the
+parts of `services/planner/wingtip` that are functions of their inputs and nothing else:
 great-circle math in `wingtip.geo`, engineered features, the
 wind-correction-angle math in `wingtip.navlog`, `model_registry`'s
 evaluate/promote decision, and the remote-URI guards. These are fast,
@@ -849,8 +849,8 @@ subtly wrong.
 **Browser logic counts as pure logic.** The decisions the pages make —
 which points a filter admits, what counts as rated, which way the arrows
 step, which leg leaves a checkpoint — are functions of plain objects, so
-[`web/src/features/chart-labels/logic.ts`](../web/src/features/chart-labels/logic.ts) and
-[`web/src/features/plan/format.ts`](../web/src/features/plan/format.ts)
+[`apps/web/src/features/chart-labels/logic.ts`](../apps/web/src/features/chart-labels/logic.ts) and
+[`apps/web/src/features/plan/format.ts`](../apps/web/src/features/plan/format.ts)
 hold them and `vitest` covers them in under a second with no browser.
 What is left in the components — binding Leaflet layers, rendering rows —
 is the part where a test would mostly restate the code. The general
@@ -861,7 +861,7 @@ together, and separating them is what makes both better.
 **Rendering still has to be looked at.** A layout fault — the map
 inheriting no height, so Leaflet fits the route against a container it
 measured wrong — breaks no pure function and fails no unit test. So
-`web/e2e/` renders the pages in a real browser, at a phone and a desktop
+`apps/web/e2e/` renders the pages in a real browser, at a phone and a desktop
 viewport, and checks what the DOM alone cannot: nothing overflows, the
 header controls sit where they should, the sidebar starts closed.
 
@@ -873,7 +873,7 @@ method produce a 405 rather than a leaky 500. Booting a database to
 answer those questions would only slow them down.
 
 **Integration points get real infrastructure.**
-[`FlightPersistenceTest`](../springboot-app/src/test/java/com/northflyers/wingtip/FlightPersistenceTest.java)
+[`FlightPersistenceTest`](../services/gateway/src/test/java/com/northflyers/wingtip/FlightPersistenceTest.java)
 starts an actual Postgres via Testcontainers, because the things it
 verifies can only be verified against a real database: that Flyway's
 migrations apply in order, that `ddl-auto: validate` agrees the JPA

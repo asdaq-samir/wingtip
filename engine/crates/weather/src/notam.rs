@@ -4,7 +4,7 @@
 //! 2610201100") and the ICAO one ("A1234/26 NOTAMN ... B) ... C) ...") --
 //! for its number, place and times, which is what a phone gets over
 //! FIS-B. The domestic form is the FAA's (FAA JO 7930.2, Notices to Air
-//! Missions), the ICAO one Annex 15's. tests/test_parsers.py holds both
+//! Missions), the ICAO one Annex 15's. services/planner/tests_wingtip/test_parsers.py holds both
 //! to the planner's answers.
 
 use crate::{json, xml};

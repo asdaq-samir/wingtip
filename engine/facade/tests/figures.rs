@@ -1,5 +1,5 @@
 //! The four pilot pages' figures (wingtip_engine::figures), held to the
-//! cases the planner's tests hold app.figures to (planning-service/tests/
+//! cases the planner's tests hold app.figures to (services/planner/tests/
 //! test_figures_*.py), themselves the web's lib/debrief, lib/diversion,
 //! lib/holdEntry and lib/lostComms tests.
 

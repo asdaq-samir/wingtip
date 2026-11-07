@@ -1,0 +1,205 @@
+"""wingtip.sua: the FAA's special-use airspace along a route, read from its
+feature service (mocked here with GeoJSON in the service's own shape)."""
+from unittest.mock import Mock, patch
+
+import pytest
+
+from wingtip import sua
+
+
+def _feature(name, type_code, ring, lower=("0", "FT", "SFC"), upper=("18000", "FT", "MSL"), times="CONTINUOUS"):
+    return {
+        "type": "Feature",
+        "properties": {"NAME": name, "TYPE_CODE": type_code, "LOWER_VAL": lower[0], "LOWER_UOM": lower[1],
+                       "LOWER_CODE": lower[2], "UPPER_VAL": upper[0], "UPPER_UOM": upper[1], "UPPER_CODE": upper[2],
+                       "TIMESOFUSE": times, "CONT_AGENT": "ZDC"},
+        "geometry": {"type": "Polygon", "coordinates": [ring]},
+    }
+
+
+BOX_ON_ROUTE = [[-90.2, 45.4], [-89.8, 45.4], [-89.8, 45.6], [-90.2, 45.6], [-90.2, 45.4]]
+BOX_OFF_ROUTE = [[-88.2, 45.4], [-87.8, 45.4], [-87.8, 45.6], [-88.2, 45.6], [-88.2, 45.4]]
+
+
+@pytest.fixture(autouse=True)
+def _fresh_cache(monkeypatch, tmp_path):
+    monkeypatch.setattr(sua, "_CACHE", {})
+    monkeypatch.setattr(sua, "_DISK", tmp_path / "sua.pkl")
+    monkeypatch.setattr(sua, "_RETRY_AT", 0.0)
+
+
+def _service(features):
+    resp = Mock()
+    resp.raise_for_status = Mock()
+    resp.json = Mock(return_value={"type": "FeatureCollection", "features": features})
+    return resp
+
+
+def test_areas_the_route_crosses_are_listed_in_order_with_their_limits():
+    features = [
+        _feature("MOA NORTH", "MOA", BOX_ON_ROUTE, lower=("500", "FT", "AGL"), upper=("180", "FL", "MSL"),
+                 times="0800-2200 LOCAL MON-FRI"),
+        _feature("R-OFF", "R", BOX_OFF_ROUTE),
+    ]
+    with patch("wingtip.sua.requests.get", return_value=_service(features)) as get:
+        areas = sua.along_route((45.0, -90.0), (46.0, -90.0))
+
+    # The whole country asked for once, paged, not the route's box.
+    assert get.call_args.kwargs["params"]["where"] == "1=1"
+    assert "geometry" not in get.call_args.kwargs["params"]
+    (moa,) = areas
+    assert moa["name"] == "MOA NORTH" and moa["kind"] == "military operations area"
+    assert moa["floor_ft"] == 500.0 and moa["floor_ref"] == "AGL"
+    assert moa["ceiling_ft"] == 18000.0                          # FL180
+    assert moa["times_of_use"] == "0800-2200 LOCAL MON-FRI"
+    assert moa["legs"] == [0]
+
+
+def test_an_areas_times_are_read_in_the_zone_the_faa_gives_it():
+    """GMTOFFSET and DST_CODE, the FAA's fields for the zone an area's
+    times are written in, name an IANA zone the web reads them in."""
+    def zoned(offset, dst):
+        feature = _feature("MOA NORTH", "MOA", BOX_ON_ROUTE, times="0700-2200, MON-FRI")
+        feature["properties"].update(GMTOFFSET=offset, DST_CODE=dst)
+        return feature
+
+    for (offset, dst), zone in [(("-6", "1"), "America/Chicago"), (("-7", "0"), "America/Phoenix"),
+                                (("-10", "0"), "Pacific/Honolulu"), (("10", "0"), "Pacific/Guam"), ((None, None), None),
+                                (("-7", None), None)]:
+        sua._CACHE.clear()
+        sua._DISK.unlink(missing_ok=True)
+        with patch("wingtip.sua.requests.get", return_value=_service([zoned(offset, dst)])) as get:
+            (area,) = sua.along_route((45.0, -90.0), (46.0, -90.0))
+        assert area["time_zone"] == zone, (offset, dst)
+    assert "GMTOFFSET" in get.call_args.kwargs["params"]["outFields"]
+
+
+def test_each_zone_keeps_the_offset_and_the_daylight_saving_its_fields_say():
+    """Each zone named is the FAA's offset in winter, and an hour on in
+    summer only where DST_CODE is 1 -- checked against the tz database."""
+    from datetime import datetime, timezone
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+    january, july = datetime(2026, 1, 15, 12, tzinfo=timezone.utc), datetime(2026, 7, 15, 12, tzinfo=timezone.utc)
+    for (offset, dst), name in sua.TIME_ZONES.items():
+        try:
+            zone = ZoneInfo(name)
+        except ZoneInfoNotFoundError:
+            pytest.skip("no tz database here")
+        winter = january.astimezone(zone).utcoffset().total_seconds() / 3600
+        summer = july.astimezone(zone).utcoffset().total_seconds() / 3600
+        assert winter == float(offset), name
+        assert summer - winter == (1.0 if dst == "1" else 0.0), name
+
+
+def test_one_answer_serves_the_day():
+    with patch("wingtip.sua.requests.get", return_value=_service([])) as get:
+        sua.along_route((45.0, -90.0), (46.0, -90.0))
+        sua.along_route((45.0, -90.0), (46.0, -90.0))
+    assert get.call_count == 1
+
+
+def test_a_service_that_does_not_answer_says_so():
+    import requests
+    with patch("wingtip.sua.requests.get", side_effect=requests.ConnectionError("down")):
+        with pytest.raises(sua.SpecialUseUnavailable):
+            sua.along_route((45.0, -90.0), (46.0, -90.0))
+
+
+def test_a_service_that_does_not_answer_serves_the_set_read_within_the_cycle(monkeypatch):
+    """The areas change only on the 28-day cycle: a day-old set is asked
+    for again, but while the service does not answer the one read is
+    served, from memory or from disk, until it is a cycle old."""
+    import requests
+    features = [_feature("R-4501", "R", BOX_ON_ROUTE)]
+    with patch("wingtip.sua.requests.get", return_value=_service(features)):
+        sua.areas_in((44.0, -91.0, 47.0, -87.0))
+    now = sua.time.time()
+    monkeypatch.setattr(sua.time, "time", lambda: now + sua.HOLD_S + 1)
+    with patch("wingtip.sua.requests.get", side_effect=requests.ConnectionError("down")) as get:
+        assert [a["name"] for a, _ in sua.areas_in((44.0, -91.0, 47.0, -87.0))] == ["R-4501"]
+        sua.areas_in((44.0, -91.0, 47.0, -87.0))
+    assert get.call_count == 1                       # not asked again at every route
+    sua._CACHE.clear()  # a new process, the set on disk
+    monkeypatch.setattr(sua, "_RETRY_AT", 0.0)
+    with patch("wingtip.sua.requests.get", side_effect=requests.ConnectionError("down")):
+        assert [a["name"] for a, _ in sua.areas_in((44.0, -91.0, 47.0, -87.0))] == ["R-4501"]
+    sua._CACHE.clear()
+    monkeypatch.setattr(sua, "_RETRY_AT", 0.0)
+    monkeypatch.setattr(sua.time, "time", lambda: now + sua.SERVE_HELD_S + 1)
+    with patch("wingtip.sua.requests.get", side_effect=requests.ConnectionError("down")):
+        with pytest.raises(sua.SpecialUseUnavailable):
+            sua.areas_in((44.0, -91.0, 47.0, -87.0))
+
+
+@pytest.mark.parametrize("altitude, expected", [(4500, True), (18000, True), (18500, False)])
+def test_a_prohibited_area_blocks_the_altitudes_between_its_limits(altitude, expected):
+    area = {"type": "P", "floor_ft": 0.0, "ceiling_ft": 18000.0, "ceiling_ref": "MSL"}
+    assert sua.blocked(altitude, [area]) is expected
+
+
+def test_an_agl_ceiling_is_taken_as_unlimited_and_a_restricted_area_blocks_nothing():
+    assert sua.blocked(30000, [{"type": "P", "floor_ft": 0.0, "ceiling_ft": 3000.0, "ceiling_ref": "AGL"}])
+    assert not sua.blocked(4500, [{"type": "R", "floor_ft": 0.0, "ceiling_ft": 18000.0, "ceiling_ref": "MSL"}])
+
+
+def test_the_areas_over_a_point_are_those_that_hold_it_lowest_first():
+    features = [
+        _feature("MOA NORTH", "MOA", BOX_ON_ROUTE, lower=("500", "FT", "AGL")),
+        _feature("R-4501", "R", BOX_ON_ROUTE),
+        _feature("R-OFF", "R", BOX_OFF_ROUTE),
+    ]
+    with patch("wingtip.sua.requests.get", return_value=_service(features)):
+        here = sua.at_point(45.5, -90.0)
+    assert [(a["name"], a["kind"], a["floor_ft"], a["floor_ref"]) for a in here] == [
+        ("R-4501", "restricted area", 0.0, "SFC"), ("MOA NORTH", "military operations area", 500.0, "AGL"),
+    ]
+    assert "along_track_nm" not in here[0]
+
+
+def test_the_whole_set_is_read_page_by_page():
+    first = _service([_feature("R-1", "R", BOX_ON_ROUTE)])
+    first.json.return_value["properties"] = {"exceededTransferLimit": True}
+    second = _service([_feature("R-2", "R", BOX_OFF_ROUTE)])
+    with patch("wingtip.sua.requests.get", side_effect=[first, second]) as get:
+        names = sorted(area["name"] for area, _ in sua.areas_in((44.0, -91.0, 47.0, -87.0)))
+    assert names == ["R-1", "R-2"]
+    assert [c.kwargs["params"]["resultOffset"] for c in get.call_args_list] == [0, 1]
+
+
+def test_a_restart_within_the_day_reads_the_areas_kept_on_disk(monkeypatch):
+    features = [_feature("R-4501", "R", BOX_ON_ROUTE)]
+    with patch("wingtip.sua.requests.get", return_value=_service(features)):
+        first = sua.areas_in((44.0, -91.0, 47.0, -87.0))
+    sua._CACHE.clear()  # a new process
+    with patch("wingtip.sua.requests.get", side_effect=AssertionError("asked the service again")):
+        again = sua.areas_in((44.0, -91.0, 47.0, -87.0))
+    assert [(a["name"], s.wkt) for a, s in again] == [(a["name"], s.wkt) for a, s in first]
+    # A day on, the service is asked again.
+    sua._CACHE.clear()
+    now = sua.time.time()
+    monkeypatch.setattr(sua.time, "time", lambda: now + sua.HOLD_S + 1)
+    with patch("wingtip.sua.requests.get", return_value=_service([])) as get:
+        assert sua.areas_in((44.0, -91.0, 47.0, -87.0)) == []
+    assert get.called
+
+
+def test_a_restart_reads_the_areas_from_the_cycle_pack_as_downloaded(monkeypatch, tmp_path):
+    from wingtip import cycle_pack
+
+    features = [_feature("R-4501", "R", BOX_ON_ROUTE)]
+    with patch("wingtip.sua.requests.get", return_value=_service(features)):
+        first = sua.areas_in((44.0, -91.0, 47.0, -87.0))
+    held = sua.everything()
+    shp = tmp_path / "empty.shp"
+    import shapefile
+
+    with shapefile.Writer(str(shp), shapeType=shapefile.POLYGON) as w:
+        w.field("CLASS", "C")
+    cycle_pack.write(cycle_pack.PACK_DIR, "2026-10-29", shp_path=shp, sua_held=held,
+                     sua_at=sua._CACHE["all"][0], urban=[], urban_path=None, tables={})
+    sua._CACHE.clear()  # a new process
+    sua._DISK.unlink()
+    with patch("wingtip.sua.requests.get", side_effect=AssertionError("asked the service again")):
+        again = sua.areas_in((44.0, -91.0, 47.0, -87.0))
+    assert [(a, s.wkt) for a, s in again] == [(a, s.wkt) for a, s in first]

@@ -1,5 +1,5 @@
 //! The runway check at each airport a flight takes off from or lands at
-//! (web/src/lib/runwayCheck.ts): the runway the pilot picked, else the one
+//! (apps/web/src/lib/runwayCheck.ts): the runway the pilot picked, else the one
 //! the wind favours, the field's pressure and density altitude, the
 //! reported wind along and across it, and the POH's short-field distances
 //! against that runway's length -- the runway lengths and takeoff and

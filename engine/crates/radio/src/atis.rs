@@ -1,6 +1,6 @@
 //! An ATIS or AWOS/ASOS broadcast as the phone's recognizer wrote it,
 //! read into its figures -- the web app's lib/atis and the native app's
-//! Atis, both held to the same fixture (web/src/lib/fixtures/atis.json;
+//! Atis, both held to the same fixture (apps/web/src/lib/fixtures/atis.json;
 //! engine/facade/tests/atis.rs), so the phone at the hold-short line reads
 //! one with no signal.
 //!

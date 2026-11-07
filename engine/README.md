@@ -28,11 +28,11 @@ issue #482.
 - `bindings/py` (`wingtip_native`): the engine as wingtip imports it, through PyO3. It
   only carries arrays and mapped files across; every figure is the
   engine's. wingtip imports it at module level, so every image that copies
-  src/ needs it: the planner, the pipeline stages and ML are each built
-  FROM wingtip's base image (docker/Dockerfile.base), which compiles it
+  services/planner/wingtip needs it: the planner, the pipeline stages and ML are each built
+  FROM wingtip's base image (services/Dockerfile.base), which compiles it
   and installs it with wingtip's requirements once for all of them
-  (tests/test_dockerfiles.py holds every such image to it). A new image
-  that reads src/ is built FROM it too.
+  (services/planner/tests_wingtip/test_dockerfiles.py holds every such image to it). A new image
+  that reads wingtip is built FROM it too.
 
 ## The engine's crates
 
@@ -93,13 +93,13 @@ Every name in `facade/src/call.rs` has its input and its answer in
 `contract/engine.schema.json`, a JSON Schema written from the Rust, with
 the AIM, 14 CFR or ACS source of each figure in its descriptions. The
 apps' types come from it rather than from hand-written copies: the web's
-`web/src/lib/engine/contract.ts` (json-schema-to-typescript, in `npm run
+`apps/web/src/lib/engine/contract.ts` (json-schema-to-typescript, in `npm run
 types`), which types `callEngine` by name, so a renamed field fails the
 web's typecheck rather than a screen on a phone; and the phones' answer
 types for the names they decode (quicktype, through
-`scripts/engine-contract-apps.sh`): `ios/Wingtip/Engine/EngineContract.swift`
+`scripts/build/engine-contract-apps.sh`): `apps/ios/Wingtip/Engine/EngineContract.swift`
 and
-`android/app/src/main/kotlin/app/wingtipmaps/android/engine/EngineContract.kt`.
+`apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/EngineContract.kt`.
 `facade/tests/contract.rs` holds the schema's names to the dispatcher's
 and the shared fixtures' answers to the schema; `contract.test.ts` holds
 the generated file to the schema.
@@ -110,12 +110,12 @@ A rule goes in this way, each step in the same pull request:
    source cited in a comment.
 2. Its name in `facade/src/call.rs`, reading and writing JSON.
 3. Its entry in `contract/engine.schema.json`.
-4. `npm run types` in `web/`, and `scripts/engine-contract-apps.sh` when
+4. `npm run types` in `apps/web/`, and `scripts/build/engine-contract-apps.sh` when
    a phone decodes the answer with a generated type; commit what they
    write.
-5. A test against the shared fixtures in `web/src/lib/fixtures`, so the
+5. A test against the shared fixtures in `apps/web/src/lib/fixtures`, so the
    web, the phones and the planner are held to the same examples.
-6. `scripts/build-engine-wasm.sh`, and the `.wasm` committed; the
+6. `scripts/build/build-engine-wasm.sh`, and the `.wasm` committed; the
    planner's image rebuilt for the Python side.
 
 Then the callers switch to the name and the old copy is deleted.
@@ -124,7 +124,7 @@ Then the callers switch to the name and the old copy is deleted.
 
 - The engine also reads an ATC clearance heard into its items and a call
   to us by its call sign (`crates/radio`, the web's lib/clearance and
-  lib/heardCall, held to their fixtures in `web/src/lib/fixtures`), and
+  lib/heardCall, held to their fixtures in `apps/web/src/lib/fixtures`), and
   finds the places it names in the phone's kept packs with no signal
   (`crates/airspace`, wingtip.spoken's matching): `wt_clearance_hear`.
 - The four pilot pages' figures are the engine's too (`crates/procedures`): a
@@ -184,41 +184,41 @@ Then the callers switch to the name and the old copy is deleted.
   (`reserve_min`, `isa_temp_c`, `descent_ft_per_nm` ...) and a figure in
   the web's words (`words_*`) are asked by name from wingtip and
   app.gonogo, held to the planner's answers from before the move in
-  `web/src/lib/fixtures/plannerRules.json`.
+  `apps/web/src/lib/fixtures/plannerRules.json`.
 - `bindings/ffi` (`wingtip-ffi`): the engine's C functions for the phones
   (`bindings/ffi/include/wingtip_engine.h`), a static library: the airspace over a
   point from a phone's cycle pack, as the planner's /api/airspace/at
   answers it. A plain C interface rather than UniFFI, whose bindgen
   brings dozens of crates for five functions.
   `bindings/ffi/build-xcframework.sh` builds it for the iPhone and the simulator
-  into `ios/Frameworks/WingtipEngine.xcframework` (native-ios.yml, on
+  into `apps/ios/Frameworks/WingtipEngine.xcframework` (native-ios.yml, on
   GitHub's macOS runner), which the app imports as `WingtipEngine`.
 
 - `bindings/wasm` (`wingtip-wasm`): the engine for the web app, as WebAssembly
   with no wasm-bindgen. Every host asks a rule the same way, by name with
   JSON in and JSON out (`facade/src/call.rs`, which lists the rules and
   their inputs): the browser through `wt_call` in the module
-  (`web/src/lib/engine/engine.ts`, `callEngine`), the planner through
+  (`apps/web/src/lib/engine/engine.ts`, `callEngine`), the planner through
   `wingtip_native.call`, the phones through `wt_call` in the header. A rule
   moved into the engine needs only a name there. The module's ABI is in
-  `bindings/wasm/src/lib.rs`. `scripts/build-engine-wasm.sh` builds it in Docker
+  `bindings/wasm/src/lib.rs`. `scripts/build/build-engine-wasm.sh` builds it in Docker
   (the Rust image pinned by digest, so the bytes are the same anywhere)
-  into `web/src/lib/engine/wingtip-engine.wasm`, which is committed, as
+  into `apps/web/src/lib/engine/wingtip-engine.wasm`, which is committed, as
   the web build has no Rust; CI's `test` job builds it again and fails
   where it differs. Rebuild and commit it with any change under
   `facade/`, `crates/` or `bindings/wasm`.
 
-The tests share their fixtures with the Python's (`tests/fixtures/native`):
+The tests share their fixtures with the Python's (`services/planner/tests_wingtip/fixtures/native`):
 
     cargo test --manifest-path engine/Cargo.toml -p wingtip-engine   # the facade's tests
     cargo test --manifest-path engine/Cargo.toml -p wingtip-brief    # one crate's
-    pytest tests/test_native.py   # with the wheel installed
+    pytest services/planner/tests_wingtip/test_native.py   # with the wheel installed
 
-The cycle pack itself is written by `wingtip.pack`, by the planner after its
+The cycle pack itself is written by `wingtip.cycle_pack`, by the planner after its
 warm-up once a cycle, to `data/raw/packs/wingtip-<cycle>.pack` (not
 committed); the phones' packs of it, one a 4-degree region with the rings
-simplified (`wingtip.pack.write_phone`), to `data/raw/packs/phone/<cycle>/`,
+simplified (`wingtip.cycle_pack.write_phone`), to `data/raw/packs/phone/<cycle>/`,
 served at `/api/cycle-packs` and `/api/cycle-pack/<cycle>/<region>.pack`.
-`tests/test_phone_pack.py` holds the engine's answer from them to the
+`services/planner/tests_wingtip/test_phone_pack.py` holds the engine's answer from them to the
 planner's own code; the iOS app's `CyclePackTests` read the Chicago ones
-in `tests/fixtures/native/phone`.
+in `services/planner/tests_wingtip/fixtures/native/phone`.

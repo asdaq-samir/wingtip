@@ -1,8 +1,8 @@
 //! The engine for the web app, as WebAssembly (wasm32-unknown-unknown):
 //! one way in, `wt_call`, a rule by name with its input and answer JSON
 //! (wingtip_engine::call), so the browser asks the very code the planner
-//! and the phones do. Built by scripts/build-engine-wasm.sh into
-//! web/src/lib/engine/wingtip-engine.wasm; web/src/lib/engine/engine.ts
+//! and the phones do. Built by scripts/build/build-engine-wasm.sh into
+//! apps/web/src/lib/engine/wingtip-engine.wasm; apps/web/src/lib/engine/engine.ts
 //! is the JavaScript side.
 //!
 //! The ABI, all in the module's own memory (`memory`, exported):

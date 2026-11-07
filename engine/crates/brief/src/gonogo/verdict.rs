@@ -1,4 +1,4 @@
-//! The Brief's Go / No-Go (web/src/lib/verdict.ts, which holds the same
+//! The Brief's Go / No-Go (apps/web/src/lib/verdict.ts, which holds the same
 //! rules for the web app: the two change together): every tab's own
 //! finding about the flight in one list, each a row that opens where it
 //! was found -- the weather, the airspace on the route, the altitude, the

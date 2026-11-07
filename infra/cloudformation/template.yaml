@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  Wingtip Maps on AWS, built for low cost: one EC2 server (webapp, planner,
+  Wingtip Maps on AWS, built for low cost: one EC2 server (gateway, planner,
   Postgres) behind CloudFront, FAA chart tiles drawn once
   per 56-day cycle by a Fargate Spot task into S3, and the web app's
   fingerprinted files cached at the edge. About $29 a month with the
@@ -312,7 +312,7 @@ Resources:
                 - HasBudget
                 - { Effect: Allow, Action: "sns:Publish", Resource: !Ref BackupAlertTopic }
                 - !Ref AWS::NoValue
-              # Its services' logs, to CloudWatch (docker-compose.prod.yml).
+              # Its services' logs, to CloudWatch (infra/docker-compose.prod.yml).
               - Effect: Allow
                 Action: [logs:CreateLogStream, logs:PutLogEvents]
                 Resource: !GetAtt ServerLogGroup.Arn
@@ -602,7 +602,7 @@ Resources:
                 AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
 
   # The answers the same for every pilot (PlannerProxyController's
-  # SHARED_PATHS and the airport diagrams, the planner's app.common
+  # SHARED_PATHS and the airport diagrams, the planner's app.router_basics
   # SHARED_CACHE, CHART_CACHE and DIAGRAM_CACHE):
   # kept for as long as their own Cache-Control says, a day at most, and
   # not at all when they say nothing. Keyed by path and query string alone
@@ -663,7 +663,7 @@ Resources:
           # Managed AllViewerExceptHostHeader: every header, cookie and
           # query string, but Host -- CloudFront then names
           # origin.<domain>, the name Caddy holds a certificate for, and
-          # Caddy tells the webapp the public one.
+          # Caddy tells the gateway the public one.
           OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
         CacheBehaviors:
           - PathPattern: tiles/*
@@ -702,7 +702,7 @@ Resources:
             Compress: true
             CachePolicyId: !Ref SharedAnswersCachePolicy
           # An airport diagram's picture, its d-TPP cycle in its address
-          # (the planner's app.common DIAGRAM_CACHE).
+          # (the planner's app.router_basics DIAGRAM_CACHE).
           - PathPattern: api/planner/airport-diagram/*
             TargetOriginId: server
             ViewerProtocolPolicy: redirect-to-https
@@ -1016,7 +1016,7 @@ Resources:
       Subscription: [{ Protocol: email, Endpoint: !Ref BudgetEmail }]
 
   # Is the app up, as a pilot reaches it: through CloudFront to the
-  # webapp's health, which counts its database, every 30 seconds from
+  # gateway's health, which counts its database, every 30 seconds from
   # Route 53's checkers round the world. About $1.50 a month.
   HealthCheck:
     Type: AWS::Route53::HealthCheck

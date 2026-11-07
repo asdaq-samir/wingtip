@@ -1,5 +1,5 @@
 //! Which runway end is flown at a field, and its traffic pattern's rules
-//! (web/src/lib/pattern.ts, wingtip.pattern): the pilot's pick, else the end
+//! (apps/web/src/lib/pattern.ts, wingtip.pattern): the pilot's pick, else the end
 //! most nearly into the wind (AC 90-66C 11.5), else the runway used most;
 //! which side of the runway its pattern is flown (left unless the FAA says
 //! right, 14 CFR 91.126(b)(1)); how to join it from the way the route

@@ -15,7 +15,7 @@
 //!
 //! A leg the planner flies by the procedures picked (its `procedure`: out
 //! of a field by its departure, into one by its arrival and its approach,
-//! each to its runway; planning-service with_procedures) is flown along
+//! each to its runway; planner with_procedures) is flown along
 //! their path from its start, the whole leg at once -- its tops of climb
 //! and descent, laid along the route, are passed as it starts -- in the
 //! leg's own time and fuel, which the planner made the longer by the path's

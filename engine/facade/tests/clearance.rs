@@ -1,5 +1,5 @@
 //! The engine's clearance reading against the web app's own fixtures
-//! (web/src/lib/fixtures): the same clearances read into the same items,
+//! (apps/web/src/lib/fixtures): the same clearances read into the same items,
 //! the same routes from what was found, the same calls to us -- so the
 //! phone in the air answers as the page does.
 
@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use wingtip_engine::clearance::{cleared_route, direct_of, our_call, read, tokens, Found, FoundPlaces, FoundProcedure, Route};
 
 fn fixture(name: &str) -> Value {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/src/lib/fixtures").join(name);
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures").join(name);
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
 

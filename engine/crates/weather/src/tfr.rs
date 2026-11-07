@@ -1,7 +1,7 @@
 //! A TFR's XNOTAM detail file from tfr.faa.gov (detail_X_NNNN.xml), read
 //! for what a pilot needs, as wingtip.tfr's `parse_detail` reads it: when it
 //! is in effect, the rule it is issued under, its purpose, and its lowest
-//! floor and highest ceiling over its areas. tests/test_parsers.py holds
+//! floor and highest ceiling over its areas. services/planner/tests_wingtip/test_parsers.py holds
 //! the two to the same answer on every TFR the FAA lists.
 
 use crate::{json, xml};

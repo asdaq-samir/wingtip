@@ -1,6 +1,6 @@
 //! A field's weather as the app says it (wingtip_engine::forecast), held
 //! to the cases the web's lib/map/flightCategory and lib/hourly tests and
-//! the planner's tests/test_glmp.py hold their copies to.
+//! the planner's services/planner/tests_wingtip/test_glmp.py hold their copies to.
 
 use serde_json::{json, Value};
 use wingtip_engine::call::call;
@@ -47,7 +47,7 @@ fn with_no_visibility_only_what_the_ceiling_decides_alone() {
 
 #[test]
 fn the_glmp_cases_are_the_aims() {
-    // tests/test_glmp.py's, the modelled weather's categories.
+    // services/planner/tests_wingtip/test_glmp.py's, the modelled weather's categories.
     for (c, v, want) in [
         (None, 10.0, "VFR"),
         (Some(3100.0), 6.0, "VFR"),

@@ -56,4 +56,4 @@ Verify any of these against the source before changing code that uses it.
 | Traffic patterns | AIM 4-3-3 |
 | Operations at non-towered airports | AC 90-66C |
 
-Never edit `planning-service/app/detection.py`: a kept read is hashed against it.
+Never edit `services/planner/app/detection.py`: a kept read is hashed against it.

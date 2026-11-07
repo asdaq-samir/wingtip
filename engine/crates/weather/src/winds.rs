@@ -4,7 +4,7 @@
 //! in. The coding is AC 00-45H's Winds and Temperatures Aloft Forecast:
 //! DDFF wind (tens of degrees true, knots; 50 added to the direction for
 //! 100 kt and more; 9900 light and variable), a signed temperature to
-//! 24,000 ft and an unsigned, negative one above. tests/test_parsers.py
+//! 24,000 ft and an unsigned, negative one above. services/planner/tests_wingtip/test_parsers.py
 //! holds the two readers to the same answer on the current products.
 
 use crate::{json, time};

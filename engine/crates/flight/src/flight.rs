@@ -1,10 +1,10 @@
 //! The flight's own figures, one copy for the planner and the phones:
 //! the wind triangle, VFR cruising altitudes, the fuel reserve and the
 //! atmosphere. Each is the planner's (wingtip.navlog, wingtip.altitude,
-//! wingtip.performance) written again here, and tests/test_flight_rules.py
+//! wingtip.performance) written again here, and services/planner/tests_wingtip/test_flight_rules.py
 //! holds the two to the same answer; the web's TypeScript copy of the
 //! wind triangle (lib/diversion) is held to the same fixture
-//! (web/src/lib/fixtures/flightRules.json).
+//! (apps/web/src/lib/fixtures/flightRules.json).
 
 /// The wind correction angle, degrees, positive to the right: the E6B's
 /// triangle (FAA-H-8083-25C, Pilot's Handbook of Aeronautical Knowledge,

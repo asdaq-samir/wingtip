@@ -3,11 +3,11 @@
 # simulator on both Apple silicon and Intel Macs, put in one XCFramework
 # with its C header and module map, so Swift can `import WingtipEngine`.
 # Run on a Mac with Xcode and rustup (GitHub's macOS runner, native-ios.yml);
-# writes ios/Frameworks/WingtipEngine.xcframework, which is not committed.
+# writes apps/ios/Frameworks/WingtipEngine.xcframework, which is not committed.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 engine=$(cd "$here/../.." && pwd)
-out="$engine/../ios/Frameworks/WingtipEngine.xcframework"
+out="$engine/../apps/ios/Frameworks/WingtipEngine.xcframework"
 targets=(aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios)
 rustup target add "${targets[@]}"
 for target in "${targets[@]}"; do

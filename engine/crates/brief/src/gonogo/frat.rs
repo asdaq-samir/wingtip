@@ -1,4 +1,4 @@
-//! A flight risk assessment before each flight (web/src/lib/frat.ts and
+//! A flight risk assessment before each flight (apps/web/src/lib/frat.ts and
 //! lib/airworthiness.ts; the roadmap's FRAT, after the FAA Risk Management
 //! Handbook's PAVE and IMSAFE, FAA-H-8083-2): points for what raises the
 //! risk of this flight -- from the briefing (VFR not recommended, the

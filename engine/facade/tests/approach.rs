@@ -3,7 +3,7 @@
 //! asked by name as each host asks. The debrief's procedures are KBUR's
 //! ILS Y RWY 08 and RNAV (GPS) Z RWY 08 as the planner draws them from the
 //! CIFP of 1 Oct 2026, read from the fixture the web's tests read
-//! (web/src/lib/fixtures/approachKbur.json).
+//! (apps/web/src/lib/fixtures/approachKbur.json).
 
 use serde_json::{json, Value};
 use std::path::PathBuf;
@@ -16,7 +16,7 @@ fn ask(name: &str, input: Value) -> Value {
 }
 
 fn kbur() -> Value {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/src/lib/fixtures/approachKbur.json");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/approachKbur.json");
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
 

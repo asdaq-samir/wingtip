@@ -3,7 +3,7 @@
 //! (wingtip.weather's `_parse_tafs`): each period's start and end, its change
 //! group (FM, TEMPO, BECMG, PROB), wind, visibility, ceiling and weather.
 //! The groups are AC 00-45H's TAF and WMO No. 306's (INTER, used outside
-//! the US, is a TEMPO). tests/test_parsers.py holds the reader to the
+//! the US, is a TEMPO). services/planner/tests_wingtip/test_parsers.py holds the reader to the
 //! AWC's own decoding of every TAF in its cache and lists where they
 //! differ.
 

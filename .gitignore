@@ -4,7 +4,7 @@ __pycache__/
 .ruff_cache/
 data/raw/
 .ipynb_checkpoints/
-springboot-app/target/
+services/gateway/target/
 .DS_Store
 # The agent's own settings, which are a property of this machine rather
 # than of this project: they set a permission mode and an allowlist, and
@@ -58,30 +58,27 @@ infra/local-https/certs/
 data/labels/*.lock
 data/labels/.*.tmp
 
-# The TV apps built by tv/package.sh.
-tv/out/
-
 # The native iOS app: XcodeGen makes the project on the runner.
-ios/Wingtip.xcodeproj
-ios/.build
-ios/Wingtip/Info.plist
-ios/Wingtip/Wingtip.entitlements
+apps/ios/Wingtip.xcodeproj
+apps/ios/.build
+apps/ios/Wingtip/Info.plist
+apps/ios/Wingtip/Wingtip.entitlements
 # And the Watch app's and the widgets' files it writes beside them.
-ios/WingtipWatch/Info.plist
-ios/WingtipWidgets/Info.plist
-ios/WingtipWidgets/WingtipWidgets.entitlements
+apps/ios/WingtipWatch/Info.plist
+apps/ios/WingtipWidgets/Info.plist
+apps/ios/WingtipWidgets/WingtipWidgets.entitlements
 # The engine for the app, built on the runner (engine/bindings/ffi/build-xcframework.sh).
-ios/Frameworks/
+apps/ios/Frameworks/
 
 # The Rust extension's build output (engine/, built by maturin)
 engine/target/
 
-# The native Android app (android/, docs/NATIVE-ANDROID.md): the engine
+# The native Android app (apps/android/, docs/NATIVE-ANDROID.md): the engine
 # built for it on the runner (engine/bindings/ffi/build-android.sh), Gradle's own
 # state and output, and the SDK path a machine writes for itself.
-android/app/engine/
-android/.gradle/
-android/**/build/
+apps/android/app/engine/
+apps/android/.gradle/
+apps/android/**/build/
 # The JNI shim's CMake state, which the Gradle plugin writes.
-android/app/.cxx/
-android/local.properties
+apps/android/app/.cxx/
+apps/android/local.properties

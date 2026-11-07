@@ -1,0 +1,799 @@
+"""A route that lands on the way (`stops`): each flight between two
+landings -- a hop -- planned as a route of its own, and the course, the
+checkpoints, the legs and the totals running on through each stop. The
+same stubbed world as test_plan: every hop is read off the same two
+candidates, flies at the one legal altitude, and each leg is 10 nm."""
+import pytest
+from fastapi.testclient import TestClient
+from wingtip import airports, fixes, geo, navlog
+from wingtip import altitude as altitude_module
+
+from app import planning, checkpoint_scoring
+from app.router_basics import load_hop, load_route
+from app.main import app
+
+from .conftest import airport, select_cruise_altitude_stub
+from .test_plan import CANDIDATES, _leg
+
+client = TestClient(app)
+
+VIA_MADISON = {"dep": "C81", "dest": "KDLH", "stops": "KMSN"}
+
+
+@pytest.fixture(autouse=True)
+def _stubbed_world(monkeypatch, altitude):
+    # Each hop's own points, as two corridors' reads are: ids of their own.
+    monkeypatch.setattr(checkpoint_scoring, "score", lambda dep, dest: [{**c, "id": f"{dep}:{c['id']}"} for c in CANDIDATES])
+    monkeypatch.setattr(altitude_module, "select_cruise_altitude", select_cruise_altitude_stub(altitude))
+    monkeypatch.setattr(navlog, "assemble_leg", _leg)
+    # No chart read to start: every hop's candidates are the stub's.
+    monkeypatch.setattr(checkpoint_scoring.chart_model, "corridor", lambda route, wait: None)
+
+
+def _hop_nm(a: str, b: str) -> float:
+    pa, pb = airport(a), airport(b)
+    return geo.distance_nm(pa["lat"], pa["lon"], pb["lat"], pb["lon"])
+
+
+def test_the_course_lands_at_each_stop_and_is_as_long_as_its_hops():
+    body = client.get("/api/course", params=VIA_MADISON).json()
+
+    assert [s["ident"] for s in body["stops"]] == ["KMSN"]
+    assert body["distance_nm"] == pytest.approx(_hop_nm("C81", "KMSN") + _hop_nm("KMSN", "KDLH"), abs=0.1)
+    madison = airport("KMSN")
+    assert [madison["lat"], madison["lon"]] in body["course_line"]
+
+
+def test_the_checkpoints_are_each_hops_own_along_the_whole_route():
+    body = client.get("/api/checkpoints", params=VIA_MADISON).json()
+
+    first = _hop_nm("C81", "KMSN")
+    hops = [c["hop"] for c in body["selected"]]
+    assert set(hops) == {0, 1} and hops == sorted(hops)
+    # The second hop's run on from the stop.
+    assert all(c["along_track_nm"] >= first for c in body["selected"] if c["hop"] == 1)
+    assert [c["along_track_nm"] for c in body["selected"]] == sorted(c["along_track_nm"] for c in body["selected"])
+
+
+def test_the_legs_land_at_the_stop_and_each_hop_has_its_own_fuel_check():
+    body = client.get("/api/plan", params=VIA_MADISON).json()
+
+    legs = body["legs"]
+    assert [leg["to"] for leg in legs].count("KMSN") == 1
+    assert [leg["from"] for leg in legs].count("KMSN") == 1
+    assert len(legs) == len(body["selected"]) + 2
+    totals = body["totals"]
+    assert [(h["departure"], h["destination"]) for h in totals["hops"]] == [("C81", "KMSN"), ("KMSN", "KDLH")]
+    # The tanks are filled at the stop: no fuel check over the whole trip.
+    assert totals["fuel_required_gal"] is None
+    assert all(h["totals"]["fuel_required_gal"] is not None for h in totals["hops"])
+    assert totals["fuel_gal"] == pytest.approx(sum(h["totals"]["fuel_gal"] for h in totals["hops"]), abs=0.15)
+    # One breakdown for the route, a segment per leg.
+    assert len(body["altitude_selection"]["segments"]) == len(legs)
+
+
+def test_the_flight_after_a_stop_leaves_after_its_time_on_the_ground(monkeypatch):
+    """Thirty minutes at a stop the pilot gave no time for, the owner's
+    pick (2026-10-20), or the pilot's own (`ground`): the next flight is
+    planned to leave that much later, its winds and night read for then,
+    and the totals carry the time for the arrival. None had been counted."""
+    from datetime import datetime, timedelta, timezone
+
+    from app.routers import plan as plan_router
+
+    starts = []
+    real = plan_router.flight_window
+
+    def window(when, length_nm, tas):
+        starts.append(when)
+        return real(when, length_nm, tas)
+
+    monkeypatch.setattr(plan_router, "flight_window", window)
+    depart = datetime(2026, 9, 22, 15, 0, tzinfo=timezone.utc)
+    by_default = client.get("/api/plan", params={**VIA_MADISON, "depart": depart.isoformat()}).json()["totals"]
+    first, after = starts[0], starts[1]
+    starts.clear()
+    own = client.get("/api/plan", params={**VIA_MADISON, "depart": depart.isoformat(), "ground": "KMSN:75"}).json()["totals"]
+    assert starts[1] - after == timedelta(minutes=45)
+    assert after - first > timedelta(minutes=30)
+    assert (by_default["ground_min"], own["ground_min"]) == (30.0, 75.0)
+    assert client.get("/api/plan", params={**VIA_MADISON, "ground": "KMSN:soon"}).status_code == 422
+
+
+def test_the_leg_into_a_stop_says_its_time_on_the_ground(messages):
+    """The planner owns the stops' minutes on the ground: the leg that
+    lands at each carries them (Leg.ground_min), the pilot's own or the
+    thirty-minute turnaround, for the web to time the rows after it by,
+    and no other leg does -- the destination is not left again."""
+    legs = client.get("/api/plan", params=VIA_MADISON).json()["legs"]
+    assert [(leg["to"], leg["ground_min"]) for leg in legs if leg["ground_min"] is not None] == [("KMSN", 30.0)]
+    assert legs[-1]["ground_min"] is None
+
+    streamed = [m for m in messages(client.get("/api/navlog", params={**VIA_MADISON, "ground": "KMSN:75"})) if m["type"] == "leg"]
+    assert [(leg["to"], leg["ground_min"]) for leg in streamed if leg.get("ground_min") is not None] == [("KMSN", 75.0)]
+
+
+def test_each_flight_climbs_from_its_field_and_comes_down_to_its_own_pattern():
+    # The stub's 10 nm legs at 4,500 ft, the fields at 900: the climb
+    # tops out on each flight's first leg, and each comes down to 1,900,
+    # 2,600 ft at three to one, 7.8 nm out -- on the leg into the field.
+    legs = client.get("/api/plan", params=VIA_MADISON).json()["legs"]
+
+    assert [leg["from"] for leg in legs if leg["toc"]] == ["C81", "KMSN"]
+    tods = [(leg["to"], leg["tod"]) for leg in legs if leg["tod"]]
+    assert [to for to, _ in tods] == ["KMSN", "KDLH"]
+    assert all(tod["to_ft"] == 1900.0 and tod["pattern"] and tod["along_nm"] == 2.2 for _, tod in tods)
+
+
+def test_the_stream_runs_through_the_stop_and_ends_on_the_hops_totals(messages):
+    lines = messages(client.get("/api/navlog", params=VIA_MADISON))
+
+    legs = [m for m in lines if m["type"] == "leg"]
+    assert legs[0]["from"] == "C81" and legs[-1]["to"] == "KDLH"
+    assert any(leg["to"] == "KMSN" for leg in legs)
+    assert len(lines[-1]["totals"]["hops"]) == 2
+
+
+def test_a_hop_with_no_legal_altitude_is_flown_anyway(monkeypatch, altitude, messages):
+    madison = airport("KMSN")
+    flyable = select_cruise_altitude_stub(altitude)
+    stuck = select_cruise_altitude_stub({**altitude, "recommended_ft": None})
+
+    def select(start, end, profile, **kw):
+        north = start == (madison["lat"], madison["lon"])
+        return (stuck if north else flyable)(start, end, profile, **kw)
+
+    monkeypatch.setattr(altitude_module, "select_cruise_altitude", select)
+    last = messages(client.get("/api/navlog", params=VIA_MADISON))[-1]
+
+    assert last["type"] == "done"
+    legs = client.get("/api/plan", params=VIA_MADISON).json()["legs"]
+    assert legs[0]["from"] == "C81" and legs[-1]["to"] == "KDLH"
+
+
+def test_a_route_without_stops_is_planned_as_it_always_was():
+    body = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH"}).json()
+    assert body["stops"] == []
+    assert body["totals"]["hops"] == [] and body["totals"]["fuel_required_gal"] is not None
+
+
+@pytest.mark.parametrize("stops", ["C81", "KMSN,KMSN"])
+def test_a_stop_that_is_the_airport_before_it_is_refused(stops):
+    assert client.get("/api/course", params={"dep": "C81", "dest": "KDLH", "stops": stops}).status_code == 422
+
+
+def test_a_stop_at_the_same_place_as_the_point_before_it_is_refused(monkeypatch):
+    # MSN is KMSN's own FAA identifier: the same airport written two ways,
+    # a hop of no length.
+    monkeypatch.setattr(airports, "get_airport", lambda ident, **kw: airport({"MSN": "KMSN"}.get(ident.upper(), ident.upper())))
+    response = client.get("/api/course", params={"dep": "C81", "dest": "KMSN", "stops": "MSN"})
+    assert response.status_code == 422
+    assert "MSN and KMSN are the same place" in response.json()["detail"]
+
+
+# The Rockford DME as NASR files it, and the airport RFD also names.
+RFD_DME = {"ident": "RFD", "lat": 42.2256, "lon": -89.1993, "kind": "DME", "vfr": False, "navaid": True,
+           "name": "Rockford", "freq": "110.8", "state": "IL"}
+
+
+@pytest.fixture
+def the_rockford_dme(monkeypatch):
+    """RFD both a navaid and an airport's own identifier, as Rockford's is."""
+    monkeypatch.setattr(fixes, "find_navaid", lambda ident, near=(): RFD_DME if ident.upper() == "RFD" else None)
+    monkeypatch.setattr(fixes, "search_fixes", lambda q, limit=5: [RFD_DME] if "RFD".startswith(q.upper()) else [])
+    monkeypatch.setattr(airports, "get_airport", lambda ident, **kw: airport({"RFD": "KMSN"}.get(ident.upper(), ident.upper())))
+
+
+def test_a_stop_named_for_a_navaid_flies_over_the_navaid_not_to_the_airport(the_rockford_dme):
+    course = client.get("/api/course", params={"dep": "C81", "dest": "KDLH", "stops": "RFD"}).json()
+    stop = course["stops"][0]
+    assert (stop["ident"], stop["kind"], stop["name"]) == ("RFD", "fix", "Rockford DME 110.8")
+    assert (stop["lat"], stop["lon"]) == (RFD_DME["lat"], RFD_DME["lon"])
+
+
+REAL_FIND_NAVAID = fixes.find_navaid
+
+
+def test_of_two_navaids_by_one_ident_a_route_flies_over_the_one_by_it(monkeypatch):
+    # "AB" a beacon in Wisconsin and another in Georgia, as NASR has some
+    # two-letter idents twice: from C81 to Duluth, Wisconsin's.
+    beacon = {"ident": "AB", "kind": "NDB", "vfr": False, "navaid": True, "name": "Beacon", "freq": "350", "state": None}
+    navaids = {"AB": [{**beacon, "lat": 33.5, "lon": -82.6, "state": "GA"}, {**beacon, "lat": 44.5, "lon": -90.5, "state": "WI"}]}
+    monkeypatch.setattr(fixes, "_TABLE", fixes._Table({}, navaids))
+    monkeypatch.setattr(fixes, "find_navaid", REAL_FIND_NAVAID)
+    stop = client.get("/api/course", params={"dep": "C81", "dest": "KDLH", "stops": "AB"}).json()["stops"][0]
+    assert (stop["lat"], stop["lon"]) == (44.5, -90.5)
+    # And a hop's own ends choose it the same way, for its checkpoints.
+    assert load_route("C81", "KDLH", "AB").hops[1].airports[0]["lat"] == 44.5
+    assert load_hop("AB", "KDLH").airports[0]["lat"] == 44.5
+
+
+def test_a_stops_search_names_the_navaid_by_the_route_of_an_ident_in_two_places(monkeypatch):
+    beacon = {"ident": "AB", "kind": "NDB", "vfr": False, "navaid": True, "freq": "350"}
+    navaids = {"AB": [{**beacon, "name": "Georgia", "lat": 33.5, "lon": -82.6, "state": "GA"},
+                      {**beacon, "name": "Wisconsin", "lat": 44.5, "lon": -90.5, "state": "WI"}]}
+    monkeypatch.setattr(fixes, "_TABLE", fixes._Table({}, navaids))
+    monkeypatch.setattr(fixes, "find_navaid", REAL_FIND_NAVAID)
+    monkeypatch.setattr(airports, "search_airports", lambda q, near=None: [])
+    search = lambda **near: client.get("/api/airports/search", params={"q": "AB", "fixes": True, **near}).json()["airports"]  # noqa: E731
+    assert search(near="42.3,-88.1;46.8,-92.2")[0]["name"] == "Wisconsin NDB 350"
+    assert search(near="33.6,-84.4;32.1,-81.2")[0]["name"] == "Georgia NDB 350"
+
+
+def test_a_stops_search_puts_the_navaid_typed_whole_first(the_rockford_dme, monkeypatch):
+    monkeypatch.setattr(airports, "search_airports", lambda q, near=None: [{**airport("KMSN"), "ident": "KRFD"}])
+    found = client.get("/api/airports/search", params={"q": "rfd", "fixes": True}).json()["airports"]
+    assert [(a["ident"], a.get("kind")) for a in found][:2] == [("RFD", "fix"), ("KRFD", "airport")]
+    assert found[0]["name"] == "Rockford DME 110.8"
+
+
+def test_no_checkpoint_is_kept_just_off_a_stop(monkeypatch):
+    # The field is the fix there: a river a few cables past it is no use.
+    near = {**CANDIDATES[0], "id": "river@near", "along_track_nm": 0.4, "predicted_score": 4.9}
+    monkeypatch.setattr(checkpoint_scoring, "score", lambda dep, dest: [{**c, "id": f"{dep}:{c['id']}"} for c in [near, *CANDIDATES]])
+    body = client.get("/api/checkpoints", params=VIA_MADISON).json()
+    assert all(not c["id"].endswith("river@near") for c in body["selected"])
+    assert all(not c["selected"] for c in body["candidates"] if c["id"].endswith("river@near"))
+
+
+def test_a_point_beside_a_stop_is_counted_once(monkeypatch):
+    # The same place read on both hops: the first hop's.
+    monkeypatch.setattr(checkpoint_scoring, "score", lambda dep, dest: [dict(c) for c in CANDIDATES])
+    body = client.get("/api/checkpoints", params=VIA_MADISON).json()
+    ids = [c["id"] for c in body["candidates"]]
+    assert len(ids) == len(set(ids))
+
+
+def test_a_round_trip_lands_where_it_left():
+    r = load_route("C81", "C81", "KMSN")
+    assert [(hop.dep_ident, hop.dest_ident) for hop in r.hops] == [("C81", "KMSN"), ("KMSN", "C81")]
+
+
+def test_too_many_stops_are_refused():
+    from app.router_basics import MAX_STOPS
+
+    many = ",".join(["KMSN", "KDLH"] * (MAX_STOPS // 2 + 1))
+    assert client.get("/api/course", params={"dep": "C81", "dest": "KMSN", "stops": many}).status_code == 422
+
+
+def test_the_joined_breakdown_is_the_most_limiting_of_the_hops():
+    a = {"floor_ft": 2000.0, "band_ceiling_ft": 9000.0, "airspace_ceiling_ft": None, "candidates_ft": [4500.0, 6500.0],
+         "segments": [{"from_nm": 0.0, "to_nm": 40.0}], "special_use": [], "airspace_transits": [], "hazards": [],
+         "weather_unavailable": [], "icing_possible": False, "low_ceiling_or_visibility": False}
+    b = {**a, "floor_ft": 5000.0, "band_ceiling_ft": 7000.0, "airspace_ceiling_ft": 8000.0, "candidates_ft": [6500.0],
+         "segments": [{"from_nm": 0.0, "to_nm": 60.0}], "icing_possible": None}
+
+    joined = planning.join_selections([a, b], [0.0, 40.0])
+
+    assert joined["floor_ft"] == 5000.0 and joined["band_ceiling_ft"] == 7000.0
+    assert joined["airspace_ceiling_ft"] == 8000.0
+    assert joined["candidates_ft"] == [6500.0] and joined["recommended_ft"] == 6500.0
+    assert [(s["from_nm"], s["to_nm"]) for s in joined["segments"]] == [(0.0, 40.0), (40.0, 100.0)]
+    # A hop that could not be checked: unknown, not "no icing".
+    assert joined["icing_possible"] is None
+
+
+VPBNG = {"ident": "VPBNG", "lat": 42.2673, "lon": -88.1311, "kind": "VFR waypoint", "vfr": True, "state": "IL"}
+
+
+@pytest.fixture
+def a_vfr_waypoint(monkeypatch):
+    """VPBNG, a VFR waypoint, and no airport by its name."""
+    def get_airport(ident, **kw):
+        if ident.upper() not in ("C81", "KDLH", "KMSN"):
+            raise ValueError(f"Airport identifier {ident.upper()!r} not found")
+        return airport(ident.upper())
+    monkeypatch.setattr(airports, "get_airport", get_airport)
+    monkeypatch.setattr(fixes, "find_fix", lambda ident: VPBNG if ident.upper() == "VPBNG" else None)
+    monkeypatch.setattr(fixes, "search_fixes", lambda q, limit=5: [VPBNG] if "VPBNG".startswith(q.upper()) else [])
+
+
+def test_a_waypoint_is_flown_through_not_landed_at(a_vfr_waypoint):
+    params = {"dep": "C81", "dest": "KDLH", "stops": "VPBNG"}
+    course = client.get("/api/course", params=params).json()
+    assert course["stops"][0] == {**course["stops"][0], "ident": "VPBNG", "kind": "fix", "elevation_ft": None}
+
+    body = client.get("/api/plan", params=params).json()
+    legs = body["legs"]
+    out_of_it = next(i for i, leg in enumerate(legs) if leg["from"] == "VPBNG")
+    # A climb from the field at the start, none out of the waypoint.
+    assert legs[0]["climb_min"] > 0 and legs[out_of_it]["climb_min"] == 0
+    # One flight, one fuel check: nothing is landed at on the way.
+    assert body["totals"]["hops"] == [] and body["totals"]["fuel_required_gal"] is not None
+
+
+def test_a_waypoint_between_two_landings_is_in_the_one_flights_fuel_check(a_vfr_waypoint):
+    body = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH", "stops": "VPBNG,KMSN"}).json()
+    assert [(h["departure"], h["destination"]) for h in body["totals"]["hops"]] == [("C81", "KMSN"), ("KMSN", "KDLH")]
+
+
+def test_neither_an_airport_nor_a_waypoint_is_a_404(a_vfr_waypoint):
+    resp = client.get("/api/course", params={"dep": "C81", "dest": "KDLH", "stops": "VPZZZ"})
+    assert resp.status_code == 404 and "VPZZZ" in resp.json()["detail"]
+
+
+def test_a_stops_search_finds_the_waypoints_after_the_airports(a_vfr_waypoint, monkeypatch):
+    monkeypatch.setattr(airports, "search_airports", lambda q, near=None: [])
+    found = client.get("/api/airports/search", params={"q": "VPB", "fixes": True}).json()["airports"]
+    assert found == [{"ident": "VPBNG", "name": "VFR waypoint", "municipality": None, "region": "IL", "kind": "fix"}]
+    assert client.get("/api/airports/search", params={"q": "VPB"}).json()["airports"] == []
+
+
+def test_a_waypoints_own_altitude_flies_the_hop_into_it_and_the_rest_as_planned(a_vfr_waypoint):
+    body = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH", "stops": "VPBNG", "altitudes": "VPBNG:6500"}).json()
+    legs = body["legs"]
+    into = next(i for i, leg in enumerate(legs) if leg["to"] == "VPBNG")
+    assert {leg["altitude_ft"] for leg in legs[:into + 1]} == {6500.0}
+    # Down to the plan's 4,500 on the way out of it, the plan still the one flown.
+    assert {leg["altitude_ft"] for leg in legs[into + 1:]} == {4500.0}
+    assert body["altitude_choice"] == "fastest"
+
+
+def test_an_airports_own_pattern_is_the_one_a_flight_comes_down_to():
+    legs = client.get("/api/plan", params={**VIA_MADISON, "altitudes": "KMSN:2400"}).json()["legs"]
+    tods = {leg["to"]: leg["tod"]["to_ft"] for leg in legs if leg["tod"]}
+    assert tods == {"KMSN": 2400.0, "KDLH": 1900.0}
+
+
+def test_a_flight_landing_by_an_approach_comes_down_to_its_first_fix_by_it(monkeypatch):
+    from app.routers import plan as plan_router
+
+    field = airport("KDLH")
+    # An approach from ANDOE, crossed at or above 3,000 ft three miles
+    # out; its final approach fix lower and nearer, and a missed approach
+    # fix higher: neither is the one the descent ends at.
+    def fix(ident, north, min_ft, missed=False):
+        return {"ident": ident, "lat": field["lat"] + north, "lon": field["lon"], "roles": [], "min_ft": min_ft, "max_ft": None,
+                "missed": missed}
+
+    drawn = {"kind": "approach", "fixes": [fix("ANDOE", 0.05, 3000), fix("FAFIX", 0.02, 2300), fix("MISSD", -0.1, 4000, True)]}
+    asked = []
+    monkeypatch.setattr(plan_router.procedures, "procedure_drawing",
+                        lambda ident, procedure, transition=None: asked.append((ident, procedure, transition)) or drawn)
+    legs = client.get("/api/plan", params={**VIA_MADISON, "procedures": "DLH:I09:ANDOE"}).json()["legs"]
+    tods = {leg["to"]: leg["tod"] for leg in legs if leg["tod"]}
+    # Asked once, by the field as picked, for the descent and the leg alike.
+    assert asked == [("DLH", "I09", "ANDOE")]
+    assert (tods["KDLH"]["to_ft"], tods["KDLH"]["fix"], tods["KDLH"]["pattern"]) == (3000.0, "ANDOE", False)
+    # Madison, with no approach picked, still down to its pattern.
+    assert (tods["KMSN"]["to_ft"], tods["KMSN"]["fix"], tods["KMSN"]["pattern"]) == (1900.0, None, True)
+    # 1,500 ft at three to one is 4.5 nm, short of ANDOE's three miles
+    # out: 7.5 nm before the field, the last leg being 10.
+    last = [leg for leg in legs if leg["to"] == "KDLH"][-1]
+    assert last["tod"]["along_nm"] == pytest.approx(last["distance_nm"] - 4.5 - geo.distance_nm(
+        field["lat"] + 0.05, field["lon"], field["lat"], field["lon"]), abs=0.1)
+
+
+def test_a_flight_cruising_under_an_approachs_first_fix_comes_down_to_the_next_fix_lower(monkeypatch):
+    from app.routers import plan as plan_router
+
+    field = airport("KDLH")
+    # The stub's plan cruises at 4,500: an initial fix at 5,000 is over
+    # it, so the descent is to the final approach fix's 2,300.
+    drawn = {"kind": "approach", "fixes": [
+        {"ident": ident, "lat": field["lat"] + north, "lon": field["lon"], "roles": [], "min_ft": min_ft, "max_ft": None, "missed": False}
+        for ident, north, min_ft in (("HIGHR", 0.2, 5000), ("FAFIX", 0.05, 2300))
+    ]}
+    monkeypatch.setattr(plan_router.procedures, "procedure_drawing", lambda ident, procedure, transition=None: drawn)
+    legs = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH", "procedures": "KDLH:R27:HIGHR"}).json()["legs"]
+    tod = next(leg["tod"] for leg in legs if leg["tod"])
+    assert (tod["to_ft"], tod["fix"]) == (2300.0, "FAFIX")
+
+
+def test_a_leg_flown_by_an_arrival_is_the_longer_by_its_path_and_so_are_its_time_fuel_and_the_totals(monkeypatch):
+    from app.routers import plan as plan_router
+
+    field = airport("KDLH")
+    # An arrival out 0.5° west of the field and back: its path from the
+    # last leg's start runs miles past the field and round, where the leg
+    # runs straight in. Its fix crossed at 12,000, over the plan's cruise.
+    west = [field["lat"], field["lon"] - 0.5]
+    drawn = {
+        "kind": "arrival", "holds": [], "fixes": [{"ident": "WESTX", "lat": west[0], "lon": west[1], "roles": [],
+                                                   "min_ft": 12000, "max_ft": None, "missed": False}],
+        "lines": [{"role": "common", "points": [west, [field["lat"] + 0.05, field["lon"]]]}],
+    }
+    monkeypatch.setattr(plan_router.procedures, "procedure_drawing", lambda ident, procedure, transition=None: drawn)
+    plain = client.get("/api/plan", params=VIA_MADISON).json()
+    flown = client.get("/api/plan", params={**VIA_MADISON, "procedures": "KDLH:WEST1"}).json()
+    before, after = plain["legs"][-1], flown["legs"][-1]
+    more = after["procedure"]["more_nm"]
+    assert more > 10
+    # The leg keeps the route's own distance, the miles more at its ground
+    # speed and burn in its time and fuel.
+    assert after["distance_nm"] == before["distance_nm"]
+    assert after["ete_min"] == pytest.approx(before["ete_min"] + more / before["groundspeed_kt"] * 60, abs=0.2)
+    assert after["fuel_gal"] == pytest.approx(before["fuel_gal"] + after["procedure"]["more_min"] / 60 * before["fuel_burn_gph"], abs=0.02)
+    assert after["procedure"]["landing"] is True
+    assert after["procedure"]["path"][0] != after["procedure"]["path"][-1]
+    # And the totals, the fuel the reserve and the fuel required are added to.
+    assert flown["totals"]["distance_nm"] == pytest.approx(plain["totals"]["distance_nm"] + more, abs=0.2)
+    assert flown["totals"]["fuel_gal"] == pytest.approx(plain["totals"]["fuel_gal"] + after["procedure"]["more_gal"], abs=0.1)
+    # Madison's leg in, with nothing picked there, as it was.
+    madison = [leg for leg in flown["legs"] if leg["to"] == "KMSN"][-1]
+    assert madison.get("procedure") is None
+
+
+def test_a_procedure_flown_direct_to_a_fix_is_read_from_its_fourth_part(monkeypatch):
+    from app.routers import plan as plan_router
+
+    asked = []
+    def drawing(ident, procedure, transition=None):
+        asked.append((ident, procedure, transition))
+        return {"kind": "approach", "fixes": []}
+    monkeypatch.setattr(plan_router.procedures, "procedure_drawing", drawing)
+    q = plan_router.PlanQuery(dep="C81", dest="KDLH", procedures="KDLH:I09::ANDOE,KDLH:R27:HIGHR:WIRSA")
+    assert q.procedure_picks() == [("KDLH", "I09", None, "ANDOE"), ("KDLH", "R27", "HIGHR", "WIRSA")]
+    assert [d.get("direct") for _, d in q.drawn_procedures()] == ["ANDOE", "WIRSA"]
+    assert asked == [("KDLH", "I09", None), ("KDLH", "R27", "HIGHR")]
+
+
+def test_a_fix_given_an_altitude_to_cross_is_crossed_at_it_for_the_descent(monkeypatch):
+    """The owner's ask ("set an altitude when crossing it"): ANDOE given
+    2,500 where the chart has 3,000 or above, the descent planned to it."""
+    from app.routers import plan as plan_router
+
+    field = airport("KDLH")
+    drawn = {"kind": "approach", "fixes": [
+        {"ident": "ANDOE", "lat": field["lat"] + 0.05, "lon": field["lon"], "roles": [], "min_ft": 3000, "max_ft": None, "missed": False},
+    ]}
+    monkeypatch.setattr(plan_router.procedures, "procedure_drawing", lambda ident, procedure, transition=None: drawn)
+    params = {"dep": "C81", "dest": "KDLH", "procedures": "KDLH:I09:ANDOE", "crossings": "ANDOE:2500"}
+    legs = client.get("/api/plan", params=params).json()["legs"]
+    tod = next(leg["tod"] for leg in legs if leg["tod"])
+    assert (tod["to_ft"], tod["fix"]) == (2500.0, "ANDOE")
+    assert client.get("/api/plan", params={"dep": "C81", "dest": "KDLH", "crossings": "ANDOE:99999"}).status_code == 422
+
+
+def test_a_departure_is_flown_by_its_transition_for_the_runway_left_from(monkeypatch):
+    """St. Louis's BERYY6 left 30R by its runway 11 transition (the audit of
+    2026-10-21): the runway the pilot picked goes to the path."""
+    from app.routers import plan as plan_router
+
+    field = airport("C81")
+    drawn = {"kind": "departure", "fixes": [], "holds": [],
+             "lines": [{"role": "runway", "name": "RW27", "points": [[field["lat"], field["lon"]], [field["lat"] + 0.05, field["lon"]]]}]}
+    monkeypatch.setattr(plan_router.procedures, "procedure_drawing", lambda ident, procedure, transition=None: drawn)
+    asked = []
+    real = plan_router.procedure_paths.flown
+    monkeypatch.setattr(plan_router.procedure_paths, "flown", lambda *a, **k: asked.append(k.get("runway")) or real(*a, **k))
+    params = {"dep": "C81", "dest": "KDLH", "procedures": "C81:DEP1", "runways": "C81:27,KDLH:9"}
+    assert client.get("/api/plan", params=params).status_code == 200
+    assert asked == ["27"]
+    # By the FAA's ident, as the procedures are (_bare_field).
+    assert plan_router.PlanQuery(dep="C81", dest="KDLH", runways="kstl:30r").departure_runways() == {"STL": "30R"}
+    assert client.get("/api/plan", params={**params, "runways": "C81:west"}).status_code == 422
+
+
+@pytest.mark.parametrize("picks", ["KDLH", "KDLH:", "KDLH:I09:ANDOE:X", "KDLH:I09;KMSN:R18"])
+def test_a_procedure_that_is_not_one_is_refused(picks):
+    params = {**VIA_MADISON, "procedures": picks}
+    assert client.get("/api/plan", params=params).status_code == 422
+    assert client.get("/api/navlog", params=params).status_code == 422
+
+
+def test_the_course_says_each_airports_pattern_and_no_waypoints(a_vfr_waypoint):
+    course = client.get("/api/course", params={"dep": "C81", "dest": "KDLH", "stops": "VPBNG"}).json()
+    assert course["departure"]["pattern_altitude_ft"] == course["destination"]["pattern_altitude_ft"] == 1900.0
+    assert course["stops"][0].get("pattern_altitude_ft") is None
+
+
+@pytest.mark.parametrize("altitudes", ["VPBNG", "VPBNG:", "VPBNG:18000", "VPBNG:0", "V:4500", "VPBNG:4500;KMSN:1900"])
+def test_a_points_altitude_that_is_not_one_is_refused(altitudes):
+    params = {**VIA_MADISON, "altitudes": altitudes}
+    assert client.get("/api/plan", params=params).status_code == 422
+    assert client.get("/api/navlog", params=params).status_code == 422
+
+
+def test_a_waypoints_own_altitude_under_the_floor_is_flown_and_warned(a_vfr_waypoint):
+    # The stub's floor is 2,200 ft: 2,000 to VPBNG is under it.
+    body = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH", "stops": "VPBNG", "altitudes": "VPBNG:2000"}).json()
+    assert {leg["altitude_ft"] for leg in body["legs"] if leg["to"] == "VPBNG"} == {2000.0}
+    assert body["altitude_cautions"] == [{
+        "from_ident": "C81", "to_ident": "VPBNG", "altitude_ft": 2000.0,
+        "reasons": ["Under the 2,200 ft the terrain and obstacles need (14 CFR 91.119)"],
+    }]
+    # The planner's own plans: nothing to say.
+    assert client.get("/api/plan", params={"dep": "C81", "dest": "KDLH", "stops": "VPBNG"}).json()["altitude_cautions"] == []
+
+
+def test_a_route_may_start_at_the_present_position_flown_from_not_taken_off_from():
+    """Fly Here's Direct-To in the air: from wherever the airplane is."""
+    from app.router_basics import load_route
+
+    r = load_route("@42.3246,-88.0741", "KDLH")
+    assert r.departure["kind"] == "fix" and r.departure["name"] == "Present position"
+    assert (r.departure["lat"], r.departure["lon"]) == (42.3246, -88.0741)
+    assert not r.takes_off and r.lands
+    body = client.get("/api/course", params={"dep": "@42.3246,-88.0741", "dest": "KDLH"}).json()
+    assert body["departure"]["ident"] == "@42.3246,-88.0741"
+    assert body["destination"]["ident"] == "KDLH"
+
+
+def test_a_position_off_the_globe_is_no_position():
+    from app.router_basics import position_of
+
+    assert position_of("@91.0,-88.0") is None
+    assert position_of("KDLH") is None
+    assert position_of("@42.3,-88.1") == {
+        "name": "Present position", "lat": 42.3, "lon": -88.1, "elevation_ft": None, "fix": True, "altitude_ft": None,
+    }
+    assert position_of("@42.3,-88.1,3500")["altitude_ft"] == 3500.0
+
+
+def test_a_direct_to_climbs_from_the_gps_altitude_and_with_none_starts_level(altitude, monkeypatch):
+    """In the air the climb to the cruise starts where the airplane is:
+    from 1,000 ft, a climb on the first leg; with no altitude from the
+    GPS, level at the first leg's, as before. Never from under the ground
+    there: a GPS's 0 ft over ground 1,000 ft up climbs from the ground."""
+    from app.routers import plan
+
+    monkeypatch.setattr(plan.elevation, "get_elevations_m", lambda points: {p: 1000 / plan.M_TO_FT for p in points})
+    legs = lambda dep: client.get("/api/plan", params={"dep": dep, "dest": "KDLH"}).json()["legs"]  # noqa: E731
+    assert altitude["recommended_ft"] > 1000
+    assert legs("@42.3246,-88.0741,1000")[0]["climb_min"] > 0
+    assert legs("@42.3246,-88.0741")[0]["climb_min"] == 0
+    assert legs("@42.3246,-88.0741,0")[0] == legs("@42.3246,-88.0741,1000")[0]
+
+
+def test_an_airway_among_the_stops_is_flown_fix_by_fix_with_its_altitudes(monkeypatch):
+    """"BAE V900 DDD" is BAE, the fixes V900 passes, DDD (wingtip.airways): each
+    one a waypoint, each hop into one carrying its segment's MEA."""
+    from wingtip import airways
+
+    from app import router_basics
+
+    segments = [airways.Segment("V900", "BAE", "CCC", 4000.0, None, 2600.0, 17500.0),
+                airways.Segment("V900", "CCC", "DDD", 5000.0, None, None, 17500.0)]
+    monkeypatch.setattr(airways, "is_airway", lambda token: token == "V900")
+    monkeypatch.setattr(airways, "along", lambda airway, a, b: segments)
+    idents, flown = router_basics.with_airways(["C81", "BAE", "V900", "DDD", "KDLH"])
+    assert idents == ["C81", "BAE", "CCC", "DDD", "KDLH"]
+    assert flown == {2: segments[0], 3: segments[1]}
+
+
+def test_each_leg_along_an_airway_carries_its_segment_for_the_nav_log():
+    """A hop flown along an airway ends at a point holding the segment
+    flown into it (router_basics.with_airways): each of its legs carries it, for
+    the nav log's route column; a hop off an airway's legs carry none."""
+    from app.routers.plan import on_airway
+
+    segment = {"id": "V191", "from": "BAE", "mea_ft": 4000.0, "gnss_mea_ft": None, "moca_ft": 2600.0, "maa_ft": 17500.0}
+    legs = [{"from": "BAE", "to": "X"}, {"from": "X", "to": "CORIR"}]
+    assert on_airway(legs, {"ident": "CORIR", "airway": segment}) == [{**leg, "airway": segment} for leg in legs]
+    assert on_airway(legs, {"ident": "KDLH"}) == legs
+
+
+def test_an_airway_that_cannot_be_flown_as_written_is_a_422_that_says_why(monkeypatch):
+    from fastapi import HTTPException
+    from wingtip import airways
+
+    from app import router_basics
+
+    def nowhere(airway, a, b):
+        raise airways.AirwayError(f"{a} is not on {airway}: an airway is joined at one of its own fixes.")
+
+    monkeypatch.setattr(airways, "is_airway", lambda token: token in ("V900", "V901"))
+    monkeypatch.setattr(airways, "along", nowhere)
+    monkeypatch.setattr(router_basics, "_is_place", lambda ident: False)
+    with pytest.raises(HTTPException) as err:
+        router_basics.with_airways(["C81", "V900", "DDD", "KDLH"])
+    assert err.value.status_code == 422 and err.value.detail == "C81 is not on V900: an airway is joined at one of its own fixes."
+    with pytest.raises(HTTPException, match="follow each other"):
+        router_basics.with_airways(["C81", "BAE", "V900", "V901", "DDD", "KDLH"])
+    # An airport whose identifier reads as an airway is a place.
+    monkeypatch.setattr(router_basics, "_is_place", lambda ident: True)
+    assert router_basics.with_airways(["C81", "V900", "KDLH"])[0] == ["C81", "V900", "KDLH"]
+
+
+def test_with_the_class_b_clearance_each_hop_through_it_is_offered_a_way_round(monkeypatch):
+    """The owner's pick (2026-10-20): Class B accepted by default, and
+    "Avoid Class B" a waypoint round it, asked for each hop at its
+    highest cruise altitude. None without the clearance or a Class B."""
+    from types import SimpleNamespace
+
+    from app.routers import plan as plan_router
+
+    asked = []
+
+    def ways(start, end, cruise_ft):
+        asked.append((start, cruise_ft))
+        return [{"ident": "VPBNG", "kind": "VFR waypoint", "added_nm": 6.2}] if start == (1.0, 1.0) else []
+
+    monkeypatch.setattr(plan_router, "class_b_ways", ways)
+    monkeypatch.setattr(plan_router, "_where", lambda ident: "by Campbell")
+    hop = lambda start: SimpleNamespace(hop=SimpleNamespace(start=start, end=(9.0, 9.0)))  # noqa: E731
+    runs = [hop((0.0, 0.0)), hop((1.0, 1.0))]
+    outcome = SimpleNamespace(
+        selection={"airspace_transits": [{"class": "B", "name": "CHICAGO CLASS B"}]},
+        hop_legs=([{"altitude_ft": 3500.0}], [{"altitude_ft": 3500.0}, {"altitude_ft": 4500.0}]),
+    )
+    cleared = SimpleNamespace(class_b_clearance=True)
+    assert plan_router.class_b_detours_of(runs, outcome, cleared) == [
+        {"ident": "VPBNG", "kind": "VFR waypoint", "added_nm": 6.2, "stop_index": 1, "description": "by Campbell"},
+    ]
+    assert asked == [((0.0, 0.0), 3500.0), ((1.0, 1.0), 4500.0)]
+    assert plan_router.class_b_detours_of(runs, outcome, SimpleNamespace(class_b_clearance=False)) == []
+    no_b = SimpleNamespace(selection={"airspace_transits": [{"class": "C"}]}, hop_legs=outcome.hop_legs)
+    assert plan_router.class_b_detours_of(runs, no_b, cleared) == []
+
+
+def test_a_route_with_stops_figures_at_each_altitude_join_its_hops():
+    """A hop that does not offer an altitude flies its nearest, the lower
+    on a tie; times and fuel summed, the wind weighed by length."""
+    from app.routers.plan import join_figures
+    from app.schemas import AltitudeFigure
+
+    def f(alt, ete, fuel, wind, everywhere=True):
+        return AltitudeFigure(altitude_ft=alt, ete_min=ete, fuel_gal=fuel, tailwind_kt=wind, everywhere=everywhere)
+
+    west = (f(4500.0, 30.0, 4.0, 10.0), f(6500.0, 28.0, 4.1, 20.0))
+    east = (f(5500.0, 20.0, 3.0, -10.0),)
+    joined = {j.altitude_ft: j for j in join_figures([west, east], [100.0, 50.0])}
+    assert sorted(joined) == [4500.0, 5500.0, 6500.0]
+    assert (joined[4500.0].ete_min, joined[4500.0].fuel_gal, joined[4500.0].everywhere) == (50.0, 7.0, False)
+    # 5,500 is 1,000 ft from both of the west hop's: the lower, 4,500.
+    assert joined[5500.0].ete_min == 50.0
+    assert joined[6500.0].tailwind_kt == pytest.approx((20.0 * 100 + -10.0 * 50) / 150, abs=0.05)
+    assert join_figures([west], [100.0]) == west
+    # A hop with none to offer: the others' altitudes kept for the ruler,
+    # their times, fuel and "everywhere" unknown; none at all, none.
+    gapped = {j.altitude_ft: j for j in join_figures([west, ()], [100.0, 50.0])}
+    assert sorted(gapped) == [4500.0, 6500.0]
+    assert (gapped[4500.0].ete_min, gapped[4500.0].fuel_gal, gapped[4500.0].everywhere) == (None, None, False)
+    assert gapped[6500.0].tailwind_kt == 20.0
+    assert join_figures([(), ()], [100.0, 50.0]) == ()
+
+
+def test_a_stop_may_be_the_pilots_own_point_off_a_fix(monkeypatch):
+    # "VPBNG/090/30", at the owner's ask: flown over where it is, named for
+    # how it was made; a point off a fix NASR has none of is a 404.
+    vpbng = {"ident": "VPBNG", "lat": 42.27, "lon": -88.13, "kind": "VFR waypoint", "vfr": True}
+    monkeypatch.setattr(fixes, "_TABLE", fixes._Table({"VPBNG": vpbng}, {}))
+    monkeypatch.setattr(fixes, "find_navaid", REAL_FIND_NAVAID)
+    stop = client.get("/api/course", params={"dep": "C81", "dest": "KDLH", "stops": "VPBNG/090/30"}).json()["stops"][0]
+    assert (stop["ident"], stop["kind"], stop["name"]) == ("VPBNG/090/30", "fix", "30 nm on 090° from VPBNG")
+    assert stop["lon"] > vpbng["lon"] + 0.6
+    # NOPE no airport either, as the airports' own reader says one is not.
+    stubbed = airports.get_airport
+
+    def get_airport(ident, **kw):
+        if ident.upper() == "NOPE":
+            raise ValueError("No airport NOPE.")
+        return stubbed(ident, **kw)
+
+    monkeypatch.setattr(airports, "get_airport", get_airport)
+    missing = client.get("/api/course", params={"dep": "C81", "dest": "KDLH", "stops": "NOPE/090/30"})
+    assert missing.status_code == 404
+
+
+def test_a_hold_at_a_stop_is_flown_on_the_leg_leaving_it_and_its_minutes_are_in_the_times_and_fuel():
+    # Two turns of a one-minute hold at Madison, the owner's "create a
+    # left/right hold": two four-minute laps on the leg out of it.
+    plain = client.get("/api/plan", params=VIA_MADISON).json()
+    held = client.get("/api/plan", params={**VIA_MADISON, "holds": "KMSN:180:L:1M:2T"}).json()
+    i = next(k for k, leg in enumerate(held["legs"]) if leg["from"] == "KMSN")
+    before, after = plain["legs"][i], held["legs"][i]
+    hold = after["hold"]
+    assert (hold["fix"], hold["inbound_deg"], hold["right"], hold["turns"]) == ("KMSN", 180, False, 2)
+    assert hold["minutes"] == pytest.approx(8.0)
+    assert hold["entry"] in ("direct", "teardrop", "parallel")
+    assert hold["path"][0] == hold["path"][-1]
+    assert after["ete_min"] == pytest.approx(before["ete_min"] + 8.0, abs=0.1)
+    assert after["fuel_gal"] == pytest.approx(before["fuel_gal"] + 8.0 / 60 * before["fuel_burn_gph"], abs=0.02)
+    assert held["totals"]["fuel_gal"] == pytest.approx(plain["totals"]["fuel_gal"] + hold["gal"], abs=0.1)
+    # One that is not a hold is refused.
+    assert client.get("/api/plan", params={**VIA_MADISON, "holds": "KMSN:999:L:1M:2T"}).status_code == 422
+
+
+def test_an_altitude_on_the_pilots_own_point_off_a_fix_is_flown_to_it(monkeypatch):
+    # Set altitude… on "VPBNG/090/30" was a 422 for the whole log: the
+    # planner took an ident of 2 to 5 letters and digits alone. Packed, or
+    # as the route writes it, the hop into the point is flown at it.
+    vpbng = {"ident": "VPBNG", "lat": 42.27, "lon": -88.13, "kind": "VFR waypoint", "vfr": True}
+    monkeypatch.setattr(fixes, "_TABLE", fixes._Table({"VPBNG": vpbng}, {}))
+    monkeypatch.setattr(fixes, "find_navaid", REAL_FIND_NAVAID)
+    for written in ("VPBNG/090/30", "VPBNG090030"):
+        got = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH", "stops": "VPBNG/090/30", "altitudes": f"{written}:5500"})
+        assert got.status_code == 200, (written, got.text)
+        into = [leg for leg in got.json()["legs"] if leg["to"] == "VPBNG/090/30"]
+        assert into and into[-1]["altitude_ft"] == 5500.0, written
+
+
+def test_an_altitude_picked_on_the_wheel_flies_each_leg_at_its_nearest_legal_altitude():
+    # The wheel's figures are each leg at its nearest legal altitude; its
+    # pick is flown so (altitude_nearest), where a typed one is flown on
+    # every leg, legal or not. Here 4,500 is every leg's one legal altitude.
+    typed = client.get("/api/plan", params={**VIA_MADISON, "altitude_ft": 6500}).json()
+    wheel = client.get("/api/plan", params={**VIA_MADISON, "altitude_ft": 6500, "altitude_nearest": True}).json()
+    assert {leg["altitude_ft"] for leg in typed["legs"]} == {6500.0}
+    assert {leg["altitude_ft"] for leg in wheel["legs"]} == {4500.0}
+
+
+def test_a_round_trips_hold_at_its_field_is_the_arrivals():
+    # C81 to Madison and back: a hold set at C81 is flown before landing
+    # there, its fuel on the last flight; matched as the departure, it was
+    # on the first flight out, and the last flight's fuel came up short.
+    held = client.get("/api/plan", params={"dep": "C81", "dest": "C81", "stops": "KMSN", "holds": "C81:180:L:1M:2T"}).json()
+    legs = held["legs"]
+    assert [k for k, leg in enumerate(legs) if leg.get("hold")] == [len(legs) - 1]
+
+
+def test_a_hold_makes_the_flights_after_it_leave_later(monkeypatch):
+    # Two one-minute turns at the departure (eight minutes) are flown on the
+    # first flight, so the second leaves eight minutes later: its winds and
+    # night are read for then, as the time on the ground is.
+    from datetime import datetime, timedelta, timezone
+
+    from app.routers import plan as plan_router
+
+    starts = []
+    real = plan_router.flight_window
+
+    def window(when, length_nm, tas):
+        starts.append(when)
+        return real(when, length_nm, tas)
+
+    monkeypatch.setattr(plan_router, "flight_window", window)
+    depart = datetime(2026, 9, 22, 15, 0, tzinfo=timezone.utc).isoformat()
+    client.get("/api/plan", params={**VIA_MADISON, "depart": depart})
+    plain = starts[1]
+    starts.clear()
+    client.get("/api/plan", params={**VIA_MADISON, "depart": depart, "holds": "C81:180:L:1M:2T"})
+    assert starts[1] - plain == timedelta(minutes=8)
+
+
+def test_where_the_ceiling_stops_it_over_high_ground_the_way_round_is_offered(monkeypatch):
+    """No legal altitude because the ground needs more than the airplane's
+    service ceiling: the points round it (wingtip.terrain_detour), in order, as
+    one detour, with the miles it adds."""
+    from wingtip import terrain_detour
+
+    from app.router_basics import load_hop
+    from app.routers.plan import terrain_way
+
+    hop = load_hop("C81", "KDLH")
+    selection = {"segments": [{"candidates_ft": [], "service_ceiling_ft": 10950.0}]}
+    monkeypatch.setattr(terrain_detour, "way_round", lambda start, end, ceiling: [
+        {"ident": "KMSN", "name": "MADISON", "lat": 43.14, "lon": -89.34},
+        {"ident": "KEAU", "name": "EAU CLAIRE", "lat": 44.87, "lon": -91.48},
+    ])
+    way = terrain_way(selection, hop)
+    assert way["via"] == ["KMSN", "KEAU"] and way["ident"] == "KMSN"
+    assert way["added_nm"] > 0
+    # Clouds, not the ceiling, stopping it: no way round offered.
+    assert terrain_way({"segments": [{"candidates_ft": []}]}, hop) is None
+
+
+def test_the_runways_picked_are_flown_off_the_runway_and_into_the_pattern(monkeypatch):
+    """The owner's "is it not flying that and landing?" (2026-10-27): with a
+    runway picked at each end and no procedure, the first leg leaves along
+    the runway and its upwind, and the last comes in by the traffic pattern
+    to the threshold, its miles in its time and fuel."""
+    from app.routers import plan as plan_router
+
+    def runway(ident, airport_, end):
+        lat, lon = airport_["lat"], airport_["lon"]
+        return {"runway_ends": [
+            {"ident": "09", "heading_true_deg": 90.0, "traffic": "left", "lat": lat, "lon": lon - 0.01},
+            {"ident": "27", "heading_true_deg": 270.0, "traffic": "right", "lat": lat, "lon": lon + 0.01},
+        ]}
+    monkeypatch.setattr(plan_router, "_field_runway", runway)
+    plain = client.get("/api/plan", params=VIA_MADISON).json()
+    flown = client.get("/api/plan", params={**VIA_MADISON, "runways": "C81:9,KMSN:27", "patterns": "KMSN:27,KDLH:9"}).json()
+    first, last = flown["legs"][0], flown["legs"][-1]
+    c81, dlh = airport("C81"), airport("KDLH")
+    assert first["procedure"]["path"][0] == [round(c81["lat"], 6), round(c81["lon"] - 0.01, 6)]
+    assert first["procedure"]["landing"] is False
+    assert last["procedure"]["landing"] is True
+    assert last["procedure"]["path"][-1] == [round(dlh["lat"], 6), round(dlh["lon"] - 0.01, 6)]
+    assert last["ete_min"] == pytest.approx(plain["legs"][-1]["ete_min"] + last["procedure"]["more_min"], abs=0.2)
+    # Into Madison by its pattern, out of it by its runway: each its own leg.
+    into_madison = [leg for leg in flown["legs"] if leg["to"] == "KMSN"][-1]
+    assert into_madison["procedure"]["landing"] is True
+
+
+def test_a_runway_landed_on_is_read_from_the_address():
+    from app.routers import plan as plan_router
+
+    assert plan_router.PlanQuery(dep="C81", dest="KDLH", patterns="KDLH:9,UGN:23R").landing_runways() == {"DLH": "9", "UGN": "23R"}

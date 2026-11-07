@@ -2,7 +2,7 @@
 //! cells a line crosses, its minutes, and the loop that straightens a way
 //! through cell centres into the fewest turns. Each gives exactly what the
 //! Python it stood in for gave -- the same samples, the same sums in the
-//! same order -- as the shared fixtures (tests/fixtures/native) hold it to.
+//! same order -- as the shared fixtures (services/planner/tests_wingtip/fixtures/native) hold it to.
 
 use crate::sums::{pairwise, Neumaier};
 use std::collections::HashSet;

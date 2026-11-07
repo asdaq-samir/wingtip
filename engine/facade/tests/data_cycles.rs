@@ -1,5 +1,5 @@
 //! The FAA data sets' cycles held to the shared fixture the planner and
-//! the web are held to (web/src/lib/fixtures/dataCycles.json, its dates
+//! the web are held to (apps/web/src/lib/fixtures/dataCycles.json, its dates
 //! from the FAA's 28 and 56 Day Product Schedule, the NASR subscription
 //! page and the DOF page), asked as every host asks: `data_cycle` by name.
 
@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use wingtip_engine::call::call;
 
 fn fixture() -> Value {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/src/lib/fixtures/dataCycles.json");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/dataCycles.json");
     serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
 }
 

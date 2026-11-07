@@ -1,6 +1,6 @@
 //! A pilot's personal minimums -- the weather they have decided they will
 //! not take off or land in, stricter than the rules -- and where the
-//! briefing's weather is under them (web/src/lib/minimums.ts, with
+//! briefing's weather is under them (apps/web/src/lib/minimums.ts, with
 //! lib/wind's steadyOrGustKt and runwayCrosswindKt). Each off (None) until
 //! set.
 

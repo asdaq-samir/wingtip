@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # The key of each image the browser suite runs (.github/ci-images.hcl),
-# and of the page its webapp serves: a hash of the files, as this commit
+# and of the page its gateway serves: a hash of the files, as this commit
 # has them, that decide what each does in the suite's stack. Each is
 # built once per key, by the e2e-images job, and a shard pulls the one
 # built by any earlier commit with the same key -- most commits change
 # none of the images', and a shard then waits for no image to be built.
 # One line each: "<name> <key>".
 #
-#   webapp            its jar: springboot-app's Dockerfile, pom and
-#                     sources. Not web/: the suite's stack serves the
+#   gateway            its jar: services/gateway's Dockerfile, pom and
+#                     sources. Not apps/web/: the suite's stack serves the
 #                     page below, mounted over the image's
-#                     (docker-compose.ci.yml).
-#   planning-service  its packages: the Dockerfile, the base it is built
-#                     FROM (docker/Dockerfile.base), the requirements it
+#                     (infra/docker-compose.ci.yml).
+#   planner  its packages: the Dockerfile, the base it is built
+#                     FROM (services/Dockerfile.base), the requirements it
 #                     installs and engine/, the engine the base builds
 #                     into the image (a rule added there is missing from
 #                     an image keyed without it: the planner answered "the
@@ -20,7 +20,7 @@
 #                     Python code, which the stack mounts from the
 #                     checkout over the image's
 #                     (docker-compose.yml).
-#   page              the page: web/ but its browser suite (web/e2e),
+#   page              the page: apps/web/ but its browser suite (apps/web/e2e),
 #                     the two API documents its types are made from, and
 #                     the Node it is built with.
 #
@@ -28,7 +28,7 @@
 # `pushed`), so that a change there is a new image for every key.
 set -euo pipefail
 key() { { echo "zstd"; git ls-tree -r HEAD -- "$@"; } | git hash-object --stdin | cut -c1-16; }
-echo "webapp $(key springboot-app/Dockerfile springboot-app/pom.xml springboot-app/src/main)"
-echo "planning-service $(key planning-service/Dockerfile docker/Dockerfile.base planning-service/requirements.txt src/requirements.txt src/requirements-charts.txt engine)"
-echo "page $(git ls-tree -r HEAD -- web planning-service/openapi.json springboot-app/openapi.json .nvmrc \
-  | grep -v $'\tweb/e2e/' | git hash-object --stdin | cut -c1-16)"
+echo "gateway $(key services/gateway/Dockerfile services/gateway/pom.xml services/gateway/src/main)"
+echo "planner $(key services/planner/Dockerfile services/Dockerfile.base services/planner/requirements.txt services/planner/requirements-wingtip.txt services/planner/requirements-wingtip-charts.txt engine)"
+echo "page $(git ls-tree -r HEAD -- apps/web services/planner/openapi.json services/gateway/openapi.json apps/web/.nvmrc \
+  | grep -v $'\tapps/web/e2e/' | git hash-object --stdin | cut -c1-16)"

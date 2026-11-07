@@ -27,7 +27,7 @@ variable "PUSH" {
 # Promote workflow walks, promoting each this commit built.
 group "default" {
   targets = ["base", "ml", "pipeline-processing", "pipeline-training",
-             "planning-service", "webapp"]
+             "planner", "gateway"]
 }
 
 function "image" {
@@ -35,7 +35,7 @@ function "image" {
   result = {
     tags       = ["${REGISTRY}/${name}:sha-${SHA}"]
     # The base's cache too: every image that imports wingtip is built
-    # FROM it (docker/Dockerfile.base), so the engine and wingtip's
+    # FROM it (services/Dockerfile.base), so the engine and wingtip's
     # requirements an earlier run built are found by each image, not
     # built again for each image's own cache.
     cache-from = ["type=registry,ref=${REGISTRY}/${name}:buildcache",
@@ -45,7 +45,7 @@ function "image" {
   }
 }
 
-# wingtip's Python base (docker/Dockerfile.base): Python, wingtip's own
+# wingtip's Python base (services/Dockerfile.base): Python, wingtip's own
 # requirements and its Rust extension. Each image below that imports
 # wingtip names it as its `wingtip-base` context, `target:base`, so one
 # bake builds it once for all of them; main also pushes it as an image of
@@ -53,7 +53,7 @@ function "image" {
 # push builds the planner on (workflows/promote.yml).
 target "base" {
   context    = "."
-  dockerfile = "docker/Dockerfile.base"
+  dockerfile = "services/Dockerfile.base"
   target     = "base"
   tags       = image("base").tags
   cache-from = image("base").cache-from
@@ -63,7 +63,7 @@ target "base" {
 
 target "ml" {
   context    = "."
-  dockerfile = "docker/Dockerfile.ml"
+  dockerfile = "ml/Dockerfile.ml"
   contexts   = { wingtip-base = "target:base" }
   tags       = image("ml").tags
   cache-from = image("ml").cache-from
@@ -73,7 +73,7 @@ target "ml" {
 
 target "pipeline-processing" {
   context    = "."
-  dockerfile = "docker/Dockerfile.processing"
+  dockerfile = "ml/Dockerfile.processing"
   contexts   = { wingtip-base = "target:base" }
   tags       = image("pipeline-processing").tags
   cache-from = image("pipeline-processing").cache-from
@@ -83,7 +83,7 @@ target "pipeline-processing" {
 
 target "pipeline-training" {
   context    = "."
-  dockerfile = "docker/Dockerfile.training"
+  dockerfile = "ml/Dockerfile.training"
   contexts   = { wingtip-base = "target:base" }
   tags       = image("pipeline-training").tags
   cache-from = image("pipeline-training").cache-from
@@ -91,9 +91,9 @@ target "pipeline-training" {
   output     = image("pipeline-training").output
 }
 
-target "planning-service" {
+target "planner" {
   context    = "."
-  dockerfile = "planning-service/Dockerfile"
+  dockerfile = "services/planner/Dockerfile"
   contexts   = { wingtip-base = "target:base" }
   tags       = image("planning-service").tags
   cache-from = image("planning-service").cache-from
@@ -101,9 +101,9 @@ target "planning-service" {
   output     = image("planning-service").output
 }
 
-target "webapp" {
+target "gateway" {
   context    = "."
-  dockerfile = "springboot-app/Dockerfile"
+  dockerfile = "services/gateway/Dockerfile"
   tags       = image("webapp").tags
   cache-from = image("webapp").cache-from
   cache-to   = image("webapp").cache-to

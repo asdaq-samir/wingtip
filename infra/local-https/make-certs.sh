@@ -1,6 +1,6 @@
 #!/bin/sh
 # A local certificate authority and a server certificate for the
-# webapp's HTTPS port (see HttpsConnectorConfig), so a phone on the same
+# gateway's HTTPS port (see HttpsConnectorConfig), so a phone on the same
 # Wi-Fi reaches the app over a secure origin -- the one the browser
 # grants geolocation and a service worker to.
 #
@@ -9,7 +9,7 @@
 #
 # Writes into infra/local-https/certs/ (ignored by git):
 #   ca.pem       the authority's certificate -- install this on the phone
-#   webapp.p12   the server certificate and key, PKCS12, for the webapp
+#   webapp.p12   the server certificate and key, PKCS12, for the gateway
 #
 # The authority's own key is kept out of the repo, in
 # ~/.config/wingtip-local-ca (WINGTIP_LOCAL_CA_DIR to change it). The repo is
@@ -22,7 +22,7 @@
 # remove the old profile).
 #
 # Runs openssl in a container so nothing has to be installed here.
-# Then `docker compose up -d webapp`, and on the phone open
+# Then `docker compose up -d gateway`, and on the phone open
 # https://<address>:8443/app/plan after trusting ca.pem:
 #   iPhone: AirDrop or mail ca.pem to it, Settings > General > VPN &
 #           Device Management > install the profile, then Settings >
@@ -40,11 +40,11 @@ out="$here/certs"
 ca_dir="${WINGTIP_LOCAL_CA_DIR:-$HOME/.config/wingtip-local-ca}"
 mkdir -p "$out" "$ca_dir"
 chmod 700 "$ca_dir"
-# The PKCS12 container's password, the one the webapp opens it with by
+# The PKCS12 container's password, the one the gateway opens it with by
 # default (app.https.keystore-password). It protects nothing -- the key
 # sits unencrypted beside it in certs/ -- and it used to be a setting
 # read here from the environment and by compose from .env: set in .env
-# alone, it made a keystore the webapp could not open.
+# alone, it made a keystore the gateway could not open.
 password=changeit
 
 # An authority made by an earlier version of this script kept its key
@@ -84,5 +84,5 @@ docker run --rm --entrypoint sh -v "$out:/certs" -v "$ca_dir:/ca" -w /certs \
     echo "note: this authority has no name constraints -- run again with --new-ca to replace it" >&2
   fi
 '
-echo "wrote $out/ca.pem (install on the phone) and $out/webapp.p12 (the webapp reads it)"
-echo "now: docker compose up -d webapp, then open https://$address:8443/app/plan on the phone"
+echo "wrote $out/ca.pem (install on the phone) and $out/webapp.p12 (the gateway reads it)"
+echo "now: docker compose up -d gateway, then open https://$address:8443/app/plan on the phone"

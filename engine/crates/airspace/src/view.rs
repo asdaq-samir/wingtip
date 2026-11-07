@@ -6,7 +6,7 @@
 //! names and the same nulls, so the native app decodes it as it decodes
 //! the planner's and draws the chart's overlays from the packs it keeps.
 //!
-//! What a phone pack (wingtip.pack's `write_phone`) holds of each, and what it
+//! What a phone pack (wingtip.cycle_pack's `write_phone`) holds of each, and what it
 //! cannot, which is answered null:
 //!
 //! - The airspace layer's rings (crate::pack, simplified to the phone's
@@ -22,7 +22,7 @@
 //!   one, else the FAA's. The planner lists OurAirports' fields and names
 //!   them as OurAirports does; here the name is NASR's, set in title case.
 //!   `kind` is the SIZE column, OurAirports' size written into the pack
-//!   (wingtip.pack.airport_sizes); a pack without it has every field "other".
+//!   (wingtip.cycle_pack.airport_sizes); a pack without it has every field "other".
 //!   `military` is OWNERSHIP_TYPE_CODE's, null from a pack without that
 //!   column. `flight_category` is a live METAR's and always null here.
 //!   `airspace_class` is read off the pack's own airspace, as

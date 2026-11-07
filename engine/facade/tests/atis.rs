@@ -1,5 +1,5 @@
 //! The engine's ATIS reading against the web app's own fixture
-//! (web/src/lib/fixtures/atis.json): the same broadcasts read into the
+//! (apps/web/src/lib/fixtures/atis.json): the same broadcasts read into the
 //! same figures, so the phone at the hold-short line reads one as the
 //! page does.
 
@@ -9,7 +9,7 @@ use wingtip_engine::atis::read;
 use wingtip_engine::call::call;
 
 fn fixture() -> Value {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/src/lib/fixtures/atis.json");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/atis.json");
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
 

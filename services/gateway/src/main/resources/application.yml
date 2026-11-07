@@ -1,0 +1,242 @@
+spring:
+  mvc:
+    async:
+      # PlannerProxyController's streamed responses (detect/stream,
+      # navlog) run as Spring MVC async requests, and the default async
+      # timeout (30 s) cut any stream still open past that -- observed
+      # as a nav log that simply ended after the altitude stage, no legs
+      # and no error line, whenever aviationweather.gov was slow enough
+      # for the altitude selection to outlast it. Matches the
+      # controller's own 10-minute upstream timeout ("a cold corridor
+      # read is tens of seconds and a collection job is minutes; the
+      # client is what should give up").
+      request-timeout: 600000
+  # Signed-in sessions live in Postgres (spring-session-jdbc) and last
+  # 30 days of not being used, with a cookie that outlives the browser
+  # (server.servlet.session below): sign in once per device a month,
+  # not after every half hour away or every gateway restart. The tables
+  # come from Flyway (V8__spring_session.sql).
+  session:
+    jdbc:
+      initialize-schema: never
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/wingtip}
+    username: ${SPRING_DATASOURCE_USERNAME:wingtip}
+    password: ${SPRING_DATASOURCE_PASSWORD:wingtip}
+  jpa:
+    # Flyway (db/migration/) owns schema now -- validate just checks the
+    # entity mapping still matches what Flyway created, it doesn't touch
+    # the schema itself.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  # The magic-link email flow's own sender (MagicLinkController).
+  # Declared unconditionally, unlike Google/Apple's own credentials --
+  # spring-boot-starter-mail only auto-configures a JavaMailSender bean
+  # once `spring.mail.host` exists as a property at all, even blank, so
+  # this has to be here (not left absent) for that bean to exist for the
+  # controller to inject in the first place. Unconfigured, sending just
+  # fails at the point of use (logged, not thrown -- see the
+  # controller's own comment), the same fail-closed shape as every
+  # other optional integration in this app.
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# Sign-in with Google/Apple lives in OAuthClientsConfig (a Java
+# @Configuration, @Profile("oauth")), not YAML here -- Apple's own
+# client secret is a signed, expiring JWT, not a static string
+# Spring Boot's declarative registration properties could ever hold.
+# Absent the profile (or absent real credentials within it),
+# SecurityConfig registers no oauth2Login and the pilot-scoped
+# endpoints answer 401 -- closed, not open. The magic-link flow above
+# is independent of this profile entirely.
+
+# The Python planner: chart vision, course, checkpoints and nav log.
+# Reached only through this service, which is what lets it publish no port
+# of its own.
+planner-service:
+  base-url: ${PLANNER_SERVICE_URL:http://localhost:8084}
+
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 30d
+      cookie:
+        max-age: 30d
+  # Trusts X-Forwarded-Proto/-Host/-Port from the ALB doing TLS
+  # termination, so the app sees itself as HTTPS -- without this,
+  # Spring Security's HSTS header writer (only fires on a request it
+  # considers secure) would silently never send HSTS in production. A
+  # no-op locally: nothing sends those headers without a proxy in front.
+  forward-headers-strategy: framework
+  # gzip for the text the browser downloads: the front-end bundle is
+  # 930 KB of JavaScript and 145 KB after gzip, the difference between
+  # a second and a fraction of one on a phone. Only these types -- the
+  # chart tiles are PNG and already as small as they get, and the
+  # planner's NDJSON streams (application/x-ndjson) are left out so a
+  # line the planner flushes reaches the browser the moment it is
+  # written, not when a gzip block fills. And the engine's WebAssembly
+  # (apps/web/src/lib/engine), which the first render waits for: left out, it
+  # went as 735 KB where gzip makes it 276 KB, and Lighthouse's phone LCP
+  # went from 9.0 s to 13.7 s the night it grew to that (issue #214).
+  compression:
+    enabled: true
+    mime-types: text/html,text/css,text/javascript,application/javascript,application/json,image/svg+xml,application/wasm
+    min-response-size: 1024
+
+management:
+  # Traces (Micrometer's OpenTelemetry bridge) only where they are asked
+  # for: docker-compose's tracing profile sets MANAGEMENT_TRACING_ENABLED
+  # and the OTLP endpoint (Jaeger's). On, each request is a span and the
+  # planner's spans go under it (StreamingProxy passes the context on).
+  tracing:
+    enabled: false
+  opentelemetry:
+    resource-attributes:
+      service.name: gateway
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      # /actuator/health/liveness + /actuator/health/readiness -- Fargate/
+      # ALB target-group health checks should hit /readiness (fails if the
+      # DB connection pool can't reach RDS); Kubernetes-style liveness/
+      # readiness split, but works the same way for ECS.
+      probes:
+        enabled: true
+      group:
+        # Spring Boot's own readiness group defaults to readinessState
+        # alone -- an app-process-is-up signal, not a dependency check.
+        # "db" is the auto-configured DataSource health contributor;
+        # without adding it here, a pool that can't reach RDS would
+        # still report ready, defeating the ALB check's whole purpose.
+        readiness:
+          include: readinessState,db
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    # Actuator auto-registers a mail health indicator the moment
+    # spring-boot-starter-mail is on the classpath, and by default it
+    # feeds into the aggregate /actuator/health -- which docker-compose's
+    # own health check (and every service that waits on it) depends on.
+    # An unconfigured or unreachable MAIL_HOST must not fail that check
+    # the way an unreachable database correctly does; mail is optional,
+    # the database is not.
+    mail:
+      enabled: false
+
+# Where the front-end bundle is served from -- see WebMvcConfig. The
+# Docker image sets APP_STATIC_LOCATION to a directory beside the jar
+# (front-end changes rebuild the bundle without rebuilding the jar); a
+# local `mvn package` after `vite build` finds it on the classpath.
+app:
+  static-location: ${APP_STATIC_LOCATION:classpath:/static/app/}
+  # A second, HTTPS port for a phone on the same Wi-Fi
+  # (HttpsConnectorConfig) -- only when the keystore is named and the
+  # file exists; docker-compose.yml names it, infra/local-https/
+  # make-certs.sh writes it. Unset on AWS, where the load balancer
+  # terminates TLS.
+  https:
+    keystore: ${APP_HTTPS_KEYSTORE:}
+    keystore-password: ${APP_HTTPS_KEYSTORE_PASSWORD:changeit}
+    port: ${APP_HTTPS_PORT:8443}
+  # HSTS on by default (right behind that load balancer); off locally,
+  # where a browser must not learn to upgrade the plain port.
+  hsts: ${APP_HSTS:true}
+  # With no sign-in configured, whether planner writes and the billed
+  # narrative are open to every caller (true) or refused (false, the
+  # default) -- for a machine of one's own with no inbox. The local
+  # stack signs in through its own (mailpit); see SecurityConfig.
+  open-writes: ${APP_OPEN_WRITES:false}
+  # Where a magic-link email's sign-in link points, e.g.
+  # https://planner.example.com. Required as soon as MAIL_HOST is set:
+  # a link built from the request's own Host or X-Forwarded-Host would
+  # point wherever the caller asking for it said.
+  public-base-url: ${APP_PUBLIC_BASE_URL:}
+  # The addresses whose pilot is a developer (the training workspace, the
+  # developer console), comma-separated: granted at that pilot's next
+  # request. docker-compose.yml lists the e2e suite's own address; add
+  # yours in .env. See PilotService.
+  developer-emails: ${APP_DEVELOPER_EMAILS:}
+  # The token the nightly lab run sends with its speed measurements
+  # (SpeedController, X-Speed-Token); blank refuses them. CI's secret
+  # SPEED_LAB_TOKEN holds the same value.
+  speed:
+    lab-token: ${APP_SPEED_LAB_TOKEN:}
+  # The emailed link's own throttle (MagicLinkController): requests an
+  # hour per address and per caller. docker-compose.yml loosens both for
+  # the local stack, where the e2e suite signs in.
+  # The calls this app pays Anthropic for, a day's worth per pilot (or
+  # per address, where nobody is signed in), each counted on its own:
+  # the Brief's narratives and generating a route's checkpoint notes
+  # (per-day each), the assistant (Opus, up to eight tool rounds an ask)
+  # and the readings in words (Haiku; the Brief asks three each time a
+  # route or its weather changes) (PlannerProxyController). Past it, a 429
+  # that says when there are more.
+  paid-calls:
+    per-day: ${APP_PAID_CALLS_PER_DAY:40}
+    assistant-per-day: ${APP_PAID_CALLS_ASSISTANT_PER_DAY:20}
+    words-per-day: ${APP_PAID_CALLS_WORDS_PER_DAY:150}
+  # The subscription to the paid features (SubscriptionService): the free
+  # month's length, once an account; each Claude-written feature's monthly
+  # allowance per subscriber, so the heaviest user costs less than they
+  # pay (the mock oral's 60 calls, 30 questions asked and graded, are
+  # about $0.90 on Opus at the cap); and the addresses given it without
+  # paying, comma-separated (an instructor, a tester). A developer always
+  # has it, uncounted.
+  # Whether this deployment sells the subscription at all: off for the
+  # proof of concept, at the owner's ask -- the page then says nothing of
+  # it, the debrief is everyone's, and the features Claude writes are
+  # claude-features' (OFF, DEVELOPERS or EVERYONE, each within the caps).
+  # Every pilot with an account has them for now, at the owner's ask
+  # ("I can offer the AI features to users with an account, no revenue").
+  claude-features: ${APP_CLAUDE_FEATURES:EVERYONE}
+  subscription:
+    enabled: ${APP_SUBSCRIPTION_ENABLED:false}
+    trial-days: ${APP_SUBSCRIPTION_TRIAL_DAYS:30}
+    caps:
+      narrative: ${APP_SUBSCRIPTION_CAP_NARRATIVE:60}
+      checkpoint-notes: ${APP_SUBSCRIPTION_CAP_CHECKPOINT_NOTES:60}
+      oral: ${APP_SUBSCRIPTION_CAP_ORAL:60}
+      assistant: ${APP_SUBSCRIPTION_CAP_ASSISTANT:100}
+      words: ${APP_SUBSCRIPTION_CAP_WORDS:1000}
+    comped-emails: ${APP_SUBSCRIPTION_COMPED_EMAILS:}
+  magic-link:
+    per-address-per-hour: ${APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR:5}
+    per-client-per-hour: ${APP_MAGIC_LINK_PER_CLIENT_PER_HOUR:20}
+  # Where the chart tiles come from when they are published to a CDN
+  # (the AWS stack sets this to its CloudFront domain, and the planner
+  # tells the browser the same base): the content security policy has
+  # to let images load from there. Empty locally, where the tiles are
+  # same-origin through the planner proxy.
+  chart-tiles-origin: ${APP_CHART_TILES_ORIGIN:}
+  # Flight Service's filing and briefing through the app
+  # (FlightServiceGateway): "none" until the owner's agreement with a
+  # provider (Leidos, in the contiguous U.S.) is in place and its
+  # implementation is written.
+  flight-service:
+    provider: ${APP_FLIGHT_SERVICE_PROVIDER:none}
+
+# The flight watch (FlightWatchService): how often the watched flights
+# departing within the window are re-briefed and the planner asked what
+# changed, an ISO duration. Each check is a briefing and one Claude call
+# a watch, so this is also what the watch costs.
+wingtip:
+  watch:
+    every: ${WINGTIP_WATCH_EVERY:PT30M}

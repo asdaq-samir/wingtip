@@ -8,7 +8,7 @@ description: Find and prove speed problems in the planner the way they show up o
 Profile before guessing. Every speed claim needs a before number, an after number and the method behind both.
 
 ## Method
-- **Measure the production build,** not vite's dev server. The web-dev setup (`WEB_DIST_MOUNT`, docker-compose.yml) serves `web/dist`, which `web-build` keeps current.
+- **Measure the production build,** not vite's dev server. The web-dev setup (`WEB_DIST_MOUNT`, docker-compose.yml) serves `apps/web/dist`, which `web-build` keeps current.
 - **Throttle the CPU to look like a phone:** CDP `Emulation.setCPUThrottlingRate` at 4 for interactions, 6 for a cold load. This Mac is a 2016 i7 in Docker, so at 4x it is slower than an iPhone. Compare runs with each other, not with a phone.
 - **Take the median of five or six runs.** Single samples of the same build spread by about 20%, which is enough to invent an improvement that isn't there.
 - **Keep it quiet:** nothing heavy beside the measurement, such as a chart re-render, an image build or the test suite.
@@ -16,7 +16,7 @@ Profile before guessing. Every speed claim needs a before number, an after numbe
 ## Tools
 - **The trend:** the developer console's Speed page (System, then Speed) charts pilots' Core Web Vitals (75th percentile, by device) beside the nightly lab run, for 400 days (SpeedController). Look there first for when something got slower and at which commit. The lab is `e2e/speed-lab.spec.ts` (`SPEED_LAB=1`, phone project); run it the same way to compare a change locally.
 - **Bundle:**
-  - Build into a throwaway directory, never into the `dist` the phone is being served: `docker run --rm -v "$PWD":/repo -w /repo/web node:26-slim npx vite build --outDir /tmp/out`. It prints the chunk table.
+  - Build into a throwaway directory, never into the `dist` the phone is being served: `docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim npx vite build --outDir /tmp/out`. It prints the chunk table.
   - The first load was 1.12 MB of JavaScript in October 2026. Re-measure after anything that adds an import to `MapPage`, `PlanWorkspace` or what they reach.
   - To find what pulls a module in, walk the static imports (`from"./x.js"`) from `dist/index.html` and `MapPage`. For bytes per source module, decode a `--sourcemap` build's mappings (source-map-explorer fails on it).
 - **A tap's time:** use a scratch Playwright spec in the Playwright image (see the `checks` skill). Throttle, tap, and time until the result is visible. Add a `longtask` PerformanceObserver for main-thread blocking, and `browser.startTracing` when a trace is needed.

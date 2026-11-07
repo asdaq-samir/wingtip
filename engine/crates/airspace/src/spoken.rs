@@ -1,7 +1,7 @@
 //! Places said aloud, found as idents -- wingtip.spoken, here so the native
 //! app finds them in the air with no signal, among the places the phone
 //! keeps: the airports, navaids and fixes of each region it holds a pack
-//! of (crate::pack_query, wingtip.pack's `write_phone`), the regions its routes
+//! of (crate::pack_query, wingtip.cycle_pack's `write_phone`), the regions its routes
 //! cross. The planner looks nationwide; offline, a place outside the kept
 //! regions is not found, and is said so.
 //!
@@ -302,7 +302,7 @@ pub fn title(s: &str) -> String {
     out
 }
 
-/// The airports, navaids and fixes of a phone pack's tables (wingtip.pack's
+/// The airports, navaids and fixes of a phone pack's tables (wingtip.cycle_pack's
 /// COLUMNS: NASR's APT_BASE, NAV_BASE and FIX_BASE, a row each): the
 /// airports open to the public in service by their ICAO ident where they
 /// have one, the navaids in service of the kinds a route flies over, by
@@ -452,7 +452,7 @@ mod tests {
         Place { ident: ident.into(), name: name.map(Into::into), what, lat, lon }
     }
 
-    /// tests/test_spoken.py's places, round KMSP and KDLH.
+    /// services/planner/tests_wingtip/test_spoken.py's places, round KMSP and KDLH.
     fn places() -> Vec<Place> {
         vec![
             place("GEP", Some("Gopher"), "navaid", 45.15, -93.37),

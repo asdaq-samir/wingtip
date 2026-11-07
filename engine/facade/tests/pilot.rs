@@ -1,7 +1,7 @@
 //! The pilot's records and text (wingtip_engine::pilot) held to the cases
 //! the web app's tests hold lib/checklist, lib/logbookCsv,
 //! lib/handbookText, lib/endorsements and lib/checkride to, and to the
-//! shared fixtures (web/src/lib/fixtures/checklist.json, logbookCsv.json)
+//! shared fixtures (apps/web/src/lib/fixtures/checklist.json, logbookCsv.json)
 //! the iPhone app's SharedFixturesTests read too -- all through the one
 //! way in, `call`, as every host asks.
 
@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use wingtip_engine::call::call;
 
 fn fixture(name: &str) -> Value {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/src/lib/fixtures").join(name);
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures").join(name);
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
 

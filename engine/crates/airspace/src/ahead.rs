@@ -8,7 +8,7 @@
 //! so: the obstacles (the FAA's Digital Obstacle File is not in a pack),
 //! and the TFRs' age. Every figure is wingtip.alerts' own; see it for why.
 //!
-//! The ground is the pack's `terrain` (wingtip.pack's `_terrain`): the ground
+//! The ground is the pack's `terrain` (wingtip.cycle_pack's `_terrain`): the ground
 //! grid's highest ground pooled to a 60th of a degree, plus the grid's
 //! margin, so never under the planner's grid; the planner reads the zoom-12
 //! tiles point by point, so the phone's ground can stand some hundreds of

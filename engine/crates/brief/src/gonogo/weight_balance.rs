@@ -1,4 +1,4 @@
-//! The airplane's weight and balance (web/src/lib/weightBalance.ts): what
+//! The airplane's weight and balance (apps/web/src/lib/weightBalance.ts): what
 //! the pilot loads -- its own empty weight and arm (from its weight and
 //! balance record), each station's pounds in the loading's order, and the
 //! fuel at the start in gallons -- against its POH's loading: the

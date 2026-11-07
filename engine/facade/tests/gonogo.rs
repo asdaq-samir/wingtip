@@ -1,5 +1,5 @@
 //! The Go / No-Go's rules (wingtip_engine::gonogo), held to every case the
-//! planner's tests hold app.gonogo to (planning-service/tests/
+//! planner's tests hold app.gonogo to (services/planner/tests/
 //! test_gonogo_*.py), themselves the web's lib/verdict, lib/minimums,
 //! lib/icing, lib/frat, lib/airworthiness, lib/runwayCheck,
 //! lib/runwayFlown, lib/weightBalance and lib/passTimes tests -- and to the

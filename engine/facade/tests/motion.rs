@@ -2,7 +2,7 @@
 //! host asks them (crate::call), held to the cases the web's own tests
 //! hold its lib/map/traffic, lib/aircraftAlerts, lib/map/glide,
 //! navlog/profile and navlog/dryRun to, and to the shared traffic fixture
-//! (web/src/lib/fixtures/traffic.json) the phone's Traffic is held to.
+//! (apps/web/src/lib/fixtures/traffic.json) the phone's Traffic is held to.
 
 use serde_json::{json, Value};
 use std::path::PathBuf;
@@ -95,7 +95,7 @@ fn near_own_ships_height_is_within_1000_ft() {
 
 #[test]
 fn the_shared_traffic_fixture() {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/src/lib/fixtures/traffic.json");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/traffic.json");
     let fixture: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
     let cases = fixture["cases"].as_array().unwrap();
     assert!(cases.len() >= 20);

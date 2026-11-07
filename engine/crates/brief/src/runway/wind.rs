@@ -1,4 +1,4 @@
-//! A wind on a runway (web/src/lib/wind.ts, wingtip.runway_wind): how much of
+//! A wind on a runway (apps/web/src/lib/wind.ts, wingtip.runway_wind): how much of
 //! it is along and how much across, the gust's crosswind against the
 //! steady one, when a wind is calm, the end of each runway the reported
 //! wind favours, and the end a pilot would pick into a wind the field's

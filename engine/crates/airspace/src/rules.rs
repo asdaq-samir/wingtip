@@ -1,7 +1,7 @@
 //! The airspace over a point in bands, from the ground to FL600, with the
 //! rules of each: wingtip.airspace_at's `column`, `minimums`, `equipment`,
 //! `speed_kt` and `ENTRY`, written again here so the phone answers as the
-//! planner does with no network. tests/test_native.py holds the two to
+//! planner does with no network. services/planner/tests_wingtip/test_native.py holds the two to
 //! the same answer at every tap it asks.
 
 use crate::json;
@@ -506,7 +506,7 @@ mod tests {
     fn the_91_117_speed_limit_by_class_and_height() {
         // 91.117(b): 200 kt at or below 2,500 ft above the surface in a
         // Class C or D; (a): 250 kt below 10,000 ft MSL; (c): 200 kt under
-        // a Class B. (Moved from tests/test_airspace_at.py, #482.)
+        // a Class B. (Moved from services/planner/tests_wingtip/test_airspace_at.py, #482.)
         for (class, floor, agl, under_b, limit) in [
             ('D', 640.0, 0.0, false, Some(200)),
             ('C', 640.0, 2499.0, false, Some(200)),

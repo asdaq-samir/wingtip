@@ -1,5 +1,5 @@
 //! Under IFR, whether the flight is planned into icing
-//! (web/src/lib/icing.ts): a leg flown at or above the freezing level,
+//! (apps/web/src/lib/icing.ts): a leg flown at or above the freezing level,
 //! where the moisture icing needs is forecast -- cloud along the route, or
 //! an icing AIRMET or SIGMET over it (the planner's `icing_possible`,
 //! wingtip.altitude) -- with the pilot reports of icing near the route

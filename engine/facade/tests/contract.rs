@@ -1,8 +1,8 @@
 //! The engine against its contract (engine/contract/engine.schema.json),
 //! the one statement of every call's input and answer that the web's types
-//! (web/src/lib/engine/contract.ts) are generated from: every name the
+//! (apps/web/src/lib/engine/contract.ts) are generated from: every name the
 //! engine dispatches has its entry there and no other does, and the answers
-//! to the shared fixtures (web/src/lib/fixtures), asked as the hosts ask,
+//! to the shared fixtures (apps/web/src/lib/fixtures), asked as the hosts ask,
 //! are of the shapes it gives. A member renamed in Rust then fails here,
 //! not on the phone.
 
@@ -24,7 +24,7 @@ fn contract() -> Value {
 }
 
 fn fixture(name: &str) -> Value {
-    read_json(&format!("web/src/lib/fixtures/{name}"))
+    read_json(&format!("apps/web/src/lib/fixtures/{name}"))
 }
 
 fn schema_names() -> BTreeSet<String> {

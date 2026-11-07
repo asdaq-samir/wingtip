@@ -1,7 +1,7 @@
 # What Wingtip Maps collects
 
 This list is read from the code and is the one source for the privacy
-policy (`web/src/lib/legal`), App Store Connect's App Privacy answers,
+policy (`apps/web/src/lib/legal`), App Store Connect's App Privacy answers,
 Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
@@ -28,8 +28,8 @@ longer than it takes to answer the request.
 
 - **Position for Nearest, the map and the airspace at a point.** The
   device's position goes to the planner to answer and is not kept: the
-  planner writes no access log in production (`docker-compose.prod.yml`),
-  and nothing stores it (the webapp's log of a planner outage names the path only). The position itself is read on the device, with
+  planner writes no access log in production (`infra/docker-compose.prod.yml`),
+  and nothing stores it (the gateway's log of a planner outage names the path only). The position itself is read on the device, with
   the permission the browser, iOS or Android asks for.
 - **A cockpit receiver's traffic and FIS-B weather** (the iOS and Android
   apps, with Traffic on): heard on the cockpit's Wi-Fi and shown on the

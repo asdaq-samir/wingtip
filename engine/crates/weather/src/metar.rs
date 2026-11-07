@@ -4,7 +4,7 @@
 //! `_parse_metars`): the wind, visibility, ceiling, weather, temperature
 //! and dewpoint, altimeter and flight category. The groups are the
 //! Federal Meteorological Handbook No. 1's (FMH-1, ch. 12, coding) and
-//! WMO No. 306's for the reports from outside the US. tests/test_parsers.py
+//! WMO No. 306's for the reports from outside the US. services/planner/tests_wingtip/test_parsers.py
 //! holds the decoder to the AWC's own decoding of every report in its
 //! current cache and lists where they differ.
 

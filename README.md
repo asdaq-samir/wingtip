@@ -19,7 +19,7 @@ Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an of
 git clone https://github.com/asdaq-samir/wingtip.git
 cd wingtip
 
-docker compose up webapp          # UI + API at http://localhost:8080/app
+docker compose up gateway          # UI + API at http://localhost:8080/app
 ```
 
 No API key is needed for any of that. The planner's Claude features — the written briefing, checkpoint descriptions, the assistant — want an `ANTHROPIC_API_KEY` of your own in `.env`; without one they say the model cannot be reached, and nothing else needs it.
@@ -36,9 +36,9 @@ gets the same answer:
 | Layer | Where | Its job |
 |---|---|---|
 | The engine | [`engine/`](engine) (Rust) | Every aviation rule and figure, once: altitudes, winds, runways, fuel, weather limits, Go / No-Go, holds, procedures (currency is to join them, #482). No network, no screen, no clock. A facade (`wingtip-engine`) over ten domain crates; each rule is a name in `engine/facade/src/call.rs`, JSON in and out, typed by a contract (`engine/contract/engine.schema.json`) the apps' types are generated from. |
-| The planner | [`planning-service/`](planning-service) over [`src/wingtip`](src) (FastAPI) | Works out a flight: fetches the FAA and weather data, reads the chart and scores its checkpoints with the chart model, runs the AI assistant, and asks the engine every rule. |
-| Spring Boot | [`springboot-app/`](springboot-app) | Who the pilot is and what they saved: accounts, sign-in, records, the public API, scheduled mail. Should hold no aviation logic, asking the planner (which asks the engine) for a figure; the currency rules are still Java until #482 moves them. |
-| The apps | [`web/`](web), [`ios/`](ios), [`android/`](android) | Get data, keep state, draw (a view model per screen), and ask the engine the rest: the web as WebAssembly, the phones through its C interface. |
+| The planner | [`services/planner/`](services/planner) over [`services/planner/wingtip`](services/planner/wingtip) (FastAPI) | Works out a flight: fetches the FAA and weather data, reads the chart and scores its checkpoints with the chart model, runs the AI assistant, and asks the engine every rule. |
+| Spring Boot | [`services/gateway/`](services/gateway) | Who the pilot is and what they saved: accounts, sign-in, records, the public API, scheduled mail. Should hold no aviation logic, asking the planner (which asks the engine) for a figure; the currency rules are still Java until #482 moves them. |
+| The apps | [`apps/web/`](apps/web), [`apps/ios/`](apps/ios), [`apps/android/`](apps/android) | Get data, keep state, draw (a view model per screen), and ask the engine the rest: the web as WebAssembly, the phones through its C interface. |
 
 Two server languages stay, on that line (the owner, 2026-11-06): the
 boundary between them is plain HTTP, merging them would give a pilot
@@ -48,8 +48,8 @@ moves them in, in order.
 
 | Service | Role |
 |---|---|
-| `webapp` | Spring Boot: accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React front end and proxies the planner |
-| `planning-service` | FastAPI: works out a flight (charts, checkpoints scored by the chart model in-process, the nav log, weather, the written briefing, the assistant), the engine inside it |
+| `gateway` | Spring Boot: accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React front end and proxies the planner |
+| `planner` | FastAPI: works out a flight (charts, checkpoints scored by the chart model in-process, the nav log, weather, the written briefing, the assistant), the engine inside it |
 | `db` | PostgreSQL — application data |
 | `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and training, as one-off jobs; `retrain` is the whole training run in the training image, which the developer console starts |
 | `ml` | Jupyter environment for model development -- on demand: `docker compose up ml` |
@@ -67,35 +67,36 @@ Demo route: **Campbell Airport (C81)** → **Duluth International (KDLH)**.
 - **scikit-learn model selection.** Each retrain grid-searches Ridge, Random Forest and Gradient Boosting against a predict-the-mean baseline on the same feature set, by 5-fold cross-validation, and keeps the best; the planner scores checkpoints with the promoted model. Notebook 03 adds nested cross-validation and permutation importance.
 - **A repeatable training run.** One command (`python -m wingtip.pipeline run`, which the developer console's Retrain starts as a container) runs collection, feature engineering, training, evaluation, and promotion in order; a new model goes live only if it beats the currently deployed one on held-out metrics.
 - **FAA-accurate flight planning.** Dead-reckoning legs (wind correction angle, true/magnetic heading, groundspeed, ETE, fuel burn) from live NOAA winds-aloft and magnetic-declination data. Cruising-altitude selection accounts for terrain/obstacle clearance (FAA MEF methodology), live Class B/C/D airspace, and current METAR/TAF/SIGMET data.
-- **Claude in the planner.** The written briefing, the checkpoint descriptions, the plain-words readings and the pilot's assistant are each a direct call through the Anthropic Python SDK from `planning-service`, over the planner's own figures: the briefing streams as it is written (`POST /api/briefing/narrative`), and the assistant runs the SDK's tool runner over the planner's functions.
-- **A cheap path to production.** One server behind CloudFront runs the webapp, the planner and Postgres, and a Fargate Spot task draws each 56-day chart cycle once into S3 for the edge to serve: about $29 a month with the server on Spot capacity, in one CloudFormation template ([`docs/README-AWS.md`](docs/README-AWS.md) has the design, the cost and the runbook).
+- **Claude in the planner.** The written briefing, the checkpoint descriptions, the plain-words readings and the pilot's assistant are each a direct call through the Anthropic Python SDK from `planner`, over the planner's own figures: the briefing streams as it is written (`POST /api/briefing/narrative`), and the assistant runs the SDK's tool runner over the planner's functions.
+- **A cheap path to production.** One server behind CloudFront runs the gateway, the planner and Postgres, and a Fargate Spot task draws each 56-day chart cycle once into S3 for the edge to serve: about $29 a month with the server on Spot capacity, in one CloudFormation template ([`docs/README-AWS.md`](docs/README-AWS.md) has the design, the cost and the runbook).
 
 
 ## Project layout
 
 | Path | Contents |
 |---|---|
-| [`web/`](web) | The web app: React 19, TypeScript and MapLibre |
-| [`ios/`](ios) | The native iOS app: SwiftUI over the shared Rust engine (docs/NATIVE.md) |
-| [`android/`](android) | The native Android app: Kotlin, Compose and MapLibre over the shared Rust engine (docs/NATIVE-ANDROID.md) |
-| [`engine/`](engine) | The shared Rust engine: every aviation rule once, in ten crates behind one facade, its contract, and its Python, C and WebAssembly faces |
-| [`planning-service/`](planning-service) | The planner's HTTP layer: route planning, chart vision, the chart model, the assistant |
-| [`springboot-app/`](springboot-app) | Accounts, sign-in, the pilot's records, the public API |
-| [`src/`](src) | The planner's Python package (`wingtip`): data, charts, pipeline, model registry, and the nav log until it moves into the engine |
-| [`infra/`](infra) | AWS CloudFormation and the production server's files |
-| [`notebooks/`](notebooks) | Numbered, run-in-order exploratory notebooks |
+| [`apps/web/`](apps/web) | The web app: React 19, TypeScript and MapLibre |
+| [`apps/ios/`](apps/ios) | The native iOS app: SwiftUI over the shared Rust engine (docs/NATIVE.md) |
+| [`apps/android/`](apps/android) | The native Android app: Kotlin, Compose and MapLibre over the shared Rust engine (docs/NATIVE-ANDROID.md) |
+| [`engine/`](engine) | The shared Rust engine: every aviation rule once, in ten crates (`crates/`) behind one facade (`facade/`), its contract (`contract/`), and its Python, C and WebAssembly faces (`bindings/`) |
+| [`services/planner/`](services/planner) | The planner: its HTTP layer (`app/`, FastAPI: route planning, chart vision, the chart model, the assistant), its Python package (`wingtip/`: data, charts, pipeline, model registry, and the nav log until it moves into the engine), and both their test suites (`tests/`, `tests_wingtip/`) |
+| [`services/gateway/`](services/gateway) | Accounts, sign-in, the pilot's records, the public API (Spring Boot) |
+| [`services/Dockerfile.base`](services/Dockerfile.base) | The Python base every image that imports wingtip is built from |
+| [`ml/`](ml) | The notebooks and the pipeline's and notebooks' images |
+| [`infra/`](infra) | AWS CloudFormation, the production server's files and compose file, CI's compose file, the local HTTPS certificates, the rehearsal, the dev-services sidecar and the load tests |
+| [`scripts/`](scripts) | `build/` (the engine's WebAssembly, the phones' generated models), `ci/` (the flaky-test report), `dev/` (the checks, the hooks, one-at-a-time) |
 | [`docs/`](docs) | Full documentation, AWS deployment guide, architecture diagrams |
 
 ## Documentation
 
 | | |
 |---|---|
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to run it, where a change goes, the checks, and how a change lands |
+| [`CONTRIBUTING.md`](.github/CONTRIBUTING.md) | How to run it, where a change goes, the checks, and how a change lands |
 | [`docs/README.md`](docs/README.md) | Architecture, service reference, data design, developer guide |
 | [`docs/README-AWS.md`](docs/README-AWS.md) | AWS target architecture and deployment |
 | [`docs/CI.md`](docs/CI.md) | What CI runs and when, and how to run it on the Mac mini |
 | [`docs/GOOGLE-MAPS.md`](docs/GOOGLE-MAPS.md) | The map's overlays over the chart: the USGS's imagery, and Google's map and satellite with the owner's key |
-| [`docs/TV.md`](docs/TV.md) | The TV apps for Samsung (Tizen) and LG (webOS): the site made for a remote, their packages, and the owner's store steps |
+| [`docs/TV.md`](docs/TV.md) | The TV apps for Samsung (Tizen) and LG (webOS), parked: the site made for a remote, and the shells deleted 2026-11-07 (in git history) |
 | [`docs/NATIVE.md`](docs/NATIVE.md) | The native iOS app: SwiftUI over the shared engine, its rules and fixtures, and its build and tests on the macOS runner |
 | [`docs/NATIVE-ANDROID.md`](docs/NATIVE-ANDROID.md) | The native Android app: Compose and MapLibre over the shared engine, its build and emulator tests on the Linux runner |
 | [`docs/LEARNING-GUIDE.md`](docs/LEARNING-GUIDE.md) | Guided walkthrough of the system, section by section |

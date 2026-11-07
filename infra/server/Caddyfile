@@ -1,4 +1,4 @@
-# The production server's front door (docker-compose.prod.yml's caddy).
+# The production server's front door (infra/docker-compose.prod.yml's caddy).
 #
 # CloudFront is the only client: the security group admits port 443 from
 # CloudFront's origin-facing addresses alone, and every request must carry
@@ -14,17 +14,17 @@
 	handle @cloudfront {
 		# The pilot's address is the last one in X-Forwarded-For: CloudFront
 		# appends the viewer's to whatever the request came with, and only
-		# CloudFront reaches this server. The webapp's per-client limits
+		# CloudFront reaches this server. The gateway's per-client limits
 		# (SlidingWindowLimiter) read the last entry, so it is passed on
 		# alone -- appended to, it would be CloudFront's own address.
 		map {http.request.header.X-Forwarded-For} {viewer_ip} {
 			~(?:^|,\s*)([^,\s]+)\s*$ "${1}"
 			default {remote_host}
 		}
-		reverse_proxy webapp:8080 {
+		reverse_proxy gateway:8080 {
 			header_up X-Forwarded-For {viewer_ip}
 			header_up X-Forwarded-Proto https
-			# Links and redirects the webapp builds name the public domain,
+			# Links and redirects the gateway builds name the public domain,
 			# not this origin's.
 			header_up X-Forwarded-Host {$PUBLIC_HOST}
 			header_up -X-Origin-Secret

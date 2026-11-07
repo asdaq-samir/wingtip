@@ -1,4 +1,4 @@
-//! What a runway asks of the airplane (web/src/lib/takeoffLanding.ts and
+//! What a runway asks of the airplane (apps/web/src/lib/takeoffLanding.ts and
 //! lib/runwayFit.ts): the field's pressure and density altitude, the POH's
 //! short-field distances over a 50 ft obstacle, and how one runway end
 //! suits the airplane today -- the crosswind on it against the most the

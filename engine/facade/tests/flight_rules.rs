@@ -1,5 +1,5 @@
 //! The flight's figures held to the shared fixture the planner, the web
-//! and the iOS app are held to (web/src/lib/fixtures/flightRules.json,
+//! and the iOS app are held to (apps/web/src/lib/fixtures/flightRules.json,
 //! written by the planner's Python).
 
 use serde_json::Value;
@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use wingtip_engine::{flight, validity, wmm};
 
 fn fixture() -> Value {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/src/lib/fixtures/flightRules.json");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/flightRules.json");
     serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
 }
 

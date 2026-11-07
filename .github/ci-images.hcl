@@ -19,12 +19,12 @@ variable "REGISTRY" {
 # first, for the layers a new key's image will share with it. Pushed
 # with their cache inline, so the next build finds its own last layers
 # too. Empty (a pull request's shard
-# building one itself): tagged the name docker-compose.ci.yml runs it
+# building one itself): tagged the name infra/docker-compose.ci.yml runs it
 # by, and loaded, not pushed.
-variable "WEBAPP_KEY" {
+variable "GATEWAY_KEY" {
   default = ""
 }
-variable "PLANNING_SERVICE_KEY" {
+variable "PLANNER_KEY" {
   default = ""
 }
 
@@ -50,36 +50,36 @@ function "pushed" {
 }
 
 group "ci" {
-  targets = ["webapp", "planning-service"]
+  targets = ["gateway", "planner"]
 }
 
-target "webapp" {
+target "gateway" {
   context    = "."
-  dockerfile = "springboot-app/Dockerfile"
-  tags       = tags("webapp", WEBAPP_KEY)
-  cache-from = cache("webapp")
-  cache-to   = WEBAPP_KEY == "" ? [] : ["type=inline"]
-  output     = pushed(WEBAPP_KEY)
+  dockerfile = "services/gateway/Dockerfile"
+  tags       = tags("gateway", GATEWAY_KEY)
+  cache-from = cache("gateway")
+  cache-to   = GATEWAY_KEY == "" ? [] : ["type=inline"]
+  output     = pushed(GATEWAY_KEY)
 }
 
 # wingtip's Python base, which the planner is built FROM
-# (docker/Dockerfile.base): built in the same bake, from images.hcl's
+# (services/Dockerfile.base): built in the same bake, from images.hcl's
 # cache of it.
 target "base" {
   context    = "."
-  dockerfile = "docker/Dockerfile.base"
+  dockerfile = "services/Dockerfile.base"
   target     = "base"
   cache-from = cache("base")
 }
 
-target "planning-service" {
+target "planner" {
   context    = "."
-  dockerfile = "planning-service/Dockerfile"
+  dockerfile = "services/planner/Dockerfile"
   contexts   = { wingtip-base = "target:base" }
-  tags       = tags("planning-service", PLANNING_SERVICE_KEY)
-  cache-from = cache("planning-service")
-  cache-to   = PLANNING_SERVICE_KEY == "" ? [] : ["type=inline"]
-  output     = pushed(PLANNING_SERVICE_KEY)
+  tags       = tags("planner", PLANNER_KEY)
+  cache-from = cache("planner")
+  cache-to   = PLANNER_KEY == "" ? [] : ["type=inline"]
+  output     = pushed(PLANNER_KEY)
 }
 
 # The image the suite's tests run in: the Playwright image (PLAYWRIGHT_FROM,

@@ -11,7 +11,7 @@
 //! altimeter's and a ground track is not a heading, so each figure is
 //! close to what the examiner sees, not it -- the page says so.
 //!
-//! app.figures.debrief (itself web/src/lib/debrief.ts): the web's copy
+//! app.figures.debrief (itself apps/web/src/lib/debrief.ts): the web's copy
 //! holds the same rules and changes with this. Its checkpoints are the
 //! saved flight's (the gateway's FlightCheckpointDto) and its points the
 //! track's (TrackDto: `t` in ms since 1970, GPS altitude in feet).

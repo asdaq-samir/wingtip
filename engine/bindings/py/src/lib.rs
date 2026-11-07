@@ -102,7 +102,7 @@ fn shape_holds(content: PyBuffer<u8>, lon: f64, lat: f64) -> PyResult<bool> {
         .ok_or_else(|| PyValueError::new_err("a shapefile record cut short"))
 }
 
-/// Tests only: an oracle for the pack's shapes in tests/test_native.py.
+/// Tests only: an oracle for the pack's shapes in services/planner/tests_wingtip/test_native.py.
 #[pyfunction]
 fn wkb_holds(wkb: PyBuffer<u8>, lon: f64, lat: f64) -> PyResult<bool> {
     airspace::wkb_holds(bytes_of(&wkb)?, lon, lat).ok_or_else(|| PyValueError::new_err("not a WKB polygon"))
@@ -121,7 +121,7 @@ fn read_pack(bytes: &[u8]) -> PyResult<pack::Pack<'_>> {
 }
 
 /// The pack's header and sections: {"cycle", "built_at", "crc32",
-/// "sections"} (pack::Pack::read). Tests only: tests/test_native.py's
+/// "sections"} (pack::Pack::read). Tests only: services/planner/tests_wingtip/test_native.py's
 /// oracle.
 #[pyfunction]
 fn pack_header(py: Python<'_>, data: PyBuffer<u8>) -> PyResult<Py<PyAny>> {
@@ -134,7 +134,7 @@ fn pack_header(py: Python<'_>, data: PyBuffer<u8>) -> PyResult<Py<PyAny>> {
     Ok(header.into_any().unbind())
 }
 
-/// Tests only: tests/test_native.py's oracle.
+/// Tests only: services/planner/tests_wingtip/test_native.py's oracle.
 #[pyfunction]
 fn pack_verify(data: PyBuffer<u8>) -> PyResult<bool> {
     Ok(read_pack(bytes_of(&data)?)?.verify())
@@ -151,7 +151,7 @@ fn pack_holding(data: PyBuffer<u8>, layer: &str, lon: f64, lat: f64) -> PyResult
 
 /// The planner's AirspaceAt for the point as JSON, from a phone's pack
 /// (pack_query::airspace_at): what the phones answer with no network. Tests
-/// only: tests/test_phone_pack.py's oracle.
+/// only: services/planner/tests_wingtip/test_phone_pack.py's oracle.
 #[pyfunction]
 #[pyo3(signature = (data, lat, lon, ground_ft=None))]
 fn airspace_at_json(data: Option<PyBuffer<u8>>, lat: f64, lon: f64, ground_ft: Option<f64>) -> PyResult<String> {
@@ -243,7 +243,7 @@ fn product(name: &str) -> PyResult<validity::Product> {
     })
 }
 
-/// Tests only: an oracle for tests/test_flight_rules.py.
+/// Tests only: an oracle for services/planner/tests_wingtip/test_flight_rules.py.
 #[pyfunction]
 #[pyo3(signature = (product_name, now, observed=None, last_routine=None, valid_from=None, valid_to=None))]
 fn weather_in_force(product_name: &str, now: i64, observed: Option<i64>, last_routine: Option<i64>,
@@ -254,7 +254,7 @@ fn weather_in_force(product_name: &str, now: i64, observed: Option<i64>, last_ro
 // The products as sent, read by the engine: each answer JSON in the
 // planner's own names, None where the text is no such product.
 
-/// Tests only: metar_json and taf_json are tests/test_parsers.py's oracles.
+/// Tests only: metar_json and taf_json are services/planner/tests_wingtip/test_parsers.py's oracles.
 #[pyfunction]
 fn metar_json(raw: &str) -> Option<String> {
     metar::parse(raw).map(|m| metar::to_json(&m))
@@ -280,14 +280,14 @@ fn tfr_detail_json(text: &str) -> PyResult<Option<String>> {
     Ok(tfr::parse_detail(text).map(|d| tfr::to_json(&d)))
 }
 
-/// Tests only: an oracle for tests/test_parsers.py.
+/// Tests only: an oracle for services/planner/tests_wingtip/test_parsers.py.
 #[pyfunction]
 fn notam_text_json(raw: &str) -> Option<String> {
     notam::from_text(raw).map(|n| notam::to_json(&[n]))
 }
 
 /// The alerts ahead from phone packs (wingtip_engine::ahead), JSON. Tests
-/// only: tests/test_phone_pack.py's oracle.
+/// only: services/planner/tests_wingtip/test_phone_pack.py's oracle.
 #[pyfunction]
 #[pyo3(signature = (packs, lat, lon, track_deg, gs_kt, alt_ft, vs_fpm, now, tfr_lines=None, tfrs_at=None))]
 #[allow(clippy::too_many_arguments)]

@@ -3,22 +3,22 @@
 # the three ABIs Google Play and the emulator want -- 64-bit ARM (every
 # phone sold today), 32-bit ARM (the old ones Play still serves) and
 # x86_64 (the emulator CI tests on) -- and put where the app's CMake build
-# (android/app/src/main/cpp/CMakeLists.txt) links it into the JNI shim,
+# (apps/android/app/src/main/cpp/CMakeLists.txt) links it into the JNI shim,
 # with its C header. The twin of build-xcframework.sh for the iPhone.
 # Needs rustup and an Android NDK: ANDROID_NDK_HOME, or the
 # ANDROID_NDK_LATEST_HOME GitHub's runner sets (native-android.yml).
-# Writes android/app/engine/, which is not committed.
+# Writes apps/android/app/engine/, which is not committed.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 engine=$(cd "$here/../.." && pwd)
-out="$engine/../android/app/engine"
+out="$engine/../apps/android/app/engine"
 ndk="${ANDROID_NDK_HOME:-${ANDROID_NDK_LATEST_HOME:-}}"
 if [ -z "$ndk" ]; then
   echo "build-android.sh: set ANDROID_NDK_HOME to an Android NDK" >&2
   exit 1
 fi
 # The NDK's prebuilt clang for the machine building, and the API level
-# the app's minSdk names (android/app/build.gradle.kts): the engine is
+# the app's minSdk names (apps/android/app/build.gradle.kts): the engine is
 # linked against the same Android libc the app runs on.
 case "$(uname -s)" in
   Darwin) host=darwin-x86_64 ;;

@@ -4,7 +4,7 @@
 //! the clearance as the rule words it. In VFR conditions there is nothing
 //! to work: continue VFR and land as soon as practicable (91.185(b)).
 //!
-//! app.figures.lost_comms (itself web/src/lib/lostComms.ts and the words
+//! app.figures.lost_comms (itself apps/web/src/lib/lostComms.ts and the words
 //! of features/pilot/LostCommsPage.tsx): the web's copy holds the same
 //! rules and changes with this.
 

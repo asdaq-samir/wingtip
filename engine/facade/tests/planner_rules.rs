@@ -1,6 +1,6 @@
 //! The planner's rules moved into the engine (#482 phase 0), held to the
 //! answers the planner's own Python gave before the move
-//! (web/src/lib/fixtures/plannerRules.json, written by it): the airspace
+//! (apps/web/src/lib/fixtures/plannerRules.json, written by it): the airspace
 //! over a point, the Mode C veil, an FNS message's NOTAMs, a hazard's
 //! window, a report's ceiling and category, and a figure in the web's
 //! words. The planner now asks these names (wingtip_native.call), so the
@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use wingtip_engine::call::call;
 
 fn fixture() -> Value {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/src/lib/fixtures/plannerRules.json");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/plannerRules.json");
     serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
 }
 

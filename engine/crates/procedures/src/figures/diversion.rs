@@ -10,7 +10,7 @@
 //! ALLOWANCES are this drill's own, about what a pilot works out in their
 //! head and off the chart while flying the airplane.
 //!
-//! app.figures.diversion (itself web/src/lib/diversion.ts) and the
+//! app.figures.diversion (itself apps/web/src/lib/diversion.ts) and the
 //! planner's steps in words: the web's copy holds the same rules and
 //! changes with this.
 

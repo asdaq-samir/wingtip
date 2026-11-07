@@ -1,15 +1,15 @@
 //! The map's view from the phone's packs (wingtip_engine::view) against
 //! the planner's own answers: the Chicago phone packs the iOS app's tests
-//! read (tests/fixtures/native/phone, the Chicago cut with the NASR
+//! read (services/planner/tests_wingtip/fixtures/native/phone, the Chicago cut with the NASR
 //! airports and navaids tables and airspace.attr), and what the planner
 //! answered on 2026-11-03 for the same boxes over Chicago
-//! (tests/fixtures/native/phone/view, /api/airspace/in-view,
+//! (services/planner/tests_wingtip/fixtures/native/phone/view, /api/airspace/in-view,
 //! /api/airports/in-view and /api/navaids/in-view as captured with curl),
 //! field by field, allowing for what a pack cannot hold -- a live METAR's
 //! flight category, a navaid's remarks -- and for what it holds
 //! differently: NASR's names and positions of fields where the planner
 //! has OurAirports', and rings simplified to the phone's tolerance. The
-//! cut holds only some of Chicago's volumes (tests/test_native.py's taps'),
+//! cut holds only some of Chicago's volumes (services/planner/tests_wingtip/test_native.py's taps'),
 //! so the planner answers volumes the packs cannot: every volume the
 //! packs do answer is held to the planner's, and a field's airspace class
 //! is held to it unless its volume is one the cut lacks.
@@ -22,7 +22,7 @@ use wingtip_engine::pack::Pack;
 use wingtip_engine::view;
 
 fn fixtures() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/native/phone")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../services/planner/tests_wingtip/fixtures/native/phone")
 }
 
 fn pack_bytes() -> Vec<Vec<u8>> {

@@ -1,0 +1,16 @@
+# CI only (.github/workflows/ci.yml) -- what's needed to import and test
+# the modules tests_wingtip/ actually covers. Not a project-wide dependency file
+# -- see DEVELOPMENT.md for why this project doesn't have one of those
+# anymore.
+#
+# wingtip's own dependencies come from requirements-wingtip*.txt, so a new import
+# in wingtip is covered here the moment it is added there. Anything a test
+# needs beyond wingtip itself goes below: a test module importing something
+# missing fails at *collection*, which takes the whole suite down rather
+# than one test.
+-r requirements-wingtip-charts.txt   # wingtip's own list, charts included -- tests_wingtip/ covers both
+# Pillow among them is pinned once, 13.0.0, in services/planner/requirements-wingtip-charts.txt.
+pytest
+pytest-randomly==5.0.0   # every run in a new random order, --randomly-seed=N repeats one (docs/CI.md, "Flaky tests")
+ruff
+pygeodesy   # TEST ONLY -- the independent implementation services/planner/tests_wingtip/test_geo.py pins wingtip.geo against

@@ -20,7 +20,7 @@ The app is free to plan and fly with; the subscription ($1 a month or $10 a year
 - Write the decision for the owner with the numbers; don't change a price without them.
 
 ## 3. Build it
-- **One entitlement, on the server:** the webapp records each pilot's plan (store or Stripe, trial, renewal date) from the stores' server notifications (App Store Server Notifications, Google Real-time Developer Notifications) and Stripe webhooks; the planner and the webapp check it on every paid request. The app's own state is only for display.
+- **One entitlement, on the server:** the gateway records each pilot's plan (store or Stripe, trial, renewal date) from the stores' server notifications (App Store Server Notifications, Google Real-time Developer Notifications) and Stripe webhooks; the planner and the gateway check it on every paid request. The app's own state is only for display.
 - **Stores' rules:** a paid digital feature in the iOS app is sold through in-app purchase (StoreKit 2); the trial is the store's introductory offer, once per account. Read the current App Store Review Guidelines section 3.1 before shipping.
 - **Caps:** a monthly allowance per subscriber for each Claude-backed feature, counted on the server, with the remaining count shown where the feature is.
 - **The paywall:** shown where the paid feature is, in the app's own iOS look (the `iphone-review` skill), saying what it unlocks, the price and the trial; never a modal over planning, never over safety information.

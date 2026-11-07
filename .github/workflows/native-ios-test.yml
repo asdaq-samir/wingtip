@@ -1,7 +1,7 @@
 name: Native iOS test
 
-# The native iOS app built and tested (ios/, docs/NATIVE.md): the engine's
-# framework, the Xcode project made by XcodeGen from ios/project.yml, and
+# The native iOS app built and tested (apps/ios/, docs/NATIVE.md): the engine's
+# framework, the Xcode project made by XcodeGen from apps/ios/project.yml, and
 # xcodebuild test on the simulators. Called, not triggered: by ci.yml on
 # a pull request that touches what the app builds from, so "CI passed"
 # -- the one check main requires -- waits for it (#499 merged with a phone
@@ -41,7 +41,7 @@ jobs:
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          path: ios/Frameworks/WingtipEngine.xcframework
+          path: apps/ios/Frameworks/WingtipEngine.xcframework
           key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
       - name: The engine, for the app
         # wingtip-engine through its C functions (engine/bindings/ffi), which the app
@@ -55,13 +55,13 @@ jobs:
         if: steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          path: ios/Frameworks/WingtipEngine.xcframework
+          path: apps/ios/Frameworks/WingtipEngine.xcframework
           key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
       - name: The Xcode project, from project.yml
         run: |
           # The Mac mini's runner has xcodegen already, and no Homebrew.
           command -v xcodegen >/dev/null || brew install xcodegen
-          xcodegen generate --spec ios/project.yml --project ios
+          xcodegen generate --spec apps/ios/project.yml --project apps/ios
       - name: The newest Xcode on the runner
         run: |
           # iPhone Duo's own layout (to the screen's edge, bars down the
@@ -103,7 +103,7 @@ jobs:
         run: |
           host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")
           set -o pipefail
-          xcodebuild -project ios/Wingtip.xcodeproj -scheme Wingtip -configuration Debug \
+          xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -configuration Debug \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.iphone }}" \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.ipad }}" \
             ${{ steps.sim.outputs.duo && format('-destination "platform=iOS Simulator,id={0}"', steps.sim.outputs.duo) || '' }} \

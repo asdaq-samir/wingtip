@@ -3,7 +3,7 @@ name = "wingtip-wasm"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "The engine for the web app: one WebAssembly function, a rule by name with JSON in and out (web/src/lib/engine)"
+description = "The engine for the web app: one WebAssembly function, a rule by name with JSON in and out (apps/web/src/lib/engine)"
 
 [lib]
 name = "wingtip_wasm"
@@ -11,6 +11,6 @@ crate-type = ["cdylib"]
 
 # None but the engine: no wasm-bindgen, so building it takes only cargo
 # and the wasm32-unknown-unknown target, and the JavaScript side is the
-# few lines of web/src/lib/engine/engine.ts.
+# few lines of apps/web/src/lib/engine/engine.ts.
 [dependencies]
 wingtip-engine = { path = "../../facade" }

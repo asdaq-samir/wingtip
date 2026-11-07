@@ -22,7 +22,7 @@ wingtip-route = { path = "../crates/route" }
 wingtip-weather = { path = "../crates/weather" }
 wingtip-wording = { path = "../crates/wording" }
 
-# The shared fixtures (tests/fixtures/native) are gzip and JSON, which the
+# The shared fixtures (services/planner/tests_wingtip/fixtures/native) are gzip and JSON, which the
 # Python reads as well.
 [dev-dependencies]
 flate2 = "1.1"

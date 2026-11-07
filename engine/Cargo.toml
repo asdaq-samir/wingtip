@@ -34,7 +34,7 @@ inherits = "release"
 lto = false
 codegen-units = 16
 
-# The web app's WebAssembly (bindings/wasm, scripts/build-engine-wasm.sh): small
+# The web app's WebAssembly (bindings/wasm, scripts/build/build-engine-wasm.sh): small
 # over fast, since every phone downloads it before the first draw and the
 # rules it runs take microseconds either way. A profile of its own because
 # a profile cannot be set for one package's panic strategy: abort, as

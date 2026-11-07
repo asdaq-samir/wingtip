@@ -80,7 +80,7 @@ jobs:
           exit "$failed"
 
   # Copies every image the production server runs
-  # (docker-compose.prod.yml; the stack's ECR repositories in
+  # (infra/docker-compose.prod.yml; the stack's ECR repositories in
   # infra/cloudformation/template.yaml) from GHCR to ECR, as
   # `sha-<commit>` and `latest`: the very images CI tested, by a copy of
   # their manifests and layers, not a second build that only hoped to hit
@@ -124,7 +124,7 @@ jobs:
         run: |
           set -euo pipefail
           # The two images the production server runs
-          # (docker-compose.prod.yml). The pipeline stays out of
+          # (infra/docker-compose.prod.yml). The pipeline stays out of
           # production (docs/README-AWS.md).
           for service in webapp planning-service; do
             source="$GHCR/$service:sha-$SHA"

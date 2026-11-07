@@ -4,7 +4,7 @@
 //! (wind.test.ts, windPick.test.ts, runwayFlown.test.ts,
 //! runwayFit.test.ts, trafficPattern.test.ts, weightBalance.test.ts), and
 //! the planner's tests hold wingtip.runway_wind and wingtip.pattern to
-//! (tests/test_runway_wind*.py, test_pattern.py), asked as the hosts ask
+//! (services/planner/tests_wingtip/test_runway_wind*.py, test_pattern.py), asked as the hosts ask
 //! them: by name, JSON in and out.
 
 use serde_json::{json, Value};
