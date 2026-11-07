@@ -730,6 +730,21 @@ Resources:
             CachedMethods: [GET, HEAD]
             Compress: true
             CachePolicyId: !Ref SharedAnswersCachePolicy
+          # The map's FAA overlays as vector tiles (the planner's
+          # /api/overlay-tiles and /api/overlay-tiles/{name}.pmtiles): the
+          # index for the hour it says, the archive -- its build in its
+          # name -- a day at the edge and its cycle in the browser. The map
+          # reads the archive in byte ranges, which CloudFront answers from
+          # what it holds (the Range header is never part of the key); not
+          # compressed, since its tiles are gzipped inside and a range of
+          # a compressed answer would not be the archive's bytes.
+          - PathPattern: api/planner/overlay-tiles*
+            TargetOriginId: server
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            Compress: false
+            CachePolicyId: !Ref SharedAnswersCachePolicy
         # A server error is passed on, never kept: CloudFront would hold
         # one for ten seconds by default, and a planner restarting would
         # then outlast itself at the edge.
@@ -815,7 +830,8 @@ Resources:
       NetworkMode: awsvpc
       # Two workers drawing tiles, and the country's sheets plus their
       # pyramid on the task's own disk: 6 GB of sheets and 7.4 GB of
-      # tiles (1.5 million of them) for the 09-03-2026 cycle.
+      # tiles (1.5 million of them) for the 09-03-2026 cycle, and about
+      # 25 GB more of the 512-pixel "@2x" tiles from the 12-24-2026 cycle.
       Cpu: "2048"
       Memory: "8192"
       EphemeralStorage: { SizeInGiB: 60 }

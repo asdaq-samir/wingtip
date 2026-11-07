@@ -3329,6 +3329,16 @@
             "title": "Revision",
             "type": "integer"
           },
+          "scales": {
+            "default": [
+              1
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "title": "Scales",
+            "type": "array"
+          },
           "sheets": {
             "default": [],
             "items": {
@@ -10419,6 +10429,82 @@
         "title": "OralQuestionRequest",
         "type": "object"
       },
+      "OverlayTiles": {
+        "description": "The map's FAA overlays as vector tiles (wingtip.vector_tiles): one\nPMTiles archive of the cycle, fetched in byte ranges at\n/api/overlay-tiles/{name}.pmtiles; its zooms, and how far its lines\nmay stray from the FAA's (metres on the ground).",
+        "properties": {
+          "built_at": {
+            "title": "Built At",
+            "type": "number"
+          },
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "cycle": {
+            "title": "Cycle",
+            "type": "string"
+          },
+          "layers": {
+            "items": {
+              "$ref": "#/components/schemas/OverlayTilesLayer"
+            },
+            "title": "Layers",
+            "type": "array"
+          },
+          "max_zoom": {
+            "title": "Max Zoom",
+            "type": "integer"
+          },
+          "min_zoom": {
+            "title": "Min Zoom",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "tolerance_m": {
+            "title": "Tolerance M",
+            "type": "number"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cycle",
+          "name",
+          "version",
+          "bytes",
+          "built_at",
+          "min_zoom",
+          "max_zoom",
+          "tolerance_m",
+          "layers"
+        ],
+        "title": "OverlayTiles",
+        "type": "object"
+      },
+      "OverlayTilesLayer": {
+        "description": "One layer of the overlay tiles (wingtip.vector_tiles.LAYERS) and how\nmany features it holds.",
+        "properties": {
+          "features": {
+            "title": "Features",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "features"
+        ],
+        "title": "OverlayTilesLayer",
+        "type": "object"
+      },
       "OwnAirplane": {
         "description": "The pilot's own airplane being flown, its records from the gateway;\nleft out for a stock profile, which has none.",
         "properties": {
@@ -16329,12 +16415,36 @@
         "type": "object"
       },
       "WindsPeriod": {
-        "description": "A winds and temperatures aloft forecast's period (AC 00-45H, the\nWinds and Temperatures Aloft Forecast (FB)):\nvalid at `valid_at`, for use from `use_from` to `use_to`, ISO UTC;\n`modelled` where the FB could not be had and the GFS's winds stand in\nfor it (wingtip.modelwinds).",
+        "description": "The period of the winds and temperatures aloft a plan flies: the\nGFS model's (wingtip.modelwinds), since the FB ended with the NAM (NWS\nService Change Notice 26-47). Valid at `valid_at`, for use from\n`use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round\nthe forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the\nhour of it read; `modelled` always true now.",
         "properties": {
+          "forecast_hour": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Forecast Hour"
+          },
           "modelled": {
             "default": false,
             "title": "Modelled",
             "type": "boolean"
+          },
+          "run": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run"
           },
           "use_from": {
             "title": "Use From",
@@ -17900,6 +18010,75 @@
           }
         },
         "summary": "Chart Tile"
+      }
+    },
+    "/api/chart-tile/{kind}/{z}/{x}/{y}@2x.png": {
+      "get": {
+        "description": "The same tile at twice the pixels, 512 on a side, for a 2x or 3x\nscreen: drawn from the FAA's sheet at that size, where the browser\nstretching the 256-pixel tile blurred every line and letter.\n`chart_layers` says which kinds have them (`scales`).",
+        "operationId": "chart_tile_2x_api_chart_tile__kind___z___x___y__2x_png_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "z",
+            "required": true,
+            "schema": {
+              "title": "Z",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "x",
+            "required": true,
+            "schema": {
+              "title": "X",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "y",
+            "required": true,
+            "schema": {
+              "title": "Y",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "image/png": {}
+            },
+            "description": "Successful Response"
+          },
+          "204": {
+            "description": "No sheet covers the tile"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Chart Tile 2X"
       }
     },
     "/api/charts/refresh": {
@@ -20193,6 +20372,70 @@
           }
         },
         "summary": "Oral Question"
+      }
+    },
+    "/api/overlay-tiles": {
+      "get": {
+        "description": "The overlay tiles' archive of the cycle the planner holds: its name,\nwhich its address takes, its zooms and layers. 404 until the planner\nhas built it (after the cycle pack, once a cycle). Kept as the airport\nsearch is: the next cycle's reaches the map within the hour.",
+        "operationId": "overlay_tiles_api_overlay_tiles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverlayTiles"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Overlay Tiles"
+      }
+    },
+    "/api/overlay-tiles/{name}.pmtiles": {
+      "get": {
+        "description": "The archive by its name in /api/overlay-tiles, whole or -- as a map\nreads it, a tile at a time -- the byte ranges asked for (206, with\nAccept-Ranges and Content-Range: Starlette's FileResponse). Its name\nchanges with every build, so it is kept as an airport diagram is.",
+        "operationId": "overlay_tiles_file_api_overlay_tiles__name__pmtiles_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/octet-stream": {}
+            },
+            "description": "Successful Response"
+          },
+          "206": {
+            "content": {
+              "application/octet-stream": {}
+            },
+            "description": "The byte range asked for (Range: bytes=a-b)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Overlay Tiles File"
       }
     },
     "/api/picks": {
