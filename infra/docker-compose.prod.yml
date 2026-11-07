@@ -71,7 +71,7 @@ services:
 
   planner:
     <<: *restart
-    image: ${IMAGE_REGISTRY}/planning-service:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REGISTRY}/planner:${IMAGE_TAG:-latest}
     # No access log: its lines carry each request's query, and the
     # Nearest list asks with the pilot's own position, which would then
     # sit in CloudWatch for a month (docs/privacy-inventory.md). The
@@ -123,7 +123,7 @@ services:
 
   gateway:
     <<: *restart
-    image: ${IMAGE_REGISTRY}/webapp:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REGISTRY}/gateway:${IMAGE_TAG:-latest}
     depends_on:
       db:
         condition: service_healthy
