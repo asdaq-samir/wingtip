@@ -89,9 +89,11 @@ def airports_in_view(
         metars = {}
     classes = _surface_classes(places)
     primaries = _primaries()
+    towers = faa_data.towered_fields(altitude.DEFAULT_FAA_CACHE_DIR)
     return {"airports": [
         {**p, "flight_category": (metars.get(p["source_ident"]) or {}).get("flight_category"), "military": military,
-         "private": private, "airspace_class": cls, "primary_of": primaries.get(p.get("faa_id") or "")}
+         "private": private, "airspace_class": cls, "primary_of": primaries.get(p.get("faa_id") or ""),
+         "towered": p["ident"].upper() in towers or p.get("source_ident", "").upper() in towers}
         for p, cls, (military, private) in zip(places, classes, _owners(places))
     ]}
 

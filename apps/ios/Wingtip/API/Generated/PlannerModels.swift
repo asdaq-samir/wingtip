@@ -196,6 +196,7 @@ struct APINearestAirport: Codable, Equatable, Sendable {
     var primaryOf: String?
     var isPrivate: Bool?
     var radio: APIInboundRadio?
+    var towered: Bool?
 
     enum CodingKeys: String, CodingKey {
         case airspaceClass
@@ -208,7 +209,7 @@ struct APINearestAirport: Codable, Equatable, Sendable {
         case military, municipality, name
         case primaryOf
         case isPrivate = "private"
-        case radio
+        case radio, towered
     }
 }
 

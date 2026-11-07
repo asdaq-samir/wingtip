@@ -1,4 +1,5 @@
 import { Marker } from "maplibre-gl";
+import { prefersReducedMotion } from "../../motion";
 import type { IconLike } from "../icons";
 
 export type { IconLike };
@@ -15,6 +16,18 @@ export function iconMarker(icon: IconLike, options: { interactive?: boolean } = 
   setIcon(el, icon);
   if (!options.interactive) el.style.pointerEvents = "none";
   return new Marker({ element: el, anchor: "top-left" }).setOffset(offsetOf(icon));
+}
+
+/** A mark of what changes over the chart -- an airplane, a PIREP, a wind
+ *  barb -- faded in as it first appears, over `ms` (glLayer's
+ *  FADE_IN_MS), rather than snapped on; at once under reduced motion. An
+ *  animation, not the element's own opacity, which MapLibre sets. */
+export function fadeInMarker(marker: Marker, ms = 250): Marker {
+  const el = marker.getElement();
+  if (!prefersReducedMotion() && typeof el.animate === "function") {
+    el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease-out" });
+  }
+  return marker;
 }
 
 /** The marker's element made again from `icon`, and its anchor. */

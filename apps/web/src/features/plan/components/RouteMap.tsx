@@ -338,3 +338,6 @@ export default memo(function RouteMap({
     />
   );
 });
+
+// The map drawn before the engine is there (MapPage), on this chunk too.
+export { GlBootMap as BootMap } from "../../../lib/map/gl/GlRouteMap";

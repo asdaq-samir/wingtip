@@ -5,7 +5,7 @@ import { api } from "../../../api/client";
 import { areaColour } from "../../../weatherMap";
 import { AreaCard, PirepCard, RADAR_URL, SATELLITE_URL, WindCard, barbIcon, pirepIcon, weatherBoxOf } from "../../WeatherCards";
 import { useWeatherLayers } from "../../weatherLayers";
-import { useGlData, useGlLayer, useGlMap, useGlTap } from "../glLayer";
+import { FADE_IN_MS, useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../glLayer";
 import { glZoom } from "../glStyle";
 import { useGlProbe } from "../useGlProbe";
 import { TAP } from "./common";
@@ -52,6 +52,8 @@ export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | nul
   const radarUrl = data?.radar_valid ? `${RADAR_URL}?v=${encodeURIComponent(data.radar_valid)}` : RADAR_URL;
 
   useGlLayer("areas", { [AREAS]: empty() }, AREA_LAYERS);
+  // Faded in as the first answer comes, not snapped on over the chart.
+  useGlFadeIn(AREA_LAYERS, !!data);
   const areaFeatures = useMemo<GeoJSON.FeatureCollection | null>(() => (areas && data ? {
     type: "FeatureCollection",
     features: data.advisories.map(a => ({
@@ -79,7 +81,7 @@ export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | nul
       onTap: () => openCard(<WindCard key={w.ident} wind={w} altitudeFt={windsFt} />),
     })) : []),
   ], [data, pireps, windsFt, openCard]);
-  useGlMarks(marks);
+  useGlMarks(marks, true);
   return (
     <>
       {satellite && <WeatherTiles key="sat" id="wx-satellite" url={SATELLITE_URL} max={9} opacity={0.45} />}
@@ -92,7 +94,10 @@ export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | nul
  *  address changes (the radar's time). */
 function WeatherTiles({ id, url, max, opacity }: { id: string; url: string; max: number; opacity: number }) {
   const source = { [id]: { type: "raster" as const, tiles: [url], tileSize: 256, maxzoom: max } };
-  const layer: RasterLayerSpecification = { id, type: "raster", source: id, minzoom: glZoom(3), paint: { "raster-opacity": opacity, "raster-fade-duration": 0 } };
+  // Each tile faded in as it comes (MapLibre's own raster fade), and the
+  // layer as a whole as it is turned on or the radar's time moves on.
+  const layer: RasterLayerSpecification = { id, type: "raster", source: id, minzoom: glZoom(3), paint: { "raster-opacity": opacity, "raster-fade-duration": FADE_IN_MS } };
   useGlLayer("areas", source, [layer]);
+  useGlFadeIn([layer], true);
   return null;
 }

@@ -285,6 +285,14 @@ export const googleMapsQuery = queryOptions({
   queryKey: ["googleMaps"], queryFn: () => api.googleMaps(), staleTime: Infinity, retry: false, meta: { silent: true },
 });
 
+/** The cycle's overlay tiles' archive (wingtip.vector_tiles): its name and
+ *  layers, asked as the page boots (main.tsx) beside the chart's, so the
+ *  map's first tile from it goes straight out; a 404, quiet, until the
+ *  planner has built one. */
+export const overlayTilesQuery = queryOptions({
+  queryKey: ["overlayTiles"], queryFn: () => api.overlayTiles(), staleTime: 60 * 60_000, retry: false, meta: { silent: true },
+});
+
 export const classBQuery = queryOptions({
   queryKey: ["classB"], queryFn: () => api.classB(), staleTime: 5 * 60_000, meta: { silent: true },
 });

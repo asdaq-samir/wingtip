@@ -40,6 +40,10 @@ export function absoluteTiles(template: string, origin: string): string {
   return template.startsWith("/") ? `${origin}${template}` : template;
 }
 
+/** The day chart's lift (chartPaint). */
+export const DAY_CONTRAST = 0.1;
+export const DAY_SATURATION = 0.1;
+
 export interface ChartStyle {
   sources: Record<string, RasterSourceSpecification>;
   layers: RasterLayerSpecification[];
@@ -50,7 +54,9 @@ export interface ChartStyle {
 
 /** The chart's ink by day and dimmed at night, as index.css dims the
  *  Leaflet tiles (`brightness(0.5) contrast(1.15)`) and brightens them in
- *  sunlight (`contrast(1.25) saturate(1.2)`). */
+ *  sunlight (`contrast(1.25) saturate(1.2)`). By day a touch more
+ *  contrast and colour than the scan (0.1 each), as ForeFlight's chart
+ *  reads beside ours (the owner's screenshots, 2026-11-07). */
 export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecification["paint"] {
   return {
     // Each tile drawn in the frame it comes, as Leaflet's fadeAnimation
@@ -62,8 +68,8 @@ export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecif
     // chart's type from shimmering as a pinch passes through them.
     "raster-resampling": "linear",
     "raster-brightness-max": night ? 0.5 : 1,
-    "raster-contrast": sunlight ? 0.2 : night ? 0.13 : 0,
-    "raster-saturation": sunlight ? 0.2 : 0,
+    "raster-contrast": sunlight ? 0.2 : night ? 0.13 : DAY_CONTRAST,
+    "raster-saturation": sunlight ? 0.2 : night ? 0 : DAY_SATURATION,
   };
 }
 
@@ -103,16 +109,17 @@ type AirspaceClass = AirspaceVolume["airspace_class"] | "E";
  * sectional symbology (Aeronautical Chart User's Guide, VFR Terms and
  * Symbols, Airspace) -- Class B solid blue, Class C solid magenta, Class
  * D dashed blue, Class E (surface) dashed magenta, drawn here faded -- in
- * ForeFlight's lighter blue and clearer magenta, which stand off the
- * chart's own printed ring.
+ * ForeFlight's brighter blue and magenta, and bolder (B and C 4 px, D
+ * 3.5), so they stand off the chart's own printed ring as ForeFlight's do
+ * (the owner's screenshots, 2026-11-07).
  */
-export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number[]; opacity: number; label: string }> = {
-  B: { colour: "#4b9df8", opacity: 0.95, label: "#1f5fae" },
-  C: { colour: "#c43fc0", opacity: 0.95, label: "#8a1f87" },
-  // A dash of 10 px and a gap of 5, as the Leaflet canvas draws it, in
-  // MapLibre's units, the line's own width (3 px).
-  D: { colour: "#4b9df8", dash: [10 / 3, 5 / 3], opacity: 0.95, label: "#1f5fae" },
-  E: { colour: "#c43fc0", dash: [10 / 3, 5 / 3], opacity: 0.45, label: "#8a1f87" },
+export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number[]; opacity: number; width: number; label: string }> = {
+  B: { colour: "#2f8cff", opacity: 1, width: 4, label: "#1f5fae" },
+  C: { colour: "#e02ad8", opacity: 1, width: 4, label: "#8a1f87" },
+  // A dash of 10 px and a gap of 5, in MapLibre's units, the line's own
+  // width.
+  D: { colour: "#2f8cff", dash: [10 / 3.5, 5 / 3.5], opacity: 1, width: 3.5, label: "#1f5fae" },
+  E: { colour: "#e02ad8", dash: [10 / 3, 5 / 3], opacity: 0.45, width: 3, label: "#8a1f87" },
 };
 
 /** From which Leaflet zoom each class is drawn, AirspaceLayer's:
@@ -120,12 +127,15 @@ export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number
 export const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 6, C: 7, D: 8, E: 8 };
 export const AIRSPACE_LABELS_FROM = 8;
 
-/** A volume's altitudes on one line as AirspaceLayer writes them along
- *  it, as ForeFlight does: a shelf's "100/30", a Class D's ceiling. */
+/** A volume's altitudes on one line, in its tab on the ring as ForeFlight
+ *  writes them: the class, then the ceiling over the floor in the
+ *  sectional's hundreds of feet MSL (airspaceLabel; Chart User's Guide,
+ *  Airspace), "C: 48–SFC", "B: 100–30"; a Class D its ceiling, "D: 25"
+ *  ("-25" where it stops under a Class B). */
 export function airspaceText(volume: AirspaceVolume): string | null {
   const label = airspaceLabel(volume);
   if (!label) return null;
-  return label.kind === "shelf" ? `${label.top}/${label.floor}` : label.ceiling;
+  return `${volume.airspace_class}: ${label.kind === "shelf" ? `${label.top}–${label.floor}` : label.ceiling}`;
 }
 
 export interface AirspaceProps { id: string; cls: AirspaceClass; label: string }
@@ -157,38 +167,62 @@ export function airspaceFeatures(volumes: AirspaceVolume[]): GeoJSON.FeatureColl
 export const AIRSPACE_SOURCE = "airspace";
 export const AIRSPACE_LINE_LAYERS = (["E", "D", "C", "B"] as const).map(c => `airspace-${c}`);
 
+/** The dark tab an airspace's altitudes sit in (icon-text-fit stretches
+ *  it to the text): its id, for the layer that draws it. */
+export const AIRSPACE_TAB = "airspace|tab";
+
+/** The cycle's overlay tiles' source (glOverlays, lib/map/overlayTiles),
+ *  in the map's first style. */
+export const OVERLAY_SOURCE = "faa-overlays";
+
+/** A figure of a tile's feature in the sectional's hundreds of feet, as
+ *  airspaceLabel's hundreds: 3,600 is "36". */
+const hundredsOf = (field: string) => ["to-string", ["round", ["/", ["get", field], 100]]];
+/** airspaceText as an expression on the overlay tiles' `airspace` fields
+ *  (wingtip.vector_tiles): "B: 100–30", "C: 48–SFC", "D: -25" -- the
+ *  ceiling with a minus where it is "up to but not including" it
+ *  (UPPER_DESC TNI), over the floor or SFC where the floor is the surface
+ *  (0 ft, as the planner's floor_sfc). */
+const TOP = ["concat", ["case", ["==", ["get", "ceiling_excluded"], true], "-", ""], hundredsOf("ceiling_ft")];
+const FLOOR = ["case", ["==", ["coalesce", ["get", "floor_ft"], 0], 0], "SFC", hundredsOf("floor_ft")];
+export const AIRSPACE_TILE_LABEL = ["concat", ["get", "class"], ": ", ["case", ["==", ["get", "class"], "D"], TOP, ["concat", TOP, "–", FLOOR]]];
+
 /** One line layer a class, drawn from that class's zoom, and the labels
- *  along every line: on the line, upright, kept off each other and off
- *  the route's marks by MapLibre's own collision, haloed as the chart's
- *  own type is. */
-export function airspaceLayers(font: string[]): LayerSpecification[] {
-  const lines: LineLayerSpecification[] = (["E", "D", "C", "B"] as const).map(cls => {
-    const ink = AIRSPACE_INK[cls];
+ *  on every line: white bold type in a dark tab, level on the screen,
+ *  kept off each other and off the route's marks by MapLibre's own
+ *  collision. From the in-view volumes (airspaceFeatures), or with
+ *  `tiles` the overlay tiles' `airspace` layer, its rings drawn as lines
+ *  and its labels written from its fields (AIRSPACE_TILE_LABEL); Class E
+ *  is in the tiles but not drawn, as the in-view answer has none. */
+export function airspaceLayers(font: string[], tiles = false): LayerSpecification[] {
+  const from = tiles ? { source: OVERLAY_SOURCE, "source-layer": "airspace" } : { source: AIRSPACE_SOURCE };
+  const cls = tiles ? "class" : "cls";
+  const lines: LineLayerSpecification[] = (tiles ? (["D", "C", "B"] as const) : (["E", "D", "C", "B"] as const)).map(c => {
+    const ink = AIRSPACE_INK[c];
     return {
-      id: `airspace-${cls}`, type: "line", source: AIRSPACE_SOURCE, minzoom: glZoom(AIRSPACE_FROM[cls]),
-      filter: ["==", ["get", "cls"], cls],
+      id: `airspace-${c}`, type: "line", ...from, minzoom: glZoom(AIRSPACE_FROM[c]),
+      filter: ["==", ["get", cls], c],
       layout: { "line-join": "round", "line-cap": ink.dash ? "butt" : "round" },
-      paint: { "line-color": ink.colour, "line-width": 3, "line-opacity": ink.opacity, ...(ink.dash ? { "line-dasharray": ink.dash } : {}) },
+      paint: { "line-color": ink.colour, "line-width": ink.width, "line-opacity": ink.opacity, ...(ink.dash ? { "line-dasharray": ink.dash } : {}) },
     };
   });
   const labels: SymbolLayerSpecification = {
-    id: "airspace-labels", type: "symbol", source: AIRSPACE_SOURCE, minzoom: glZoom(AIRSPACE_LABELS_FROM),
-    filter: ["!=", ["get", "label"], ""],
+    id: "airspace-labels", type: "symbol", ...from, minzoom: glZoom(AIRSPACE_LABELS_FROM),
+    filter: tiles ? ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "ceiling_ft"]] : ["!=", ["get", "label"], ""],
     layout: {
       "symbol-placement": "line",
-      "symbol-spacing": 280,
-      "text-field": ["get", "label"],
+      "symbol-spacing": 320,
+      "text-field": tiles ? AIRSPACE_TILE_LABEL as never : ["get", "label"],
       "text-font": font,
-      "text-size": 12,
-      "text-max-angle": 30,
-      "text-keep-upright": true,
+      "text-size": 11,
+      "text-rotation-alignment": "viewport",
+      "icon-rotation-alignment": "viewport",
+      "icon-image": AIRSPACE_TAB,
+      "icon-text-fit": "both",
+      "icon-text-fit-padding": [2, 5, 2, 5],
       "text-padding": 4,
     },
-    paint: {
-      "text-color": ["match", ["get", "cls"], "C", AIRSPACE_INK.C.label, "E", AIRSPACE_INK.E.label, AIRSPACE_INK.B.label],
-      "text-halo-color": "#ffffff",
-      "text-halo-width": 2,
-    },
+    paint: { "text-color": "#ffffff" },
   };
   return [...lines, labels];
 }

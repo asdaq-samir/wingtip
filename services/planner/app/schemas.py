@@ -1993,6 +1993,11 @@ class AirportPin(BaseModel):
     #: both inside the Class B, and not DFW and Intercontinental at their
     #: middle (the owner, 2026-11-03). None for every other field.
     primary_of: Literal["B", "C", "D"] | None = None
+    #: Whether the field has a control tower (NASR APT_BASE TWR_TYPE_CODE
+    #: ATCT...): the sectional's airport symbol is blue for a towered
+    #: field, magenta for every other (FAA Aeronautical Chart User's
+    #: Guide, VFR Terms and Symbols, Airports).
+    towered: bool = False
 
 
 class InboundRadio(BaseModel):

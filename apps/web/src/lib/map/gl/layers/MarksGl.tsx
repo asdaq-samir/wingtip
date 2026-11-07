@@ -12,7 +12,7 @@ import { useOwnShip } from "../../ownShip";
 import { chartPair, sheetAt } from "../../tiles";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
-import { iconMarker, type IconLike } from "../htmlMarker";
+import { fadeInMarker, iconMarker, type IconLike } from "../htmlMarker";
 import { useGlLines, type GlRun } from "../useGlLines";
 
 export interface GlMark {
@@ -34,7 +34,7 @@ export interface GlMark {
  * need a picture for each. The map places them in the frame it draws
  * the chart.
  */
-export function useGlMarks(marks: GlMark[]) {
+export function useGlMarks(marks: GlMark[], fade = false) {
   const { map } = useGlMap();
   const kept = useRef(new Map<string, { marker: Marker; icon: IconLike; mark: GlMark }>());
   useEffect(() => {
@@ -49,6 +49,8 @@ export function useGlMarks(marks: GlMark[]) {
       }
       was?.marker.remove();
       const marker = iconMarker(mark.icon, { interactive: !!mark.onTap }).setLngLat([mark.lon, mark.lat]).addTo(map);
+      // A new mark of what changes (the weather's) faded in, not snapped on.
+      if (fade && !was) fadeInMarker(marker);
       const el = marker.getElement();
       if (mark.title) el.title = mark.title;
       const entry = { marker, icon: mark.icon, mark };
@@ -66,7 +68,7 @@ export function useGlMarks(marks: GlMark[]) {
         kept.current.delete(key);
       }
     }
-  }, [map, marks]);
+  }, [map, marks, fade]);
   useEffect(() => {
     const all = kept.current;
     return () => { for (const { marker } of all.values()) marker.remove(); all.clear(); };

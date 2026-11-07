@@ -1,5 +1,5 @@
 import * as maplibregl from "maplibre-gl";
-import type { LngLatBoundsLike, MapMouseEvent, PaddingOptions, StyleSpecification } from "maplibre-gl";
+import type { LayerSpecification, LngLatBoundsLike, MapMouseEvent, PaddingOptions, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // The worker MapLibre parses its sources in (worker.ts).
 import "./worker";
@@ -13,13 +13,17 @@ import MapBanners from "../../../components/MapBanners";
 import { MapInsetsContext, SHEET_SECONDS, type MapInsets } from "../../../components/mapChrome";
 import { SheetCard } from "../../../components/SheetCard";
 import type { SheetTurn } from "../../../components/MapPanel";
-import type { Course } from "../../api/types";
-import { chartQuery } from "../../queryClient";
+import type { Course, OverlayTiles } from "../../api/types";
+import { engineLoaded } from "../../engine/engine";
+import { usePreferences } from "../../preferences";
+import { chartQuery, overlayTilesQuery, queryClient } from "../../queryClient";
 import { prefersReducedMotion } from "../../motion";
 import { BUTTONS_CLEAR } from "../clear";
 import { CardCloseContext } from "../cardClose";
+import { prefetchRing, registerOverlayProtocol } from "../overlayTiles";
 import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../ownShip";
-import { GlMapContext, SLOTS, slotId, type GlMapApi, type GlTap } from "./glLayer";
+import { GlMapContext, SLOTS, adoptLayers, parkLayers, slotId, sweepLayers, type DrawnImage, type GlMapApi, type GlTap, type Slot } from "./glLayer";
+import { OVERLAY_SOURCE, applyOverlayFilters, overlayPictures, overlayStyle } from "./glOverlays";
 import { glZoom } from "./glStyle";
 import { RulerGl } from "./layers/RulerGl";
 import { tvPlatform, zoomInKey, zoomOutKey } from "../../tv";
@@ -32,7 +36,143 @@ const PLACE_ZOOM = 9;
 /** Round a fit, over what the panel covers: a margin, and clear of the
  *  map's buttons at the sides (MapShell's). */
 export const FIT_MARGIN = { top: 30, bottom: 30, left: 30 + BUTTONS_CLEAR, right: 30 + BUTTONS_CLEAR };
-const flight = () => (prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 * 2);
+/** The map's first showing (GlMap's reveal): at the latest this long after
+ *  it is made, faded in over this long. */
+const REVEAL_LATEST_MS = 2500;
+const REVEAL_FADE_MS = 150;
+/** The longest the map waits, before it is made, for the overlay tiles'
+ *  name and the overlays' pictures to put in its first style: past it, it
+ *  is made without them and they come in as they arrive. */
+const FIRST_STYLE_WAIT_MS = 1500;
+/** How long a map left by one page's tree waits for the next to take it
+ *  up (the map drawn before the engine, handed to the planner's), before
+ *  it is let go. */
+const PARK_MS = 10_000;
+const flight = () =>(prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 * 2);
+
+// The overlay tiles' protocol, once for the page (lib/map/overlayTiles).
+registerOverlayProtocol(maplibregl);
+
+/** The overlays' pictures, once drawn (glOverlays' overlayPictures), for
+ *  every map to take as a tile asks for one. */
+let pictures: Map<string, DrawnImage> | null = null;
+const picturesDrawn = overlayPictures().then(p => { pictures = p; }, () => { pictures = new Map(); });
+
+/** The overlay tiles each map draws, for its prefetch round the view. */
+const overlaysOf = new WeakMap<maplibregl.Map, OverlayTiles>();
+
+/** The map handed from one tree to the next, its element with it. */
+let parked: { map: maplibregl.Map; holder: HTMLDivElement; timer: number } | null = null;
+/** The maps whose style has loaded. */
+const loaded = new WeakSet<maplibregl.Map>();
+
+/**
+ * A map made in `holder`, at the pilot's last position or the country, in
+ * the middle of what the panel leaves (padding), its first style the
+ * slots' empty layers with the cycle's FAA overlays (glOverlays) among
+ * them, so the airspace, the airports and the navaids load per tile with
+ * the chart rather than each asking the planner for the view.
+ */
+function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): maplibregl.Map {
+  const last = useOwnShip.getState().lastFix;
+  const [lat, lon] = last ? [last.lat, last.lon] : COUNTRY;
+  const tiles = queryClient.getQueryData(overlayTilesQuery.queryKey) ?? null;
+  const overlays = tiles ? overlayStyle(tiles) : null;
+  const layers: LayerSpecification[] = SLOTS.flatMap((s: Slot) => [
+    ...(overlays?.layers[s] ?? []),
+    { id: slotId(s), type: "background" as const, layout: { visibility: "none" as const } },
+  ]);
+  const style: StyleSpecification = {
+    version: 8, sources: overlays ? { [OVERLAY_SOURCE]: overlays.source } : {}, layers,
+    // The same variable font under a second name: MapLibre draws a name
+    // with "Bold" in it at weight 700 (GL_FONT_BOLD, the chart's labels).
+    "font-faces": {
+      Inter: [{ url: interUrl, "unicode-range": ["U+0000-00FF", "U+2000-206F"] }],
+      "Inter Bold": [{ url: interUrl, "unicode-range": ["U+0000-00FF", "U+2000-206F"] }],
+    },
+  };
+  const m = new maplibregl.Map({
+    container: holder, style, center: [lon, lat], zoom: glZoom(last ? OPEN_ZOOM : COUNTRY_ZOOM),
+    minZoom: glZoom(3), attributionControl: false,
+    // A chart is read north up, as Leaflet's is: no turn, no tilt.
+    dragRotate: false, pitchWithRotate: false, touchPitch: false,
+    // On a TV (lib/tv) the map takes the remote's arrows while focused.
+    keyboard: onTv,
+    // Symbols placed at once, not faded in over 0.3 s.
+    fadeDuration: 0,
+    renderWorldCopies: false,
+  });
+  if (tiles) overlaysOf.set(m, tiles);
+  // A tile's picture the moment its layout asks for it, from the ones
+  // drawn ahead (overlayPictures), so no symbol is laid out bare.
+  m.on("styleimagemissing", (e: { id: string }) => {
+    const got = pictures?.get(e.id);
+    if (got && !m.hasImage(e.id)) m.addImage(e.id, got.image, got.options);
+  });
+  // A remote has no pinch: the map's own + and - to reach with its arrows.
+  if (onTv) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+  m.touchZoomRotate.disableRotation();
+  m.setPadding(padOf(insets));
+  // A terminal sheet's tile where it has none is a 404, as Leaflet's
+  // overlay leaves blank: not an error to say.
+  m.on("error", () => {});
+  // Whether it is moving, on its element, for the browser tests to wait
+  // on a still map (e2e helpers' mapStill).
+  const el = holder;
+  m.on("movestart", () => { el.dataset.moving = ""; });
+  // And where it is: its middle, and where the point it opened on is on
+  // the screen now (as Leaflet's pane's offset was), and the layers drawn
+  // bottom to top.
+  const anchor = m.getCenter();
+  const say = () => {
+    const c = m.getCenter(), p = m.project(anchor);
+    el.dataset.center = `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`;
+    el.dataset.offset = `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    // In the app's levels (Leaflet's: MapLibre's zoom plus one).
+    el.dataset.zoom = (m.getZoom() + 1).toFixed(3);
+  };
+  say();
+  m.on("moveend", () => { delete el.dataset.moving; say(); });
+  m.on("idle", () => { el.dataset.layers = m.getStyle().layers.map(l => l.id).filter(id => !id.startsWith("slot-")).join(" "); });
+  m.once("load", () => loaded.add(m));
+  // Once at rest, the overlay tiles one ring outside the view fetched
+  // (overlayTiles' prefetchRing), so a pan's first frame has them; again
+  // at each rest after, for the tiles not fetched yet.
+  m.on("idle", () => {
+    const tiles = overlaysOf.get(m);
+    if (!tiles) return;
+    const b = m.getBounds();
+    prefetchRing(tiles, { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }, m.getZoom());
+  });
+  // The map shown as one thing (the owner, 2026-11-07: the chart, then
+  // the rings, then the airports snapping on one by one): the canvas
+  // kept clear over the page's background until the map is first at
+  // rest with the chart's tiles drawn and the overlay tiles' first ones
+  // in, then faded in once; never longer than REVEAL_LATEST_MS, so a
+  // slow tile never leaves the map blank.
+  const canvas = m.getCanvas();
+  canvas.style.opacity = "0";
+  let chartIn = false;
+  let overlaysIn = !tiles;
+  const tileIn = (e: { sourceId?: string; tile?: unknown }) => {
+    if (!e.tile) return;
+    if (e.sourceId?.startsWith("chart")) chartIn = true;
+    if (e.sourceId === OVERLAY_SOURCE) overlaysIn = true;
+  };
+  const reveal = () => {
+    m.off("sourcedata", tileIn);
+    m.off("idle", rested);
+    window.clearTimeout(latest);
+    canvas.style.transition = prefersReducedMotion() ? "" : `opacity ${REVEAL_FADE_MS}ms ease-out`;
+    canvas.style.opacity = "1";
+    el.dataset.revealed = "";
+  };
+  const rested = () => { if (chartIn && overlaysIn) reveal(); };
+  const latest = window.setTimeout(reveal, REVEAL_LATEST_MS);
+  m.on("sourcedata", tileIn);
+  m.on("idle", rested);
+  return m;
+}
 
 interface Props {
   course: Course | null;
@@ -43,6 +183,9 @@ interface Props {
   place: { lat: number; lon: number } | null;
   /** Its layers (lib/map/gl/layers), drawn once the map is made. */
   children: ReactNode;
+  /** The map alone, drawn before the engine is there (GlBootMap): no
+   *  buttons, banners or ruler, which ask it, and no taps until it is. */
+  bare?: boolean;
 }
 
 /**
@@ -56,12 +199,18 @@ interface Props {
  * what the sheet leaves stays the middle, eased in the sheet's own time
  * from the sheet's turn (MapPanel's sheetturn), and a route is fitted to
  * what the sheet leaves, clear of the map's buttons.
+ *
+ * One MapLibre map lives on from one tree to the next: the map the page
+ * draws before the engine is there (GlBootMap, outside MapPage's engine
+ * gate) is parked as that tree goes and taken up by the planner's, its
+ * chart and overlays kept, rather than a second map drawn from nothing.
  */
-export default function GlMapShell({ course, focus, focusZoom, place, children }: Props) {
+export default function GlMapShell({ course, focus, focusZoom, place, children, bare = false }: Props) {
   // Once: a page is on a TV or not for its whole visit.
   const [onTv] = useState(() => tvPlatform() !== null);
   const box = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<maplibregl.Map | null>(null);
+  const [overlays, setOverlays] = useState(false);
   const insets = useContext(MapInsetsContext);
   const insetsRef = useRef(insets);
   // Where a point picked is being flown to (flyTo below), for the sheet
@@ -69,58 +218,67 @@ export default function GlMapShell({ course, focus, focusZoom, place, children }
   const flying = useRef<{ center: [number, number]; zoom: number } | null>(null);
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const known = !!(course ?? chartOnly);
-
-  // Made once the chart is known, at the pilot's last position or the
-  // country, in the middle of what the panel leaves (padding), with an
-  // empty layer for each slot the layers are put under.
+  // The overlay tiles' name and the overlays' pictures, for the map's
+  // first style, each waited for at most FIRST_STYLE_WAIT_MS.
+  const { status: tilesStatus } = useQuery(overlayTilesQuery);
+  const [drawnPictures, setDrawnPictures] = useState(() => pictures !== null);
+  const [waited, setWaited] = useState(false);
   useEffect(() => {
-    if (!box.current || !known) return;
-    const last = useOwnShip.getState().lastFix;
-    const [lat, lon] = last ? [last.lat, last.lon] : COUNTRY;
-    const style: StyleSpecification = {
-      version: 8, sources: {},
-      layers: SLOTS.map(s => ({ id: slotId(s), type: "background", layout: { visibility: "none" } })),
-      "font-faces": { Inter: [{ url: interUrl, "unicode-range": ["U+0000-00FF", "U+2000-206F"] }] },
+    let live = true;
+    void picturesDrawn.then(() => { if (live) setDrawnPictures(true); });
+    const timer = window.setTimeout(() => setWaited(true), FIRST_STYLE_WAIT_MS);
+    return () => { live = false; window.clearTimeout(timer); };
+  }, []);
+  const ready = known && ((drawnPictures && tilesStatus !== "pending") || waited);
+
+  // Made once the chart is known (makeMap), or the map the last tree left
+  // taken up.
+  useEffect(() => {
+    const host = box.current;
+    if (!host || !ready) return;
+    const held = parked;
+    parked = null;
+    let m: maplibregl.Map, holder: HTMLDivElement;
+    if (held) {
+      window.clearTimeout(held.timer);
+      ({ map: m, holder } = held);
+      host.appendChild(holder);
+      adoptLayers(m);
+      m.resize();
+      m.setPadding(padOf(insetsRef.current));
+    } else {
+      holder = document.createElement("div");
+      holder.className = "h-full w-full bg-slate-100 dark:bg-slate-900";
+      holder.dataset.testid = "gl-map";
+      host.appendChild(holder);
+      m = makeMap(holder, onTv, insetsRef.current);
+    }
+    // Whether its first style has the overlay tiles: a map made without
+    // them (no archive, or its name too slow to come) keeps the in-view
+    // layers for its life.
+    const take = () => { setOverlays(!!m.getSource(OVERLAY_SOURCE)); setMap(m); };
+    if (loaded.has(m)) take();
+    else m.once("load", take);
+    return () => {
+      m.off("load", take);
+      setMap(null);
+      // Kept a moment for the next tree to take up, then let go.
+      parkLayers(m);
+      holder.remove();
+      parked = { map: m, holder, timer: window.setTimeout(() => {
+        if (parked?.map === m) parked = null;
+        m.remove();
+      }, PARK_MS) };
     };
-    const m = new maplibregl.Map({
-      container: box.current, style, center: [lon, lat], zoom: glZoom(last ? OPEN_ZOOM : COUNTRY_ZOOM),
-      minZoom: glZoom(3), attributionControl: false,
-      // A chart is read north up, as Leaflet's is: no turn, no tilt.
-      dragRotate: false, pitchWithRotate: false, touchPitch: false,
-      // On a TV (lib/tv) the map takes the remote's arrows while focused.
-      keyboard: onTv,
-      // Symbols placed at once, not faded in over 0.3 s.
-      fadeDuration: 0,
-      renderWorldCopies: false,
-    });
-    // A remote has no pinch: the map's own + and - to reach with its arrows.
-    if (onTv) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
-    m.touchZoomRotate.disableRotation();
-    m.setPadding(padOf(insetsRef.current));
-    // A terminal sheet's tile where it has none is a 404, as Leaflet's
-    // overlay leaves blank: not an error to say.
-    m.on("error", () => {});
-    // Whether it is moving, on its element, for the browser tests to wait
-    // on a still map (e2e helpers' mapStill).
-    const el = box.current;
-    m.on("movestart", () => { el.dataset.moving = ""; });
-    // And where it is: its middle, and where the point it opened on is on
-    // the screen now (as Leaflet's pane's offset was), and the layers drawn
-    // bottom to top.
-    const anchor = m.getCenter();
-    const say = () => {
-      const c = m.getCenter(), p = m.project(anchor);
-      el.dataset.center = `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`;
-      el.dataset.offset = `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-      // In the app's levels (Leaflet's: MapLibre's zoom plus one).
-      el.dataset.zoom = (m.getZoom() + 1).toFixed(3);
-    };
-    say();
-    m.on("moveend", () => { delete el.dataset.moving; say(); });
-    m.on("idle", () => { el.dataset.layers = m.getStyle().layers.map(l => l.id).filter(id => !id.startsWith("slot-")).join(" "); });
-    m.on("load", () => setMap(m));
-    return () => { setMap(null); m.remove(); };
-  }, [known, onTv]);
+  }, [ready, onTv]);
+
+  // The settings' filters on the overlay tiles as they change
+  // (applyOverlayFilters).
+  useEffect(() => {
+    if (!map || !overlays) return;
+    applyOverlayFilters(map);
+    return usePreferences.subscribe(() => applyOverlayFilters(map));
+  }, [map, overlays]);
 
   // A remote has no pinch: its zoom keys zoom the map while it is focused
   // (TvMapKeys on the Leaflet map).
@@ -152,6 +310,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children }
   useEffect(() => {
     if (!map) return;
     const tap = (e: MapMouseEvent) => {
+      // The cards a tap opens ask the engine as they draw: a tap waits for
+      // it, as nothing else on the map does (MapPage's engine gate).
+      if (!engineLoaded()) return;
       for (const t of [...registry.taps].sort((a, b) => a.rank - b.rank)) {
         const layers = t.layers.filter(l => map.getLayer(l));
         if (!layers.length) continue;
@@ -169,7 +330,10 @@ export default function GlMapShell({ course, focus, focusZoom, place, children }
     map.on("click", tap);
     return () => { map.off("click", tap); };
   }, [map, registry]);
-  const api = useMemo<GlMapApi | null>(() => (map ? { map, addTap, addMiss, openCard: setCard } : null), [map, addTap, addMiss]);
+  const api = useMemo<GlMapApi | null>(() => (map ? { map, addTap, addMiss, openCard: setCard, overlays } : null), [map, addTap, addMiss, overlays]);
+  // The last tree's layers this one has not drawn again, taken away once
+  // its own are in (children's effects run before this one's).
+  useEffect(() => { if (api) sweepLayers(api.map); }, [api]);
 
   // Fit to the route: once per route, clear of the panel and the buttons,
   // as MapShell's.
@@ -291,12 +455,14 @@ export default function GlMapShell({ course, focus, focusZoom, place, children }
 
   return (
     <div className="relative h-full w-full">
-      <div ref={box} className="h-full w-full bg-slate-100 dark:bg-slate-900" data-testid="gl-map" />
+      {/* The map's own element (data-testid gl-map) is made with the map and
+          goes with it from tree to tree (makeMap, parked). */}
+      <div ref={box} className="h-full w-full bg-slate-100 dark:bg-slate-900" />
       {api && (
         <GlMapContext.Provider value={api}>
           {children}
           {/* Two fingers held on the chart measure it, on every map. */}
-          <RulerGl />
+          {!bare && <RulerGl />}
         </GlMapContext.Provider>
       )}
       {card && (
@@ -304,8 +470,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children }
           <CardCloseContext.Provider value={closeCard}>{card}</CardCloseContext.Provider>
         </SheetCard>
       )}
-      <MapBanners map={map} />
-      <MapControls />
+      {!bare && <MapBanners map={map} />}
+      {!bare && <MapControls />}
     </div>
   );
 }

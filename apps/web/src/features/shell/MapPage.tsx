@@ -14,6 +14,7 @@ import { useWarmAirportIndex } from "../../lib/airportIndex";
 import LinkSignIn from "../pilot/LinkSignIn";
 import TvLink from "../pilot/TvLink";
 import PlanWorkspace from "../plan/PlanWorkspace";
+import { BootMap } from "../plan/routeMapChunk";
 import type { WorkspacePieces } from "./workspace";
 
 /** Setup's pill (the switches, the account), with the console's code
@@ -229,11 +230,11 @@ export default function MapPage({ mode }: { mode: Mode }) {
     <Suspense fallback={<div className="h-dvh w-full bg-background" />}>
     {/* The workspace asks the shared engine while it renders (the
         planner's first render writes its procedures with it): drawn once
-        the engine is there, the page's own background until then, so
-        the page paints without waiting for the .wasm (main.tsx). The map
-        is not held back by it: its chunk and the chart it waits for are
-        larger than the engine. */}
-    <EngineGate fallback={<div className="h-dvh w-full bg-background" />}>
+        the engine is there. Until then the map alone (BootMap: the chart
+        and the overlay tiles, which ask it nothing), so the page paints
+        without waiting for the .wasm (main.tsx); the workspace's map
+        takes that one up as it is, rather than drawing a second. */}
+    <EngineGate fallback={<BootMapPage />}>
     <Workspace dep={dep} dest={dest} panel={panel} setPanel={setPanel}>
       {pieces => {
         // The route's row built once a render, the same element as the top
@@ -323,6 +324,18 @@ export default function MapPage({ mode }: { mode: Mode }) {
     </Workspace>
     </EngineGate>
     </Suspense>
+  );
+}
+
+/** The page before the engine is there: the map alone where the page's
+ *  map will be, over the page's own background. */
+function BootMapPage() {
+  return (
+    <div className="fixed inset-0 overflow-hidden bg-background print:hidden">
+      <main className="absolute inset-0 isolate">
+        <BootMap />
+      </main>
+    </div>
   );
 }
 

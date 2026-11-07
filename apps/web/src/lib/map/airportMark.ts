@@ -64,3 +64,39 @@ export function airportMarkSvg(space: AirspaceClass | null, weather: string, use
   return `<svg data-airport-mark="" data-airspace="${space ?? ""}"${use ? ` data-use="${use}"` : ""} aria-hidden="true" class="${className}"` +
     ` width="${AIRPORT_MARK}" height="${AIRPORT_MARK}" viewBox="${-half} ${-half} ${AIRPORT_MARK} ${AIRPORT_MARK}">${symbol}</svg>`;
 }
+
+/** The sectional's airport inks (FAA Aeronautical Chart User's Guide,
+ *  VFR Terms and Symbols, Airports: "Airports having control towers are
+ *  shown in blue, all others in magenta"). */
+export const TOWERED_BLUE = BLUE;
+export const UNTOWERED_MAGENTA = MAGENTA;
+
+/** How big a field's symbol is drawn, by its size: the big fields the
+ *  biggest, so the small ones don't crowd the chart out at a distance. */
+const SECTIONAL_RADIUS: Record<"large" | "medium" | "small" | "other", number> = { large: 7, medium: 6, small: 5, other: 4.5 };
+
+/**
+ * A field's mark on the WebGL map in the sectional's own symbology (FAA
+ * Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports), as
+ * ForeFlight draws it over the chart: a solid disc, blue for a field with
+ * a control tower and magenta for every other; a private field (closed to
+ * the public, NASR FACILITY_USE_CODE PR) the guide's small magenta circle
+ * with an "R"; a military one the same circle with an "M"; a heliport an
+ * "H" in its circle. The field's weather (its METAR's flight category) a
+ * small pip at its lower right, where there is a report: no ring and no
+ * big weather fill.
+ */
+export function sectionalAirportSvg(
+  towered: boolean, size: keyof typeof SECTIONAL_RADIUS, use: "military" | "private" | "heliport" | null, weather: string | null,
+): string {
+  const ink = towered ? TOWERED_BLUE : UNTOWERED_MAGENTA;
+  const box = 20;
+  const casing = `stroke="#fff" stroke-width="1.5"`;
+  const letter = use === "private" ? "R" : use === "military" ? "M" : use === "heliport" ? "H" : null;
+  const symbol = letter
+    ? `<circle r="5.5" fill="#fff" stroke="${ink}" stroke-width="1.6"/>` +
+      `<text y="2.9" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" font-weight="800" fill="${ink}">${letter}</text>`
+    : `<circle r="${SECTIONAL_RADIUS[size]}" fill="${ink}" ${casing}/>`;
+  const pip = weather ? `<circle data-weather="" cx="5.5" cy="5.5" r="3" fill="${text(weather)}" stroke="#fff" stroke-width="1.2"/>` : "";
+  return `<svg width="${box}" height="${box}" viewBox="${-box / 2} ${-box / 2} ${box} ${box}">${symbol}${pip}</svg>`;
+}

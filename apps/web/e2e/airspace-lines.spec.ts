@@ -35,15 +35,14 @@ test("Chicago's airspace is drawn over the chart with its altitudes, and the swi
   // O'Hare's card brings the map in on it, close enough for the labels.
   await page.goto("/app/plan?place=KORD");
   await expect.poll(() => lines(page), { timeout: slow(30000) }).toBeGreaterThan(5);
-  // The altitudes along the lines, no plates (the owner, 2026-10-30):
-  // O'Hare's shelves among them, and a Class D's
-  // ceiling alone. In sight, and turned to read upright.
-  // O'Hare's shelves' "100/…": the surface area's "100/SFC" is a small
-  // ring round KORD's own mark, its label skipped where the mark is.
-  await expect.poll(async () => (await labels(page)).some(l => /^100\/(SFC|\d+)$/.test(l.text)), { timeout: slow(15000) }).toBe(true);
+  // The altitudes on the lines in their dark tabs, as ForeFlight writes
+  // them (2026-11-07): O'Hare's shelves among them ("B: 100–30"), and a
+  // Class D's ceiling alone ("D: -30"). The surface area's "B: 100–SFC"
+  // is a small ring round KORD's own mark, its label skipped there.
+  await expect.poll(async () => (await labels(page)).some(l => /^B: 100–(SFC|\d+)$/.test(l.text)), { timeout: slow(15000) }).toBe(true);
   const written = await labels(page);
-  expect(written.some(l => /^-?\d+$/.test(l.text))).toBe(true);
-  expect(written.some(l => /^\d+\/\d+$/.test(l.text))).toBe(true);
+  expect(written.some(l => /^D: -?\d+$/.test(l.text))).toBe(true);
+  expect(written.some(l => /^[BC]: \d+–\d+$/.test(l.text))).toBe(true);
   expect(written.length).toBeGreaterThan(3);
   // Upright: a line straight up and down reads bottom to top, either
   // end of the half-turn.

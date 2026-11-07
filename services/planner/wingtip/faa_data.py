@@ -389,6 +389,30 @@ def _private_of(path: str, _mtime: float) -> frozenset:
     )
 
 
+@once(maxsize=2)
+def _towered_of(path: str, _mtime: float) -> frozenset:
+    df = _read_apt_base_cached(path, _mtime)
+    df = df[df["TWR_TYPE_CODE"].fillna("").str.strip().str.upper().str.startswith("ATCT")]
+    return frozenset(
+        ident.strip().upper() for ident in [*df["ARPT_ID"], *df["ICAO_ID"]] if isinstance(ident, str) and ident.strip()
+    )
+
+
+def towered_fields(cache_dir) -> frozenset:
+    """Every field with a control tower (APT_BASE's TWR_TYPE_CODE ATCT,
+    ATCT-A/C, ATCT-TRACON and the rest; NON-ATCT is none), by its FAA and
+    ICAO identifiers: the sectional draws these in blue and every other
+    field in magenta (FAA Aeronautical Chart User's Guide, VFR Terms and
+    Symbols, Airports). Empty where the file cannot be had: the map then
+    draws every field in magenta, as an untowered one."""
+    try:
+        path = ensure_nasr_file("APT_BASE.csv", cache_dir)
+        return _towered_of(str(path), path.stat().st_mtime)
+    except Exception:
+        log.warning("No APT_BASE.csv for towered fields; none marked", exc_info=True)
+        return frozenset()
+
+
 def private_fields(cache_dir) -> frozenset:
     """Every field closed to the public (APT_BASE's FACILITY_USE_CODE PR),
     by its FAA and ICAO identifiers -- the sectional's R in a circle, a
