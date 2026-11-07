@@ -1119,6 +1119,11 @@
             "default": false,
             "title": "Private",
             "type": "boolean"
+          },
+          "towered": {
+            "default": false,
+            "title": "Towered",
+            "type": "boolean"
           }
         },
         "required": [
@@ -9812,6 +9817,11 @@
                 "type": "null"
               }
             ]
+          },
+          "towered": {
+            "default": false,
+            "title": "Towered",
+            "type": "boolean"
           }
         },
         "required": [

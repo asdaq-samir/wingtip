@@ -4,17 +4,20 @@ import { useEffect, useMemo, useState } from "react";
 import type { FixPin, VorPin } from "../../../api/types";
 import { usePreferences } from "../../../preferences";
 import { BLUE } from "../../../useAirspace";
-import { WAYPOINT_MAGENTA } from "../../chartColors";
 import { FixCard, VorCard, navaidsQuery } from "../../NavaidCards";
 import { usePointActions } from "../../pointActions";
 import { WaypointCard, waypointsQuery, type Waypoint } from "../../WaypointCard";
 import { addSvgImages, useGlData, useGlLayer, useGlMap, useGlTap } from "../glLayer";
 import { useGlView } from "../useGlView";
 import { useGlProbe } from "../useGlProbe";
-import { GL_FONT, TAP } from "./common";
+import { GL_FONT_BOLD, LABEL_HALO, TAP } from "./common";
 
 /** The chart's own ink for a fix (NavaidCanvas' FIX_INK). */
 const FIX_INK = "#1c1a17";
+/** A VFR waypoint's ink on the WebGL map: ForeFlight's green triangle, at
+ *  the owner's ask (2026-11-07, from its screenshots), where the
+ *  sectional prints a magenta flag (Chart User's Guide, VFR waypoints). */
+const VFR_GREEN = "#148a3b";
 
 /** The marks' pictures, NavaidCanvas' own: the VOR's hexagon, a fix's
  *  triangle, a VFR waypoint's magenta one (FAA Aeronautical Chart User's
@@ -23,7 +26,7 @@ const FIX_INK = "#1c1a17";
 const PICTURES: [string, () => string, { inset: number }?][] = [
   ["nav|vor", () => `<svg width="16" height="16" viewBox="0 0 16 16"><polygon points="15,8 11.5,14.06 4.5,14.06 1,8 4.5,1.94 11.5,1.94" fill="#fff" stroke="${BLUE}" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="${BLUE}"/></svg>`],
   ["nav|fix", () => `<svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,1 9.4,8.8 0.6,8.8" fill="#fff" stroke="${FIX_INK}" stroke-width="1.2" stroke-linejoin="round"/></svg>`],
-  ["nav|vfr", () => `<svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,1 9.4,8.8 0.6,8.8" fill="#fff" stroke="${WAYPOINT_MAGENTA}" stroke-width="1.6" stroke-linejoin="round"/></svg>`],
+  ["nav|vfr", () => `<svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,1 11.2,10.4 0.8,10.4" fill="${VFR_GREEN}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>`],
   ["nav|tag", () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12" rx="3" fill="${BLUE}"/></svg>`, { inset: 4 }],
 ];
 
@@ -33,8 +36,9 @@ const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollectio
 
 /** The mark, its ident beside it on whichever side is clear: MapLibre's
  *  variable anchor and collision, where declutter.ts picked a VOR's tag
- *  side by hand. A VOR's ident on its blue tag, a fix's and a waypoint's
- *  dark or magenta on a white halo. */
+ *  side by hand. A VOR's ident and frequency on its blue tag, "GCO
+ *  (108.25)" as ForeFlight writes it; a fix's and a waypoint's bold, dark
+ *  or green on a white halo. */
 function marks(id: string, source: string): SymbolLayerSpecification[] {
   return [
     {
@@ -44,15 +48,16 @@ function marks(id: string, source: string): SymbolLayerSpecification[] {
     {
       id: `${id}-idents`, type: "symbol", source,
       layout: {
-        "text-field": ["get", "ident"], "text-font": GL_FONT, "text-size": 11,
+        "text-field": ["case", ["has", "freq"], ["concat", ["get", "ident"], " (", ["get", "freq"], ")"], ["get", "ident"]],
+        "text-font": GL_FONT_BOLD, "text-size": ["interpolate", ["linear"], ["zoom"], 6, 10, 10, 12],
         "text-variable-anchor": ["left", "right"], "text-radial-offset": 1.1, "text-justify": "auto",
         "icon-image": ["case", ["==", ["get", "kind"], "vor"], "nav|tag", ""],
         "icon-text-fit": "both", "icon-text-fit-padding": [1, 4, 1, 4],
       },
       paint: {
-        "text-color": ["match", ["get", "kind"], "vor", "#ffffff", "vfr", WAYPOINT_MAGENTA, FIX_INK],
-        "text-halo-color": ["match", ["get", "kind"], "vor", "rgba(0,0,0,0)", "#ffffff"],
-        "text-halo-width": 1.5,
+        "text-color": ["match", ["get", "kind"], "vor", "#ffffff", "vfr", VFR_GREEN, FIX_INK],
+        "text-halo-color": ["match", ["get", "kind"], "vor", "rgba(0,0,0,0)", LABEL_HALO["text-halo-color"]],
+        "text-halo-width": LABEL_HALO["text-halo-width"],
       },
     },
   ];
@@ -62,8 +67,8 @@ const NONE_VORS: VorPin[] = [];
 const NONE_FIXES: FixPin[] = [];
 const FIX_ZOOM = 10;
 
-function point(kind: string, p: { ident: string; lat: number; lon: number }, key: string): GeoJSON.Feature {
-  return { type: "Feature", properties: { kind, ident: p.ident, key }, geometry: { type: "Point", coordinates: [p.lon, p.lat] } };
+function point(kind: string, p: { ident: string; lat: number; lon: number; freq?: string | null }, key: string): GeoJSON.Feature {
+  return { type: "Feature", properties: { kind, ident: p.ident, key, ...(p.freq ? { freq: p.freq } : {}) }, geometry: { type: "Point", coordinates: [p.lon, p.lat] } };
 }
 
 function usePictures(): boolean {

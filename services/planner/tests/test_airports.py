@@ -284,8 +284,22 @@ def test_the_airport_file_is_read_once_for_all_the_fields_in_view(monkeypatch):
     monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {})
     monkeypatch.setattr(faa_data, "military_fields", lambda cache_dir: calls.append("military") or {})
     monkeypatch.setattr(faa_data, "private_fields", lambda cache_dir: calls.append("private") or frozenset())
+    monkeypatch.setattr(faa_data, "towered_fields", lambda cache_dir: calls.append("towered") or frozenset())
     client.get("/api/airports/in-view", params={"south": 30, "west": -100, "north": 47, "east": -80})
-    assert sorted(calls) == ["military", "private"]
+    assert sorted(calls) == ["military", "private", "towered"]
+
+
+def test_a_field_with_a_control_tower_is_marked_towered(monkeypatch):
+    # From NASR's APT_BASE TWR_TYPE_CODE (wingtip.faa_data.towered_fields),
+    # by either ident: the sectional's blue airport symbol.
+    base = {**DULUTH, "kind": "small"}
+    fields = [{**base, "ident": "06C", "source_ident": "06C"}, {**base}]
+    monkeypatch.setattr(airports, "places_in", lambda *args, **kwargs: fields)
+    monkeypatch.setattr(weather, "reporting_idents", lambda: set())
+    monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {})
+    monkeypatch.setattr(faa_data, "towered_fields", lambda cache_dir: frozenset({"KDLH"}))
+    body = client.get("/api/airports/in-view", params={"south": 30, "west": -100, "north": 47, "east": -80}).json()
+    assert [(a["ident"], a["towered"]) for a in body["airports"]] == [("06C", False), ("KDLH", True)]
 
 
 def test_reporting_asks_for_the_fields_with_a_metar_alone(monkeypatch):
@@ -370,6 +384,7 @@ def test_the_nearest_fields_are_the_nearest_first_with_their_way_and_runway(monk
     body = client.get("/api/airports/nearest", params={"lat": 42.3, "lon": -88.1}).json()
     assert body["airports"][0] == {
         "ident": "C81", "name": "Campbell", "lat": 42.32, "lon": -88.07, "kind": "small", "flight_category": None, "primary_of": None,
+        "towered": False,
         "municipality": "Grayslake", "elevation_ft": 788.0, "distance_nm": 2.1, "bearing_deg": 45, "longest_runway_ft": 3573,
         "military": None, "private": False, "airspace_class": "G", "radio": {"kind": "CTAF", "mhz": 122.7},
     }

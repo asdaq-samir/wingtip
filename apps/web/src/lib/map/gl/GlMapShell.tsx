@@ -32,7 +32,11 @@ const PLACE_ZOOM = 9;
 /** Round a fit, over what the panel covers: a margin, and clear of the
  *  map's buttons at the sides (MapShell's). */
 export const FIT_MARGIN = { top: 30, bottom: 30, left: 30 + BUTTONS_CLEAR, right: 30 + BUTTONS_CLEAR };
-const flight = () => (prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 * 2);
+/** The map's first showing (GlMap's reveal): at the latest this long after
+ *  it is made, faded in over this long. */
+const REVEAL_LATEST_MS = 2500;
+const REVEAL_FADE_MS = 150;
+const flight = () =>(prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 * 2);
 
 interface Props {
   course: Course | null;
@@ -80,7 +84,12 @@ export default function GlMapShell({ course, focus, focusZoom, place, children }
     const style: StyleSpecification = {
       version: 8, sources: {},
       layers: SLOTS.map(s => ({ id: slotId(s), type: "background", layout: { visibility: "none" } })),
-      "font-faces": { Inter: [{ url: interUrl, "unicode-range": ["U+0000-00FF", "U+2000-206F"] }] },
+      // The same variable font under a second name: MapLibre draws a name
+      // with "Bold" in it at weight 700 (GL_FONT_BOLD, the chart's labels).
+      "font-faces": {
+        Inter: [{ url: interUrl, "unicode-range": ["U+0000-00FF", "U+2000-206F"] }],
+        "Inter Bold": [{ url: interUrl, "unicode-range": ["U+0000-00FF", "U+2000-206F"] }],
+      },
     };
     const m = new maplibregl.Map({
       container: box.current, style, center: [lon, lat], zoom: glZoom(last ? OPEN_ZOOM : COUNTRY_ZOOM),
@@ -119,7 +128,29 @@ export default function GlMapShell({ course, focus, focusZoom, place, children }
     m.on("moveend", () => { delete el.dataset.moving; say(); });
     m.on("idle", () => { el.dataset.layers = m.getStyle().layers.map(l => l.id).filter(id => !id.startsWith("slot-")).join(" "); });
     m.on("load", () => setMap(m));
-    return () => { setMap(null); m.remove(); };
+    // The map shown as one thing (the owner, 2026-11-07: the chart, then
+    // the rings, then the airports snapping on one by one): the canvas
+    // kept clear over the page's background until the map is first at
+    // rest with the chart's tiles drawn and the overlays' sources loaded,
+    // then faded in once; never longer than REVEAL_LATEST_MS, so a slow
+    // tile never leaves the map blank.
+    const canvas = m.getCanvas();
+    canvas.style.opacity = "0";
+    let chartIn = false;
+    const chartTile = (e: { sourceId?: string; tile?: unknown }) => { if (e.tile && e.sourceId?.startsWith("chart")) chartIn = true; };
+    const reveal = () => {
+      m.off("sourcedata", chartTile);
+      m.off("idle", rested);
+      window.clearTimeout(latest);
+      canvas.style.transition = prefersReducedMotion() ? "" : `opacity ${REVEAL_FADE_MS}ms ease-out`;
+      canvas.style.opacity = "1";
+      el.dataset.revealed = "";
+    };
+    const rested = () => { if (chartIn) reveal(); };
+    const latest = window.setTimeout(reveal, REVEAL_LATEST_MS);
+    m.on("sourcedata", chartTile);
+    m.on("idle", rested);
+    return () => { window.clearTimeout(latest); setMap(null); m.remove(); };
   }, [known, onTv]);
 
   // A remote has no pinch: its zoom keys zoom the map while it is focused

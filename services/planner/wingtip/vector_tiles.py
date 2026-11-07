@@ -26,6 +26,12 @@ FAA's own data set, its attributes the fields named below:
 - `navaids`: NASR's NAV_BASE.csv, read as wingtip.fixes reads it (in
   service, the kinds a route flies to).
 - `fixes`: NASR's FIX_BASE.csv, read as wingtip.fixes reads it, every row.
+- `runways`: each runway with both its ends surveyed, from APT_RWY.csv
+  (SITE_NO, RWY_ID, RWY_WIDTH in ft, SURFACE_TYPE_CODE) and
+  APT_RWY_END.csv (RWY_END_ID, LAT_DECIMAL/LONG_DECIMAL, the end's own
+  position): its surface as a polygon, its centreline, and a point at
+  each end with the end's number (09L) and true heading, for the close
+  zooms where the chart's own airport symbol is too coarse to land by.
 
 The tiles are made by tippecanoe (felt/tippecanoe, built into the
 planner's image at a pinned tag) into PMTiles, the single-file archive a
@@ -37,6 +43,7 @@ from __future__ import annotations
 import csv
 import json
 import logging
+import math
 import os
 import re
 import shutil
@@ -57,7 +64,7 @@ INDEX = "overlays.json"
 #: What the tiles hold and how, as a number: a change to a layer's
 #: attributes, zooms or tolerances bumps it, and the archive is built again
 #: under a new name (its address is kept a cycle by every cache).
-VERSION = 1
+VERSION = 2
 
 #: The zooms there are tiles of (XYZ zooms, 256-pixel tiles: MapLibre,
 #: whose tiles are 512, draws tile z at its own zoom z). From 4, a
@@ -109,8 +116,17 @@ NAVAID_MIN_ZOOM = 7
 #: (RNAV and approach fixes) closer in.
 CHARTED_FIX_MIN_ZOOM = 8
 FIX_MIN_ZOOM = 10
+#: Runways from zoom 10 (a tile 39 km across): the map draws them closer
+#: in, past the chart's own detail, where they are a few pixels wide.
+RUNWAY_MIN_ZOOM = 10
+#: Feet to metres, exactly (the international foot, 0.3048 m).
+FT_M = 0.3048
+#: WGS 84's equatorial radius, m: the local frame a runway's corners are
+#: put in (_runway_corners) is a plane tangent there, which over a
+#: 4-km runway is out by well under a centimetre.
+EARTH_M = 6_378_137.0
 
-LAYERS = ("airspace", "special_use", "airports", "navaids", "fixes")
+LAYERS = ("airspace", "special_use", "airports", "navaids", "fixes", "runways")
 ATTRIBUTION = "FAA NASR and special use airspace (ADDS), cycle {cycle}"
 
 #: NASR's SITE_TYPE_CODE (APT_BASE).
@@ -321,6 +337,71 @@ def fix_features(fix_path: Path, bbox=None):
             CHARTED_FIX_MIN_ZOOM if f["vfr"] or f["enroute_low"] else FIX_MIN_ZOOM)
 
 
+def _runway_corners(a, b, width_m: float) -> list[list[float]]:
+    """The four corners of a runway's surface, (lon, lat), from its two
+    ends' positions and its width: a rectangle along the line between the
+    ends, half the width each side, as a closed counter-clockwise ring
+    (RFC 7946). Worked in a plane tangent at the runway's middle."""
+    lat0 = math.radians((a[1] + b[1]) / 2)
+    east = lambda lon: math.radians(lon) * EARTH_M * math.cos(lat0)  # noqa: E731
+    north = lambda lat: math.radians(lat) * EARTH_M  # noqa: E731
+    ax, ay, bx, by = east(a[0]), north(a[1]), east(b[0]), north(b[1])
+    length = math.hypot(bx - ax, by - ay) or 1.0
+    # The unit normal to the runway, half its width long.
+    nx, ny = -(by - ay) / length * width_m / 2, (bx - ax) / length * width_m / 2
+    back = lambda x, y: [round(math.degrees(x / (EARTH_M * math.cos(lat0))), 7), round(math.degrees(y / EARTH_M), 7)]  # noqa: E731
+    ring = [back(ax - nx, ay - ny), back(bx - nx, by - ny), back(bx + nx, by + ny), back(ax + nx, ay + ny)]
+    if (ring[1][0] - ring[0][0]) * (ring[2][1] - ring[0][1]) - (ring[1][1] - ring[0][1]) * (ring[2][0] - ring[0][0]) < 0:
+        ring.reverse()
+    return [*ring, ring[0]]
+
+
+def _true_bearing(a, b) -> int:
+    """The initial great-circle bearing from a to b, (lon, lat), degrees
+    true: the heading of an airplane landing on a's end towards b."""
+    lat1, lat2, dlon = math.radians(a[1]), math.radians(b[1]), math.radians(b[0] - a[0])
+    y = math.sin(dlon) * math.cos(lat2)
+    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+    return round(math.degrees(math.atan2(y, x))) % 360
+
+
+def runway_features(rwy_path: Path, rwy_end_path: Path, bbox=None):
+    """The `runways` layer's lines: for each runway whose two ends NASR
+    surveys (APT_RWY_END LAT_DECIMAL/LONG_DECIMAL), its surface (`part`
+    surface, a polygon RWY_WIDTH wide), its centreline (`part`
+    centreline) and each end (`part` end: RWY_END_ID and the true heading
+    along the runway from it). Helipads (RWY_ID H1 and the like) and
+    runways with an end unsurveyed are left out: no shape is guessed."""
+    widths: dict[tuple[str, str], tuple[float | None, str]] = {}
+    for row in _rows(rwy_path):
+        key = ((row.get("SITE_NO") or "").strip(), (row.get("RWY_ID") or "").strip().upper())
+        widths[key] = (_number(row.get("RWY_WIDTH")), (row.get("SURFACE_TYPE_CODE") or "").strip().upper())
+    ends: dict[tuple[str, str], list[tuple[str, tuple[float, float]]]] = {}
+    for row in _rows(rwy_end_path):
+        key = ((row.get("SITE_NO") or "").strip(), (row.get("RWY_ID") or "").strip().upper())
+        lat, lon = _number(row.get("LAT_DECIMAL")), _number(row.get("LONG_DECIMAL"))
+        if not key[0] or key[1].startswith("H") or lat is None or lon is None:
+            continue
+        ends.setdefault(key, []).append(((row.get("RWY_END_ID") or "").strip().upper(), (lon, lat)))
+    for key, pair in ends.items():
+        if len(pair) != 2:
+            continue
+        (id_a, a), (id_b, b) = pair
+        box = (min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1]))
+        if not _meets(box, bbox):
+            continue
+        width_ft, surface = widths.get(key, (None, ""))
+        props = {"site_no": key[0], "runway": key[1], "width_ft": width_ft, "surface": surface,
+                 "hard": _hard(surface)}
+        ring = _runway_corners(a, b, (width_ft or 75) * FT_M)
+        yield _feature({**props, "part": "surface"}, json.dumps({"type": "Polygon", "coordinates": [ring]}), RUNWAY_MIN_ZOOM)
+        yield _feature({**props, "part": "centreline"},
+                       json.dumps({"type": "LineString", "coordinates": [list(a), list(b)]}), RUNWAY_MIN_ZOOM)
+        for end_id, here, there in ((id_a, a, b), (id_b, b, a)):
+            yield _feature({**props, "part": "end", "end_id": end_id, "heading": _true_bearing(here, there)},
+                           json.dumps({"type": "Point", "coordinates": list(here)}), RUNWAY_MIN_ZOOM)
+
+
 def write_layers(folder: Path, pack, *, apt_path: Path, rwy_path: Path | None, rwy_end_path: Path | None,
                  nav_path: Path, fix_path: Path, bbox=None) -> dict[str, int]:
     """Each layer's GeoJSON, a feature a line, into folder/<layer>.geojsonl;
@@ -331,6 +412,7 @@ def write_layers(folder: Path, pack, *, apt_path: Path, rwy_path: Path | None, r
         "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox),
         "navaids": navaid_features(nav_path, bbox),
         "fixes": fix_features(fix_path, bbox),
+        "runways": runway_features(rwy_path, rwy_end_path, bbox) if rwy_path and rwy_end_path else iter(()),
     }
     counts = {}
     for layer, lines in sources.items():
@@ -357,7 +439,7 @@ def tippecanoe_args(folder: Path, out: Path, cycle: str, tippecanoe: str = TIPPE
         "--detect-shared-borders", "--generate-ids", "--read-parallel",
         "--temporary-directory", str(folder),
         "--name", f"Wingtip FAA overlays {cycle}",
-        "--description", f"Airspace, special use, airports, navaids and fixes, FAA cycle {cycle}",
+        "--description", f"Airspace, special use, airports, navaids, fixes and runways, FAA cycle {cycle}",
         "--attribution", ATTRIBUTION.format(cycle=cycle),
     ]
     for layer in LAYERS:

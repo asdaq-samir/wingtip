@@ -15,7 +15,7 @@ import type { OverlayTiles } from "../api/types";
  */
 
 /** The archive's source layers (wingtip.vector_tiles.LAYERS). */
-export const OVERLAY_LAYERS = ["airspace", "special_use", "airports", "navaids", "fixes"] as const;
+export const OVERLAY_LAYERS = ["airspace", "special_use", "airports", "navaids", "fixes", "runways"] as const;
 export type OverlayLayer = (typeof OVERLAY_LAYERS)[number];
 
 /** MapLibre's addProtocol, as much of it as this needs: maplibre-gl itself

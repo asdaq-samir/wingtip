@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AirspaceVolume, ChartInfo } from "../../api/types";
-import { absoluteTiles, airspaceFeatures, airspaceLayers, chartStyle, glZoom } from "./glStyle";
+import { absoluteTiles, airspaceFeatures, airspaceLayers, chartPaint, chartStyle, DAY_CONTRAST, DAY_SATURATION, glZoom } from "./glStyle";
 
 const chart = {
   chart_cycle: "10-29-2026", chart_revision: 6, chart_tiles_base: null,
@@ -28,6 +28,13 @@ describe("chartStyle", () => {
     expect(style.layers[2]!.minzoom).toBe(glZoom(10));
   });
 
+  it("lifts the chart's contrast and colour by day, leaving the night and the sunlight as they were", () => {
+    expect(chartPaint(false, false)).toMatchObject({ "raster-contrast": DAY_CONTRAST, "raster-saturation": DAY_SATURATION });
+    expect([DAY_CONTRAST, DAY_SATURATION]).toEqual([0.1, 0.1]);
+    expect(chartPaint(true, false)).toMatchObject({ "raster-contrast": 0.13, "raster-saturation": 0, "raster-brightness-max": 0.5 });
+    expect(chartPaint(false, true)).toMatchObject({ "raster-contrast": 0.2, "raster-saturation": 0.2 });
+  });
+
   it("leaves a CDN's address as it is, and keeps the braces", () => {
     expect(absoluteTiles("https://cdn.test/c/sec/{z}/{x}/{y}.png?r=1", "https://wingtip.test")).toBe("https://cdn.test/c/sec/{z}/{x}/{y}.png?r=1");
   });
@@ -44,7 +51,7 @@ describe("airspaceFeatures", () => {
     // The one-point line is dropped: no line to draw.
     expect(features).toHaveLength(1);
     expect(features[0]!.geometry.coordinates).toEqual([[-87.9, 41.9], [-87.8, 42.0]]);
-    expect(features[0]!.properties).toEqual({ id: "ORD-B-1", cls: "B", label: "100/30" });
+    expect(features[0]!.properties).toEqual({ id: "ORD-B-1", cls: "B", label: "B: 100–30" });
   });
 
   it("draws each class from AirspaceLayer's zoom, the labels from 8", () => {

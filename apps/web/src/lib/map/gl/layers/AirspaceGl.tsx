@@ -1,16 +1,23 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AirspaceVolume } from "../../../api/types";
 import { usePreferences } from "../../../preferences";
 import { AirspaceCardBody, airspaceQuery } from "../../AirspaceCard";
-import { useGlData, useGlLayer, useGlMap, useGlTap } from "../glLayer";
-import { AIRSPACE_LINE_LAYERS, AIRSPACE_SOURCE, airspaceFeatures, airspaceLayers } from "../glStyle";
+import { addSvgImages, useGlData, useGlLayer, useGlMap, useGlTap } from "../glLayer";
+import { AIRSPACE_LINE_LAYERS, AIRSPACE_SOURCE, AIRSPACE_TAB, airspaceFeatures, airspaceLayers } from "../glStyle";
 import { useGlView } from "../useGlView";
 import { useGlProbe } from "../useGlProbe";
-import { GL_FONT, TAP } from "./common";
+import { GL_FONT_BOLD, TAP } from "./common";
 
 const SOURCES = { [AIRSPACE_SOURCE]: { type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] }, tolerance: 0.5 } };
-const LAYERS = airspaceLayers(GL_FONT);
+const LAYERS = airspaceLayers(GL_FONT_BOLD);
+/** The dark tab an airspace's altitudes sit in, as ForeFlight's: a
+ *  rounded box its corners kept as drawn, stretched to the text. */
+const TAB: [string, () => string, { inset: number }] = [
+  AIRSPACE_TAB,
+  () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.5" y="0.5" width="11" height="11" rx="3" fill="#1c2330" fill-opacity="0.9" stroke="#fff" stroke-width="1"/></svg>`,
+  { inset: 4 },
+];
 const NONE: AirspaceVolume[] = [];
 
 /**
@@ -31,7 +38,11 @@ export function AirspaceGl() {
   const { data } = useQuery({ ...query, placeholderData: keepPreviousData });
   const volumes = query.enabled ? data ?? NONE : NONE;
   useGlLayer("lines", SOURCES, LAYERS);
-  const features = useMemo(() => airspaceFeatures(volumes), [volumes]);
+  const { map } = useGlMap();
+  // The tab's picture first, then the lines that wear it.
+  const [ready, setReady] = useState(false);
+  useEffect(() => { void addSvgImages(map, [TAB]).then(() => setReady(true)); }, [map]);
+  const features = useMemo(() => (ready ? airspaceFeatures(volumes) : null), [ready, volumes]);
   useGlData(AIRSPACE_SOURCE, features);
   // What is drawn, for the specs and the load log (AirspaceLinesCanvas' and
   // AirspaceLabelsCanvas' records were these).

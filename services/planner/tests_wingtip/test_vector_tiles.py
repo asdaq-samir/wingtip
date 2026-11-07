@@ -56,9 +56,9 @@ APT_BASE = [
      "ELEV": "720", "ARPT_STATUS": "CI", "FUEL_TYPES": "", "TWR_TYPE_CODE": "NON-ATCT"},
 ]
 APT_RWY = [
-    {"SITE_NO": "04508.", "RWY_ID": "04L/22R", "RWY_LEN": "7500", "SURFACE_TYPE_CODE": "ASPH"},
+    {"SITE_NO": "04508.", "RWY_ID": "04L/22R", "RWY_LEN": "7500", "SURFACE_TYPE_CODE": "ASPH", "RWY_WIDTH": "150"},
     {"SITE_NO": "04508.", "RWY_ID": "09C/27C", "RWY_LEN": "11245", "SURFACE_TYPE_CODE": "CONC"},
-    {"SITE_NO": "04508.", "RWY_ID": "10L/28R", "RWY_LEN": "13000", "SURFACE_TYPE_CODE": "ASPH-CONC"},
+    {"SITE_NO": "04508.", "RWY_ID": "10L/28R", "RWY_LEN": "13000", "SURFACE_TYPE_CODE": "ASPH-CONC", "RWY_WIDTH": "150"},
     {"SITE_NO": "04508.", "RWY_ID": "10X", "RWY_LEN": "0", "SURFACE_TYPE_CODE": ""},
     {"SITE_NO": "04508.", "RWY_ID": "H1", "RWY_LEN": "200", "SURFACE_TYPE_CODE": "CONC"},
     {"SITE_NO": "04518.8", "RWY_ID": "11/29", "RWY_LEN": "3800", "SURFACE_TYPE_CODE": "CONC"},
@@ -67,9 +67,14 @@ APT_RWY = [
     {"SITE_NO": "04382.4", "RWY_ID": "H1", "RWY_LEN": "50", "SURFACE_TYPE_CODE": "CONC"},
 ]
 APT_RWY_END = [
-    {"SITE_NO": "04508.", "RWY_ID": "10L/28R", "RWY_END_ID": "10L", "TRUE_ALIGNMENT": "90"},
-    {"SITE_NO": "04508.", "RWY_ID": "10L/28R", "RWY_END_ID": "28R", "TRUE_ALIGNMENT": "270"},
-    {"SITE_NO": "04518.8", "RWY_ID": "11/29", "RWY_END_ID": "11", "TRUE_ALIGNMENT": ""},
+    {"SITE_NO": "04508.", "RWY_ID": "10L/28R", "RWY_END_ID": "10L", "TRUE_ALIGNMENT": "90",
+     "LAT_DECIMAL": "41.96899488", "LONG_DECIMAL": "-87.93153172"},
+    {"SITE_NO": "04508.", "RWY_ID": "10L/28R", "RWY_END_ID": "28R", "TRUE_ALIGNMENT": "270",
+     "LAT_DECIMAL": "41.96907025", "LONG_DECIMAL": "-87.883729"},
+    # 06C's 11 with its position, 29 without: a runway with an end
+    # unsurveyed is no shape.
+    {"SITE_NO": "04518.8", "RWY_ID": "11/29", "RWY_END_ID": "11", "TRUE_ALIGNMENT": "",
+     "LAT_DECIMAL": "41.99070305", "LONG_DECIMAL": "-88.10798888"},
 ]
 NAV_BASE = [
     {"NAV_ID": "DPA", "NAV_TYPE": "VOR/DME", "NAME": "DUPAGE", "NAV_STATUS": "OPERATIONAL RESTRICTED",
@@ -189,6 +194,34 @@ def test_the_airports_as_nasr_files_them(sources):
     assert {k: f["tippecanoe"]["minzoom"] for k, f in found.items()} == {"ORD": 5, "06C": 6, "LL22": 9, "7IL4": 10}
 
 
+def test_the_runways_from_their_surveyed_ends(sources):
+    """O'Hare's 10L/28R as NASR surveys it: its 150-ft surface between
+    its two ends, its centreline, and each end numbered and headed along
+    it; 06C's 11/29, with one end unsurveyed, is left out."""
+    _, nasr = sources
+    found = _lines(vector_tiles.runway_features(nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv"))
+    assert {f["properties"]["runway"] for f in found} == {"10L/28R"}
+    parts = {f["properties"]["part"]: f for f in found if f["properties"]["part"] != "end"}
+    ends = {f["properties"]["end_id"]: f for f in found if f["properties"]["part"] == "end"}
+    assert set(parts) == {"surface", "centreline"} and set(ends) == {"10L", "28R"}
+    assert all(f["tippecanoe"]["minzoom"] == vector_tiles.RUNWAY_MIN_ZOOM for f in found)
+    assert parts["surface"]["properties"] == {
+        "site_no": "04508.", "runway": "10L/28R", "width_ft": 150.0, "surface": "ASPH-CONC", "hard": True,
+        "part": "surface"}
+    assert ends["10L"]["geometry"]["coordinates"] == [-87.93153172, 41.96899488]
+    # Landing on 10L is flying east, 28R west: NASR's TRUE_ALIGNMENT 90 and 270.
+    assert ends["10L"]["properties"]["heading"] == 90 and ends["28R"]["properties"]["heading"] == 270
+    # The surface is 150 ft wide (its area over the centreline's length,
+    # both in metres) and its outer ring counter-clockwise (RFC 7946).
+    ring = parts["surface"]["geometry"]["coordinates"][0]
+    assert len(ring) == 5 and ring[0] == ring[-1]
+    assert shapely.Polygon(ring).exterior.is_ccw
+    kx, ky = 111_320 * math.cos(math.radians(41.969)), 110_574
+    area = shapely.Polygon([(x * kx, y * ky) for x, y in ring]).area
+    length = shapely.LineString([(x * kx, y * ky) for x, y in parts["centreline"]["geometry"]["coordinates"]]).length
+    assert area / length == pytest.approx(150 * 0.3048, rel=0.01)
+
+
 @pytest.mark.parametrize(("surface", "hard"), [
     ("ASPH", True), ("CONC", True), ("ASPH-CONC", True), ("ASPH-TRTD", True), ("PEM", True),
     ("ASPH-TURF", False), ("TURF", False), ("GRVL", False), ("TRTD", False), ("WATER", False), ("", False),
@@ -274,7 +307,7 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     pack, nasr = sources
     assert {layer["name"]: layer["features"] for layer in index["layers"]} == {
         "airspace": len(list(vector_tiles.airspace_features(pack, BBOX))), "special_use": 1, "airports": 4,
-        "navaids": 2, "fixes": 4}
+        "navaids": 2, "fixes": 4, "runways": 4}
 
 
 @NEEDS_TIPPECANOE

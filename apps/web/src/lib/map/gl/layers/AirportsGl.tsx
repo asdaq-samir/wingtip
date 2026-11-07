@@ -4,14 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../api/client";
 import type { AirportPin } from "../../../api/types";
 import { usePreferences } from "../../../preferences";
-import { airportMarkSvg } from "../../airportMark";
+import { sectionalAirportSvg, TOWERED_BLUE, UNTOWERED_MAGENTA } from "../../airportMark";
 import { airportsQuery } from "../../airportsQuery";
 import { colourOf } from "../../flightCategory";
 import { addSvgImages, useGlData, useGlLayer, useGlMap, useGlMiss, useGlTap } from "../glLayer";
 import { glZoom } from "../glStyle";
 import { useGlView } from "../useGlView";
 import { useGlProbe } from "../useGlProbe";
-import { GL_FONT, TAP } from "./common";
+import { GL_FONT_BOLD, LABEL_HALO, TAP } from "./common";
 
 /** AirportsLayer's zooms, Leaflet's: every field from 8, the reporting
  *  ones from 4, each kind from its own (SHOWN_FROM), a field with no
@@ -37,27 +37,33 @@ const SELECTED = "airport-selected";
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
 const SOURCES = { [SOURCE]: empty(), [SELECTED]: empty() };
 
-const markId = (space: string | null, weather: string, use: string | null) => `apt|${space ?? ""}|${weather}|${use ?? ""}`;
+const markId = (towered: boolean, kind: string, weather: string | null, use: string | null) => `apt|${towered ? "t" : "u"}|${kind}|${weather ?? ""}|${use ?? ""}`;
 
 const MARKS: SymbolLayerSpecification = {
   id: "airports", type: "symbol", source: SOURCE,
   layout: {
     "icon-image": ["get", "icon"],
+    // Smaller out at a state's width, a field's own size closer in: the
+    // small fields don't crowd the chart, and the size follows a pinch
+    // frame by frame (a zoom expression, not the page's state).
+    "icon-size": ["interpolate", ["linear"], ["zoom"], glZoom(FARTHEST_ZOOM), 0.7, glZoom(10), 1, glZoom(13), 1.25],
     "icon-allow-overlap": false,
     // Out at a few states, a mark's room is AirportsLayer's 80 px apart;
     // closer in, its own: every field at a field's own scale.
     "icon-padding": ["step", ["zoom"], 27, glZoom(REPORTING_FROM_ZOOM), 2],
     "symbol-sort-key": ["get", "rank"],
     "text-field": ["get", "ident"],
-    "text-font": GL_FONT,
-    "text-size": 11,
+    "text-font": GL_FONT_BOLD,
+    "text-size": ["interpolate", ["linear"], ["zoom"], glZoom(FARTHEST_ZOOM), 10, glZoom(10), 12, glZoom(13), 13],
     "text-anchor": "left",
-    "text-offset": [1.3, 0],
+    "text-offset": [0.9, 0],
     // The ident gives way, the mark stays: a busy area keeps its fields.
     "text-optional": true,
     "text-padding": 1,
   },
-  paint: { "text-color": "#1c1a17", "text-halo-color": "#ffffff", "text-halo-width": 1.75 },
+  // The ident in its field's ink, as the sectional sets an airport's name
+  // in the symbol's colour (Chart User's Guide, Airports).
+  paint: { "text-color": ["case", ["get", "towered"], TOWERED_BLUE, UNTOWERED_MAGENTA], ...LABEL_HALO },
 };
 /** The ring round the field whose card is open (icons.ts selectionIcon). */
 const RING: CircleLayerSpecification = {
@@ -69,9 +75,10 @@ const RING: CircleLayerSpecification = {
  * The chart's airports, as AirportsLayer draws them on the Leaflet map:
  * the same questions for the view (airportsQuery) and along the route,
  * the same zooms and filters (military, private), each field's mark in
- * its airspace's ring with its weather in the middle (airportMark's own
- * SVG), its ident beside it -- as one symbol layer, kept apart by
- * MapLibre's collision. A tap within a finger's reach opens its card.
+ * the sectional's symbology (sectionalAirportSvg: blue towered, magenta
+ * not, a private field's R), its weather a pip beside it, its ident in
+ * bold beside it -- as one symbol layer, kept apart by MapLibre's
+ * collision. A tap within a finger's reach opens its card.
  */
 export function AirportsGl({ selected, onSelect, others, route }: {
   selected: { ident: string; lat: number; lon: number } | null;
@@ -111,9 +118,11 @@ export function AirportsGl({ selected, onSelect, others, route }: {
     const feats: GeoJSON.Feature[] = marks.map(a => {
       const weather = colourOf(a.flight_category);
       const use = a.military === "military" ? "military" : a.private ? "private" : null;
-      const icon = markId(a.airspace_class ?? null, weather, use);
-      looks.set(icon, () => airportMarkSvg(a.airspace_class ?? null, weather, use, ""));
-      return { type: "Feature", properties: { ident: a.ident, icon, rank: rankOf(a), space: a.airspace_class ?? "", use: use ?? "", weather }, geometry: { type: "Point", coordinates: [a.lon, a.lat] } };
+      const towered = !!a.towered;
+      const pip = a.flight_category ? weather : null;
+      const icon = markId(towered, a.kind, pip, use);
+      looks.set(icon, () => sectionalAirportSvg(towered, a.kind, use, pip));
+      return { type: "Feature", properties: { ident: a.ident, icon, rank: rankOf(a), towered, space: a.airspace_class ?? "", use: use ?? "", weather }, geometry: { type: "Point", coordinates: [a.lon, a.lat] } };
     });
     void addSvgImages(map, looks).then(() => { if (live) setFeatures({ type: "FeatureCollection", features: feats }); });
     return () => { live = false; };

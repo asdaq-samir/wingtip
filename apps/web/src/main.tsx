@@ -6,7 +6,7 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, Navigate, redirect, RouterProvider } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { chartQuery, courseQuery, queryClient } from "./lib/queryClient";
+import { chartQuery, courseQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";
 import { routeOf, stopsOf } from "./lib/identSchema";
 import AppToaster from "./components/AppToaster";
 import { BrandLook } from "./lib/brand";
@@ -162,6 +162,8 @@ const router = createBrowserRouter(
 // The chart the map is drawn on, asked for now too: a map with no route
 // waits on nothing else (and draws from the last answer kept, meanwhile).
 void queryClient.prefetchQuery({ ...chartQuery, meta: { silent: true } });
+// And the overlay tiles' archive's name, for the map's vector source.
+void queryClient.prefetchQuery(overlayTilesQuery);
 
 const opening = new URLSearchParams(window.location.search);
 const openingDep = opening.get("dep")?.trim().toUpperCase();

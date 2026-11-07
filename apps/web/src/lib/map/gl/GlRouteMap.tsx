@@ -9,6 +9,7 @@ import GlMapShell from "./GlMapShell";
 import { AirportsGl } from "./layers/AirportsGl";
 import { AirspaceGl } from "./layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "./layers/BaseGl";
+import { RunwaysGl } from "./layers/RunwaysGl";
 import { ChartGl } from "./layers/ChartGl";
 import { AheadGl, ClassBGl } from "./layers/MarksGl";
 import { NavaidsGl, WaypointsGl } from "./layers/NavaidsGl";
@@ -103,6 +104,7 @@ function Layers(p: GlRouteMapProps) {
       <LandWaterGl />
       <ChartGl course={course} previewing={previewing} />
       <OverlayGl />
+      <RunwaysGl />
       <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />
       <TfrGl />
       <AirspaceGl />
