@@ -15,7 +15,7 @@ import org.springframework.util.unit.DataSize;
 /**
  * HTTPS is on only for a keystore that is a readable file. A blank
  * setting -- the default, and AWS's -- resolved to the working
- * directory, passed both old gates, and the webapp failed to start.
+ * directory, passed both old gates, and the gateway failed to start.
  */
 class HttpsConnectorConfigTest {
 
@@ -40,12 +40,12 @@ class HttpsConnectorConfigTest {
     @Test
     void aDirectoryOrAMissingFileIsThePlainPortAlone() {
         assertThat(connectorsFor(dir.toString())).isEmpty();
-        assertThat(connectorsFor(dir.resolve("webapp.p12").toString())).isEmpty();
+        assertThat(connectorsFor(dir.resolve("gateway.p12").toString())).isEmpty();
     }
 
     @Test
     void aReadableFileIsAnHttpsConnector() throws IOException {
-        Path keystore = Files.writeString(dir.resolve("webapp.p12"), "not checked until Tomcat starts");
+        Path keystore = Files.writeString(dir.resolve("gateway.p12"), "not checked until Tomcat starts");
         assertThat(connectorsFor(keystore.toString())).singleElement()
                 .satisfies(connector -> assertThat(connector.getScheme()).isEqualTo("https"));
     }
@@ -54,7 +54,7 @@ class HttpsConnectorConfigTest {
     void theHttpsConnectorCompressesAsThePlainPortDoes() throws IOException {
         // server.compression is set on the connector Spring Boot makes; this
         // one is added, so it is given the same: JSON over 1 KB gzipped.
-        Path keystore = Files.writeString(dir.resolve("webapp.p12"), "not checked until Tomcat starts");
+        Path keystore = Files.writeString(dir.resolve("gateway.p12"), "not checked until Tomcat starts");
         Connector connector = connectorsFor(keystore.toString()).getFirst();
         assertThat(connector.getProperty("compression")).isEqualTo("on");
         assertThat(String.valueOf(connector.getProperty("compressibleMimeType"))).contains("application/json");
