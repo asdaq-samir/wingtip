@@ -172,7 +172,7 @@ class Settings(BaseSettings):
     #: The compose stack's dev-services sidecar; None everywhere else.
     dev_services_url: str | None = None
     #: The webapp's address, for the status page's health probe.
-    webapp_url: str = "http://webapp:8080"
+    webapp_url: str = "http://gateway:8080"
     #: The FAA SWIM subscription (app.swim_reader): the broker, the account, and the CA store.
     #: A feed is read only where all of host, username, password and its own VPN and queue are set.
     swim_host: str | None = None
