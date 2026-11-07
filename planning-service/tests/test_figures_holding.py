@@ -1,4 +1,4 @@
-"""web/src/lib/holding.test.ts's cases for app.figures.holding, by AIM
+"""web/src/lib/holdEntry.test.ts's cases for app.figures.holding, by AIM
 5-3-8's sectors, and HoldingPage's words."""
 import pytest
 

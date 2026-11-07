@@ -22,7 +22,7 @@ export function InlineField({ label, testId, widest, tabular = false, placeholde
    *  after it: the input's own placeholder shows only while it is empty,
    *  which a fixed start never is. Room kept for it, as for the example. */
   hint?: { start: string; words: string };
-  /** The first-run tip pointed at it (lib/tips). */
+  /** The first-run tip pointed at it (lib/firstRunTips). */
   tip?: string;
   /** The room kept at its end for its button, so the field does not
    *  widen as one comes: none where it has none (the airplane's, since

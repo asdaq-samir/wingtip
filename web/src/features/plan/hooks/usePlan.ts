@@ -85,7 +85,7 @@ export interface PlanParams {
   /** Minutes on the ground at the stops ("KJVL:45"); one not named, the
    *  planner's 30. */
   ground?: string;
-  /** The pilot's holds ("VPBNG:270:R:1M:2T", lib/holds). */
+  /** The pilot's holds ("VPBNG:270:R:1M:2T", lib/routeHolds). */
   holds?: string;
   /** Checkpoints between the route's points, as the map shows them (the
    *  settings' Waypoints): without, the nav log runs point to point and

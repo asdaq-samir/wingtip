@@ -5,7 +5,7 @@ import PaidPrompt from "../../components/PaidPrompt";
 import type { PaidFeature } from "../../lib/api/types";
 import { PRICE, standing, subscriptionQuery } from "../../lib/subscription";
 import { TEXT } from "../../lib/text";
-import { FINDING_TONE } from "../../lib/status";
+import { FINDING_TONE } from "../../lib/findings";
 
 /** Each Claude-written feature's month, as the row names it. */
 const COUNTED: Record<PaidFeature, string> = {

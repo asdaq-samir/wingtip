@@ -2,13 +2,13 @@ import { useCallback, useState } from "react";
 import { api } from "../../../lib/api/client";
 import { positionNow } from "../../../lib/map/ownShip";
 import { usePreferences } from "../../../lib/preferences";
-import { FIRST_FLIGHT, unseen, useTips } from "../../../lib/tips";
+import { FIRST_FLIGHT, unseen, useTips } from "../../../lib/firstRunTips";
 import type { RouteParts } from "../components/RouteBox";
 
 /**
  * The first flight's card (FirstFlight): offered the first time the app
  * opens with no route on this device, and gone for good once it has
- * planned one or been closed -- kept as the tips are (lib/tips), one key
+ * planned one or been closed -- kept as the tips are (lib/firstRunTips), one key
  * among them, so Settings' Tips brings it back with the rest.
  *
  * Plan it plans to the destination from where the pilot is -- own ship's

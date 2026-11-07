@@ -17,7 +17,7 @@ import type { RouteParts } from "./RouteBox";
  * search bar use (useAirportSearch, through PanelCapsule's field and
  * results), Plan it, and the three steps under it -- Route, Nav log,
  * Brief. Planned, the card is gone for good, the nav log opens and one
- * tip points at the Brief (lib/tips "brief"). Where the app has no
+ * tip points at the Brief (lib/firstRunTips "brief"). Where the app has no
  * position and no last departure, a second field asks where from.
  */
 export default function FirstFlight({ routed, onPlan, onPlanned }: {

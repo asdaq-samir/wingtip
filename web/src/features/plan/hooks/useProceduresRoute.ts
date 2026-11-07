@@ -14,7 +14,7 @@ import { reportedWind, type ReportedWind } from "../format";
 import type { EditedPoint, PointAltitude } from "../components/PointAltitudeDialog";
 import type { HoldAt } from "../components/HoldSheet";
 import { useFuelStops } from "./useFuelStops";
-import type { Hold } from "../../../lib/holds";
+import type { Hold } from "../../../lib/routeHolds";
 import { legOf, type NavLogRow } from "../components/navlog/rows";
 import { callEngine } from "../../../lib/engine/engine";
 import type { Landing } from "../components/procedures/PatternChips";
@@ -189,7 +189,7 @@ export interface ProceduresRouteProps {
   /** The pilot's own point off one of the route's, flown over after it
    *  (FixFromDialog): "VPBNG/090/30". */
   onCreateFix: (after: string, ident: string) => void;
-  /** The pilot's holds (lib/holds), each its own row after its point, and
+  /** The pilot's holds (lib/routeHolds), each its own row after its point, and
    *  one set, changed or (null) taken off (HoldSheet). */
   holds: Hold[];
   onHoldSet: (fix: string, hold: Hold | null) => void;

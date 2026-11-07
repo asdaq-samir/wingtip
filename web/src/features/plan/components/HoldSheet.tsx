@@ -7,8 +7,8 @@ import PullDown from "../../../components/PullDown";
 import Segmented from "../../../components/Segmented";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
-import { lengthCode, lengthOfCode, lengthWords, type Hold } from "../../../lib/holds";
-import { legMinutes } from "../../../lib/holding";
+import { lengthCode, lengthOfCode, lengthWords, type Hold } from "../../../lib/routeHolds";
+import { legMinutes } from "../../../lib/holdEntry";
 import { bearing } from "../../../lib/units";
 import { TEXT } from "../../../lib/text";
 
@@ -32,7 +32,7 @@ const LENGTHS = ["1T", "2T", "3T", "4T", "10M", "15M", "20M", "30M"];
  * pilot-defined holds are, at the owner's ask ("create a left/right
  * hold", mock 4 of the canvas's holds): the course, inbound or outbound;
  * the turns, right (the standard pattern) or left; the legs by time --
- * a minute at or below 14,000 ft, a minute and a half above (lib/holding's
+ * a minute at or below 14,000 ft, a minute and a half above (lib/holdEntry's
  * legMinutes) -- or distance; and how long, in turns or minutes. The planner works
  * out the entry from the course flown to it, and adds the hold's time
  * and fuel to the flight's (plan.with_holds). A card in the map's panel

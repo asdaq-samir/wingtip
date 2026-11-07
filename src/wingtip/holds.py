@@ -38,7 +38,7 @@ class Hold:
 def parse(text: str) -> Hold | None:
     """One hold as the address writes it, or None where it is not one: the
     engine's reading (wingtip_engine::route::holds), the one the web app's
-    lib/holds and the phones ask too."""
+    lib/routeHolds and the phones ask too."""
     read = json.loads(wingtip_native.call("hold_read", json.dumps({"text": text})))
     return None if read is None else _hold(read)
 

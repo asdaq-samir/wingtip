@@ -352,7 +352,7 @@ export function PillSection({ title, onMore, beside, right, children, testId }: 
  *  section it came from -- no Back on the left, at the owner's ask
  *  ("remove the back buttons, because close button should behave as the
  *  back button", 2026-10-22). It is a device's Back too (lib/openCards,
- *  lib/back), as a card's close is: Android's Back put the sheet down and
+ *  lib/backNavigation), as a card's close is: Android's Back put the sheet down and
  *  left the list open. */
 export function ListPageHead({ title, backLabel, onBack, action, testId }: {
   title: string;

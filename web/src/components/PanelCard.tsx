@@ -89,7 +89,7 @@ export function CardHead({ name, line, nameTestId, lineClassName, lineTestId, on
 }
 
 /**
- * A card's close, kept for a device's Back (lib/openCards, lib/back) and
+ * A card's close, kept for a device's Back (lib/openCards, lib/backNavigation) and
  * the minimized tab bar's Back (TabBar) while the card is open -- and never
  * drawn, at the owner's ask: "Close should not be anywhere except the top
  * right corner of the card inline with label; when tabs labels appear,

@@ -22,7 +22,7 @@ import kotlin.math.roundToInt
  * is held on the JVM (StripDataTest).
  */
 
-/** A finding, as the engine's go / no-go names them (lib/status). */
+/** A finding, as the engine's go / no-go names them (lib/findings). */
 enum class Finding { OK, CAUTION, STOP, UNKNOWN, PENDING }
 
 /** The verdict over the flight, in the Brief's words (the engine's

@@ -23,7 +23,7 @@ import QueryState from "../../components/QueryState";
 import InstructorPage from "./InstructorPage";
 import { localDay } from "../../lib/clock";
 import { said } from "../../lib/endorsements";
-import { FINDING_TONE } from "../../lib/status";
+import { FINDING_TONE } from "../../lib/findings";
 import { currencyQuery, trainingQuery } from "../../lib/queryClient";
 import { EditToggle, RemoveMinus } from "../../components/Favorites";
 import { SwipeToDelete } from "../../components/SwipeToDelete";

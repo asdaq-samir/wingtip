@@ -14,7 +14,7 @@ import type { ExperienceItem, Training } from "../../lib/api/types";
 import { acsCodesIn, lookUp } from "../../lib/checkride";
 import { useAcsTable } from "../../lib/useAcsTable";
 import { TEXT } from "../../lib/text";
-import { FINDING_TONE } from "../../lib/status";
+import { FINDING_TONE } from "../../lib/findings";
 import { inForce, reviewRoute, reviewState, said } from "../../lib/endorsements";
 import { GoodTo, SignedRow } from "./Endorsements";
 import ConsoleClose from "../../components/ConsoleClose";

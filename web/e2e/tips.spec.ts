@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { consolePage, controlsInSight, openSetup, settle, slow } from "./helpers";
 
 /**
- * The first-run tips (lib/tips, TipHost): one at a time beside the
+ * The first-run tips (lib/firstRunTips, TipHost): one at a time beside the
  * control it is about, once in sight, each said once on this device, and
  * offered again from Settings. The suite's session has them all seen;
  * this spec starts with none seen, once, so a reload keeps what it saw.

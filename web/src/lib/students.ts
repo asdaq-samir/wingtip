@@ -12,7 +12,7 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import type { CrossCountryReview, Instructor, StudentRow } from "./api/types";
 import { reviewRoute, said } from "./endorsements";
 import { riskLine } from "./frat";
-import type { Finding } from "./status";
+import type { Finding } from "./findings";
 
 /** A 14 CFR 61.87(n) solo endorsement is good for 90 days; one lapsing
  *  within this many days, or lapsed, wants the instructor. */

@@ -4,7 +4,7 @@ import { OctagonAlert, TriangleAlert } from "lucide-react";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
 import { passLine, type SuaWhen, type TfrWhen } from "../../../../lib/passTimes";
-import { FINDING_TONE, type Finding } from "../../../../lib/status";
+import { FINDING_TONE, type Finding } from "../../../../lib/findings";
 
 // The small pieces the briefing's parts share (FlightBriefingView).
 

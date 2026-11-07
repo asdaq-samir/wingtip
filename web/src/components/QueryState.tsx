@@ -1,7 +1,7 @@
 import { cn } from "cn";
 import { Skeleton } from "./ui/skeleton";
 import { ListRow } from "./GroupedList";
-import { FINDING_TONE } from "../lib/status";
+import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
 
 /** What a query says of itself (TanStack Query's own flags). */

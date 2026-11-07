@@ -6,7 +6,7 @@ the legs in the wind -- each worked out by the engine
 planner and the phones share. Only the dicts the router reads are made
 here.
 
-web/src/lib/holding.ts asks the same engine (its WebAssembly, by the
+web/src/lib/holdEntry.ts asks the same engine (its WebAssembly, by the
 rule's name); the words of features/pilot/HoldingPage.tsx change with the
 engine's."""
 import json

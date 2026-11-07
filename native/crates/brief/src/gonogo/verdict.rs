@@ -9,7 +9,7 @@
 //! the planner's; the decision is the pilot in command's (14 CFR 91.3),
 //! and the line says so.
 //!
-//! A finding (lib/status) is "ok", "caution", "stop", "unknown" or
+//! A finding (lib/findings) is "ok", "caution", "stop", "unknown" or
 //! "pending". Strings are taken as JavaScript takes them: one empty or
 //! absent is not said.
 
@@ -17,7 +17,7 @@ use super::{said, strings};
 use crate::figures::words::{js_num, one};
 use crate::json;
 
-/// The worst first (lib/status worstOf): a stop over a caution over not
+/// The worst first (lib/findings worstOf): a stop over a caution over not
 /// known over still pending over nothing found.
 pub const WORST_FIRST: [&str; 4] = ["stop", "caution", "unknown", "pending"];
 

@@ -12,7 +12,7 @@ import { nextFocus } from "../../../../lib/oral";
 import { pilotQuery, trainingQuery } from "../../../../lib/queryClient";
 import { TEXT } from "../../../../lib/text";
 import { useAcsTable } from "../../../../lib/useAcsTable";
-import { FINDING_TONE } from "../../../../lib/status";
+import { FINDING_TONE } from "../../../../lib/findings";
 import { Spinner } from "../../../../components/ui/spinner";
 
 const VERDICT: Record<OralGrade["verdict"], { words: string; tone: "up" | "checking" | "down" }> = {

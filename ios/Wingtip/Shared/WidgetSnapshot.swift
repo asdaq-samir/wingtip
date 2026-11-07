@@ -18,7 +18,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var eteMin: Double?
     var fuelGal: Double?
     /// The Brief's verdict as the planner finds it -- "ok", "caution",
-    /// "stop" or "pending" (the web's lib/status) -- and its words; nil
+    /// "stop" or "pending" (the web's lib/findings) -- and its words; nil
     /// where none has been asked for this route.
     var verdict: String?
     var verdictWords: String?

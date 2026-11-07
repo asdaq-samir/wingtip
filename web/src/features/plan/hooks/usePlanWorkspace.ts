@@ -36,7 +36,7 @@ import type { FitInputs, ProcedureAirport, ProceduresAt } from "../components/Pr
 import { useLoad } from "./useLoad";
 import { departurePattern, patternsOf, patternsParam, trafficPattern, type TrafficPattern } from "../../../lib/trafficPattern";
 import { approachRunway, proceduresOf, proceduresParam, sameField, transitionWords, typedProcedure, type PickedProcedure, type TypedProcedure } from "../../../lib/procedures";
-import { holdsOf, holdsParam, type Hold } from "../../../lib/holds";
+import { holdsOf, holdsParam, type Hold } from "../../../lib/routeHolds";
 import { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists, renamedFieldLists } from "../../../lib/fieldLists";
 import { picksOf, planHrefOf, recentHrefOf } from "../../../lib/flightLink";
 import { runwayNumber } from "../../../lib/pattern";
@@ -63,7 +63,7 @@ import { navlogQuery, usePlan, type PlanParams } from "./usePlan";
 import { useVerdict, type VerdictItem } from "../../../lib/verdict";
 import { mayUse, useEntitlement } from "../../../lib/subscription";
 import { flightLevel, grouped } from "../../../lib/units";
-import type { WorkspaceProps } from "../../page/workspace";
+import type { WorkspaceProps } from "../../shell/workspace";
 import { loadRoutePanel, prefetchPilotPanel } from "../routePanelParts";
 
 /** No ways on the chart: one array for good, so the map's memo holds. */
@@ -291,7 +291,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const groundParamText = searchParams.get("ground");
   const ground = useMemo(() => groundOf(groundParamText), [groundParamText]);
   const groundText = altitudesParam(ground);
-  // The pilot's holds (`holds`, lib/holds), each flown on the leg leaving
+  // The pilot's holds (`holds`, lib/routeHolds), each flown on the leg leaving
   // its point (plan.with_holds), set from a point's menu in FPL's list.
   const holdsParamText = searchParams.get("holds");
   const holds = useMemo(() => holdsOf(holdsParamText), [holdsParamText]);
@@ -1484,7 +1484,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     setSearchParams(prev => patched(prev, { lesson: null }), { replace: true });
   }, [setSearchParams]);
   // Each written in place of the address's last, as every panel change is
-  // (lib/back): they pushed onto the history, the browser's Back stepping
+  // (lib/backNavigation): they pushed onto the history, the browser's Back stepping
   // through Saved and Nearest alone of the lists.
   const openSaved = useCallback(() => {
     setSearchParams(prev => {

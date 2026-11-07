@@ -1,7 +1,7 @@
 //! The four pilot pages' figures (wingtip_engine::figures), held to the
 //! cases the planner's tests hold app.figures to (planning-service/tests/
 //! test_figures_*.py), themselves the web's lib/debrief, lib/diversion,
-//! lib/holding and lib/lostComms tests.
+//! lib/holdEntry and lib/lostComms tests.
 
 use serde_json::Value;
 use wingtip_engine::figures::debrief::{self, Checkpoint, Point};
