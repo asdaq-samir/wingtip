@@ -399,9 +399,11 @@ jobs:
               # the shared fixtures the engine's rules are tested against
               # (test_flight_rules.py and the rest)
               - web/src/lib/fixtures/**
-              # test_dockerfiles.py: every image's wingtip-native stage
+              # test_dockerfiles.py: every image's Dockerfile, the base
+              # they are built FROM, and the compose file that builds it
               - '*/Dockerfile'
               - docker/Dockerfile.*
+              - docker-compose.yml
               # test_dev_services_sidecar.py
               - docker/dev-services/**
             test-web:
@@ -456,27 +458,34 @@ jobs:
             # Javadoc; each Python suite's job makes its pdoc.
             docs:
               - springboot-app/**
-            # The images, each by what its Dockerfile reads: native/** for
-            # every one with the wingtip-native stage (docker/Dockerfile.native).
+            # The images, each by what its Dockerfile reads: the base
+            # (docker/Dockerfile.base, wingtip's requirements and native/)
+            # for every one built FROM it.
+            base:
+              - docker/Dockerfile.base
+              - src/requirements.txt
+              - native/**
             ml:
               - docker/Dockerfile.ml
+              - docker/Dockerfile.base
               - docker/requirements-ml*.txt
               - src/**
               - native/**
             pipeline-processing:
               - docker/Dockerfile.processing
+              - docker/Dockerfile.base
               - docker/requirements-processing.txt
               - src/**
               - native/**
             pipeline-training:
               - docker/Dockerfile.training
+              - docker/Dockerfile.base
               - docker/requirements-training.txt
-              - src/**
-              - native/**
               - src/**
               - native/**
             planning-service:
               - planning-service/**
+              - docker/Dockerfile.base
               - src/**
               - native/**
             # web/** rather than the files the Dockerfile copies: a file
@@ -500,7 +509,7 @@ jobs:
           everything = os.environ.get("ALL") == "true" or "global" in changed
           # Every image this workflow builds, each a target of
           # .github/images.hcl, which has its context and Dockerfile.
-          IMAGES = ("ml", "pipeline-processing", "pipeline-training",
+          IMAGES = ("base", "ml", "pipeline-processing", "pipeline-training",
                     "planning-service", "webapp")
           due = lambda name: everything or name in changed
           images = [{"service": s} for s in IMAGES if due(s)]

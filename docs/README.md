@@ -5,7 +5,7 @@
 ![Docker](https://img.shields.io/badge/Docker%20Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL%20%2B%20pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square)
 ![Claude](https://img.shields.io/badge/Claude%20API-D97757?style=flat-square&logo=anthropic&logoColor=white)
 
@@ -125,12 +125,12 @@ Java, and some in the web and phone apps -- and issue #482 moves them
 in, in phases: copies the engine already has, small rules, weather parsing,
 altitude selection, the nav log, then route options.
 
-The system runs today as these Docker services (`retrain` is the training image run as the whole training run, not an image of its own):
+The system runs today as six Docker services (`retrain` is the training image run as the whole training run, not an image of its own):
 
 | Service | Role |
 |---|---|
 | `webapp` | Spring Boot — accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React app and proxies the planner |
-| `db` | PostgreSQL + pgvector — application data |
+| `db` | PostgreSQL — application data |
 | `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and model training, run as one-off jobs; `retrain` is the whole training run (`python -m wingtip.pipeline run`) in the training image, the container the developer console's Retrain starts |
 | `ml` | Jupyter environment for model development and experimentation -- on demand, behind the `notebooks` profile: `docker compose up ml` |
 | `planning-service` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather, and the Claude features (the written briefing, checkpoint notes, words, the assistant) -- with the engine inside it for every rule |
@@ -154,7 +154,7 @@ works too. AWS counterpart: `architecture-aws.drawio`, rendered in
 
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL%20%2B%20pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 
 **Front end**
 
@@ -483,7 +483,9 @@ Nothing else to install natively; every service builds its own image.
 data/             raw/processed/labels/aircraft/models — see Appendix for detail
 notebooks/        numbered, run-in-order exploratory notebooks (01-08)
 src/wingtip/          shared Python package — pipeline.py, model_registry.py, navlog.py, altitude.py, etc.
-docker/           Dockerfiles + requirements for ml / pipeline-processing / pipeline-training
+docker/           Dockerfiles + requirements for ml / pipeline-processing / pipeline-training,
+                  and Dockerfile.base, the Python base (wingtip's requirements and its
+                  Rust extension) every image that imports wingtip is built FROM
                   (each including wingtip's own list, src/requirements.txt)
 springboot-app/   Spring Boot API (webapp) — routes, DB, proxies planning-service
 infra/            CloudFormation template and the production server's files
@@ -502,9 +504,12 @@ docker compose up ml                               # Jupyter at :8888 (token "wi
 
 **On a phone, on the same Wi-Fi:** the webapp's ports are on this
 machine's loopback by default, because with no sign-in configured every
-planner write is open to whoever can reach them. `docker-compose.phone.yml`
-publishes webapp alone on every interface, for as long as you are
-testing on a network you trust. `http://<your Mac's address>:8080/app/plan`
+planner write is open to whoever can reach them. `PUBLISH_ADDRESS=0.0.0.0`
+in `.env` publishes webapp (and the sign-in inbox, behind
+`MAILPIT_UI_AUTH`'s password) on every interface, for as long as you are
+testing on a network you trust; `PHONE_BASE_URL` points the emailed
+sign-in link at the phone's address, and compose refuses to start
+without either once the ports are open. `http://<your Mac's address>:8080/app/plan`
 then works for planning, but the two things a pilot wants in the air --
 their own position on the chart, and the route's charts with no
 connection -- the browser grants only to a secure origin. So the webapp
@@ -512,9 +517,22 @@ also listens on HTTPS once it has a certificate:
 
 ```bash
 infra/local-https/make-certs.sh 192.168.1.42   # your Mac's LAN address; writes infra/local-https/certs/
-docker compose -f docker-compose.yml -f docker-compose.phone.yml up -d webapp
-                                               # now also https://192.168.1.42:8443
+cat >> .env <<'EOF'
+PUBLISH_ADDRESS=0.0.0.0
+PHONE_BASE_URL=https://192.168.1.42:8443
+MAILPIT_UI_AUTH=<user>:<password>
+# and, for front-end work, web/dist served as vite rebuilds it:
+COMPOSE_PROFILES=web-dev
+WEB_DIST_MOUNT=/app/static/app
+EOF
+docker compose up -d                           # now also https://192.168.1.42:8443
 ```
+
+The developer console's other doors (the planner's port, Jupyter) stay
+on loopback unless `DEV_PUBLISH_ADDRESS=0.0.0.0` publishes them too;
+both answer without a password, Jupyter runs code, and the database is
+never published. The top of `docker-compose.yml` lists every such
+setting.
 
 Install `certs/ca.pem` on the phone once (the script prints the steps
 for iPhone and Android), then open `https://<address>:8443/app/plan`.
