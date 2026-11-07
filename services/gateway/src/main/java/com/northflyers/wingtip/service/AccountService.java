@@ -62,7 +62,7 @@ public class AccountService {
     public AccountService(PilotRepository pilots, MagicLinkRepository magicLinks,
             FindByIndexNameSessionRepository<? extends Session> sessions, TransactionTemplate transaction,
             AppleRevocation apple,
-            @Value("${planner-service.base-url:http://planning-service:8000}") String plannerBaseUrl) {
+            @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl) {
         this.pilots = pilots;
         this.magicLinks = magicLinks;
         this.sessions = sessions;

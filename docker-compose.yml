@@ -365,7 +365,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/wingtip
       SPRING_DATASOURCE_USERNAME: wingtip
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-wingtip}
-      PLANNER_SERVICE_URL: http://planning-service:8000
+      PLANNER_SERVICE_URL: http://planner:8000
       # Traces to Jaeger with TRACING=1, the planner's calls under the
       # gateway's (see the jaeger service); off otherwise.
       MANAGEMENT_TRACING_ENABLED: ${TRACING:-false}
