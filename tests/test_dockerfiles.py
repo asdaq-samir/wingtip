@@ -36,7 +36,11 @@ def froms(text: str) -> list[str]:
 
 @pytest.mark.parametrize("path", IMAGES)
 def test_the_image_is_built_from_the_base(path):
-    assert froms((ROOT / path).read_text()) == ["wingtip-base"]
+    # The planner also builds tippecanoe in a build-only stage whose
+    # binaries are copied on; the image itself is the last FROM.
+    stages = froms((ROOT / path).read_text())
+    assert stages[-1] == "wingtip-base"
+    assert all(f.startswith("python:3.14-slim@sha256:") for f in stages[:-1])
 
 
 @pytest.mark.parametrize("path", IMAGES)
