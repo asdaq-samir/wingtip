@@ -22,7 +22,7 @@ const vors = async (page: Page): Promise<string[]> =>
   (await drawn(page, "navaid-marks")).filter(m => m.kind === "vor").map(m => String(m.ident));
 
 test("Chicago's airspace is drawn over the chart with its altitudes, and the switch takes it off", async ({ page }) => {
-  // The planner's own answer, through the webapp: O'Hare's Class B
+  // The planner's own answer, through the gateway: O'Hare's Class B
   // shelves, Midway's Class C and Wheeling's Class D under the Bravo.
   const answer = await page.request.get("/api/planner/airspace/in-view?south=41.5&west=-88.5&north=42.5&east=-87.5");
   expect(answer.ok()).toBe(true);

@@ -1,7 +1,7 @@
 """HTTP-layer tests for the endpoints this session added, against a real
 FastAPI TestClient -- planner had zero tests at this layer for
 any of its ~24 endpoints before this pass. Scoped to the newest/least
-proven ones rather than all 24; external dependencies (the webapp,
+proven ones rather than all 24; external dependencies (the gateway,
 aviationweather.gov, the OurAirports/FAA downloads) are mocked at the
 same module-level names app.main itself calls, so these tests check the
 HTTP contract (status codes, response shape, error translation) rather
@@ -81,7 +81,7 @@ def test_checkpoints_translates_a_chart_that_would_not_read_to_502(monkeypatch):
 
 def test_status_reports_every_service_and_the_data_on_disk(monkeypatch):
     monkeypatch.setattr(devservices, "SIDECAR_URL", None)
-    monkeypatch.setattr(system, "_webapp_status", lambda: (
+    monkeypatch.setattr(system, "_gateway_status", lambda: (
         system.ServiceStatus(up=True, detail="HTTP 200"), system.ServiceStatus(up=False, detail="HTTP 503")))
     # Not the chart model's real count: that reads the real ratings'
     # corridors, a chart read of its own.
@@ -91,7 +91,7 @@ def test_status_reports_every_service_and_the_data_on_disk(monkeypatch):
 
     assert resp.status_code == 200
     body = resp.json()
-    assert body["services"]["webapp"] == {"up": True, "detail": "HTTP 200"}
+    assert body["services"]["gateway"] == {"up": True, "detail": "HTTP 200"}
     assert body["services"]["db"] == {"up": False, "detail": "HTTP 503"}
     assert body["pipeline"]["startable"] is False
     assert "docker compose up retrain" in body["pipeline"]["detail"]

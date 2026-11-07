@@ -648,22 +648,22 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
     },
   });
   // Every row from the planner's one snapshot, which probed the others
-  // -- the webapp's liveness and its readiness group (the database)
+  // -- the gateway's liveness and its readiness group (the database)
   // included -- and the planner itself by having answered. The browser
-  // used to probe the webapp and the planner too, and on a phone those
+  // used to probe the gateway and the planner too, and on a phone those
   // requests queued behind the chart tiles on one HTTP/1.1 connection
   // pool, timed out at ten seconds, and read "no answer" for a gateway
   // that had just served the page.
   const services = status?.services;
   const rows: { name: string; health: Health; detail: string }[] = [
-    { name: "webapp (Spring Boot)", health: reported(services?.webapp, failed), detail: "the gateway, sessions, aircraft and flights" },
+    { name: "gateway (Spring Boot)", health: reported(services?.gateway, failed), detail: "sign-in, sessions, aircraft and flights" },
     { name: "db (Postgres)", health: reported(services?.db, failed), detail: "application data" },
-    { name: "planning-service", health: reported(status ? { up: true } : null, failed), detail: "course, checkpoints and the chart model's scores, nav log, briefing, chart reading" },
+    { name: "planner", health: reported(status ? { up: true } : null, failed), detail: "course, checkpoints and the chart model's scores, nav log, briefing, chart reading" },
   ];
   const host = window.location.hostname;
   const links: { label: string; href: string; localOnly?: boolean; service?: string; note?: string }[] = [
-    { label: "webapp API docs", href: "/swagger-ui/index.html" },
-    { label: "planning-service API docs", href: `http://${host}:8084/docs`, localOnly: true },
+    { label: "gateway API docs", href: "/swagger-ui/index.html" },
+    { label: "planner API docs", href: `http://${host}:8084/docs`, localOnly: true },
     { label: "Jupyter (the notebooks)", href: `http://${host}:8888`, localOnly: true, service: "ml" },
   ];
 

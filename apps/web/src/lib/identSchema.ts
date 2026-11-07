@@ -69,7 +69,7 @@ export function positionIdent(fix: { lat: number; lon: number; altitudeFt?: numb
 }
 
 /** A present position without its altitude: where a flight saved from
- *  one starts (the webapp keeps the place, not a moment's altitude). */
+ *  one starts (the gateway keeps the place, not a moment's altitude). */
 export const withoutAltitude = (ident: string) => (isPosition(ident) ? ident.split(",").slice(0, 2).join(",") : ident);
 
 /** Whether a route's point is a present position (positionOf). */

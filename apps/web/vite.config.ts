@@ -75,7 +75,7 @@ const preloadEngine: Plugin = {
 // An answer the service worker gives from its cache rather than the
 // network, marked so the page can say so (lib/fromCache): the header
 // carries when the network gave it, the response's own Date, which the
-// planner and the webapp send on every answer. Only on the NetworkFirst
+// planner and the gateway send on every answer. Only on the NetworkFirst
 // caches below, where the cache answers only when the network has not --
 // the steady ones answer from the cache every time, by design. Written
 // out whole inside the function: Workbox copies it into the generated
@@ -113,7 +113,7 @@ export default defineConfig({
     // drawn or `KeepRoute` fetched ahead, and the planner's own
     // answers (course, checkpoints, nav log, briefing) as they are
     // fetched -- so a route opened on the ground opens again with no
-    // connection at all. Served from /app/sw.js by webapp (its /app/**
+    // connection at all. Served from /app/sw.js by the gateway (its /app/**
     // handler serves a real file as itself), scoped to /app/. Installs
     // only on a secure origin: https, or localhost.
     VitePWA({
@@ -282,7 +282,7 @@ export default defineConfig({
             },
           },
           {
-            // The pilot's own, from the webapp rather than the planner --
+            // The pilot's own, from the gateway rather than the planner --
             // who is signed in, their airplanes, their saved flights, and
             // what signing in offers -- the network first and the last
             // answer when there is none, so a start with no signal still
@@ -364,14 +364,14 @@ export default defineConfig({
   // independently of TypeScript's own (type-check-only) path mapping.
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   build: {
-    // apps/web/dist, where the webapp's image copies it from and the web-dev
+    // apps/web/dist, where the gateway's image copies it from and the web-dev
     // setup (WEB_DIST_MOUNT) serves it. It was services/gateway's resources, which nothing
     // has served since the image built its own: a build in a container
     // that mounted the whole repo left a stale copy there for every grep.
     outDir: "dist",
     // Emptied before a build -- except under docker-compose.yml's web-build
     // watch, which sets VITE_KEEP_OUTDIR: there the directory is what
-    // the webapp is serving, and watch mode empties it on every rebuild,
+    // the gateway is serving, and watch mode empties it on every rebuild,
     // so a page loading that instant got nothing. Old chunks are kept an
     // hour, and the service worker's manifest lists only the current ones
     // (thisBuildOnly). (The CLI's --emptyOutDir can only set it true.)

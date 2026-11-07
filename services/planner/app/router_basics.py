@@ -351,7 +351,7 @@ def line(message: BaseModel) -> str:
 
 def ndjson(lines, on_error) -> StreamingResponse:
     """One JSON object per line, sent as each is produced. The headers keep
-    any proxy in between (nginx, the Spring webapp) from buffering lines
+    any proxy in between (nginx, the Spring gateway) from buffering lines
     until the stream ends, which would defeat streaming entirely.
 
     `on_error` builds the stream's "error" message. Once the first line

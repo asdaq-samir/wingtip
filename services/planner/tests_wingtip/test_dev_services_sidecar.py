@@ -60,9 +60,9 @@ def test_start_leaves_a_running_service_alone():
     assert not any(method == "POST" for method, _ in api.calls)
 
 
-@pytest.mark.parametrize("name", ["webapp", "db", "../containers/create", ""])
+@pytest.mark.parametrize("name", ["gateway", "db", "../containers/create", ""])
 def test_start_refuses_anything_off_the_list_without_touching_docker(name):
-    api = FakeDocker({"webapp": "exited"})
+    api = FakeDocker({"gateway": "exited"})
     status, _ = server.start(name, "flight_plan", ALLOWED, api)
     assert status == 404
     assert api.calls == []

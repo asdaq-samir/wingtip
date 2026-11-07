@@ -4,7 +4,7 @@
  * report gives, read out of whatever the student pastes, and an
  * endorsement's words as they will be signed. The endorsements themselves
  * -- AC 61-65K's samples, their 14 CFR sections and how long each is good
- * for -- are the webapp's (EndorsementKind), sent with the record.
+ * for -- are the gateway's (EndorsementKind), sent with the record.
  *
  * The words and the codes are the shared engine's (engine/crates/pilot/src/
  * pilot/endorsements.rs, through lib/engine), as the iPhone app's are.
@@ -13,9 +13,9 @@ import { callEngine } from "./engine/engine";
 
 /**
  * An endorsement's words with the student's name and the fields filled
- * in, as the webapp's EndorsementKind.render fills them: a blank left
+ * in, as the gateway's EndorsementKind.render fills them: a blank left
  * empty leaves nothing, the spaces around it closed up. What the sheet
- * shows is what is signed: the webapp refuses a signature over words that
+ * shows is what is signed: the gateway refuses a signature over words that
  * are not what it makes of the same fields.
  */
 export function renderEndorsement(template: string, student: string, fields: Record<string, string>): string {

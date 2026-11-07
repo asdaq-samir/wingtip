@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY apps/web/ ./
 # The planner's and this app's own OpenAPI documents, from which `npm run
 # types` generates the front end's API types (apps/web/src/lib/api/schema.d.ts
-# and webapp-schema.d.ts, not committed).
+# and gateway-schema.d.ts, not committed).
 COPY services/planner/openapi.json /repo/services/planner/openapi.json
 COPY services/gateway/openapi.json /repo/services/gateway/openapi.json
 # The engine's contract, from which it generates the engine calls' types

@@ -3,7 +3,7 @@ import { library, openConsole, showTabs } from "./helpers";
 
 /**
  * The Logbook's Checkride page (CheckridePage): 61.109's experience as
- * the planner's webapp reckons it, a knowledge test report's codes in the
+ * the gateway reckons it, a knowledge test report's codes in the
  * FAA's own words, an endorsement dated, and one an instructor signed in
  * the app read as signed. Spring's endpoints are
  * mocked, as logbook.spec's are.
@@ -35,7 +35,7 @@ test("experience item by item, a report's codes looked up, and an endorsement da
       text: "I certify that Avery B. Student has satisfactorily completed the pre-solo knowledge test of 14 CFR § 61.87(b) for the Cessna 172 aircraft.",
       signature: "/s/ 09-01-2026 J. J. Jones 987654321CFI RE 12-31-2027", signedOn: "2026-09-01", until: null, voided: false, digest: "0".repeat(64),
     }],
-    // The webapp's own list (EndorsementKind), the first three.
+    // The gateway's own list (EndorsementKind), the first three.
     kinds: [
       { code: "pre-solo-knowledge", paragraph: "A.3", rule: "61.87(b)", label: "Pre-solo aeronautical knowledge", validDays: null, template: "", fields: [] },
       { code: "pre-solo-flight", paragraph: "A.4", rule: "61.87(c)(1) and (2)", label: "Pre-solo flight training", validDays: null, template: "", fields: [] },
@@ -57,7 +57,7 @@ test("experience item by item, a report's codes looked up, and an endorsement da
     } else if (request.method() === "PUT") {
       const body = request.postDataJSON() as { endorsedOn: string };
       sent.push({ url: request.url(), body });
-      // The webapp works out the day it runs out: 90 days on, for this one.
+      // The gateway works out the day it runs out: 90 days on, for this one.
       const until = new Date(`${body.endorsedOn}T00:00:00Z`);
       until.setUTCDate(until.getUTCDate() + 90);
       record = { ...record, endorsements: [{ code: request.url().split("/").pop()!, endorsedOn: body.endorsedOn, until: until.toISOString().slice(0, 10) }] };

@@ -85,7 +85,7 @@ const DETERMINATIONS = [
  * signature made: its blanks filled in, the words read as they will be
  * signed, and then a deliberate tap on the signature -- for a solo
  * cross-country, only once the instructor has ticked what 61.93(d) asks
- * them to determine. The webapp signs what these fields make and nothing
+ * them to determine. The gateway signs what these fields make and nothing
  * else (InstructorService.sign).
  */
 export function SignForm({ kind, studentId, studentName, instructor, initial, reviewId, onDone, onCancel }: {

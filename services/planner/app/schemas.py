@@ -2621,13 +2621,13 @@ class ServiceStatus(BaseModel):
 
 
 class Services(BaseModel):
-    """The webapp and its database, probed from here -- its liveness and
+    """The gateway and its database, probed from here -- its liveness and
     its readiness group, which includes the database -- rather than by
     the browser: a phone's probes queued behind its chart
     tiles on one HTTP/1.1 connection pool and timed out, and the
     console read "no answer" for a gateway that had just served it."""
 
-    webapp: ServiceStatus | None = None
+    gateway: ServiceStatus | None = None
     db: ServiceStatus | None = None
 
 
