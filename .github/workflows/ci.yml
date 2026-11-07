@@ -1792,8 +1792,8 @@ jobs:
   # run and passed in another is flaky. Nightly only, and not among the
   # jobs "CI passed" waits on: a flaky test is work to do, listed in one
   # standing issue, not a reason to stop a merge. The root suite and the
-  # planner's, the two whose modules hold the state a test can leave
-  # behind; the agents' suites are small and mock everything.
+  # planner's, the two suites there are, whose modules hold the state a
+  # test can leave behind.
   flake-hunt-python:
     name: Flake hunt (${{ matrix.suite }})
     if: github.event_name == 'schedule'
@@ -1936,7 +1936,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-webapp, test-planning-service, test-nav-log-agent, test-crewai-agent, docs, infra, api-compat]
+    needs: [changes, test, test-web, test-webapp, test-planning-service, docs, infra, api-compat]
     if: always()
     steps:
       - name: Every job passed or was not needed
