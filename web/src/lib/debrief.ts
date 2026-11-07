@@ -15,7 +15,7 @@
  *
  * Worked out by the shared engine (native/crates/figures/src/figures/debrief.rs,
  * through lib/engine), the very code behind the planner's /api/debrief and
- * the phones' wt_debrief: the tolerances and each row's mark too, so the
+ * the phones' wt_call("debrief"): the tolerances and each row's mark too, so the
  * page's headings and ticks are the engine's figures, not copies.
  */
 import type { Flight } from "./api/types";
