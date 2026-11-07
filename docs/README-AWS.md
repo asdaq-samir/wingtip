@@ -109,7 +109,7 @@ Prices in us-east-1, October 2026, at today's traffic:
 | EC2 t3a.medium on Spot, all month (on demand: $27.45) | ~$10, as Spot's price moves |
 | Its public IPv4 address | $3.65 |
 | 20 GB system disk and 30 GB data disk, gp3 | $4.00 |
-| S3 tiles: 1.5 million uploads a cycle ($7.50 per 56 days) and up to three cycles stored | ~$4.50 |
+| S3 tiles: 1.5 million uploads a cycle ($7.50 per 56 days), 0.73 million more for the 512-pixel "@2x" tiles phones draw ($3.70), and up to three cycles stored (about 25 GB more a cycle with the @2x tiles) | ~$7.50 |
 | Secrets Manager, four secrets | $1.60 |
 | Route 53 hosted zone | $0.50 |
 | Daily snapshots of the data disk, seven kept | ~$1 |
@@ -117,7 +117,7 @@ Prices in us-east-1, October 2026, at today's traffic:
 | ECR, CloudWatch logs, backups, the Fargate Spot refresh (under $1 a cycle) | ~$1.50 |
 | CloudFront | $0 within the always-free 1 TB and 10 million requests |
 | SES | $0.10 per 1,000 sign-in emails |
-| **Total** | **about $29** |
+| **Total** | **about $32** |
 
 With `ServerPricing=on-demand`, for a server AWS never takes back, it
 is about $46, or about $36 with a one-year Savings Plan. The next
@@ -216,7 +216,16 @@ its settings, but has no images to run until the first push to ECR.
 1. In GitHub, Settings → Secrets and variables → Actions → Variables,
    add `AWS_ROLE_ARN` (the `DeployRoleArn` output), `AWS_REGION`
    (`us-east-1`) and `AWS_SERVER_NAME` (the `ServerName` output).
-2. Fill in the owner's values in the `AppSecret` output's secret, as
+2. In GitHub, Settings → Environments, create `production` and under
+   "Deployment branches and tags" choose "Selected branches and tags"
+   with `main` alone. The deploy role trusts only a job in this
+   environment (`sub` `repo:<owner>/<repo>:environment:production`), not
+   any workflow on `main`: ci-autofix.yml runs as `main` with an OIDC
+   token while it runs a branch's code. Without the branch rule a
+   workflow on any branch could name the environment and get the role;
+   a job that names an environment that does not exist creates it with
+   no rules at all, so create it first.
+3. Fill in the owner's values in the `AppSecret` output's secret, as
    [`infra/server/env.example`](../infra/server/env.example) lists them:
 
    ```bash
@@ -225,8 +234,9 @@ its settings, but has no images to run until the first push to ECR.
    rm app-secret.json
    ```
 
-3. The next green CI run on `main` promotes its images, pushes the four
-   the server runs to ECR (`promote.yml`, `push-ecr`) and runs
+4. The next green CI run on `main` promotes its images, copies the three
+   the server runs from GHCR to ECR as `sha-<commit>` and `latest`
+   (`promote.yml`, `push-ecr`: the images CI tested, not rebuilt) and runs
    [`infra/server/deploy.sh`](../infra/server/deploy.sh) on the server
    (`deploy`). To deploy without waiting for one:
 
@@ -291,10 +301,14 @@ Mac is promoted the same way.
 ### Deploys
 
 A pull request merged to `main` deploys itself once CI passes: Promote
-pushes the images and runs `deploy.sh` over SSM, and the job fails if it
-does. A deploy restarts only the services whose image changed. The
-server's copy of the repository follows `main` too (`git pull` in
-`deploy.sh`), for `docker-compose.prod.yml` and the Caddyfile.
+copies the images CI tested to ECR and runs `deploy.sh <commit>` over
+SSM, and the job fails if it does. The server checks out that commit,
+for `docker-compose.prod.yml` and the Caddyfile, and runs its images
+(`IMAGE_TAG=sha-<commit>`), so files and images always match whatever
+has merged since. A deploy restarts only the services whose image
+changed. `deploy.sh` with no commit, by hand, takes `main` and `latest`.
+To go back to an earlier commit, run `deploy.sh <its full hash>`: ECR
+keeps the last 20 images of each service.
 
 ### On the server
 
@@ -347,7 +361,9 @@ At 07:17 UTC every night `backup.sh` copies to
 the database (`postgres.dump`: accounts, aircraft, flights, the briefing
 agent's memory) and the planner's `data/labels` (`labels.tar.gz`: the
 checkpoint notes pilots and Claude have written). The bucket keeps 14
-days. The dump is written to a file and checked with `pg_restore --list`
+days, and is versioned: a backup overwritten or deleted stays as an
+older version for 30 days more (`aws s3api list-object-versions`). The
+server may write only `backups/` and `ground_grid/`. The dump is written to a file and checked with `pg_restore --list`
 before it is uploaded, so a truncated one never replaces a good day, and a
 failed backup emails `BudgetEmail` (confirm the SNS subscription mail once).
 The data disk is also snapshotted daily at 05:00 UTC, seven kept. To

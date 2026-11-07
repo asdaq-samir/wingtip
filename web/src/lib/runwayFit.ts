@@ -13,12 +13,6 @@ import type { AircraftProfile, Runway } from "./api/types";
 import { callEngine } from "./engine/engine";
 import type { RunwayEnd } from "./pattern";
 
-/** "Close": a runway with less than 15 per cent to spare over the
- *  distance needed -- SAFO 19001's margin for a landing, held to a
- *  takeoff too. The engine's DISTANCE_MARGIN (runway/performance.rs, where
- *  its source is given), which endFit goes by; named here for the pages. */
-export const DISTANCE_MARGIN = 1.15;
-
 /** A wind as a METAR reports it: true, in knots. */
 export interface FitWind {
   dirTrueDeg: number | null | undefined;
@@ -35,9 +29,15 @@ export interface EndFit {
   /** The distance over a 50 ft obstacle, and the runway's length. */
   neededFt: number | null;
   lengthFt: number | null;
-  /** Longer than the runway; or within its margin (DISTANCE_MARGIN). */
+  /** Longer than the runway; or within its margin (the engine's
+   *  DISTANCE_MARGIN, runway/performance.rs: SAFO 19001's 15 per cent). */
   short: boolean;
   close: boolean;
+  /** The distance or the runway's length not known: whether it fits is
+   *  not known either. */
+  unknown: boolean;
+  /** The distance was read past the POH's table. */
+  beyond: boolean;
 }
 
 export function endFit({ aircraft, runway, end, wind, elevationFt, altimeterInHg, tempC, weightLb, kind }: {
@@ -45,7 +45,8 @@ export function endFit({ aircraft, runway, end, wind, elevationFt, altimeterInHg
   runway: Runway;
   end: RunwayEnd;
   wind: FitWind | null;
-  elevationFt: number;
+  /** Null where not known: no distance is worked out then. */
+  elevationFt: number | null;
   altimeterInHg: number | null | undefined;
   tempC: number | null | undefined;
   weightLb: number | null;
@@ -59,6 +60,6 @@ export function endFit({ aircraft, runway, end, wind, elevationFt, altimeterInHg
   });
   return {
     crosswindKt: fit.crosswind_kt, crosswindOver: fit.crosswind_over, neededFt: fit.needed_ft, lengthFt: fit.length_ft, short: fit.short,
-    close: fit.close,
+    close: fit.close, unknown: fit.unknown, beyond: fit.beyond,
   };
 }
