@@ -339,7 +339,7 @@ def fetch_tile(x: int, y: int, zoom: int = DEFAULT_ZOOM) -> Image.Image | None:
     tile -- open water, Canada -- so one missing tile leaves a hole in
     the mosaic rather than failing the whole read.
 
-    The same tiles back the map's own tile endpoint (the planner's
+    The same tiles back the map's own tile endpoint (planning-service's
     /api/chart-tile/sec/...): a corridor planned once has its map tiles
     ready, and a map browsed once has its detection tiles ready. The
     transparency of an uncovered corner is white here, since the
