@@ -20,9 +20,12 @@ const AIRPORTS_LIMIT = 1000;
  *  thousand, the box being some nine views: the planner's most, 270 in
  *  two degrees by two and a half round Chicago in 0.14 s. Ten minutes, as
  *  a METAR's colour can change by the hour. The layer's useQuery and the
- *  map's own events (useAhead) ask it alike. */
-export function airportsQuery(asked: Box, zoom: number) {
-  const reportingOnly = zoom < FROM_ZOOM;
+ *  map's own events (useAhead) ask it alike. With `reporting`, the ones
+ *  that report alone at every zoom: the METARs the overlay tiles' fields
+ *  wear their weather from (AirportsGl), the fields themselves being in
+ *  the tiles. */
+export function airportsQuery(asked: Box, zoom: number, reporting = false) {
+  const reportingOnly = reporting || zoom < FROM_ZOOM;
   return {
     queryKey: ["airportsInView", asked.key, reportingOnly],
     queryFn: () => api.airportsInView({ ...asked.box, reporting: reportingOnly, limit: AIRPORTS_LIMIT }),

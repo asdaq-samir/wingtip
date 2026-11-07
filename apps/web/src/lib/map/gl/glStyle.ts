@@ -171,27 +171,48 @@ export const AIRSPACE_LINE_LAYERS = (["E", "D", "C", "B"] as const).map(c => `ai
  *  it to the text): its id, for the layer that draws it. */
 export const AIRSPACE_TAB = "airspace|tab";
 
+/** The cycle's overlay tiles' source (glOverlays, lib/map/overlayTiles),
+ *  in the map's first style. */
+export const OVERLAY_SOURCE = "faa-overlays";
+
+/** A figure of a tile's feature in the sectional's hundreds of feet, as
+ *  airspaceLabel's hundreds: 3,600 is "36". */
+const hundredsOf = (field: string) => ["to-string", ["round", ["/", ["get", field], 100]]];
+/** airspaceText as an expression on the overlay tiles' `airspace` fields
+ *  (wingtip.vector_tiles): "B: 100–30", "C: 48–SFC", "D: -25" -- the
+ *  ceiling with a minus where it is "up to but not including" it
+ *  (UPPER_DESC TNI), over the floor or SFC where the floor is the surface
+ *  (0 ft, as the planner's floor_sfc). */
+const TOP = ["concat", ["case", ["==", ["get", "ceiling_excluded"], true], "-", ""], hundredsOf("ceiling_ft")];
+const FLOOR = ["case", ["==", ["coalesce", ["get", "floor_ft"], 0], 0], "SFC", hundredsOf("floor_ft")];
+export const AIRSPACE_TILE_LABEL = ["concat", ["get", "class"], ": ", ["case", ["==", ["get", "class"], "D"], TOP, ["concat", TOP, "–", FLOOR]]];
+
 /** One line layer a class, drawn from that class's zoom, and the labels
  *  on every line: white bold type in a dark tab, level on the screen,
  *  kept off each other and off the route's marks by MapLibre's own
- *  collision. */
-export function airspaceLayers(font: string[]): LayerSpecification[] {
-  const lines: LineLayerSpecification[] = (["E", "D", "C", "B"] as const).map(cls => {
-    const ink = AIRSPACE_INK[cls];
+ *  collision. From the in-view volumes (airspaceFeatures), or with
+ *  `tiles` the overlay tiles' `airspace` layer, its rings drawn as lines
+ *  and its labels written from its fields (AIRSPACE_TILE_LABEL); Class E
+ *  is in the tiles but not drawn, as the in-view answer has none. */
+export function airspaceLayers(font: string[], tiles = false): LayerSpecification[] {
+  const from = tiles ? { source: OVERLAY_SOURCE, "source-layer": "airspace" } : { source: AIRSPACE_SOURCE };
+  const cls = tiles ? "class" : "cls";
+  const lines: LineLayerSpecification[] = (tiles ? (["D", "C", "B"] as const) : (["E", "D", "C", "B"] as const)).map(c => {
+    const ink = AIRSPACE_INK[c];
     return {
-      id: `airspace-${cls}`, type: "line", source: AIRSPACE_SOURCE, minzoom: glZoom(AIRSPACE_FROM[cls]),
-      filter: ["==", ["get", "cls"], cls],
+      id: `airspace-${c}`, type: "line", ...from, minzoom: glZoom(AIRSPACE_FROM[c]),
+      filter: ["==", ["get", cls], c],
       layout: { "line-join": "round", "line-cap": ink.dash ? "butt" : "round" },
       paint: { "line-color": ink.colour, "line-width": ink.width, "line-opacity": ink.opacity, ...(ink.dash ? { "line-dasharray": ink.dash } : {}) },
     };
   });
   const labels: SymbolLayerSpecification = {
-    id: "airspace-labels", type: "symbol", source: AIRSPACE_SOURCE, minzoom: glZoom(AIRSPACE_LABELS_FROM),
-    filter: ["!=", ["get", "label"], ""],
+    id: "airspace-labels", type: "symbol", ...from, minzoom: glZoom(AIRSPACE_LABELS_FROM),
+    filter: tiles ? ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "ceiling_ft"]] : ["!=", ["get", "label"], ""],
     layout: {
       "symbol-placement": "line",
       "symbol-spacing": 320,
-      "text-field": ["get", "label"],
+      "text-field": tiles ? AIRSPACE_TILE_LABEL as never : ["get", "label"],
       "text-font": font,
       "text-size": 11,
       "text-rotation-alignment": "viewport",

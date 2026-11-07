@@ -24,7 +24,9 @@ FAA's own data set, its attributes the fields named below:
   each field's runways from APT_RWY.csv (RWY_ID, RWY_LEN,
   SURFACE_TYPE_CODE) and APT_RWY_END.csv (TRUE_ALIGNMENT), by SITE_NO.
 - `navaids`: NASR's NAV_BASE.csv, read as wingtip.fixes reads it (in
-  service, the kinds a route flies to).
+  service, the kinds a route flies to), with each one's own remarks from
+  NAV_RMK.csv (REMARK, as wingtip.fixes.navaid_remarks reads them), one
+  a line.
 - `fixes`: NASR's FIX_BASE.csv, read as wingtip.fixes reads it, every row.
 - `runways`: each runway with both its ends surveyed, from APT_RWY.csv
   (SITE_NO, RWY_ID, RWY_WIDTH in ft, SURFACE_TYPE_CODE) and
@@ -64,7 +66,7 @@ INDEX = "overlays.json"
 #: What the tiles hold and how, as a number: a change to a layer's
 #: attributes, zooms or tolerances bumps it, and the archive is built again
 #: under a new name (its address is kept a cycle by every cache).
-VERSION = 2
+VERSION = 3
 
 #: The zooms there are tiles of (XYZ zooms, 256-pixel tiles: MapLibre,
 #: whose tiles are 512, draws tile z at its own zoom z). From 4, a
@@ -308,18 +310,23 @@ def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path |
         }, f'{{"type":"Point","coordinates":[{lon},{lat}]}}', AIRPORT_MIN_ZOOM[rank])
 
 
-def navaid_features(nav_path: Path, bbox=None):
-    """The `navaids` layer's lines: wingtip.fixes's navaids in service."""
+def navaid_features(nav_path: Path, bbox=None, rmk_path: Path | None = None):
+    """The `navaids` layer's lines: wingtip.fixes's navaids in service,
+    with their own remarks from NAV_RMK.csv where rmk_path is given
+    (wingtip.fixes.navaid_remarks: where the signal is unusable, the Chart
+    Supplement's service volume restrictions, AIM 1-1-8), one a line, for
+    a VOR's card to show without asking the planner."""
     from . import fixes
 
     for found in fixes._read_navaids(nav_path).values():
         for n in found:
             if not _meets((n["lon"], n["lat"], n["lon"], n["lat"]), bbox):
                 continue
+            said = fixes.navaid_remarks(n["ident"], n["kind"], rmk_path.parent) if rmk_path is not None else []
             yield _feature({
                 "ident": n["ident"], "name": n["name"], "kind": n["kind"], "freq": n["freq"], "channel": n["channel"],
                 "service_volume": n["service_volume"], "mag_var": n["mag_var"], "elevation_ft": n["elevation_ft"],
-                "hours": n["hours"], "restricted": n["restricted"],
+                "hours": n["hours"], "restricted": n["restricted"], "remarks": "\n".join(said) or None,
             }, f'{{"type":"Point","coordinates":[{n["lon"]},{n["lat"]}]}}',
                 VOR_MIN_ZOOM if n["kind"] in fixes.VOR_KINDS else NAVAID_MIN_ZOOM)
 
@@ -403,14 +410,14 @@ def runway_features(rwy_path: Path, rwy_end_path: Path, bbox=None):
 
 
 def write_layers(folder: Path, pack, *, apt_path: Path, rwy_path: Path | None, rwy_end_path: Path | None,
-                 nav_path: Path, fix_path: Path, bbox=None) -> dict[str, int]:
+                 nav_path: Path, fix_path: Path, bbox=None, nav_rmk_path: Path | None = None) -> dict[str, int]:
     """Each layer's GeoJSON, a feature a line, into folder/<layer>.geojsonl;
     how many features each holds."""
     sources = {
         "airspace": airspace_features(pack, bbox),
         "special_use": special_use_features(pack, bbox),
         "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox),
-        "navaids": navaid_features(nav_path, bbox),
+        "navaids": navaid_features(nav_path, bbox, nav_rmk_path),
         "fixes": fix_features(fix_path, bbox),
         "runways": runway_features(rwy_path, rwy_end_path, bbox) if rwy_path and rwy_end_path else iter(()),
     }
@@ -474,7 +481,7 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
         folder = Path(tmp)
         counts = write_layers(folder, pack, apt_path=nasr("APT_BASE.csv"), rwy_path=nasr("APT_RWY.csv"),
                               rwy_end_path=nasr("APT_RWY_END.csv"), nav_path=nasr("NAV_BASE.csv"),
-                              fix_path=nasr("FIX_BASE.csv"), bbox=bbox)
+                              nav_rmk_path=nasr("NAV_RMK.csv"), fix_path=nasr("FIX_BASE.csv"), bbox=bbox)
         part = folder / "out.pmtiles"
         run = subprocess.run(tippecanoe_args(folder, part, pack.cycle, tippecanoe), capture_output=True, text=True)
         if run.returncode != 0:

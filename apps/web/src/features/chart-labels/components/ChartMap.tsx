@@ -6,7 +6,6 @@ import GlMapShell from "../../../lib/map/gl/GlMapShell";
 import { useGlTap } from "../../../lib/map/gl/glLayer";
 import { AirspaceGl } from "../../../lib/map/gl/layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "../../../lib/map/gl/layers/BaseGl";
-import { RunwaysGl } from "../../../lib/map/gl/layers/RunwaysGl";
 import { ChartGl } from "../../../lib/map/gl/layers/ChartGl";
 import { NavaidsGl } from "../../../lib/map/gl/layers/NavaidsGl";
 import { OwnShipGl } from "../../../lib/map/gl/layers/OwnShipGl";
@@ -62,7 +61,6 @@ export default function ChartMap({
       <LandWaterGl />
       <ChartGl course={course} />
       <OverlayGl />
-      <RunwaysGl />
       <AirspaceGl />
       <NavaidsGl />
       <RouteGl course={course} checkpoints={[]} candidates={candidates} endpoints={ends} />

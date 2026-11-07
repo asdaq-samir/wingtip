@@ -15,7 +15,7 @@ import { trafficCredit } from "../../trafficCredit";
 import { reported, useTracking, useTrafficFocus, type Report } from "../../tracking";
 import { useGlMap } from "../glLayer";
 import { glZoom, leafletZoomOf } from "../glStyle";
-import { iconMarker, setMarkerIcon } from "../htmlMarker";
+import { fadeInMarker, iconMarker, setMarkerIcon } from "../htmlMarker";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";
 
 /** TrafficLayer's: asked every five seconds, each airplane carried on
@@ -232,7 +232,7 @@ function Traffic() {
         if (!target.drawn && (!target.icon || added >= ADD_PER_STEP)) continue;
         target.marker.setLngLat([lon, lat]);
         if (!target.drawn) {
-          target.marker.addTo(map);
+          fadeInMarker(target.marker.addTo(map));
           target.drawn = true;
           added += 1;
         }

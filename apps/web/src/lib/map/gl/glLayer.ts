@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
+import { prefersReducedMotion } from "../../motion";
 import type { GeoJSONSource, LayerSpecification, Map as MlMap, MapGeoJSONFeature, MapMouseEvent, SourceSpecification } from "maplibre-gl";
 
 /**
@@ -41,6 +42,13 @@ export interface GlMapApi {
   /** A card in the map's sheet (SheetCard), as a tap on the Leaflet map
    *  opens one; null puts it away. */
   openCard: (card: ReactNode | null) => void;
+  /** Whether the cycle's overlay tiles are in the map's first style
+   *  (glOverlays): its airspace, airports, navaids, fixes and runways
+   *  drawn per tile from the archive, so a layer of them asks the planner
+   *  nothing for the view and only adds its taps, its filters and its
+   *  probes; none where the planner has no archive, and each asks the
+   *  in-view endpoints as before. */
+  overlays: boolean;
 }
 
 export const GlMapContext = createContext<GlMapApi | null>(null);
@@ -51,23 +59,142 @@ export function useGlMap(): GlMapApi {
   return api;
 }
 
+/** What each map's layers were added as, by `s:<source id>` and
+ *  `l:<layer id>`, and the ones a map handed from one page's tree to the
+ *  next has not had claimed again yet (parkLayers, sweepLayers). */
+const added = new WeakMap<MlMap, Map<string, string>>();
+const unclaimed = new WeakMap<MlMap, Set<string>>();
+const parked = new WeakSet<MlMap>();
+const addedOf = (map: MlMap) => {
+  let kept = added.get(map);
+  if (!kept) added.set(map, kept = new Map());
+  return kept;
+};
+
+/** The map is being handed to the next tree that draws it (GlMapShell's
+ *  park): the layers of the tree leaving stay where they are, for the
+ *  next to claim as they are rather than draw again from nothing. */
+export function parkLayers(map: MlMap) {
+  parked.add(map);
+}
+
+/** The map taken up again: every layer of the last tree is unclaimed
+ *  until the new tree adds the same. */
+export function adoptLayers(map: MlMap) {
+  parked.delete(map);
+  unclaimed.set(map, new Set(addedOf(map).keys()));
+}
+
+/** Once the new tree has added its own: the last tree's layers it did not
+ *  claim taken away, its layers first and then their sources. */
+export function sweepLayers(map: MlMap) {
+  const left = unclaimed.get(map);
+  unclaimed.delete(map);
+  if (!left?.size || !map.style) return;
+  const kept = addedOf(map);
+  for (const key of left) if (key.startsWith("l:") && map.getLayer(key.slice(2))) map.removeLayer(key.slice(2));
+  for (const key of left) if (key.startsWith("s:") && map.getSource(key.slice(2))) removeSource(map, key.slice(2));
+  for (const key of left) kept.delete(key);
+}
+
+/** A source and every layer drawn from it. */
+function removeSource(map: MlMap, id: string) {
+  for (const layer of map.getStyle().layers) if ("source" in layer && layer.source === id) map.removeLayer(layer.id);
+  map.removeSource(id);
+}
+
 /** Adds `sources` and `layers` under `slot` while mounted. The specs are
  *  read once a map: a style that changes goes through setPaintProperty
- *  (useGlPaint) or the data (useGlData). */
-export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecification>, layers: LayerSpecification[]) {
+ *  (useGlPaint) or the data (useGlData). A source or layer already there
+ *  as the same spec -- the last tree's, on a map handed over (parkLayers)
+ *  -- is claimed as it is, its tiles and data kept. With `under`, drawn
+ *  under that layer where the map has it (a ring under its marks). */
+export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecification>, layers: LayerSpecification[], under?: string) {
   const { map } = useGlMap();
   const spec = useRef({ sources, layers });
   useEffect(() => {
     const { sources, layers } = spec.current;
-    for (const [id, source] of Object.entries(sources)) if (!map.getSource(id)) map.addSource(id, source);
-    for (const layer of layers) map.addLayer(layer, slotId(slot));
+    const kept = addedOf(map);
+    const left = unclaimed.get(map);
+    for (const [id, source] of Object.entries(sources)) {
+      const key = `s:${id}`, as = JSON.stringify(source);
+      if (map.getSource(id) && kept.has(key) && kept.get(key) !== as) removeSource(map, id);
+      if (!map.getSource(id)) map.addSource(id, source);
+      kept.set(key, as);
+      left?.delete(key);
+    }
+    for (const layer of layers) {
+      const key = `l:${layer.id}`, as = JSON.stringify(layer);
+      if (map.getLayer(layer.id) && kept.get(key) !== as) map.removeLayer(layer.id);
+      if (!map.getLayer(layer.id)) map.addLayer(layer, under && map.getLayer(under) ? under : slotId(slot));
+      kept.set(key, as);
+      left?.delete(key);
+    }
     return () => {
-      // The map gone first (the page left) takes its layers with it.
-      if (!map.style) return;
-      for (const layer of layers) if (map.getLayer(layer.id)) map.removeLayer(layer.id);
-      for (const id of Object.keys(sources)) if (map.getSource(id)) map.removeSource(id);
+      // The map gone first (the page left) takes its layers with it; one
+      // being handed to the next tree keeps them for it to claim.
+      if (!map.style || parked.has(map)) return;
+      for (const layer of layers) {
+        if (map.getLayer(layer.id)) map.removeLayer(layer.id);
+        kept.delete(`l:${layer.id}`);
+      }
+      for (const id of Object.keys(sources)) {
+        if (map.getSource(id)) removeSource(map, id);
+        kept.delete(`s:${id}`);
+      }
     };
-  }, [map, slot]);
+  }, [map, slot, under]);
+}
+
+/** How long a layer of what changes over the chart -- weather, traffic,
+ *  TFRs -- takes to fade in as its first data comes, rather than snap on. */
+export const FADE_IN_MS = 250;
+
+/** Each layer type's opacities, the paint a fade sets. */
+const OPACITIES: Partial<Record<LayerSpecification["type"], string[]>> = {
+  fill: ["fill-opacity"], line: ["line-opacity"], circle: ["circle-opacity", "circle-stroke-opacity"],
+  symbol: ["icon-opacity", "text-opacity"], raster: ["raster-opacity"],
+};
+
+/** The layers (useGlLayer's, called before this) clear as they are added,
+ *  then, once `shown` is true, faded to their own opacities over
+ *  FADE_IN_MS (at once under reduced motion). The opacities must be
+ *  constants or zoom expressions, which MapLibre eases; one that differs
+ *  by feature it would only switch. */
+export function useGlFadeIn(layers: LayerSpecification[], shown: boolean) {
+  const { map } = useGlMap();
+  const spec = useRef(layers);
+  const state = useRef<"new" | "clear" | "done">("new");
+  useEffect(() => {
+    const each = (paint: (id: string, prop: string, to: unknown) => void) => {
+      for (const layer of spec.current) {
+        if (!map.getLayer(layer.id)) continue;
+        for (const prop of OPACITIES[layer.type] ?? []) paint(layer.id, prop, (layer.paint as Record<string, unknown> | undefined)?.[prop] ?? 1);
+      }
+    };
+    const set = (id: string, k: string, v: unknown) => map.setPaintProperty(id, k as Parameters<MlMap["setPaintProperty"]>[1], v as never);
+    const fade = () => {
+      if (state.current === "done") return;
+      state.current = "done";
+      each((id, prop, to) => {
+        set(id, `${prop}-transition`, { duration: prefersReducedMotion() ? 0 : FADE_IN_MS, delay: 0 });
+        set(id, prop, to);
+      });
+    };
+    if (state.current === "new") {
+      state.current = "clear";
+      each((id, prop) => {
+        set(id, `${prop}-transition`, { duration: 0, delay: 0 });
+        set(id, prop, 0);
+      });
+      // Drawn clear once before the fade, or MapLibre has nothing to ease from.
+      if (shown) {
+        map.once("render", fade);
+        return () => { map.off("render", fade); };
+      }
+    }
+    if (shown) fade();
+  }, [map, shown]);
 }
 
 /** A GeoJSON source's data, set as it changes. */
@@ -119,6 +246,40 @@ export interface Stretch { inset: number }
 /** The images each map has, or is drawing, by id. */
 const images = new WeakMap<MlMap, Map<string, Promise<void>>>();
 
+/** A picture ready for addImage: drawn, and its density and stretch. */
+export interface DrawnImage {
+  image: HTMLImageElement;
+  options: { pixelRatio: number; stretchX?: [number, number][]; stretchY?: [number, number][]; content?: [number, number, number, number] };
+}
+
+/** A picture's SVG markup drawn at the screen's density (up to three
+ *  pixels a point), with its stretch for icon-text-fit; null where it
+ *  cannot be drawn. */
+export function drawSvg(svg: string, stretch?: Stretch): Promise<DrawnImage | null> {
+  const ratio = Math.max(1, Math.min(3, Math.ceil(window.devicePixelRatio || 1)));
+  return new Promise(resolve => {
+    const w = Number(/width="([\d.]+)"/.exec(svg)?.[1] ?? 24), h = Number(/height="([\d.]+)"/.exec(svg)?.[1] ?? 24);
+    const sized = svg
+      .replace(`width="${w}"`, `width="${w * ratio}"`).replace(`height="${h}"`, `height="${h * ratio}"`)
+      .replace(/^<svg (?!xmlns)/, `<svg xmlns="http://www.w3.org/2000/svg" `);
+    const image = new Image(w * ratio, h * ratio);
+    image.onload = () => {
+      // A label's box (icon-text-fit) stretches between its corners.
+      const s = (v: number) => v * ratio;
+      const fit = stretch && {
+        stretchX: [[s(stretch.inset), s(w - stretch.inset)]] as [number, number][],
+        stretchY: [[s(stretch.inset), s(h - stretch.inset)]] as [number, number][],
+        content: [s(stretch.inset), s(stretch.inset), s(w - stretch.inset), s(h - stretch.inset)] as [number, number, number, number],
+      };
+      resolve({ image, options: { pixelRatio: ratio, ...fit } });
+    };
+    // A picture that cannot be drawn leaves its symbol bare, not the
+    // layer waiting.
+    image.onerror = () => resolve(null);
+    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(sized)}`;
+  });
+}
+
 /**
  * The marks' pictures from their own SVG markup -- the same markup the
  * Leaflet map's markers and canvases draw (airportMark, icons) -- drawn
@@ -130,33 +291,12 @@ const images = new WeakMap<MlMap, Map<string, Promise<void>>>();
 export function addSvgImages(map: MlMap, wanted: Iterable<[id: string, svg: () => string, stretch?: Stretch]>): Promise<void> {
   let kept = images.get(map);
   if (!kept) images.set(map, kept = new Map());
-  const ratio = Math.max(1, Math.min(3, Math.ceil(window.devicePixelRatio || 1)));
   const waits: Promise<void>[] = [];
   for (const [id, svg, stretch] of wanted) {
     let wait = kept.get(id);
     if (!wait) {
-      wait = new Promise<void>(resolve => {
-        const markup = svg();
-        const w = Number(/width="([\d.]+)"/.exec(markup)?.[1] ?? 24), h = Number(/height="([\d.]+)"/.exec(markup)?.[1] ?? 24);
-        const sized = markup
-          .replace(`width="${w}"`, `width="${w * ratio}"`).replace(`height="${h}"`, `height="${h * ratio}"`)
-          .replace(/^<svg (?!xmlns)/, `<svg xmlns="http://www.w3.org/2000/svg" `);
-        const image = new Image(w * ratio, h * ratio);
-        image.onload = () => {
-          // A label's box (icon-text-fit) stretches between its corners.
-          const s = (v: number) => v * ratio;
-          const fit = stretch && {
-            stretchX: [[s(stretch.inset), s(w - stretch.inset)]] as [number, number][],
-            stretchY: [[s(stretch.inset), s(h - stretch.inset)]] as [number, number][],
-            content: [s(stretch.inset), s(stretch.inset), s(w - stretch.inset), s(h - stretch.inset)] as [number, number, number, number],
-          };
-          if (map.style && !map.hasImage(id)) map.addImage(id, image, { pixelRatio: ratio, ...fit });
-          resolve();
-        };
-        // A picture that cannot be drawn leaves its symbol bare, not the
-        // layer waiting.
-        image.onerror = () => resolve();
-        image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(sized)}`;
+      wait = drawSvg(svg(), stretch).then(drawn => {
+        if (drawn && map.style && !map.hasImage(id)) map.addImage(id, drawn.image, drawn.options);
       });
       kept.set(id, wait);
     }

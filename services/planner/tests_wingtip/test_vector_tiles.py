@@ -25,8 +25,8 @@ import pytest
 import shapely
 from shapely.geometry import Polygon
 
-from wingtip import cycle_pack
-from wingtip import vector_tiles
+from wingtip import cycle_pack, vector_tiles
+from wingtip import fixes as wingtip_fixes
 
 FIXTURES = Path(__file__).parent / "fixtures" / "native"
 NEEDS_TIPPECANOE = pytest.mark.skipif(
@@ -84,6 +84,11 @@ NAV_BASE = [
      "LAT_DECIMAL": "41.51000658", "LONG_DECIMAL": "-87.57154611", "ELEV": "633.6", "MAG_VARN": "2",
      "MAG_VARN_HEMIS": "E", "FREQ": "114.2", "CHAN": "89X", "ALT_CODE": "L", "OPER_HOURS": "24", "STATE_CODE": "IL"},
 ]
+#: A navaid's own remark (NAV_RMK.csv), as the FAA files it.
+NAV_RMK = [
+    {"NAV_ID": "DPA", "NAV_TYPE": "VOR/DME", "TAB_NAME": "NAVIGATION_AID",
+     "REMARK": "VOR UNUSABLE 072-090 BYD 34 NM BLO 3000 FT."},
+]
 FIX_BASE = [
     {"FIX_ID": "VPAON", "STATE_CODE": "IL", "LAT_DECIMAL": "42.07806388", "LONG_DECIMAL": "-87.86358888",
      "FIX_USE_CODE": "VFR  ", "CHARTS": "SECTIONAL,VFR TERMINAL AREA"},
@@ -127,7 +132,7 @@ def sources(tmp_path_factory):
     nasr = root / "nasr"
     nasr.mkdir()
     for name, rows in (("APT_BASE.csv", APT_BASE), ("APT_RWY.csv", APT_RWY), ("APT_RWY_END.csv", APT_RWY_END),
-                       ("NAV_BASE.csv", NAV_BASE), ("FIX_BASE.csv", FIX_BASE)):
+                       ("NAV_BASE.csv", NAV_BASE), ("NAV_RMK.csv", NAV_RMK), ("FIX_BASE.csv", FIX_BASE)):
         _csv(nasr / name, rows)
     return cycle_pack.Pack(packed), nasr
 
@@ -238,6 +243,13 @@ def test_the_navaids_and_every_fix(sources):
         "mag_var": 2.0, "elevation_ft": 801.6, "hours": "24", "restricted": True,
     }
     assert navaids["DPA"]["tippecanoe"] == {"minzoom": 5}
+    # With NAV_RMK.csv, each one's own remarks, read as the VOR's card in
+    # view reads them (wingtip.fixes.navaid_remarks), one a line.
+    remarked = {f["properties"]["ident"]: f["properties"] for f in _lines(
+        vector_tiles.navaid_features(nasr / "NAV_BASE.csv", rmk_path=nasr / "NAV_RMK.csv"))}
+    assert remarked["DPA"]["remarks"] == "\n".join(wingtip_fixes.navaid_remarks("DPA", "VOR/DME", nasr))
+    assert "072-090" in remarked["DPA"]["remarks"]
+    assert "remarks" not in remarked["CGT"]
     fixes = {f["properties"]["ident"]: f for f in _lines(vector_tiles.fix_features(nasr / "FIX_BASE.csv"))}
     assert fixes["VPAON"]["properties"] == {"ident": "VPAON", "kind": "VFR waypoint", "vfr": True, "enroute_low": False}
     assert fixes["VPDVA"]["properties"]["kind"] == "Helicopter route waypoint"

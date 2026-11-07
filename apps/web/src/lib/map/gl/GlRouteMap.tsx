@@ -9,7 +9,6 @@ import GlMapShell from "./GlMapShell";
 import { AirportsGl } from "./layers/AirportsGl";
 import { AirspaceGl } from "./layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "./layers/BaseGl";
-import { RunwaysGl } from "./layers/RunwaysGl";
 import { ChartGl } from "./layers/ChartGl";
 import { AheadGl, ClassBGl } from "./layers/MarksGl";
 import { NavaidsGl, WaypointsGl } from "./layers/NavaidsGl";
@@ -87,6 +86,23 @@ export default function GlRouteMap(p: GlRouteMapProps) {
   );
 }
 
+/**
+ * The map before the engine is there (MapPage's engine gate): the chart
+ * and the cycle's overlays from their tiles, which ask it nothing, drawn
+ * while the .wasm comes; no taps, cards, buttons or route, which do. The
+ * planner's map takes this one up as it comes (GlMapShell's park), the
+ * chart and the overlays as they are.
+ */
+export function GlBootMap() {
+  return (
+    <GlMapShell bare course={null} focus={null} focusZoom={0} place={null}>
+      <LandWaterGl />
+      <ChartGl course={null} />
+      <OverlayGl />
+    </GlMapShell>
+  );
+}
+
 function Layers(p: GlRouteMapProps) {
   const { course } = p;
   const dryRunning = usePastFlight(s => s.hex === DRY_RUN);
@@ -104,7 +120,6 @@ function Layers(p: GlRouteMapProps) {
       <LandWaterGl />
       <ChartGl course={course} previewing={previewing} />
       <OverlayGl />
-      <RunwaysGl />
       <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />
       <TfrGl />
       <AirspaceGl />
