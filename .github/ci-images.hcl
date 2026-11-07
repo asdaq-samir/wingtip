@@ -33,9 +33,13 @@ function "cache" {
   result = REGISTRY == "" ? [] : ["type=registry,ref=${REGISTRY}/${image}:buildcache", "type=registry,ref=${REGISTRY}/${image}:e2e"]
 }
 
+# The registry keeps the images' names from before the 2026-11-07 reorg
+# (webapp, planning-service): GHCR lets the workflow push only to packages
+# already linked to the repository. Only the local tag takes the compose
+# service's name (wingtip-gateway:ci, wingtip-planner:ci).
 function "tags" {
-  params = [image, key]
-  result = key == "" ? ["wingtip-${image}:ci"] : ["${REGISTRY}/${image}:e2e-${key}", "${REGISTRY}/${image}:e2e"]
+  params = [image, name, key]
+  result = key == "" ? ["wingtip-${name}:ci"] : ["${REGISTRY}/${image}:e2e-${key}", "${REGISTRY}/${image}:e2e"]
 }
 
 # Pushed (with a key) with every layer zstd rather than gzip, the base
@@ -56,8 +60,8 @@ group "ci" {
 target "gateway" {
   context    = "."
   dockerfile = "services/gateway/Dockerfile"
-  tags       = tags("gateway", GATEWAY_KEY)
-  cache-from = cache("gateway")
+  tags       = tags("webapp", "gateway", GATEWAY_KEY)
+  cache-from = cache("webapp")
   cache-to   = GATEWAY_KEY == "" ? [] : ["type=inline"]
   output     = pushed(GATEWAY_KEY)
 }
@@ -76,8 +80,8 @@ target "planner" {
   context    = "."
   dockerfile = "services/planner/Dockerfile"
   contexts   = { wingtip-base = "target:base" }
-  tags       = tags("planner", PLANNER_KEY)
-  cache-from = cache("planner")
+  tags       = tags("planning-service", "planner", PLANNER_KEY)
+  cache-from = cache("planning-service")
   cache-to   = PLANNER_KEY == "" ? [] : ["type=inline"]
   output     = pushed(PLANNER_KEY)
 }

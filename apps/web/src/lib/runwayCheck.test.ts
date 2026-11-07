@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import c172Json from "../../../data/aircraft/c172.json?raw";
+import c172Json from "../../../../data/aircraft/c172.json?raw";
 import type { AircraftProfile, Airport, Briefing, Course } from "./api/types";
 import { callEngine } from "./engine/engine";
 import { densityAltitudeFt, runwayChecks } from "./runwayCheck";
