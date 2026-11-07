@@ -166,14 +166,20 @@ def _stuck(pending_stage: str | None = None):
     reporting `pending_stage` as still running, and the event that lets
     the test release it afterwards."""
     release = threading.Event()
+    # Set once compute() is under way, so a test can wait for the leader to
+    # hold the key instead of sleeping and hoping it has (a fixed 0.1 s sleep
+    # lost the race on a loaded CI runner, 2026-11-07).
+    started = threading.Event()
 
     def make(pending: set):
         def compute():
             if pending_stage:
                 pending.add(pending_stage)
+            started.set()
             release.wait(timeout=5)
             return "late"
         return compute
+    make.started = started
     return make, release
 
 
@@ -183,7 +189,7 @@ def test_a_follower_gives_up_after_the_limit_and_says_what_is_running():
     leader_pending: set = set()
     leader = threading.Thread(target=lambda: cache.get_or_compute("k", make(leader_pending), 5, leader_pending))
     leader.start()
-    time.sleep(0.1)
+    assert make.started.wait(timeout=5), "the leader never started computing"
 
     started = time.monotonic()
     try:
