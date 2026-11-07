@@ -324,7 +324,8 @@ data class NearestAirport (
     @SerialName("private")
 
     val isPrivate: Boolean? = null,
-    val radio: InboundRadio? = null
+    val radio: InboundRadio? = null,
+    val towered: Boolean? = null
 )
 
 /**
