@@ -25,9 +25,9 @@ export TILES_DIR=${TILES_DIR:-$PWD/data/raw/chart_tiles.nosync}
 if [ "${SKIP_BUILD:-}" != 1 ]; then
   # The planner is built FROM wingtip's base (services/Dockerfile.base).
   docker build -t wingtip-local/base:rehearsal -f services/Dockerfile.base --target base .
-  docker build -t wingtip-local/planning-service:rehearsal -f services/planner/Dockerfile \
+  docker build -t wingtip-local/planner:rehearsal -f services/planner/Dockerfile \
     --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
-  docker build -t wingtip-local/webapp:rehearsal -f services/gateway/Dockerfile .
+  docker build -t wingtip-local/gateway:rehearsal -f services/gateway/Dockerfile .
 fi
 
 # deploy.sh's seeds: the notes so far and the corridor the planner warms

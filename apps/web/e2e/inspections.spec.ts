@@ -5,7 +5,7 @@ import { library, openConsole, showTabs } from "./helpers";
  * An airplane's inspections and tests in its form (the Library's
  * Aircraft): each recorded date with the last day it is good for -- the
  * annual's past due -- the 100-hour by hours, and the whole saved
- * together. The webapp's answers are stubbed: the calendar months are
+ * together. The gateway's answers are stubbed: the calendar months are
  * AircraftControllerTest's, and what the risk assessment makes of them
  * airworthiness.test's.
  */

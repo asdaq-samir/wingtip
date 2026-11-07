@@ -3,9 +3,9 @@ import { library, openConsole, showTabs } from "./helpers";
 
 /**
  * Instrument currency in the Logbook (14 CFR 61.57(c), (d)): what the
- * webapp reckons from the approaches, holding and tracking logged, said
+ * gateway reckons from the approaches, holding and tracking logged, said
  * with the window's count, and the last proficiency check given beside
- * it; a flight logged with its approaches sends them. The webapp's
+ * it; a flight logged with its approaches sends them. The gateway's
  * answers are stubbed: the rule's arithmetic is CurrencyServiceTest's.
  */
 

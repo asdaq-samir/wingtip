@@ -5,7 +5,7 @@ import { openConsole, settle, showTabs, slow } from "./helpers";
  * Signing a TV in from a phone (#207, DeviceSignInController): the TV's
  * sign-in shows a code and the address to type it at, and asks until it
  * has been typed in, then goes where it is sent signed in; the phone,
- * opened at that address, takes the code. The webapp's three steps are
+ * opened at that address, takes the code. The gateway's three steps are
  * stubbed here (its own tests are DeviceSignInControllerTest's).
  */
 

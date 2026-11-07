@@ -108,7 +108,7 @@ startFresh();
 // The map page is in the first script: every page this app has is a
 // map, so a chunk of its own was only a round trip later.
 //
-// basename "/app": the app is served under that prefix (webapp's
+// basename "/app": the app is served under that prefix (the gateway's
 // WebMvcConfig), not at the domain root. Bare "/app"/"/app/" already
 // redirect server-side to "/app/plan" (a real 500 otherwise -- see that
 // config's own comment) -- the index route below handles it too, for

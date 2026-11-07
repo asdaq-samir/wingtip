@@ -234,7 +234,7 @@ function Standing({ through, testId }: { through: string | null | undefined; tes
 
 /**
  * The airplane's inspections and tests, as its owner records them from its
- * maintenance records, each with the last day it is good for (the webapp
+ * maintenance records, each with the last day it is good for (the gateway
  * works it out by the rule's calendar months) -- what the risk assessment
  * reads for whether it may be flown (lib/airworthiness). Saved together.
  */

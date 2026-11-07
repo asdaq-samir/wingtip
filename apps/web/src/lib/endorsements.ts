@@ -15,7 +15,7 @@ export function inForce(signed: SignedEndorsement[]): Map<string, SignedEndorsem
   return new Map(picked.map(([code, at]) => [code, signed[at]!]));
 }
 
-/** The signature line AC 61-65K asks of every endorsement, as the webapp
+/** The signature line AC 61-65K asks of every endorsement, as the gateway
  *  writes it: "/s/ 10-13-2026 J. J. Jones 987654321CFI RE 12-31-2027". */
 export function signatureLine(instructor: Instructor, signedOn: string): string {
   return `/s/ ${acDay(signedOn)} ${instructor.fullName} ${instructor.certificate} ${instructor.untilKind === "EXP" ? "Exp." : "RE"} ${acDay(instructor.until!)}`;

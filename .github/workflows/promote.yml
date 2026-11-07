@@ -126,7 +126,7 @@ jobs:
           # The two images the production server runs
           # (infra/docker-compose.prod.yml). The pipeline stays out of
           # production (docs/README-AWS.md).
-          for service in webapp planning-service; do
+          for service in gateway planner; do
             source="$GHCR/$service:sha-$SHA"
             if ! docker buildx imagetools inspect --raw "$source" > /dev/null 2>&1; then
               source="$GHCR/$service:latest"

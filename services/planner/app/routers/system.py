@@ -41,7 +41,7 @@ router = APIRouter()
 
 # The gateway, by its compose name; its actuator answers liveness and
 # readiness (the readiness group includes the database).
-WEBAPP_URL = get_settings().webapp_url
+GATEWAY_URL = get_settings().gateway_url
 PROBE_TIMEOUT_S = 3.0
 
 # The FAA downloads a nav log depends on, wherever wingtip keeps them.
@@ -59,13 +59,13 @@ def _mtime(path: Path) -> str | None:
         return None
 
 
-def _webapp_status() -> tuple[ServiceStatus, ServiceStatus]:
-    """The webapp's liveness, and its readiness -- which includes the
+def _gateway_status() -> tuple[ServiceStatus, ServiceStatus]:
+    """The gateway's liveness, and its readiness -- which includes the
     database, so that is the database's row -- each as up only on a
     200: a 503 from the actuator is a running process saying no."""
     def ask(path: str) -> ServiceStatus:
         try:
-            resp = requests.get(f"{WEBAPP_URL}/actuator/health/{path}", timeout=PROBE_TIMEOUT_S)
+            resp = requests.get(f"{GATEWAY_URL}/actuator/health/{path}", timeout=PROBE_TIMEOUT_S)
             return ServiceStatus(up=resp.ok, detail=f"HTTP {resp.status_code}")
         except requests.RequestException as err:
             return ServiceStatus(up=False, detail=str(err).split("\n")[0][:160])
@@ -217,7 +217,7 @@ def status() -> Status:
     network probes run side by side so a service that is down costs one
     timeout, not one per service."""
     with ThreadPoolExecutor(max_workers=2) as pool:
-        webapp = pool.submit(_webapp_status)
+        gateway = pool.submit(_gateway_status)
         pipeline = pool.submit(_pipeline_status)
         # Each FAA data set's cycle, from the disk; one out of date is
         # logged too (once a day), for the owner.
@@ -226,8 +226,8 @@ def status() -> Status:
         return Status(
             checked_at=datetime.now(tz=timezone.utc).isoformat(),
             services={
-                "webapp": webapp.result()[0],
-                "db": webapp.result()[1],
+                "gateway": gateway.result()[0],
+                "db": gateway.result()[1],
             },
             faa_files=_faa_files(),
             weather=_weather_datasets(),

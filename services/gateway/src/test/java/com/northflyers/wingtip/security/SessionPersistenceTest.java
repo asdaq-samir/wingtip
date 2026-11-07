@@ -19,7 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * A sign-in is kept in Postgres (spring-session-jdbc, Flyway's V8) and
  * lasts 30 days of disuse, rather than living in the JVM for half an
- * hour: a pilot signs in once per device a month, and a webapp restart
+ * hour: a pilot signs in once per device a month, and a gateway restart
  * no longer signs everyone out.
  *
  * <p>Against a real Postgres, because the parts that can break are the

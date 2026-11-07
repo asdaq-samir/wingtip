@@ -124,7 +124,7 @@ To see the breaks before pushing:
 ```sh
 git show origin/main:services/planner/openapi.json > /tmp/base.json
 docker run --rm -v /tmp:/base -v "$PWD:/head" tufin/oasdiff:v1.34.1 \
-  breaking /base/base.json /head/planning-service/openapi.json --format singleline
+  breaking /base/base.json /head/services/planner/openapi.json --format singleline
 ```
 
 ## Where it runs

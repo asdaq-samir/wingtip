@@ -1544,7 +1544,7 @@ def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
         yield line(NavLogStage(detail="Planning altitudes…"))
         # On side threads with a heartbeat, not inline: an uncached
         # selection on a bad aviationweather.gov day was observed
-        # taking over two minutes, all of it silent -- and the webapp
+        # taking over two minutes, all of it silent -- and the gateway
         # proxy cuts a stream that has been silent that long, so the
         # browser saw the nav log simply end with no legs and no error.
         # A stage line every few seconds keeps the connection visibly

@@ -3,7 +3,7 @@ import { openConsole, openAccount } from "./helpers";
 
 /**
  * Signing in the way a person does on the local stack: the emailed
- * link, from the inbox docker-compose.yml runs beside the webapp
+ * link, from the inbox docker-compose.yml runs beside the gateway
  * (Mailpit, its API on port 8025). MAILPIT_URL overrides where that
  * is; MAILPIT_UI_AUTH, `user:password`, is the password
  * docker-compose.yml puts on it once PUBLISH_ADDRESS opens it to the Wi-Fi.

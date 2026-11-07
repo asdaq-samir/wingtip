@@ -49,7 +49,7 @@ import org.springframework.context.annotation.Configuration;
  * file. It used to be two gates a blank value passed -- the property is
  * always present (application.yml defaults it to empty), and a blank
  * path resolves to the working directory, which is readable -- so a
- * webapp started without {@code APP_HTTPS_KEYSTORE}, as on AWS, failed
+ * gateway started without {@code APP_HTTPS_KEYSTORE}, as on AWS, failed
  * to start trying to load a keystore from "".
  */
 @Configuration

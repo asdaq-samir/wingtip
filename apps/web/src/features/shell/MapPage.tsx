@@ -86,7 +86,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const setDep = useCallback((d: string) => setDraft({ of: addressKey, dep: d, dest }), [addressKey, dest]);
   const setDest = useCallback((a: string) => setDraft({ of: addressKey, dep, dest: a }), [addressKey, dep]);
 
-  // A Google or Apple sign-in the webapp refused comes back here: an
+  // A Google or Apple sign-in the gateway refused comes back here: an
   // address the provider has not verified can be nobody's pilot. Said
   // once, and taken off the address.
   const refused = searchParams.get("signin") === "refused";

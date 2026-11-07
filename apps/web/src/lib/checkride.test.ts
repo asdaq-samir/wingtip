@@ -10,8 +10,8 @@ describe("the checkride page's reading", () => {
     expect(acsCodesIn("nothing here")).toEqual([]);
   });
 
-  // AC 61-65K A.10 filled in as the webapp's EndorsementKindTest fills it:
-  // the two must make the same words, or the webapp refuses the signature.
+  // AC 61-65K A.10 filled in as the gateway's EndorsementKindTest fills it:
+  // the two must make the same words, or the gateway refuses the signature.
   test("an endorsement's words as they will be signed, a blank left empty leaving nothing", () => {
     const template = "I have reviewed the cross-country planning of {student}. I find the planning and preparation to be correct"
       + " to make the solo flight from {from} to {to} via {via} with landings at {landings} in a {mm} aircraft on {date}."

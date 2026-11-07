@@ -74,7 +74,7 @@ def _hop_of(r, lat: float, lon: float):
     return min(r.hops, key=lambda hop: abs(geo.cross_track_distance_nm(lat, lon, hop.start, hop.end)))
 
 
-#: Set by webapp's proxy from the signed-in pilot, and stripped from
+#: Set by the gateway's proxy from the signed-in pilot, and stripped from
 #: anything a browser sent (PlannerProxyController). Absent where nobody
 #: can sign in, which makes an edit the shared note -- one user, locally.
 PILOT_HEADER = "X-Pilot-Id"
@@ -227,7 +227,7 @@ def forget_pilots_notes(
     x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER),
 ) -> PilotNotesForgotten:
     """A pilot's own notes, every one, taken out as their account is
-    deleted (the webapp's DELETE /api/me). Asked by the webapp alone:
+    deleted (the gateway's DELETE /api/me). Asked by the gateway alone:
     its proxy does not forward this path, and the pilot is named by the
     header it sets from the session. The shared notes stay."""
     if not x_pilot_id:

@@ -797,11 +797,8 @@ jobs:
           # Until Postgres and Mailpit are pulled, which go first.
           small() { until [ -f /tmp/e2e-out/small.pulled ]; do sleep 0.5; done; }
           # One image, $1, for its key, $2.
-          # The registry's name for a service's image: its name from before
-          # the 2026-11-07 reorg, as GHCR's packages are linked by it.
-          image_of() { case "$1" in gateway) echo webapp ;; planner) echo planning-service ;; *) echo "$1" ;; esac; }
           fetch() {
-            local ref=$REGISTRY/$(image_of "$1") built=yes
+            local ref=$REGISTRY/$1 built=yes
             there "$ref:e2e-$2" || built=""
             small
             if [ -z "$built" ]; then
@@ -820,7 +817,7 @@ jobs:
           # The page, for its key, $1: copied out of the image e2e-images
           # made of it into apps/web/dist, which the gateway serves.
           page() {
-            local ref=$REGISTRY/webapp:e2e-page-$1
+            local ref=$REGISTRY/gateway:e2e-page-$1
             await "$ref" || return 1
             docker pull -q "$ref" > /dev/null || return 1
             docker create --name e2e-page "$ref" none > /dev/null || return 1
@@ -1304,7 +1301,7 @@ jobs:
   # The page's key changes on about half the commits (22 of 39). It is
   # built here, once, as the Dockerfile builds it (`npm run types`, `vite
   # build`) with the browser suite's own packages and Node from apps/web/.nvmrc,
-  # and pushed as an image of its files alone (webapp:e2e-page-<key>),
+  # and pushed as an image of its files alone (gateway:e2e-page-<key>),
   # which each shard copies out and mounts over the gateway image's page
   # (infra/docker-compose.ci.yml). Each shard built it itself in 1deccfc's run,
   # 10 to 20 seconds of processors already fully busy with its setup.
@@ -1360,18 +1357,16 @@ jobs:
           missing=""
           while read -r name key; do
             if [ "$name" = page ]; then
-              if there "$REGISTRY/webapp:e2e-page-$key"; then
-                echo "the page: webapp:e2e-page-$key is there"
+              if there "$REGISTRY/gateway:e2e-page-$key"; then
+                echo "the page: gateway:e2e-page-$key is there"
               else
-                echo "the page: webapp:e2e-page-$key to build"
-                echo "page=$REGISTRY/webapp:e2e-page-$key" >> "$GITHUB_OUTPUT"
+                echo "the page: gateway:e2e-page-$key to build"
+                echo "page=$REGISTRY/gateway:e2e-page-$key" >> "$GITHUB_OUTPUT"
               fi
               continue
             fi
             echo "$(echo "$name" | tr 'a-z-' 'A-Z_')_KEY=$key" >> "$GITHUB_ENV"
-            # The registry keeps the pre-reorg names (webapp, planning-service).
-            image=$name; [ "$name" = gateway ] && image=webapp; [ "$name" = planner ] && image=planning-service
-            if there "$REGISTRY/$image:e2e-$key"; then
+            if there "$REGISTRY/$name:e2e-$key"; then
               echo "$name: e2e-$key is there"
             else
               echo "$name: e2e-$key to build"

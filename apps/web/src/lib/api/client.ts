@@ -1,6 +1,6 @@
 import createClient, { type Middleware } from "openapi-fetch";
 import type { paths } from "./schema";
-import type { paths as WebappPaths } from "./webapp-schema";
+import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
 import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AirspaceInView, AlertsAhead, Alternates, AltitudeChoice, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, ChecklistDto, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavaidsInView, NavLogMessage, OverlayTiles, NearestAirports, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, WaypointsInView, ClearanceAsk, ClearancePlaces } from "./types";
 
@@ -8,7 +8,7 @@ import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressReques
  * Every call the pages make. Both servers' calls go through
  * openapi-fetch, typed end to end from each one's own OpenAPI document
  * (`npm run types` regenerates ./schema.d.ts for the planner and
- * ./webapp-schema.d.ts for this app's Spring Boot endpoints): a renamed
+ * ./gateway-schema.d.ts for this app's Spring Boot endpoints): a renamed
  * query parameter or response field is a compile error at the call
  * site, not a silent 404 or `undefined` -- every response type named
  * below is a generated one, and `data` checks it against the path's own.
@@ -47,7 +47,7 @@ export function csrfHeaders(method: string): Record<string, string> {
 }
 
 /** The server's own word for what went wrong: `detail` is the
- *  planner's (and the webapp's proxies'), `error` is Spring's where it
+ *  planner's (and the gateway's proxies'), `error` is Spring's where it
  *  sends one. A 401 carries no body at all (Spring Security's own entry
  *  point), and falls through to the status text. FastAPI's own 422 --
  *  a query parameter it could not parse -- sends `detail` as a list of
@@ -121,8 +121,8 @@ const planner = createClient<paths>({ baseUrl: "", Request: GatewayRequest });
 planner.use(csrfAndFailures);
 
 /** The Spring Boot endpoints, on this same origin. */
-const webapp = createClient<WebappPaths>({ baseUrl: "" });
-webapp.use(csrfAndFailures);
+const gateway = createClient<GatewayPaths>({ baseUrl: "" });
+gateway.use(csrfAndFailures);
 
 /** A schema's shape as openapi-fetch hands it back: every fixed-length
  *  tuple ([lat, lon]) widened to a plain array. */
@@ -663,7 +663,7 @@ export const api = {
    */
   async me(): Promise<Pilot | null> {
     try {
-      return (await webapp.GET("/api/me").then(data<Pilot>)) ?? null;
+      return (await gateway.GET("/api/me").then(data<Pilot>)) ?? null;
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) return null;
       throw err;
@@ -672,14 +672,14 @@ export const api = {
 
   /** A code for this TV to be signed in with from a phone
    *  (DeviceSignInController): shown, with the address to type it at. */
-  deviceCode: () => webapp.POST("/api/auth/device").then(data<DeviceCode>),
+  deviceCode: () => gateway.POST("/api/auth/device").then(data<DeviceCode>),
 
   /** Whether this TV's code has been typed in on a phone: not yet
    *  ("waiting"), signed in now with where to go, or run out ("gone"),
    *  for which the TV asks for a new one. */
   deviceToken: async (deviceCode: string): Promise<AppleSignedIn | "waiting" | "gone"> => {
     try {
-      const { data: answer, response } = await webapp.POST("/api/auth/device/token", { body: { deviceCode } });
+      const { data: answer, response } = await gateway.POST("/api/auth/device/token", { body: { deviceCode } });
       return response.status === 202 ? "waiting" : answer as AppleSignedIn;
     } catch (err) {
       if (err instanceof ApiError && err.status === 410) return "gone";
@@ -690,18 +690,18 @@ export const api = {
   /** The code a TV shows, typed in by the pilot signed in here: the TV
    *  is signed in as them at its next ask. */
   approveDevice: async (userCode: string): Promise<void> => {
-    await webapp.POST("/api/auth/device/approve", { body: { userCode } });
+    await gateway.POST("/api/auth/device/approve", { body: { userCode } });
   },
 
   /** The signed-in pilot's telephone number and home base, both at once,
    *  for a flight plan's item 19 (PilotController); blank is none. */
-  setContact: (body: PilotContactRequest) => webapp.PUT("/api/me/contact", { body }).then(data<Pilot>),
+  setContact: (body: PilotContactRequest) => gateway.PUT("/api/me/contact", { body }).then(data<Pilot>),
 
   /** Deletes the signed-in pilot's account and everything that was
    *  theirs, on every device, and signs them out (a 204). A 502 deleted
    *  nothing: the planner could not take their notes. */
   async deleteAccount(): Promise<void> {
-    await webapp.DELETE("/api/me");
+    await gateway.DELETE("/api/me");
   },
 
   /**
@@ -710,7 +710,7 @@ export const api = {
    * mail host cannot hold a role at all, which is what decides whether
    * the developer's switch is offered to a caller with no session.
    */
-  capabilities: () => webapp.GET("/api/auth/capabilities").then(data<SignInCapabilities>),
+  capabilities: () => gateway.GET("/api/auth/capabilities").then(data<SignInCapabilities>),
 
   /** POSTs to Spring Security's own logout endpoint, which no schema
    *  describes: a 204 once the session is gone (SecurityConfig). The
@@ -727,7 +727,7 @@ export const api = {
    * malformed address the server's own validation rejects with 400).
    */
   requestMagicLink: async (email: string): Promise<void> => {
-    await webapp.POST("/api/auth/magic-link", { body: { email } });
+    await gateway.POST("/api/auth/magic-link", { body: { email } });
   },
 
   /**
@@ -753,148 +753,148 @@ export const api = {
   /** A signed-in pilot's own airplanes -- also a Spring Boot call,
    *  like `me()`: nothing here is planner's concern. */
   aircraft: {
-    list: () => webapp.GET("/api/aircraft").then(data<Aircraft[]>),
-    add: (request: AircraftRequest) => webapp.POST("/api/aircraft", { body: request }).then(data<Aircraft>),
+    list: () => gateway.GET("/api/aircraft").then(data<Aircraft[]>),
+    add: (request: AircraftRequest) => gateway.POST("/api/aircraft", { body: request }).then(data<Aircraft>),
     update: (id: number, request: AircraftRequest) =>
-      webapp.PUT("/api/aircraft/{id}", { params: { path: { id } }, body: request }).then(data<Aircraft>),
+      gateway.PUT("/api/aircraft/{id}", { params: { path: { id } }, body: request }).then(data<Aircraft>),
     remove: async (id: number): Promise<void> => {
-      await webapp.DELETE("/api/aircraft/{id}", { params: { path: { id } } });
+      await gateway.DELETE("/api/aircraft/{id}", { params: { path: { id } } });
     },
     /** Its VOR check for IFR, recorded (14 CFR 91.171(d)). */
     vorCheck: (id: number, request: VorCheckRequest) =>
-      webapp.PUT("/api/aircraft/{id}/vor-check", { params: { path: { id } }, body: request }).then(data<Aircraft>),
+      gateway.PUT("/api/aircraft/{id}/vor-check", { params: { path: { id } }, body: request }).then(data<Aircraft>),
     /** Its inspections and tests, recorded all at once (14 CFR 91.409,
      *  91.411, 91.413, 91.207). */
     inspections: (id: number, request: InspectionsRequest) =>
-      webapp.PUT("/api/aircraft/{id}/inspections", { params: { path: { id } }, body: request }).then(data<Aircraft>),
+      gateway.PUT("/api/aircraft/{id}/inspections", { params: { path: { id } }, body: request }).then(data<Aircraft>),
     /** Its checklist, as its owner wrote it, and that replaced whole. */
     checklist: (id: number) =>
-      webapp.GET("/api/aircraft/{id}/checklist", { params: { path: { id } } }).then(data<ChecklistDto>),
+      gateway.GET("/api/aircraft/{id}/checklist", { params: { path: { id } } }).then(data<ChecklistDto>),
     saveChecklist: (id: number, checklist: ChecklistDto) =>
-      webapp.PUT("/api/aircraft/{id}/checklist", { params: { path: { id } }, body: checklist }).then(data<ChecklistDto>),
+      gateway.PUT("/api/aircraft/{id}/checklist", { params: { path: { id } }, body: checklist }).then(data<ChecklistDto>),
     /** Its squawks, newest first; one written, changed or fixed, or taken out. */
-    squawks: (id: number) => webapp.GET("/api/aircraft/{id}/squawks", { params: { path: { id } } }).then(data<Squawk[]>),
+    squawks: (id: number) => gateway.GET("/api/aircraft/{id}/squawks", { params: { path: { id } } }).then(data<Squawk[]>),
     addSquawk: (id: number, squawk: SquawkRequest) =>
-      webapp.POST("/api/aircraft/{id}/squawks", { params: { path: { id } }, body: squawk }).then(data<Squawk>),
+      gateway.POST("/api/aircraft/{id}/squawks", { params: { path: { id } }, body: squawk }).then(data<Squawk>),
     updateSquawk: (id: number, squawkId: number, squawk: SquawkRequest) =>
-      webapp.PUT("/api/aircraft/{id}/squawks/{squawkId}", { params: { path: { id, squawkId } }, body: squawk }).then(data<Squawk>),
+      gateway.PUT("/api/aircraft/{id}/squawks/{squawkId}", { params: { path: { id, squawkId } }, body: squawk }).then(data<Squawk>),
     removeSquawk: async (id: number, squawkId: number): Promise<void> => {
-      await webapp.DELETE("/api/aircraft/{id}/squawks/{squawkId}", { params: { path: { id, squawkId } } });
+      await gateway.DELETE("/api/aircraft/{id}/squawks/{squawkId}", { params: { path: { id, squawkId } } });
     },
   },
 
   /** The signed-in pilot's subscription to the paid features, and the
    *  free month started: once an account, a 409 after. */
   subscription: {
-    get: () => webapp.GET("/api/subscription").then(data<Subscription>),
-    startTrial: () => webapp.POST("/api/subscription/trial").then(data<Subscription>),
+    get: () => gateway.GET("/api/subscription").then(data<Subscription>),
+    startTrial: () => gateway.POST("/api/subscription/trial").then(data<Subscription>),
   },
 
   /** Flight Service's filing through the app (FlightServiceController):
    *  whether it is connected, and a flight plan filed in the pilot's name. */
   flightService: {
-    status: () => webapp.GET("/api/flight-service").then(data<FlightServiceStatus>),
+    status: () => gateway.GET("/api/flight-service").then(data<FlightServiceStatus>),
     file: (plan: FlightPlanFilingRequest) =>
-      webapp.POST("/api/flight-service/flight-plans", { body: plan }).then(data<FlightPlanFiled>),
+      gateway.POST("/api/flight-service/flight-plans", { body: plan }).then(data<FlightPlanFiled>),
   },
 
   /** The web app's speed, a day at a time (SpeedController): the
    *  developer's Speed page. */
-  speedTrend: (days = 90) => webapp.GET("/api/speed", { params: { query: { days } } }).then(data<SpeedDay[]>),
+  speedTrend: (days = 90) => gateway.GET("/api/speed", { params: { query: { days } } }).then(data<SpeedDay[]>),
 
   /** A signed-in pilot's logbook and currency. */
   logbook: {
-    list: () => webapp.GET("/api/logbook").then(data<LogbookEntry[]>),
-    add: (request: LogbookEntryRequest) => webapp.POST("/api/logbook", { body: request }).then(data<LogbookEntry>),
+    list: () => gateway.GET("/api/logbook").then(data<LogbookEntry[]>),
+    add: (request: LogbookEntryRequest) => gateway.POST("/api/logbook", { body: request }).then(data<LogbookEntry>),
     update: (id: number, request: LogbookEntryRequest) =>
-      webapp.PUT("/api/logbook/{id}", { params: { path: { id } }, body: request }).then(data<LogbookEntry>),
+      gateway.PUT("/api/logbook/{id}", { params: { path: { id } }, body: request }).then(data<LogbookEntry>),
     remove: async (id: number): Promise<void> => {
-      await webapp.DELETE("/api/logbook/{id}", { params: { path: { id } } });
+      await gateway.DELETE("/api/logbook/{id}", { params: { path: { id } } });
     },
-    currency: () => webapp.GET("/api/logbook/currency").then(data<Currency>),
-    setCurrencyDates: (request: CurrencyDatesRequest) => webapp.PUT("/api/logbook/currency", { body: request }).then(data<Currency>),
+    currency: () => gateway.GET("/api/logbook/currency").then(data<Currency>),
+    setCurrencyDates: (request: CurrencyDatesRequest) => gateway.PUT("/api/logbook/currency", { body: request }).then(data<Currency>),
     /** Whether the pilot is emailed before their currency runs out. */
-    reminders: () => webapp.GET("/api/logbook/reminders").then(data<Reminders>),
-    setReminders: (on: boolean) => webapp.PUT("/api/logbook/reminders", { body: { on } }).then(data<Reminders>),
+    reminders: () => gateway.GET("/api/logbook/reminders").then(data<Reminders>),
+    setReminders: (on: boolean) => gateway.PUT("/api/logbook/reminders", { body: { on } }).then(data<Reminders>),
     /** Flights from a file, those already in the logbook left out. */
     importAll: (entries: LogbookEntryRequest[]) =>
-      webapp.POST("/api/logbook/import", { body: { entries } }).then(data<LogbookImportResult>),
+      gateway.POST("/api/logbook/import", { body: { entries } }).then(data<LogbookImportResult>),
   },
 
   /** A student's way to the checkride, beside the logbook. */
   training: {
-    get: () => webapp.GET("/api/training").then(data<Training>),
+    get: () => gateway.GET("/api/training").then(data<Training>),
     setKnowledgeTest: (codes: string[]) =>
-      webapp.PUT("/api/training/knowledge-test", { body: { codes } }).then(data<Training>),
+      gateway.PUT("/api/training/knowledge-test", { body: { codes } }).then(data<Training>),
     endorse: (code: string, endorsedOn: string) =>
-      webapp.PUT("/api/training/endorsements/{code}", { params: { path: { code } }, body: { endorsedOn } }).then(data<Training>),
+      gateway.PUT("/api/training/endorsements/{code}", { params: { path: { code } }, body: { endorsedOn } }).then(data<Training>),
     withdraw: (code: string) =>
-      webapp.DELETE("/api/training/endorsements/{code}", { params: { path: { code } } }).then(data<Training>),
+      gateway.DELETE("/api/training/endorsements/{code}", { params: { path: { code } } }).then(data<Training>),
     /** Their name as their certificate gives it, which endorsements use. */
-    setName: (fullName: string) => webapp.PUT("/api/training/name", { body: { fullName } }).then(data<Training>),
+    setName: (fullName: string) => gateway.PUT("/api/training/name", { body: { fullName } }).then(data<Training>),
     /** An instructor asked in by address, who is emailed. */
-    askInstructor: (email: string) => webapp.POST("/api/training/instructors", { body: { email } }).then(data<Training>),
+    askInstructor: (email: string) => gateway.POST("/api/training/instructors", { body: { email } }).then(data<Training>),
     dropInstructor: (id: number) =>
-      webapp.DELETE("/api/training/instructors/{id}", { params: { path: { id } } }).then(data<Training>),
+      gateway.DELETE("/api/training/instructors/{id}", { params: { path: { id } } }).then(data<Training>),
     /** A saved flight put to an instructor for its solo cross-country review. */
     askReview: (body: { flightId: number; instructorId: number; makeModel: string; flightOn: string; note: string | null }) =>
-      webapp.POST("/api/training/reviews", { body }).then(data<Training>),
+      gateway.POST("/api/training/reviews", { body }).then(data<Training>),
     withdrawReview: (id: number) =>
-      webapp.DELETE("/api/training/reviews/{id}", { params: { path: { id } } }).then(data<Training>),
+      gateway.DELETE("/api/training/reviews/{id}", { params: { path: { id } } }).then(data<Training>),
     /** How far along an approach set them: briefed, flown, its quiz so far. */
     lessonProgress: (id: number, body: LessonProgressRequest) =>
-      webapp.POST("/api/training/lessons/{id}/progress", { params: { path: { id } }, body }).then(data<Training>),
+      gateway.POST("/api/training/lessons/{id}/progress", { params: { path: { id } }, body }).then(data<Training>),
   },
 
   /** The pilot as a flight instructor: their certificate, students,
    *  reviews and the endorsements they sign. */
   instructor: {
-    get: () => webapp.GET("/api/instructor").then(data<Instructor>),
-    set: (body: InstructorRequest) => webapp.PUT("/api/instructor", { body }).then(data<Instructor>),
-    stop: () => webapp.DELETE("/api/instructor").then(data<Instructor>),
+    get: () => gateway.GET("/api/instructor").then(data<Instructor>),
+    set: (body: InstructorRequest) => gateway.PUT("/api/instructor", { body }).then(data<Instructor>),
+    stop: () => gateway.DELETE("/api/instructor").then(data<Instructor>),
     accept: (linkId: number) =>
-      webapp.POST("/api/instructor/students/{linkId}/accept", { params: { path: { linkId } } }).then(data<Instructor>),
+      gateway.POST("/api/instructor/students/{linkId}/accept", { params: { path: { linkId } } }).then(data<Instructor>),
     leave: (linkId: number) =>
-      webapp.DELETE("/api/instructor/students/{linkId}", { params: { path: { linkId } } }).then(data<Instructor>),
+      gateway.DELETE("/api/instructor/students/{linkId}", { params: { path: { linkId } } }).then(data<Instructor>),
     student: (studentId: number) =>
-      webapp.GET("/api/instructor/students/{studentId}/training", { params: { path: { studentId } } }).then(data<Training>),
+      gateway.GET("/api/instructor/students/{studentId}/training", { params: { path: { studentId } } }).then(data<Training>),
     sign: (studentId: number, body: SignRequest) =>
-      webapp.POST("/api/instructor/students/{studentId}/endorsements", { params: { path: { studentId } }, body }).then(data<Training>),
+      gateway.POST("/api/instructor/students/{studentId}/endorsements", { params: { path: { studentId } }, body }).then(data<Training>),
     voidEndorsement: (id: number) =>
-      webapp.POST("/api/instructor/endorsements/{id}/void", { params: { path: { id } } }).then(data<Instructor>),
+      gateway.POST("/api/instructor/endorsements/{id}/void", { params: { path: { id } } }).then(data<Instructor>),
     decline: (id: number, note: string) =>
-      webapp.POST("/api/instructor/reviews/{id}/decline", { params: { path: { id } }, body: { note } }).then(data<Instructor>),
+      gateway.POST("/api/instructor/reviews/{id}/decline", { params: { path: { id } }, body: { note } }).then(data<Instructor>),
     /** An approach set one of their students as a lesson, and taken back. */
     assignLesson: (studentId: number, body: AssignLessonRequest) =>
-      webapp.POST("/api/instructor/students/{studentId}/lessons", { params: { path: { studentId } }, body }).then(data<Training>),
+      gateway.POST("/api/instructor/students/{studentId}/lessons", { params: { path: { studentId } }, body }).then(data<Training>),
     removeLesson: (studentId: number, id: number) =>
-      webapp.DELETE("/api/instructor/students/{studentId}/lessons/{id}", { params: { path: { studentId, id } } }).then(data<Training>),
+      gateway.DELETE("/api/instructor/students/{studentId}/lessons/{id}", { params: { path: { studentId, id } } }).then(data<Training>),
     /** The track of a flight the student put to them, to debrief its approach. */
     reviewedTrack: (studentId: number, flightId: number) =>
-      webapp.GET("/api/instructor/students/{studentId}/flights/{flightId}/track", { params: { path: { studentId, flightId } } })
+      gateway.GET("/api/instructor/students/{studentId}/flights/{flightId}/track", { params: { path: { studentId, flightId } } })
         .then(data<SavedTrack>),
   },
 
   /** A signed-in pilot's own filed flights. */
   flights: {
-    list: () => webapp.GET("/api/flights").then(data<FlightSummary[]>),
-    save: (request: SaveFlightRequest) => webapp.POST("/api/flights", { body: request }).then(data<Flight>),
+    list: () => gateway.GET("/api/flights").then(data<FlightSummary[]>),
+    save: (request: SaveFlightRequest) => gateway.POST("/api/flights", { body: request }).then(data<Flight>),
     remove: async (id: number): Promise<void> => {
-      await webapp.DELETE("/api/flights/{id}", { params: { path: { id } } });
+      await gateway.DELETE("/api/flights/{id}", { params: { path: { id } } });
     },
     /** One flight with its nav log, for its debrief. */
-    get: (id: number) => webapp.GET("/api/flights/{id}", { params: { path: { id } } }).then(data<Flight>),
+    get: (id: number) => gateway.GET("/api/flights/{id}", { params: { path: { id } } }).then(data<Flight>),
     /** Its track as saved to the account, or null where none is. */
     track: (id: number): Promise<SavedTrack | null> =>
-      webapp.GET("/api/flights/{id}/track", { params: { path: { id } } }).then(data<SavedTrack>).catch(err => {
+      gateway.GET("/api/flights/{id}/track", { params: { path: { id } } }).then(data<SavedTrack>).catch(err => {
         if (err instanceof ApiError && err.status === 404) return null;
         throw err;
       }),
     saveTrack: async (id: number, track: SavedTrack): Promise<void> => {
-      await webapp.PUT("/api/flights/{id}/track", { params: { path: { id } }, body: track });
+      await gateway.PUT("/api/flights/{id}/track", { params: { path: { id } }, body: track });
     },
     deleteTrack: async (id: number): Promise<void> => {
-      await webapp.DELETE("/api/flights/{id}/track", { params: { path: { id } } });
+      await gateway.DELETE("/api/flights/{id}/track", { params: { path: { id } } });
     },
   },
 };

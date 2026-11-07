@@ -32,7 +32,7 @@ const dayLabel = (day: string) => DAY.format(new Date(`${day}T00:00:00Z`));
  * The web app's speed over time, a page of the developer console's System
  * tab (DevPanel): each Core Web Vital as pilots' browsers measured it
  * (lib/speed) beside the nightly lab run (ci.yml's Speed trend), and the
- * lab's own timings, against where "good" ends. Kept by the webapp
+ * lab's own timings, against where "good" ends. Kept by the gateway
  * (SpeedController) for 400 days.
  */
 export default function SpeedPage() {

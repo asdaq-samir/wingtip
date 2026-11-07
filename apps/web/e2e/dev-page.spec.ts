@@ -41,7 +41,7 @@ test("dev page: the dev console opens on training, and the waypoint drawer opens
   expect(await devMl.getByRole("button", { name: /Retrain/ }).count()).toBe(0);
   await consolePage(devMl, "Status");
   await devMl.getByRole("button", { name: /^Services/ }).click();
-  await expect(devMl.getByText("planning-service", { exact: true })).toBeVisible();
+  await expect(devMl.getByText("planner", { exact: true })).toBeVisible();
 
   // Escape puts it away, Train the tab up again; Perf is how good the
   // models are; then the waypoint drawer opens from its grabber, and

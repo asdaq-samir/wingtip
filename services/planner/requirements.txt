@@ -2,7 +2,7 @@
 # reads it back, and draws the charts. wingtip's own dependencies, charts
 # included, come from services/planner/requirements-wingtip-charts.txt; this file lists only
 # what the service needs on top. It serves no pages -- the front end is
-# in apps/web/ and ships inside webapp.
+# in apps/web/ and ships inside the gateway's image.
 #
 # PINNED: an unpinned FastAPI/pandas/etc. drifting between builds is
 # silent version skew, and for the chart model's joblib artifact (below)
