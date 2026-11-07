@@ -1015,7 +1015,21 @@ def encode_png(rgba: np.ndarray) -> bytes:
     encoding (15 KB against 43 for a busy urban tile) at a third the
     time, and exact -- at the chart's own zoom the pixels are the
     sheet's palette to begin with, so the quantiser has nothing to
-    approximate. The octree quantiser is the one that keeps alpha."""
+    approximate. The octree quantiser is the one that keeps alpha.
+
+    A 512-pixel "@2x" tile is the exception: it is the sheet resampled
+    (Lanczos, in RGB) to twice its pixels, so its edges are new colours
+    the palette never had, and quantising them back to 256 threw away
+    the smooth edges of lines and lettering that make it worth drawing
+    -- the owner found the map less crisp than ForeFlight's on an iPhone
+    (2026-11-07). It is kept in full colour, losslessly: RGB where every
+    pixel is opaque, RGBA where the sheet's edge leaves some clear."""
+    if rgba.shape[0] > 256:
+        opaque = bool((rgba[:, :, 3] == 255).all())
+        image = Image.fromarray(rgba[:, :, :3] if opaque else rgba, "RGB" if opaque else "RGBA")
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG", optimize=True)
+        return buffer.getvalue()
     image = Image.fromarray(rgba, "RGBA").quantize(256, method=Image.Quantize.FASTOCTREE)
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
