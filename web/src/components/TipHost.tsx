@@ -4,7 +4,7 @@ import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 import { TEXT } from "../lib/text";
-import { TIPS, unseen, useTips, type TipSpec } from "../lib/tips";
+import { TIPS, unseen, useTips, type TipSpec } from "../lib/firstRunTips";
 
 /** In sight and not under anything: the point at its middle is its own.
  *  Not in the panel at rest: there the pill is the tab bar and a strip
@@ -27,7 +27,7 @@ const somethingOpen = () =>
   !!document.querySelector("[role='dialog'][data-state='open'], [role='alertdialog'][data-state='open'], [role='menu'], [data-slot='popover-content']:not([data-tip-content])");
 
 /**
- * The planner's first-run tips (lib/tips), one at a time, as TipKit shows
+ * The planner's first-run tips (lib/firstRunTips), one at a time, as TipKit shows
  * a popover tip: beside its control (`data-tip`) once the control has
  * been in sight a moment and nothing else is up, a light to say it is a
  * tip, and the app's close (CloseButton) at its title row's end, as every

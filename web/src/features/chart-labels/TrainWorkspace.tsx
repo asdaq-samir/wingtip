@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { identOf, routeOf } from "../../lib/identSchema";
 import { statusQuery } from "../../lib/queryClient";
 import { useProgressToast } from "../../lib/useProgressToast";
-import type { WorkspaceProps } from "../page/workspace";
+import type { WorkspaceProps } from "../shell/workspace";
 import { ChartColumn, GraduationCap } from "lucide-react";
 import TabBar, { type BarTab } from "../../components/TabBar";
 import { fromLucide } from "../../components/tabGlyphs";

@@ -3,7 +3,7 @@ import { ExternalLink, Info } from "lucide-react";
 import { cn } from "cn";
 import FindingIcon from "../../../../components/FindingIcon";
 import { useTicked, usePreflight } from "../../../../lib/preflight";
-import { FINDING_TONE, type Finding } from "../../../../lib/status";
+import { FINDING_TONE, type Finding } from "../../../../lib/findings";
 import { TEXT } from "../../../../lib/text";
 import { verdictLine, type VerdictItem, type Where } from "../../../../lib/verdict";
 import { GoToTab, LEGS } from "../navlog/panelTab";

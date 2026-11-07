@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { openMapSettings, openSetup, settle, consolePage } from "./helpers";
 
 /**
- * What the planner is not (lib/limits): said in About and at the
+ * What the planner is not (lib/planningAid, lib/dataSources): said in About and at the
  * briefing's foot, not in a dialog to accept before the map, at the
  * owner's ask ("no aviation app does that").
  */

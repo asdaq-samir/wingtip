@@ -69,7 +69,7 @@ interface Props {
 /**
  * The planning panel's tabs' briefing, one part to a tab (`part`), each
  * opening with its conclusion and then going place by place or check by
- * check -- the same marks (lib/status) and the same warnings on the
+ * check -- the same marks (lib/findings) and the same warnings on the
  * sections' titles in every tab:
  *
  * - The Brief: the Go / No-Go over every tab's findings (lib/verdict),

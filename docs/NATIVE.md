@@ -74,7 +74,7 @@ is docs/NATIVE-ANDROID.md.
 
 | Rule | Web (the reference) | On the phone | Fixture |
 |---|---|---|---|
-| A pilot's hold as the planner reads it, its legs' minutes by altitude (wingtip.holds; AIM 5-3-8 j.4(a)) | `lib/holds.ts`, `lib/holding.ts` `legMinutes` | the engine: `hold_read`, `hold_write`, `holding_leg_minutes` (`Hold`) | `holds.json` |
+| A pilot's hold as the planner reads it, its legs' minutes by altitude (wingtip.holds; AIM 5-3-8 j.4(a)) | `lib/routeHolds.ts`, `lib/holdEntry.ts` `legMinutes` | the engine: `hold_read`, `hold_write`, `holding_leg_minutes` (`Hold`) | `holds.json` |
 | A hold's entry and wind, lost comms' altitudes (AIM 5-3-8; 14 CFR 91.185) | the planner's /api/holding, /api/lost-comms | the engine: `holding`, `lost_comms` (`Engine.holding`, `Engine.lostComms`) | the engine's own tests |
 | The route's procedures, a fix off a point, a fix's charted altitudes | `lib/procedures.ts`, `lib/identSchema.ts` | the engine: `procedures_write`, `frd_read`, `frd_write`, `altitude_lines` | the engine's own tests |
 | The airplane's checklist written as text | `lib/checklist.ts` | the engine: `checklist_read`, `checklist_write` (`ChecklistText`) | `checklist.json` |

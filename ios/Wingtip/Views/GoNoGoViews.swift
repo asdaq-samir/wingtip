@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A finding's mark and colour, the one scale the Brief says every check
-/// on (the web's lib/status): nothing against it, something to look at,
+/// on (the web's lib/findings): nothing against it, something to look at,
 /// something to fix before the flight goes as planned, not worked out,
 /// or still being worked out.
 enum FindingStyle {

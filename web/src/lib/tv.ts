@@ -1,4 +1,4 @@
-import { closeTopmost } from "./back";
+import { closeTopmost } from "./backNavigation";
 
 /**
  * The TV apps (tv/: Samsung's Tizen and LG's webOS): the site in the
@@ -100,7 +100,7 @@ function registerChannelKeys(platform: TvPlatform) {
  * sofa (LG's app asks the same of webOS in its appinfo.json); the
  * remote's arrows moving from control to control by where they are on
  * the screen (the W3C's spatial navigation, by its polyfill); its Back
- * closing what is open, as Escape does (lib/back), then leaving the app.
+ * closing what is open, as Escape does (lib/backNavigation), then leaving the app.
  * On the map the arrows pan it and OK and a channel up and down zoom it
  * (MapShell, TvMapKeys), and Back takes the remote off it.
  */

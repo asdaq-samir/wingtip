@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { SetURLSearchParams } from "react-router-dom";
 import { toast } from "../lib/toast";
-import { cn } from "../lib/utils";
+import { cn } from "cn";
 import { TEXT } from "../lib/text";
 import { observed, planStateOf, redone, restored, started, undone, type PlanHistory } from "../lib/planHistory";
 

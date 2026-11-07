@@ -5,7 +5,7 @@ import FieldHit from "../../components/FieldHit";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import Segmented from "../../components/Segmented";
 import { Input } from "../../components/ui/input";
-import { approachRelative, entrySteps, holdingEntry, holdingWind, type Entry, type Turns } from "../../lib/holding";
+import { approachRelative, entrySteps, holdingEntry, holdingWind, type Entry, type Turns } from "../../lib/holdEntry";
 import { bearing } from "../../lib/units";
 import { TEXT } from "../../lib/text";
 

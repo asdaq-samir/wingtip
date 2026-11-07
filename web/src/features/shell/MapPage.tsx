@@ -31,7 +31,7 @@ import type { WorkspacePieces } from "./workspace";
  * React's own `lazy`, resolved while the `Suspense` below shows the
  * empty shell.
  */
-const TrainWorkspace = lazy(() => import("../train/TrainWorkspace"));
+const TrainWorkspace = lazy(() => import("../chart-labels/TrainWorkspace"));
 
 export type Mode = "pilot" | "dev";
 

@@ -2,7 +2,7 @@ import { Button } from "../../../components/ui/button";
 import { cn } from "cn";
 import { TEXT } from "../../../lib/text";
 import type { Unflyable } from "../hooks/usePlan";
-import { FINDING_TONE } from "../../../lib/status";
+import { FINDING_TONE } from "../../../lib/findings";
 
 /**
  * No legal altitude for the route: where along it, why as a list, and the

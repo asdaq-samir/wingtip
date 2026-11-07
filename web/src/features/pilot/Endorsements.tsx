@@ -10,7 +10,7 @@ import type { EndorsementKind, Instructor, SignedEndorsement } from "../../lib/a
 import { renderEndorsement } from "../../lib/checkride";
 import { lapseWarning, said, signatureLine } from "../../lib/endorsements";
 import { localDay } from "../../lib/clock";
-import { FINDING_TONE } from "../../lib/status";
+import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 
 /** "Good to 11 Jan 2027", or in red once it has run out. */

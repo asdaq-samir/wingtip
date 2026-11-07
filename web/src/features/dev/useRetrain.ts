@@ -5,7 +5,7 @@ import { statusQuery } from "../../lib/queryClient";
 import type { Status } from "../../lib/api/types";
 import { useConfirm } from "../../components/useConfirm";
 import { useConsoleOpen } from "../../components/mapChrome";
-import { useDevTab } from "../train/devTab";
+import { useDevTab } from "../chart-labels/devTab";
 
 /**
  * The one action that changes the model, and what a button for it

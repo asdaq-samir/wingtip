@@ -19206,7 +19206,7 @@
     },
     "/api/holding": {
       "get": {
-        "description": "A hold's entry (web/src/lib/holding, AIM 5-3-8): for an airplane\nheading `heading` to the fix of a hold on the inbound course `inbound`\nwith `turns`, the entry by the AIM's sectors and its steps in words,\nand the other entry where the heading is within 5 degrees of a\nsector's edge; given a true airspeed, a wind (both the course's\nreference, magnetic as a clearance gives it) and the altitude, the\ninbound and outbound headings and the outbound time that make the\ninbound leg a minute (a minute and a half above 14,000 ft MSL).",
+        "description": "A hold's entry (web/src/lib/holdEntry, AIM 5-3-8): for an airplane\nheading `heading` to the fix of a hold on the inbound course `inbound`\nwith `turns`, the entry by the AIM's sectors and its steps in words,\nand the other entry where the heading is within 5 degrees of a\nsector's edge; given a true airspeed, a wind (both the course's\nreference, magnetic as a clearance gives it) and the altitude, the\ninbound and outbound headings and the outbound time that make the\ninbound leg a minute (a minute and a half above 14,000 ft MSL).",
         "operationId": "holding_api_holding_get",
         "parameters": [
           {

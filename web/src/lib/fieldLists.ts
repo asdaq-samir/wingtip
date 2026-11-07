@@ -12,7 +12,7 @@
  * approach that locked its takeoff runway (the 19 and 20 Oct audits).
  */
 import { altitudesOf, altitudesParam, groundOf } from "./identSchema";
-import { holdsOf, holdsParam, type Hold } from "./holds";
+import { holdsOf, holdsParam, type Hold } from "./routeHolds";
 import { proceduresOf, proceduresParam, sameField, type PickedProcedure } from "./procedures";
 import { patternsOf, patternsParam } from "./trafficPattern";
 

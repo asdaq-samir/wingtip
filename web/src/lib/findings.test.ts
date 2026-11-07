@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { worstOf } from "./status";
+import { worstOf } from "./findings";
 
 describe("worstOf", () => {
   it("is a stop over a caution over not known, and nothing found when all are fine", () => {

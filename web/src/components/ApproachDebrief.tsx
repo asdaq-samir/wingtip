@@ -12,7 +12,7 @@ import {
 import { clockTime } from "../lib/clock";
 import { rad } from "../lib/geo";
 import { sameField, transitionWords, type PickedProcedure } from "../lib/procedures";
-import { FINDING_TONE } from "../lib/status";
+import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
 import type { TrackPoint } from "../lib/track";
 import { feet } from "../lib/units";

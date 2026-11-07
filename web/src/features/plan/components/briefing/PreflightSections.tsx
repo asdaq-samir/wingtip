@@ -8,7 +8,7 @@ import { Input } from "../../../../components/ui/input";
 import type { AircraftProfile, Briefing, Course } from "../../../../lib/api/types";
 import { runwayChecks, type RunwayDistance } from "../../../../lib/runwayCheck";
 import { useRunwayPicks } from "../../../../lib/useRunwayPicks";
-import { FINDING_TONE } from "../../../../lib/status";
+import { FINDING_TONE } from "../../../../lib/findings";
 import FindingIcon from "../../../../components/FindingIcon";
 import { windOnRunway } from "../../format";
 import { TEXT } from "../../../../lib/text";

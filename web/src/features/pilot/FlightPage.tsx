@@ -22,7 +22,7 @@ import PaidPrompt from "../../components/PaidPrompt";
 import { hm, localDay } from "../../lib/clock";
 import { reviewState, said } from "../../lib/endorsements";
 import { ReviewAskForm, type ReviewAsk } from "./ReviewAsk";
-import { FINDING_TONE } from "../../lib/status";
+import { FINDING_TONE } from "../../lib/findings";
 import { airportQuery, trainingQuery } from "../../lib/queryClient";
 import { proceduresOf, sameField } from "../../lib/procedures";
 

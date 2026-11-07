@@ -20,7 +20,7 @@ import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
 import { useTabSearch } from "../../../lib/tabSearch";
 import { altFt } from "../../../lib/units";
-import { FINDING_TONE } from "../../../lib/status";
+import { FINDING_TONE } from "../../../lib/findings";
 
 export interface NearFrom {
   label: string;

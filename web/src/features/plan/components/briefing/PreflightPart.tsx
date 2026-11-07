@@ -11,7 +11,7 @@ import { WeightBalanceSection } from "./PreflightSections";
 import OnRouteRow from "./OnRouteRow";
 import { faaWords, suaAltitudes, tfrAltitudes, tfrPage, tfrTimes } from "../../../../lib/advisories";
 import { passLine, tfrWhen } from "../../../../lib/passTimes";
-import { FINDING_TONE } from "../../../../lib/status";
+import { FINDING_TONE } from "../../../../lib/findings";
 import BriefChecks from "./BriefChecks";
 import { Accordion } from "../../../../components/ui/accordion";
 import { SectionsOpen } from "../../../../components/sectionLayout";

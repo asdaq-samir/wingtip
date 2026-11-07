@@ -16,7 +16,7 @@ import { passTime, suaWhen, tfrWhen, type SuaWhen } from "../../../lib/passTimes
 import { pickedEnd, runwayFlown, runwayNumber } from "../../../lib/pattern";
 import { useRunwayPicks } from "../../../lib/useRunwayPicks";
 import { runwayChecks } from "../../../lib/runwayCheck";
-import { worstOf } from "../../../lib/status";
+import { worstOf } from "../../../lib/findings";
 import { useVerdict, verdictItems, type VerdictItem } from "../../../lib/verdict";
 import { callSign, fieldPhases } from "../../../lib/radio";
 import { useGlance, type BriefGlance, type FieldGlance } from "../../../lib/glance";

@@ -849,7 +849,7 @@ subtly wrong.
 **Browser logic counts as pure logic.** The decisions the pages make —
 which points a filter admits, what counts as rated, which way the arrows
 step, which leg leaves a checkpoint — are functions of plain objects, so
-[`web/src/features/train/logic.ts`](../web/src/features/train/logic.ts) and
+[`web/src/features/chart-labels/logic.ts`](../web/src/features/chart-labels/logic.ts) and
 [`web/src/features/plan/format.ts`](../web/src/features/plan/format.ts)
 hold them and `vitest` covers them in under a second with no browser.
 What is left in the components — binding Leaflet layers, rendering rows —

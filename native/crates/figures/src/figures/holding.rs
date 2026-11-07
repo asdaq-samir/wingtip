@@ -7,7 +7,7 @@
 //! and the inbound leg at a minute (a minute and a half above 14,000 ft
 //! MSL), the outbound heading and time worked to make it so in the wind.
 //!
-//! app.figures.holding (itself web/src/lib/holding.ts and the words of
+//! app.figures.holding (itself web/src/lib/holdEntry.ts and the words of
 //! features/pilot/HoldingPage.tsx) with wingtip.holds' entry and leg time:
 //! the web's copy holds the same rules and changes with this.
 

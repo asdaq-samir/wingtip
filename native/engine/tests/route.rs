@@ -1,7 +1,7 @@
 //! The route's pilot-made pieces (wingtip_engine::route), held to the
 //! shared holds fixture (web/src/lib/fixtures/holds.json, which the web's
-//! lib/holds and the iPhone's Hold are tested against too) and to the
-//! cases the web's lib/holds, lib/procedures and lib/identSchema tests,
+//! lib/routeHolds and the iPhone's Hold are tested against too) and to the
+//! cases the web's lib/routeHolds, lib/procedures and lib/identSchema tests,
 //! tests/test_holds.py and the planner's test_stops.py hold their copies
 //! to.
 
@@ -51,7 +51,7 @@ fn the_shared_holds_fixture_reads_and_writes() {
 
 #[test]
 fn a_hold_is_read_as_the_planner_reads_it() {
-    // tests/test_holds.py and lib/holds.test.ts.
+    // tests/test_holds.py and lib/routeHolds.test.ts.
     let hold = holds::read("vpbng/090/30:270:R:1M:2T").unwrap();
     assert_eq!(hold.fix, "VPBNG/090/30");
     assert_eq!((hold.inbound, hold.right, hold.leg, hold.length), (270, true, Leg::Minutes(1.0), Length::Turns(2)));
@@ -90,7 +90,7 @@ fn a_hold_is_written_with_its_course_in_three_figures() {
 
 #[test]
 fn a_length_coded_and_read_back() {
-    // lib/holds.test.ts: lengthCode, lengthOfCode.
+    // lib/routeHolds.test.ts: lengthCode, lengthOfCode.
     assert_eq!(ask("hold_length_write", json!({ "turns": 2 })), "2T");
     assert_eq!(ask("hold_length_write", json!({ "minutes": 10 })), "10M");
     assert_eq!(ask("hold_length_read", json!({ "text": "2t" })), json!({ "turns": 2 }));

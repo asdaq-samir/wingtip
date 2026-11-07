@@ -9,7 +9,7 @@ import { dataWarning } from "../../../../lib/dataCycles";
 import { useDataCycles } from "../../../../lib/map/layerAges";
 import { glanceLines, useGlance, type FieldGlance, type GlanceLine } from "../../../../lib/glance";
 import { pilotQuery, trainingQuery } from "../../../../lib/queryClient";
-import { FINDING_TONE, type Finding } from "../../../../lib/status";
+import { FINDING_TONE, type Finding } from "../../../../lib/findings";
 import { TEXT } from "../../../../lib/text";
 import { grouped } from "../../../../lib/units";
 import { mhzText } from "../../../../lib/frequencies";

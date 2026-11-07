@@ -14,7 +14,7 @@ import { CardHead, PanelCard } from "../../../components/PanelCard";
 import { CardAction } from "../../../components/CardAction";
 import { RowBadge } from "../../../components/RowBadge";
 import { BADGE } from "../../../lib/rowBadges";
-import { FINDING_TONE } from "../../../lib/status";
+import { FINDING_TONE } from "../../../lib/findings";
 import { faaWords, suaAltitudes, tfrPage } from "../../../lib/advisories";
 
 /** One of a band's rules on a line of its own, its glyph before it: the

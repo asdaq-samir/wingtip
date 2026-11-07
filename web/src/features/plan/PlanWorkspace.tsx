@@ -4,7 +4,7 @@ import { TEXT } from "../../lib/text";
 import TabBar, { type BarTab } from "../../components/TabBar";
 import type { PanelTab } from "./hooks/useTabCards";
 import { MAX_STOPS, routeName } from "../../lib/identSchema";
-import type { WorkspaceProps } from "../page/workspace";
+import type { WorkspaceProps } from "../shell/workspace";
 import ShareMenu from "./components/ShareMenu";
 import type { RouteCard } from "../../lib/openCards";
 import { CardHead } from "../../components/PanelCard";
