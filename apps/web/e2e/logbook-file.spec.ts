@@ -5,7 +5,7 @@ import { library, openConsole, showTabs } from "./helpers";
  * The Logbook to and from a file (lib/logbookCsv): ForeFlight's export
  * read on the device and its flights sent together, what was already
  * there and what could not be read said under the rows; and the logbook
- * out as a CSV in ForeFlight's column names. The webapp's answers are
+ * out as a CSV in ForeFlight's column names. The gateway's answers are
  * stubbed: what it leaves out as already logged is LogbookServiceTest's.
  */
 const LOGGED = [{

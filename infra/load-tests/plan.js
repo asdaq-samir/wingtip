@@ -1,4 +1,4 @@
-// A load test of the planner through the webapp, with k6
+// A load test of the planner through the gateway, with k6
 // (https://k6.io): pilots planning a few routes at once -- the course,
 // the checkpoints, the nav log and the briefing, as the page asks for
 // them -- and the times each takes under it.

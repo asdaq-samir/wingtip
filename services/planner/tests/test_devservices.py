@@ -50,7 +50,7 @@ def test_an_unknown_service_is_refused_before_the_sidecar_is_asked(monkeypatch):
 
     monkeypatch.setattr(devservices, "_sidecar", sidecar)
 
-    assert client.post("/api/dev/services/webapp/start").status_code == 404
+    assert client.post("/api/dev/services/gateway/start").status_code == 404
 
 
 def test_the_sidecars_refusal_is_passed_on(monkeypatch):

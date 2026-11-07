@@ -159,18 +159,18 @@ Resources:
   # ---------------------------------------------------------------------
   # Images: the two the server runs, pushed by promote.yml's push-ecr.
   # ---------------------------------------------------------------------
-  WebappRepository:
+  GatewayRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: wingtip/webapp
+      RepositoryName: wingtip/gateway
       EmptyOnDelete: true
       LifecyclePolicy:
         LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
 
-  PlanningServiceRepository:
+  PlannerRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: wingtip/planning-service
+      RepositoryName: wingtip/planner
       EmptyOnDelete: true
       LifecyclePolicy:
         LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
@@ -288,8 +288,8 @@ Resources:
               - Effect: Allow
                 Action: [ecr:BatchGetImage, ecr:GetDownloadUrlForLayer, ecr:BatchCheckLayerAvailability]
                 Resource:
-                  - !GetAtt WebappRepository.Arn
-                  - !GetAtt PlanningServiceRepository.Arn
+                  - !GetAtt GatewayRepository.Arn
+                  - !GetAtt PlannerRepository.Arn
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: [!Ref DbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
@@ -839,7 +839,7 @@ Resources:
       TaskRoleArn: !GetAtt ChartRefreshTaskRole.Arn
       ContainerDefinitions:
         - Name: chart-refresh
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/wingtip/planning-service:${ImageTag}"
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/wingtip/planner:${ImageTag}"
           Command: ["python", "-m", "wingtip.charts", "refresh", "--workers", "2"]
           Environment:
             - { Name: CHART_TILES_BUCKET, Value: !Ref ChartTilesBucket }
@@ -983,8 +983,8 @@ Resources:
                   - ecr:PutImage
                   - ecr:UploadLayerPart
                 Resource:
-                  - !GetAtt WebappRepository.Arn
-                  - !GetAtt PlanningServiceRepository.Arn
+                  - !GetAtt GatewayRepository.Arn
+                  - !GetAtt PlannerRepository.Arn
               # The server changes with each Spot interruption, so deploys
               # find it by its Name tag and may run only on that.
               - Effect: Allow

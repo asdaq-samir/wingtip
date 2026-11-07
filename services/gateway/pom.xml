@@ -90,7 +90,7 @@
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
         <!-- Sessions kept in Postgres rather than the JVM's memory, so a
-             sign-in survives a webapp restart (every rebuild used to sign
+             sign-in survives a gateway restart (every rebuild used to sign
              everyone out) and can last the 30 days application.yml sets.
              The tables are Flyway's (V8), not created at startup. -->
         <dependency>
@@ -139,7 +139,7 @@
         <!-- Generates an OpenAPI spec + Swagger UI (/swagger-ui.html,
              /v3/api-docs) from the existing controller/DTO annotations;
              no hand-written spec to keep in sync. planner (FastAPI)
-             already gets this for free at /docs; this gives webapp the
+             already gets this for free at /docs; this gives the gateway the
              same thing. -->
         <dependency>
             <groupId>org.springdoc</groupId>

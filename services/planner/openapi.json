@@ -13921,7 +13921,7 @@
         "type": "object"
       },
       "Services": {
-        "description": "The webapp and its database, probed from here -- its liveness and\nits readiness group, which includes the database -- rather than by\nthe browser: a phone's probes queued behind its chart\ntiles on one HTTP/1.1 connection pool and timed out, and the\nconsole read \"no answer\" for a gateway that had just served it.",
+        "description": "The gateway and its database, probed from here -- its liveness and\nits readiness group, which includes the database -- rather than by\nthe browser: a phone's probes queued behind its chart\ntiles on one HTTP/1.1 connection pool and timed out, and the\nconsole read \"no answer\" for a gateway that had just served it.",
         "properties": {
           "db": {
             "anyOf": [
@@ -13933,7 +13933,7 @@
               }
             ]
           },
-          "webapp": {
+          "gateway": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ServiceStatus"
@@ -18214,7 +18214,7 @@
     },
     "/api/checkpoint-notes/mine": {
       "delete": {
-        "description": "A pilot's own notes, every one, taken out as their account is\ndeleted (the webapp's DELETE /api/me). Asked by the webapp alone:\nits proxy does not forward this path, and the pilot is named by the\nheader it sets from the session. The shared notes stay.",
+        "description": "A pilot's own notes, every one, taken out as their account is\ndeleted (the gateway's DELETE /api/me). Asked by the gateway alone:\nits proxy does not forward this path, and the pilot is named by the\nheader it sets from the session. The shared notes stay.",
         "operationId": "forget_pilots_notes_api_checkpoint_notes_mine_delete",
         "parameters": [
           {

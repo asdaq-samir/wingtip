@@ -57,8 +57,8 @@ test("a snapshot that failed reads no answer, and nothing waits for it for ever"
   await expect(consoleSheet(page).getByRole("button", { name: /^Services/ })).toContainText("3 down");
   await openServices(page);
 
-  await expect(row(page, /webapp/)).toContainText("no answer");
-  await expect(row(page, /planning-service/)).toContainText("no answer");
+  await expect(row(page, /gateway/)).toContainText("no answer");
+  await expect(row(page, /planner/)).toContainText("no answer");
   // The reference data's page says so too, once its row is tapped: back
   // to the tab, a row each that opens its own page.
   await consoleSheet(page).getByRole("button", { name: "Back to Status", exact: true }).click();

@@ -17,6 +17,8 @@
 # - The local HTTPS authority's folder, ~/.config/vfr-local-ca, is
 #   ~/.config/wingtip-local-ca (infra/local-https/make-certs.sh): moved,
 #   so the phone keeps trusting the certificates made from it.
+# - The gateway's certificate, infra/local-https/certs/webapp.p12, is
+#   gateway.p12: renamed.
 #
 # Stop the old stack first (docker compose -p flight_plan down). Safe to
 # run again: what is already done is left alone.
@@ -87,6 +89,15 @@ done
 if [ -d "$HOME/.config/vfr-local-ca" ] && [ ! -e "$HOME/.config/wingtip-local-ca" ]; then
   mv "$HOME/.config/vfr-local-ca" "$HOME/.config/wingtip-local-ca"
   echo "moved ~/.config/vfr-local-ca to ~/.config/wingtip-local-ca"
+fi
+
+# The gateway's local HTTPS certificate was webapp.p12 and is gateway.p12
+# (2026-11-07): renamed, so the phone's HTTPS port opens again without
+# making a new one. The same certificate and password, only the name.
+certs="$(cd "$(dirname "$0")/../.." && pwd)/infra/local-https/certs"
+if [ -f "$certs/webapp.p12" ] && [ ! -e "$certs/gateway.p12" ]; then
+  mv "$certs/webapp.p12" "$certs/gateway.p12"
+  echo "renamed infra/local-https/certs/webapp.p12 to gateway.p12"
 fi
 
 echo "done: start the stack as before; it is the wingtip project now"

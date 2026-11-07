@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 /**
  * Every planner endpoint the web app asks for is one the gateway forwards
- * (springboot's PlannerProxyController ROUTES, the list of what the
+ * (the gateway's PlannerProxyController ROUTES, the list of what the
  * browser may reach): a path left off it is a 404 there, and the
  * runway's forecast wind (forecast-wind) and an airplane's alert state
  * (traffic status) had been for as long as they were asked for, with

@@ -21,7 +21,7 @@ export const FROM_CACHE_HEADER = "X-From-Cache";
  *  route means the briefing is reaching the network again. */
 export const useSaved = create<{ saved: Record<string, number> }>(() => ({ saved: {} }));
 
-/** Every answer from the planner or the webapp, as it arrives: one from
+/** Every answer from the planner or the gateway, as it arrives: one from
  *  the cache is noted, one from the network clears its path's note. */
 export function noteAnswer(url: string, response: Response) {
   const path = pathOf(url);

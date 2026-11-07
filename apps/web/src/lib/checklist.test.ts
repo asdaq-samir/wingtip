@@ -29,7 +29,7 @@ describe("a checklist written as text", () => {
     expect(checklistOf(textOf(checklist))).toEqual(checklist);
   });
 
-  it("keeps a hyphenated word whole, and cuts to the webapp's lengths", () => {
+  it("keeps a hyphenated word whole, and cuts to the gateway's lengths", () => {
     expect(checklistOf("Pitot-static heat -- On").sections[0]!.items[0]).toEqual({ challenge: "Pitot-static heat", response: "On" });
     const long = checklistOf(`# ${"S".repeat(60)}\n${"C".repeat(100)} -- ${"R".repeat(100)}`).sections[0]!;
     expect([long.title.length, long.items[0]!.challenge.length, long.items[0]!.response!.length]).toEqual([40, 80, 80]);

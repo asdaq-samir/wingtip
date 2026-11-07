@@ -6,7 +6,7 @@ import { consoleSheet, openBriefing, openConsole, openSection, openTab, settle, 
  * without it, each paid feature's own place says what it does, that it
  * comes with the subscription and its price, and the free month starts
  * there; nothing paid is asked of the server meanwhile. The suite's
- * pilot is a developer, who has it given; here the webapp's answer is a
+ * pilot is a developer, who has it given; here the gateway's answer is a
  * plain pilot's, stubbed, as the server's check is the Java tests'.
  */
 
@@ -23,7 +23,7 @@ const subscription = (state: Standing, over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** The webapp's subscription for this page, starting as `state`: the
+/** The gateway's subscription for this page, starting as `state`: the
  *  free month started by its POST. Answers what was asked of it. */
 async function stubSubscription(page: Page, state: Standing, over: Record<string, unknown> = {}) {
   let now = state;

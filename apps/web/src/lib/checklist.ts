@@ -7,7 +7,7 @@ import { callEngine } from "./engine/engine";
  * response split by a dash or a run of dots, as a printed checklist sets
  * them ("Fuel selector -- Both", "Mixture ..... Rich"). What the editor
  * shows and what it saves (ChecklistDto). An item before any section is
- * in "Checklist". The webapp's limits are the text's: 40 characters a
+ * in "Checklist". The gateway's limits are the text's: 40 characters a
  * section's title, 80 a challenge or a response.
  *
  * Read and written by the shared engine (engine/crates/pilot/src/pilot/

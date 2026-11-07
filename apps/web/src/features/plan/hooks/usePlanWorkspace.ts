@@ -2109,7 +2109,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
 
   // The plan as a flight to save: Save's, and the solo cross-country
   // review's, which saves it as it asks.
-  // A route from a present position too: the webapp files one (V17), as
+  // A route from a present position too: the gateway files one (V17), as
   // Fly Here's Direct-To in the air starts. Not the route as entered,
   // whose checkpoints' log comes in its place: saved then, it filed a
   // flight with none, and Save was offered again as the log changed under it.

@@ -437,7 +437,7 @@ services:
       # must keep working after the HTTPS one has been used once.
       # Opened with the gateway's default password, which is the one
       # make-certs.sh writes it with.
-      APP_HTTPS_KEYSTORE: ${APP_HTTPS_KEYSTORE:-/certs/webapp.p12}
+      APP_HTTPS_KEYSTORE: ${APP_HTTPS_KEYSTORE:-/certs/gateway.p12}
       APP_HSTS: "false"
 
   # Front-end work without the image: vite in watch mode keeping apps/web/dist

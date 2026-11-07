@@ -56,7 +56,7 @@ public class OpenApiConfig {
     OpenApiCustomizer everyFieldPresent() {
         return openApi -> {
             // The same document wherever it is served from: the page is
-            // always on the webapp's own origin.
+            // always on the gateway's own origin.
             openApi.setServers(List.of(new Server().url("/")));
             if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
                 return;

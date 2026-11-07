@@ -4,7 +4,7 @@ import { said } from "./endorsements";
 import type { PickedProcedure } from "./procedures";
 
 /**
- * Approaches an instructor set as lessons (springboot's LessonService),
+ * Approaches an instructor set as lessons (the gateway's LessonService),
  * read the same way on both sides: how far the student has come, the
  * quiz's score, the day it is due, the instructor's note at a fix, and
  * the approach to open the lesson on.

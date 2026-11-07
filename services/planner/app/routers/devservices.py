@@ -29,8 +29,8 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 #: The services the console links to, and what it calls them. db and
-#: webapp are absent on purpose: nothing in the console links to a
-#: database port, and webapp starting itself is a contradiction.
+#: the gateway are absent on purpose: nothing in the console links to a
+#: database port, and the gateway starting itself is a contradiction.
 STARTABLE = {
     "ml": "Jupyter (the notebooks)",
 }
