@@ -36,7 +36,8 @@ gets the same answer:
 | Layer | Where | Its job |
 |---|---|---|
 | The engine | [`engine/`](engine) (Rust) | Every aviation rule and figure, once: altitudes, winds, runways, fuel, weather limits, Go / No-Go, holds, procedures, a pilot's currency (14 CFR 61.56, 61.57) and 61.109 experience. No network, no screen, no clock. A facade (`wingtip-engine`) over ten domain crates; each rule is a name in `engine/facade/src/call.rs`, JSON in and out, typed by a contract (`engine/contract/engine.schema.json`) the apps' types are generated from. |
-| The planner | [`services/planner/`](services/planner) over [`services/planner/wingtip`](services/planner/wingtip) (FastAPI) | Works out a flight: fetches the FAA and weather data, reads the chart and scores its checkpoints with the chart model, runs the AI assistant, and asks the engine every rule. |
+| The planner | [`services/planner/`](services/planner) over [`services/planner/wingtip`](services/planner/wingtip) (FastAPI) | Works out a flight: fetches the FAA data, reads the weather the weather service stores, reads the chart and scores its checkpoints with the chart model, runs the AI assistant, and asks the engine every rule. |
+| The weather service | [`services/weather/`](services/weather) | Fetches the weather on a schedule (METARs, TAFs, advisories, PIREPs, the GFS's winds aloft, GLMP, TFRs, the radar's time) into the store the planner reads, so no pilot waits on a live fetch. |
 | Spring Boot | [`services/gateway/`](services/gateway) | Who the pilot is and what they saved: accounts, sign-in, records, the public API, scheduled mail. Holds no aviation logic, asking the planner (which asks the engine) for a figure such as currency; the endorsements' and inspections' dates are still Java until #482 moves them. |
 | The apps | [`apps/web/`](apps/web), [`apps/ios/`](apps/ios), [`apps/android/`](apps/android) | Get data, keep state, draw (a view model per screen), and ask the engine the rest: the web as WebAssembly, the phones through its C interface. |
 
@@ -50,11 +51,12 @@ moves them in, in order.
 |---|---|
 | `gateway` | Spring Boot: accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React front end and proxies the planner |
 | `planner` | FastAPI: works out a flight (charts, checkpoints scored by the chart model in-process, the nav log, weather, the written briefing, the assistant), the engine inside it |
+| `weather` | The weather the planner reads, fetched on a schedule into the weather store (`data/raw/weather`) |
 | `db` | PostgreSQL — application data |
 | `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and training, as one-off jobs; `retrain` is the whole training run in the training image, which the developer console starts |
 | `ml` | Jupyter environment for model development -- on demand: `docker compose up ml` |
 
-Six services, one `docker compose up`. Full write-up, including the AWS target architecture, is in [`docs/README.md`](docs/README.md).
+Seven services, one `docker compose up`. Full write-up, including the AWS target architecture, is in [`docs/README.md`](docs/README.md).
 
 
 ## Under the hood
@@ -68,7 +70,7 @@ Demo route: **Campbell Airport (C81)** → **Duluth International (KDLH)**.
 - **A repeatable training run.** One command (`python -m wingtip.pipeline run`, which the developer console's Retrain starts as a container) runs collection, feature engineering, training, evaluation, and promotion in order; a new model goes live only if it beats the currently deployed one on held-out metrics.
 - **FAA-accurate flight planning.** Dead-reckoning legs (wind correction angle, true/magnetic heading, groundspeed, ETE, fuel burn) from live NOAA winds-aloft and magnetic-declination data. Cruising-altitude selection accounts for terrain/obstacle clearance (FAA MEF methodology), live Class B/C/D airspace, and current METAR/TAF/SIGMET data.
 - **Claude in the planner.** The written briefing, the checkpoint descriptions, the plain-words readings and the pilot's assistant are each a direct call through the Anthropic Python SDK from `planner`, over the planner's own figures: the briefing streams as it is written (`POST /api/briefing/narrative`), and the assistant runs the SDK's tool runner over the planner's functions.
-- **A cheap path to production.** One server behind CloudFront runs the gateway, the planner and Postgres, and a Fargate Spot task draws each 56-day chart cycle once into S3 for the edge to serve: about $32 a month with the server on Spot capacity, in one CloudFormation template ([`docs/README-AWS.md`](docs/README-AWS.md) has the design, the cost and the runbook).
+- **A cheap path to production.** One server behind CloudFront runs the gateway, the planner, the weather service and Postgres, and a Fargate Spot task draws each 56-day chart cycle once into S3 for the edge to serve: about $32 a month with the server on Spot capacity, in one CloudFormation template ([`docs/README-AWS.md`](docs/README-AWS.md) has the design, the cost and the runbook).
 
 
 ## Project layout
@@ -80,6 +82,7 @@ Demo route: **Campbell Airport (C81)** → **Duluth International (KDLH)**.
 | [`apps/android/`](apps/android) | The native Android app: Kotlin, Compose and MapLibre over the shared Rust engine (docs/NATIVE-ANDROID.md) |
 | [`engine/`](engine) | The shared Rust engine: every aviation rule once, in ten crates (`crates/`) behind one facade (`facade/`), its contract (`contract/`), and its Python, C and WebAssembly faces (`bindings/`) |
 | [`services/planner/`](services/planner) | The planner: its HTTP layer (`app/`, FastAPI: route planning, chart vision, the chart model, the assistant), its Python package (`wingtip/`: data, charts, pipeline, model registry, and the nav log until it moves into the engine), and both their test suites (`tests/`, `tests_wingtip/`) |
+| [`services/weather/`](services/weather) | The weather service: the scheduled fetch of the weather the planner reads, into the weather store |
 | [`services/gateway/`](services/gateway) | Accounts, sign-in, the pilot's records, the public API (Spring Boot) |
 | [`services/Dockerfile.base`](services/Dockerfile.base) | The Python base every image that imports wingtip is built from |
 | [`ml/`](ml) | The notebooks and the pipeline's and notebooks' images |

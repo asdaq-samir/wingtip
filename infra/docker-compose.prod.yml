@@ -82,8 +82,8 @@ services:
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
     # FAA data, the corridor's chart sheets for reading checkpoints, the
     # chart model deploy.sh syncs into data/models (scored in-process,
-    # app.chart_scorer), and the planner's caches: on the server's disk,
-    # kept across deploys.
+    # app.chart_scorer), the planner's caches and the weather service's
+    # store (data/raw/weather): on the server's disk, kept across deploys.
     volumes:
       - /srv/wingtip/data:/workspace/data
       # The stock aircraft profiles are the repository's, so they follow
@@ -123,6 +123,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 60
+
+  # The weather the planner reads, fetched on a schedule into the weather
+  # store on the planner's data folder (services/weather, #535): no
+  # pilot's request waits on aviationweather.gov or NOMADS.
+  weather:
+    <<: *restart
+    image: ${IMAGE_REGISTRY}/weather:${IMAGE_TAG:-latest}
+    volumes:
+      - /srv/wingtip/data:/workspace/data
+    environment:
+      TZ: America/Chicago
+    # Its working set is Python, the engine and a GLMP issue's two grids
+    # at their largest while it reads them: a modest share of the 4 GB
+    # server, held to it so a bad day at NOAA cannot take the planner's.
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
 
   gateway:
     <<: *restart
