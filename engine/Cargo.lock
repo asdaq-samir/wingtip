@@ -1027,6 +1027,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "wingtip-altitude"
+version = "0.1.0"
+dependencies = [
+ "wingtip-core",
+ "wingtip-flight",
+ "wingtip-procedures",
+]
+
+[[package]]
 name = "wingtip-brief"
 version = "0.1.0"
 dependencies = [
@@ -1048,6 +1057,7 @@ dependencies = [
  "proptest",
  "serde_json",
  "wingtip-airspace",
+ "wingtip-altitude",
  "wingtip-brief",
  "wingtip-core",
  "wingtip-flight",

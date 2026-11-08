@@ -57,6 +57,7 @@ workspace.
 | `route` | route, motion, approach | core, procedures |
 | `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead | core, procedures, radio |
 | `wording` | wording | core, procedures, airspace |
+| `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words) | core, flight, procedures |
 | `facade/` | call | all of them |
 
 Why these lines:
@@ -80,6 +81,9 @@ Why these lines:
   packs through `pack` and `pack_query`, which `radio` is under), and `figures` because `rules` writes its figures with
   `figures::words`; `wording` sits on top of it for `rules`' entry rules
   and call types by class.
+- `altitude` takes `flight` for 91.159's lowest altitude and `procedures`
+  for `figures::words`, which its words where no altitude fits are written
+  in; nothing above it uses it but the facade.
 - `call.rs` names every rule, so it alone stays in the facade, over all.
 
 Inside a crate, the modules under it are used at the root by the names
@@ -177,6 +181,19 @@ Then the callers switch to the name and the old copy is deleted.
   answers it (`wt_airspace_in_view`, `wt_airports_in_view`,
   `wt_navaids_in_view`), with what a pack cannot hold -- a live METAR's
   flight category, a navaid's remarks -- answered null or empty.
+- The altitude a flight is planned at is the engine's too (`crates/altitude`,
+  #482 phase 3): each leg's floor -- the terrain and DOF obstacles with
+  14 CFR 91.119's clearances (`vfr_floors`), or 91.177(a)'s minimum IFR
+  altitude over Part 95's mountainous areas (`ifr_floors`, the areas drawn
+  in `mountainous.rs`), or an airway's MEA -- the band under the Class B
+  shelf, 91.155's distance under the forecast clouds and the service
+  ceiling, none in prohibited airspace (73.83), the cruising altitudes by
+  course (91.159, 91.179(b)), the recommendation and the icing
+  (`select_cruise_altitude`), the altitude wheel's rows, and the altitude
+  flown anyway where none is legal with why (`altitude_anyway`,
+  `no_altitude`). The planner reads the ground, the obstacles, the towns,
+  the airspace and the weather and passes them in; held to the shared
+  fixture `altitude.json`.
 - The planner's own copies are going (#482 phase 0): the airspace column
   and the Mode C veil (`airspace_column`, `mode_c_veil`), an FNS message's
   NOTAMs (`notams_fns`), a report's ceiling and category (`ceiling_ft`,

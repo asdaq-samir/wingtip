@@ -8,6 +8,12 @@ import pytest
 
 from tests_wingtip.test_terrain import _dof_line
 from wingtip import elevation, faa_data, geo, ifr
+from wingtip.engine import ask as engine
+
+
+def cruising(floor_ft, ceiling_ft, course):
+    """The engine's IFR cruising altitudes (14 CFR 91.179(b))."""
+    return engine("legal_cruising_altitudes", floor_ft=floor_ft, ceiling_ft=ceiling_ft, magnetic_course_deg=course, rules="ifr")
 
 GROUND_M = 300.0   # 984.25 ft
 START = (45.0, -90.0)   # Wisconsin: no mountainous area
@@ -54,24 +60,24 @@ def land(tmp_path, monkeypatch):
 
 
 def test_eastbound_flies_odd_thousands_and_westbound_even_up_to_the_ceiling():
-    assert ifr.cruising_altitudes(4100, 12000, 90) == [5000, 7000, 9000, 11000]
-    assert ifr.cruising_altitudes(4100, 12000, 270) == [6000, 8000, 10000, 12000]
+    assert cruising(4100, 12000, 90) == [5000, 7000, 9000, 11000]
+    assert cruising(4100, 12000, 270) == [6000, 8000, 10000, 12000]
     # A floor on one of them is flown at it.
-    assert ifr.cruising_altitudes(5000, 9000, 45)[0] == 5000
+    assert cruising(5000, 9000, 45)[0] == 5000
     # 000 through 179 odd, 180 through 359 even (91.179(b)(1)).
-    assert ifr.cruising_altitudes(2100, 6000, 179.9) == [3000, 5000]
-    assert ifr.cruising_altitudes(2100, 6000, 180.0) == [4000, 6000]
+    assert cruising(2100, 6000, 179.9) == [3000, 5000]
+    assert cruising(2100, 6000, 180.0) == [4000, 6000]
     # Nothing between the floor and the ceiling.
-    assert ifr.cruising_altitudes(8100, 8900, 90) == []
+    assert cruising(8100, 8900, 90) == []
 
 
 def test_flight_levels_follow_the_same_rule_to_fl410():
     # 91.179(b)(2): odd flight levels east, even west, from 18,000 ft.
-    assert ifr.cruising_altitudes(17500, 23000, 90) == [19000, 21000, 23000]
-    assert ifr.cruising_altitudes(17500, 22000, 270) == [18000, 20000, 22000]
+    assert cruising(17500, 23000, 90) == [19000, 21000, 23000]
+    assert cruising(17500, 22000, 270) == [18000, 20000, 22000]
     # (b)(4) and JO 7110.65 TBL 4-5-1: every 2,000 ft to FL410, no further.
-    assert ifr.cruising_altitudes(38000, None, 90)[-1] == 41000
-    assert ifr.cruising_altitudes(38000, None, 270)[-1] == 40000
+    assert cruising(38000, None, 90)[-1] == 41000
+    assert cruising(38000, None, 270)[-1] == 40000
 
 
 @pytest.mark.parametrize(("place", "lat", "lon", "expected"), [
@@ -88,36 +94,36 @@ def test_flight_levels_follow_the_same_rule_to_fl410():
     ("San Juan, on Puerto Rico's coast", 18.45, -66.07, False),
 ])
 def test_the_designated_mountainous_areas(place, lat, lon, expected):
-    assert ifr.mountainous(lat, lon) is expected, place
+    assert engine("mountainous_at", lat=lat, lon=lon) is expected, place
 
 
 def test_the_floor_is_1000_ft_over_the_highest_ground_within_4_nm(land):
     [floor] = ifr.floor_profile([START, END])
     # 984 ft of ground, 50 ft for the tiles' pixels, 1,000 ft: 2,100.
-    assert floor.floor_ft == 2100
-    assert not floor.mountainous
-    assert not floor.highest_is_obstacle
+    assert floor["floor_ft"] == 2100
+    assert not floor["mountainous"]
+    assert not floor["highest_is_obstacle"]
 
 
 def test_a_peak_3_nm_off_the_course_counts_and_one_5_nm_off_does_not(land):
     land.peak(_at(START, 10, 5), 900.0)
-    assert ifr.floor_profile([START, END])[0].floor_ft == 2100
+    assert ifr.floor_profile([START, END])[0]["floor_ft"] == 2100
     land.peak(_at(START, 12, -3), 900.0)
     # 2,953 ft of ground, 50 and 1,000 more: 4,100.
-    assert ifr.floor_profile([START, END])[0].floor_ft == 4100
+    assert ifr.floor_profile([START, END])[0]["floor_ft"] == 4100
 
 
 def test_a_peak_past_the_courses_end_but_within_4_nm_of_it_counts(land):
     land.peak(_at(END, 3), 900.0)
-    assert ifr.floor_profile([START, END])[0].floor_ft == 4100
+    assert ifr.floor_profile([START, END])[0]["floor_ft"] == 4100
 
 
 def test_an_obstacle_within_4_nm_sets_the_floor_where_it_is_higher(land):
     land.obstacles(_dof_line(*_at(START, 8, 3.5), amsl_ft=2400), _dof_line(*_at(START, 8, -4.5), amsl_ft=5000))
     [floor] = ifr.floor_profile([START, END])
-    assert floor.floor_ft == 3400
-    assert floor.highest_is_obstacle
-    assert floor.highest_ft == 2400
+    assert floor["floor_ft"] == 3400
+    assert floor["highest_is_obstacle"]
+    assert floor["highest_ft"] == 2400
 
 
 def test_each_leg_has_its_own_floor(land):
@@ -125,12 +131,12 @@ def test_each_leg_has_its_own_floor(land):
     land.peak(_at(middle, 10), 900.0)
     first, second = ifr.floor_profile([START, middle, _at(middle, 20)])
     # The peak is 10 nm past the first leg's end: the second leg's alone.
-    assert first.floor_ft == 2100
-    assert second.floor_ft == 4100
+    assert first["floor_ft"] == 2100
+    assert second["floor_ft"] == 4100
 
 
 def test_over_a_mountainous_area_the_clearance_is_2000_ft(land):
     a, b = (39.7, -105.5), (39.7, -105.0)
     [floor] = ifr.floor_profile([a, b])
-    assert floor.mountainous
-    assert floor.floor_ft == 3100
+    assert floor["mountainous"]
+    assert floor["floor_ft"] == 3100

@@ -11,15 +11,13 @@ struct ProfileCard: View {
     @Environment(DryRun.self) private var dryRun
     @State private var picked: Double?
 
-    private static let ladder: [Double] = stride(from: 1000.0, through: 17_500.0, by: 500.0).map { $0 }
-
-    /// The wheel's rows, highest first: the planner's legal altitudes and
-    /// the 500 ft ladder under Class A (14 CFR 71.33).
+    /// The wheel's rows, highest first: the planner's legal altitudes, the
+    /// one flown and every 500 ft from 1,000 ft under Class A (14 CFR
+    /// 71.33) -- the engine's `altitude_wheel`, as the web's wheel asks it.
     private var altitudes: [Double] {
-        let legal = Set(plan.altitude?.altitudeFigures.map(\.altitudeFt) ?? [])
-        var all = Set(Self.ladder).union(legal)
-        if let flown = plan.altitudeFt { all.insert(flown) }
-        return all.sorted(by: >)
+        let legal = plan.altitude?.altitudeFigures.map(\.altitudeFt) ?? []
+        let rows: [Double]? = try? Engine.call("altitude_wheel", json: ["legal_ft": legal, "flown_ft": plan.altitudeFt])
+        return rows ?? Set(legal + [plan.altitudeFt].compactMap { $0 }).sorted(by: >)
     }
 
     private var legal: Set<Double> { Set(plan.altitude?.altitudeFigures.map(\.altitudeFt) ?? []) }

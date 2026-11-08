@@ -8,7 +8,20 @@ import math
 import pytest
 
 from wingtip import navlog, performance
-from wingtip.altitude import is_eastbound, legal_cruising_altitudes, lowest_vfr_cruising_altitude
+from wingtip.engine import ask as engine
+
+
+def is_eastbound(course):
+    return engine("is_eastbound", magnetic_course_deg=course)
+
+
+def lowest_vfr_cruising_altitude(floor_ft, course):
+    return engine("lowest_vfr_cruising_altitude", floor_ft=floor_ft, magnetic_course_deg=course)
+
+
+def legal_cruising_altitudes(floor_ft, ceiling_ft, course, rule_from_ft=None):
+    return engine("legal_cruising_altitudes", floor_ft=floor_ft, ceiling_ft=ceiling_ft, magnetic_course_deg=course,
+                  rule_from_ft=rule_from_ft)
 
 PROFILE = {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_rate_fpm_sea_level": 800.0, "climb_tas_kt": 70.0,
            "service_ceiling_ft": 14000.0}

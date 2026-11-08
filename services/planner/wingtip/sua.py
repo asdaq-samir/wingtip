@@ -356,17 +356,3 @@ def at_point(lat: float, lon: float) -> list:
             found.setdefault(area["name"], area)
     return sorted(found.values(), key=lambda a: (a["floor_ft"] is None, a["floor_ft"] or 0))
 
-
-def blocked(altitude_ft: float, areas: list) -> bool:
-    """Whether a cruising altitude would enter a prohibited area the
-    route crosses: between its floor and ceiling. Cautious where the
-    numbers are not MSL: an AGL floor is taken as that many feet MSL
-    (lower than it is), and an AGL or missing ceiling as unlimited."""
-    for area in areas:
-        if area["type"] != "P":
-            continue
-        floor = area["floor_ft"] if area["floor_ft"] is not None else 0.0
-        ceiling = area["ceiling_ft"] if area["ceiling_ft"] is not None and area.get("ceiling_ref") != "AGL" else float("inf")
-        if floor <= altitude_ft <= ceiling:
-            return True
-    return False

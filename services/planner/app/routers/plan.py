@@ -41,7 +41,7 @@ from ..router_basics import CHART_CACHE, DEFAULT_AIRCRAFT, Route, line, load_rou
 from ..planning import (
     alternate_leg, altitude_anyway,
     COMPUTE_LIMIT_S, StillComputing, aircraft_profile, altitude_plans, altitude_waiting_on, class_b_detours, class_b_ways,
-    cruise_altitude, flight_totals, flight_window, forecast_hour_for, join_selections, no_altitude, no_altitude_detail,
+    cruise_altitude, flight_totals, flight_window, forecast_hour_for, join_selections, no_altitude,
     own_altitude_caution, prohibited_caution, route_line, route_totals,
 )
 from .. import planning as planning_module
@@ -1446,7 +1446,7 @@ def plan(q: Annotated[PlanQuery, Depends()]) -> Plan:
         raise outcome.error
     if isinstance(outcome, Unflyable):
         _, ways = unflyable_parts(outcome, runs)
-        raise HTTPException(422, no_altitude_detail(outcome.selection, outcome.between, ways[0] if ways else None))
+        raise HTTPException(422, no_altitude(outcome.selection, outcome.between, ways[0] if ways else None)["detail"])
     outcome, leg_list = flown_as_picked(r, runs, outcome, q, drawn, own)
 
     return Plan(

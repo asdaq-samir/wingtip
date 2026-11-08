@@ -74,6 +74,7 @@ fn code_names() -> BTreeSet<String> {
     for src in [
         include_str!("../../crates/wording/src/wording/mod.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
+        include_str!("../../crates/altitude/src/altitude/calls.rs"),
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
         include_str!("../../crates/route/src/approach/calls.rs"),
         include_str!("../../crates/route/src/route/answers.rs"),
@@ -302,6 +303,42 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     c.ask("distance_nm", json!({ "lat1": 46.84, "lon1": -92.19, "lat2": 38.75, "lon2": -90.37 }));
     c.ask("region_of", json!({ "lat": 41.9, "lon": -87.9 }));
     c.ask("descent_ft_per_nm", json!({}));
+    // The altitude rules (crate::altitude), on the shared fixture and a
+    // small route of the planner's select_cruise_altitude.
+    let altitude = fixture("altitude.json");
+    for case in altitude["legal"].as_array().unwrap() {
+        c.ask("legal_cruising_altitudes", case["input"].clone());
+    }
+    for case in altitude["tight"].as_array().unwrap() {
+        c.ask("tight_cruising_altitude", case["input"].clone());
+    }
+    for case in altitude["anyway"].as_array().unwrap() {
+        c.ask("altitude_anyway", json!({ "selection": case["selection"] }));
+    }
+    for case in altitude["noAltitude"].as_array().unwrap() {
+        c.ask("no_altitude", case["input"].clone());
+    }
+    c.ask("highest_under_clouds_ft", json!({ "cloud_base_ft": 6000 }));
+    c.ask("cloud_clearance_at_ft", json!({ "altitude_ft": 10500 }));
+    c.ask("altitude_wheel", json!({ "legal_ft": [4500, 6500], "flown_ft": 3300 }));
+    c.ask("ifr_obstacle_radius_nm", json!({}));
+    c.ask("airway_floor_ft", json!({ "mea_ft": null, "gnss_mea_ft": 4000 }));
+    c.ask("mountainous_at", json!({ "lat": 39.74, "lon": -105.0 }));
+    c.ask("altitude_blocked", json!({ "altitude_ft": 4500, "areas": [{ "type": "P", "floor_ft": 0, "ceiling_ft": 18000, "ceiling_ref": "MSL" }] }));
+    let (dep, mid, dest) = (json!([45.0, -90.0]), json!([45.5, -89.85]), json!([46.0, -90.0]));
+    let floors = c.ask("vfr_floors", json!({
+        "start": dep, "end": dest, "breaks_nm": [0.0, 30.0, 60.0],
+        "ground": { "along_nm": [0.0, 15.0, 30.0, 45.0, 60.0], "high_ft": [900, 1000, 1100, 1000, 900], "low_ft": [800, 900, 1000, 900, 800], "congested": [false, false, true, false, false] },
+        "obstacles": [{ "lat": 45.25, "lon": -90.01, "amsl_ft": 2049, "type": "TOWER", "congested": false }],
+    }));
+    c.ask("ifr_floors", json!({ "legs": [{ "a": dep, "b": mid, "ground_ft": 1150 }], "obstacles": [{ "lat": 45.25, "lon": -89.95, "amsl_ft": 2049 }] }));
+    c.ask("select_cruise_altitude", json!({
+        "start": dep, "end": dest, "fixes": [dep, mid, dest], "breaks_nm": [0.0, 30.0, 60.0],
+        "floors": floors, "airspace_ceilings_ft": [null, 3000], "service_ceilings_ft": [14000, 14000],
+        "variation_deg": 0, "leg_variations_deg": [0, 0],
+        "stations": [{ "icaoId": "KXYZ", "lat": 45.5, "lon": -90.0, "ceiling_ft": 2200, "elevation_ft": 900 }],
+        "min_ceiling_ft": 2200, "special_use": [], "freezing": { "ft": 4000, "at_or_below": false }, "hazards": [], "weather_unavailable": [],
+    }));
     // The names that replaced wingtip_native's own functions (#482 phase 0).
     c.ask("wind_correction_deg", json!({ "true_course_deg": 360, "wind_from_deg": 270, "wind_kt": 20, "tas_kt": 110 }));
     c.ask("groundspeed_kt", json!({ "true_course_deg": 360, "wind_from_deg": 270, "wind_kt": 20, "tas_kt": 110, "wca_deg": -10.5 }));

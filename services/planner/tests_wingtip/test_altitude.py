@@ -7,6 +7,11 @@ from pathlib import Path
 import pytest
 
 from wingtip import airspace, altitude, performance, sua, terrain, weather
+from wingtip.engine import ask as engine
+
+
+def under_clouds(base_ft):
+    return engine("highest_under_clouds_ft", cloud_base_ft=base_ft)
 
 PROFILE = {"service_ceiling_ft": 14000, "cruise_tas_kt": 110}
 DEP, DEST = (45.0, -90.0), (46.0, -90.0)          # due north
@@ -22,7 +27,7 @@ def sources(monkeypatch):
              "hazards": [], "temperatures": []}
     monkeypatch.setattr(airspace, "ensure_class_airspace_shapefile", lambda cache_dir: Path("/nowhere"))
     monkeypatch.setattr(terrain, "floor_profile", lambda start, end, breaks, faa_cache_dir=None: (
-        [terrain.SegmentFloor(2000.0, 1500.0)] * (len(breaks) - 1)))
+        [{"floor_ft": 2000.0, "lowest_ground_ft": 1500.0}] * (len(breaks) - 1)))
     monkeypatch.setattr(airspace, "airspace_ceiling_profile", lambda start, end, fixes, shp: [None] * (len(fixes) - 1))
     monkeypatch.setattr(airspace, "airspace_transits", lambda start, end, shp, fixes=None: [])
     monkeypatch.setattr(altitude, "magnetic_variation_deg", lambda lat, lon: 0.0)
@@ -200,11 +205,11 @@ def test_a_leg_keeps_500_ft_under_the_clouds_forecast_near_it(sources):
 
 
 def test_at_10000_ft_and_above_the_clouds_are_kept_1000_ft_above(sources):
-    assert altitude.highest_under_clouds_ft(6000.0) == 5500.0
-    assert altitude.highest_under_clouds_ft(12000.0) == 11000.0
+    assert under_clouds(6000.0) == 5500.0
+    assert under_clouds(12000.0) == 11000.0
     # 500 ft under a 10,800 ft base is 10,300 -- but at 10,000 and above
     # the rule is 1,000 ft, so the highest is just under 10,000.
-    assert 9500.0 < altitude.highest_under_clouds_ft(10800.0) < 10000.0
+    assert 9500.0 < under_clouds(10800.0) < 10000.0
 
 
 def test_clouds_too_low_over_the_floor_are_said_and_the_leg_keeps_its_band(sources):
@@ -264,7 +269,10 @@ def test_the_book_service_ceiling_where_the_temperatures_are_unknown(sources, mo
 # at 1,900. Below 3,000 ft above the ground any altitude is legal, so
 # 1,800 is -- under the shelf, not at it -- though tight.
 
-from wingtip.altitude import tight_cruising_altitude  # noqa: E402
+
+
+def tight_cruising_altitude(floor_ft, ceiling_ft, rule_from_ft):
+    return engine("tight_cruising_altitude", floor_ft=floor_ft, ceiling_ft=ceiling_ft, rule_from_ft=rule_from_ft)
 
 
 def test_the_highest_whole_hundred_under_the_ceiling_that_clears_the_floor():
@@ -287,7 +295,8 @@ def ifr_floors(sources, monkeypatch):
     from wingtip import ifr
 
     def floors(fixes, faa_cache_dir=None):
-        return [ifr.LegFloor(3100.0, 2050.0, False, i == 0) for i in range(len(fixes) - 1)]
+        return [{"floor_ft": 3100.0, "highest_ft": 2050.0, "highest_is_obstacle": False, "mountainous": i == 0}
+                for i in range(len(fixes) - 1)]
 
     monkeypatch.setattr(ifr, "floor_profile", floors)
     monkeypatch.setattr(airspace, "airspace_ceiling_profile", lambda start, end, fixes, shp: [3000.0] * (len(fixes) - 1))
