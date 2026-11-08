@@ -177,8 +177,9 @@ a column in production. Flyway owns the schema; Hibernate is only allowed
 to check that it matches and refuse to start if not.
 
 **The proxy's base URL is externalised.** `planner-service.base-url`
-reads `${PLANNER_SERVICE_URL}`, which is a Compose hostname locally and a
-Cloud Map name on AWS (`planner.wingtip.internal`). Note the
+reads `${PLANNER_SERVICE_URL}`, which is the Compose hostname
+(`http://planner:8000`) both locally and on the AWS server, which runs the
+same Compose services (`infra/docker-compose.prod.yml`). Note the
 env var name must match `application.yml` exactly — Spring's relaxed
 binding does *not* map `PLANNER_SERVICE_BASE_URL` onto a property with a
 hyphen in it.
