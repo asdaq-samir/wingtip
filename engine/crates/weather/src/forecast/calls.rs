@@ -6,7 +6,7 @@ use crate::json::{self, Value};
 use crate::{metar, winds};
 
 /// The names this module answers.
-pub const NAMES: [&str; 20] = [
+pub const NAMES: [&str; 21] = [
     "flight_category",
     "ceiling_visibility",
     "field_hours",
@@ -25,6 +25,7 @@ pub const NAMES: [&str; 20] = [
     "gairmets_along_route",
     "freezing_level",
     "temperature_at",
+    "service_ceiling_on_the_day",
     "wind_at_altitude",
     "forecast_hour",
 ];
@@ -277,6 +278,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             None => out.push_str("null"),
         },
         "temperature_at" => json::opt_number(&mut out, winds::temperature_at(&profile(name, v)?, num(name, v, "altitude_ft")?)),
+        "service_ceiling_on_the_day" => json::number(&mut out, winds::service_ceiling_on_the_day(num(name, v, "service_ceiling_ft")?, &profile(name, v)?)),
         "wind_at_altitude" => {
             let lv = levels(name, v)?;
             match v.get("altitudes") {

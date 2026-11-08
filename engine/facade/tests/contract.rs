@@ -460,7 +460,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     let approach = json!([{ "ident": "ANDOE", "lat": 42.25, "lon": -89.1, "min_ft": 3000, "max_ft": null, "missed": false }]);
     c.ask("navlog_approach_end", json!({ "fixes": approach, "cruise_ft": 5500, "field": { "lat": 42.195, "lon": -89.097 } }));
     c.ask("navlog_approach_end", json!({ "fixes": approach, "cruise_ft": 2500, "field": { "lat": 42.195, "lon": -89.097 } }));
-    c.ask("performance_reference_ft", json!({}));
     c.ask("performance_cruise", json!({ "profile": profile, "altitude_ft": 8500, "oat_c": 2 }));
     c.ask("performance_climb", json!({ "profile": profile, "from_ft": 800, "to_ft": 5500, "isa_dev_c": 5 }));
     // Route options, its frame, the way round high ground and a point

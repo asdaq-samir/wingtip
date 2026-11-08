@@ -14963,26 +14963,6 @@
       ],
       "additionalProperties": false
     },
-    "performance_reference_ft": {
-      "description": "The altitude a profile's cruise TAS and fuel burn are taken at on a standard day where it names none: 6,000 ft, a row of every light single's cruise table.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "PerformanceReferenceFtInput",
-          "type": "object",
-          "properties": {}
-        },
-        "answer": {
-          "title": "PerformanceReferenceFtAnswer",
-          "type": "number"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "performance_cruise": {
       "description": "An airplane's cruise at an altitude in air at oat_c (a standard day's where null): its power at the cruise setting or full throttle (Gagg and Ferrar), TAS as the cube root of power over density, burn with power, and the density altitude.",
       "type": "object",
@@ -17040,6 +17020,47 @@
               "added_nm"
             ]
           }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "service_ceiling_on_the_day": {
+      "description": "The airplane's service ceiling on the day: the book figure, a density altitude, found as an altitude in the forecast temperatures to the nearest 100 ft (FAA-H-8083-25C ch. 11); the book figure where the profile is empty.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ServiceCeilingOnTheDayInput",
+          "type": "object",
+          "properties": {
+            "service_ceiling_ft": {
+              "type": "number",
+              "description": "The handbook's service ceiling, a standard day's."
+            },
+            "profile": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "description": "The forecast temperatures aloft, [[altitude_ft, temp_c], ...]."
+            }
+          },
+          "required": [
+            "service_ceiling_ft",
+            "profile"
+          ]
+        },
+        "answer": {
+          "title": "ServiceCeilingOnTheDayAnswer",
+          "type": "number"
         }
       },
       "required": [

@@ -334,8 +334,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         usable_gal: r.num(v, "usable_gal")?,
         taxi_gal: r.num(v, "taxi_gal")?,
         reserve_gal: r.num(v, "reserve_gal")?,
-        // The owner's 30-minute turnaround (2026-10-20).
-        ground_min: r.opt_num(v, "ground_min")?.unwrap_or(30.0),
+        // The owner's 30-minute turnaround (2026-10-20), the flight crate's.
+        ground_min: r.opt_num(v, "ground_min")?.unwrap_or(wingtip_flight::flight::TURNAROUND_MIN),
     };
     let (stops, choices) = suggest(point(v, "start")?, point(v, "end")?, &fig, &fields, &skip);
     let mut out = String::from("{\"stops\":[");

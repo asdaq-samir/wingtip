@@ -107,9 +107,8 @@ def altitude_profiles(
     Empty where some leg has no legal altitude at all."""
     flown = [engine_fix(f) for f in fix_list]
     given_segments = [{"candidates_ft": s.get("candidates_ft")} for s in segments]
-    # TODO(phase3): the candidates are the altitude selection's
-    # (wingtip.altitude.select_cruise_altitude), asked as it is today; the
-    # integration merge passes the engine's own selection here.
+    # The candidates are the engine's own selection's
+    # (select_cruise_altitude, which wingtip.altitude asks), each leg's.
     candidates = engine("navlog_candidates", segments=given_segments, legs=len(flown) - 1, profile=aircraft_profile)
     if candidates is None:
         return AltitudePlans()

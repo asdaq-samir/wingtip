@@ -38,9 +38,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 /// The altitude a profile's cruise TAS and fuel burn are the airplane's
-/// at, on a standard day: the middle of where a light single cruises
-/// across country, and a row of every handbook's cruise table.
-pub const REFERENCE_ALTITUDE_FT: f64 = 6000.0;
+/// at, on a standard day: the flight module's CRUISE_REFERENCE_FT, the one
+/// figure the apps say beside the figures (`planning_figures`).
+pub const REFERENCE_ALTITUDE_FT: f64 = crate::flight::CRUISE_REFERENCE_FT;
 /// The cruise power of a profile that names none: 65%, a light single's
 /// usual economy-cruise setting (the stock profiles' own, data/aircraft).
 pub const DEFAULT_CRUISE_POWER_PCT: f64 = 65.0;
@@ -332,7 +332,7 @@ mod tests {
 
     #[test]
     fn a_climbs_minutes_are_the_straight_lines_integral() {
-        let b = 630.0 / 13500.0;
+        let b: f64 = 630.0 / 13500.0;
         let climber = Climber::new(&c172());
         let climb = climber.climb(1000.0, 8000.0, 0.0);
         let want = ((730.0 - b * 1000.0) / (730.0 - b * 8000.0)).ln() / b;

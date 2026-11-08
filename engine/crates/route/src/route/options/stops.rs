@@ -14,8 +14,8 @@ use wingtip_core::grid::Point;
 /// The fields with fuel looked at for a stop, nm off the way.
 pub const STOP_FIELD_NM: f64 = 15.0;
 /// Minutes on the ground at each stop: the owner's 30-minute turnaround
-/// (2026-10-20), the planner's own (app.routers.plan.TURNAROUND_MIN).
-pub const TURNAROUND_MIN: f64 = 30.0;
+/// (2026-10-20), the flight crate's, as the nav log and the apps count it.
+pub const TURNAROUND_MIN: f64 = wingtip_flight::flight::TURNAROUND_MIN;
 /// How many minutes more a fuel stop in marginal weather costs than one
 /// in the clear (three times that for the best weather's way): the
 /// planner's own figure, half an hour's flying past one to a field in VFR.

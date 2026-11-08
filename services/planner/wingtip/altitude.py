@@ -18,7 +18,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from itertools import pairwise
 
-from . import airspace, ifr, performance, sua, terrain, weather
+from . import airspace, ifr, sua, terrain, weather
 from .engine import ask as engine
 from .geo import along_track_distance_nm, distance_nm
 from .magnetic import magnetic_variation_deg
@@ -67,10 +67,10 @@ def _service_ceiling_ft(aircraft_profile: dict, a: tuple, b: tuple, fcst_hr: str
     """The profile's service ceiling as an altitude over the leg from a
     to b: a density altitude -- the height where the best climb has
     fallen to 100 fpm on any day -- found in the forecast temperatures
-    at the leg's midpoint (wingtip.performance.altitude_at_density_altitude),
-    to the nearest 100 ft. The book figure, a standard day's, where
-    there are none: `temperatures` False (the forecast could not be
-    read), or no station near."""
+    at the leg's midpoint, to the nearest 100 ft, by the engine
+    (`service_ceiling_on_the_day`). The book figure, a standard day's,
+    where there are none: `temperatures` False (the forecast could not
+    be read), or no station near."""
     book_ft = float(aircraft_profile["service_ceiling_ft"])
     if not temperatures:
         return book_ft
@@ -80,7 +80,7 @@ def _service_ceiling_ft(aircraft_profile: dict, a: tuple, b: tuple, fcst_hr: str
         return book_ft
     if not profile:
         return book_ft
-    return float(round(performance.altitude_at_density_altitude(book_ft, lambda h: weather.temperature_at(profile, h)), -2))
+    return float(engine("service_ceiling_on_the_day", service_ceiling_ft=book_ft, profile=[list(p) for p in profile]))
 
 
 def select_cruise_altitude(
