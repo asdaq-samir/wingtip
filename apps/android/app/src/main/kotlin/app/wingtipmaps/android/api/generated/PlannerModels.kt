@@ -1030,6 +1030,45 @@ data class ChartInfo (
 )
 
 /**
+ * The map's FAA overlays as vector tiles (wingtip.vector_tiles): one
+ * PMTiles archive of the cycle, fetched in byte ranges at
+ * /api/overlay-tiles/{name}.pmtiles; its zooms, and how far its lines
+ * may stray from the FAA's (metres on the ground).
+ */
+@Serializable
+data class OverlayTiles (
+    @SerialName("built_at")
+    val builtAt: Double,
+
+    val bytes: Long,
+    val cycle: String,
+    val layers: List<OverlayTilesLayer>,
+
+    @SerialName("max_zoom")
+    val maxZoom: Int,
+
+    @SerialName("min_zoom")
+    val minZoom: Int,
+
+    val name: String,
+
+    @SerialName("tolerance_m")
+    val toleranceM: Double,
+
+    val version: Int
+)
+
+/**
+ * One layer of the overlay tiles (wingtip.vector_tiles.LAYERS) and how
+ * many features it holds.
+ */
+@Serializable
+data class OverlayTilesLayer (
+    val features: Int,
+    val name: String
+)
+
+/**
  * A field's instrument procedures, approaches first, from the CIFP
  * of the AIRAC cycle that took effect on `cycle` (YYMMDD); none for a
  * field with none.

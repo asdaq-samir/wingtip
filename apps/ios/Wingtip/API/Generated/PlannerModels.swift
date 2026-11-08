@@ -610,6 +610,30 @@ struct APIChartInfo: Codable, Equatable, Sendable {
     var maxZoom, minZoom: Int
 }
 
+/// The map's FAA overlays as vector tiles (wingtip.vector_tiles): one
+/// PMTiles archive of the cycle, fetched in byte ranges at
+/// /api/overlay-tiles/{name}.pmtiles; its zooms, and how far its lines
+/// may stray from the FAA's (metres on the ground).
+// MARK: - APIOverlayTiles
+struct APIOverlayTiles: Codable, Equatable, Sendable {
+    var builtAt: Double
+    var bytes: Int
+    var cycle: String
+    var layers: [APIOverlayTilesLayer]
+    var maxZoom, minZoom: Int
+    var name: String
+    var toleranceM: Double
+    var version: Int
+}
+
+/// One layer of the overlay tiles (wingtip.vector_tiles.LAYERS) and how
+/// many features it holds.
+// MARK: - APIOverlayTilesLayer
+struct APIOverlayTilesLayer: Codable, Equatable, Sendable {
+    var features: Int
+    var name: String
+}
+
 /// A field's instrument procedures, approaches first, from the CIFP
 /// of the AIRAC cycle that took effect on `cycle` (YYMMDD); none for a
 /// field with none.

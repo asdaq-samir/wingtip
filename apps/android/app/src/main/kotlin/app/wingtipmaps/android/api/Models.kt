@@ -36,6 +36,11 @@ data class Pilot(
 typealias ChartInfo = app.wingtipmaps.android.api.generated.ChartInfo
 typealias ChartLayer = app.wingtipmaps.android.api.generated.ChartLayer
 
+/** The cycle's FAA overlays as one PMTiles archive the planner builds
+ *  (wingtip.vector_tiles): its name, which its address takes, its zooms
+ *  and its layers. */
+typealias OverlayTiles = app.wingtipmaps.android.api.generated.OverlayTiles
+
 /** A field in the map's view (AirportPin). */
 @Serializable
 data class AirportPin(

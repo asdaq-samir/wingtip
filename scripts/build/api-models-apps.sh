@@ -47,7 +47,7 @@ docker=${DOCKER:-docker}
 PLANNER=(
   AirportPlace AirportSuggestion NearestAirport Traffic
   Briefing RouteOptions RouteProfile Course Candidate
-  ChartInfo ProcedureList AircraftProfile
+  ChartInfo OverlayTiles ProcedureList AircraftProfile
 )
 # The gateway's. Its answers (PilotDto, LogbookEntryDto and the rest) are
 # still read by hand: their names and dates differ from the apps' models,

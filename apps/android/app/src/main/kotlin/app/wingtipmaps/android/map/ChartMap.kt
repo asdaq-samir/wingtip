@@ -3,6 +3,8 @@ package app.wingtipmaps.android.map
 import android.content.ComponentCallbacks
 import android.content.res.Configuration
 import android.graphics.Color
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -13,6 +15,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.tiles.TileTemplate
@@ -33,12 +36,14 @@ import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.layers.RasterLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 
 /**
  * The FAA chart on a map that works like Maps on a phone: MapLibre's
- * native map view with one raster source over the chart's tiles
- * (TileTemplate) and the route's line over that. MapLibre is the open
+ * native map view with the chart's tiles (TileTemplate) and the cycle's
+ * overlays from the planner's vector tiles in its first style
+ * (MapStyle), and the route's line over them. MapLibre is the open
  * native map -- no key, no account, no usage terms of a maps vendor's --
  * which is why it draws the chart rather than Google Maps
  * (docs/NATIVE-ANDROID.md). The view is Android's own, so its lifecycle
@@ -51,6 +56,16 @@ import org.maplibre.android.style.sources.GeoJsonSource
  * @param trail the path flown (OwnTrail), drawn under the route.
  * @param follow whether the map keeps the airplane in the middle; a
  *   drag of the map ends it (`onDragged`), as Apple Maps lets go.
+ * @param overlays the cycle's overlay tiles, in the first style with
+ *   the chart; null for the chart alone.
+ * @param night the phone's dark theme: the chart dimmed (MapStyle.chartPaint).
+ * @param bottomInset what the sheet covers of the map, in pixels: the
+ *   map's padding, so its middle is the middle of what the sheet leaves.
+ * @param opensAt where the map opens, the airplane's last position
+ *   (OwnShip.lastPosition); the country where there is none.
+ * @param onRevealed told once, when the map is first at rest with the
+ *   chart and the overlays drawn, or REVEAL_LATEST_MS after its style
+ *   was set: the loading mark over it (MapLoading) then fades.
  */
 @Composable
 fun ChartMap(
@@ -59,15 +74,23 @@ fun ChartMap(
     maxZoom: Int,
     line: List<List<Double>>,
     modifier: Modifier = Modifier,
+    overlays: OverlayTiles? = null,
+    night: Boolean = false,
+    bottomInset: Int = 0,
+    opensAt: Pair<Double, Double>? = null,
     ownShip: OwnShip.Fix? = null,
     trail: List<PathPoint> = emptyList(),
     follow: Boolean = false,
     onDragged: () -> Unit = {},
+    onRevealed: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val holder = remember { MapHolder(MapView(context)) }
+    val holder = remember { MapHolder(MapView(context), context.resources.displayMetrics.density) }
     holder.onDragged = onDragged
+    holder.onRevealed = onRevealed
+    holder.opensAt = opensAt
+    holder.night = night
 
     DisposableEffect(lifecycle, holder) {
         val observer = LifecycleEventObserver { _, event -> holder.on(event) }
@@ -87,7 +110,9 @@ fun ChartMap(
         }
     }
 
-    LaunchedEffect(holder, template, minZoom, maxZoom) { holder.style(template, minZoom, maxZoom, line) }
+    LaunchedEffect(holder, template, minZoom, maxZoom, overlays) { holder.style(template, minZoom, maxZoom, overlays, line) }
+    LaunchedEffect(holder, night) { holder.paint(night) }
+    LaunchedEffect(holder, bottomInset) { holder.inset(bottomInset) }
     LaunchedEffect(holder, line) { holder.route(line) }
     LaunchedEffect(holder, ownShip, follow) { holder.ownShip(ownShip, follow) }
     LaunchedEffect(holder, trail) { holder.trail(trail) }
@@ -97,12 +122,26 @@ fun ChartMap(
 
 /** The map view with its lifecycle forwarded, each call made at most
  *  once however the composition and the activity end. */
-private class MapHolder(val view: MapView) {
+private class MapHolder(val view: MapView, private val density: Float) {
     private var created = false
     private var destroyed = false
     private var opened = false
     /** Told when the pilot drags the map, so following ends. */
     var onDragged: () -> Unit = {}
+    /** Told once, as the map is first shown (ChartMap's onRevealed). */
+    var onRevealed: () -> Unit = {}
+    /** Where the map opens, read as it opens. */
+    var opensAt: Pair<Double, Double>? = null
+    /** The dark theme, for the chart's paint in a style set anew. */
+    var night = false
+    /** What the sheet covers, read as the map opens and set as it settles,
+     *  so the map never opens with a padding the sheet has since left
+     *  (the web's #543). */
+    private var bottomInset = 0
+    private var styled = false
+    private var revealed = false
+    private val handler = Handler(Looper.getMainLooper())
+    private val latest = Runnable { reveal() }
     /** What the map last drew of the airplane and its path, drawn again
      *  when the chart's style is set anew (a cycle change), which drops
      *  every source but the chart's. */
@@ -129,22 +168,71 @@ private class MapHolder(val view: MapView) {
     fun destroy() {
         if (destroyed) return
         destroyed = true
+        handler.removeCallbacks(latest)
         if (created) view.onDestroy()
     }
 
-    /** The chart as the map's style: the one raster source and its
-     *  layer, then the route on top once the style is in. */
-    fun style(template: TileTemplate?, minZoom: Int, maxZoom: Int, line: List<List<Double>>) {
+    /** The chart and the overlays as the map's style (MapStyle), with the
+     *  overlays' pictures, then the route and the airplane on it once the
+     *  style is in. */
+    fun style(template: TileTemplate?, minZoom: Int, maxZoom: Int, overlays: OverlayTiles?, line: List<List<Double>>) {
         if (destroyed) return
         view.getMapAsync { map ->
             open(map)
             if (template == null) return@getMapAsync
-            map.setStyle(Style.Builder().fromJson(styleJson(template, minZoom, maxZoom))) { style ->
+            map.setMaxZoomPreference(MapStyle.maxZoom(maxZoom))
+            val builder = Style.Builder().fromJson(MapStyle.styleJson(template, minZoom, maxZoom, overlays, night))
+            OverlayPictures.addTo(builder, density)
+            // At the latest this long after the style is set the map is
+            // shown, so a slow tile never leaves it hidden.
+            if (!revealed) {
+                handler.removeCallbacks(latest)
+                handler.postDelayed(latest, REVEAL_LATEST_MS)
+            }
+            map.setStyle(builder) { style ->
+                styled = true
                 route(style, line)
                 trail(style, lastTrail)
                 ownShip(map, style, lastFix, lastFollow)
             }
         }
+    }
+
+    /** The chart's paint by day or night (MapStyle.chartPaint). */
+    fun paint(night: Boolean) {
+        if (destroyed) return
+        view.getMapAsync { map ->
+            map.getStyle { style ->
+                val paint = MapStyle.chartPaint(night)
+                for (id in MapStyle.CHART_LAYERS) {
+                    style.getLayerAs<RasterLayer>(id)?.setProperties(
+                        PropertyFactory.rasterBrightnessMax(paint.brightnessMax),
+                        PropertyFactory.rasterContrast(paint.contrast),
+                        PropertyFactory.rasterSaturation(paint.saturation),
+                    )
+                }
+            }
+        }
+    }
+
+    /** The sheet's room as the map's padding: the airplane, a fit and the
+     *  map's middle in what it leaves. Eased as the sheet settles, as the
+     *  web's map follows its sheet. */
+    fun inset(px: Int) {
+        if (px == bottomInset) return
+        bottomInset = px
+        if (destroyed || !opened) return
+        view.getMapAsync { map -> map.easeCamera(CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()), INSET_MS) }
+    }
+
+    /** The map shown as one thing: the first time it is at rest with its
+     *  style's tiles drawn -- the chart's and the overlays' -- or at the
+     *  latest REVEAL_LATEST_MS after its style was set. */
+    private fun reveal() {
+        if (revealed || destroyed) return
+        revealed = true
+        handler.removeCallbacks(latest)
+        onRevealed()
     }
 
     fun route(line: List<List<Double>>) {
@@ -165,17 +253,29 @@ private class MapHolder(val view: MapView) {
         view.getMapAsync { map -> map.getStyle { style -> trail(style, points) } }
     }
 
-    /** Fresh open over the Chicago area, as the web app opens until a
-     *  position comes (lib/map); the first fix followed brings the map
-     *  to the airplane. A drag by the pilot ends following, as Apple
-     *  Maps lets go of the position when the map is moved by hand. */
+    /** The map opened on the airplane's last position at a region's
+     *  scale, or the whole country before the phone ever had one, as the
+     *  web's map opens (GlMapShell makeMap), with the sheet's room as
+     *  its padding as it is now, so the place is in the middle of what
+     *  the sheet leaves, under the loading mark. A drag by the pilot ends
+     *  following, as Apple Maps lets go of the position when the map is
+     *  moved by hand. A chart is read north up: no turn, no tilt. */
     private fun open(map: MapLibreMap) {
         if (opened) return
         opened = true
-        map.cameraPosition = CameraPosition.Builder().target(LatLng(41.9, -87.9)).zoom(8.0).build()
+        val at = opensAt
+        map.setMinZoomPreference(MapStyle.glZoom(LEAFLET_MIN_ZOOM))
+        map.uiSettings.isRotateGesturesEnabled = false
+        map.uiSettings.isTiltGesturesEnabled = false
+        map.cameraPosition = CameraPosition.Builder()
+            .target(if (at != null) LatLng(at.first, at.second) else COUNTRY)
+            .zoom(MapStyle.glZoom(if (at != null) LEAFLET_OPEN_ZOOM else LEAFLET_COUNTRY_ZOOM))
+            .padding(0.0, 0.0, 0.0, bottomInset.toDouble())
+            .build()
         map.addOnCameraMoveStartedListener { reason ->
             if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) onDragged()
         }
+        view.addOnDidBecomeIdleListener { if (styled) reveal() }
     }
 
     /** The airplane as the blue dot of a map app (the web app's own-ship
@@ -224,7 +324,11 @@ private class MapHolder(val view: MapView) {
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
-        if (style.getLayer(ROUTE) != null) style.addLayerBelow(layer, ROUTE) else style.addLayer(layer)
+        when {
+            style.getLayer(ROUTE) != null -> style.addLayerBelow(layer, ROUTE)
+            style.getLayer(MapStyle.ROUTE_SLOT) != null -> style.addLayerBelow(layer, MapStyle.ROUTE_SLOT)
+            else -> style.addLayer(layer)
+        }
     }
 
     private fun route(style: Style, line: List<List<Double>>) {
@@ -237,19 +341,19 @@ private class MapHolder(val view: MapView) {
         style.addSource(GeoJsonSource(ROUTE, geoJson))
         // The route line as the web app draws it: the blue tint, a little
         // see-through so the chart reads under it.
-        style.addLayer(
-            LineLayer(ROUTE, ROUTE).withProperties(
-                PropertyFactory.lineColor(Color.rgb(0, 122, 255)),
-                PropertyFactory.lineWidth(4f),
-                PropertyFactory.lineOpacity(0.8f),
-                PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
-                PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
-            ),
+        // Over the airspace, under the navaids and the airports (the
+        // style's route slot), as the web's map lays them.
+        val layer = LineLayer(ROUTE, ROUTE).withProperties(
+            PropertyFactory.lineColor(Color.rgb(0, 122, 255)),
+            PropertyFactory.lineWidth(4f),
+            PropertyFactory.lineOpacity(0.8f),
+            PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
+            PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
+        if (style.getLayer(MapStyle.ROUTE_SLOT) != null) style.addLayerBelow(layer, MapStyle.ROUTE_SLOT) else style.addLayer(layer)
     }
 
     private companion object {
-        const val CHART = "chart"
         const val ROUTE = "route"
         const val OWN_SHIP = "own-ship"
         const val TRAIL = "trail"
@@ -258,28 +362,20 @@ private class MapHolder(val view: MapView) {
         const val FOLLOW_ZOOM = 9.0
         /** Shorter than a fix's second, so the dot never lags the map. */
         const val FOLLOW_MS = 300
-
-        /** An empty style but for the chart: no vendor's base map under
-         *  it, as the FAA's chart is the whole picture. */
-        fun styleJson(template: TileTemplate, minZoom: Int, maxZoom: Int): String = buildJsonObject {
-            put("version", 8)
-            putJsonObject("sources") {
-                putJsonObject(CHART) {
-                    put("type", "raster")
-                    putJsonArray("tiles") { add(template.pattern()) }
-                    put("tileSize", 256)
-                    put("minzoom", minZoom)
-                    put("maxzoom", maxZoom)
-                }
-            }
-            putJsonArray("layers") {
-                addJsonObject {
-                    put("id", CHART)
-                    put("type", "raster")
-                    put("source", CHART)
-                }
-            }
-        }.toString()
+        /** The sheet's own settle, so the map's middle moves with it. */
+        const val INSET_MS = 300
+        /** The latest the map is shown after its style is set, the web's
+         *  REVEAL_LATEST_MS. */
+        const val REVEAL_LATEST_MS = 2_500L
+        /** The web's opening zooms, in Leaflet's levels (lib/map/ownShip
+         *  OPEN_ZOOM and COUNTRY_ZOOM, GlMapShell's minZoom): a region
+         *  round the last position, the whole country before one, and no
+         *  farther out than a few states. */
+        const val LEAFLET_OPEN_ZOOM = 8.0
+        const val LEAFLET_COUNTRY_ZOOM = 4.0
+        const val LEAFLET_MIN_ZOOM = 3.0
+        /** The middle of the lower 48 (the web's COUNTRY). */
+        val COUNTRY = LatLng(39.5, -98.35)
 
         /** A line (the route, the path flown) as GeoJSON, whose
          *  coordinates are longitude first; no feature under two points. */
