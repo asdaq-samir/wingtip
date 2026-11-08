@@ -15,7 +15,8 @@ one job (the owner kept both server languages on this split, 2026-11-06):
   says). Every aviation rule or figure lives there once: altitudes,
   winds, runways, fuel, weather limits, Go / No-Go, holds, procedures,
   the clearance reader, the debrief, a pilot's currency and a student's
-  61.109 experience. No network, no screen, no clock of its own. Each rule is a name in `engine/facade/src/call.rs`,
+  61.109 experience, endorsements and inspections, the altitude limits,
+  91.155's minimums, the filing form's items. No network, no screen, no clock of its own. Each rule is a name in `engine/facade/src/call.rs`,
   JSON in and out, typed in `engine/contract/engine.schema.json`.
 - **The planner** (FastAPI, `services/planner`: `app` over `wingtip`) works
   out a flight: it fetches the FAA and weather data, runs the chart
@@ -24,10 +25,11 @@ one job (the owner kept both server languages on this split, 2026-11-06):
 - **Spring Boot** (`services/gateway`) is who the pilot is and what they
   saved: accounts, sign-in, records, the public API, scheduled mail. It
   holds no aviation logic: for a figure it asks the planner over HTTP
-  (`PlannerClient`, as for currency, 14 CFR 61.56 and 61.57, and
-  61.109's experience), which asks the engine. What is left in Java
-  (the endorsements' validity and 61.93 checks, the inspections'
-  calendar months) is in #482. Add no new rule there.
+  (`PlannerClient`: currency, 14 CFR 61.56 and 61.57, 61.109's
+  experience, the endorsements' days and 61.93(d)'s checks, the
+  inspections' due dates and 91.171's VOR check), which asks the engine.
+  AC 61-65K's endorsement texts (`EndorsementKind`) are still Java, in
+  #482. Add no new rule there.
 - **Each app is a shell that gets data, keeps state and draws**, and asks
   the engine the rest by name: the web through `callEngine`
   (apps/web/src/lib/engine, the engine built to WebAssembly), the iPhone

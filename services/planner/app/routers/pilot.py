@@ -146,7 +146,9 @@ class ReviewCheck(BaseModel):
 
 class Endorsements(BaseModel):
     """What the endorsements say (the engine's endorsement_records)."""
-    until: list[date | None] = Field(description="Each held endorsement's last good day, in order: 90 days on for a solo (14 CFR 61.87(n), (o), (p)) or Class B one (61.95); null for one that does not run out.")
+    until: list[date | None] = Field(description=(
+        "Each held endorsement's last good day, in order: 90 days on for a solo (14 CFR 61.87(n), (o), (p)) "
+        "or Class B one (61.95); null for one that does not run out."))
     soloUntil: date | None = Field(description="The last day of the latest solo endorsement (61.87(n), (p)).")
     checks: list[ReviewCheck] = Field(description="61.93(d)(4) and (5) for the solo cross-country on flightOn; none without.")
 

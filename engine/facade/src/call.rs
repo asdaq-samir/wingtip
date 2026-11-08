@@ -371,6 +371,33 @@
 //!   `{"enter", "leave", "valid_from"?, "valid_to"?, "margin_min"?}`
 //!   (seconds since 1970; PASS_MARGIN_MIN where no margin is given).
 //!
+//! The apps' and the gateway's own copies, moved here (#482 phase 1):
+//!
+//! - `altitude_limits` `{"lowest_ft", "highest_ft", "class_a_floor_ft",
+//!   "flight_levels_from_ft", "step_ft"}` from `{"ifr"?}`;
+//!   `altitude_allowed` from `{"ft", "ifr"?}`; `vfr_altitudes` from
+//!   `{"from_ft"?}`; `altitude_said` ("5,500 ft", "FL180") from `{"ft"}`
+//!   (crate::limits: 71.33, 91.119(c), 91.121, 91.159, 91.179);
+//! - `filed_level`, `filed_speed` (`{"tas_kt"}`), `filed_duration`
+//!   (`{"minutes"}`), `filed_wake` (`{"max_takeoff_lb"?}`), `filed_zzzz`
+//!   (`{"ident"}`), `filed_route` (`{"stops", "airways"?, "departure"?,
+//!   "arrival"?}`): FAA Form 7233-4's items (crate::filing);
+//! - `planning_figures` `{"turnaround_min", "cruise_reference_ft"}` from
+//!   `{}`; `workings_right` from `{"key", "typed", "answer"}` (an E6B's
+//!   tolerances, figures::diversion);
+//! - `vfr_minimums` (91.155(a)) `{"day", "night"}` or null, from
+//!   `{"class", "altitude_ft", "agl_ft"?}`; `drill_decks`, the light gun's
+//!   and the minimums' cards, from `{}` (crate::drills);
+//! - `route_position` `{"along_nm", "total_nm", "left_nm", "off_nm",
+//!   "on_route", "leg", "leg_fraction", "burnt_gal"}` or null, from
+//!   `{"at", "line"? | "points"?, "legs"?}` (motion::along);
+//! - `endorsement_records` `{"until", "solo_until", "checks"}` from
+//!   `{"held": [{"code", "on", "make_model"?}], "flight_on"?}`;
+//!   `inspections_due` from `{"annual_on"?, "elt_on"?, "static_check_on"?,
+//!   "transponder_check_on"?, "hundred_hour_at_hours"?, "vor_check"?}`;
+//!   `vor_check_limit_deg` from `{"kind"}` (pilot::records: 61.87, 61.93(d),
+//!   61.95, 91.171, 91.207, 91.409, 91.411, 91.413).
+//!
 //! The FAA's data sets on their cycles (crate::cycles):
 //!
 //! - `data_cycle`: whether an edition is in force on a day, `{"kind",

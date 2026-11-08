@@ -48,14 +48,14 @@ workspace.
 | Crate | Modules | Uses |
 |---|---|---|
 | `core` | geo, wmm, grid, sums, time, json, xml | nothing |
-| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere) | nothing |
+| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items) | nothing |
 | `weather` | metar, taf, winds, forecast, validity, notam, tfr | core |
 | `procedures` | figures (debrief, diversion, holding, lost comms, words) | core, flight |
 | `radio` | clearance, readback, atis | core |
-| `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109), aircraft | core |
+| `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), aircraft | core |
 | `brief` | gonogo, runway | core, flight, procedures |
-| `route` | route, motion, approach | core, procedures |
-| `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead | core, procedures, radio |
+| `route` | route, motion (with along: where the airplane is on the route), approach | core, procedures |
+| `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, procedures, radio |
 | `wording` | wording | core, procedures, airspace |
 | `facade/` | call | all of them |
 
