@@ -97,6 +97,9 @@ export function RouteGl({ course, checkpoints, candidates, endpoints }: {
   // The course drawn, for the browser tests.
   useGlProbe("route-line", ["route-core"], () => ({ course: true }));
   useGlProbe("candidate-marks", ["candidates"], f => ({ key: f.properties.key }));
+  // The checkpoints' names the chart shows, those MapLibre placed clear of
+  // each other (a name it could not fit is not drawn), for the tests.
+  useGlProbe("checkpoint-names", [NAMES.id], f => ({ name: f.properties.name }));
   const dots = useMemo<GeoJSON.FeatureCollection>(() => ({
     type: "FeatureCollection",
     features: checkpoints.map(c => ({

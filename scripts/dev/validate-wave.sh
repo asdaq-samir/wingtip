@@ -29,7 +29,8 @@
 # or a build is what timed the browser tests out before (the checks skill).
 #
 # Logs and exit codes go to WAVE_OUT (a fresh directory in $TMPDIR by
-# default), named in the summary.
+# default), named in the summary, the browser stack's own as stack.log;
+# WAVE_KEEP_STACK=1 leaves that stack up after the suite.
 set -uo pipefail
 
 here=$(cd "$(dirname "$0")/../.." && pwd)
@@ -180,6 +181,12 @@ EOF
     wave down -v --remove-orphans >/dev/null 2>&1
     return 1
   fi
+  # The route the suite plans most, read once before it, as CI's e2e job
+  # does (first-reads.sh): its first nav log fetches the corridor's
+  # elevations and obstacles, minutes under a cold cache, and the first
+  # tests that asked for it timed out behind it.
+  curl -sf -o /dev/null --max-time 600 "http://localhost:$PLANNER_PORT/api/navlog?dep=C81&dest=KDLH" \
+    || echo "validate-wave: the first nav log did not come back (curl $?)"
   echo "validate-wave: stack up and warm"
   vol=$(e2e_modules "$image")
   rm -rf "$here/apps/web/e2e/.auth"
@@ -187,8 +194,15 @@ EOF
     -e BASE_URL="http://localhost:$GATEWAY_PORT" -e MAILPIT_URL="http://localhost:$MAILPIT_PORT" \
     -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" \
     npx playwright test --project=mobile --grep @smoke --reporter=list || status=$?
-  [ "$status" -eq 0 ] || wave logs --no-color --tail 40 planner gateway
-  wave down -v --remove-orphans >/dev/null 2>&1
+  # The stack's whole logs beside the suite's, for a failure to be read.
+  wave logs --no-color --timestamps planner gateway weather > "$out/stack.log" 2>&1
+  [ "$status" -eq 0 ] || echo "validate-wave: the stack's logs are in $out/stack.log"
+  # WAVE_KEEP_STACK=1 leaves it up, to run a failing spec again against it.
+  if [ -n "${WAVE_KEEP_STACK:-}" ]; then
+    echo "validate-wave: the stack is left up (docker compose -p $PROJECT ... down -v to remove it)"
+  else
+    wave down -v --remove-orphans >/dev/null 2>&1
+  fi
   return "$status"
 }
 

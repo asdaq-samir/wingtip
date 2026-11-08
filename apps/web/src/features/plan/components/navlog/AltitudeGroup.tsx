@@ -35,8 +35,9 @@ const strikeWords = (nm: number | null) => (nm === null ? "None" : `${Math.round
 const HINT = { start: "FL-", words: flightLevel(null).slice(3) };
 /** An altitude as said: feet under 18,000 ft, a flight level from there
  *  up, where altimeters are set to 29.92 (the engine's `altitude_said`;
- *  14 CFR 91.121(a)(2), AIM 4-2-9). */
-const said = (ft: number) => callEngine("altitude_said", { ft });
+ *  14 CFR 91.121(a)(2), AIM 4-2-9), its "ft" said in full as "feet", as
+ *  VoiceOver reads this label aloud). */
+const said = (ft: number) => callEngine("altitude_said", { ft }).replace(/ ft$/, " feet");
 
 /** The cruising altitude the log flies: the highest of its legs once they
  *  are in, a point's own altitude among them (RouteBox), else of the

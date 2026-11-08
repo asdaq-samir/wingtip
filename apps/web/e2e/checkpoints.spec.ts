@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { slow, settle, mapStill, sideDrawer, openBrief, briefPage, openBriefing, openTab, grabberTo, panelTabs, openNavLog, closeNavLog, navLogScroller, navLogSheet, settled } from "./helpers";
+import { slow, settle, mapStill, drawn, sideDrawer, openBrief, briefPage, openBriefing, openTab, grabberTo, panelTabs, openNavLog, closeNavLog, navLogScroller, navLogSheet, settled } from "./helpers";
 
 /**
  * The nav log's checkpoints: selected by a click, by Enter or by a pick
@@ -227,52 +227,55 @@ test("plan page: iOS never zooms the page in on a phone's field: every field but
 test("plan page: the checkpoints are their numbers at the route's zoom, named in sentence case beside their dots once closer in, none over another and none off the screen", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  const labels = page.locator("[data-checkpoint-label]");
+  // The names are the chart's own text (RouteGl's checkpoint-names layer),
+  // read through its probe: MapLibre places each clear of the others and
+  // leaves out one it cannot fit, so none is over another.
+  const names = () => drawn(page, "checkpoint-names");
   // The route fitted: its dots numbered and no names, where two dozen dark
   // names covered the chart (the design review, 2026-10-28).
   const dots = page.locator(".maplibregl-marker").filter({ hasText: /^\d+$/ });
   await expect.poll(() => dots.count(), { timeout: slow(30000) }).toBeGreaterThan(3);
   await mapStill(page);
-  await expect(labels).toHaveCount(0);
+  expect(await names()).toEqual([]);
   // Closer in, over the first dot, they are named.
   const first = await dots.first().boundingBox();
   await expect(async () => {
     await page.mouse.move(first!.x + first!.width / 2, first!.y + first!.height / 2);
     await page.mouse.wheel(0, -300);
-    await expect.poll(() => labels.count(), { timeout: 2500 }).toBeGreaterThan(0);
+    await expect.poll(async () => (await names()).length, { timeout: 2500 }).toBeGreaterThan(0);
   }).toPass({ timeout: slow(30000) });
   await mapStill(page);
+  const shown = await names();
   // In sentence case, the chart's names for the places ("River near
   // Lenroot"); a field its own name and its ident as written, "Wag-Aero
   // (WI92)" (the owner, 2026-10-24).
-  for (const text of await labels.allInnerTexts()) {
+  for (const { name } of shown) {
+    const text = String(name);
     expect(text).toMatch(/^[A-Z0-9]/);
     expect(text, `${text} in capitals`).toMatch(/[a-z]/);
     const ident = /\(([^)]+)\)$/.exec(text)?.[1];
     if (ident) expect(ident).toMatch(/^[A-Z0-9]+$/);
   }
+  // Each beside a dot on the screen, not off it: a dot at the very edge,
+  // its middle up to its own radius past it, has its name drawn inward
+  // (text-variable-anchor), so the point is allowed that far out.
   const viewport = page.viewportSize()!;
-  const boxes = (await labels.evaluateAll(els => els.map(el => {
-    const r = el.getBoundingClientRect();
-    return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
-  })));
-  // Nor over the route's own airports' marks, nor their idents beside them.
+  const DOT_RADIUS = 8;
+  for (const { x, y } of shown as { x: number; y: number }[]) {
+    expect(x).toBeGreaterThanOrEqual(-DOT_RADIUS);
+    expect(x).toBeLessThanOrEqual(viewport.width + DOT_RADIUS);
+    expect(y).toBeGreaterThanOrEqual(-DOT_RADIUS);
+    expect(y).toBeLessThanOrEqual(viewport.height + DOT_RADIUS);
+  }
+  // Nor at the route's own airports' marks, nor their idents beside them.
   const chips = await page.locator(".maplibregl-marker", { hasText: /^(C81|KDLH)$/ }).evaluateAll(els => els.map(el => {
     const [mark, ident] = [...el.children].map(c => c.getBoundingClientRect());
     return { left: mark!.left, right: Math.max(mark!.right, ident!.right), top: Math.min(mark!.top, ident!.top), bottom: Math.max(mark!.bottom, ident!.bottom) };
   }));
-  for (const a of boxes) {
+  for (const { x, y, name } of shown as { x: number; y: number; name: string }[]) {
     for (const c of chips) {
-      const apart = a.right <= c.left + 1 || c.right <= a.left + 1 || a.bottom <= c.top + 1 || c.bottom <= a.top + 1;
-      expect(apart, `${JSON.stringify(a)} over the chip ${JSON.stringify(c)}`).toBe(true);
-    }
-  }
-  for (const [i, a] of boxes.entries()) {
-    expect(a.left).toBeGreaterThanOrEqual(-1);
-    expect(a.right).toBeLessThanOrEqual(viewport.width + 1);
-    for (const b of boxes.slice(i + 1)) {
-      const apart = a.right <= b.left + 1 || b.right <= a.left + 1 || a.bottom <= b.top + 1 || b.bottom <= a.top + 1;
-      expect(apart, `${JSON.stringify(a)} over ${JSON.stringify(b)}`).toBe(true);
+      const inside = x > c.left && x < c.right && y > c.top && y < c.bottom;
+      expect(inside, `${name} at ${x},${y} under the chip ${JSON.stringify(c)}`).toBe(false);
     }
   }
 });
