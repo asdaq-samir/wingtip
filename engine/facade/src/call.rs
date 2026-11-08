@@ -211,6 +211,23 @@
 //! - `read_track`: `{"points": [{"t", "lat", "lon", "alt_ft"}]}` or
 //!   `{"error"}`, a GPX or KML track read, from `{"text"}`; `thin_track`:
 //!   at most `most` (4,000) of `points`, from `{"points", "most"?}`.
+//! - `in_flight`: a flight under way against its route (#218) -- `{"on_route",
+//!   "along_nm", "total_nm", "left_nm", "off_nm", "off_side", "desired_track_deg",
+//!   "desired_track_mag_deg", "track_mag_deg", "track_error_deg",
+//!   "variation_deg", "burnt_gal", "next", "destination"}` or null, each
+//!   waypoint `{"index", "name", "distance_nm", "bearing_deg",
+//!   "bearing_mag_deg", "ete_min", "eta_s", "fuel_left_gal"}` -- from
+//!   `{"fix": {"lat", "lon", "track_deg"?, "speed_kt"?}, "line", "points":
+//!   [{"name", "lat", "lon"}], "legs"?, "fuel_start_gal"?, "now_s"?}`;
+//!   `vertical_speed`: ft a minute or null from `{"samples": [{"t_s",
+//!   "altitude_ft"}]}`; `glide_ring`: `{"range_nm", "ground_ft", "ring"}`
+//!   or null from `{"lat", "lon", "altitude_ft"?, "speed_kt"?,
+//!   "terrain_ft"?, "field_ft"?}`;
+//! - `diagram_labels`: the latitude and longitude labels in an airport
+//!   diagram's text, from `{"text"}`; `diagram_graticule`: the page
+//!   against the ground or null, from `{"labels": [{"text", "x", "y"}]}`;
+//!   `diagram_point`: `{"x", "y", "on_page"}` from `{"graticule", "lat",
+//!   "lon", "width", "height"}` (#218).
 //! The route's pilot-made pieces (crate::route), as the address writes
 //! them and the planner's query reads them; a hold is `{"fix", "inbound",
 //! "right", "leg_min"|"leg_nm", "turns"|"minutes"}`, the others null:

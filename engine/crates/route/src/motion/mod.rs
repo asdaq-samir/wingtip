@@ -15,7 +15,12 @@
 //!   by its procedures and holds, going missed when asked
 //!   (navlog/dryRun);
 //! - track: a flown track read from a GPX or KML file, and thinned for
-//!   keeping (lib/track).
+//!   keeping (lib/track);
+//! - instruments: a flight under way against its route -- the next
+//!   waypoint and the destination, the desired track, the fuel left --
+//!   with the vertical speed and the glide ring (#218);
+//! - diagram: own ship on the FAA's airport diagram, by its own latitude
+//!   and longitude labels (#218).
 //!
 //! What runs every frame stays in each app -- where a replay's airplane is
 //! between two reports, a report carried on along its track, the dry run's
@@ -27,8 +32,10 @@
 //! answer (14 ms for 554 against the web's 0.2).
 
 pub mod alerts;
+pub mod diagram;
 pub mod dry_run;
 pub mod glide;
+pub mod instruments;
 pub mod profile;
 pub mod track;
 pub mod traffic;
@@ -88,6 +95,12 @@ pub fn call(name: &str, v: &Value) -> Option<Result<String, String>> {
         "dry_run" => dry_run::dry_run_rule(v),
         "read_track" => track::read_rule(v),
         "thin_track" => track::thin_rule(v),
+        "in_flight" => instruments::in_flight_rule(v),
+        "vertical_speed" => instruments::vertical_speed_rule(v),
+        "glide_ring" => instruments::glide_ring_rule(v),
+        "diagram_labels" => diagram::labels_rule(v),
+        "diagram_graticule" => diagram::graticule_rule(v),
+        "diagram_point" => diagram::point_rule(v),
         _ => return None,
     })
 }

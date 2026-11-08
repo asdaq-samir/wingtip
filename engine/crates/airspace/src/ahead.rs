@@ -483,21 +483,24 @@ fn near_field(packs: &[Pack], lat: f64, lon: f64, alt: f64) -> bool {
 }
 
 /// The alerts ahead, as the planner's {"alerts", "unavailable"} with
-/// "tfrs_as_of", JSON. `tfrs` the phone's kept TFRs (one a line, as
-/// `Tfr` above) and when it downloaded them; None where it has none.
+/// "tfrs_as_of", and "ground_ft": the packs' ground under the airplane
+/// (`ground_ft`, the grid's highest in its cell plus its margin) or null,
+/// which the phones' glide ring stands on (#218), JSON. `tfrs` the
+/// phone's kept TFRs (one a line, as `Tfr` above) and when it downloaded
+/// them; None where it has none.
 #[allow(clippy::too_many_arguments)]
 pub fn ahead(packs: &[Pack], lat: f64, lon: f64, track_deg: f64, gs_kt: f64, alt_ft: Option<f64>, vs_fpm: f64, now: i64,
              tfr_lines: Option<&str>, tfrs_at: Option<i64>) -> String {
     let mut alerts: Vec<Alert> = Vec::new();
     let mut unavailable: Vec<&str> = Vec::new();
+    let under = ground_ft(packs, lat, lon);
     if gs_kt >= AIRBORNE_KT {
         let track = Track::new(lat, lon, track_deg, gs_kt, alt_ft, vs_fpm, LOOK_AHEAD_S, AIRSPACE_STEP_S);
         let near = Track::new(lat, lon, track_deg, gs_kt, alt_ft, vs_fpm, TERRAIN_LOOK_AHEAD_S, TERRAIN_STEP_S);
-        let ground = ground_ft(packs, lat, lon);
         alerts.extend(classes(packs, &track));
-        alerts.extend(special_use(packs, &track, ground));
+        alerts.extend(special_use(packs, &track, under));
         match tfr_lines {
-            Some(text) => alerts.extend(tfrs(packs, &track, ground, now, text)),
+            Some(text) => alerts.extend(tfrs(packs, &track, under, now, text)),
             None => unavailable.push("TFRs"),
         }
         match alt_ft {
@@ -515,10 +518,10 @@ pub fn ahead(packs: &[Pack], lat: f64, lon: f64, track_deg: f64, gs_kt: f64, alt
         }
         alerts.sort_by(|a, b| (a.level != "warning").cmp(&(b.level != "warning")).then(a.seconds.partial_cmp(&b.seconds).unwrap()));
     }
-    to_json(&alerts, &unavailable, tfrs_at)
+    to_json(&alerts, &unavailable, tfrs_at, under)
 }
 
-fn to_json(alerts: &[Alert], unavailable: &[&str], tfrs_at: Option<i64>) -> String {
+fn to_json(alerts: &[Alert], unavailable: &[&str], tfrs_at: Option<i64>, ground: Option<f64>) -> String {
     let mut out = String::from("{\"alerts\":[");
     for (k, a) in alerts.iter().enumerate() {
         if k > 0 {
@@ -557,6 +560,8 @@ fn to_json(alerts: &[Alert], unavailable: &[&str], tfrs_at: Option<i64>) -> Stri
         Some(t) => out.push_str(&t.to_string()),
         None => out.push_str("null"),
     }
+    out.push_str(",\"ground_ft\":");
+    json::opt_number(&mut out, ground);
     out.push('}');
     out
 }
@@ -584,5 +589,6 @@ mod tests {
         assert!(flying.contains("\"id\":\"tfr:6/1234\""), "{flying}");
         // No packs: no ground to read.
         assert!(flying.contains("\"terrain\""), "{flying}");
+        assert!(flying.ends_with(",\"ground_ft\":null}"), "{flying}");
     }
 }
