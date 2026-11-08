@@ -27,7 +27,7 @@ variable "PUSH" {
 # Promote workflow walks, promoting each this commit built.
 group "default" {
   targets = ["base", "ml", "pipeline-processing", "pipeline-training",
-             "planner", "ingest", "gateway"]
+             "planner", "ingest", "assistant", "gateway"]
 }
 
 function "image" {
@@ -110,6 +110,17 @@ target "ingest" {
   cache-from = image("ingest").cache-from
   cache-to   = image("ingest").cache-to
   output     = image("ingest").output
+}
+
+# Every Claude call (services/assistant), on wingtip's base like the planner.
+target "assistant" {
+  context    = "."
+  dockerfile = "services/assistant/Dockerfile"
+  contexts   = { wingtip-base = "target:base" }
+  tags       = image("assistant").tags
+  cache-from = image("assistant").cache-from
+  cache-to   = image("assistant").cache-to
+  output     = image("assistant").output
 }
 
 target "gateway" {

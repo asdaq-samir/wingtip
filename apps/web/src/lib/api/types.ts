@@ -1,9 +1,11 @@
 /**
  * The shapes the API returns.
  *
- * Everything either server sends is generated from its own OpenAPI
+ * Everything a server sends is generated from its own OpenAPI
  * document by `npm run types` -- the Python planner's from
- * services/planner/openapi.json into ./schema.d.ts, this app's Spring
+ * services/planner/openapi.json into ./schema.d.ts, the assistant
+ * service's (every Claude call) from services/assistant/openapi.json into
+ * ./assistant-schema.d.ts, this app's Spring
  * Boot endpoints from services/gateway/openapi.json into
  * ./gateway-schema.d.ts -- and re-exported here under the names the pages
  * use, so a field renamed in services/planner/app/schemas.py or in a
@@ -12,9 +14,11 @@
  * no server schema describes: the page's own compositions.
  */
 import type { components } from "./schema";
+import type { components as AssistantComponents } from "./assistant-schema";
 import type { components as GatewayComponents } from "./gateway-schema";
 
 type Schemas = components["schemas"];
+type Assistant = AssistantComponents["schemas"];
 type Gateway = GatewayComponents["schemas"];
 
 // ---------------------------------------------------------------------
@@ -113,14 +117,14 @@ export type ProcedureFix = Schemas["ProcedureFix"];
 export type ProcedureMissedLeg = Schemas["ProcedureMissedLeg"];
 export type ChartPages = Schemas["ChartPages"];
 /** The mock oral's question, its answer graded, and what each is asked with. */
-export type OralQuestion = Schemas["OralQuestion"];
-export type OralQuestionRequest = Schemas["OralQuestionRequest"];
+export type OralQuestion = Assistant["OralQuestion"];
+export type OralQuestionRequest = Assistant["OralQuestionRequest"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];
 export type ClearancePlaces = Schemas["ClearancePlaces"];
 export type ClearanceWords = Schemas["ClearanceWords"];
-export type OralGrade = Schemas["OralGrade"];
-export type OralGradeRequest = Schemas["OralGradeRequest"];
-export type OralCitation = Schemas["OralCitation"];
+export type OralGrade = Assistant["OralGrade"];
+export type OralGradeRequest = Assistant["OralGradeRequest"];
+export type OralCitation = Assistant["OralCitation"];
 export type AirportPin = Schemas["AirportPin"];
 export type AirportsInView = Schemas["AirportsInView"];
 export type WaypointsInView = Schemas["WaypointsInView"];
@@ -212,14 +216,14 @@ export interface AircraftChoice {
   tail?: string;
 }
 /** One line of the per-checkpoint description stream. */
-export type CheckpointDescriptionMessage = Schemas["CheckpointNoteMessage"];
+export type CheckpointDescriptionMessage = Assistant["CheckpointNoteMessage"];
 /** The nav log on screen, sent to be told in words (the Brief's narrative,
  *  POST /api/briefing/narrative): checked on arrival, a field the prompt
  *  cannot read a 422 naming it. */
-export type NarrativeRequest = Schemas["NarrativeRequest"];
+export type NarrativeRequest = Assistant["NarrativeRequest"];
 /** One line of the narrative's stream: text as Claude writes it, then the
  *  whole briefing, or why there is none. */
-export type NarrativeMessage = Schemas["NarrativeMessage"];
+export type NarrativeMessage = Assistant["NarrativeMessage"];
 export type CheckpointNoteSaved = Schemas["CheckpointNoteSaved"];
 
 /** What the nav log stream's "altitude" message carries -- the generated

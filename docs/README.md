@@ -69,13 +69,14 @@ explicit path to production on AWS.
   constrains the cruising altitude: C and D need two-way radio
   communication established rather than a clearance, so they are reported
   as calls to make, not airspace to fly beneath.
-- **Claude in the planner, on the SDK directly.** The written briefing
+- **Claude in the assistant service, on the SDK directly.** The written briefing
   (`POST /api/briefing/narrative`) is one streamed Messages call over the
   nav log the pilot sees, its words arriving as they are written; the
   checkpoint descriptions, the plain-words readings and the mock oral are
   Messages calls too, and the pilot's assistant runs the SDK's tool runner
-  over the planner's own functions. No agent framework sits between the
-  planner and the model (the owner, 2026-11-06: a product, not a
+  over the planner's HTTP API. Every one of them is in `services/assistant`,
+  which holds the Anthropic key; no agent framework sits between it and
+  the model (the owner, 2026-11-06: a product, not a
   framework showcase).
 - **A cheap path to production**: one EC2 server behind CloudFront, chart
   tiles drawn once a cycle into S3, about $32 a month — see
@@ -99,14 +100,16 @@ Four layers, each with one job:
 - **The planner** (`planner` over `services/planner/wingtip`, FastAPI):
   works out a flight. It fetches the FAA's and the weather's data, reads
   the chart and scores the checkpoints with the chart model in its own
-  process, runs the AI features (the assistant, the written briefing) with the
-  Anthropic SDK, and asks the engine every rule through
-  `wingtip_native.call`.
+  process, and asks the engine every rule through `wingtip_native.call`.
 - **ingest** (`services/ingest`, the `ingest` service): the live feeds,
   read always -- the FAA's SWIM feeds and the followed airplanes' adsb.fi
   rounds -- written into the SQLite stores on the data folder the planner
   reads (issue #535's first split from the planner). It fetches and
   stores only; any figure is still the engine's.
+- **The assistant** (`services/assistant`, FastAPI): every Claude call --
+  the assistant, the written briefing, the words, the checkpoint notes,
+  the mock oral -- over the planner's figures, asked over HTTP. It holds
+  the Anthropic key and computes no figure.
 - **Spring Boot** (`services/gateway`, the `gateway` service): who the pilot
   is and what they saved -- accounts, sign-in, aircraft, flights,
   logbook and endorsements, the public API, scheduled mail. It holds no
@@ -139,8 +142,9 @@ The system runs today as seven Docker services (`retrain` is the training image 
 | `mailpit` | The local inbox the sign-in mail goes to (Amazon SES on AWS) |
 | `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and model training, run as one-off jobs; `retrain` is the whole training run (`python -m wingtip.pipeline run`) in the training image, the container the developer console's Retrain starts |
 | `ml` | Jupyter environment for model development and experimentation -- on demand, behind the `notebooks` profile: `docker compose up ml` |
-| `planner` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather, and the Claude features (the written briefing, checkpoint notes, words, the assistant) -- with the engine inside it for every rule |
+| `planner` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather -- with the engine inside it for every rule |
 | `ingest` | The live feeds, read always: the FAA's SWIM feeds (STDDS's terminal radar, FNS's NOTAMs, TFMS's flight plans) and the followed airplanes' adsb.fi rounds, written into the SQLite stores under `data/raw` that the planner reads; no port ([`services/ingest/README.md`](../services/ingest/README.md)) |
+| `assistant` | FastAPI: every Claude call (the written briefing, checkpoint notes, words, the assistant, the mock oral) over the planner's figures, behind the gateway at the same `/api/planner/...` addresses; 256 MB at most ([`services/assistant/README.md`](../services/assistant/README.md)) |
 
 ![Current local architecture](architecture-current.svg)
 
@@ -213,8 +217,8 @@ adsb.lol by region and an open card's airplane, is still asked by the
 planner as the pilot asks. See
 [`services/ingest/README.md`](../services/ingest/README.md).
 
-**`planner`** — chart vision, checkpoint selection, the nav log
-and the assistant; it asks the engine (`wingtip_native`) for the rules
+**`planner`** — chart vision, checkpoint selection and the nav log;
+it asks the engine (`wingtip_native`) for the rules
 the engine holds, and #482 moves the rest of its Python rules there.
 Serves no pages: the front end lives in [`apps/web/`](../apps/web) and is built
 into `gateway`'s jar, which proxies here for every computation. Publishes no
@@ -254,22 +258,23 @@ gateway reaches the planner by its Compose name (`http://planner:8000`).
   | `fixes` | NASR FIX_BASE, every row | `ident`, `kind`, `vfr`, `enroute_low` | charted 8, others 10 |
 - `/api/briefing` — the FAA-sequence weather briefing behind the
   briefing on `/app/plan`, the flight planning drawer
-- `/api/briefing/narrative` — the Brief's written briefing
-  (`app/narrative.py`): the nav log on screen, sent back by the page,
+- `/api/briefing/narrative` — the Brief's written briefing, answered
+  by the `assistant` service (`services/assistant/app/narrative.py`): the nav log on screen, sent back by the page,
   told in plain prose by one streamed Claude call (the Anthropic SDK's
   `messages.stream`, model `NARRATIVE_MODEL`, Haiku by default), as
   newline-delimited JSON — `delta` lines as it is written, then `done`
   or `error`. A paid feature: `gateway` checks the subscription and the
   day's allowance before it forwards the call
-- `/api/assistant` — the pilot's assistant (`app/assistant.py`): a
-  question about the flight in the pilot's own words, answered by Claude
-  with the planner's own functions as its tools (the plan, the weather at
+- `/api/assistant` — the pilot's assistant (the `assistant` service's
+  `app/assistant.py`): a question about the flight in the pilot's own
+  words, answered by Claude with the planner's own endpoints as its tools (the plan, the weather at
   a field, the briefing, the Go / No-Go, a field's card, the nearest
   fields, a hold's entry, a diversion), so every figure is the planner's
   and the model only chooses the tools and writes the words; streamed as
   newline-delimited JSON with the raw sources the answer rests on
 - `/api/words/{notams,weather,risk,debrief,changes}` — short readings in
-  words (`app/ai_words.py`): each sentence cites the raw source it rests on
+  words (the `assistant` service's `app/words.py`, over the planner's
+  `/api/words/{kind}/sources`): each sentence cites the raw source it rests on
   by id (a METAR, a NOTAM, a finding), and a sentence with none is
   dropped; `changes` diffs two briefings first and asks the model only
   where something moved, for `gateway`'s flight watch
@@ -496,7 +501,7 @@ an engineering gap:
   there is no native Python virtualenv.
 - **Git.**
 - **An Anthropic API key** (`ANTHROPIC_API_KEY`) — only required for the
-  planner's Claude features: the Brief's written briefing, the "how to
+  `assistant` service's Claude features: the Brief's written briefing, the "how to
   spot it" checkpoint notes, the plain-words readings and the assistant.
   Everything else works without one, including every `docker compose`
   command: the key is read with `:-`, not `:?`, precisely so that a
@@ -512,7 +517,7 @@ an engineering gap:
 git clone <repo-url>
 cd wingtip
 
-# Only needed for the planner's Claude features (briefing, notes, assistant):
+# Only needed for the assistant service's Claude features (briefing, notes, assistant):
 export ANTHROPIC_API_KEY=sk-...
 # or put it in a .env file (gitignored) at the repo root — docker compose
 # reads .env automatically.

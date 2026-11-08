@@ -91,7 +91,6 @@ services:
       # server's own.
       - ../data/aircraft:/workspace/data/aircraft:ro
     environment:
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       # The map's Google overlay (routers/basemaps), where the owner has a key.
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
       ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
@@ -143,6 +142,32 @@ services:
       SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
       SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
 
+  # Every Claude call (services/assistant, issue #535): the only service
+  # given the Anthropic key. It asks the planner for every figure and
+  # keeps nothing in memory but a request's own: about 100 MB resident
+  # (Python, FastAPI, the SDK), capped at 256 MB so it can never take the
+  # planner's or the JVM's share of this 4 GB server. One worker: its
+  # requests wait on Claude and the planner, not on its processor.
+  assistant:
+    <<: *restart
+    image: ${IMAGE_REGISTRY}/assistant:${IMAGE_TAG:-latest}
+    # No access log, as the planner's: a request's body is a pilot's
+    # plan and position, and its line would sit in CloudWatch.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+    mem_limit: 256m
+    # The regulations and the AIM the mock oral quotes, fetched once into
+    # data/raw/references and kept across deploys.
+    volumes:
+      - /srv/wingtip/data:/workspace/data
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      PLANNER_URL: http://planner:8000
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
   gateway:
     <<: *restart
     image: ${IMAGE_REGISTRY}/gateway:${IMAGE_TAG:-latest}
@@ -151,6 +176,8 @@ services:
         condition: service_healthy
       planner:
         condition: service_healthy
+      assistant:
+        condition: service_started
     healthcheck:
       test:
         - CMD
@@ -169,6 +196,7 @@ services:
       SPRING_DATASOURCE_USERNAME: wingtip
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       PLANNER_SERVICE_URL: http://planner:8000
+      ASSISTANT_SERVICE_URL: http://assistant:8000
       # The gateway is reached only through Caddy over the server's own
       # network: plain HTTP inside, TLS at Caddy and at CloudFront.
       APP_PUBLIC_BASE_URL: https://${PUBLIC_HOST}

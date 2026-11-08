@@ -324,6 +324,27 @@ jobs:
       - run: ruff check ingest tests
       - run: pytest tests/ -v
 
+  # The assistant service's suite (services/assistant): every Claude call,
+  # the model and the planner stood in for. Its own small dependency set
+  # (requirements-dev.txt), no engine, no reference data: it imports
+  # nothing of wingtip.
+  test-assistant:
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes]
+    if: needs.changes.outputs.test-assistant == 'true'
+    defaults:
+      run:
+        working-directory: services/assistant
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+        with:
+          python-version: "3.14"
+      - run: pip install uv
+      - run: uv pip install --system -r requirements-dev.txt
+      - run: ruff check app tests
+      - run: pytest tests/ -v
+
   # What this run has to do, from what changed: the one job the test
   # jobs and the image builds wait on, and quick (a checkout and a diff).
   # Each test job and each image then runs only if something it reads
@@ -354,6 +375,7 @@ jobs:
       test-gateway: ${{ steps.plan.outputs.test-gateway }}
       test-planner: ${{ steps.plan.outputs.test-planner }}
       test-ingest: ${{ steps.plan.outputs.test-ingest }}
+      test-assistant: ${{ steps.plan.outputs.test-assistant }}
       docs: ${{ steps.plan.outputs.docs }}
       infra: ${{ steps.plan.outputs.infra }}
       android: ${{ steps.plan.outputs.android }}
@@ -438,6 +460,7 @@ jobs:
               - apps/web/**
               - apps/web/.nvmrc
               - services/planner/openapi.json
+              - services/assistant/openapi.json
               - services/gateway/openapi.json
               - engine/contract/**
               # The phones' models of the two documents, checked there.
@@ -446,8 +469,8 @@ jobs:
               - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
             test-gateway:
               - services/gateway/**
-              # the planner's answers PlannerClient reads are generated from it
-              - services/planner/openapi.json
+              # the assistant's answers PlannerClient reads are generated from it
+              - services/assistant/openapi.json
             test-planner:
               - services/planner/**
               - engine/**
@@ -457,9 +480,13 @@ jobs:
               - services/planner/wingtip/**
               - services/planner/requirements-wingtip.txt
               - engine/**
+            test-assistant:
+              - services/assistant/**
+              - .ruff.toml
             # The two APIs the phones call, for api-compat.
             api:
               - services/planner/openapi.json
+              - services/assistant/openapi.json
               - services/gateway/openapi.json
               - .github/api-breaks.txt
             # The production stack's own files.
@@ -523,6 +550,8 @@ jobs:
             ingest:
               - services/ingest/**
               - services/planner/wingtip/**
+            assistant:
+              - services/assistant/**
               - services/Dockerfile.base
               - services/planner/requirements-wingtip.txt
               - engine/**
@@ -533,6 +562,7 @@ jobs:
               - apps/web/**
               - services/gateway/**
               - services/planner/openapi.json
+              - services/assistant/openapi.json
               - engine/contract/**
       - name: What this run builds and tests
         id: plan
@@ -548,11 +578,11 @@ jobs:
           # Every image this workflow builds, each a target of
           # .github/images.hcl, which has its context and Dockerfile.
           IMAGES = ("base", "ml", "pipeline-processing", "pipeline-training",
-                    "planner", "ingest", "gateway")
+                    "planner", "ingest", "assistant", "gateway")
           due = lambda name: everything or name in changed
           images = [{"service": s} for s in IMAGES if due(s)]
           outputs = {"images": json.dumps(images)}
-          for name in ("test-root", "test-web", "test-gateway", "test-planner", "test-ingest",
+          for name in ("test-root", "test-web", "test-gateway", "test-planner", "test-ingest", "test-assistant",
                        "docs", "infra", "api"):
               outputs[name] = "true" if due(name) else "false"
           # The phones' builds gate a merge: a pull request, or a run
@@ -1688,7 +1718,7 @@ jobs:
         run: |
           docker pull -q "$OASDIFF_IMAGE"
           status=0
-          for doc in services/planner/openapi.json services/gateway/openapi.json; do
+          for doc in services/planner/openapi.json services/assistant/openapi.json services/gateway/openapi.json; do
             mkdir -p "/tmp/base/$(dirname "$doc")"
             if ! git show "HEAD^1:$doc" > "/tmp/base/$doc" 2>/dev/null; then
               echo "$doc is new: nothing on main to break"
@@ -1974,7 +2004,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, docs, infra, api-compat]
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, docs, infra, api-compat]
     if: always()
     steps:
       - name: Every job passed or was not needed

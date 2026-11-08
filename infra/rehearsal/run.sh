@@ -29,6 +29,8 @@ if [ "${SKIP_BUILD:-}" != 1 ]; then
     --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
   docker build -t wingtip-local/ingest:rehearsal -f services/ingest/Dockerfile \
     --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
+  docker build -t wingtip-local/assistant:rehearsal -f services/assistant/Dockerfile \
+    --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
   docker build -t wingtip-local/gateway:rehearsal -f services/gateway/Dockerfile .
 fi
 

@@ -95,7 +95,8 @@ class Settings(BaseSettings):
     """Every environment variable wingtip and the planner read, by its
     own name (case aside; the field `log_level` is LOG_LEVEL), with its
     default. Unset optional keys (the ADS-B keys) are None,
-    which is how each feature knows it is off. ANTHROPIC_API_KEY is not here: the anthropic SDK reads it itself."""
+    which is how each feature knows it is off. The Claude models and ANTHROPIC_API_KEY are the assistant
+    service's (services/assistant, app.settings): the planner calls no model."""
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 
@@ -155,16 +156,6 @@ class Settings(BaseSettings):
     charts_refresh_workers: int = 1
     #: Whether the chart model reads tiles in the planner's own process pool.
     chart_reads_in_process: bool = True
-    #: The assistant's model, its effort, and whether the server-side fallback is asked for (1 only).
-    assistant_model: str = "claude-opus-5-5"
-    assistant_effort: str = "medium"
-    assistant_fallbacks: bool = False
-    #: The mock oral's model.
-    oral_model: str = "claude-opus-5-5"
-    #: The plain-words briefs' model.
-    words_model: str = "claude-haiku-5-5"
-    #: The checkpoint notes' model.
-    checkpoint_note_model: str = "claude-haiku-5-5"
     #: The OTLP collector traces go to; None sends none (app.tracing).
     otel_exporter_otlp_endpoint: str | None = None
     #: The service name on those traces.
@@ -179,12 +170,6 @@ class Settings(BaseSettings):
     read_switches = field_validator(
         "charts_fetch_for_tiles", "adsbfi_open_data", "registry_refresh", "cycle_pack", "overlay_tiles", "landmarks_build",
         "charts_auto_refresh", "faa_data_auto_refresh", "chart_reads_in_process", mode="before")(_switch)
-
-    @field_validator("assistant_fallbacks", mode="before")
-    @classmethod
-    def read_opt_in(cls, value):
-        """The fallback is opt-in: "1" turns it on, anything else leaves it off."""
-        return value == "1" if isinstance(value, str) else value
 
     @field_validator("chart_tiles_url", "dev_services_url", mode="before")
     @classmethod

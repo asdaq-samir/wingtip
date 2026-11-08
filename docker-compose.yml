@@ -242,10 +242,6 @@ services:
       # services/planner/app/main.py) is read against: the desk this
       # runs on, not UTC.
       TZ: ${TZ:-America/Chicago}
-      # The planner's Claude calls: /api/checkpoint-notes (one per
-      # checkpoint with no saved note yet), the briefing's narrative
-      # (/api/briefing/narrative), the assistant and the words.
-      ANTHROPIC_API_KEY: *anthropic-api-key
       # The map's Google overlay (routers/basemaps): a browser key for
       # Google's Map Tiles API, none by default.
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
@@ -298,6 +294,39 @@ services:
       <<: *python-healthcheck
       # Its beat in the live store, written every ten seconds (ingest.health).
       test: ["CMD", "python", "-m", "ingest.health"]
+
+  # Every Claude call the app makes (services/assistant, issue #535): the
+  # pilot's assistant, the Brief's narrative, the readings in words, the
+  # checkpoint notes and the mock oral. It holds the Anthropic key and
+  # the model settings, and asks the planner for every figure; the
+  # browser reaches it only through gateway's /api/planner/* proxy, at
+  # the same addresses as before. Mounts the project for its code, as the
+  # planner does, and for data/raw/references, the regulations and the
+  # AIM the mock oral quotes. A few HTTP calls at a time and no data of
+  # its own in memory: 256 MB is room and to spare.
+  assistant:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: services/assistant/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    ports:
+      - "${DEV_PUBLISH_ADDRESS:-127.0.0.1}:8085:8000"
+    mem_limit: 256m
+    volumes:
+      - .:/workspace
+    environment:
+      PYTHONPATH: /workspace/services/assistant
+      PLANNER_URL: http://planner:8000
+      ANTHROPIC_API_KEY: *anthropic-api-key
+      # The models, each by its own name, as services/assistant/app/settings.py
+      # declares them; unset, its defaults.
+      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-claude-opus-5-5}
+      ASSISTANT_FALLBACKS: ${ASSISTANT_FALLBACKS:-0}
+    healthcheck:
+      <<: *python-healthcheck
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
 
   # Where the local stack's sign-in emails go: an inbox of its own at
   # http://localhost:8025, sent nowhere. A mail host is what makes
@@ -369,6 +398,10 @@ services:
         condition: service_healthy
       planner:
         condition: service_healthy
+      # Started with it, not waited for: nothing in the gateway's start
+      # asks the assistant.
+      assistant:
+        condition: service_started
       mailpit:
         condition: service_started
     # Ready means Spring's readiness group (the app and its database)
@@ -396,6 +429,7 @@ services:
       SPRING_DATASOURCE_USERNAME: wingtip
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-wingtip}
       PLANNER_SERVICE_URL: http://planner:8000
+      ASSISTANT_SERVICE_URL: http://assistant:8000
       # Traces to Jaeger with TRACING=1, the planner's calls under the
       # gateway's (see the jaeger service); off otherwise.
       MANAGEMENT_TRACING_ENABLED: ${TRACING:-false}

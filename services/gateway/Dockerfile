@@ -21,10 +21,12 @@ COPY apps/web/package.json apps/web/package-lock.json ./
 # `npm ci` doesn't re-download the same packages every time.
 RUN --mount=type=cache,target=/root/.npm npm ci
 COPY apps/web/ ./
-# The planner's and this app's own OpenAPI documents, from which `npm run
-# types` generates the front end's API types (apps/web/src/lib/api/schema.d.ts
-# and gateway-schema.d.ts, not committed).
+# The planner's, the assistant's and this app's own OpenAPI documents,
+# from which `npm run types` generates the front end's API types
+# (apps/web/src/lib/api/schema.d.ts, assistant-schema.d.ts and
+# gateway-schema.d.ts, not committed).
 COPY services/planner/openapi.json /repo/services/planner/openapi.json
+COPY services/assistant/openapi.json /repo/services/assistant/openapi.json
 COPY services/gateway/openapi.json /repo/services/gateway/openapi.json
 # The engine's contract, from which it generates the engine calls' types
 # (apps/web/src/lib/engine/contract.ts, committed, made again here).
@@ -46,11 +48,11 @@ COPY services/gateway/pom.xml .
 # The mount stays, as the local download cache for a changed pom.
 RUN --mount=type=cache,target=/root/.m2/repository \
     mvn -B -q dependency:go-offline && cp -R /root/.m2/repository /build/m2
-# The planner's OpenAPI document, from which the build generates the
-# planner's answers PlannerClient reads (pom.xml's
-# openapi-generator-maven-plugin): at ../planner from the pom, where it
+# The assistant's OpenAPI document, from which the build generates the
+# assistant's answers PlannerClient reads (pom.xml's
+# openapi-generator-maven-plugin): at ../assistant from the pom, where it
 # is in the repository too.
-COPY services/planner/openapi.json /planner/openapi.json
+COPY services/assistant/openapi.json /assistant/openapi.json
 # src/main alone: the tests are neither run here (-DskipTests) nor
 # wanted in the layer, where an edited test rebuilt the jar.
 COPY services/gateway/src/main ./src/main

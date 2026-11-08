@@ -11,5 +11,5 @@ def test_the_committed_openapi_document_matches_the_app():
 
 def test_every_stream_message_union_is_published():
     document = render()
-    for name in ("NavLogMessage", "DetectMessage", "CheckpointNoteMessage"):
+    for name in ("NavLogMessage", "DetectMessage"):
         assert f'"{name}"' in document

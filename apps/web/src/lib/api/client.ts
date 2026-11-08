@@ -1,5 +1,6 @@
 import createClient, { type Middleware } from "openapi-fetch";
 import type { paths } from "./schema";
+import type { paths as AssistantPaths } from "./assistant-schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
 import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AirspaceInView, AlertsAhead, Alternates, AltitudeChoice, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, ChecklistDto, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavaidsInView, NavLogMessage, OverlayTiles, NearestAirports, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, WaypointsInView, ClearanceAsk, ClearancePlaces } from "./types";
@@ -119,6 +120,13 @@ export class GatewayRequest extends Request {
 
 const planner = createClient<paths>({ baseUrl: "", Request: GatewayRequest });
 planner.use(csrfAndFailures);
+
+/** The assistant service's endpoints -- every Claude call: the narrative,
+ *  the checkpoint notes, the mock oral (and ./assistant, ./words) -- typed
+ *  by its own document, at the same /api/planner/... addresses: the
+ *  gateway sends them on to the assistant (PlannerProxyController). */
+const assistant = createClient<AssistantPaths>({ baseUrl: "", Request: GatewayRequest });
+assistant.use(csrfAndFailures);
 
 /** The Spring Boot endpoints, on this same origin. */
 const gateway = createClient<GatewayPaths>({ baseUrl: "" });
@@ -453,7 +461,7 @@ export const api = {
    * within the month's cap (PlannerProxyController).
    */
   async *narrative(request: NarrativeRequest, signal?: AbortSignal): AsyncGenerator<NarrativeMessage> {
-    const result = await planner.POST("/api/briefing/narrative", { body: request, parseAs: "stream", signal });
+    const result = await assistant.POST("/api/briefing/narrative", { body: request, parseAs: "stream", signal });
     yield* ndjson<NarrativeMessage>(result.data as ReadableStream | undefined);
   },
 
@@ -466,7 +474,7 @@ export const api = {
     dep: string, dest: string, signal?: AbortSignal, stops: string[] = [],
   ): AsyncGenerator<CheckpointDescriptionMessage> {
     // A POST: each checkpoint without a note is a billed Claude call.
-    const result = await planner.POST("/api/checkpoint-notes/generate", {
+    const result = await assistant.POST("/api/checkpoint-notes/generate", {
       body: { departure_ident: dep, destination_ident: dest, stops },
       parseAs: "stream", signal,
     });
@@ -514,8 +522,8 @@ export const api = {
   /** The mock oral (the planner's app.oral): a question about this
    *  flight, and an answer graded. The developer's, for now. */
   oral: {
-    question: (body: OralQuestionRequest) => planner.POST("/api/oral/question", { body }).then(data<OralQuestion>),
-    grade: (body: OralGradeRequest) => planner.POST("/api/oral/grade", { body }).then(data<OralGrade>),
+    question: (body: OralQuestionRequest) => assistant.POST("/api/oral/question", { body }).then(data<OralQuestion>),
+    grade: (body: OralGradeRequest) => assistant.POST("/api/oral/grade", { body }).then(data<OralGrade>),
   },
   airport: (ident: string) =>
     planner.GET("/api/airport/{ident}", { params: { path: { ident } }, priority: "high" }).then(data<AirportPlace>),

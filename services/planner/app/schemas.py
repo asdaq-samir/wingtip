@@ -1863,69 +1863,68 @@ class PilotNotesForgotten(BaseModel):
     removed: int
 
 
-class NoteStart(BaseModel):
-    type: Literal["start"] = "start"
-    count: int
+class NoteToWrite(BaseModel):
+    """A route's checkpoint as the assistant writes its note
+    (POST /api/checkpoint-notes/pending): where it is, what it is, the
+    hop its note is kept under, and the note already kept for it -- the
+    pilot's own, else the shared one -- or None, for the assistant to
+    write and seed."""
 
-
-class NoteCheckpoint(BaseModel):
-    """`source` says where the text came from: "saved" is a pilot's own
-    earlier edit, "generated" a fresh model call, "error" that call
-    failing for this checkpoint alone (`description` is None then)."""
-
-    type: Literal["checkpoint"] = "checkpoint"
     lat: float
     lon: float
     id: str
-    description: str | None
-    source: Literal["generated", "saved", "error"]
-    detail: str | None = None
+    name: str | None = None
+    category: str
+    along_track_nm: float
+    hop_key: str
+    saved: str | None = None
 
 
-class NoteError(BaseModel):
-    """A failure that applies to every checkpoint the same way (a bad
-    key, an exhausted rate limit), sent once."""
+class NotesToWrite(BaseModel):
+    """A route's checkpoints in along-track order, for their notes."""
 
-    type: Literal["error"] = "error"
-    detail: str
-
-
-class NoteDone(BaseModel):
-    type: Literal["done"] = "done"
+    departure_ident: str
+    checkpoints: list[NoteToWrite]
 
 
-CheckpointNoteMessage = Annotated[
-    NoteStart | NoteCheckpoint | NoteError | NoteDone, Field(discriminator="type"),
-]
+class NoteSeeded(BaseModel):
+    """A generated note offered as the shared one: kept (`written`), or
+    the shared one saved meanwhile, which stays (`description` is it)."""
+
+    description: str
+    written: bool
 
 
-# --- /api/briefing/narrative: the Brief's narrative as it is written (app.narrative) ---
+# --- the readings in words' sources (routers/words.py) -------------------
 
 
-class NarrativeDelta(BaseModel):
-    """A piece of the briefing as Claude writes it."""
+class WordsSource(BaseModel):
+    """The raw thing a sentence can rest on, as the pilot can read it: a
+    METAR or a NOTAM as sent, a TAF line, a hazard's words, a finding's
+    line, a debrief figure's line. `id` is what a sentence cites
+    ("metar:KDLH", "finding:fuel"); `label` is its heading on screen."""
 
-    type: Literal["delta"] = "delta"
+    id: str
+    label: str
     text: str
 
 
-class NarrativeDone(BaseModel):
-    """The whole briefing, once it is written."""
+class WordsSources(BaseModel):
+    """A reading's sources, in the order they bear on the flight; for the
+    NOTAMs, since when the NOTAM feed has been heard and what could not be
+    checked ("tfrs")."""
 
-    type: Literal["done"] = "done"
-    briefing: str
-
-
-class NarrativeError(BaseModel):
-    """Why there is no briefing, in words a pilot reads. It may come after
-    deltas: a failure once the first line is out cannot change the status
-    any more."""
-
-    type: Literal["error"] = "error"
-    detail: str
+    sources: list[WordsSource]
+    since: str | None = None
+    unchecked: list[str] = []
 
 
-NarrativeMessage = Annotated[NarrativeDelta | NarrativeDone | NarrativeError, Field(discriminator="type")]
+class RouteChecked(BaseModel):
+    """A route that would plan (GET /api/route-check): its stops as the
+    planner reads them."""
+
+    stops: list[str]
+
 
 
 # --- everything else ----------------------------------------------------
@@ -2848,8 +2847,6 @@ class Index(BaseModel):
 STREAM_MESSAGES = {
     "NavLogMessage": NavLogMessage,
     "DetectMessage": DetectMessage,
-    "CheckpointNoteMessage": CheckpointNoteMessage,
-    "NarrativeMessage": NarrativeMessage,
 }
 
 
@@ -2928,74 +2925,6 @@ class DevServiceStarted(BaseModel):
     service: str
     state: str
     started: bool
-
-
-class OralFocus(BaseModel):
-    """An ACS element the mock oral examines: its code and its words."""
-
-    code: str = Field(pattern=r"^[A-Z]{2}\.[IVX]+\.[A-Z]\.[KRS]\d+[a-z]?$")
-    text: str = Field(max_length=400)
-
-
-class OralQuestionRequest(BaseModel):
-    """The student's flight in a few lines (the page's own summary of its
-    plan and briefing), the ACS elements to examine, and the questions
-    already asked."""
-
-    plan: str = Field(max_length=6000)
-    focus: list[OralFocus] = Field(min_length=1, max_length=12)
-    asked: list[Annotated[str, Field(max_length=600)]] = Field(default=[], max_length=20)
-
-
-class OralCitation(BaseModel):
-    """A passage an answer rests on, quoted word for word (checked), with
-    its source's title and where to read it."""
-
-    source: str
-    title: str
-    url: str
-    quote: str
-
-
-class OralEditions(BaseModel):
-    """The editions the sources are: the eCFR's issue date and the day the
-    AIM was read."""
-
-    cfr_issued: str | None = None
-    aim_fetched: str | None = None
-
-
-class OralQuestion(BaseModel):
-    """One examiner's question (app.oral), its answer and key points, the
-    citations that survived the check, and the sources to grade from.
-    `unsupported` where none did."""
-
-    question: str
-    acs_code: str
-    model_answer: str
-    key_points: list[str]
-    citations: list[OralCitation]
-    source_ids: list[str]
-    unsupported: bool
-    editions: OralEditions
-
-
-class OralGradeRequest(BaseModel):
-    question: str = Field(max_length=1000)
-    model_answer: str = Field(max_length=4000)
-    key_points: list[Annotated[str, Field(max_length=300)]] = Field(default=[], max_length=12)
-    source_ids: list[Annotated[str, Field(max_length=40)]] = Field(max_length=12)
-    answer: str = Field(min_length=1, max_length=4000)
-
-
-class OralGrade(BaseModel):
-    """The student's answer graded: satisfactory, partial or unsatisfactory,
-    in a few sentences, the key points it missed, and the citations."""
-
-    verdict: Literal["satisfactory", "partial", "unsatisfactory"]
-    feedback: str
-    missed: list[str]
-    citations: list[OralCitation]
 
 
 class DestinationCheck(BaseModel):

@@ -1,9 +1,10 @@
 """The pilot's assistant (the owner's ask, 2026-11-03: "make it all AI
 powered"): a question about the flight in the pilot's own words -- "can I
 make Duluth before dark with this wind, and where would I stop for
-fuel?" -- answered by Claude with the planner's own functions as its
+fuel?" -- answered by Claude with the planner's own endpoints as its
 tools. The model chooses which to ask and writes the words; every figure
-in the answer comes from a tool, which is the planner (the route, the
+in the answer comes from a tool, which is the planner's HTTP API
+(app.planner: the route, the
 nav log, the briefing, the Go / No-Go, a field's card, the weather, the
 nearest fields, a hold's entry, a diversion), so the rules stay in one
 place (CLAUDE.md's "Architecture": a rule outside the engine is a bug)
@@ -38,10 +39,12 @@ from typing import Iterator, Literal
 
 import anthropic
 from anthropic import beta_tool
-from fastapi import HTTPException
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from .routers.plan import DEFAULT_AIRCRAFT, PlanQuery
+from . import planner
+from .planner import PlannerError
 from .settings import get_settings
 
 log = logging.getLogger(__name__)
@@ -158,10 +161,21 @@ def _stops(stops: str | list[str] | None) -> str:
 def _failed(err: Exception) -> str:
     """A tool's failure as the model reads it: the planner's own words,
     never a traceback."""
-    if isinstance(err, HTTPException):
+    if isinstance(err, PlannerError):
         return f"Error: {err.detail}"
     log.exception("assistant tool")
     return f"Error: {type(err).__name__}: {err}"
+
+
+def _iso(when: datetime | None) -> str | None:
+    """A time as the planner's query reads it, UTC."""
+    return None if when is None else when.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _ident(ident: str) -> str:
+    """An ident as a path segment: letters and digits only, so a model's
+    stray slash cannot reach another planner path."""
+    return "".join(ch for ch in ident.strip().upper() if ch.isalnum()) or "-"
 
 
 def _zulu(observed: str | None) -> str:
@@ -225,28 +239,23 @@ class Toolbox:
             depart: The departure time, ISO 8601 UTC; the plan's, else now.
             rules: "vfr" or "ifr"; the plan's when empty.
         """
-        from .router_basics import load_route
-        from .routers.gonogo import plan_for
-
         try:
             c = self.context
             dep, dest, stops = self.route(dep, dest, stops)
-            q = PlanQuery(dep=dep, dest=dest, stops=stops, aircraft=aircraft or c.aircraft or DEFAULT_AIRCRAFT,
-                          altitude_ft=altitude_ft if altitude_ft is not None else c.altitude_ft,
-                          depart=self.depart(depart), rules=rules or c.rules)  # type: ignore[arg-type]
-            planned = plan_for(q, load_route(q.dep, q.dest, q.stops))
+            planned = planner.get("/api/plan", dep=dep, dest=dest, stops=stops, aircraft=aircraft or c.aircraft,
+                                  altitude_ft=altitude_ft if altitude_ft is not None else c.altitude_ft,
+                                  depart=_iso(self.depart(depart)), rules=rules or c.rules)
         except Exception as err:  # noqa: BLE001 -- the model is told, in the planner's words
             return _failed(err)
-        nav = planned.nav or {}
         legs = [{k: leg.get(k) for k in ("from", "to", "distance_nm", "magnetic_heading_deg", "groundspeed_kt",
-                                          "ete_min", "fuel_gal", "altitude_ft", "wind")} for leg in planned.legs]
-        answer = {"route": f"{dep} {stops} {dest}".replace("  ", " "), "problem": planned.problem,
-                  "altitude_ft": nav.get("altitude_ft"), "flown": nav.get("flown"), "cautions": nav.get("cautions"),
-                  "legs": legs, "totals": planned.totals}
+                                          "ete_min", "fuel_gal", "altitude_ft", "wind")} for leg in planned.get("legs") or []]
+        totals = planned.get("totals") or {}
+        answer = {"route": f"{dep} {stops} {dest}".replace("  ", " "), "altitude_ft": planned.get("altitude_ft"),
+                  "flown": planned.get("altitude_choice") or "custom", "cautions": planned.get("altitude_cautions"),
+                  "legs": legs, "totals": totals}
         label = f"The plan {dep} to {dest}" + (f" via {stops}" if stops else "")
-        totals = planned.totals or {}
         line = (f"{label}: {totals.get('distance_nm')} nm, {totals.get('ete_min')} min, {totals.get('fuel_gal')} gal "
-                f"at {nav.get('altitude_ft')} ft" if totals else f"{label}: {planned.problem or 'no plan'}")
+                f"at {planned.get('altitude_ft')} ft")
         self.source(f"plan:{dep}-{dest}", label, line)
         return _json(answer)
 
@@ -257,25 +266,23 @@ class Toolbox:
         Args:
             ident: The airport's ident (KDLH, C81).
         """
-        from .routers.airports import airport_place
-
         try:
-            place = airport_place(ident)
+            place = planner.get(f"/api/airport/{_ident(ident)}")
         except Exception as err:  # noqa: BLE001
             return _failed(err)
-        metar = _dump(place.metar) if place.metar else None
-        nearby = _dump(place.nearby_metar) if place.nearby_metar else None
+        metar = place.get("metar")
+        nearby = place.get("nearby_metar")
         if metar and metar.get("raw"):
-            self.source(f"metar:{place.ident}", f"METAR {place.ident} {_zulu(metar.get('observed_at'))}".strip(), metar["raw"])
+            self.source(f"metar:{place['ident']}", f"METAR {place['ident']} {_zulu(metar.get('observed_at'))}".strip(), metar["raw"])
         elif nearby and (nearby.get("metar") or {}).get("raw"):
             near = nearby["metar"]
             self.source(f"metar:{nearby.get('ident')}",
                         f"METAR {nearby.get('ident')} {_zulu(near.get('observed_at'))} (nearest)".replace("  ", " "), near["raw"])
-        taf = getattr(place, "taf", None)
+        taf = place.get("taf")
         if taf:
-            self.source(f"taf:{place.ident}", f"TAF {place.ident}", taf)
-        return _json({"ident": place.ident, "name": place.name, "elevation_ft": place.elevation_ft, "metar": metar,
-                      "nearby_metar": nearby, "taf": taf, "weather_unavailable": getattr(place, "weather_unavailable", None)})
+            self.source(f"taf:{place['ident']}", f"TAF {place['ident']}", taf)
+        return _json({"ident": place.get("ident"), "name": place.get("name"), "elevation_ft": place.get("elevation_ft"),
+                      "metar": metar, "nearby_metar": nearby, "taf": taf, "weather_unavailable": place.get("weather_unavailable")})
 
     def briefing_for(self, dep: str = "", dest: str = "", stops: str = "", depart: str | None = None,
                      ete_min: float | None = None) -> str:
@@ -290,11 +297,10 @@ class Toolbox:
             depart: The departure time, ISO 8601 UTC; the plan's, else now.
             ete_min: The flight's time in minutes, for the hours briefed; two hours when omitted.
         """
-        from .routers.briefing import briefing
-
         try:
             dep, dest, stops = self.route(dep, dest, stops)
-            brief = _dump(briefing(dep, dest, stops, self.depart(depart), ete_min))
+            brief = planner.get("/api/briefing", dep=dep, dest=dest, stops=stops, depart=_iso(self.depart(depart)),
+                                ete_min=ete_min)
         except Exception as err:  # noqa: BLE001
             return _failed(err)
         for ident, metar in (brief.get("metars") or {}).items():
@@ -309,8 +315,8 @@ class Toolbox:
         tfrs = []
         for n, t in enumerate(brief.get("tfrs") or [], 1):
             text = t.get("raw") or t.get("text") or t.get("description") or _json(t)
-            self.source(f"tfr:{n}", f"TFR {t.get('notam') or t.get('id') or n}", str(text)[:2000])
-            tfrs.append({k: t.get(k) for k in ("notam", "id", "name", "type", "from", "to", "on_route") if k in t})
+            self.source(f"tfr:{n}", f"TFR {t.get('notam') or t.get('notam_id') or t.get('id') or n}", str(text)[:2000])
+            tfrs.append({k: t.get(k) for k in ("notam", "notam_id", "id", "name", "title", "type", "from", "to", "on_route") if k in t})
         answer = {"route": f"{dep} {stops} {dest}".replace("  ", " "), "hazards": hazards, "tfrs": tfrs,
                   "fields_below_vfr": brief.get("fields_below_vfr"), "vfr_not_recommended": brief.get("vfr_not_recommended"),
                   "metars": brief.get("metars"), "forecast": brief.get("forecast"),
@@ -332,15 +338,12 @@ class Toolbox:
             depart: The departure time, ISO 8601 UTC; the plan's, else now.
             rules: "vfr" or "ifr"; the plan's when empty.
         """
-        from .gonogo.schemas import GoNoGoAsk
-        from .routers.gonogo import go_no_go as verdict_of
-
         try:
             c = self.context
             dep, dest, stops = self.route(dep, dest, stops)
-            fields: dict = {"dep": dep, "dest": dest, "stops": stops, "aircraft": aircraft or c.aircraft or DEFAULT_AIRCRAFT,
+            fields: dict = {"dep": dep, "dest": dest, "stops": stops, "aircraft": aircraft or c.aircraft or None,
                             "altitude_ft": altitude_ft if altitude_ft is not None else c.altitude_ft,
-                            "depart": self.depart(depart), "rules": rules or c.rules}
+                            "depart": _iso(self.depart(depart)), "rules": rules or c.rules}
             pilot = c.pilot or {}
             # The pilot's own minimums, loading, ticks and currency as the
             # app keeps them, taken only in the ask's own shapes: the apps
@@ -353,7 +356,7 @@ class Toolbox:
                 fields["ticked"] = pilot["ticked"]
             if isinstance(pilot.get("personal_minimums"), dict) and "minimums" not in fields:
                 fields["minimums"] = pilot["personal_minimums"]
-            verdict = _dump(verdict_of(GoNoGoAsk(**fields)))
+            verdict = planner.post("/api/go-no-go", {k: v for k, v in fields.items() if v is not None})
         except Exception as err:  # noqa: BLE001
             return _failed(err)
         line = verdict.get("line") or {}
@@ -378,10 +381,8 @@ class Toolbox:
         Args:
             ident: The airport's ident (KDLH, C81).
         """
-        from .routers.airports import airport_place
-
         try:
-            place = _dump(airport_place(ident))
+            place = planner.get(f"/api/airport/{_ident(ident)}")
         except Exception as err:  # noqa: BLE001
             return _failed(err)
         keep = ("ident", "name", "municipality", "region", "elevation_ft", "kind", "airspace_class", "towered", "private",
@@ -402,14 +403,13 @@ class Toolbox:
             lon: Longitude, degrees; the airplane's when omitted.
             limit: How many, 1 to 25.
         """
-        from .routers.airports import nearest_airports as nearest
-
         own = self.context.own_ship
         if (lat is None or lon is None) and own is None:
             return "Error: no position: the airplane's position is not known and none was given."
         try:
-            found = _dump(nearest(lat if lat is not None else own.lat, lon if lon is not None else own.lon,  # type: ignore[union-attr]
-                                  max(1, min(25, int(limit)))))
+            found = planner.get("/api/airports/nearest", lat=lat if lat is not None else own.lat,  # type: ignore[union-attr]
+                                lon=lon if lon is not None else own.lon,  # type: ignore[union-attr]
+                                limit=max(1, min(25, int(limit))))
         except Exception as err:  # noqa: BLE001
             return _failed(err)
         self.source("nearest", "Nearest airports", _json(found)[:2000])
@@ -421,10 +421,8 @@ class Toolbox:
         Args:
             text: What the pilot said: an ident, an airport's name, a town.
         """
-        from .routers.airports import places_search
-
         try:
-            return _json(_dump(places_search(text)))
+            return _json(planner.get("/api/places/search", q=text))
         except Exception as err:  # noqa: BLE001
             return _failed(err)
 
@@ -442,10 +440,9 @@ class Toolbox:
             wind_kt: The wind's speed, knots.
             altitude_ft: The holding altitude, feet.
         """
-        from .routers.figures import holding
-
         try:
-            answer = _dump(holding(inbound, heading, turns, tas_kt, wind_from, wind_kt, altitude_ft))  # type: ignore[arg-type]
+            answer = planner.get("/api/holding", inbound=inbound, heading=heading, turns=turns, tas_kt=tas_kt,
+                                 wind_from=wind_from, wind_kt=wind_kt, altitude_ft=altitude_ft)
         except Exception as err:  # noqa: BLE001
             return _failed(err)
         self.source("holding", "Hold entry (AIM 5-3-8)", _json(answer)[:1500])
@@ -463,16 +460,15 @@ class Toolbox:
             altitude_ft: The altitude to fly it at; the plan's, else 3,000.
             aircraft: The airplane's profile name; the plan's when empty.
         """
-        from .routers.figures import diversion
-
         c = self.context
         own = c.own_ship
         if (lat is None or lon is None) and own is None:
             return "Error: no position: the airplane's position is not known and none was given."
         try:
-            answer = _dump(diversion(lat if lat is not None else own.lat, lon if lon is not None else own.lon,  # type: ignore[union-attr]
-                                     to.strip().upper(), altitude_ft or c.altitude_ft or 3000.0,
-                                     aircraft or c.aircraft or DEFAULT_AIRCRAFT))
+            answer = planner.get("/api/diversion", lat=lat if lat is not None else own.lat,  # type: ignore[union-attr]
+                                 lon=lon if lon is not None else own.lon,  # type: ignore[union-attr]
+                                 to=to.strip().upper(), altitude_ft=altitude_ft or c.altitude_ft or 3000.0,
+                                 aircraft=aircraft or c.aircraft)
         except Exception as err:  # noqa: BLE001
             return _failed(err)
         self.source(f"diversion:{to.upper()}", f"Diversion to {to.upper()}", _json(answer)[:1500])
@@ -494,8 +490,6 @@ class Toolbox:
             depart: A different departure time, ISO 8601 UTC.
             why: What the change does for the pilot, in one sentence.
         """
-        from .router_basics import load_route, resolve, resolve_stop, stops_of
-
         c = self.context
         change: dict = {}
         if dep.strip():
@@ -503,7 +497,7 @@ class Toolbox:
         if dest.strip():
             change["dest"] = dest.strip().upper()
         if stops is not None:
-            change["stops"] = stops_of(stops)
+            change["stops"] = [s.strip().upper() for s in stops.split(",") if s.strip()]
         if altitude_ft is not None:
             change["altitude_ft"] = int(altitude_ft) if float(altitude_ft).is_integer() else altitude_ft
         try:
@@ -512,16 +506,15 @@ class Toolbox:
                 change["depart"] = when.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")  # type: ignore[union-attr]
             if not change:
                 return "Error: nothing to change: give the field that would change."
-            # The route as it would then be, checked as a typed one is
-            # (load_route): a bad ident, a stop at the point before it, too
-            # many stops. With an end still missing, each ident given alone.
-            route_dep, route_dest = change.get("dep", c.dep), change.get("dest", c.dest)
-            if route_dep and route_dest:
-                load_route(route_dep, route_dest, change.get("stops", c.stops))
-            else:
-                resolve(*(ident for ident in (change.get("dep"), change.get("dest")) if ident))
-                for stop in change.get("stops", []):
-                    resolve_stop(stop)
+            # The route as it would then be, checked by the planner as a
+            # typed one is (GET /api/route-check): a bad ident, a stop at
+            # the point before it, too many stops, and the stops in the
+            # planner's own form. With an end still missing, each ident
+            # given is checked alone.
+            checked = planner.get("/api/route-check", dep=change.get("dep", c.dep), dest=change.get("dest", c.dest),
+                                  stops=",".join(change.get("stops", c.stops)))
+            if "stops" in change:
+                change["stops"] = checked["stops"]
         except Exception as err:  # noqa: BLE001
             return _failed(err)
         self.actions.append({"change": change, "words": why})
@@ -683,3 +676,23 @@ def answer(ask: AssistantAsk, runner=None, box: Toolbox | None = None) -> Iterat
         yield _line({"type": "action", "change": action["change"], "words": action["words"]})
     yield _line({"type": "sources", "sources": [s.model_dump() for s in box.sources]})
     yield _line({"type": "done"})
+
+
+router = APIRouter()
+
+
+@router.post("/api/assistant", responses={200: {"content": {"application/x-ndjson": {}}}})
+def ask_assistant(ask: AssistantAsk) -> StreamingResponse:
+    """The answer as events, one JSON object a line: `tool` (name, label)
+    as each is asked, `text` (a piece of the answer) as it comes, `action`
+    for each change proposed, `sources` (id, label, text: the raw things
+    the answer rests on) once, then `done`; or `error` with the reason in
+    words. The conversation is sent whole each time, the pilot's turn
+    last; the context is the plan, position and record as the app has
+    them (AssistantAsk). One billed Claude conversation a question; the
+    gateway lets signed-in pilots through (SecurityConfig)."""
+    # The conversation is checked before the stream opens, so a bad one
+    # is a 422 the client reads, not an error event.
+    conversation(ask)
+    return StreamingResponse(answer(ask), media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})

@@ -11,6 +11,7 @@
 !engine/
 !services/planner/
 !services/ingest/
+!services/assistant/
 !services/gateway/
 !apps/web/
 !ml/requirements-*.txt
@@ -20,6 +21,7 @@
 services/planner/tests/
 services/planner/tests_wingtip/
 services/ingest/tests/
+services/assistant/tests/
 **/__pycache__/
 **/*.pyc
 **/node_modules/

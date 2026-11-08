@@ -1,11 +1,10 @@
-"""The mock oral's routes (app.oral, routers/oral.py), Claude stubbed: the
+"""The mock oral's routes (app.oral), Claude stubbed: the
 sources a small corpus, the examiner's tool calls canned."""
 import anthropic
 import pytest
 from fastapi.testclient import TestClient
-from wingtip import references
 
-from app import oral
+from app import oral, references
 from app.main import app
 
 client = TestClient(app)

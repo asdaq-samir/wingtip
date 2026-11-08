@@ -1,0 +1,16 @@
+# The assistant service: every Claude call the app makes (app.main). Built
+# FROM wingtip's base (services/Dockerfile.base), whose Python, requests,
+# pydantic and pydantic-settings it uses as the base pins them
+# (services/planner/requirements-wingtip.txt); this file lists what the
+# service adds, and the base's three again at the same versions so the
+# test job, which has no base, installs the same. It imports nothing of
+# wingtip: every figure is the planner's, over HTTP.
+#
+# PINNED, as the planner's are: an unpinned FastAPI or SDK drifting
+# between builds is silent version skew.
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
+anthropic==1.11.0
+requests==2.34.2
+pydantic==2.13.5
+pydantic-settings==2.16.2
