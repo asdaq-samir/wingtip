@@ -90,6 +90,17 @@ one job (the owner kept both server languages on this split, 2026-11-06):
     (`git merge origin/<branch>`); nothing waits for a merge.
   - The branches are merged into `claude/integration` as they finish,
     conflicts resolved once there.
+  - **Live for the owner first** (the owner, 2026-11-08, standing): as
+    soon as a wave's code is merged into `claude/integration`, before any
+    lengthy test or CI, it goes live on the owner's local stack so they
+    can try it on the phone (https://10.0.0.87:8443). The stack runs from
+    a worktree of its own, `~/Developer/wingtip-live` on
+    `claude/integration`, with `data/`, `.env` and
+    `infra/local-https/certs/` linked from the main checkout and the same
+    compose project (`wingtip`), so the main checkout stays on `main`:
+    `scripts/dev/go-live.sh` pulls the branch, rebuilds and restarts
+    the changed services and the web build, then says what is running.
+    The owner is told what to try; the validation runs while they do.
   - At the end of a wave, one validation pass on the integration branch
     on the Mac: every suite, the image builds, the browser tests, the
     phones (iPad included), screenshots. Its fixes are one commit set.
