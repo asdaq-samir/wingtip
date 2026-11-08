@@ -23,11 +23,10 @@ async function violations(page: Page, within?: string) {
   await atRest(page);
   let axe = new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-    .exclude(".maplibregl-canvas-container")
-    // maximum-scale=1 is deliberate: it keeps iOS from zooming the page
-    // in on a field a finger taps (checkpoints.spec), and iOS lets a
-    // pinch zoom it all the same.
-    .disableRules(["meta-viewport"]);
+    .exclude(".maplibregl-canvas-container");
+  // The viewport no longer forbids zoom (#265, 2026-11-08), so
+  // meta-viewport stays on. The sheet's thin grabber is exempt from
+  // target-size (WCAG 2.2, not in these tags) as Apple Maps' is.
   // A sheet over the page: what is under its dimming is not what is read.
   if (within) axe = axe.include(within);
   const results = await axe.analyze();

@@ -213,8 +213,7 @@ export function DescriptionCell({
       // shadcn's own Textarea, sized down to a table cell: one line in
       // the row, at the row's own size -- 15 to a finger, where it was a
       // field's 17 among figures of 15 (iOS Safari zooms in on a field
-      // under 16 only where the page lets it, and this one's viewport
-      // does not: maximum-scale=1 in index.html).
+      // under 16; the viewport no longer forbids it, #265).
       className={cn(
         "min-h-0 w-full resize-none rounded py-0.5 pr-1 pl-0.5 text-left align-top shadow-none",
         // md:text-xs: the Textarea's own md:text-sm is another variant, which
