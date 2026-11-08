@@ -430,14 +430,15 @@ def resolve_altitude(
         failure = None
     except WeatherServiceError as err:
         plans, failure = {}, err
-    options = [AltitudeOption(kind=kind, **{k: v for k, v in plans[kind].items() if k not in ("legs", "totals")})
-               for kind in navlog.PLAN_KINDS] if plans else []
+    options = [AltitudeOption(kind=kind, **{k: v for k, v in plan.items() if k not in ("legs", "totals")})
+               for kind, plan in plans.items()]
     figures = tuple(AltitudeFigure(**f) for f in getattr(plans, "by_altitude", []))
     if altitude_ft is not None and nearest and plans:
         return Flown(selection, options, None, altitude_ft, plans.legs_at(altitude_ft), figures=figures)
     if altitude_ft is not None:
         try:
-            legs = navlog.with_climbs(navlog.legs(fix_list, altitude_ft, profile, fcst_hr), departure_elevation(r), profile)
+            legs = engine("navlog_with_climbs", legs=navlog.legs(fix_list, altitude_ft, profile, fcst_hr),
+                          start_altitude_ft=departure_elevation(r), profile=profile)
         except WeatherServiceError as err:
             return NoWinds(selection, options, err, figures)
         caution = own_altitude_caution(selection, legs, (r.dep_ident, r.dest_ident), profile)
@@ -453,7 +454,8 @@ def resolve_altitude(
         if anyway is None:
             return Unflyable(selection)
         try:
-            legs = navlog.with_climbs(navlog.legs(fix_list, anyway, profile, fcst_hr), departure_elevation(r), profile)
+            legs = engine("navlog_with_climbs", legs=navlog.legs(fix_list, anyway, profile, fcst_hr),
+                          start_altitude_ft=departure_elevation(r), profile=profile)
         except WeatherServiceError as err:
             return NoWinds(selection, options, err, figures)
         between = (r.dep_ident, r.dest_ident)
@@ -551,31 +553,10 @@ def join_options(options_by_hop: list[list[AltitudeOption]], lengths: list[float
     """The four plans of a route with stops: each the same plan flown on
     every hop, its steps in turn and its costs summed -- the tailwind
     weighted by each hop's length. None where a hop's plans could not be
-    made."""
-    if len(options_by_hop) == 1:
-        return options_by_hop[0]
-    if any(not options for options in options_by_hop):
-        return []
-    joined = []
-    for kind in navlog.PLAN_KINDS:
-        mine = [next(o for o in options if o.kind == kind) for options in options_by_hop]
-
-        def total(attr, mine=mine):
-            values = [getattr(o, attr) for o in mine]
-            return None if any(v is None for v in values) else round(sum(values), 1)
-
-        winds = [(o.tailwind_kt, n) for o, n in zip(mine, lengths) if o.tailwind_kt is not None]
-        weight = sum(n for _, n in winds)
-        joined.append(AltitudeOption(
-            kind=kind, steps=[step for o in mine for step in o.steps],
-            ete_min=total("ete_min"), fuel_gal=total("fuel_gal"),
-            climb_penalty_min=round(sum(o.climb_penalty_min for o in mine), 1),
-            tailwind_kt=round(sum(t * n for t, n in winds) / weight, 1) if weight else None,
-            unflyable_legs=sum(o.unflyable_legs for o in mine),
-            legs_without_wind=sum(o.legs_without_wind for o in mine),
-            needs_oxygen=any(o.needs_oxygen for o in mine),
-        ))
-    return joined
+    made. The engine's (navlog_join_plans)."""
+    joined = engine("navlog_join_plans", by_hop=[[o.model_dump(by_alias=True) for o in options] for options in options_by_hop],
+                    lengths=list(lengths))
+    return [AltitudeOption.model_validate(o) for o in joined]
 
 
 def join_figures(figures_by_hop: list[tuple], lengths: list[float]) -> tuple:
@@ -583,37 +564,13 @@ def join_figures(figures_by_hop: list[tuple], lengths: list[float]) -> tuple:
     each hop's: every altitude any hop offers, each hop at it or, where it
     does not offer it, at its own nearest (the lower on a tie), as a pilot
     who picks it flies that hop; times and fuel summed, the wind weighed
-    by each hop's length. One hop's as they are.
-
-    A hop with no legal altitude to offer (a pilot's own altitude flown
-    on it, legal or not, with its cautions) leaves the others' altitudes
-    on the profile's ruler, which went blank for the whole route (the
-    owner's C81 - KEVU - KGCK - KABQ at 6,000 ft, its last hop with none
-    over the Sangre de Cristos); their times and fuel unknown, as that
-    hop's are, and none of them flown everywhere."""
-    if len(figures_by_hop) == 1:
-        return figures_by_hop[0]
-    if all(not figures for figures in figures_by_hop):
-        return ()
-    gap = any(not figures for figures in figures_by_hop)
-    offered = [figures for figures in figures_by_hop if figures]
-    offered_nm = [n for figures, n in zip(figures_by_hop, lengths) if figures]
-    joined = []
-    for target in sorted({f.altitude_ft for figures in offered for f in figures}):
-        mine = [min(figures, key=lambda f: (abs(f.altitude_ft - target), f.altitude_ft)) for figures in offered]
-
-        def total(attr, mine=mine):
-            values = [getattr(f, attr) for f in mine]
-            return None if gap or any(v is None for v in values) else round(sum(values), 1)
-
-        winds = [(f.tailwind_kt, n) for f, n in zip(mine, offered_nm) if f.tailwind_kt is not None]
-        weight = sum(n for _, n in winds)
-        joined.append(AltitudeFigure(
-            altitude_ft=target, ete_min=total("ete_min"), fuel_gal=total("fuel_gal"),
-            tailwind_kt=round(sum(t * n for t, n in winds) / weight, 1) if weight else None,
-            everywhere=not gap and all(f.everywhere and f.altitude_ft == target for f in mine),
-        ))
-    return tuple(joined)
+    by each hop's length. One hop's as they are. A hop with no legal
+    altitude to offer leaves the others' altitudes on the ruler, their
+    times and fuel unknown and none flown everywhere. The engine's
+    (navlog_join_figures)."""
+    joined = engine("navlog_join_figures", by_hop=[[f.model_dump() for f in figures] for figures in figures_by_hop],
+                    lengths=list(lengths))
+    return tuple(AltitudeFigure.model_validate(f) for f in joined)
 
 
 def join_outcomes(runs: list[HopRun], outcomes: list) -> "Flown | Unflyable | NoWinds":
@@ -764,20 +721,12 @@ def pattern_altitude(flight: Route, own: dict[str, float] | None = None) -> floa
 
 
 def approach_end(flight: Route, drawn: list[tuple[str, dict]],
-                 cruise_ft: float | None = None) -> tuple[float, float, str] | None:
+                 cruise_ft: float | None = None) -> dict | None:
     """Where a flight landing by the instrument approach picked for its
-    field comes down to: the altitude its first fix with one under the
-    cruise (`cruise_ft`) is crossed at, the fix, and the fix's distance
-    from the field. The first fix is the transition's initial approach
-    fix, or from vectors the intermediate fix; a plan cruising at or under
-    its altitude comes down to the next fix lower, the final approach
-    fix's, say, as the approach steps down. The altitude is the chart's
-    lowest for the fix, coded in the FAA's CIFP
-    (wingtip.procedures.altitude_limits, ARINC 424-18 5.29) as the plate
-    prints it (AIM 5-4-5), or its highest where it is crossed at or below
-    one. The route runs to the field, not to the fix: the descent ends
-    where the route is the fix's own distance out, and the approach is
-    flown from there as charted. None where no approach is picked there
+    field comes down to, as the engine's navlog_with_descents takes it
+    (`end_altitude_ft`, `end_before_nm`, `end_fix`): the engine's
+    navlog_approach_end, the first fix of the approach with an altitude
+    under the cruise (`cruise_ft`). None where no approach is picked there
     (`drawn`, PlanQuery.drawn_procedures), no fix is under the cruise, or
     the CIFP cannot be had: down to the pattern."""
     if not flight.lands:
@@ -785,12 +734,9 @@ def approach_end(flight: Route, drawn: list[tuple[str, dict]],
     approach = _picked(drawn, "approach", flight.dest_ident)
     if approach is None:
         return None
-    crossed = [(f, f["min_ft"] if f["min_ft"] is not None else f["max_ft"]) for f in approach["fixes"] if not f["missed"]]
-    fix, at_ft = next(((f, ft) for f, ft in crossed if ft and (cruise_ft is None or ft < cruise_ft)), (None, None))
-    if fix is None:
-        return None
     field = flight.dest_airport
-    return float(at_ft), geo.distance_nm(fix["lat"], fix["lon"], field["lat"], field["lon"]), fix["ident"]
+    fixes = [{k: f.get(k) for k in ("ident", "lat", "lon", "min_ft", "max_ft", "missed")} for f in approach["fixes"]]
+    return engine("navlog_approach_end", fixes=fixes, cruise_ft=cruise_ft, field={"lat": field["lat"], "lon": field["lon"]})
 
 
 def _bare_field(ident: str) -> str:
@@ -1005,41 +951,31 @@ def with_holds(r: Route, runs: list[HopRun], outcome: Flown, held: list[vfr_hold
         if at is None and idents[0] == hold.fix and idents[-1] != hold.fix and hops[0]:
             at = 0
         if at is not None:
-            leg, fix = hops[at][0], runs[at].fixes[0]
-            before = hops[at - 1][-1] if at > 0 and hops[at - 1] else leg
+            (k, i), fix = (at, 0), runs[at].fixes[0]
+            before = hops[at - 1][-1] if at > 0 and hops[at - 1] else hops[at][0]
         elif idents[-1] == hold.fix and hops[-1]:
-            leg = before = hops[-1][-1]
-            fix = runs[-1].fixes[-1]
+            (k, i), fix = (len(hops) - 1, len(hops[-1]) - 1), runs[-1].fixes[-1]
+            before = hops[-1][-1]
         else:
             continue
-        if leg["ete_min"] is None:
-            continue
-        tas = leg["tas_kt"]
-        # Magnetic = true - variation, east positive (wingtip.magnetic): the
-        # course flown to the point, and the hold's inbound course in true.
-        arrival = (before["true_course_deg"] - before["magnetic_variation_deg"]) % 360
-        inbound_true = (hold.inbound_deg + magnetic.magnetic_variation_deg(fix["lat"], fix["lon"])) % 360
-        leg_nm = hold.leg_nm if hold.leg_nm is not None else (hold.leg_min or 1.0) * tas / 60
-        minutes = vfr_holds.held_minutes(hold, tas)
-        gal = minutes / 60 * leg["fuel_burn_gph"]
-        leg["ete_min"] = round(leg["ete_min"] + minutes, 1)
-        if leg["fuel_gal"] is not None:
-            leg["fuel_gal"] = round(leg["fuel_gal"] + gal, 2)
-        leg["hold"] = {
-            "fix": hold.fix, "inbound_deg": hold.inbound_deg, "right": hold.right,
-            "leg_min": hold.leg_min, "leg_nm": hold.leg_nm, "turns": hold.turns, "minutes": round(minutes, 1),
-            "lap_min": round(vfr_holds.lap_minutes(hold, tas), 2), "gal": round(gal, 2),
-            "entry": vfr_holds.entry(arrival, hold.inbound_deg, hold.right),
-            "path": vfr_holds.racetrack((fix["lat"], fix["lon"]), inbound_true, hold.right, tas, leg_nm),
-            "at_end": at is None,
-        }
+        # Flown on the leg by the engine (navlog_hold): its minutes and fuel
+        # added, its entry from the course flown to the point (AIM 5-3-8
+        # j.3) and its racetrack in true degrees -- the hold's inbound
+        # course is magnetic, the variation at its point east positive. A
+        # leg that cannot be flown comes back as it was.
+        hops[k][i] = engine(
+            "navlog_hold", leg=hops[k][i], before=before, at_end=at is None,
+            hold={"fix": hold.fix, "inbound": hold.inbound_deg, "right": hold.right, "leg_min": hold.leg_min,
+                  "leg_nm": hold.leg_nm, "turns": hold.turns, "minutes": hold.minutes},
+            fix={"lat": fix["lat"], "lon": fix["lon"]}, variation_deg=magnetic.magnetic_variation_deg(fix["lat"], fix["lon"]),
+        )
     return replace(outcome, legs=[leg for legs in hops for leg in legs], by_hop=tuple(hops) if outcome.by_hop else ())
 
 
 def flown_legs(r: Route, runs: list[HopRun], outcome: Flown, own: dict[str, float] | None = None,
                drawn: list[tuple[str, dict]] | None = None, ground: dict[str, float] | None = None) -> list:
     """The legs a pilot flies, with each flight's tops of climb and
-    descent placed (navlog.with_descents): from one landing to the next,
+    descent placed (the engine's navlog_with_descents): from one landing to the next,
     through any waypoints, down to the pattern at the end of each --
     `own`, a pilot's own patterns by ident -- or to an approach's first
     fix, where one is picked for the field (`drawn`, approach_end). The
@@ -1053,11 +989,8 @@ def flown_legs(r: Route, runs: list[HopRun], outcome: Flown, own: dict[str, floa
         legs = [leg for i, legs in enumerate(outcome.hop_legs[at:at + hops], start=at) for leg in on_airway(legs, r.airports[i + 1])]
         fix_list = [fix for k, run in enumerate(runs[at:at + hops]) for fix in (run.fixes if k == 0 else run.fixes[1:])]
         approach = approach_end(flight, drawn or [], legs[-1]["altitude_ft"] if legs else None)
-        if approach:
-            to_ft, before_nm, fix = approach
-            out.extend(navlog.with_descents(legs, fix_list, to_ft, before_nm, fix))
-        else:
-            out.extend(navlog.with_descents(legs, fix_list, pattern_altitude(flight, own)))
+        end = approach or {"end_altitude_ft": pattern_altitude(flight, own)}
+        out.extend(engine("navlog_with_descents", legs=legs, fixes=[navlog.engine_fix(f) for f in fix_list], **end))
         if out and k < len(flights) - 1:
             out[-1] = {**out[-1], "ground_min": ground_min_at(ground, flight.dest_ident)}
         at += hops
@@ -1511,7 +1444,7 @@ def local_flight(q: Annotated[PlanQuery, Depends()], duration_min: LocalMinutes 
     night = sun.is_night(*r.start, depart) or sun.is_night(*r.start, depart + timedelta(minutes=duration_min))
     return Totals(
         distance_nm=0.0, ete_min=duration_min, fuel_gal=fuel, unflyable_legs=0, legs_without_wind=0,
-        **navlog.fuel_plan(fuel, profile, night, q.rules),
+        **engine("navlog_fuel_plan", total_fuel_gal=fuel, profile=profile, night=bool(night), rules=q.rules),
     )
 
 

@@ -9,7 +9,8 @@ from pathlib import Path
 import pytest
 import wingtip_native
 
-from wingtip import airspace_at, navlog, notams, tfr, weather
+from wingtip import airspace_at, notams, tfr, weather
+from wingtip.engine import ask as engine
 
 FIXTURE = json.loads((Path(__file__).parents[3] / "apps/web/src/lib/fixtures/plannerRules.json").read_text())
 
@@ -53,9 +54,9 @@ def test_a_tfr_is_in_force_when_its_window_meets_the_span():
 def test_the_reserve_and_the_descent_are_the_engines():
     profile = {"fuel_burn_gph": 8.0}
     # 91.151(a): 30 minutes by day, 45 at night; 91.167(a)(3): 45 under IFR.
-    assert [navlog.fuel_plan(10.0, profile, night, rules)["reserve_gal"]
+    assert [engine("navlog_fuel_plan", total_fuel_gal=10.0, profile=profile, night=night, rules=rules)["reserve_gal"]
             for rules, night in (("vfr", False), ("vfr", None), ("vfr", True), ("ifr", False))] == [4.0, 4.0, 6.0, 6.0]
-    assert navlog.DESCENT_FT_PER_NM == pytest.approx(1000 / 3)
+    assert engine("descent_ft_per_nm") == pytest.approx(1000 / 3)
 
 
 def test_the_basic_vfr_minimums_are_the_engines():

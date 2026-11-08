@@ -24,22 +24,25 @@ CANDIDATES = [
 ]
 
 
-def _leg(start, end, altitude_ft, profile, fcst_hr="06") -> dict:
-    """What wingtip.navlog.assemble_leg returns, minus the live winds call."""
-    return {
-        "true_course_deg": 320.0, "distance_nm": 10.0, "altitude_ft": altitude_ft,
-        "wind": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 15.0},
-        "wca_deg": -6.0, "true_heading_deg": 314.0, "magnetic_variation_deg": -3.0,
-        "magnetic_heading_deg": 317.0, "groundspeed_kt": 105.0, "ete_min": 5.7, "fuel_gal": 0.8,
-        "tas_kt": 111.4, "fuel_burn_gph": 8.5, "power_pct": 65.0, "oat_c": 4.0, "density_altitude_ft": 4600,
-    }
+def _wind(lat, lon, altitude_ft, fcst_hr="06") -> dict:
+    """The wind every leg is flown in, minus the live winds call."""
+    return {"wind_dir_true_deg": 270.0, "wind_speed_kt": 15.0}
+
+
+def _air(monkeypatch, wind=_wind):
+    """The air the nav log's legs are flown in (wingtip.navlog's lookups),
+    the engine working the legs out of it: `wind`, 4 degC aloft and 3
+    degrees west variation."""
+    monkeypatch.setattr(navlog, "wind_at_altitude", wind)
+    monkeypatch.setattr(navlog, "temperature_at_altitude", lambda lat, lon, altitude_ft, fcst_hr="06": 4.0)
+    monkeypatch.setattr(navlog, "magnetic_variation_deg", lambda lat, lon, on=None: -3.0)
 
 
 @pytest.fixture(autouse=True)
 def _stubbed_world(monkeypatch, altitude):
     monkeypatch.setattr(checkpoint_scoring, "score", lambda dep, dest: [dict(c) for c in CANDIDATES])
     monkeypatch.setattr(altitude_module, "select_cruise_altitude", select_cruise_altitude_stub(altitude))
-    monkeypatch.setattr(navlog, "assemble_leg", _leg)
+    _air(monkeypatch)
 
 
 def test_checkpoints_marks_the_selected_candidates():
@@ -67,9 +70,9 @@ def test_plan_returns_legs_with_from_and_to_and_totals():
     # legal altitude here, so all four are the same plan.
     assert [o["kind"] for o in body["altitude_options"]] == ["lowest", "highest", "fastest", "economical"]
     assert body["altitude_choice"] == "fastest"
-    assert body["altitude_options"][0]["steps"] == [
-        {"from": "C81", "to": "KDLH", "altitude_ft": 4500.0, "distance_nm": 30.0},
-    ]
+    (step,) = body["altitude_options"][0]["steps"]
+    assert (step["from"], step["to"], step["altitude_ft"]) == ("C81", "KDLH", 4500.0)
+    assert step["distance_nm"] == pytest.approx(sum(leg["distance_nm"] for leg in legs), abs=0.2)
     assert "total_min" not in body["altitude_options"][2]   # it only ever repeated ete_min
 
 
@@ -117,7 +120,7 @@ def test_navlog_streams_altitude_then_legs_then_done(messages):
     assert types.index("altitude") < types.index("leg")
     legs = [m for m in lines if m["type"] == "leg"]
     assert legs[0]["from"] == "C81" and legs[0]["wind"]["wind_speed_kt"] == 15.0
-    assert lines[-1]["totals"]["distance_nm"] == 10.0 * len(legs)
+    assert lines[-1]["totals"]["distance_nm"] == pytest.approx(sum(leg["distance_nm"] for leg in legs), abs=0.1)
     altitude = next(m for m in lines if m["type"] == "altitude")
     assert [o["kind"] for o in altitude["options"]] == ["lowest", "highest", "fastest", "economical"]
     assert altitude["flown"] == "fastest" and altitude["altitude_ft"] == 4500.0
@@ -129,11 +132,11 @@ def test_a_departure_time_picks_the_winds_forecast_period(monkeypatch, messages)
     # The forecast period each leg's winds are read for.
     asked = []
 
-    def leg(start, end, altitude_ft, profile, fcst_hr="06"):
+    def wind(lat, lon, altitude_ft, fcst_hr="06"):
         asked.append(fcst_hr)
-        return _leg(start, end, altitude_ft, profile, fcst_hr)
+        return _wind(lat, lon, altitude_ft, fcst_hr)
 
-    monkeypatch.setattr(navlog, "assemble_leg", leg)
+    _air(monkeypatch, wind)
     # No product's header to hand: the period by hours ahead.
     from wingtip import weather
     monkeypatch.setattr(weather, "winds_period", lambda fcst_hr="06": None)
@@ -293,7 +296,7 @@ def _no_winds(monkeypatch):
     def fail(*args, **kwargs):
         raise WeatherServiceError("aviationweather.gov winds-06 unavailable: timed out")
 
-    monkeypatch.setattr(navlog, "assemble_leg", fail)
+    _air(monkeypatch, fail)
 
 
 def test_navlog_at_a_pilots_own_altitude_streams_it_then_its_legs(messages):
@@ -609,8 +612,8 @@ def test_under_ifr_the_fuel_on_to_the_alternate_is_flown_before_the_reserve(mess
     filed = messages(client.get("/api/navlog", params={**params, "alternate": "KMSN"}))[-1]["totals"]
     leg = filed["alternate"]
     assert without["alternate"] is None
-    # The leg in its winds, as every leg here is stubbed (_leg): 10 nm, 0.8 gal.
-    assert leg["ident"] == "KMSN" and leg["distance_nm"] == 10.0 and leg["fuel_gal"] == 0.8 and not leg["still_air"]
+    # The leg in its winds, as every leg here is stubbed (_air).
+    assert leg["ident"] == "KMSN" and leg["distance_nm"] > 50 and leg["fuel_gal"] > 0 and not leg["still_air"]
     assert filed["fuel_required_gal"] == round(filed["fuel_gal"] + filed["taxi_gal"] + leg["fuel_gal"] + filed["reserve_gal"], 1)
     # Under VFR an alternate means nothing to the fuel.
     vfr = messages(client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH", "alternate": "KMSN"}))[-1]["totals"]

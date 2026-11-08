@@ -6,7 +6,7 @@ use crate::json::{self, Value};
 use crate::{metar, winds};
 
 /// The names this module answers.
-pub const NAMES: [&str; 20] = [
+pub const NAMES: [&str; 21] = [
     "flight_category",
     "ceiling_visibility",
     "field_hours",
@@ -25,6 +25,7 @@ pub const NAMES: [&str; 20] = [
     "gairmets_along_route",
     "freezing_level",
     "temperature_at",
+    "service_ceiling_on_the_day",
     "wind_at_altitude",
     "forecast_hour",
 ];
@@ -277,6 +278,22 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             None => out.push_str("null"),
         },
         "temperature_at" => json::opt_number(&mut out, winds::temperature_at(&profile(name, v)?, num(name, v, "altitude_ft")?)),
+        // The service ceiling on the day: the book's figure is a density
+        // altitude (where the best climb has fallen to 100 fpm on any
+        // day), found in the forecast's temperatures by
+        // wingtip_flight::performance, to the nearest 100 ft as the
+        // planner gave it; the book figure where there are none.
+        "service_ceiling_on_the_day" => {
+            let book_ft = num(name, v, "book_ft")?;
+            let air = profile(name, v)?;
+            let found = if air.is_empty() {
+                book_ft
+            } else {
+                let temp_at = |h: f64| winds::temperature_at(&air, h).unwrap_or_else(|| wingtip_flight::flight::isa_temp_c(h));
+                (wingtip_flight::performance::altitude_at_density_altitude(book_ft, temp_at) / 100.0).round_ties_even() * 100.0
+            };
+            json::number(&mut out, found);
+        }
         "wind_at_altitude" => {
             let lv = levels(name, v)?;
             match v.get("altitudes") {

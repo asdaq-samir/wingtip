@@ -18,7 +18,6 @@ from dataclasses import dataclass
 
 import wingtip_native
 
-from . import geo
 
 
 @dataclass(frozen=True)
@@ -114,16 +113,8 @@ def racetrack(fix: tuple[float, float], inbound_true_deg: float, right: bool, ta
               steps: int = 12) -> list[list[float]]:
     """One turn round the racetrack from the fix, [lat, lon] pairs: the
     turn at the fix toward the holding side, the outbound leg, the turn
-    back, and the inbound leg to the fix again. True degrees."""
-    side = 1 if right else -1
-    r = turn_radius_nm(tas_kt)
-    c1 = geo.destination_point(fix[0], fix[1], (inbound_true_deg + 90 * side) % 360, r)
-    c2 = geo.destination_point(c1[0], c1[1], (inbound_true_deg + 180) % 360, leg_nm)
-
-    def arc(center: tuple, start_deg: float) -> list[list[float]]:
-        return [list(geo.destination_point(center[0], center[1], (start_deg + side * 180 * k / steps) % 360, r))
-                for k in range(steps + 1)]
-
-    first = arc(c1, inbound_true_deg - 90 * side)
-    second = arc(c2, inbound_true_deg + 90 * side)
-    return [[fix[0], fix[1]], *first[1:], *second, [fix[0], fix[1]]]
+    back, and the inbound leg to the fix again. True degrees. The engine's
+    (wingtip_route::navlog::holds::racetrack, navlog_racetrack)."""
+    return json.loads(wingtip_native.call("navlog_racetrack", json.dumps({
+        "fix": {"lat": fix[0], "lon": fix[1]}, "inbound_true_deg": inbound_true_deg, "right": right, "tas_kt": tas_kt,
+        "leg_nm": leg_nm, "steps": steps})))

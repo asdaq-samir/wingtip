@@ -78,6 +78,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
         include_str!("../../crates/route/src/approach/calls.rs"),
         include_str!("../../crates/route/src/route/answers.rs"),
+        include_str!("../../crates/route/src/navlog/calls.rs"),
     ] {
         names.extend(names_const(src));
     }
@@ -371,6 +372,50 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         let path = c.ask("approach_lesson_path", json!({ "drawing": drawing }));
         assert!(path.is_array(), "{id}");
     }
+
+    // The nav log (#482 phase 4), on the first recorded route the
+    // planner's golden test replays (services/planner/tests_wingtip/golden).
+    let golden = read_json("services/planner/tests_wingtip/golden/KUGN-KRFD.json");
+    let given = &golden["given"];
+    let fixes = given["fixes"].as_array().unwrap();
+    let profile = &given["profile"];
+    let candidates = c.ask("navlog_candidates", json!({ "segments": given["segments"], "legs": fixes.len() - 1, "profile": profile }));
+    let air: Vec<Value> = candidates
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|options| {
+            let at: Vec<Value> = options.as_array().unwrap().iter().map(|a| json!({ "altitude_ft": a, "wind": { "wind_dir_true_deg": 270, "wind_speed_kt": 15 }, "oat_c": null })).collect();
+            json!({ "variation_deg": -3.0, "at": at })
+        })
+        .collect();
+    let plans_in = json!({ "fixes": fixes, "segments": given["segments"], "profile": profile, "departure_elevation_ft": given["departure_elevation_ft"], "air": air });
+    let made = c.ask("navlog_plans", plans_in.clone());
+    let target = made["by_altitude"][0]["altitude_ft"].clone();
+    let mut at_in = plans_in.clone();
+    at_in["target_ft"] = target;
+    c.ask("navlog_legs_at", at_in);
+    let legs = made["plans"]["fastest"]["legs"].clone();
+    c.ask("navlog_with_descents", json!({ "legs": legs, "fixes": fixes, "end_altitude_ft": given["pattern_ft"] }));
+    c.ask("navlog_with_climbs", json!({ "legs": legs, "start_altitude_ft": 800, "profile": profile }));
+    let totals = c.ask("navlog_totals", json!({ "legs": legs }));
+    c.ask("navlog_fuel_plan", json!({ "total_fuel_gal": totals["fuel_gal"], "profile": profile, "night": null, "rules": "ifr", "alternate_gal": 2.5 }));
+    let one = c.ask("navlog_legs", json!({ "fixes": [fixes[0], fixes[1]], "altitude_ft": air[0]["at"][0]["altitude_ft"], "profile": profile, "air": [air[0]] }));
+    c.ask("navlog_leg", json!({ "start": fixes[0], "end": fixes[1], "altitude_ft": 5500, "profile": profile, "wind": null, "oat_c": 10, "variation_deg": -3.0 }));
+    c.ask("navlog_alternate_leg", json!({ "dest": { "ident": "KRFD", "lat": 42.195, "lon": -89.097 }, "alternate": { "ident": "KDKB", "lat": 41.934, "lon": -88.706 },
+        "altitude_ft": 3500, "profile": profile, "air": null }));
+    c.ask("navlog_hold", json!({ "leg": one[0], "before": one[0], "hold": { "fix": "KUGN", "inbound": 90, "right": true, "leg_min": 1, "leg_nm": null, "turns": 2, "minutes": null },
+        "fix": fixes[0], "variation_deg": -3.0, "at_end": false }));
+    c.ask("navlog_racetrack", json!({ "fix": fixes[0], "inbound_true_deg": 87, "tas_kt": 110, "leg_nm": 2 }));
+    let options: Vec<Value> = made["plans"].as_object().unwrap().iter().map(|(k, p)| { let mut p = p.clone(); p["kind"] = json!(k); p }).collect();
+    c.ask("navlog_join_plans", json!({ "by_hop": [options.clone(), options], "lengths": [40, 60] }));
+    c.ask("navlog_join_figures", json!({ "by_hop": [made["by_altitude"], []], "lengths": [40, 60] }));
+    let approach = json!([{ "ident": "ANDOE", "lat": 42.25, "lon": -89.1, "min_ft": 3000, "max_ft": null, "missed": false }]);
+    c.ask("navlog_approach_end", json!({ "fixes": approach, "cruise_ft": 5500, "field": { "lat": 42.195, "lon": -89.097 } }));
+    c.ask("navlog_approach_end", json!({ "fixes": approach, "cruise_ft": 2500, "field": { "lat": 42.195, "lon": -89.097 } }));
+    c.ask("performance_reference_ft", json!({}));
+    c.ask("performance_cruise", json!({ "profile": profile, "altitude_ft": 8500, "oat_c": 2 }));
+    c.ask("performance_climb", json!({ "profile": profile, "from_ft": 800, "to_ft": 5500, "isa_dev_c": 5 }));
 
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.

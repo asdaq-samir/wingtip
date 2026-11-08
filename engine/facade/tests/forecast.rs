@@ -211,3 +211,23 @@ fn a_ceiling_sent_with_no_height_is_not_known_and_says_only_what_the_visibility_
     // Not said, as before: no ceiling at 10 SM is VFR.
     assert_eq!(ask("flight_category", json!({"ceiling_ft": null, "ceiling_unknown": false, "visibility_sm": 10})), json!("VFR"));
 }
+
+// --- The service ceiling on the day -------------------------------------------
+
+/// A profile `dev_c` from a standard day (ICAO Doc 7488's 1.98 C a
+/// thousand feet from 15 C) at the GFS's levels.
+fn isa_plus(dev_c: f64) -> Value {
+    json!([3000.0_f64, 6000.0, 9000.0, 12000.0, 18000.0, 24000.0].iter().map(|&h| json!([h, 15.0 - 0.0019812 * h + dev_c])).collect::<Vec<_>>())
+}
+
+// wingtip.performance's test of the Python copy, which this call
+// replaces (services/planner/tests_wingtip/test_performance.py).
+#[test]
+fn the_service_ceiling_comes_down_on_a_warm_day_and_up_on_a_cold_one() {
+    let at = |dev: f64| ask("service_ceiling_on_the_day", json!({"book_ft": 13500, "profile": isa_plus(dev)})).as_f64().unwrap();
+    assert!((at(0.0) - 13500.0).abs() <= 100.0);
+    let (warm, cold) = (at(15.0), at(-10.0));
+    assert!(11500.0 < warm && warm < 12000.0 && 14500.0 < cold && cold < 15000.0, "{warm} {cold}");
+    assert_eq!(warm % 100.0, 0.0);
+    assert_eq!(ask("service_ceiling_on_the_day", json!({"book_ft": 13500, "profile": []})), json!(13500.0));
+}
