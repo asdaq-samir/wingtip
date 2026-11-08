@@ -1,6 +1,7 @@
 import { cn } from "cn";
 import CardIdent from "./CardIdent";
-import { CARD_GAP, CardMark, CardThread, EmptyMark, POINT_CARD } from "./routeCard";
+import { CardMark, CardThread, EmptyMark } from "./routeCard";
+import { CARD_GAP, POINT_CARD } from "./routeListStyle";
 
 /**
  * FPL's two lines before there is a route, where the route is changed in

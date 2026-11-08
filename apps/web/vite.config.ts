@@ -1,6 +1,6 @@
-import { readFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
@@ -8,29 +8,73 @@ import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-// Under docker-compose.yml's web-build watch (VITE_KEEP_OUTDIR) apps/web/dist is
-// never emptied, so a page loading mid-build still finds its chunks. The
-// files this build wrote, so that the service worker precaches them and
-// not every build's before them -- it listed 3,488 files, half a
-// gigabyte, for a phone to fetch -- and the old ones an hour stale
-// cleared away.
-const keepOutDir = !!process.env.VITE_KEEP_OUTDIR;
-const emitted = new Set<string>();
+// Under docker-compose.yml's web-build watch, VITE_PUBLISH_DIR names the
+// directory the gateway serves (apps/web/dist). A phone that loaded the
+// page while vite was writing into it got an index.html whose chunks were
+// not all there yet -- "Importing a module script failed", and the page's
+// "Part of the app didn't load" (2026-11-08) -- so a build is written
+// whole into STAGING first, which vite empties at every build, and only
+// then moved into the served directory a file at a time by rename, which
+// a reader sees either before or after, never half done: the hashed
+// chunks first, which nothing yet names, then the service worker, and
+// index.html last. The files of builds replaced within the last hour stay
+// beside them, for pages already open that have yet to load a lazy chunk
+// (main.tsx reloads a page whose chunk has gone, on vite:preloadError);
+// PUBLISHED lists each build's files and when it was replaced. The service
+// worker's precache is this build's files alone, since STAGING holds
+// nothing else. Unset (the image's build, CI), vite writes dist as usual.
+const publishDir = process.env.VITE_PUBLISH_DIR;
+const STAGING = ".dist-next";
+const PUBLISHED = ".published.json";
 const STALE_MS = 60 * 60 * 1000;
-const thisBuildOnly: Plugin = {
-  name: "this-build-only",
+type Published = { files: string[]; replacedAt?: number }[];
+
+function filesUnder(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter(e => e.isFile())
+    .map(e => relative(dir, join(e.parentPath, e.name)));
+}
+
+// What a page asks for first goes in last: index.html names the entry
+// chunk, and the service worker names every file it precaches.
+const moveOrder = (file: string) => (file === "index.html" ? 2 : /^(sw\.js|registerSW\.js|manifest\.webmanifest|[^/]+\.html)$/.test(file) ? 1 : 0);
+
+function publishBuild(staging: string, served: string, now = Date.now()) {
+  const files = filesUnder(staging).sort((a, b) => moveOrder(a) - moveOrder(b));
+  if (files.length === 0) return;
+  const ledger = join(served, PUBLISHED);
+  // The first build into a directory without a ledger: whatever is there
+  // is the build this one replaces.
+  let builds: Published = existsSync(ledger)
+    ? JSON.parse(readFileSync(ledger, "utf8"))
+    : [{ files: filesUnder(served) }];
+  for (const file of files) {
+    mkdirSync(dirname(join(served, file)), { recursive: true });
+    renameSync(join(staging, file), join(served, file));
+  }
+  for (const build of builds) build.replacedAt ??= now;
+  builds = [...builds.filter(b => now - (b.replacedAt ?? now) < STALE_MS), { files }];
+  const keep = new Set(builds.flatMap(b => b.files));
+  for (const file of filesUnder(served)) {
+    if (file !== PUBLISHED && !keep.has(file)) rmSync(join(served, file));
+  }
+  writeFileSync(`${ledger}.tmp`, JSON.stringify(builds));
+  renameSync(`${ledger}.tmp`, ledger);
+}
+
+// After every other plugin's closeBundle, vite-plugin-pwa's (which writes
+// the service worker) included, at every build of the watch.
+const publish: Plugin = {
+  name: "publish-build",
   apply: "build",
-  generateBundle(_options, bundle) {
-    emitted.clear();
-    for (const file of Object.keys(bundle)) emitted.add(file);
-  },
-  writeBundle(options) {
-    if (!keepOutDir || !options.dir) return;
-    const assets = join(options.dir, "assets");
-    for (const name of readdirSync(assets)) {
-      const file = join(assets, name);
-      if (!emitted.has(`assets/${name}`) && Date.now() - statSync(file).mtimeMs > STALE_MS) unlinkSync(file);
-    }
+  closeBundle: {
+    order: "post",
+    sequential: true,
+    handler(error?: Error) {
+      if (!publishDir || error) return;
+      publishBuild(STAGING, publishDir);
+    },
   },
 };
 
@@ -95,7 +139,7 @@ const markFromCache = {
 // front door on another port.
 export default defineConfig({
   plugins: [
-    thisBuildOnly,
+    publish,
     tesseractFiles,
     preloadEngine,
     react(),
@@ -165,11 +209,6 @@ export default defineConfig({
         // page reader's 15 MB (tesseract/), kept by tesseract.js itself.
         // Asked for when needed, as any request.
         globIgnores: ["**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2", "**/{DevPanel,TrainWorkspace}-*.js", "tesseract/**"],
-        // This build's own chunks only, where the old ones are kept
-        // (thisBuildOnly).
-        manifestTransforms: keepOutDir ? [async entries => ({
-          manifest: entries.filter(e => !e.url.startsWith("assets/") || emitted.has(e.url)), warnings: [],
-        })] : [],
         runtimeCaching: [
           {
             // Google's map tiles and its map services (OverlayTiles):
@@ -368,14 +407,10 @@ export default defineConfig({
     // setup (WEB_DIST_MOUNT) serves it. It was services/gateway's resources, which nothing
     // has served since the image built its own: a build in a container
     // that mounted the whole repo left a stale copy there for every grep.
-    outDir: "dist",
-    // Emptied before a build -- except under docker-compose.yml's web-build
-    // watch, which sets VITE_KEEP_OUTDIR: there the directory is what
-    // the gateway is serving, and watch mode empties it on every rebuild,
-    // so a page loading that instant got nothing. Old chunks are kept an
-    // hour, and the service worker's manifest lists only the current ones
-    // (thisBuildOnly). (The CLI's --emptyOutDir can only set it true.)
-    emptyOutDir: !process.env.VITE_KEEP_OUTDIR,
+    // Into STAGING under docker-compose.yml's web-build watch, moved into
+    // the served directory from there whole (publishBuild, above).
+    outDir: publishDir ? STAGING : "dist",
+    emptyOutDir: true,
     // The libraries in chunks of their own, so that a change to this
     // app's code (most deploys) leaves React, the map and the query
     // client with the same hashed names -- and so still in the

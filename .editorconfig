@@ -1,0 +1,45 @@
+# How the files here are already written, so an editor keeps to it: spaces,
+# LF, one final newline, no trailing blanks. Two spaces for TypeScript,
+# JavaScript, CSS, HTML, YAML, shell and Markdown; four where each
+# language's own formatter or convention says so (ruff for Python,
+# rustfmt, Swift, Kotlin, Java, XML, TOML, SQL). Measured over every
+# tracked file on 2026-11-08; the exceptions below are files written as
+# their sources write them, which an editor should leave as they are.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.{py,pyi,rs,swift,kt,kts,java,xml,toml,sql}]
+indent_size = 4
+
+# Hard breaks in Markdown are two trailing spaces.
+[*.md]
+trim_trailing_whitespace = false
+
+# Written by tools: the asset catalogues, the e2e fixtures and the
+# diagrams' exports have no final newline.
+[*.{json,svg,drawio}]
+insert_final_newline = unset
+
+# Caddy's own files and Spring Session's schema are indented with tabs.
+[{Caddyfile,Caddyfile.*,V8__spring_session.sql}]
+indent_style = tab
+
+# Windows' Gradle wrapper, and data as its source writes it.
+[*.bat]
+end_of_line = crlf
+
+[*.csv]
+end_of_line = unset
+trim_trailing_whitespace = false
+
+# The FAA's CIFP file, fixed-width records kept byte for byte.
+[FAACIFP*]
+trim_trailing_whitespace = false
+insert_final_newline = unset

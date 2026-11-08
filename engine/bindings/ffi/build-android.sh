@@ -6,16 +6,29 @@
 # (apps/android/app/src/main/cpp/CMakeLists.txt) links it into the JNI shim,
 # with its C header. The twin of build-xcframework.sh for the iPhone.
 # Needs rustup and an Android NDK: ANDROID_NDK_HOME, or the
-# ANDROID_NDK_LATEST_HOME GitHub's runner sets (native-android.yml).
+# ANDROID_NDK_LATEST_HOME GitHub's runner sets (native-android.yml), or else
+# the newest NDK in the SDK ($ANDROID_HOME/ndk, ~/Library/Android/sdk/ndk on
+# a Mac, ~/Android/Sdk/ndk on Linux), named as it is picked.
 # Writes apps/android/app/engine/, which is not committed.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 engine=$(cd "$here/../.." && pwd)
 out="$engine/../apps/android/app/engine"
+# rustup's cargo, where a shell that has not read ~/.cargo/env (an agent's,
+# a launchd job's) has no Rust on its PATH.
+command -v cargo >/dev/null || PATH=$PATH:$HOME/.cargo/bin
 ndk="${ANDROID_NDK_HOME:-${ANDROID_NDK_LATEST_HOME:-}}"
 if [ -z "$ndk" ]; then
-  echo "build-android.sh: set ANDROID_NDK_HOME to an Android NDK" >&2
-  exit 1
+  for sdk in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" "$HOME/Library/Android/sdk" "$HOME/Android/Sdk"; do
+    [ -n "$sdk" ] && [ -d "$sdk/ndk" ] || continue
+    ndk=$(find "$sdk/ndk" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+    [ -n "$ndk" ] && break
+  done
+  if [ -z "$ndk" ]; then
+    echo "build-android.sh: no Android NDK: set ANDROID_NDK_HOME, or install one with Android Studio's SDK Manager (SDK Tools, NDK)" >&2
+    exit 1
+  fi
+  echo "build-android.sh: using the NDK at $ndk (ANDROID_NDK_HOME is unset)" >&2
 fi
 # The NDK's prebuilt clang for the machine building, and the API level
 # the app's minSdk names (apps/android/app/build.gradle.kts): the engine is

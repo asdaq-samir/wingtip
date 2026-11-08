@@ -8,7 +8,7 @@ import { useGlData, useGlLayer, useGlMap, useGlTap } from "../glLayer";
 import { CHECKPOINT_SOURCE, ROUTE_SOURCE, glZoom, pointFeatures, routeFeature, routeLayers } from "../glStyle";
 import { useGlProbe } from "../useGlProbe";
 import { GL_FONT, TAP } from "./common";
-import { useGlMarks, type GlMark } from "./MarksGl";
+import { useGlMarks, type GlMark } from "../useGlMarks";
 
 export interface GlCheckpoint {
   key: string;

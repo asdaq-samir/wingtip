@@ -6,7 +6,8 @@ import {
 } from "@dnd-kit/core";
 import { cn } from "cn";
 import CardIdent from "../CardIdent";
-import { CARD_GAP, CardMark, CardThread, EmptyMark, POINT_CARD } from "../routeCard";
+import { CardMark, CardThread, EmptyMark } from "../routeCard";
+import { CARD_GAP, POINT_CARD, ROUTE_LINE } from "../routeListStyle";
 import { TEXT } from "../../../../lib/text";
 import type { Detour, LegHold } from "../../../../lib/api/types";
 import { holdWords, type Hold } from "../../../../lib/routeHolds";
@@ -15,13 +16,6 @@ import { pointName } from "../../../../lib/identSchema";
 // The rows down FPL's route list (ProceduresRoute) other than a field's
 // block (FieldStep): a point flown over, a hold, a stop being added, and
 // the drag that moves the typed points.
-
-/** The line that joins the route's points down FPL's list, in the course's
- *  magenta as the map draws the route, at the owner's ask ("draw the
- *  connection with magenta line"); it was the border's grey. The token
- *  (index.css --course, chartColors' COURSE_MAGENTA) rather than the
- *  value, so the Chart ink look's own magenta reaches it. */
-export const ROUTE_LINE = { backgroundColor: "var(--course)" } as const;
 
 /**
  * A stop being added, In the Plan: an empty card at its place, its text

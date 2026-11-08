@@ -19,9 +19,9 @@ import { Pending } from "./BriefingBits";
 import PreflightPart from "./PreflightPart";
 import EnroutePart from "./EnroutePart";
 
-// Save and the review asked from the route, at the path the Share menu,
-// the flight watch and the routePanel chunk import them from.
-export { planOf, ReviewAskItem, ReviewAskSheet, SAVE_FLIGHT, SaveFlightButton, useSaveRequest, type FlightToSave } from "./SaveFlight";
+// Save and the review asked from the route, at the path the routePanel
+// chunk imports them from.
+export { ReviewAskItem, ReviewAskSheet, SaveFlightButton } from "./SaveFlight";
 
 interface Props {
   /** Which of the panel's tabs this is drawn in: its sections only; null,

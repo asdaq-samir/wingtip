@@ -19,7 +19,7 @@ import { engineLoaded } from "../../engine/engine";
 import { usePreferences } from "../../preferences";
 import { chartQuery, overlayTilesQuery, queryClient } from "../../queryClient";
 import { prefersReducedMotion } from "../../motion";
-import { BUTTONS_CLEAR } from "../clear";
+import { FIT_MARGIN } from "../clear";
 import { CardCloseContext } from "../cardClose";
 import { prefetchRing, registerOverlayProtocol } from "../overlayTiles";
 import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../ownShip";
@@ -34,9 +34,6 @@ const COUNTRY: [number, number] = [39.5, -98.35];
 const MIN_FIT_DEG = 0.08;
 /** RouteMap's: how close in an airport's card brings the map. */
 const PLACE_ZOOM = 9;
-/** Round a fit, over what the panel covers: a margin, and clear of the
- *  map's buttons at the sides (MapShell's). */
-export const FIT_MARGIN = { top: 30, bottom: 30, left: 30 + BUTTONS_CLEAR, right: 30 + BUTTONS_CLEAR };
 /** The map's first showing (GlMap's reveal): at the latest this long after
  *  it is made, faded in over this long. */
 const REVEAL_LATEST_MS = 2500;

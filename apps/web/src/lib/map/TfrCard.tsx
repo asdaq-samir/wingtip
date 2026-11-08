@@ -9,21 +9,12 @@ import { BADGE } from "../rowBadges";
 import { faaWords, tfrAltitudes, tfrPage, tfrTimes } from "../advisories";
 import type { Tfr } from "../api/types";
 import { MapCard } from "./MapCard";
+import { TFR_RED } from "./tfrMarks";
 
 /**
- * A temporary flight restriction's ink, whether it is in force, and its
- * card (the map draws them: lib/map/gl/layers/TfrGl).
+ * A temporary flight restriction's card (the map draws them, in tfrMarks'
+ * ink: lib/map/gl/layers/TfrGl).
  */
-
-/** The FAA's own TFR red, as tfr.faa.gov and every EFB draw one. */
-export const TFR_RED = "#dc2626";
-
-/** Whether a TFR is in force now: one with no times is taken as so. */
-export function inForce(tfr: Tfr, now: number): boolean {
-  const from = tfr.effective ? Date.parse(tfr.effective) : -Infinity;
-  const to = tfr.expires ? Date.parse(tfr.expires) : Infinity;
-  return from <= now && now <= to;
-}
 
 export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
   const rings = useMemo(() => outsides(tfr.geometry as { type?: string; coordinates?: unknown }), [tfr.geometry]);
