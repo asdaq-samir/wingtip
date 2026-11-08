@@ -614,6 +614,31 @@ export type FreezingLevelAnswer = {
 export type TemperatureAtAnswer = number | null;
 export type WindAtAltitudeAnswer = WindAloft | null | (WindAloft | null)[];
 export type ForecastHourAnswer = "06" | "12" | "24";
+export type LegalCruisingAltitudesAnswer = number[];
+export type TightCruisingAltitudeAnswer = number | null;
+export type HighestUnderCloudsFtAnswer = number;
+export type CloudClearanceAtFtAnswer = number;
+export type AltitudeWheelAnswer = number[];
+export type VfrFloorsAnswer = {
+  floor_ft: number;
+  lowest_ground_ft: number;
+  highest_ft: number;
+  highest_is_obstacle: boolean;
+  obstacle_type?: string | null;
+  clearance_ft: number;
+  congested?: boolean | null;
+}[];
+export type IfrFloorsAnswer = {
+  floor_ft: number;
+  highest_ft: number;
+  highest_is_obstacle: boolean;
+  mountainous: boolean;
+}[];
+export type IfrObstacleRadiusNmAnswer = number;
+export type AirwayFloorFtAnswer = number | null;
+export type AltitudeBlockedAnswer = boolean;
+export type MountainousAtAnswer = boolean;
+export type AltitudeAnywayAnswer = number | null;
 
 /**
  * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. The one source of their shapes: apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
@@ -2165,6 +2190,104 @@ export interface EngineContract {
   forecast_hour: {
     input: ForecastHourInput;
     answer: ForecastHourAnswer;
+  };
+  /**
+   * Every legal cruising altitude for a magnetic course from the floor up to the ceiling, ascending: under VFR 14 CFR 91.159(a)'s thousands plus 500 under Class A (71.33), and every 500 ft up to rule_from_ft (3,000 ft over the lowest ground); under IFR 91.179(b)'s thousands (FAA Order JO 7110.65 TBL 4-5-1) to FL410.
+   */
+  legal_cruising_altitudes: {
+    input: LegalCruisingAltitudesInput;
+    answer: LegalCruisingAltitudesAnswer;
+  };
+  /**
+   * Where no 500 ft step fits under a ceiling, the highest whole hundred under it that clears the floor, below where 14 CFR 91.159 begins; null where nothing fits.
+   */
+  tight_cruising_altitude: {
+    input: TightCruisingAltitudeInput;
+    answer: TightCruisingAltitudeAnswer;
+  };
+  /**
+   * The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.
+   */
+  highest_under_clouds_ft: {
+    input: HighestUnderCloudsFtInput;
+    answer: HighestUnderCloudsFtAnswer;
+  };
+  /**
+   * The distance 14 CFR 91.155(a) keeps below the clouds at an altitude: 1,000 ft at or above 10,000 ft MSL, 500 ft below.
+   */
+  cloud_clearance_at_ft: {
+    input: CloudClearanceAtFtInput;
+    answer: CloudClearanceAtFtAnswer;
+  };
+  /**
+   * The altitude wheel's rows, highest first: the legal altitudes given, the one flown, and every 500 ft from 1,000 ft to 17,500 ft under Class A (14 CFR 71.33, 91.135) besides (the owner's pick, 2026-10-20).
+   */
+  altitude_wheel: {
+    input: AltitudeWheelInput;
+    answer: AltitudeWheelAnswer;
+  };
+  /**
+   * The VFR floor of each piece of the route between consecutive breaks: the ground plus 1,000 ft, or a DOF obstacle's top plus 14 CFR 91.119's clearance where it stands (1,000 ft over a congested area, (b); 500 elsewhere, (c); 1,000 where the towns are not known), rounded up to the next 100 ft; with 91.119's own minimum under it.
+   */
+  vfr_floors: {
+    input: VfrFloorsInput;
+    answer: VfrFloorsAnswer;
+  };
+  /**
+   * Each leg's minimum IFR altitude (14 CFR 91.177(a)(2)): the highest of the ground given and the DOF obstacles within 4 nm of its course, plus 1,000 ft, or 2,000 ft over a mountainous area (Part 95 subpart B), rounded up to the next 100 ft.
+   */
+  ifr_floors: {
+    input: IfrFloorsInput;
+    answer: IfrFloorsAnswer;
+  };
+  /**
+   * How far from the course 14 CFR 91.177(a)(2) takes the highest obstacle: 4 nm.
+   */
+  ifr_obstacle_radius_nm: {
+    input: IfrObstacleRadiusNmInput;
+    answer: IfrObstacleRadiusNmAnswer;
+  };
+  /**
+   * An airway segment's minimum IFR altitude (14 CFR 91.177(a)(1)): its MEA, else its GNSS MEA; null where it publishes neither.
+   */
+  airway_floor_ft: {
+    input: AirwayFloorFtInput;
+    answer: AirwayFloorFtAnswer;
+  };
+  /**
+   * Whether a cruising altitude enters a prohibited area (14 CFR 73.83) between its floor and ceiling, an AGL ceiling or none taken as unlimited.
+   */
+  altitude_blocked: {
+    input: AltitudeBlockedInput;
+    answer: AltitudeBlockedAnswer;
+  };
+  /**
+   * Whether a point is in a designated mountainous area (14 CFR Part 95 subpart B, 95.11 to 95.21).
+   */
+  mountainous_at: {
+    input: MountainousAtInput;
+    answer: MountainousAtAnswer;
+  };
+  /**
+   * The planner's altitude selection from the data it read: each leg's band (the floor up to the lowest of the Class B shelf, 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace; under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.
+   */
+  select_cruise_altitude: {
+    input: SelectCruiseAltitudeInput;
+    answer: SelectCruiseAltitudeAnswer;
+  };
+  /**
+   * The altitude a route with no legal one is flown at anyway (the owner's warn, never limit): the lowest over the floor everywhere on the course's own altitudes (14 CFR 91.159, 91.179(b)); null where no floor is known.
+   */
+  altitude_anyway: {
+    input: AltitudeAnywayInput;
+    answer: AltitudeAnywayAnswer;
+  };
+  /**
+   * Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, whether Class B is what stops it, and all of it as one message.
+   */
+  no_altitude: {
+    input: NoAltitudeInput;
+    answer: NoAltitudeAnswer;
   };
 }
 export interface HoldingInput {
@@ -5377,4 +5500,221 @@ export interface WindAloft {
 }
 export interface ForecastHourInput {
   hours_ahead?: number | null;
+}
+export interface LegalCruisingAltitudesInput {
+  floor_ft: number;
+  ceiling_ft?: number | null;
+  magnetic_course_deg: number;
+  rule_from_ft?: number | null;
+  rules?: "vfr" | "ifr" | null;
+}
+export interface TightCruisingAltitudeInput {
+  floor_ft: number;
+  ceiling_ft?: number | null;
+  rule_from_ft?: number | null;
+}
+export interface HighestUnderCloudsFtInput {
+  cloud_base_ft: number;
+}
+export interface CloudClearanceAtFtInput {
+  altitude_ft: number;
+}
+export interface AltitudeWheelInput {
+  legal_ft?: number[];
+  flown_ft?: number | null;
+}
+export interface VfrFloorsInput {
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  breaks_nm: number[];
+  /**
+   * The ground along the direct line, feet MSL; congested null where the towns could not be read.
+   */
+  ground: {
+    along_nm: number[];
+    high_ft: number[];
+    low_ft: number[];
+    congested?: boolean[] | null;
+  };
+  obstacles?: {
+    lat: number;
+    lon: number;
+    amsl_ft: number;
+    type?: string | null;
+    congested?: boolean | null;
+  }[];
+}
+export interface IfrFloorsInput {
+  legs: {
+    /**
+     * [lat, lon], degrees.
+     *
+     * @minItems 2
+     * @maxItems 2
+     */
+    a: [number, number];
+    /**
+     * [lat, lon], degrees.
+     *
+     * @minItems 2
+     * @maxItems 2
+     */
+    b: [number, number];
+    ground_ft: number;
+  }[];
+  obstacles?: {
+    lat: number;
+    lon: number;
+    amsl_ft: number;
+  }[];
+}
+export interface IfrObstacleRadiusNmInput {}
+export interface AirwayFloorFtInput {
+  mea_ft?: number | null;
+  gnss_mea_ft?: number | null;
+}
+export interface AltitudeBlockedInput {
+  altitude_ft: number;
+  areas?: {
+    type?: string | null;
+    floor_ft?: number | null;
+    ceiling_ft?: number | null;
+    ceiling_ref?: string | null;
+  }[];
+}
+export interface MountainousAtInput {
+  lat: number;
+  lon: number;
+}
+export interface SelectCruiseAltitudeInput {
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  fixes?: [number, number][] | null;
+  breaks_nm?: number[];
+  rules?: "vfr" | "ifr" | null;
+  class_b_cleared?: boolean | null;
+  /**
+   * vfr_floors' or ifr_floors' answer, a floor a leg.
+   */
+  floors?: {}[];
+  airway?: {
+    mea_ft?: number | null;
+    gnss_mea_ft?: number | null;
+    maa_ft?: number | null;
+  } | null;
+  airspace_ceilings_ft?: (number | null)[];
+  service_ceilings_ft: number[];
+  variation_deg?: number | null;
+  leg_variations_deg?: number[];
+  stations?: {
+    icaoId?: string | null;
+    lat?: number;
+    lon?: number;
+    ceiling_ft?: number | null;
+    elevation_ft?: number | null;
+  }[];
+  min_ceiling_ft?: number | null;
+  special_use?: {}[];
+  freezing?: {
+    ft?: number | null;
+    at_or_below?: boolean | null;
+  } | null;
+  hazards?: {}[];
+  weather_unavailable?: string[];
+}
+export interface SelectCruiseAltitudeAnswer {
+  rules: "vfr" | "ifr";
+  recommended_ft: number | null;
+  candidates_ft: number[];
+  course_magnetic_deg: number;
+  eastbound: boolean;
+  hemispheric_rule_from_ft: number;
+  floor_ft: number;
+  airspace_ceiling_ft?: number | null;
+  class_b_cleared?: boolean;
+  service_ceiling_ft: number;
+  cloud_base_ft?: number | null;
+  cloud_station?: string | null;
+  cloud_ceiling_ft?: number | null;
+  cloud_clearance_kept: boolean;
+  freezing_level_ft?: number | null;
+  freezing_level_at_or_below?: boolean;
+  icing_possible: boolean | null;
+  band_ceiling_ft?: number | null;
+  segments: AltitudeSegment[];
+  mountainous: boolean;
+}
+/**
+ * One leg's band: its floor (91.119 under VFR, 91.177(a) under IFR), the ceilings over it, its legal altitudes by its own magnetic course, and what its floor was found from.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "AltitudeSegment".
+ */
+export interface AltitudeSegment {
+  from_nm: number;
+  to_nm: number;
+  floor_ft: number;
+  airspace_ceiling_ft?: number | null;
+  service_ceiling_ft: number;
+  cloud_base_ft?: number | null;
+  cloud_station?: string | null;
+  cloud_ceiling_ft?: number | null;
+  cloud_clearance_kept: boolean;
+  band_ceiling_ft?: number | null;
+  course_magnetic_deg: number;
+  eastbound: boolean;
+  hemispheric_rule_from_ft: number;
+  candidates_ft: number[];
+  tight: boolean;
+  highest_ft?: number | null;
+  highest_is_obstacle?: boolean | null;
+  obstacle_type?: string | null;
+  obstacle_clearance_ft?: number | null;
+  congested?: boolean | null;
+  mountainous?: boolean;
+  airway?: {} | null;
+}
+export interface AltitudeAnywayInput {
+  selection: {};
+}
+export interface NoAltitudeInput {
+  selection: {};
+  between?: string[] | null;
+  via?: {
+    ident?: string;
+    added_nm?: number;
+  } | null;
+  where?: string | null;
+}
+export interface NoAltitudeAnswer {
+  title: string;
+  brief: string;
+  reasons: string[];
+  advice: string;
+  class_b: boolean;
+  detail: string;
 }

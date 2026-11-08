@@ -428,7 +428,7 @@ def test_no_altitude_says_where_and_why_in_a_pilots_words():
     assert why["brief"] == "Ceiling 14,000 ft: terrain 1,010 nm along needs 14,500"
     assert planning.no_altitude(selection, where="540 nm past KDLH")["brief"] == "Ceiling 14,000 ft: terrain 540 nm past KDLH needs 14,500"
     # One message for /api/plan's 422.
-    detail = planning.no_altitude_detail(selection)
+    detail = planning.no_altitude(selection)["detail"]
     assert detail.startswith("No legal VFR cruising altitude 980-1040 nm along the route. The terrain")
     assert "altitude_ft" not in detail
 

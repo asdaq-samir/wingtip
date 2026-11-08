@@ -12,6 +12,7 @@ name = "wingtip_engine"
 # engine is plain Rust, so the phone can carry it as it is.
 [dependencies]
 wingtip-airspace = { path = "../crates/airspace" }
+wingtip-altitude = { path = "../crates/altitude" }
 wingtip-brief = { path = "../crates/brief" }
 wingtip-procedures = { path = "../crates/procedures" }
 wingtip-core = { path = "../crates/core" }

@@ -11,9 +11,9 @@ from fastapi import HTTPException
 
 from wingtip import aircraft as aircraft_module
 from wingtip import altitude as altitude_module
-from wingtip import ifr as ifr_module
 from wingtip import airspace, geo, navlog, sun, weather
 from wingtip.config import PLAN_LIMIT_S
+from wingtip.engine import ask as engine
 
 
 # How long a caller waits on a computation that is already running before
@@ -574,30 +574,19 @@ def _own_ifr_altitude_caution(selection: dict, legs: list, between: tuple[str, s
 def altitude_anyway(selection: dict) -> float | None:
     """The altitude a route with no legal one is flown at anyway, at the
     owner's "I don't want to put hard limits on anything. A warning tick or
-    a label is enough" (2026-10-23): the lowest that keeps the terrain and
-    obstacles' floor everywhere along it (14 CFR 91.119, wingtip.terrain) on the course's own altitudes (91.159's thousands plus 500
-    under VFR, 91.179(b)(1)'s thousands under IFR, ATC's own in controlled airspace), whatever stops it there --
-    the airplane's ceiling, the clouds, Class B -- for own_altitude_caution
-    to say. None where no floor is known."""
-    segments = [s for s in selection.get("segments", []) if s.get("floor_ft") is not None] or (
-        [selection] if selection.get("floor_ft") is not None else [])
-    if not segments:
-        return None
-    course = selection.get("course_magnetic_deg")
-    if course is None:
-        course = segments[0].get("course_magnetic_deg") or 0.0
-    floor = max(float(s["floor_ft"]) for s in segments)
-    if selection.get("rules") == "ifr":
-        thousands = math.ceil(floor / 1000)
-        if thousands % 2 != (1 if altitude_module.is_eastbound(course) else 0):
-            thousands += 1
-        return float(thousands * 1000)
-    rule_from = min((s.get("hemispheric_rule_from_ft") for s in segments if s.get("hemispheric_rule_from_ft") is not None),
-                    default=None)
-    if rule_from is not None and floor < rule_from:
-        # Under 3,000 ft above the ground any 500 ft is a cruising altitude.
-        return float(math.ceil(floor / 500) * 500)
-    return altitude_module.lowest_vfr_cruising_altitude(floor, course)
+    a label is enough" (2026-10-23): the engine's `altitude_anyway` (the
+    floor everywhere on the course's own altitudes, 14 CFR 91.159 or
+    91.179(b)), for own_altitude_caution to say what stops it there."""
+    return engine("altitude_anyway", selection=_engine_selection(selection))
+
+
+def _engine_selection(selection: dict) -> dict:
+    """The members of a selection the engine's words read: its rules, its
+    course and floor, its segments, its Class B transits and its
+    special-use airspace -- not the weather's hazards and the rest."""
+    keys = ("rules", "course_magnetic_deg", "floor_ft", "hemispheric_rule_from_ft", "segments",
+            "airspace_transits", "special_use")
+    return {k: selection[k] for k in keys if k in selection}
 
 
 def prohibited_caution(selection: dict) -> list[str]:
@@ -611,125 +600,19 @@ def prohibited_caution(selection: dict) -> list[str]:
 def no_altitude(
     selection: dict, between: tuple[str, str] | None = None, via: dict | None = None, where: str | None = None,
 ) -> dict:
-    """Why no plan has an altitude, in a pilot's words, in three parts: a
-    headline saying where along the route it fails, the reasons there as
-    short sentences -- the terrain's floor, the first VFR altitude above
-    it on that course, what stops the climb -- and what to do about it.
-    The page lists the reasons under the headline in the nav log, where
-    they stay; it was one long sentence in a toast that went before it
-    could be read. It gave the whole route's highest floor beside its
-    lowest ceiling ("floor 13700 ft, ceiling 3000.0 ft" for Chicago to
-    Las Vegas: the Rockies' floor beside the Chicago Class B shelf, a
-    thousand miles apart) and asked for a query parameter. `between`, the
-    hop of a route with stops it fails on: the distances are from its
-    start, and the headline names it. `brief`, all of it in a few words
-    for the one line under the route, the numbers that bind first and
-    `where` the place it binds by the route's own points ("540 nm past
-    KDLH"), else how far along. `class_b` says Class B airspace is
-    what stops it, for the page to offer a clearance or a way round:
-    `via`, the best waypoint round it (class_b_detours), when there is one."""
-    ifr = selection.get("rules") == "ifr"
-    kind = "IFR" if ifr else "legal VFR"
-    # Prohibited airspace is closed whatever the rules or the altitude:
-    # nobody flies in it without its using agency's authorization (14 CFR
-    # 73.83), which an ATC clearance is not.
-    prohibited = [a["name"] for a in selection.get("special_use", []) if a.get("type") == "P"]
-    if prohibited:
-        return {
-            "title": "The route crosses prohibited airspace",
-            "brief": f"{prohibited[0]} is prohibited airspace",
-            "reasons": [f"{name} is closed to every altitude." for name in prohibited],
-            "advice": "Plan around it.",
-            "class_b": False,
-        }
-    stuck = next((s for s in selection.get("segments", []) if not s.get("candidates_ft")), None)
-    course = (stuck or {}).get("course_magnetic_deg", selection.get("course_magnetic_deg"))
-    floor, top = (stuck or {}).get("floor_ft"), (stuck or {}).get("band_ceiling_ft")
-    if stuck is None or None in (course, floor, top):
-        return {
-            "title": (f"No {kind} cruising altitude fits {between[0]} to {between[1]} in this aircraft" if between
-                      else f"No {kind} cruising altitude fits this route in this aircraft"),
-            "brief": f"No {'IFR' if ifr else 'VFR'} altitude fits this aircraft",
-            "reasons": [],
-            "advice": "Set a cruise altitude of your own to plan it anyway.",
-            "class_b": False,
-        }
-    place = where or f"{(stuck['from_nm'] + stuck['to_nm']) / 2:,.0f} nm along"
-    title = f"No {kind} cruising altitude {stuck['from_nm']:.0f}-{stuck['to_nm']:.0f} nm " + (
-        f"out of {between[0]} toward {between[1]}" if between else "along the route")
-    if ifr:
-        return _no_ifr_altitude(stuck, course, floor, top, title, place)
-    # The first altitude the band would have taken: the same rule as the
-    # band's own (legal_cruising_altitudes) -- any 500 ft under 3,000 ft
-    # above the ground, the course's own thousands-plus-500 over it. It
-    # said the first westbound altitude whatever the height, 2,500 ft
-    # over a 1,700 ft floor by Chicago, where 2,000 ft is legal.
-    rule_from = stuck.get("hemispheric_rule_from_ft")
-    first = (altitude_module.legal_cruising_altitudes(floor, None, course, rule_from)
-             or [altitude_module.lowest_vfr_cruising_altitude(floor, course)])[0]
-    under_rule = rule_from is not None and first < rule_from
-    heading = "eastbound" if stuck.get("eastbound") else "westbound"
-    first_line = (f"The lowest altitude above that is {first:,.0f} ft." if under_rule
-                  else f"The first {heading} VFR altitude above that is {first:,.0f} ft.")
-    advice = "Route around the high ground, or set a cruise altitude of your own to plan it anyway."
-    class_b = False
-    # And the whole of it in a few words, for the one line under the route:
-    # what stops the climb, at what, and the terrain where it does and the
-    # altitude it needs ("Ceiling 11,700 ft: terrain 540 nm past KDLH needs
-    # 12,500"), as the pilot asked -- "over the terrain" said nothing of
-    # which.
-    need = f"terrain {place} needs {first:,.0f}"
-    brief = f"Clouds at {top:,.0f} ft: {need}"
-    if top == stuck.get("service_ceiling_ft"):
-        stops = f"The aircraft's service ceiling stops at {top:,.0f} ft."
-        brief = f"Ceiling {top:,.0f} ft: {need}"
-    elif top == stuck.get("airspace_ceiling_ft"):
-        # The Class B by name, and what it takes: "The airspace over it
-        # stops at 0 ft" was Midway to Duluth's straight line over O'Hare.
-        bravo = f"The {_class_b_over(selection, stuck)}"
-        stops = (f"{bravo} reaches the ground there; going through it needs a clearance." if top <= 0
-                 else f"{bravo} over it starts at {top:,.0f} ft; going into it needs a clearance.")
-        brief = f"Class B to the ground {place}" if top <= 0 else f"Class B at {top:,.0f} ft: {need}"
-        class_b = True
-        advice = (f"Fly via {via['ident']} ({via['added_nm']:.0f} nm further) to stay out of it" if via
-                  else "Add a stop to route around it") + ", or plan it with a Class B clearance."
-    else:
-        stops = f"The cloud base stops at {top:,.0f} ft."
-    if top <= 0:
-        # Airspace from the ground up leaves no altitude whatever the
-        # terrain: the floor and the first altitude over it were noise.
-        return {"title": title, "brief": brief, "reasons": [stops], "advice": advice, "class_b": class_b}
-    return {
-        "title": title,
-        "brief": brief,
-        "reasons": [f"The terrain and obstacles there need {floor:,.0f} ft.", first_line, stops],
-        "advice": advice,
-        "class_b": class_b,
-    }
-
-
-def _no_ifr_altitude(stuck: dict, course: float, floor: float, top: float, title: str, place: str) -> dict:
-    """no_altitude for a flight under IFR, at the segment it fails on: the
-    minimum IFR altitude there (14 CFR 91.177(a)(2)) and the first IFR
-    altitude over it by the direction of flight (91.179(b)), against the
-    aircraft's service ceiling."""
-    first = (ifr_module.cruising_altitudes(floor, None, course) or [floor])[0]
-    heading = "eastbound" if stuck.get("eastbound") else "westbound"
-    clearance = stuck.get("obstacle_clearance_ft") or ifr_module.CLEARANCE_FT
-    over = " over a mountainous area" if stuck.get("mountainous") else ""
-    return {
-        "title": title,
-        "brief": f"Ceiling {top:,.0f} ft: the minimum IFR altitude {place} is {floor:,.0f}",
-        "reasons": [
-            f"The minimum IFR altitude there is {floor:,.0f} ft: {clearance:,.0f} ft over the highest obstacle "
-            f"within 4 nm{over} (14 CFR 91.177(a)).",
-            f"The first {heading} IFR altitude above that is {first:,.0f} ft.",
-            f"The aircraft's service ceiling stops at {top:,.0f} ft.",
-        ],
-        "advice": "Route around the high ground, plan it in an aircraft that climbs higher, "
-                  "or set a cruise altitude of your own to plan it anyway.",
-        "class_b": False,
-    }
+    """Why no plan has an altitude, in a pilot's words (the engine's
+    `no_altitude`): a headline saying where along the route it fails, the
+    reasons there as short sentences -- the terrain's floor, the first
+    altitude above it on that course, what stops the climb -- what to do
+    about it, `class_b` where Class B airspace is what stops it, and
+    `detail`, all of it as one message for /api/plan's 422. `between`, the
+    hop of a route with stops it fails on; `via`, the best waypoint round
+    the Class B (class_b_detours); `where`, the place it binds by the
+    route's own points ("540 nm past KDLH")."""
+    return engine(
+        "no_altitude", selection=_engine_selection(selection), between=list(between) if between else None,
+        via={"ident": via["ident"], "added_nm": via["added_nm"]} if via else None, where=where,
+    )
 
 
 def class_b_detours(selection: dict, start: tuple, end: tuple) -> list[dict]:
@@ -741,8 +624,9 @@ def class_b_detours(selection: dict, start: tuple, end: tuple) -> list[dict]:
     stuck = next((s for s in selection.get("segments", []) if not s.get("candidates_ft")), None)
     if stuck is None or stuck.get("airspace_ceiling_ft") is None or stuck.get("band_ceiling_ft") != stuck["airspace_ceiling_ft"]:
         return []
-    lowest = altitude_module.legal_cruising_altitudes(
-        stuck["floor_ft"], None, stuck.get("course_magnetic_deg", 0.0), stuck.get("hemispheric_rule_from_ft"))
+    lowest = engine(
+        "legal_cruising_altitudes", floor_ft=stuck["floor_ft"], magnetic_course_deg=stuck.get("course_magnetic_deg", 0.0),
+        rule_from_ft=stuck.get("hemispheric_rule_from_ft"))
     if not lowest:
         return []
     shp_path = airspace.ensure_class_airspace_shapefile(altitude_module.DEFAULT_FAA_CACHE_DIR)
@@ -769,25 +653,6 @@ def class_b_ways(start: tuple, end: tuple, cruise_ft: float) -> list[dict]:
     ways = airspace.detour_waypoints(start, end, shp_path, cruise_ft) if airspace.class_b_entered(start, end, shp_path, cruise_ft) else []
     _CLASS_B_WAYS[key] = ways
     return ways
-
-
-def _class_b_over(selection: dict, segment: dict) -> str:
-    """The Class B a leg is stuck under, as a pilot says it ("Chicago
-    Class B"): of the route's Class B transits, the one nearest the leg's
-    middle; "Class B airspace" where none is named."""
-    middle = (segment["from_nm"] + segment["to_nm"]) / 2
-    bravos = [t for t in selection.get("airspace_transits", []) if t.get("class") == "B"]
-    if not bravos:
-        return "Class B airspace"
-    name = min(bravos, key=lambda t: abs(t.get("along_track_nm", 0.0) - middle))["name"]
-    return " ".join(word.capitalize() if len(word) > 1 else word for word in name.split())
-
-
-def no_altitude_detail(selection: dict, between: tuple[str, str] | None = None, via: dict | None = None) -> str:
-    """no_altitude as one message, for /api/plan's 422."""
-    parts = no_altitude(selection, between, via)
-    reasons = " ".join(parts["reasons"])
-    return f"{parts['title']}. {reasons + ' ' if reasons else ''}{parts['advice']}"
 
 
 def course_line(start: tuple, end: tuple, step_nm: float = 5.0) -> list:

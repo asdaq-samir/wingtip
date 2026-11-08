@@ -14,6 +14,7 @@ import { routeProfileQuery } from "../../../../lib/queryClient";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
 import { altFt, flightLevel, one } from "../../../../lib/units";
 import { PLAN_NAME } from "../../format";
+import { callEngine } from "../../../../lib/engine/engine";
 import { duration } from "../../../../lib/clock";
 import AltitudeReasoning from "../AltitudeReasoning";
 import type { RouteEnds } from "./rows";
@@ -51,11 +52,6 @@ function cruiseOf(nav: NavLogAltitude | null, legs: Leg[]): number | null {
 /** Each plan's name at the altitude it cruises at, its highest step:
  *  "Fastest · Economical" where two fly the same, in PREFERRED's order, so
  *  the first is the one the altitude is flown as. */
-/** The wheel's altitudes past the planner's legal ones: every 500 ft from
- *  1,000 ft to 17,500 ft, under Class A, which begins at 18,000 ft MSL and
- *  takes no VFR flight (14 CFR 71.33, 91.135). */
-const LADDER_FT = Array.from({ length: 34 }, (_, i) => 1000 + i * 500);
-
 function planNames(nav: NavLogAltitude | null): Record<number, string> {
   const names: Record<number, string[]> = {};
   const options = [...(nav?.options ?? [])].sort((a, b) => PREFERRED.indexOf(a.kind) - PREFERRED.indexOf(b.kind));
@@ -268,7 +264,10 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
   const legal = new Set(listed);
   // Whenever there is a plan, so the wheel is there on a route with no
   // legal altitude too, the one it is most wanted on.
-  const altitudes = [...new Set([...listed, ...(own === null ? [] : [own]), ...(nav ? LADDER_FT : [])])].sort((a, b) => b - a);
+  // The wheel's rows are the engine's (altitude_wheel): these and every
+  // 500 ft from 1,000 ft to 17,500 ft under Class A (14 CFR 71.33, 91.135).
+  const altitudes = nav ? callEngine("altitude_wheel", { legal_ft: listed, flown_ft: own })
+    : [...new Set([...listed, ...(own === null ? [] : [own])])].sort((a, b) => b - a);
   // The altitude on the wheel, the one flown when it was put there and the
   // route it was on: once another is flown (it, re-planned; a figure
   // typed) or the route changes, the wheel is at the one flown.

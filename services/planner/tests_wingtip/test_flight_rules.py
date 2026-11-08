@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from pygeomag import GeoMag
 
-from wingtip import altitude, navlog, performance
+from wingtip import navlog, performance
 from wingtip.engine import ask as engine
 from wingtip.magnetic import magnetic_variation_deg
 
@@ -37,8 +37,8 @@ def test_the_wind_triangle_is_the_fixtures(case):
 
 @pytest.mark.parametrize("case", FIXTURE["cruisingAltitude"], ids=lambda c: f"{c['floorFt']}@{c['courseDeg']}")
 def test_cruising_altitudes_are_91_159s(case):
-    assert altitude.lowest_vfr_cruising_altitude(case["floorFt"], case["courseDeg"]) == case["altitudeFt"]
-    assert altitude.is_eastbound(case["courseDeg"]) == case["eastbound"]
+    assert engine("lowest_vfr_cruising_altitude", floor_ft=case["floorFt"], magnetic_course_deg=case["courseDeg"]) == case["altitudeFt"]
+    assert engine("is_eastbound", magnetic_course_deg=case["courseDeg"]) == case["eastbound"]
 
 
 def test_the_reserves_are_91_151s_and_91_167s():

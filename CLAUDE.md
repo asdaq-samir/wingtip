@@ -11,9 +11,9 @@ shell per app round it (the owner, 2026-11-03). Four layers, each with
 one job (the owner kept both server languages on this split, 2026-11-06):
 
 - **The Rust engine** (`engine/facade`, wingtip-engine, a facade over
-  ten domain crates in `engine/crates`, layered as engine/README.md
+  eleven domain crates in `engine/crates`, layered as engine/README.md
   says). Every aviation rule or figure lives there once: altitudes,
-  winds, runways, fuel, weather limits, Go / No-Go, holds, procedures,
+  winds, runways, fuel, weather limits, Go / No-Go, altitude selection, holds, procedures,
   the clearance reader, the debrief, a pilot's currency and a student's
   61.109 experience. No network, no screen, no clock of its own. Each rule is a name in `engine/facade/src/call.rs`,
   JSON in and out, typed in `engine/contract/engine.schema.json`.
