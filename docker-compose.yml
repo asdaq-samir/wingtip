@@ -159,7 +159,10 @@ services:
 
   db:
     restart: unless-stopped
-    image: pgvector/pgvector:pg18@sha256:c29f30688a9ad961691bdf0ec1650717cc132a5814619d80f80463d6e4c42e47
+    # Plain Postgres: the pgvector image was for the removed briefing
+    # agent's memory. Bookworm, as pgvector:pg18 was built on, so glibc
+    # (2.36) and with it the text collations of an existing volume match.
+    image: postgres:18-bookworm@sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5
     environment:
       POSTGRES_DB: wingtip
       POSTGRES_USER: wingtip
