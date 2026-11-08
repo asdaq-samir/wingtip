@@ -11,7 +11,10 @@
 #   scripts/dev/go-live.sh <branch>        another branch
 set -euo pipefail
 branch=${1:-claude/integration}
-main=$(git -C "$(dirname "$0")/../.." rev-parse --path-format=absolute --git-common-dir)
+# The main checkout: from the script's own repo, or the current
+# directory's when the script is run from a copy.
+main=$(git -C "$(dirname "$0")/../.." rev-parse --path-format=absolute --git-common-dir 2>/dev/null \
+  || git rev-parse --path-format=absolute --git-common-dir)
 main=${main%/.git}
 live=${WINGTIP_LIVE_DIR:-$HOME/Developer/wingtip-live}
 export PATH="$PATH:$HOME/.docker/bin"
