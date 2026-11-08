@@ -180,15 +180,16 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!-- The planner's answers this app reads itself (PlannerClient),
-                 generated at build time from the planner's committed
+            <!-- The assistant's answers this app reads itself (PlannerClient's
+                 changes in words, for the flight watch), generated at
+                 build time from the assistant service's committed
                  OpenAPI document rather than written out by hand, so a
-                 field the planner renames or drops fails this build
+                 field the assistant renames or drops fails this build
                  instead of reading as null in production. Models only:
                  PlannerClient asks with java.net.http, pinned to
                  HTTP/1.1 for the reason StreamingProxy gives, which a
                  generated client would replace. Only the schemas read
-                 here are generated (modelsToGenerate), prefixed Planner
+                 here are generated (modelsToGenerate), prefixed Assistant
                  so "Source" and "Sentence" do not read as this app's own;
                  the browser's pass-through proxies read nothing and need
                  none. The Dockerfile copies the document to the same
@@ -199,15 +200,15 @@
                 <version>7.26.0</version>
                 <executions>
                     <execution>
-                        <id>planner-models</id>
+                        <id>assistant-models</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/../planner/openapi.json</inputSpec>
+                            <inputSpec>${project.basedir}/../assistant/openapi.json</inputSpec>
                             <generatorName>spring</generatorName>
-                            <modelPackage>com.northflyers.wingtip.planner.model</modelPackage>
-                            <modelNamePrefix>Planner</modelNamePrefix>
+                            <modelPackage>com.northflyers.wingtip.assistant.model</modelPackage>
+                            <modelNamePrefix>Assistant</modelNamePrefix>
                             <modelsToGenerate>ChangesWords,Sentence,Source</modelsToGenerate>
                             <generateApis>false</generateApis>
                             <generateSupportingFiles>false</generateSupportingFiles>
@@ -235,7 +236,7 @@
                 <configuration>
                     <!-- Generated, and documented by the planner's own
                          document instead. -->
-                    <excludePackageNames>com.northflyers.wingtip.planner.model</excludePackageNames>
+                    <excludePackageNames>com.northflyers.wingtip.assistant.model</excludePackageNames>
                     <!-- Still catches malformed {@link}s, bad HTML, and
                          unknown tags; just doesn't demand a comment on
                          every trivial getter/DI constructor, where one

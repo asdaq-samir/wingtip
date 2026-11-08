@@ -6,14 +6,19 @@
 #
 # What is not here, on purpose:
 # - Mailpit: sign-in mail goes through Amazon SES (MAIL_* below).
-# - The pipelines and the training run: retraining runs on the owner's machine.
+# - The retrain job: retraining runs on the owner's machine, where the
+#   ratings are (data/labels), and deploy.sh syncs the promoted model.
 # - web-build and dev-services: development tools.
-# - Chart tile drawing: CHARTS_AUTO_REFRESH=0. A scheduled Fargate Spot
-#   task draws each 56-day cycle once and publishes it to S3, and the
-#   map fetches tiles from CloudFront (CHART_TILES_URL), so this 4 GB
-#   server never draws the whole country. The FAA's NASR and obstacle
-#   files are still fetched as each edition comes out
-#   (FAA_DATA_AUTO_REFRESH, on).
+# - Chart tile drawing: CHARTS_AUTO_REFRESH=0. The charts job draws each
+#   56-day cycle once as a scheduled Fargate Spot task and publishes it
+#   to S3 as one archive per kind and density, which the planner reads a
+#   tile at a time through CloudFront (CHART_TILES_URL) and CloudFront
+#   caches, so this 4 GB server never draws the whole country. The
+#   FAA's NASR and obstacle files are still fetched as each edition comes
+#   out (FAA_DATA_AUTO_REFRESH, on).
+# - The map's overlay tiles: built from the planner's cycle pack by the
+#   charts job's `overlays`, below, which the server's cron runs hourly
+#   (deploy.sh writes the entry); a no-op until a new pack is written.
 #
 # Run on the server, from /srv/wingtip with its .env beside this
 # file (infra/server/env.example lists every key):
@@ -82,8 +87,8 @@ services:
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
     # FAA data, the corridor's chart sheets for reading checkpoints, the
     # chart model deploy.sh syncs into data/models (scored in-process,
-    # app.chart_scorer), and the planner's caches: on the server's disk,
-    # kept across deploys.
+    # app.chart_scorer), the planner's caches and the weather service's
+    # store (data/raw/weather): on the server's disk, kept across deploys.
     volumes:
       - /srv/wingtip/data:/workspace/data
       # The stock aircraft profiles are the repository's, so they follow
@@ -91,7 +96,6 @@ services:
       # server's own.
       - ../data/aircraft:/workspace/data/aircraft:ro
     environment:
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       # The map's Google overlay (routers/basemaps), where the owner has a key.
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
       ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
@@ -99,18 +103,6 @@ services:
       # (github.com/adsbfi/opendata): off for the public app until adsb.fi
       # agrees to it (wingtip.traffic).
       ADSBFI_OPEN_DATA: "0"
-      # The FAA's SWIM feeds (app.swim): STDDS's terminal radar tracks; off
-      # without them. The owner's SCDS subscription's login and queue.
-      SWIM_HOST: ${SWIM_HOST:-}
-      SWIM_USERNAME: ${SWIM_USERNAME:-}
-      SWIM_PASSWORD: ${SWIM_PASSWORD:-}
-      SWIM_VPN_STDDS: ${SWIM_VPN_STDDS:-}
-      SWIM_QUEUE_STDDS: ${SWIM_QUEUE_STDDS:-}
-      SWIM_VPN_FNS: ${SWIM_VPN_FNS:-}
-      SWIM_QUEUE_FNS: ${SWIM_QUEUE_FNS:-}
-      SWIM_HOST_TFMS: ${SWIM_HOST_TFMS:-}
-      SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
-      SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
       CHARTS_AUTO_REFRESH: "0"
       # But the NASR files (airports, frequencies, navaids, Class B/C/D)
       # and the obstacle file are fetched again as each new edition comes
@@ -124,6 +116,83 @@ services:
       timeout: 5s
       retries: 60
 
+  # The live feeds, read always (services/ingest): the FAA's SWIM feeds
+  # and the followed airplanes, into the SQLite stores on the data folder
+  # the planner reads (the live store, the NOTAMs, the filed routes). No
+  # port; its health is its beat in the live store (ingest.health, the
+  # image's HEALTHCHECK). Off but for its beat where no SWIM_* are set.
+  ingest:
+    <<: *restart
+    image: ${IMAGE_REGISTRY}/ingest:${IMAGE_TAG:-latest}
+    volumes:
+      - /srv/wingtip/data:/workspace/data
+    # A few threads and a SQLite connection on a 4 GB server shared with
+    # the planner, the gateway and Postgres: held small.
+    mem_limit: 384m
+    environment:
+      # adsb.fi's open data is for personal, non-commercial use only
+      # (github.com/adsbfi/opendata): the followed airplanes' rounds are
+      # off for the public app until adsb.fi agrees to it.
+      ADSBFI_OPEN_DATA: "0"
+      # The FAA's SWIM feeds (ingest.swim); each off without its own. The
+      # owner's SCDS subscriptions' login and queues.
+      SWIM_HOST: ${SWIM_HOST:-}
+      SWIM_USERNAME: ${SWIM_USERNAME:-}
+      SWIM_PASSWORD: ${SWIM_PASSWORD:-}
+      SWIM_VPN_STDDS: ${SWIM_VPN_STDDS:-}
+      SWIM_QUEUE_STDDS: ${SWIM_QUEUE_STDDS:-}
+      SWIM_VPN_FNS: ${SWIM_VPN_FNS:-}
+      SWIM_QUEUE_FNS: ${SWIM_QUEUE_FNS:-}
+      SWIM_HOST_TFMS: ${SWIM_HOST_TFMS:-}
+      SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
+      SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
+
+  # Every Claude call (services/assistant, issue #535): the only service
+  # given the Anthropic key. It asks the planner for every figure and
+  # keeps nothing in memory but a request's own: about 100 MB resident
+  # (Python, FastAPI, the SDK), capped at 256 MB so it can never take the
+  # planner's or the JVM's share of this 4 GB server. One worker: its
+  # requests wait on Claude and the planner, not on its processor.
+  assistant:
+    <<: *restart
+    image: ${IMAGE_REGISTRY}/assistant:${IMAGE_TAG:-latest}
+    # No access log, as the planner's: a request's body is a pilot's
+    # plan and position, and its line would sit in CloudWatch.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+    mem_limit: 256m
+    # The regulations and the AIM the mock oral quotes, fetched once into
+    # data/raw/references and kept across deploys.
+    volumes:
+      - /srv/wingtip/data:/workspace/data
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      PLANNER_URL: http://planner:8000
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  # The weather the planner reads, fetched on a schedule into the weather
+  # store on the planner's data folder (services/weather, #535): no
+  # pilot's request waits on aviationweather.gov or NOMADS.
+  weather:
+    <<: *restart
+    image: ${IMAGE_REGISTRY}/weather:${IMAGE_TAG:-latest}
+    volumes:
+      - /srv/wingtip/data:/workspace/data
+    environment:
+      TZ: America/Chicago
+    # Its working set is Python, the engine and a GLMP issue's two grids
+    # at their largest while it reads them: a modest share of the 4 GB
+    # server, held to it so a bad day at NOAA cannot take the planner's.
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
   gateway:
     <<: *restart
     image: ${IMAGE_REGISTRY}/gateway:${IMAGE_TAG:-latest}
@@ -132,6 +201,8 @@ services:
         condition: service_healthy
       planner:
         condition: service_healthy
+      assistant:
+        condition: service_started
     healthcheck:
       test:
         - CMD
@@ -150,6 +221,7 @@ services:
       SPRING_DATASOURCE_USERNAME: wingtip
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       PLANNER_SERVICE_URL: http://planner:8000
+      ASSISTANT_SERVICE_URL: http://assistant:8000
       # The gateway is reached only through Caddy over the server's own
       # network: plain HTTP inside, TLS at Caddy and at CloudFront.
       APP_PUBLIC_BASE_URL: https://${PUBLIC_HOST}
@@ -179,6 +251,26 @@ services:
       # "oauth" turns on Sign in with Google and Apple (OAuthClientsConfig).
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
       JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=40 -XX:TieredStopAtLevel=1
+
+  # The charts job's overlay tiles (services/jobs/charts): one-off, behind
+  # the `jobs` profile so `up` never starts it; cron runs
+  #   docker compose -f infra/docker-compose.prod.yml run --rm charts-overlays
+  # every hour, which builds the archive only where the planner's cycle
+  # pack has none. The same data folder as the planner, which serves it.
+  charts-overlays:
+    profiles: ["jobs"]
+    image: ${IMAGE_REGISTRY}/charts:${IMAGE_TAG:-latest}
+    command: ["overlays"]
+    volumes:
+      - /srv/wingtip/data:/workspace/data
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_REGION:-}
+        awslogs-group: ${LOG_GROUP:-}
+        mode: non-blocking
+        max-buffer-size: 4m
+        tag: "{{.Name}}"
 
 volumes:
   caddy-data:

@@ -1,6 +1,6 @@
 # wingtip's own runtime dependencies: the one place they are listed, and the
 # one place each is pinned. Every image that runs wingtip installs this file
-# (planner, pipeline-processing, pipeline-training, ml), and so
+# (planner, the retrain and charts jobs, ml), and so
 # does the test suite, each through a `-r` line in its own requirements
 # file -- which then lists only what that image needs on top.
 #

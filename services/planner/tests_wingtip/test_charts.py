@@ -6,6 +6,7 @@ import io
 import json
 import math
 import re
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -627,7 +628,6 @@ def test_published_pointer_decides_the_served_cycle_in_the_cloud(tmp_path, monke
     monkeypatch.setattr(charts.requests, "get", lambda url, **kw: calls.append(url) or Response())
     assert charts.serving_cycle() == "09-03-2026"
     assert calls == ["https://d123.cloudfront.net/tiles/serving.json"]
-    assert charts.tiles_base_url() == "https://d123.cloudfront.net/tiles"
 
     # Unreachable, the planner falls back to its own disk and the FAA's cycle.
     monkeypatch.setattr(charts, "_serving_cache", {"value": None, "at": 0.0})
@@ -635,32 +635,46 @@ def test_published_pointer_decides_the_served_cycle_in_the_cloud(tmp_path, monke
     assert charts.serving_cycle() == "10-29-2026"
 
 
-def test_publish_uploads_every_tile_once_and_points_serving_at_the_cycle(tmp_path, monkeypatch):
+class _Bucket:
+    """S3 as publish uses it: put_object for the pointer, upload_file for
+    an archive."""
+
+    def __init__(self):
+        self.objects = {}
+
+    def put_object(self, Bucket, Key, Body, ContentType, CacheControl):
+        self.objects[(Bucket, Key)] = (Body, ContentType, CacheControl)
+
+    def upload_file(self, Filename, Bucket, Key, ExtraArgs):
+        self.objects[(Bucket, Key)] = (Path(Filename).read_bytes(), ExtraArgs["ContentType"], ExtraArgs["CacheControl"])
+
+
+def test_publish_uploads_each_archive_once_and_points_serving_at_them(tmp_path, monkeypatch):
     monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(charts, "TILE_SCALES", (1, 2))
     root = tmp_path / "tiles" / "09-03-2026"
-    for key in ("sec/8/65/94.png", "sec/8/65/95.png", "tac/11/522/757.png"):
+    for key in ("sec/8/65/94.png", "sec/8/65/95.png", "sec/8/65/94@2x.png", "tac/11/522/757.png"):
         (root / key).parent.mkdir(parents=True, exist_ok=True)
         (root / key).write_bytes(b"\x89PNG" + key.encode())
-    charts._write_pyramid_status("09-03-2026", {"kind": "sec", "zooms": [8], "started_at": "t", "finished_at": "t",
-                                                "rasters_total": 1, "rasters_done": 1, "tiles_written": 2, "current": None})
+    charts._write_pyramid_status("09-03-2026", {"kind": "sec", "zooms": [8], "sheets": sorted(charts.COVERAGE["sec"]),
+                                                "finished_at": "t", "tiles": 3, "current_pass": None, "scales": [1, 2]})
 
-    class Client:
-        def __init__(self):
-            self.objects = {}
-
-        def put_object(self, Bucket, Key, Body, ContentType, CacheControl):
-            self.objects[(Bucket, Key)] = (Body, ContentType, CacheControl)
-
-    client = Client()
-    assert charts.publish("09-03-2026", "charts-bucket", prefix="tiles", workers=2, client=client) == 3
-    assert client.objects[("charts-bucket", "tiles/09-03-2026/sec/8/65/94.png")][1:] == \
-        ("image/png", "public, max-age=2419200, immutable")
+    client = _Bucket()
+    assert charts.publish("09-03-2026", "charts-bucket", prefix="tiles", client=client) == 2
+    # The finished sectional packed first; the TAC, its pass not finished, stays loose and unpublished.
+    assert not (root / "sec" / "8").exists() and (root / "tac/11/522/757.png").exists()
     pointer = json.loads(client.objects[("charts-bucket", "tiles/serving.json")][0])
-    assert pointer["cycle"] == "09-03-2026" and pointer["kinds"] == {"sec": 2}
+    assert pointer["cycle"] == "09-03-2026" and pointer["kinds"] == {"sec": 3} and pointer["revision"] == 0
+    names = pointer["archives"]["sec"]
+    assert set(names) == {"1", "2"} and names["1"].startswith("sec-") and names["2"].startswith("sec@2x-")
+    body, kind, cache = client.objects[("charts-bucket", f"tiles/09-03-2026/{names['1']}")]
+    assert (kind, cache) == ("application/vnd.pmtiles", "public, max-age=2419200, immutable")
+    archive = charts.tile_archive.Archive(lambda offset, length: body[offset:offset + length])
+    assert archive.get(8, 65, 95) == b"\x89PNGsec/8/65/95.png" and archive.get(8, 64, 95) is None
 
     # A second run uploads nothing new but refreshes the pointer.
     before = len(client.objects)
-    assert charts.publish("09-03-2026", "charts-bucket", prefix="tiles", workers=2, client=client) == 0
+    assert charts.publish("09-03-2026", "charts-bucket", prefix="tiles", client=client) == 0
     assert len(client.objects) == before
 
 
@@ -911,7 +925,6 @@ def test_what_was_taken_out_is_recorded_and_unmask_renders_its_tiles_again(tmp_p
     tile = charts._tile_path(charts.SECTIONAL, cycle, x, y, 8)
     tile.parent.mkdir(parents=True)
     tile.write_bytes(b"old")
-    (tile.parent.parent.parent.parent / charts._PUBLISHED).write_text(json.dumps(["sec/8/64/94.png", "sec/8/1/1.png"]))
     monkeypatch.setattr(charts, "rasters_covering",
                         lambda kind, bbox, cycle=None: ([charts._load_ready(directory, kind, "Sheet", cycle).rasters[0]], True))
 
@@ -921,7 +934,6 @@ def test_what_was_taken_out_is_recorded_and_unmask_renders_its_tiles_again(tmp_p
     assert charts._load_ready(directory, charts.SECTIONAL, "Sheet", cycle).rasters[0].masked_lines == tuple(changed["sec"])
     assert tile.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"      # rendered again from the cleaned sheet
     assert charts.tiles_revision(cycle) == 1
-    assert json.loads((tmp_path / "tiles" / cycle / charts._PUBLISHED).read_text()) == ["sec/8/1/1.png"]
 
     # Looked at once, the sheet is not looked at again, and nothing else is rendered.
     assert charts.unmask_prepared(cycle, workers=0) == {}
@@ -938,12 +950,14 @@ def test_a_tile_is_not_rendered_again_without_every_sheet_it_needs(tmp_path, mon
     monkeypatch.setattr(charts, "rasters_covering", lambda kind, bbox, cycle=None: ([raster], False))
     monkeypatch.setattr(charts, "render_tile", lambda *a: pytest.fail("rendered without every sheet"))
 
-    assert charts._rerender_tile(("sec", cycle, x, y, 8, 1, str(tmp_path / "tiles"))) is False
+    assert charts._rerender_tile(("sec", cycle, x, y, 8, 1)) is False
+    assert charts.rerender_tiles(charts.SECTIONAL, [raster.face], cycle, workers=0) == 0
     assert tile.read_bytes() == b"old"
 
     # Nothing covers it at all: the old tile goes, as before.
     monkeypatch.setattr(charts, "rasters_covering", lambda kind, bbox, cycle=None: ([], True))
-    assert charts._rerender_tile(("sec", cycle, x, y, 8, 1, str(tmp_path / "tiles"))) is False
+    assert charts._rerender_tile(("sec", cycle, x, y, 8, 1)) is None
+    charts.rerender_tiles(charts.SECTIONAL, [raster.face], cycle, workers=0)
     assert not tile.exists()
 
 
@@ -1113,66 +1127,18 @@ def test_a_refresh_is_running_exactly_while_another_process_holds_the_lock(tmp_p
     assert not charts.refresh_running()   # ended, however it ended: the kernel let go
 
 
-def test_a_refresh_or_pyramid_finding_the_lock_held_leaves_it_to_the_running_one(tmp_path, monkeypatch):
+def test_the_revision_is_written_whole(tmp_path, monkeypatch):
+    """Written in place, a run killed mid-write left a file that read as
+    no revision at all."""
     monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
-    monkeypatch.setattr(charts, "refresh", lambda **kw: pytest.fail("refreshed beside a running one"))
-    monkeypatch.setattr(charts, "render_pyramid", lambda *a, **kw: pytest.fail("rendered beside a running one"))
-    child = _hold_in_another_process(tmp_path / "tiles", 30)
-    try:
-        assert charts._main(["refresh", "--bucket", ""]) == 0
-        assert charts._main(["pyramid", "--kind", "sec"]) == 1
-    finally:
-        child.kill()
-        child.wait()
-
-
-def test_unmask_waits_for_a_running_refresh(tmp_path, monkeypatch):
-    """It re-renders tiles and bumps the revision: interleaved with a
-    pyramid run, the pyramid could write the old pixels back after it."""
-    import time
-
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
-    ran = []
-    monkeypatch.setattr(charts, "unmask_prepared", lambda cycle, workers, again: ran.append(time.monotonic()) or {})
-    child = _hold_in_another_process(tmp_path / "tiles", 1.5)
-    started = time.monotonic()
-    assert charts._main(["unmask", "--cycle", "09-03-2026"]) == 0
-    child.wait()
-    assert ran and ran[0] - started >= 1.0
-
-
-def test_publish_waits_for_a_running_refresh(tmp_path, monkeypatch):
-    """Beside an unmask, a publish that read the ledger first wrote it
-    back after the unmask had struck its re-rendered tiles off, and they
-    were never uploaded again."""
-    import time
-
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
-    ran = []
-    monkeypatch.setattr(charts, "publish", lambda cycle, bucket: ran.append(time.monotonic()) or 0)
-    child = _hold_in_another_process(tmp_path / "tiles", 1.5)
-    started = time.monotonic()
-    assert charts._main(["publish", "--cycle", "09-03-2026", "--bucket", "charts-bucket"]) == 0
-    child.wait()
-    assert ran and ran[0] - started >= 1.0
-
-
-def test_the_revision_and_the_ledger_are_written_whole(tmp_path, monkeypatch):
-    """Written in place, a run killed mid-write left a ledger that read
-    as empty -- and the next publish uploaded the whole cycle again."""
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
-    root = tmp_path / "tiles" / "09-03-2026"
-    root.mkdir(parents=True)
-    (root / charts._PUBLISHED).write_text(json.dumps(["sec/8/1/1.png", "tac/9/2/2.png"]))
     written = []
     real_write = charts._write_atomically
     monkeypatch.setattr(charts, "_write_atomically", lambda path, data: written.append(path.name) or real_write(path, data))
 
-    charts._bump_revision("09-03-2026", strike=lambda key: key.startswith("sec/"))
+    charts._bump_revision("09-03-2026")
 
-    assert sorted(written) == sorted([charts._PUBLISHED, charts._TILES_REVISION])
+    assert written == [charts._TILES_REVISION]
     assert charts.tiles_revision("09-03-2026") == 1
-    assert json.loads((root / charts._PUBLISHED).read_text()) == ["tac/9/2/2.png"]
 
 
 def _sheet(tmp_path, name: str, box: tuple, value: int):
@@ -1355,7 +1321,6 @@ def test_a_new_renderer_draws_every_tile_again_and_the_browsers_are_told(two_she
     cycle = "10-29-2026"
     sheets = [_sheet(tmp_path, "Left", LEFT, 1), _sheet(tmp_path, "Right", RIGHT, 2)]
     charts.render_pyramid(charts.SECTIONAL, zooms=(8,), workers=0, charts=sheets, cycle=cycle)
-    (tmp_path / "tiles" / cycle / charts._PUBLISHED).write_text(json.dumps(["sec/8/65/94.png", "tac/11/1/1.png"]))
     _backdate(tmp_path / "tiles")
     assert charts.pyramid_due(cycle, ("sec",)) == ()
 
@@ -1375,7 +1340,6 @@ def test_a_new_renderer_draws_every_tile_again_and_the_browsers_are_told(two_she
     record = charts.pyramid_status(cycle)["sec"]
     assert record["renderer"] == charts.RENDERER_VERSION and record["tiles"] == 16
     assert charts.tiles_revision(cycle) == 1
-    assert json.loads((tmp_path / "tiles" / cycle / charts._PUBLISHED).read_text()) == ["tac/11/1/1.png"]
     assert charts.pyramid_due(cycle, ("sec",)) == ()
     assert charts.render_pyramid(charts.SECTIONAL, zooms=(8,), workers=0, charts=sheets, cycle=cycle) == 0
 
@@ -1585,15 +1549,9 @@ def test_the_published_pointer_says_which_scales_the_map_may_ask_for(tmp_path, m
     charts._write_pyramid_status("12-24-2026", {"kind": "sec", "zooms": [8], "sheets": [], "finished_at": "t",
                                                 "tiles": 0, "current_pass": None, "scales": [1, 2]})
 
-    class Client:
-        objects: dict = {}
-
-        def put_object(self, Bucket, Key, Body, ContentType, CacheControl):
-            self.objects[Key] = Body
-
-    client = Client()
-    charts.publish("12-24-2026", "bucket", prefix="tiles", workers=1, client=client)
-    assert json.loads(client.objects["tiles/serving.json"])["scales"] == {"sec": [1, 2]}
+    client = _Bucket()
+    charts.publish("12-24-2026", "bucket", prefix="tiles", client=client)
+    assert json.loads(client.objects[("bucket", "tiles/serving.json")][0])["scales"] == {"sec": [1, 2]}
 
 
 def test_a_staged_pass_writes_where_it_was_told_from_its_worker_processes(two_sheet_country, monkeypatch):

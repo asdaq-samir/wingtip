@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import logging
 import math
-import threading
 
 from ..config import get_settings
 from .common import STALE_S, TrafficUnavailable, _LOCK, _NM_PER_DEG, _aircraft, _clock, _sleep, _wall
 from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced
 from .adsbx import ADSBX_SOURCE, _adsbx
 from .adsbfi import ADSBFI_MIN_GAP_S, ADSBFI_SOURCE, _ADSBFI, _adsbfi
-from .recorded import _FOLLOWED, _followed, _record, _recorded
+from .recorded import _record, _recorded, followed
 from .radar import _heard_elsewhere_now
 
 log = logging.getLogger(__name__)
@@ -53,11 +52,8 @@ def follow_round() -> int:
     radar records it, heard_elsewhere) asked of adsb.fi by its address,
     a request a second at most, and what it hears recorded. How many
     were heard."""
-    _followed("")  # the followed read from their files, the first time
-    with _LOCK:
-        followed = sorted(_FOLLOWED)
     heard = 0
-    for hex_id in followed:
+    for hex_id in sorted(followed()):
         if _heard_elsewhere_now(hex_id) is not None:
             continue
         # adsb.fi's pace, a little over a second, between asks.
@@ -74,23 +70,19 @@ def follow_round() -> int:
     return heard
 
 
-def start_following() -> None:
-    """The followed airplanes asked for every FOLLOW_EVERY_S on a thread
-    of their own, for as long as the planner runs; nothing where adsb.fi
-    is off (ADSBFI_OPEN_DATA=0)."""
+def follow_forever(stop=None) -> None:
+    """The followed airplanes asked for every FOLLOW_EVERY_S for as long as
+    the caller runs (ingest's adsb thread; `stop`, an Event, ends it);
+    nothing where adsb.fi is off (ADSBFI_OPEN_DATA=0)."""
     if not get_settings().adsbfi_open_data:
         return
-
-    def run() -> None:
-        while True:
-            started = _clock()
-            try:
-                follow_round()
-            except Exception:  # noqa: BLE001 -- a bad round is not the end of following
-                log.exception("Following the airplanes failed this round")
-            _sleep(max(1.0, FOLLOW_EVERY_S - (_clock() - started)))
-
-    threading.Thread(target=run, name="traffic-follow", daemon=True).start()
+    while stop is None or not stop.is_set():
+        started = _clock()
+        try:
+            follow_round()
+        except Exception:  # noqa: BLE001 -- a bad round is not the end of following
+            log.exception("Following the airplanes failed this round")
+        _sleep(max(1.0, FOLLOW_EVERY_S - (_clock() - started)))
 
 
 def _watch(hex_id: str) -> None:
@@ -99,7 +91,7 @@ def _watch(hex_id: str) -> None:
     Exchange where neither has it or answers; what is heard in the air
     recorded, and whose it was. Quiet where none may be asked or answers:
     the next ask tries again."""
-    # The FAA's radar has it now (app.swim): recorded from there, nothing
+    # The FAA's radar has it now (ingest): recorded from there, nothing
     # asked of adsb.lol or spent of ADS-B Exchange.
     if _heard_elsewhere_now(hex_id) is not None:
         return

@@ -2813,34 +2813,6 @@
         "title": "AltitudeStep",
         "type": "object"
       },
-      "AssistantAsk": {
-        "properties": {
-          "context": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Context"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "messages": {
-            "items": {
-              "$ref": "#/components/schemas/Turn"
-            },
-            "maxItems": 40,
-            "minItems": 1,
-            "title": "Messages",
-            "type": "array"
-          }
-        },
-        "required": [
-          "messages"
-        ],
-        "title": "AssistantAsk",
-        "type": "object"
-      },
       "Briefing": {
         "description": "`weather_unavailable` names which of hazards/forecast/metars/tfrs\ncome from a call that failed rather than one that found nothing: an\nempty `hazards` must not read the same as \"no hazards reported\".",
         "properties": {
@@ -3062,52 +3034,6 @@
           "now"
         ],
         "title": "ChangesAsk",
-        "type": "object"
-      },
-      "ChangesWords": {
-        "description": "Whether anything changed; with nothing changed there are no words.",
-        "properties": {
-          "changed": {
-            "title": "Changed",
-            "type": "boolean"
-          },
-          "model": {
-            "title": "Model",
-            "type": "string"
-          },
-          "sentences": {
-            "items": {
-              "$ref": "#/components/schemas/Sentence"
-            },
-            "title": "Sentences",
-            "type": "array"
-          },
-          "sources": {
-            "items": {
-              "$ref": "#/components/schemas/Source"
-            },
-            "title": "Sources",
-            "type": "array"
-          },
-          "unavailable": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unavailable"
-          }
-        },
-        "required": [
-          "sentences",
-          "sources",
-          "model",
-          "changed"
-        ],
-        "title": "ChangesWords",
         "type": "object"
       },
       "ChartInfo": {
@@ -3539,31 +3465,6 @@
         ],
         "title": "CheckpointNote",
         "type": "object"
-      },
-      "CheckpointNoteMessage": {
-        "discriminator": {
-          "mapping": {
-            "checkpoint": "#/components/schemas/NoteCheckpoint",
-            "done": "#/components/schemas/NoteDone",
-            "error": "#/components/schemas/NoteError",
-            "start": "#/components/schemas/NoteStart"
-          },
-          "propertyName": "type"
-        },
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/NoteStart"
-          },
-          {
-            "$ref": "#/components/schemas/NoteCheckpoint"
-          },
-          {
-            "$ref": "#/components/schemas/NoteError"
-          },
-          {
-            "$ref": "#/components/schemas/NoteDone"
-          }
-        ]
       },
       "CheckpointNoteRequest": {
         "properties": {
@@ -4078,90 +3979,6 @@
           "words"
         ],
         "title": "ClearanceWords",
-        "type": "object"
-      },
-      "Context": {
-        "description": "The pilot's plan, position and record as the app has them.",
-        "properties": {
-          "aircraft": {
-            "default": "",
-            "title": "Aircraft",
-            "type": "string"
-          },
-          "altitude_ft": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Altitude Ft"
-          },
-          "dep": {
-            "default": "",
-            "title": "Dep",
-            "type": "string"
-          },
-          "depart": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Depart"
-          },
-          "dest": {
-            "default": "",
-            "title": "Dest",
-            "type": "string"
-          },
-          "own_ship": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/OwnShip"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "pilot": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pilot"
-          },
-          "rules": {
-            "default": "vfr",
-            "enum": [
-              "vfr",
-              "ifr"
-            ],
-            "title": "Rules",
-            "type": "string"
-          },
-          "stops": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Stops",
-            "type": "array"
-          }
-        },
-        "title": "Context",
         "type": "object"
       },
       "CorridorStatus": {
@@ -5079,57 +4896,6 @@
           "pattern_ft"
         ],
         "title": "DebriefTolerances",
-        "type": "object"
-      },
-      "DebriefWordsAnswer": {
-        "properties": {
-          "instructor_note": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructor Note"
-          },
-          "model": {
-            "title": "Model",
-            "type": "string"
-          },
-          "sentences": {
-            "items": {
-              "$ref": "#/components/schemas/Sentence"
-            },
-            "title": "Sentences",
-            "type": "array"
-          },
-          "sources": {
-            "items": {
-              "$ref": "#/components/schemas/Source"
-            },
-            "title": "Sources",
-            "type": "array"
-          },
-          "unavailable": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unavailable"
-          }
-        },
-        "required": [
-          "sentences",
-          "sources",
-          "model"
-        ],
-        "title": "DebriefWordsAnswer",
         "type": "object"
       },
       "DebriefWordsAsk": {
@@ -9081,258 +8847,6 @@
         "title": "ModelledWeather",
         "type": "object"
       },
-      "NarrativeDelta": {
-        "description": "A piece of the briefing as Claude writes it.",
-        "properties": {
-          "text": {
-            "title": "Text",
-            "type": "string"
-          },
-          "type": {
-            "const": "delta",
-            "default": "delta",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "text"
-        ],
-        "title": "NarrativeDelta",
-        "type": "object"
-      },
-      "NarrativeDone": {
-        "description": "The whole briefing, once it is written.",
-        "properties": {
-          "briefing": {
-            "title": "Briefing",
-            "type": "string"
-          },
-          "type": {
-            "const": "done",
-            "default": "done",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "briefing"
-        ],
-        "title": "NarrativeDone",
-        "type": "object"
-      },
-      "NarrativeError": {
-        "description": "Why there is no briefing, in words a pilot reads. It may come after\ndeltas: a failure once the first line is out cannot change the status\nany more.",
-        "properties": {
-          "detail": {
-            "title": "Detail",
-            "type": "string"
-          },
-          "type": {
-            "const": "error",
-            "default": "error",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "detail"
-        ],
-        "title": "NarrativeError",
-        "type": "object"
-      },
-      "NarrativeLeg": {
-        "additionalProperties": true,
-        "description": "What the prompt reads from one leg, checked before a word of it is\nsent. The rest of a nav-log leg (its wind, its true airspeed and\ndensity altitude, its fixes) is kept and read where the prompt has a\nuse for it. A flyable leg (one with an ETE) needs its heading, ground\nspeed and fuel; an unflyable one needs none of them.",
-        "properties": {
-          "altitude_ft": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Altitude Ft"
-          },
-          "climb_min": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Climb Min"
-          },
-          "distance_nm": {
-            "title": "Distance Nm",
-            "type": "number"
-          },
-          "ete_min": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ete Min"
-          },
-          "from": {
-            "maxLength": 80,
-            "title": "From",
-            "type": "string"
-          },
-          "fuel_gal": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fuel Gal"
-          },
-          "groundspeed_kt": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Groundspeed Kt"
-          },
-          "magnetic_heading_deg": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Magnetic Heading Deg"
-          },
-          "to": {
-            "maxLength": 80,
-            "title": "To",
-            "type": "string"
-          }
-        },
-        "required": [
-          "from",
-          "to",
-          "distance_nm"
-        ],
-        "title": "NarrativeLeg",
-        "type": "object"
-      },
-      "NarrativeMessage": {
-        "discriminator": {
-          "mapping": {
-            "delta": "#/components/schemas/NarrativeDelta",
-            "done": "#/components/schemas/NarrativeDone",
-            "error": "#/components/schemas/NarrativeError"
-          },
-          "propertyName": "type"
-        },
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/NarrativeDelta"
-          },
-          {
-            "$ref": "#/components/schemas/NarrativeDone"
-          },
-          {
-            "$ref": "#/components/schemas/NarrativeError"
-          }
-        ]
-      },
-      "NarrativeRequest": {
-        "description": "The nav log the Brief shows, to be told in words rather than\nrecomputed. `aircraft_name` omitted means the planner's own default\nairplane. `flown`, when sent, says whose altitudes the legs fly:\n\"custom\" for the pilot's own, else the planner's plan of that name.\n`altitude_selection` is the planner's reasoning for the altitude\n(the nav log's own), read field by field below.",
-        "properties": {
-          "aircraft_name": {
-            "anyOf": [
-              {
-                "maxLength": 40,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Aircraft Name"
-          },
-          "altitude_ft": {
-            "title": "Altitude Ft",
-            "type": "number"
-          },
-          "altitude_selection": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Altitude Selection"
-          },
-          "departure_ident": {
-            "maxLength": 10,
-            "title": "Departure Ident",
-            "type": "string"
-          },
-          "destination_ident": {
-            "maxLength": 10,
-            "title": "Destination Ident",
-            "type": "string"
-          },
-          "flown": {
-            "anyOf": [
-              {
-                "enum": [
-                  "custom",
-                  "lowest",
-                  "highest",
-                  "fastest",
-                  "economical"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flown"
-          },
-          "legs": {
-            "items": {
-              "$ref": "#/components/schemas/NarrativeLeg"
-            },
-            "maxItems": 100,
-            "minItems": 1,
-            "title": "Legs",
-            "type": "array"
-          }
-        },
-        "required": [
-          "departure_ident",
-          "destination_ident",
-          "altitude_ft",
-          "legs"
-        ],
-        "title": "NarrativeRequest",
-        "type": "object"
-      },
       "NavLogAltitude": {
         "description": "Which altitudes the legs that follow fly. `flown` is the planner's\nplan of that name, or \"custom\" for a pilot's own altitude; None when\nthe winds the legs need could not be read, so no leg follows -- the\nstream's next line is the error. `altitude_ft` is the first leg's (a\nplan may step), and None exactly when `flown` is. `options` are the\nfour plans, offered beside a pilot's own as well; empty only when the\nwinds failed before they could be made.\n\nIt used to say all of that with `choice: null` and an empty `options`,\nwhich a winds outage produced too: the page showed \"0 ft \u00b7 yours\",\nwith Custom pressed, for an altitude nobody typed.",
         "properties": {
@@ -10052,91 +9566,39 @@
         "title": "NearestAirports",
         "type": "object"
       },
-      "NotamWords": {
-        "description": "The NOTAM words, with since when the planner has heard the NOTAM\nfeed (ISO 8601 UTC; None where it has not yet): until the feed's\nfirst load of what was already in force, the list is not the whole\nlist for a field. `unchecked` names \"tfrs\" where tfr.faa.gov did not\nanswer, so an empty list does not read as no TFRs.",
+      "NoteSeeded": {
+        "description": "A generated note offered as the shared one: kept (`written`), or\nthe shared one saved meanwhile, which stays (`description` is it).",
         "properties": {
-          "model": {
-            "title": "Model",
+          "description": {
+            "title": "Description",
             "type": "string"
           },
-          "sentences": {
-            "items": {
-              "$ref": "#/components/schemas/Sentence"
-            },
-            "title": "Sentences",
-            "type": "array"
-          },
-          "since": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Since"
-          },
-          "sources": {
-            "items": {
-              "$ref": "#/components/schemas/Source"
-            },
-            "title": "Sources",
-            "type": "array"
-          },
-          "unavailable": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unavailable"
-          },
-          "unchecked": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Unchecked",
-            "type": "array"
+          "written": {
+            "title": "Written",
+            "type": "boolean"
           }
         },
         "required": [
-          "sentences",
-          "sources",
-          "model"
+          "description",
+          "written"
         ],
-        "title": "NotamWords",
+        "title": "NoteSeeded",
         "type": "object"
       },
-      "NoteCheckpoint": {
-        "description": "`source` says where the text came from: \"saved\" is a pilot's own\nearlier edit, \"generated\" a fresh model call, \"error\" that call\nfailing for this checkpoint alone (`description` is None then).",
+      "NoteToWrite": {
+        "description": "A route's checkpoint as the assistant writes its note\n(POST /api/checkpoint-notes/pending): where it is, what it is, the\nhop its note is kept under, and the note already kept for it -- the\npilot's own, else the shared one -- or None, for the assistant to\nwrite and seed.",
         "properties": {
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
+          "along_track_nm": {
+            "title": "Along Track Nm",
+            "type": "number"
           },
-          "detail": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Detail"
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "hop_key": {
+            "title": "Hop Key",
+            "type": "string"
           },
           "id": {
             "title": "Id",
@@ -10150,81 +9612,60 @@
             "title": "Lon",
             "type": "number"
           },
-          "source": {
-            "enum": [
-              "generated",
-              "saved",
-              "error"
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Source",
-            "type": "string"
+            "title": "Name"
           },
-          "type": {
-            "const": "checkpoint",
-            "default": "checkpoint",
-            "title": "Type",
-            "type": "string"
+          "saved": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Saved"
           }
         },
         "required": [
           "lat",
           "lon",
           "id",
-          "description",
-          "source"
+          "category",
+          "along_track_nm",
+          "hop_key"
         ],
-        "title": "NoteCheckpoint",
+        "title": "NoteToWrite",
         "type": "object"
       },
-      "NoteDone": {
+      "NotesToWrite": {
+        "description": "A route's checkpoints in along-track order, for their notes.",
         "properties": {
-          "type": {
-            "const": "done",
-            "default": "done",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "title": "NoteDone",
-        "type": "object"
-      },
-      "NoteError": {
-        "description": "A failure that applies to every checkpoint the same way (a bad\nkey, an exhausted rate limit), sent once.",
-        "properties": {
-          "detail": {
-            "title": "Detail",
-            "type": "string"
+          "checkpoints": {
+            "items": {
+              "$ref": "#/components/schemas/NoteToWrite"
+            },
+            "title": "Checkpoints",
+            "type": "array"
           },
-          "type": {
-            "const": "error",
-            "default": "error",
-            "title": "Type",
+          "departure_ident": {
+            "title": "Departure Ident",
             "type": "string"
           }
         },
         "required": [
-          "detail"
+          "departure_ident",
+          "checkpoints"
         ],
-        "title": "NoteError",
-        "type": "object"
-      },
-      "NoteStart": {
-        "properties": {
-          "count": {
-            "title": "Count",
-            "type": "integer"
-          },
-          "type": {
-            "const": "start",
-            "default": "start",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "count"
-        ],
-        "title": "NoteStart",
+        "title": "NotesToWrite",
         "type": "object"
       },
       "OnRoute": {
@@ -10381,264 +9822,6 @@
         "title": "OpenSquawk",
         "type": "object"
       },
-      "OralCitation": {
-        "description": "A passage an answer rests on, quoted word for word (checked), with\nits source's title and where to read it.",
-        "properties": {
-          "quote": {
-            "title": "Quote",
-            "type": "string"
-          },
-          "source": {
-            "title": "Source",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "url": {
-            "title": "Url",
-            "type": "string"
-          }
-        },
-        "required": [
-          "source",
-          "title",
-          "url",
-          "quote"
-        ],
-        "title": "OralCitation",
-        "type": "object"
-      },
-      "OralEditions": {
-        "description": "The editions the sources are: the eCFR's issue date and the day the\nAIM was read.",
-        "properties": {
-          "aim_fetched": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Aim Fetched"
-          },
-          "cfr_issued": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cfr Issued"
-          }
-        },
-        "title": "OralEditions",
-        "type": "object"
-      },
-      "OralFocus": {
-        "description": "An ACS element the mock oral examines: its code and its words.",
-        "properties": {
-          "code": {
-            "pattern": "^[A-Z]{2}\\.[IVX]+\\.[A-Z]\\.[KRS]\\d+[a-z]?$",
-            "title": "Code",
-            "type": "string"
-          },
-          "text": {
-            "maxLength": 400,
-            "title": "Text",
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "text"
-        ],
-        "title": "OralFocus",
-        "type": "object"
-      },
-      "OralGrade": {
-        "description": "The student's answer graded: satisfactory, partial or unsatisfactory,\nin a few sentences, the key points it missed, and the citations.",
-        "properties": {
-          "citations": {
-            "items": {
-              "$ref": "#/components/schemas/OralCitation"
-            },
-            "title": "Citations",
-            "type": "array"
-          },
-          "feedback": {
-            "title": "Feedback",
-            "type": "string"
-          },
-          "missed": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Missed",
-            "type": "array"
-          },
-          "verdict": {
-            "enum": [
-              "satisfactory",
-              "partial",
-              "unsatisfactory"
-            ],
-            "title": "Verdict",
-            "type": "string"
-          }
-        },
-        "required": [
-          "verdict",
-          "feedback",
-          "missed",
-          "citations"
-        ],
-        "title": "OralGrade",
-        "type": "object"
-      },
-      "OralGradeRequest": {
-        "properties": {
-          "answer": {
-            "maxLength": 4000,
-            "minLength": 1,
-            "title": "Answer",
-            "type": "string"
-          },
-          "key_points": {
-            "default": [],
-            "items": {
-              "maxLength": 300,
-              "type": "string"
-            },
-            "maxItems": 12,
-            "title": "Key Points",
-            "type": "array"
-          },
-          "model_answer": {
-            "maxLength": 4000,
-            "title": "Model Answer",
-            "type": "string"
-          },
-          "question": {
-            "maxLength": 1000,
-            "title": "Question",
-            "type": "string"
-          },
-          "source_ids": {
-            "items": {
-              "maxLength": 40,
-              "type": "string"
-            },
-            "maxItems": 12,
-            "title": "Source Ids",
-            "type": "array"
-          }
-        },
-        "required": [
-          "question",
-          "model_answer",
-          "source_ids",
-          "answer"
-        ],
-        "title": "OralGradeRequest",
-        "type": "object"
-      },
-      "OralQuestion": {
-        "description": "One examiner's question (app.oral), its answer and key points, the\ncitations that survived the check, and the sources to grade from.\n`unsupported` where none did.",
-        "properties": {
-          "acs_code": {
-            "title": "Acs Code",
-            "type": "string"
-          },
-          "citations": {
-            "items": {
-              "$ref": "#/components/schemas/OralCitation"
-            },
-            "title": "Citations",
-            "type": "array"
-          },
-          "editions": {
-            "$ref": "#/components/schemas/OralEditions"
-          },
-          "key_points": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Key Points",
-            "type": "array"
-          },
-          "model_answer": {
-            "title": "Model Answer",
-            "type": "string"
-          },
-          "question": {
-            "title": "Question",
-            "type": "string"
-          },
-          "source_ids": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Source Ids",
-            "type": "array"
-          },
-          "unsupported": {
-            "title": "Unsupported",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "question",
-          "acs_code",
-          "model_answer",
-          "key_points",
-          "citations",
-          "source_ids",
-          "unsupported",
-          "editions"
-        ],
-        "title": "OralQuestion",
-        "type": "object"
-      },
-      "OralQuestionRequest": {
-        "description": "The student's flight in a few lines (the page's own summary of its\nplan and briefing), the ACS elements to examine, and the questions\nalready asked.",
-        "properties": {
-          "asked": {
-            "default": [],
-            "items": {
-              "maxLength": 600,
-              "type": "string"
-            },
-            "maxItems": 20,
-            "title": "Asked",
-            "type": "array"
-          },
-          "focus": {
-            "items": {
-              "$ref": "#/components/schemas/OralFocus"
-            },
-            "maxItems": 12,
-            "minItems": 1,
-            "title": "Focus",
-            "type": "array"
-          },
-          "plan": {
-            "maxLength": 6000,
-            "title": "Plan",
-            "type": "string"
-          }
-        },
-        "required": [
-          "plan",
-          "focus"
-        ],
-        "title": "OralQuestionRequest",
-        "type": "object"
-      },
       "OverlayTiles": {
         "description": "The map's FAA overlays as vector tiles (wingtip.vector_tiles): one\nPMTiles archive of the cycle, fetched in byte ranges at\n/api/overlay-tiles/{name}.pmtiles; its zooms, and how far its lines\nmay stray from the FAA's (metres on the ground).",
         "properties": {
@@ -10748,61 +9931,6 @@
           }
         },
         "title": "OwnAirplane",
-        "type": "object"
-      },
-      "OwnShip": {
-        "properties": {
-          "altitude_ft": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Altitude Ft"
-          },
-          "groundspeed_kt": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Groundspeed Kt"
-          },
-          "lat": {
-            "maximum": 90.0,
-            "minimum": -90.0,
-            "title": "Lat",
-            "type": "number"
-          },
-          "lon": {
-            "maximum": 180.0,
-            "minimum": -180.0,
-            "title": "Lon",
-            "type": "number"
-          },
-          "track_deg": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Track Deg"
-          }
-        },
-        "required": [
-          "lat",
-          "lon"
-        ],
-        "title": "OwnShip",
         "type": "object"
       },
       "PastFlight": {
@@ -12768,7 +11896,7 @@
         "type": "object"
       },
       "PyramidPass": {
-        "description": "A pass of `python -m wingtip.charts pyramid` under way: sheets done of\nthe sheets it set out to render, and the one it is on.",
+        "description": "A pass of the charts job's `pyramid` under way: sheets done of\nthe sheets it set out to render, and the one it is on.",
         "properties": {
           "current": {
             "anyOf": [
@@ -13312,6 +12440,23 @@
           "min"
         ],
         "title": "RouteBand",
+        "type": "object"
+      },
+      "RouteChecked": {
+        "description": "A route that would plan (GET /api/route-check): its stops as the\nplanner reads them.",
+        "properties": {
+          "stops": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stops",
+            "type": "array"
+          }
+        },
+        "required": [
+          "stops"
+        ],
+        "title": "RouteChecked",
         "type": "object"
       },
       "RouteChip": {
@@ -14083,27 +13228,32 @@
         "title": "RunwayWind",
         "type": "object"
       },
-      "Sentence": {
+      "SeedNoteRequest": {
         "properties": {
-          "sources": {
-            "description": "The ids, exactly as given, of the sources this sentence rests on; at least one.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Sources",
-            "type": "array"
-          },
-          "text": {
-            "description": "One short declarative sentence a pilot reads in the cockpit.",
-            "title": "Text",
+          "description": {
+            "title": "Description",
             "type": "string"
+          },
+          "hop_key": {
+            "title": "Hop Key",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
           }
         },
         "required": [
-          "text",
-          "sources"
+          "hop_key",
+          "lat",
+          "lon",
+          "description"
         ],
-        "title": "Sentence",
+        "title": "SeedNoteRequest",
         "type": "object"
       },
       "ServiceStatus": {
@@ -14206,30 +13356,6 @@
           "grass_ground_roll_pct"
         ],
         "title": "ShortField",
-        "type": "object"
-      },
-      "Source": {
-        "description": "The raw thing a sentence can rest on, as the pilot can read it: a\nMETAR or a NOTAM as sent, a TAF line, a hazard's words, a finding's\nline, a debrief figure's line. `id` is what a sentence cites\n(\"metar:KDLH\", \"finding:fuel\"); `label` is its heading on screen.",
-        "properties": {
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "label": {
-            "title": "Label",
-            "type": "string"
-          },
-          "text": {
-            "title": "Text",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "label",
-          "text"
-        ],
-        "title": "Source",
         "type": "object"
       },
       "SpecialUse": {
@@ -15903,30 +15029,6 @@
         "title": "TrainingReadiness",
         "type": "object"
       },
-      "Turn": {
-        "properties": {
-          "content": {
-            "maxLength": 24000,
-            "minLength": 1,
-            "title": "Content",
-            "type": "string"
-          },
-          "role": {
-            "enum": [
-              "user",
-              "assistant"
-            ],
-            "title": "Role",
-            "type": "string"
-          }
-        },
-        "required": [
-          "role",
-          "content"
-        ],
-        "title": "Turn",
-        "type": "object"
-      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -16501,7 +15603,7 @@
         "type": "object"
       },
       "WindsPeriod": {
-        "description": "The period of the winds and temperatures aloft a plan flies: the\nGFS model's (wingtip.modelwinds), since the FB ended with the NAM (NWS\nService Change Notice 26-47). Valid at `valid_at`, for use from\n`use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round\nthe forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the\nhour of it read; `modelled` always true now.",
+        "description": "The period of the winds and temperatures aloft a plan flies: the\nGFS model's (fetched by services/weather, read from wingtip.weather_store), since the FB ended with the NAM (NWS\nService Change Notice 26-47). Valid at `valid_at`, for use from\n`use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round\nthe forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the\nhour of it read; `modelled` always true now.",
         "properties": {
           "forecast_hour": {
             "anyOf": [
@@ -16553,28 +15655,34 @@
         "title": "WindsPeriod",
         "type": "object"
       },
-      "WordsAnswer": {
-        "description": "A words endpoint's answer: the sentences that passed the check, the\nsources they cite (for the pilot to read raw), which model wrote them,\nand -- with no sentences -- why the briefer could not be reached, where\nthat is why. No sentences and no `unavailable` is nothing to say.",
+      "WordsSource": {
+        "description": "The raw thing a sentence can rest on, as the pilot can read it: a\nMETAR or a NOTAM as sent, a TAF line, a hazard's words, a finding's\nline, a debrief figure's line. `id` is what a sentence cites\n(\"metar:KDLH\", \"finding:fuel\"); `label` is its heading on screen.",
         "properties": {
-          "model": {
-            "title": "Model",
+          "id": {
+            "title": "Id",
             "type": "string"
           },
-          "sentences": {
-            "items": {
-              "$ref": "#/components/schemas/Sentence"
-            },
-            "title": "Sentences",
-            "type": "array"
+          "label": {
+            "title": "Label",
+            "type": "string"
           },
-          "sources": {
-            "items": {
-              "$ref": "#/components/schemas/Source"
-            },
-            "title": "Sources",
-            "type": "array"
-          },
-          "unavailable": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "text"
+        ],
+        "title": "WordsSource",
+        "type": "object"
+      },
+      "WordsSources": {
+        "description": "A reading's sources, in the order they bear on the flight; for the\nNOTAMs, since when the NOTAM feed has been heard and what could not be\nchecked (\"tfrs\").",
+        "properties": {
+          "since": {
             "anyOf": [
               {
                 "type": "string"
@@ -16583,15 +15691,28 @@
                 "type": "null"
               }
             ],
-            "title": "Unavailable"
+            "title": "Since"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/WordsSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "unchecked": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Unchecked",
+            "type": "array"
           }
         },
         "required": [
-          "sentences",
-          "sources",
-          "model"
+          "sources"
         ],
-        "title": "WordsAnswer",
+        "title": "WordsSources",
         "type": "object"
       }
     }
@@ -17724,44 +16845,6 @@
         "summary": "Approach Plate"
       }
     },
-    "/api/assistant": {
-      "post": {
-        "description": "The answer as events, one JSON object a line: `tool` (name, label)\nas each is asked, `text` (a piece of the answer) as it comes, `sources`\n(id, label, text: the raw things the answer rests on) once, then\n`done`; or `error` with the reason in words. The conversation is sent\nwhole each time, the pilot's turn last; the context is the plan,\nposition and record as the app has them (AssistantAsk).",
-        "operationId": "ask_assistant_api_assistant_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssistantAsk"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "application/x-ndjson": {}
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Ask Assistant"
-      }
-    },
     "/api/briefing": {
       "get": {
         "description": "Everything the nav log's own leg math doesn't cover: adverse\nconditions (SIGMET/AIRMET), current conditions (METAR) and\nforecast (TAF-derived ceiling/visibility) along the route, and\neach airport's runways and radio frequencies, its traffic pattern\n(wingtip.pattern) and the class of the airspace over it, for its\npattern card and the radio calls.\n\nThe forecast is for the flight: from `depart` (now when not given;\nUTC when naive) to an hour past arrival, `ete_min` after it (two\nhours when not given). It used to be read at the moment of asking,\nwhatever time the pilot was planning to go. With stops (`stops`,\n\"KDSM,KLNK\"), along every hop and for every airport landed at.\n\nEach hazard says where and when the flight meets it (`on_route`,\napp.exposure): on the nav log's legs where the page sends them --\n`fixes`, its points \"lat,lon;lat,lon\", `leg_min` each leg's ETE and\n`ground_min` each leg's minutes on the ground after it -- else on\nthe route's own legs, the flight's time shared out by distance.",
@@ -17882,44 +16965,6 @@
           }
         },
         "summary": "Briefing"
-      }
-    },
-    "/api/briefing/narrative": {
-      "post": {
-        "description": "The narrative as lines of NarrativeMessage: `delta` (a piece of\nthe text) as Claude writes it, then `done` with the whole briefing,\nor `error` with why there is none. The body is the nav log the Brief\nshows -- idents, airplane, cruise altitude and its selection, the\nlegs -- and is checked before Claude is asked, so a nav log the\nprompt cannot read is a 422 naming the field, not an error line.",
-        "operationId": "write_narrative_api_briefing_narrative_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NarrativeRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "application/x-ndjson": {}
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Write Narrative"
       }
     },
     "/api/chart": {
@@ -18081,7 +17126,7 @@
     },
     "/api/charts/refresh": {
       "post": {
-        "description": "Fetch and render the FAA's current chart cycle now, in a\nsubprocess of the planner's own -- the same job it runs daily by\nitself. `started` is False when one is already running.",
+        "description": "Fetch and render the FAA's current chart cycle now, and the\noverlay tiles where due: the charts job's container (services/jobs/\ncharts), started through the dev-services sidecar -- the same job the\nhourly check starts. `started` is False when it is already running;\nwithout the sidecar the answer says how to run it by hand.",
         "operationId": "refresh_charts_api_charts_refresh_post",
         "responses": {
           "200": {
@@ -18155,61 +17200,6 @@
         "summary": "Save Checkpoint Note"
       }
     },
-    "/api/checkpoint-notes/generate": {
-      "post": {
-        "description": "One \"how to spot it\" line per checkpoint, as newline-delimited\nJSON (each line one app.schemas.CheckpointNoteMessage), so a slow\nLLM call on checkpoint 3 does not hold up checkpoints 1 and 2 that\nalready arrived.\n\nTwo different kinds of failure, reported two different ways. A\nsingle checkpoint's own LLM call failing for a reason specific to\nit does not take the rest of the stream down -- every other\ncheckpoint is independent and still worth generating, so that one\ngets its own per-checkpoint \"error\" line and the loop moves on.\nGLOBAL_ANTHROPIC_ERRORS is the opposite case: a bad key or an\nexhausted rate limit fails identically for every checkpoint, so\nit's reported once as a single stream-level \"error\" (for one\nbanner instead of the same text repeated per row) -- but the\nstream itself keeps going: every remaining checkpoint still gets\nits own per-checkpoint \"error\" line too, just without spending a\ncall to learn what's already known. A pilot still gets a row to\ntype a note into for every checkpoint, not just the ones that\nhappened to come before the failure.\n\nA POST, not a GET: every checkpoint without a note is a billed\nClaude call and a write, which a GET invited from anything that\nprefetches a link, and which the gateway's rules left public in\nevery deployment. The caller's own edit is what they see where they\nmade one; generation only ever fills the shared note.",
-        "operationId": "describe_checkpoints_api_checkpoint_notes_generate_post",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "X-Pilot-Id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Pilot-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GenerateNotesRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Describe Checkpoints"
-      }
-    },
     "/api/checkpoint-notes/mine": {
       "delete": {
         "description": "A pilot's own notes, every one, taken out as their account is\ndeleted (the gateway's DELETE /api/me). Asked by the gateway alone:\nits proxy does not forward this path, and the pilot is named by the\nheader it sets from the session. The shared notes stay.",
@@ -18255,6 +17245,102 @@
           }
         },
         "summary": "Forget Pilots Notes"
+      }
+    },
+    "/api/checkpoint-notes/pending": {
+      "post": {
+        "description": "A route's selected checkpoints in along-track order, each with the\nnote already kept for it (the pilot's own edit, else the shared one)\nor None, and the hop its note is kept under: what the assistant\nservice writes the missing notes from (its POST\n/api/checkpoint-notes/generate, which the apps reach). Asked by the\nassistant alone; the gateway forwards no app here.",
+        "operationId": "notes_to_write_api_checkpoint_notes_pending_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Pilot-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Pilot-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateNotesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesToWrite"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notes To Write"
+      }
+    },
+    "/api/checkpoint-notes/seed": {
+      "post": {
+        "description": "A generated note offered as the shared one at its place: kept where\nnone is there yet, else the one saved meanwhile stays and is\nanswered. The assistant's alone, as /pending is.",
+        "operationId": "seed_note_api_checkpoint_notes_seed_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeedNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteSeeded"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Seed Note"
       }
     },
     "/api/checkpoints": {
@@ -20203,84 +19289,6 @@
         "summary": "Navlog Stream"
       }
     },
-    "/api/oral/grade": {
-      "post": {
-        "description": "The student's answer graded against the question's answer and the\nsources it was asked from (`source_ids`, as the question gave them).",
-        "operationId": "oral_grade_api_oral_grade_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OralGradeRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OralGrade"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Oral Grade"
-      }
-    },
-    "/api/oral/question": {
-      "post": {
-        "description": "One question on one of the `focus` ACS elements, set in the flight\n`plan` describes, not one of those already `asked`; its answer from\nthe sources and the passages it quotes, each checked word for word.\nA 503 where the sources cannot be had, a 502 where the examiner\ncannot be reached.",
-        "operationId": "oral_question_api_oral_question_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OralQuestionRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OralQuestion"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Oral Question"
-      }
-    },
     "/api/overlay-tiles": {
       "get": {
         "description": "The overlay tiles' archive of the cycle the planner holds: its name,\nwhich its address takes, its zooms and layers. 404 until the planner\nhas built it (after the cycle pack, once a cycle). Kept as the airport\nsearch is: the next cycle's reaches the map within the hour.",
@@ -20959,6 +19967,67 @@
           }
         },
         "summary": "Retrain"
+      }
+    },
+    "/api/route-check": {
+      "get": {
+        "description": "Whether a route would plan, checked as a typed one is (load_route):\na 404 naming an ident that is not one, a 422 for a stop at the point\nbefore it or too many stops. With an end missing, each ident given is\nchecked alone. Nothing is read or planned. For the assistant's\nproposals of a change to the plan; the gateway forwards no app here.",
+        "operationId": "route_check_api_route_check_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dep",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Dep",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dest",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Dest",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stops",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Stops",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteChecked"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Route Check"
       }
     },
     "/api/route-options": {
@@ -22031,10 +21100,10 @@
         "summary": "Weather On The Map"
       }
     },
-    "/api/words/changes": {
+    "/api/words/changes/sources": {
       "post": {
-        "description": "What changed in a flight's briefing since the last look, in a few\nsentences, for a watch that reads the briefing again every half\nhour. The changes are found here first (briefing_changes), in\nPython, and the words asked only where there is one: the figures are\nthe planner's two readings, the words the model's, the sources --\neach change with both readings -- the pilot's to read raw. With no\nchange there is no call at all, which is most half hours: a watch on\nevery saved flight asking the model each time would be the app's\nlargest bill for nothing to say.",
-        "operationId": "changes_words_api_words_changes_post",
+        "description": "What changed between two readings of a flight's briefing, each\nchange a source with both readings (briefing_changes), the flight\nfirst; none at all where nothing did, which is most half hours of a\nflight watch, so the assistant asks the model nothing then.",
+        "operationId": "changes_sources_api_words_changes_sources_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22050,7 +21119,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChangesWords"
+                  "$ref": "#/components/schemas/WordsSources"
                 }
               }
             },
@@ -22067,13 +21136,13 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Changes Words"
+        "summary": "Changes Sources"
       }
     },
-    "/api/words/debrief": {
+    "/api/words/debrief/sources": {
       "post": {
-        "description": "A flown flight's debrief in a few sentences, and a paragraph for\nthe pilot's instructor written from them. The figures are the\ndebrief's (POST /api/debrief: the time in the air, each leg's altitude\nand course held, each checkpoint's time, each pattern entry, its\nnotes, and the ACS tolerances they are marked against); the words are\nthe model's; the sources are the pilot's to read raw. A 422 where\nthere is no debrief: the track never flew.",
-        "operationId": "debrief_words_api_words_debrief_post",
+        "description": "A flown flight's debrief as sources (POST /api/debrief: the time in\nthe air, each leg's altitude and course held, each checkpoint's time,\neach pattern entry, its notes, and the ACS tolerances they are marked\nagainst). A 422 where there is no debrief: the track never flew.",
+        "operationId": "debrief_sources_api_words_debrief_sources_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22089,7 +21158,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DebriefWordsAnswer"
+                  "$ref": "#/components/schemas/WordsSources"
                 }
               }
             },
@@ -22106,13 +21175,13 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Debrief Words"
+        "summary": "Debrief Sources"
       }
     },
-    "/api/words/notams": {
+    "/api/words/notams/sources": {
       "post": {
-        "description": "The NOTAMs that matter for a flight, in a few sentences. The figures\nare the planner's: the NOTAMs in force or to come at every field the\nroute lands at, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's\nFNS), and the TFRs near the route over the briefing's hours\n(wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of\nflight and an hour past, the route's own time not being known here).\nThe words are the model's; the sources are the pilot's to read raw.\nWith no NOTAM and no TFR there is nothing to say and no call.",
-        "operationId": "notam_words_api_words_notams_post",
+        "description": "The NOTAMs and TFRs of a flight as sources, with the flight itself\nfirst: the NOTAMs in force or to come at every field the route lands\nat, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's FNS),\nand the TFRs near the route over the briefing's hours\n(wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of\nflight and an hour past, the route's own time not being known here).\nNone at all where there is no NOTAM and no TFR: nothing to say.\n`since`, when the NOTAM feed was first heard; `unchecked`, \"tfrs\"\nwhere tfr.faa.gov did not answer.",
+        "operationId": "notam_sources_api_words_notams_sources_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22128,7 +21197,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NotamWords"
+                  "$ref": "#/components/schemas/WordsSources"
                 }
               }
             },
@@ -22145,13 +21214,13 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Notam Words"
+        "summary": "Notam Sources"
       }
     },
-    "/api/words/risk": {
+    "/api/words/risk/sources": {
       "post": {
-        "description": "Where the risk in a flight is, in a few sentences. The figures are\nthe Go / No-Go's (POST /api/go-no-go: its line, each finding's line,\nthe risk assessment's level and every factor it counted) and the\npilot's own record as the client sends it; the words are the model's;\nthe sources are the pilot's to read raw. Never \"safe\": the decision\nis the pilot in command's (14 CFR 91.3), and the briefer is told so.",
-        "operationId": "risk_words_api_words_risk_post",
+        "description": "The Go / No-Go as sources (POST /api/go-no-go's line, each\nfinding's line, the risk assessment's level and every factor it\ncounted) and the pilot's own record as the client sends it.",
+        "operationId": "risk_sources_api_words_risk_sources_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22167,7 +21236,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WordsAnswer"
+                  "$ref": "#/components/schemas/WordsSources"
                 }
               }
             },
@@ -22184,13 +21253,13 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Risk Words"
+        "summary": "Risk Sources"
       }
     },
-    "/api/words/weather": {
+    "/api/words/weather/sources": {
       "post": {
-        "description": "The weather for a flight as a briefer would say it, in a few\nsentences. The figures are the planner's briefing (GET /api/briefing,\nasked here with the same parameters: its METARs, its TAF stations at\nthe flight's time there, its hazards, G-AIRMETs, pilot reports and\nTFRs, the fields below VFR and its own \"VFR flight not recommended\");\nthe words are the model's; the sources are the pilot's to read raw. A\nbriefing that cannot be had fails as it does there (a 502).",
-        "operationId": "weather_words_api_words_weather_post",
+        "description": "The briefing of a flight as sources (GET /api/briefing, asked here\nwith the same parameters: its METARs, its TAF stations at the flight's\ntime there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields\nbelow VFR and its own \"VFR flight not recommended\"), the flight first.\nA briefing that cannot be had fails as it does there (a 502).",
+        "operationId": "weather_sources_api_words_weather_sources_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22206,7 +21275,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WordsAnswer"
+                  "$ref": "#/components/schemas/WordsSources"
                 }
               }
             },
@@ -22223,7 +21292,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Weather Words"
+        "summary": "Weather Sources"
       }
     }
   }

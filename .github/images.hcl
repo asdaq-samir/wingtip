@@ -26,8 +26,7 @@ variable "PUSH" {
 # Every image, for a bake with no target named -- and the list the
 # Promote workflow walks, promoting each this commit built.
 group "default" {
-  targets = ["base", "ml", "pipeline-processing", "pipeline-training",
-             "planner", "gateway"]
+  targets = ["base", "ml", "retrain", "charts", "planner", "ingest", "assistant", "weather", "gateway"]
 }
 
 function "image" {
@@ -71,24 +70,26 @@ target "ml" {
   output     = image("ml").output
 }
 
-target "pipeline-processing" {
+# The jobs (services/jobs): the training run, and the charts job the
+# AWS refresh task and the server's cron run.
+target "retrain" {
   context    = "."
-  dockerfile = "ml/Dockerfile.processing"
+  dockerfile = "services/jobs/retrain/Dockerfile"
   contexts   = { wingtip-base = "target:base" }
-  tags       = image("pipeline-processing").tags
-  cache-from = image("pipeline-processing").cache-from
-  cache-to   = image("pipeline-processing").cache-to
-  output     = image("pipeline-processing").output
+  tags       = image("retrain").tags
+  cache-from = image("retrain").cache-from
+  cache-to   = image("retrain").cache-to
+  output     = image("retrain").output
 }
 
-target "pipeline-training" {
+target "charts" {
   context    = "."
-  dockerfile = "ml/Dockerfile.training"
+  dockerfile = "services/jobs/charts/Dockerfile"
   contexts   = { wingtip-base = "target:base" }
-  tags       = image("pipeline-training").tags
-  cache-from = image("pipeline-training").cache-from
-  cache-to   = image("pipeline-training").cache-to
-  output     = image("pipeline-training").output
+  tags       = image("charts").tags
+  cache-from = image("charts").cache-from
+  cache-to   = image("charts").cache-to
+  output     = image("charts").output
 }
 
 target "planner" {
@@ -99,6 +100,39 @@ target "planner" {
   cache-from = image("planner").cache-from
   cache-to   = image("planner").cache-to
   output     = image("planner").output
+}
+
+# The live feeds (services/ingest), on the same base as the planner.
+target "ingest" {
+  context    = "."
+  dockerfile = "services/ingest/Dockerfile"
+  contexts   = { wingtip-base = "target:base" }
+  tags       = image("ingest").tags
+  cache-from = image("ingest").cache-from
+  cache-to   = image("ingest").cache-to
+  output     = image("ingest").output
+}
+
+# Every Claude call (services/assistant), on wingtip's base like the planner.
+target "assistant" {
+  context    = "."
+  dockerfile = "services/assistant/Dockerfile"
+  contexts   = { wingtip-base = "target:base" }
+  tags       = image("assistant").tags
+  cache-from = image("assistant").cache-from
+  cache-to   = image("assistant").cache-to
+  output     = image("assistant").output
+}
+
+# The weather service (services/weather), on the same base as the planner.
+target "weather" {
+  context    = "."
+  dockerfile = "services/weather/Dockerfile"
+  contexts   = { wingtip-base = "target:base" }
+  tags       = image("weather").tags
+  cache-from = image("weather").cache-from
+  cache-to   = image("weather").cache-to
+  output     = image("weather").output
 }
 
 target "gateway" {

@@ -8,10 +8,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.util.RawValue;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.northflyers.wingtip.assistant.model.AssistantChangesWords;
 import com.northflyers.wingtip.domain.LogbookEntry;
 import com.northflyers.wingtip.dto.CurrencyDto;
 import com.northflyers.wingtip.dto.ExperienceItemDto;
-import com.northflyers.wingtip.planner.model.PlannerChangesWords;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -30,14 +30,16 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 /**
- * The planner, asked by this app on its own behalf rather than for a
- * browser's request (that is {@link com.northflyers.wingtip.controller.PlannerProxyController}):
- * a flight's briefing, and what changed between two briefings in words,
- * for the flight watch (FlightWatchService); and what a pilot's logbook
- * says of them -- their currency (14 CFR 61.56, 61.57) and a student's
- * 61.109 experience -- which the engine works out, as this app holds no
+ * The planner and the assistant, asked by this app on its own behalf
+ * rather than for a browser's request (that is {@link com.northflyers.wingtip.controller.PlannerProxyController}):
+ * a flight's briefing from the planner, and what changed between two
+ * briefings in words from the assistant service (services/assistant,
+ * which holds every Claude call), for the flight watch
+ * (FlightWatchService); and what a pilot's logbook says of them -- their
+ * currency (14 CFR 61.56, 61.57) and a student's 61.109 experience --
+ * which the engine works out through the planner, as this app holds no
  * aviation rule of its own (CLAUDE.md). Reached at the same base
- * address the proxy and AccountService use.
+ * addresses the proxy uses.
  *
  * <p>The briefing is the planner's JSON document, carried as a string
  * and never read inside: what it says is the planner's to say, and the
@@ -86,9 +88,12 @@ public class PlannerClient {
             .followRedirects(HttpClient.Redirect.NEVER)
             .build();
     private final String plannerBaseUrl;
+    private final String assistantBaseUrl;
 
-    public PlannerClient(@Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl) {
+    public PlannerClient(@Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
+                         @Value("${assistant-service.base-url:http://assistant:8000}") String assistantBaseUrl) {
         this.plannerBaseUrl = plannerBaseUrl.replaceAll("/+$", "");
+        this.assistantBaseUrl = assistantBaseUrl.replaceAll("/+$", "");
     }
 
     /**
@@ -111,7 +116,7 @@ public class PlannerClient {
                 .GET()
                 .timeout(TIMEOUT)
                 .build();
-        return send(request, "the briefing");
+        return send(request, "the planner", "the briefing");
     }
 
     /**
@@ -119,17 +124,17 @@ public class PlannerClient {
      * /api/words/changes): whether anything did, the sentences that say
      * what, the reports they came from, and which model wrote them;
      * {@code unavailable} says why there are none when the words could
-     * not be written. The answer is the planner's own ChangesWords,
-     * generated from services/planner/openapi.json at build time (the
-     * pom's openapi-generator-maven-plugin). Both briefings go as the
-     * JSON they came as, which is why the ask is built here rather than
-     * from the generated ChangesAsk: that would parse two whole briefings
-     * only to write them out again.
+     * not be written. Asked of the assistant service, which asks the
+     * planner for the changes and Claude for the words. The answer is
+     * the assistant's own ChangesWords, generated from
+     * services/assistant/openapi.json at build time (the pom's
+     * openapi-generator-maven-plugin). Both briefings go as the JSON
+     * they came as, never parsed here: what they say is the planner's.
      *
-     * @throws Unavailable when the planner cannot be reached, refuses, or
-     *     answers something that is not its answer
+     * @throws Unavailable when the assistant cannot be reached, refuses,
+     *     or answers something that is not its answer
      */
-    public PlannerChangesWords changes(String dep, String dest, List<String> stops, String then, String now) {
+    public AssistantChangesWords changes(String dep, String dest, List<String> stops, String then, String now) {
         ObjectNode body = JSON.createObjectNode();
         body.put("dep", dep);
         body.put("dest", dest);
@@ -140,16 +145,16 @@ public class PlannerClient {
         // Embedded as the JSON they already are, not as strings holding JSON.
         body.putRawValue("then", new RawValue(then));
         body.putRawValue("now", new RawValue(now));
-        HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + "/api/words/changes"))
+        HttpRequest request = HttpRequest.newBuilder(URI.create(assistantBaseUrl + "/api/words/changes"))
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .timeout(TIMEOUT)
                 .build();
-        String answer = send(request, "the changes");
+        String answer = send(request, "the assistant", "the changes");
         try {
-            return JSON.readValue(answer, PlannerChangesWords.class);
+            return JSON.readValue(answer, AssistantChangesWords.class);
         } catch (JsonProcessingException notItsAnswer) {
-            throw new Unavailable("the planner's answer to the changes was not its answer", notItsAnswer);
+            throw new Unavailable("the assistant's answer to the changes was not its answer", notItsAnswer);
         }
     }
 
@@ -217,7 +222,7 @@ public class PlannerClient {
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .timeout(RULE_TIMEOUT)
                 .build();
-        return send(request, what);
+        return send(request, "the planner", what);
     }
 
     private static <T> T read(String answer, Class<T> type, String what) {
@@ -228,18 +233,18 @@ public class PlannerClient {
         }
     }
 
-    private String send(HttpRequest request, String what) {
+    private String send(HttpRequest request, String who, String what) {
         try {
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() != 200) {
-                throw new Unavailable("the planner answered " + response.statusCode() + " to " + what);
+                throw new Unavailable(who + " answered " + response.statusCode() + " to " + what);
             }
             return response.body();
         } catch (IOException failed) {
-            throw new Unavailable("the planner could not be reached for " + what, failed);
+            throw new Unavailable(who + " could not be reached for " + what, failed);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
-            throw new Unavailable("interrupted asking the planner for " + what, interrupted);
+            throw new Unavailable("interrupted asking " + who + " for " + what, interrupted);
         }
     }
 

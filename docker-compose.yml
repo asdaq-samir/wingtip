@@ -33,7 +33,7 @@ x-anthropic-api-key: &anthropic-api-key ${ANTHROPIC_API_KEY:-}
 # unless-stopped): after a reboot, Docker Desktop brings back whatever
 # was running -- the phone's ports included, since it is the same
 # container -- and a service someone stopped stays stopped. The
-# pipeline jobs are one-shot and have none.
+# jobs are one-shot and have none.
 #
 # One file for every way the stack runs on a machine of one's own; the
 # phone, the LAN and front-end work used to be overlays of their own
@@ -110,52 +110,57 @@ services:
     volumes:
       - .:/workspace
 
-  # One-shot jobs, not services: behind the `pipeline` profile so a plain
-  # `docker compose up` never starts them. It used to start both -- and
-  # the training image's default command is a full all-core retrain,
-  # which then overwrote the candidate model the registry compares next.
-  # Naming one still works as before: `docker compose run --rm
-  # pipeline-training retrain`, or the whole training run, every stage in
-  # order: `docker compose run --rm pipeline-training run`.
-  pipeline-processing:
-    build:
-      context: .
-      dockerfile: ml/Dockerfile.processing
-      additional_contexts:
-        wingtip-base: service:base
-    profiles: ["pipeline"]
-    volumes:
-      - .:/workspace
-
-  pipeline-training:
-    build:
-      context: .
-      dockerfile: ml/Dockerfile.training
-      additional_contexts:
-        wingtip-base: service:base
-    profiles: ["pipeline"]
-    volumes:
-      - .:/workspace
-
+  # The jobs (services/jobs): one-off work, not services. Behind the
+  # `jobs` profile and with no restart, so a plain `docker compose up`
+  # never starts one -- it used to start the training image, whose
+  # default is a full all-core retrain that then overwrote the candidate
+  # model the registry compares next. Each runs this checkout's code (the
+  # project mounted at /workspace, as the planner's is). The developer
+  # console starts them through dev-services, which can start a container
+  # but never create one: `docker compose create retrain charts
+  # charts-overlays` makes them once. services/jobs/README.md has the rest.
+  #
   # The training run (`python -m wingtip.pipeline run`: both models'
-  # stages in order, each promoted only if it beats the one serving), as
-  # a container the developer console's Retrain starts through
-  # dev-services -- which can start a container but never create one, so
-  # `docker compose create retrain` makes it once. Behind the `pipeline`
-  # profile and with no restart, so `docker compose up` never starts a
-  # run; started again, it runs again. It replaced Airflow (the owner,
-  # 2026-11-06): a scheduler, a web server and a metadata database for
-  # a DAG that had no schedule and was only ever started from here.
+  # stages in order, each promoted only if it beats the one serving), the
+  # console's Retrain; a stage by name: `docker compose run --rm retrain
+  # collect`. It replaced Airflow (the owner, 2026-11-06): a scheduler, a
+  # web server and a metadata database for a DAG that had no schedule
+  # and was only ever started from here.
   retrain:
     build:
       context: .
-      dockerfile: ml/Dockerfile.training
+      dockerfile: services/jobs/retrain/Dockerfile
       additional_contexts:
         wingtip-base: service:base
-    profiles: ["pipeline"]
+    profiles: ["jobs"]
     command: ["run"]
     volumes:
       - .:/workspace
+
+  # The charts job: a new FAA chart cycle fetched, rendered and packed
+  # into one archive per kind and density, then the map's overlay tiles
+  # where the planner's cycle pack has none (`python -m charts run`).
+  # The planner starts it (app.chart_refresh) when a cycle is due and the
+  # night's window is open, and from the console's "refresh now"; by
+  # hand: `docker compose run --rm charts` (or a command of its own,
+  # `docker compose run --rm charts pack`). The planner only serves what
+  # it writes.
+  charts: &charts-job
+    build:
+      context: .
+      dockerfile: services/jobs/charts/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    profiles: ["jobs"]
+    command: ["run", "--workers", "${CHARTS_REFRESH_WORKERS:-1}"]
+    volumes:
+      - .:/workspace
+
+  # The overlay tiles alone, a minute or two of tippecanoe: what the
+  # planner starts when it writes a new cycle pack, at any hour.
+  charts-overlays:
+    <<: *charts-job
+    command: ["overlays"]
 
   db:
     restart: unless-stopped
@@ -204,7 +209,7 @@ services:
       context: .
       dockerfile: infra/dev-services/Dockerfile
     environment:
-      DEV_SERVICES: ml,retrain
+      DEV_SERVICES: ml,retrain,charts,charts-overlays
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks: [docker-control]
@@ -236,24 +241,53 @@ services:
       PYTHONPATH: /workspace/services/planner
       # Not the host's Docker socket -- the dev-services sidecar above,
       # which routers/devservices.py asks which services are up and to
-      # start one, the training run (retrain) among them.
+      # start one, the jobs (retrain, charts) among them.
       DEV_SERVICES_URL: http://dev-services:8000
-      # The clock the chart refresh's night-time window (see
-      # services/planner/app/main.py) is read against: the desk this
-      # runs on, not UTC.
+      # The clock the charts job's night-time window (see
+      # services/planner/app/chart_refresh.py) is read against: the desk
+      # this runs on, not UTC.
       TZ: ${TZ:-America/Chicago}
-      # The planner's Claude calls: /api/checkpoint-notes (one per
-      # checkpoint with no saved note yet), the briefing's narrative
-      # (/api/briefing/narrative), the assistant and the words.
-      ANTHROPIC_API_KEY: *anthropic-api-key
+      # How many render processes the charts job is given (its command
+      # above), for the console to show.
+      CHARTS_REFRESH_WORKERS: ${CHARTS_REFRESH_WORKERS:-1}
       # The map's Google overlay (routers/basemaps): a browser key for
       # Google's Map Tiles API, none by default.
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
       # ADS-B Exchange through RapidAPI, the traffic's fallback where
       # adsb.lol turns the planner away (wingtip.traffic): off without it.
       ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
-      # The FAA's SWIM feeds (app.swim): STDDS's terminal radar tracks; off
-      # without them. The owner's SCDS subscription's login and queue.
+      # Traces to Jaeger, with the tracing profile up and TRACING=1 (see
+      # the jaeger service below); unset, the planner sends none.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      OTEL_SERVICE_NAME: planner
+    healthcheck:
+      <<: *python-healthcheck
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+
+  # The live feeds, read always (services/ingest): the FAA's SWIM feeds
+  # (STDDS's terminal radar, FNS's NOTAMs, TFMS's flight plans) and the
+  # followed airplanes' adsb.fi rounds, written into the SQLite stores
+  # under data/raw that the planner reads (the live store, wingtip.traffic.store;
+  # the NOTAM and filed-route stores). No port: nothing calls it. The
+  # project mounted as the planner's is, so both see one data folder and
+  # ingest runs this checkout's code.
+  ingest:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: services/ingest/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    volumes:
+      - .:/workspace
+    # Production is one 4 GB server: ingest is a few threads and a SQLite
+    # connection, 186 MB with wingtip's imports (docker stats, 2026-11-08),
+    # so it is held to twice that, well below what would crowd the planner.
+    mem_limit: 384m
+    environment:
+      PYTHONPATH: /workspace/services/ingest:/workspace/services/planner
+      # The FAA's SWIM feeds (ingest.swim); each off without its own. The
+      # owner's SCDS subscriptions' login and queues.
       SWIM_HOST: ${SWIM_HOST:-}
       SWIM_USERNAME: ${SWIM_USERNAME:-}
       SWIM_PASSWORD: ${SWIM_PASSWORD:-}
@@ -264,10 +298,70 @@ services:
       SWIM_HOST_TFMS: ${SWIM_HOST_TFMS:-}
       SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
       SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
-      # Traces to Jaeger, with the tracing profile up and TRACING=1 (see
-      # the jaeger service below); unset, the planner sends none.
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
-      OTEL_SERVICE_NAME: planner
+    healthcheck:
+      <<: *python-healthcheck
+      # Its beat in the live store, written every ten seconds (ingest.health).
+      test: ["CMD", "python", "-m", "ingest.health"]
+
+  # Every Claude call the app makes (services/assistant, issue #535): the
+  # pilot's assistant, the Brief's narrative, the readings in words, the
+  # checkpoint notes and the mock oral. It holds the Anthropic key and
+  # the model settings, and asks the planner for every figure; the
+  # browser reaches it only through gateway's /api/planner/* proxy, at
+  # the same addresses as before. Mounts the project for its code, as the
+  # planner does, and for data/raw/references, the regulations and the
+  # AIM the mock oral quotes. A few HTTP calls at a time and no data of
+  # its own in memory: 256 MB is room and to spare.
+  assistant:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: services/assistant/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    ports:
+      - "${DEV_PUBLISH_ADDRESS:-127.0.0.1}:8085:8000"
+    mem_limit: 256m
+    volumes:
+      - .:/workspace
+    environment:
+      PYTHONPATH: /workspace/services/assistant
+      PLANNER_URL: http://planner:8000
+      ANTHROPIC_API_KEY: *anthropic-api-key
+      # The models, each by its own name, as services/assistant/app/settings.py
+      # declares them; unset, its defaults.
+      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-claude-opus-5-5}
+      ASSISTANT_FALLBACKS: ${ASSISTANT_FALLBACKS:-0}
+    healthcheck:
+      <<: *python-healthcheck
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+
+  # The weather the planner reads, fetched on a schedule (services/weather):
+  # METARs, TAFs, SIGMETs, PIREPs and G-AIRMETs from aviationweather.gov,
+  # the GFS's winds aloft and GLMP from NOMADS, TFRs from tfr.faa.gov and
+  # the radar's time from IEM, each written to the weather store on the
+  # data folder the planner mounts (data/raw/weather, wingtip.weather_store),
+  # so no pilot's request waits on a live fetch (#535). Fast while the
+  # planner is being used, slow otherwise. Its health check at :8000 says
+  # how fresh each product is (`docker compose exec weather python3 -c
+  # "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/').read().decode())"`).
+  # Mounts the project as the planner does, so its code is the checkout's.
+  weather:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: services/weather/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    volumes:
+      - .:/workspace
+    environment:
+      # Its own code first, then the planner's folder for wingtip.
+      PYTHONPATH: /workspace/services/weather:/workspace/services/planner
+    # Python, the engine, and a GLMP issue's two grids at their largest
+    # while it reads them: well under this, which keeps it from crowding
+    # the planner (infra/docker-compose.prod.yml has the same).
+    mem_limit: 384m
     healthcheck:
       <<: *python-healthcheck
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
@@ -342,6 +436,10 @@ services:
         condition: service_healthy
       planner:
         condition: service_healthy
+      # Started with it, not waited for: nothing in the gateway's start
+      # asks the assistant.
+      assistant:
+        condition: service_started
       mailpit:
         condition: service_started
     # Ready means Spring's readiness group (the app and its database)
@@ -369,6 +467,7 @@ services:
       SPRING_DATASOURCE_USERNAME: wingtip
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-wingtip}
       PLANNER_SERVICE_URL: http://planner:8000
+      ASSISTANT_SERVICE_URL: http://assistant:8000
       # Traces to Jaeger with TRACING=1, the planner's calls under the
       # gateway's (see the jaeger service); off otherwise.
       MANAGEMENT_TRACING_ENABLED: ${TRACING:-false}

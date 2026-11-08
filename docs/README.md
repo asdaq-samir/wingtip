@@ -69,16 +69,17 @@ explicit path to production on AWS.
   constrains the cruising altitude: C and D need two-way radio
   communication established rather than a clearance, so they are reported
   as calls to make, not airspace to fly beneath.
-- **Claude in the planner, on the SDK directly.** The written briefing
+- **Claude in the assistant service, on the SDK directly.** The written briefing
   (`POST /api/briefing/narrative`) is one streamed Messages call over the
   nav log the pilot sees, its words arriving as they are written; the
   checkpoint descriptions, the plain-words readings and the mock oral are
   Messages calls too, and the pilot's assistant runs the SDK's tool runner
-  over the planner's own functions. No agent framework sits between the
-  planner and the model (the owner, 2026-11-06: a product, not a
+  over the planner's HTTP API. Every one of them is in `services/assistant`,
+  which holds the Anthropic key; no agent framework sits between it and
+  the model (the owner, 2026-11-06: a product, not a
   framework showcase).
 - **A cheap path to production**: one EC2 server behind CloudFront, chart
-  tiles drawn once a cycle into S3, about $32 a month — see
+  tiles drawn once a cycle into S3, about $27 a month — see
   [Target Architecture](#target-architecture-aws).
 - **CI on every push.** GitHub Actions runs the test suite and lint on
   every push/PR, then builds every service image and publishes it to GHCR
@@ -97,11 +98,27 @@ Four layers, each with one job:
   input and answer are typed in `engine/contract/engine.schema.json`, from which
   the web's and the phones' types are generated.
 - **The planner** (`planner` over `services/planner/wingtip`, FastAPI):
-  works out a flight. It fetches the FAA's and the weather's data, reads
-  the chart and scores the checkpoints with the chart model in its own
-  process, runs the AI features (the assistant, the written briefing) with the
-  Anthropic SDK, and asks the engine every rule through
-  `wingtip_native.call`.
+  works out a flight. It fetches the FAA's data, reads the weather the
+  weather service keeps (below), reads the chart and scores the
+  checkpoints with the chart model in its own process, and asks the
+  engine every rule through `wingtip_native.call`.
+- **ingest** (`services/ingest`, the `ingest` service): the live feeds,
+  read always -- the FAA's SWIM feeds and the followed airplanes' adsb.fi
+  rounds -- written into the SQLite stores on the data folder the planner
+  reads (issue #535's first split from the planner). It fetches and
+  stores only; any figure is still the engine's.
+- **The assistant** (`services/assistant`, FastAPI): every Claude call --
+  the assistant, the written briefing, the words, the checkpoint notes,
+  the mock oral -- over the planner's figures, asked over HTTP. It holds
+  the Anthropic key and computes no figure.
+- **The weather service** (`weather`, `services/weather`): fetches the
+  weather on a schedule -- aviationweather.gov's METARs, TAFs, SIGMETs,
+  PIREPs and G-AIRMETs, the GFS's winds aloft and GLMP from NOMADS,
+  tfr.faa.gov's TFRs and the radar's time -- parses each and writes it to
+  the weather store on the data volume (`data/raw/weather`,
+  `wingtip.weather_store`), which the planner reads, so no pilot's
+  request waits on a live fetch (#535). Decoding rules (the ceiling, the
+  flight category, each product's validity) stay in the engine.
 - **Spring Boot** (`services/gateway`, the `gateway` service): who the pilot
   is and what they saved -- accounts, sign-in, aircraft, flights,
   logbook and endorsements, the public API, scheduled mail. It holds no
@@ -125,16 +142,20 @@ Java, and some in the web and phone apps -- and issue #482 moves them
 in, in phases: copies the engine already has, small rules, weather parsing,
 altitude selection, the nav log, then route options.
 
-The system runs today as six Docker services (`retrain` is the training image run as the whole training run, not an image of its own):
+The system runs today as these Docker services and jobs (the jobs, in [`services/jobs/`](../services/jobs), each an image of its own, behind the `jobs` profile and run when due):
 
 | Service | Role |
 |---|---|
 | `gateway` | Spring Boot — accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React app and proxies the planner |
 | `db` | PostgreSQL — application data |
 | `mailpit` | The local inbox the sign-in mail goes to (Amazon SES on AWS) |
-| `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and model training, run as one-off jobs; `retrain` is the whole training run (`python -m wingtip.pipeline run`) in the training image, the container the developer console's Retrain starts |
+| `retrain` | Job: the training run (`python -m wingtip.pipeline run`, `services/jobs/retrain`): collection, feature engineering, training, evaluation and promotion, or one stage by name; the container the developer console's Retrain starts |
+| `charts` / `charts-overlays` | Job: the charts job (`services/jobs/charts`): a new FAA chart cycle fetched, rendered and packed into one PMTiles archive per kind and density, and the map's overlay tiles built with tippecanoe from the planner's cycle pack; the planner starts it when due (`app/chart_refresh.py`) and only serves what it writes |
 | `ml` | Jupyter environment for model development and experimentation -- on demand, behind the `notebooks` profile: `docker compose up ml` |
-| `planner` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather, and the Claude features (the written briefing, checkpoint notes, words, the assistant) -- with the engine inside it for every rule |
+| `planner` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather -- with the engine inside it for every rule |
+| `ingest` | The live feeds, read always: the FAA's SWIM feeds (STDDS's terminal radar, FNS's NOTAMs, TFMS's flight plans) and the followed airplanes' adsb.fi rounds, written into the SQLite stores under `data/raw` that the planner reads; no port ([`services/ingest/README.md`](../services/ingest/README.md)) |
+| `assistant` | FastAPI: every Claude call (the written briefing, checkpoint notes, words, the assistant, the mock oral) over the planner's figures, behind the gateway at the same `/api/planner/...` addresses; 256 MB at most ([`services/assistant/README.md`](../services/assistant/README.md)) |
+| `weather` | The weather the planner reads, fetched on a schedule into the weather store (`services/weather/README.md`): fast while a pilot is planning, slow otherwise; its health check says how fresh each product is |
 
 ![Current local architecture](architecture-current.svg)
 
@@ -182,7 +203,8 @@ comes from): the FAA's own VFR Sectional tile service — which the
 checkpoint detector reads directly — plus FAA NASR airport, navaid and
 obstacle datasets, FAA Class B/C/D airspace shapefiles, NOAA aviation
 weather (METARs, TAFs and SIGMETs from aviationweather.gov's cache
-files, refreshed every few minutes, rather than a query per route),
+files, fetched every few minutes by the weather service rather than a
+query per route),
 the magnetic-declination model, and OpenStreetMap via the Overpass API
 for the tabular feature pipeline.
 
@@ -190,8 +212,25 @@ for the tabular feature pipeline.
 
 ### Services in detail
 
-**`planner`** — chart vision, checkpoint selection, the nav log
-and the assistant; it asks the engine (`wingtip_native`) for the rules
+**`ingest`** — the live feeds, out of the planner's process since #535
+(its first split). It reads the FAA's SWIM feeds (`ingest.swim`: STDDS's
+radar tracks round the places the map looks and of the followed
+airplanes, FNS's NOTAMs, TFMS's filed routes) and asks adsb.fi for the
+followed airplanes each half minute, and writes what it hears into
+SQLite files on the data folder it shares with the planner: the live
+store (`wingtip.traffic.store`: the radar, the followed airplanes and
+their tracks, the views the map asked for), `wingtip.notams`' and
+`wingtip.filed_routes'`. The planner reads those as a pilot asks, so a
+restart of the planner drops no feed and no request waits on one. The
+planner tells ingest what is worth keeping through the same store
+(where the map looks, who is followed). No message bus and no port; its
+health check reads its beat in the live store. The map's own traffic,
+adsb.lol by region and an open card's airplane, is still asked by the
+planner as the pilot asks. See
+[`services/ingest/README.md`](../services/ingest/README.md).
+
+**`planner`** — chart vision, checkpoint selection and the nav log;
+it asks the engine (`wingtip_native`) for the rules
 the engine holds, and #482 moves the rest of its Python rules there.
 Serves no pages: the front end lives in [`apps/web/`](../apps/web) and is built
 into `gateway`'s jar, which proxies here for every computation. Publishes no
@@ -201,15 +240,21 @@ gateway reaches the planner by its Compose name (`http://planner:8000`).
 - `/api/course`, `/api/checkpoints`, `/api/navlog`, `/api/detect/stream`,
   `/api/picks`, `/api/chart-tile/{kind}` — reached by the
   browser as `/api/planner/*` on `gateway`, never directly. The tile
-  endpoint renders the FAA's own chart GeoTIFFs (`wingtip.charts`, one
-  download per sheet per 56-day cycle into `data/raw/charts/`), so the
-  map depends on no hosted chart service. Its own OpenAPI page is at
+  endpoint serves the FAA's own chart GeoTIFFs as tiles (`wingtip.charts`,
+  one download per sheet per 56-day cycle into `data/raw/charts/`): out
+  of the cycle's archive for the kind (`wingtip.tile_archive`, one PMTiles
+  file per kind and density, which the charts job renders and packs, and
+  which on AWS the planner reads from S3 through CloudFront by range
+  requests), or drawn on request where there is none yet, so the map
+  depends on no hosted chart service. Its own OpenAPI page is at
   [`localhost:8084/docs`](http://localhost:8084/docs); the full endpoint
   list is in [`services/planner/README.md`](../services/planner/README.md)
 - `/api/overlay-tiles`, `/api/overlay-tiles/{name}.pmtiles` — the map's
   FAA overlays as vector tiles for MapLibre (`wingtip.vector_tiles`): one
-  PMTiles archive a cycle, built after the cycle pack by tippecanoe (in
-  the planner's image, a pinned tag) and read by the map in byte ranges
+  PMTiles archive a cycle, built from the planner's cycle pack by the
+  charts job with tippecanoe (`services/jobs/charts/overlays.py`, in the
+  job's image, a pinned tag; the planner only serves it) and read by the
+  map in byte ranges
   (the `pmtiles` protocol; `apps/web/src/lib/map/overlayTiles.ts` registers it
   and makes the source; Android's and iOS's MapLibre read `pmtiles://`
   themselves). Zooms 4 to 12, lines within `tolerance_m` (4.1 m) of the
@@ -231,22 +276,23 @@ gateway reaches the planner by its Compose name (`http://planner:8000`).
   | `fixes` | NASR FIX_BASE, every row | `ident`, `kind`, `vfr`, `enroute_low` | charted 8, others 10 |
 - `/api/briefing` — the FAA-sequence weather briefing behind the
   briefing on `/app/plan`, the flight planning drawer
-- `/api/briefing/narrative` — the Brief's written briefing
-  (`app/narrative.py`): the nav log on screen, sent back by the page,
+- `/api/briefing/narrative` — the Brief's written briefing, answered
+  by the `assistant` service (`services/assistant/app/narrative.py`): the nav log on screen, sent back by the page,
   told in plain prose by one streamed Claude call (the Anthropic SDK's
   `messages.stream`, model `NARRATIVE_MODEL`, Haiku by default), as
   newline-delimited JSON — `delta` lines as it is written, then `done`
   or `error`. A paid feature: `gateway` checks the subscription and the
   day's allowance before it forwards the call
-- `/api/assistant` — the pilot's assistant (`app/assistant.py`): a
-  question about the flight in the pilot's own words, answered by Claude
-  with the planner's own functions as its tools (the plan, the weather at
+- `/api/assistant` — the pilot's assistant (the `assistant` service's
+  `app/assistant.py`): a question about the flight in the pilot's own
+  words, answered by Claude with the planner's own endpoints as its tools (the plan, the weather at
   a field, the briefing, the Go / No-Go, a field's card, the nearest
   fields, a hold's entry, a diversion), so every figure is the planner's
   and the model only chooses the tools and writes the words; streamed as
   newline-delimited JSON with the raw sources the answer rests on
 - `/api/words/{notams,weather,risk,debrief,changes}` — short readings in
-  words (`app/ai_words.py`): each sentence cites the raw source it rests on
+  words (the `assistant` service's `app/words.py`, over the planner's
+  `/api/words/{kind}/sources`): each sentence cites the raw source it rests on
   by id (a METAR, a NOTAM, a finding), and a sentence with none is
   dropped; `changes` diffs two briefings first and asks the model only
   where something moved, for `gateway`'s flight watch
@@ -405,13 +451,13 @@ erDiagram
 One small server behind CloudFront runs what must stay live, and what is
 the same for every pilot is drawn ahead of time and served from the edge
 — see [`README-AWS.md`](README-AWS.md) for the design, the cost (about
-$32 a month) and the runbook.
+$27 a month) and the runbook.
 
 ![AWS design](architecture-aws.svg)
 
 | Local component | AWS target |
 |---|---|
-| `gateway`, `planner` | One EC2 server (`infra/docker-compose.prod.yml`), behind Caddy and CloudFront |
+| `gateway`, `planner`, `ingest`, `assistant`, `weather` | One EC2 server (`infra/docker-compose.prod.yml`), behind Caddy and CloudFront; `ingest` and `weather` held to 384 MB, `assistant` to 256 MB |
 | `db` | Postgres on the same server, dumped to S3 nightly |
 | Chart tiles | A Fargate Spot task per 56-day cycle, published to S3, served by CloudFront |
 | Mailpit | Amazon SES |
@@ -473,7 +519,7 @@ an engineering gap:
   there is no native Python virtualenv.
 - **Git.**
 - **An Anthropic API key** (`ANTHROPIC_API_KEY`) — only required for the
-  planner's Claude features: the Brief's written briefing, the "how to
+  `assistant` service's Claude features: the Brief's written briefing, the "how to
   spot it" checkpoint notes, the plain-words readings and the assistant.
   Everything else works without one, including every `docker compose`
   command: the key is read with `:-`, not `:?`, precisely so that a
@@ -489,7 +535,7 @@ an engineering gap:
 git clone <repo-url>
 cd wingtip
 
-# Only needed for the planner's Claude features (briefing, notes, assistant):
+# Only needed for the assistant service's Claude features (briefing, notes, assistant):
 export ANTHROPIC_API_KEY=sk-...
 # or put it in a .env file (gitignored) at the repo root — docker compose
 # reads .env automatically.
@@ -507,13 +553,17 @@ engine/                the shared Rust engine: facade/, crates/, contract/, bind
 services/planner/      the planner: app/ (FastAPI), wingtip/ (the shared Python package --
                        pipeline.py, model_registry.py, navlog.py, altitude.py, etc.),
                        tests/ and tests_wingtip/ (their suites), its Dockerfile and requirements
+services/ingest/       the live feeds (ingest): SWIM and the followed airplanes into the
+                       stores the planner reads
 services/gateway/      Spring Boot API (gateway) — accounts, records, proxies the planner
+services/jobs/         the one-off jobs, an image each: retrain/ (the training run) and
+                       charts/ (the chart cycle's archives, the overlay tiles); README.md
 services/Dockerfile.base
                        the Python base (wingtip's requirements and its Rust extension)
                        every image that imports wingtip is built FROM
-ml/                    notebooks/ (numbered, run-in-order, 01-08) and the images of ml,
-                       pipeline-processing and pipeline-training with their requirements
-                       (each including wingtip's own list, services/planner/requirements-wingtip.txt)
+ml/                    notebooks/ (numbered, run-in-order, 01-08) and the notebooks' image
+                       with its requirements (including wingtip's own list,
+                       services/planner/requirements-wingtip.txt)
 infra/                 CloudFormation, the production server's files and compose file,
                        CI's compose file, local HTTPS, the rehearsal, dev-services, load-tests
 scripts/               build/, ci/, dev/
@@ -712,20 +762,26 @@ CI job breakdown is in the [Appendix](#appendix).
 | `docker compose up db` | PostgreSQL | `5432` |
 | `docker compose up gateway` | Spring Boot API and the three browser pages; brings up `db` and `planner` too | `8080` |
 | `docker compose up ml` | Jupyter, for notebooks 01-03 and 08 | `8888` (token `wingtip`) |
-| `docker compose run --rm pipeline-processing collect` | Runs `pipeline.collect()`: downloads a corridor's candidates once, and again only with `--refresh` | — |
-| `docker compose run --rm pipeline-processing engineer-features` | Runs `pipeline.engineer_features()` | — |
-| `docker compose run --rm pipeline-training retrain` | Runs `pipeline.retrain()` | — |
-| `docker compose run --rm pipeline-training python -m wingtip.model_registry evaluate` | Runs `evaluate`/`promote` | — |
-| `docker compose run --rm pipeline-training run` | The whole training run, every stage in order (`pipeline.run()`); each model promoted only if it beats the one serving. The console's Retrain starts the same thing as the `retrain` container (`docker compose create retrain` once) | — |
+| `docker compose run --rm retrain collect` | Runs `pipeline.collect()`: downloads a corridor's candidates once, and again only with `--refresh` | — |
+| `docker compose run --rm retrain engineer-features` | Runs `pipeline.engineer_features()` | — |
+| `docker compose run --rm retrain retrain` | Runs `pipeline.retrain()` | — |
+| `docker compose run --rm --entrypoint python retrain -m wingtip.model_registry evaluate` | Runs `evaluate`/`promote` | — |
+| `docker compose run --rm retrain` | The whole training run, every stage in order (`pipeline.run()`); each model promoted only if it beats the one serving. The console's Retrain starts the same thing as the `retrain` container (`docker compose create retrain charts charts-overlays` once) | — |
+| `docker compose run --rm charts` | The charts job: the overlay tiles where due, then the FAA's current chart cycle fetched, rendered and packed where due | — |
+| `docker compose run --rm charts overlays` | The overlay tiles alone, where the cycle pack has none | — |
+| `docker compose run --rm charts pack` | Every finished kind's loose tiles into its archives: the one-off conversion of a cycle drawn before there were archives | — |
 | `docker compose up planner` | Planning + chart-vision API; `gateway` proxies to it and starts it | `8084` |
+| `docker compose up ingest` | The live feeds: SWIM and the followed airplanes into the live store the planner reads | — |
+| `docker compose up assistant` | Every Claude call; the gateway sends the Claude paths to it | — |
+| `docker compose up weather` | The weather service: fetches the weather into `data/raw/weather` for the planner | — |
 
 Notes:
 
-- `pipeline-processing`/`pipeline-training` are separate images on purpose
-  — they mirror the AWS Processing-Job/Training-Job split. They are jobs,
-  not services, behind the `pipeline` profile: a plain `docker compose up`
-  leaves them out (the training image's default command is a full
-  retrain), and naming one in `run` or `build` works as it always did.
+- The jobs are not services: behind the `jobs` profile, a plain `docker
+  compose up` leaves them out (the retrain image's default command is a
+  full retrain), and naming one in `run` or `build` starts it. The
+  processing image that mirrored a SageMaker Processing Job went with the
+  jobs split (#535): the retrain image runs every stage.
 - The training run writes each stage's start and end to
   `data/models/run.json`, which the planner reads, beside the `retrain`
   container's state from the dev-services sidecar, for the console's
@@ -772,15 +828,18 @@ empty commit:
 
 | Job | What it does |
 |---|---|
-| `test` | ruff + pytest over `services/planner/wingtip` |
+| `test` | ruff + pytest over `services/planner/wingtip`, and over the jobs (`services/jobs/charts`) |
 | `changes` | A path filter (`dorny/paths-filter`) telling both `build-images` and `docs` which service images a change could have touched. Runs on pull requests (where `build-images` uses it to build only the touched images) and on pushes to `main` (where `build-images` ignores it on purpose — main's images stay fully in sync with every dependency bump — but `docs` uses it to skip the three heavy `pdoc` steps below when nothing they document changed). |
 | `test-web` | `tsc --noEmit`, `vitest` and a production build over `apps/web/` — filters, ordering, what counts as rated, and which leg leaves a checkpoint, all pure functions needing no browser |
 | `test-gateway` | `mvn test` — gateway's JUnit suite, including the Testcontainers Postgres test |
-| `e2e` | The browser suite (`apps/web/e2e`, Playwright) against the stack a pilot uses — the gateway and the planner built from the commit, Postgres and Mailpit — under `infra/docker-compose.ci.yml`, with the planner's reference data (about a gigabyte it fetches for itself) kept in the Actions cache between runs. Run on every push, and on a pull request that touches anything the stack is built from. Its images and the page are built once for each content key by `build (e2e)` and pulled by all eight shards, on a push and on a pull request from one of this repository's branches; only a fork's or Dependabot's pull request, whose token cannot push, has each shard build its own. |
+| `e2e` | The browser suite (`apps/web/e2e`, Playwright) against the stack a pilot uses — the gateway, the planner and the weather service built from the commit, Postgres and Mailpit — under `infra/docker-compose.ci.yml`, with the planner's reference data (about a gigabyte it fetches for itself) kept in the Actions cache between runs. Run on every push, and on a pull request that touches anything the stack is built from. Its images and the page are built once for each content key by `build (e2e)` and pulled by all eight shards, on a push and on a pull request from one of this repository's branches; only a fork's or Dependabot's pull request, whose token cannot push, has each shard build its own. |
 | `test-planner` | ruff + pytest over `services/planner/tests/` — its own dependency set (`services/planner/requirements-dev.txt`), separate from `test`'s unrelated `services/planner/wingtip` ones |
+| `test-ingest` | ruff + pytest over `services/ingest/tests/` — the live feeds' readers and the live store, with wingtip and the engine it imports |
+| `test-assistant` | ruff + pytest over `services/assistant/tests/` — every Claude call, the model and the planner stood in for; no engine |
+| `test-weather` | ruff + pytest over `services/weather/tests/` — the weather service's fetches and parsers, and the planner's readers over what it stores |
 | `docs` | Regenerates Javadoc + godoc on every push/PR. wingtip's `pdoc` is made by the `test` job from the packages its tests have just installed, and uploaded as `pdoc-wingtip`. Output uploads as a `documentation` artifact. |
 | `build-images` | Builds every service Dockerfile, publishes each to GHCR on push to `main`. Every Python image's last build step imports that service's own code and the packages it imports lazily (`import app.main, rasterio.vrt, …`, `import wingtip.pipeline, …`), so a missing dependency fails the build -- here and in a local `docker compose build` alike -- the check that would have caught 2026-09-22's missing `pyproj` in four images |
-| `push-ecr` | Copies the two images the CloudFormation stack deploys (`gateway`, `planner`) from GHCR to ECR as `sha-<commit>` and `latest` via OIDC, the images CI tested rather than a rebuild, in the `production` environment the deploy role trusts; activates automatically once `AWS_ROLE_ARN`/`AWS_REGION` repo variables exist |
+| `push-ecr` | Copies the images the CloudFormation stack deploys (`gateway`, `planner`, `ingest`, `assistant`, `weather`, and the charts job's `charts`) from GHCR to ECR as `sha-<commit>` and `latest` via OIDC, the images CI tested rather than a rebuild, in the `production` environment the deploy role trusts; activates automatically once `AWS_ROLE_ARN`/`AWS_REGION` repo variables exist |
 
 `build-images` gates on the test jobs, so a failing test never produces a
 published image. A cold run (every cache empty, every path filter

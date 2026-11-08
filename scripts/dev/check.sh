@@ -4,7 +4,7 @@
 # Docker (the Mac has no node, npm or pytest), each area in its own turn of
 # scripts/dev/one-at-a-time.sh, and warm from the first run of any worktree.
 #
-#   scripts/dev/check.sh <area>...       web py planner engine java ios android
+#   scripts/dev/check.sh <area>...       web py planner ingest assistant weather jobs engine java ios android
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas
@@ -37,7 +37,7 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 
-AREAS="web py planner engine java ios android"
+AREAS="web py planner ingest assistant weather jobs engine java ios android"
 RUST_IMAGE=rust:1.89-slim-bookworm
 
 # The areas a list of changed paths touches, one per line in AREAS' order:
@@ -56,6 +56,19 @@ areas_for() {
     esac
     case "$path" in
       services/planner/*|engine/*) found+="planner " ;;
+    esac
+    # The weather service imports wingtip (its store and readers) and the engine.
+    case "$path" in
+      services/weather/*|services/planner/wingtip/*|services/planner/requirements-wingtip.txt|services/planner/pytest_guards.py|engine/*)
+        found+="weather " ;;
+    esac
+    case "$path" in
+      services/ingest/*|services/planner/wingtip/*|engine/*) found+="ingest " ;;
+      services/assistant/*) found+="assistant " ;;
+    esac
+    case "$path" in
+      services/jobs/*|services/planner/wingtip/*|services/planner/requirements-wingtip*.txt|services/planner/pytest_guards.py|engine/*)
+        found+="jobs " ;;
     esac
     case "$path" in
       engine/*|apps/web/src/lib/fixtures/*|services/planner/tests_wingtip/fixtures/native/*) found+="engine " ;;
@@ -134,6 +147,9 @@ requirements_of() {
 py_image() {
   local dir=$1 dev=$2 py=$3 extra=$4 name tag ctx req
   name=wingtip-check-py-$(basename "$dev" .txt)
+  # Another service's suite keeps an image name of its own, so its tags
+  # never prune the planner's.
+  [ "$dir" = services/planner ] || name=wingtip-check-py-$(basename "$dir")-$(basename "$dev" .txt)
   ctx=$(mktemp -d)
   mkdir -p "$ctx/reqs"
   for req in $(requirements_of "$dir/$dev" | sort -u); do
@@ -234,6 +250,10 @@ run_area() {
       ;;
     py) run_py services/planner requirements-dev-wingtip.txt 3.14 wingtip tests_wingtip ;;
     planner) run_py services/planner requirements-dev.txt 3.14 app tests ;;
+    ingest) run_py services/ingest requirements-dev.txt 3.14 ingest tests ;;
+    assistant) run_py services/assistant requirements-dev.txt 3.14 app tests ;;
+    weather) run_py services/weather requirements-dev.txt 3.14 app tests ;;
+    jobs) run_py services/jobs requirements-dev-jobs.txt 3.14 charts charts/tests ;;
     engine)
       # CI's own cargo test line (ci.yml's test job), so the crates tested
       # here are always the ones tested there.
@@ -246,8 +266,8 @@ run_area() {
         -e CARGO_TARGET_DIR=/target -w "/w/$key" "$RUST_IMAGE" sh -c "$cmd"
       ;;
     java)
-      # services/, not the gateway alone: the pom generates the planner's
-      # models from ../planner/openapi.json.
+      # services/, not the gateway alone: the pom generates the assistant's
+      # answers from ../assistant/openapi.json.
       docker run --rm -v "$here/services":/services -v /services/gateway/target -v fp-m2:/root/.m2 \
         -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
         -w /services/gateway maven:3.9-eclipse-temurin-25 mvn -B -q test

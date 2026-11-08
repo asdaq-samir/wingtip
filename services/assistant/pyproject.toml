@@ -1,0 +1,9 @@
+# The assistant service's suite (tests/, app), run from this directory.
+[tool.pytest.ini_options]
+# "." (this directory) so `from app.main import app` resolves the way it
+# does inside the container, where the WORKDIR is this directory.
+pythonpath = ["."]
+# No cache of the last run's failures, which would carry one run's order
+# into the next (docs/CI.md, "Flaky tests"), and a mark nobody declared is
+# an error rather than a test silently left unmarked.
+addopts = "-p no:cacheprovider --strict-markers"

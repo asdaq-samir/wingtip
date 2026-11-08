@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -r ml/requirements-ml
 RUN python -B -c "import wingtip_native, numpy, pandas, requests, pyarrow.parquet, shapely.ops, shapefile, pyproj, scipy.spatial, pygeomag, astral, sklearn, joblib, matplotlib, PIL, folium, notebook"
 
 # Non-root (the base's appuser), matching every other image
-# (Dockerfile.processing, Dockerfile.training, planner) -- this one used to run (and
+# (the jobs' and the planner's) -- this one used to run (and
 # need --allow-root for) root specifically, despite mounting the same `.:/workspace` bind mount the other two
 # pipeline images already run non-root against: a notebook saved from
 # inside this container was landing on the host owned by root, not the

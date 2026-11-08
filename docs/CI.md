@@ -69,7 +69,7 @@ the tiles alone. The e2e job copies the suite's own archive
 41.4 N to 43.4 N: Chicago, C81 and the fields west of them) into
 `data/raw/packs/tiles` before the planner starts. It is built from a
 local stack's cycle pack by `scripts/build/e2e-overlay-tiles.sh`, again
-whenever `wingtip.vector_tiles.VERSION` changes (test_vector_tiles checks
+whenever `wingtip.vector_tiles.VERSION` changes (services/jobs/charts/tests/test_overlays.py checks
 it). Specs about the chart's fields use the real ones in that box; a
 mocked `/api/airports/in-view` only gives them their weather.
 

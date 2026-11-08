@@ -356,9 +356,9 @@ def detect_face(path: Path, kind: ChartKind) -> tuple[Box, Box, Path | None]:
                         path.name, edge, collar[i])
             face.append(fallback[edge])
             continue
-        # By key, not identity: `python -m wingtip.charts` (the refresh, the
-        # pyramid) runs wingtip.charts as __main__, so its SECTIONAL is not the
-        # one this module sees through its import of wingtip.charts.
+        # By key, not identity: a ChartKind that crossed into a render
+        # process, or a module run as __main__, is a copy, not this
+        # module's own SECTIONAL.
         if how == "neatline" and kind.key == charts.SECTIONAL.key:
             position = _snap(position)
         log.info("%s: %s edge at %.4f (%s)", path.name, edge, position, how)

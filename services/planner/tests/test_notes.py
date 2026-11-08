@@ -1,7 +1,7 @@
-"""/api/checkpoint-notes: generating is a POST, and a pilot's own edit is
-what that pilot sees while everyone else keeps the shared note."""
-import json
-
+"""/api/checkpoint-notes: the checkpoints still without a note and the
+note seeded for one, for the assistant service that writes them; a
+pilot's own edit is what that pilot sees while everyone else keeps the
+shared note."""
 from fastapi.testclient import TestClient
 from wingtip import checkpoint_notes
 
@@ -18,94 +18,64 @@ def _setup(monkeypatch, tmp_path):
     path = tmp_path / "notes.csv"
     monkeypatch.setattr(checkpoint_notes, "NOTES_PATH", path)
     monkeypatch.setattr(notes, "route_checkpoints", lambda r: ([CHECKPOINT], [CHECKPOINT], [[CHECKPOINT]]))
-    calls = []
-
-    def describe(cp, dep, prev_name, next_name):
-        calls.append(cp["name"])
-        return "Generated: the lake south of the highway"
-
-    monkeypatch.setattr(notes, "_describe_checkpoint", describe)
-    return calls
 
 
-def _generate(headers=None):
-    resp = client.post("/api/checkpoint-notes/generate",
+def _pending(headers=None) -> list[dict]:
+    resp = client.post("/api/checkpoint-notes/pending",
                        json={"departure_ident": "C81", "destination_ident": "KDLH"}, headers=headers or {})
-    assert resp.status_code == 200
-    return [json.loads(line) for line in resp.text.splitlines() if line]
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["departure_ident"] == "C81"
+    return resp.json()["checkpoints"]
 
 
-def test_generation_is_not_reachable_with_a_get():
-    assert client.get("/api/checkpoint-notes", params={"dep": "C81", "dest": "KDLH"}).status_code == 405
+def _seed(description: str) -> dict:
+    resp = client.post("/api/checkpoint-notes/seed",
+                       json={"hop_key": checkpoint_notes.route_key("C81", "KDLH"), "lat": 45.0, "lon": -90.0,
+                             "description": description})
+    assert resp.status_code == 200, resp.text
+    return resp.json()
 
 
-def test_a_generated_note_is_shared_and_generated_once(monkeypatch, tmp_path):
-    calls = _setup(monkeypatch, tmp_path)
+def test_a_checkpoint_without_a_note_is_pending_with_its_hop_and_a_seeded_note_is_then_shared(monkeypatch, tmp_path):
+    _setup(monkeypatch, tmp_path)
 
-    first = [m for m in _generate() if m["type"] == "checkpoint"]
-    second = [m for m in _generate({"X-Pilot-Id": "42"}) if m["type"] == "checkpoint"]
+    first = _pending()
+    assert first == [{**CHECKPOINT, "hop_key": checkpoint_notes.route_key("C81", "KDLH"), "saved": None}]
 
-    assert calls == ["Lake Mary"]
-    assert first[0]["source"] == "generated"
-    assert second[0]["source"] == "saved"
-    assert second[0]["description"] == "Generated: the lake south of the highway"
+    assert _seed("Generated: the lake south of the highway") == {
+        "description": "Generated: the lake south of the highway", "written": True}
+    assert _pending({"X-Pilot-Id": "42"})[0]["saved"] == "Generated: the lake south of the highway"
 
 
 def test_a_pilots_edit_is_theirs(monkeypatch, tmp_path):
     _setup(monkeypatch, tmp_path)
-    _generate()
+    _seed("Generated: the lake south of the highway")
     resp = client.post("/api/checkpoint-notes", headers={"X-Pilot-Id": "42"}, json={
         "departure_ident": "C81", "destination_ident": "KDLH", "lat": 45.0, "lon": -90.0,
         "description": "Mine: look for the island"})
     assert resp.status_code == 200
 
-    mine = [m for m in _generate({"X-Pilot-Id": "42"}) if m["type"] == "checkpoint"][0]
-    theirs = [m for m in _generate({"X-Pilot-Id": "7"}) if m["type"] == "checkpoint"][0]
-
-    assert mine["description"] == "Mine: look for the island"
-    assert theirs["description"] == "Generated: the lake south of the highway"
+    assert _pending({"X-Pilot-Id": "42"})[0]["saved"] == "Mine: look for the island"
+    assert _pending({"X-Pilot-Id": "7"})[0]["saved"] == "Generated: the lake south of the highway"
 
 
-def test_a_shared_edit_saved_while_the_stream_runs_is_kept(monkeypatch, tmp_path):
-    """Where nobody signs in every edit is shared, and one saved after the
-    stream took its snapshot was buried under the generated text."""
+def test_a_shared_edit_saved_before_the_seed_is_kept(monkeypatch, tmp_path):
+    """Where nobody signs in every edit is shared, and one saved while the
+    assistant wrote its note was buried under the generated text."""
     _setup(monkeypatch, tmp_path)
+    assert _pending()[0]["saved"] is None
+    # The pilot saves while Claude is writing this checkpoint's note.
+    checkpoint_notes.save_note(checkpoint_notes.route_key("C81", "KDLH"), 45.0, -90.0, "Edited: the island")
 
-    def describe(cp, dep, prev_name, next_name):
-        # The pilot saves while Claude is writing this checkpoint's note.
-        checkpoint_notes.save_note(checkpoint_notes.route_key("C81", "KDLH"), 45.0, -90.0, "Edited: the island")
-        return "Generated: the lake south of the highway"
-
-    monkeypatch.setattr(notes, "_describe_checkpoint", describe)
-    streamed = [m for m in _generate() if m["type"] == "checkpoint"][0]
-    again = [m for m in _generate() if m["type"] == "checkpoint"][0]
-
-    assert (streamed["source"], streamed["description"]) == ("saved", "Edited: the island")
-    assert again["description"] == "Edited: the island"
+    assert _seed("Generated: the lake south of the highway") == {"description": "Edited: the island", "written": False}
+    assert _pending()[0]["saved"] == "Edited: the island"
 
 
-def _claude_replies(monkeypatch, blocks, stop_reason):
-    """notes' own Claude call, answered with these blocks and stop reason."""
-    from types import SimpleNamespace
-    messages = SimpleNamespace(create=lambda **kw: SimpleNamespace(content=blocks, stop_reason=stop_reason))
-    monkeypatch.setattr(notes.anthropic, "Anthropic", lambda: SimpleNamespace(messages=messages))
-
-
-def test_a_note_is_the_text_block_after_the_thinking(monkeypatch):
-    from types import SimpleNamespace
-    _claude_replies(monkeypatch, [SimpleNamespace(type="thinking", thinking=""),
-                                  SimpleNamespace(type="text", text=" Look for the lake south of the highway. ")], "end_turn")
-    assert notes._describe_checkpoint(CHECKPOINT, "C81", None, None) == "Look for the lake south of the highway."
-
-
-def test_a_note_cut_off_at_the_cap_is_refused_rather_than_saved(monkeypatch):
-    """The note is saved as the one every pilot sees: half a sentence is
-    worse than the row's own "no note" and a pilot's edit."""
-    import pytest
-    from types import SimpleNamespace
-    _claude_replies(monkeypatch, [SimpleNamespace(type="text", text="Look for the lake south of")], "max_tokens")
-    with pytest.raises(RuntimeError, match="max_tokens"):
-        notes._describe_checkpoint(CHECKPOINT, "C81", None, None)
+def test_an_empty_seed_is_refused(monkeypatch, tmp_path):
+    _setup(monkeypatch, tmp_path)
+    resp = client.post("/api/checkpoint-notes/seed",
+                       json={"hop_key": checkpoint_notes.route_key("C81", "KDLH"), "lat": 45.0, "lon": -90.0, "description": " "})
+    assert resp.status_code == 422
 
 
 def test_a_deleted_account_takes_its_own_notes_and_only_those(monkeypatch, tmp_path):

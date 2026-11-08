@@ -3,18 +3,14 @@ collect, engineer_features, retrain. (evaluate/promote moved to
 wingtip.model_registry -- see that module's docstring for why.) run() is
 the whole training run, every stage in order, which the developer
 console's Retrain starts (`python -m wingtip.pipeline run`, in the
-pipeline-training image). The notebooks stay the human-facing/
+retrain job's image, services/jobs/retrain). The notebooks stay the human-facing/
 exploratory versions of this same logic (plots, the folium map, the
 interactive hand-labeling cell); this module is the automatable subset --
 everything except labeling itself, which is still a human judgment call.
 
 scikit-learn/joblib are imported lazily, inside retrain() only, rather than
-at module level -- this module is shared by two differently-provisioned
-containers (Dockerfile.processing has wingtip's own requirements but NOT
-scikit-learn; Dockerfile.training has those and scikit-learn/joblib on
-top, so run() works there). A module-level sklearn import would make
-collect()/engineer_features() uncallable in the processing image even
-though neither one touches sklearn.
+at module level: the planner imports this module too (app.chart_model,
+for _publish), and loads scikit-learn only when it first scores.
 """
 from __future__ import annotations
 
@@ -795,8 +791,8 @@ def run(status_path: Path | None = None, branches: list | None = None) -> dict:
 
 def _cli() -> None:
     """Run the whole training run (`docker compose up retrain`)
-    or one stage standalone, e.g. `docker compose run --rm pipeline-training retrain`
-    or `docker compose run --rm pipeline-processing collect`.
+    or one stage standalone, e.g. `docker compose run --rm retrain retrain`
+    or `docker compose run --rm retrain collect`.
 
     Kept deliberately close to a SageMaker script-mode entry point (one
     stage per invocation, paths as arguments with sensible defaults, result

@@ -94,8 +94,9 @@ def _none_if_blank(value):
 class Settings(BaseSettings):
     """Every environment variable wingtip and the planner read, by its
     own name (case aside; the field `log_level` is LOG_LEVEL), with its
-    default. Unset optional keys (SWIM_*, the ADS-B keys) are None,
-    which is how each feature knows it is off. ANTHROPIC_API_KEY is not here: the anthropic SDK reads it itself."""
+    default. Unset optional keys (the ADS-B keys) are None,
+    which is how each feature knows it is off. The Claude models and ANTHROPIC_API_KEY are the assistant
+    service's (services/assistant, app.settings): the planner calls no model."""
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 
@@ -112,6 +113,9 @@ class Settings(BaseSettings):
     charts_fetch_for_tiles: bool = True
     #: wingtip.filed_routes' SQLite store of the FAA's filed routes.
     filed_store: Path = DATA_DIR / "raw" / "faa_filed" / "filed.sqlite"
+    #: Where the weather service (services/weather) writes the weather it
+    #: fetches and the planner reads it (wingtip.weather_store).
+    weather_store: Path = DATA_DIR / "raw" / "weather"
     #: wingtip.notams' SQLite store of NOTAMs.
     notam_store: Path = DATA_DIR / "raw" / "faa_notams" / "notams.sqlite"
     #: SageMaker's channel folders and model folder, set only inside a Training Job (wingtip.pipeline).
@@ -126,43 +130,33 @@ class Settings(BaseSettings):
     adsbx_usage_file: Path = DATA_DIR / "raw" / "adsbx_usage.json"
     #: Whether adsb.fi's open data is asked for watched airplanes (0 in production until adsb.fi agrees).
     adsbfi_open_data: bool = True
-    #: Where watched airplanes' recorded tracks are kept.
-    recorded_tracks_dir: Path = DATA_DIR / "raw" / "watched_tracks"
+    #: wingtip.traffic.store's SQLite store of the live feeds (the FAA's radar,
+    #: the followed airplanes and their tracks, where the map looks): written by
+    #: ingest (services/ingest) and the planner both, on the data folder they share.
+    live_store: Path = DATA_DIR / "raw" / "live" / "live.sqlite"
 
     # The planner (services/planner/app)
-    #: The logging level for the planner and its SWIM reader.
+    #: The logging level for the planner.
     log_level: str = "INFO"
     #: Whether the FAA aircraft registry is downloaded and read (0 on a test stack).
     registry_refresh: bool = True
     #: Whether the cycle pack is built once a cycle (0 on a test stack).
     cycle_pack: bool = True
-    #: Whether the map's overlay tiles are built from the cycle pack once a cycle.
-    overlay_tiles: bool = True
     #: Whether the chart's landmark cells are read at start (0 in CI).
     landmarks_build: bool = True
     #: Where the landmark cells are kept; None means beside the cycle's tiles.
     chart_landmarks_dir: Path | None = None
-    #: Whether the planner refreshes the chart cycle on its own (0 in production).
+    #: Whether the planner starts the charts job when a cycle or its overlay tiles are due (0 in production, which schedules it).
     charts_auto_refresh: bool = True
     #: Whether the planner fetches a new edition of the FAA's NASR files and
     #: obstacle file on its own (0 on a test stack): on in production, whatever the charts do.
     faa_data_auto_refresh: bool = True
     #: The "HH:MM-HH:MM" window a cycle's render may start in, or blank for any time.
     charts_refresh_window: str = "01:00-06:00"
-    #: How many render processes a cycle refresh gets.
+    #: How many render processes the charts job's run of a cycle gets (compose passes it to both).
     charts_refresh_workers: int = 1
     #: Whether the chart model reads tiles in the planner's own process pool.
     chart_reads_in_process: bool = True
-    #: The assistant's model, its effort, and whether the server-side fallback is asked for (1 only).
-    assistant_model: str = "claude-opus-5-5"
-    assistant_effort: str = "medium"
-    assistant_fallbacks: bool = False
-    #: The mock oral's model.
-    oral_model: str = "claude-opus-5-5"
-    #: The plain-words briefs' model.
-    words_model: str = "claude-haiku-5-5"
-    #: The checkpoint notes' model.
-    checkpoint_note_model: str = "claude-haiku-5-5"
     #: The OTLP collector traces go to; None sends none (app.tracing).
     otel_exporter_otlp_endpoint: str | None = None
     #: The service name on those traces.
@@ -173,32 +167,10 @@ class Settings(BaseSettings):
     dev_services_url: str | None = None
     #: The gateway's address (GATEWAY_URL), for the status page's health probe.
     gateway_url: str = "http://gateway:8080"
-    #: The FAA SWIM subscription (app.swim_reader): the broker, the account, and the CA store.
-    #: A feed is read only where all of host, username, password and its own VPN and queue are set.
-    swim_host: str | None = None
-    swim_username: str | None = None
-    swim_password: str | None = None
-    swim_trust_store: str = "/etc/ssl/certs"
-    #: Each feed's own broker (where it is not SWIM_HOST), VPN and queue.
-    swim_host_stdds: str | None = None
-    swim_vpn_stdds: str | None = None
-    swim_queue_stdds: str | None = None
-    swim_host_fns: str | None = None
-    swim_vpn_fns: str | None = None
-    swim_queue_fns: str | None = None
-    swim_host_tfms: str | None = None
-    swim_vpn_tfms: str | None = None
-    swim_queue_tfms: str | None = None
 
     read_switches = field_validator(
-        "charts_fetch_for_tiles", "adsbfi_open_data", "registry_refresh", "cycle_pack", "overlay_tiles", "landmarks_build",
+        "charts_fetch_for_tiles", "adsbfi_open_data", "registry_refresh", "cycle_pack", "landmarks_build",
         "charts_auto_refresh", "faa_data_auto_refresh", "chart_reads_in_process", mode="before")(_switch)
-
-    @field_validator("assistant_fallbacks", mode="before")
-    @classmethod
-    def read_opt_in(cls, value):
-        """The fallback is opt-in: "1" turns it on, anything else leaves it off."""
-        return value == "1" if isinstance(value, str) else value
 
     @field_validator("chart_tiles_url", "dev_services_url", mode="before")
     @classmethod

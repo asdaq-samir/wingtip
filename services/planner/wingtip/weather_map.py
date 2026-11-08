@@ -6,26 +6,20 @@ in sight. From the same aviationweather.gov products the briefing reads
 (wingtip.weather's held copies), so the map and the Brief never disagree.
 The radar and the satellite picture are tiles the browser draws itself
 (the Iowa Environmental Mesonet's NEXRAD and GOES mosaics); `radar_valid`
-says when the radar was made.
+says when the radar was made, as the weather service last read it
+(services/weather/app/radar.py).
 """
 from __future__ import annotations
 
 import math
 import time
 
-import requests
-
-from . import weather
+from . import weather, weather_store
 
 #: A SIGMET is a flight's for as long as it is valid; a G-AIRMET is a
 #: snapshot valid at its time, three hours apart (wingtip.weather): the one
 #: nearest the time asked for is drawn, within this.
 GAIRMET_NEAREST_S = 90 * 60
-
-#: The radar mosaic's own record of when it was made (IEM's n0q JSON).
-RADAR_META_URL = "https://mesonet.agron.iastate.edu/data/gis/images/4326/USCOMP/n0q_0.json"
-_RADAR_TTL_S = 120
-_radar: dict = {"at": 0.0, "valid": None}
 
 
 def _in_box(coords: list, box: tuple) -> bool:
@@ -131,16 +125,8 @@ def winds_in(box: tuple, altitude_ft: float, fcst_hr: str) -> dict | None:
 
 
 def radar_valid() -> str | None:
-    """When the radar mosaic the map draws was made, ISO UTC, held two
-    minutes; None where IEM does not answer (the tiles may still draw)."""
-    now = time.time()
-    if now - _radar["at"] < _RADAR_TTL_S:
-        return _radar["valid"]
-    try:
-        resp = requests.get(RADAR_META_URL, timeout=5)
-        resp.raise_for_status()
-        valid = resp.json().get("meta", {}).get("valid")
-    except (requests.RequestException, ValueError):
-        valid = _radar["valid"]
-    _radar.update(at=now, valid=valid)
-    return valid
+    """When the radar mosaic the map draws was made, ISO UTC, as the
+    weather service last read it from IEM's own record of it (every two
+    minutes); None where it has none (the tiles may still draw)."""
+    record = weather_store.read("radar")
+    return (record.data or {}).get("valid") if record else None

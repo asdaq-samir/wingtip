@@ -156,6 +156,7 @@ def _weather_datasets() -> list[WeatherDataset]:
 # compose container, not a one-off `compose run`: the sidecar sees only the
 # former, and the console reads "is a run going" from it.
 BY_HAND = "docker compose up retrain"
+CHARTS_BY_HAND = "docker compose run --rm charts"
 RUN_GOING = "A training run is going already; follow it in Performance."
 
 
@@ -243,10 +244,16 @@ def status() -> Status:
 
 @router.post("/api/charts/refresh")
 def refresh_charts() -> ChartRefreshStarted:
-    """Fetch and render the FAA's current chart cycle now, in a
-    subprocess of the planner's own -- the same job it runs daily by
-    itself. `started` is False when one is already running."""
-    return ChartRefreshStarted(started=chart_refresh.refresh_now(), current_cycle=charts.current_cycle())
+    """Fetch and render the FAA's current chart cycle now, and the
+    overlay tiles where due: the charts job's container (services/jobs/
+    charts), started through the dev-services sidecar -- the same job the
+    hourly check starts. `started` is False when it is already running;
+    without the sidecar the answer says how to run it by hand."""
+    started = chart_refresh.refresh_now()
+    if started is None:
+        raise HTTPException(501, f"The charts job starts through the dev-services sidecar, which this planner has none of. "
+                                 f"By hand: {CHARTS_BY_HAND}")
+    return ChartRefreshStarted(started=started, current_cycle=charts.current_cycle())
 
 
 @router.post("/api/retrain")

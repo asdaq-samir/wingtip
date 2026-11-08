@@ -18,9 +18,31 @@ one job (the owner kept both server languages on this split, 2026-11-06):
   61.109 experience. No network, no screen, no clock of its own. Each rule is a name in `engine/facade/src/call.rs`,
   JSON in and out, typed in `engine/contract/engine.schema.json`.
 - **The planner** (FastAPI, `services/planner`: `app` over `wingtip`) works
-  out a flight: it fetches the FAA and weather data, runs the chart
-  model and the assistant, and asks the engine every rule
-  (`wingtip_native.call`).
+  out a flight: it fetches the FAA's data, reads the weather and the live
+  feeds from the shared store, runs the chart model and chart vision,
+  and asks the engine every rule (`wingtip_native.call`). It fetches no
+  weather, reads no feed, calls no model and builds no tiles: those are
+  the services beside it (#535, the owner's split of 2026-11-08).
+- **The services beside the planner**, each its own image on wingtip's
+  base (`services/Dockerfile.base`) and each with no rule of its own:
+  `services/ingest` reads the live feeds always (the FAA's SWIM feeds:
+  STDDS radar, FNS NOTAMs, TFMS filed routes; the followed airplanes'
+  adsb.fi rounds); `services/weather` fetches the weather on a schedule
+  (METARs, TAFs, advisories, PIREPs, the GFS's winds aloft, GLMP, TFRs,
+  the radar's time); `services/assistant` makes every Claude call (the
+  assistant, the narrative, the words, the checkpoint notes, the mock
+  oral), holds the Anthropic key and asks the planner over HTTP for
+  every figure; `services/jobs` holds the one-off runs, `retrain` (the
+  chart model's training) and `charts` (the chart cycle's raster tiles,
+  packed as PMTiles, and the overlay vector tiles), behind compose's
+  `jobs` profile. **The shared store** is how they meet without a
+  message bus: ingest and weather write, the planner reads, on the data
+  volume they all mount (the live store `data/raw/live/live.sqlite`,
+  `wingtip.traffic.store`; the NOTAM and filed-route SQLite stores; the
+  weather store `data/raw/weather`, `wingtip.weather_store`; the chart
+  tiles) and in Postgres (the gateway's records), so no pilot's request
+  waits on a live fetch. The apps talk only to the gateway, which sends
+  the Claude paths to the assistant and the rest to the planner.
 - **Spring Boot** (`services/gateway`) is who the pilot is and what they
   saved: accounts, sign-in, records, the public API, scheduled mail. It
   holds no aviation logic: for a figure it asks the planner over HTTP
@@ -38,15 +60,17 @@ one job (the owner kept both server languages on this split, 2026-11-06):
 - **Screens are view and view model** (MVVM): the view draws, one hook (web)
   or observable model (iOS, Android) per screen holds its state and makes
   its calls. How a figure is written on the screen stays with each app.
-- **Data comes in at the edges**: the planner's endpoints and the cycle
-  packs feed the engine; the engine never fetches.
+- **Data comes in at the edges**: the planner's endpoints, the shared
+  store that ingest and weather fill, and the cycle packs feed the
+  engine; the engine never fetches.
 - Adding or changing a rule: the Rust in the lowest crate that can hold
   it, its name in `call.rs`, its entry in the contract
   (`engine.schema.json`), `npm run types` in apps/web (and
   `scripts/build/engine-contract-apps.sh` when a phone decodes it), its test
   against the shared fixtures (apps/web/src/lib/fixtures),
   `scripts/build/build-engine-wasm.sh` (the `.wasm` is committed and CI checks
-  it matches), and the planner's image rebuilt.
+  it matches), and the images that link it rebuilt (the planner, ingest,
+  weather and the jobs).
 
 ## Branches
 
@@ -149,8 +173,9 @@ holds up a code change (the owner, 2026-11-06 and 2026-11-08).
 
 On the Mac, run them with `scripts/dev/check.sh all-changed` (the areas the
 branch and its uncommitted files touch, in parallel) or `scripts/dev/check.sh
-<area>` (web, py, planner, engine, java, ios,
-android). It runs the table's commands in Docker, or on the host for the
+<area>` (web, py, planner, ingest, assistant, weather, jobs, engine, java,
+ios, android); a change to `services/planner/wingtip` or `engine/` also
+checks ingest, weather and jobs, which copy wingtip in. It runs the table's commands in Docker, or on the host for the
 phones, each area in its own turn of `scripts/dev/one-at-a-time.sh`, warm from
 any worktree's first run: ready-made images per lockfile and requirements,
 and shared Cargo, npm, uv and Maven caches (the script's header lists
@@ -162,6 +187,10 @@ them). The table is what it runs:
 | `services/planner/` (app) | `ruff check app tests && pytest tests/` (in `services/planner`) |
 | `services/planner/wingtip`, `tests_wingtip/` | `ruff check wingtip tests_wingtip && pytest tests_wingtip/` (in `services/planner`) |
 | `engine/` (Rust, `wingtip_native`) | the engine's `cargo test --profile ci` (`ci.yml`'s line); `maturin build -m engine/bindings/py/Cargo.toml` and install the wheel, then `pytest tests_wingtip/test_native.py` (in `services/planner`); every image that copies `services/planner/wingtip` is built FROM `services/Dockerfile.base`, which builds and installs it once (`services/planner/tests_wingtip/test_dockerfiles.py`), and none of them starts without it |
+| `services/ingest/` | `ruff check ingest tests && pytest tests/` (in `services/ingest`, after `pip install -r requirements-dev.txt` and the engine's wheel) |
+| `services/weather/` | `ruff check app tests && pytest tests/` (in `services/weather`, after `pip install -r requirements-dev.txt` and the engine's wheel) |
+| `services/assistant/` | `ruff check app tests && pytest tests/` (in `services/assistant`, after `pip install -r requirements-dev.txt`); `python -m app.openapi` after a schema or route change |
+| `services/jobs/` | `ruff check charts && pytest charts/tests/` (in `services/jobs`; CI runs them in its `test` job) |
 | `services/gateway/` | `mvn -B test` (needs Docker, for Testcontainers) |
 | `apps/ios/` (the native app) | On the Mac mini (Xcode and XcodeGen are there): `xcodegen` in `apps/ios/`, then `xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -destination "platform=iOS Simulator,name=<newest iPhone>" test` through `scripts/dev/one-at-a-time.sh`; `native-ios.yml` runs the same, iPad included (docs/NATIVE.md) |
 | `apps/android/` (the native app) | On the Mac mini: `./gradlew testDebugUnitTest lintDebug assembleDebug` in `apps/android/` with JetBrains' JDK 21, after `engine/bindings/ffi/build-android.sh`; `native-android.yml` builds the engine for each ABI, runs the unit tests, lint and a debug APK, then the instrumented tests on an emulator (docs/NATIVE-ANDROID.md) |

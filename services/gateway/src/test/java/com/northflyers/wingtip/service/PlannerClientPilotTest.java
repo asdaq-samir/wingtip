@@ -49,7 +49,8 @@ class PlannerClientPilotTest {
     }
 
     private PlannerClient client() {
-        return new PlannerClient("http://127.0.0.1:" + planner.getAddress().getPort() + "/");
+        // The rules are the planner's; the assistant is not asked here.
+        return new PlannerClient("http://127.0.0.1:" + planner.getAddress().getPort() + "/", "http://127.0.0.1:1");
     }
 
     private static List<LogbookEntry> logbook() {
