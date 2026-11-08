@@ -51,6 +51,19 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   }
   await expect(page.getByTestId("map-settings-button")).toHaveCount(0);
 
+  // EMER, under the stack at the same 60 points, opens the airplane's
+  // emergency checklists in one tap (#220).
+  const emer = page.getByTestId("flying-emergency");
+  await expect(emer).toBeVisible();
+  const emerBox = (await emer.boundingBox())!;
+  expect(Math.round(emerBox.width)).toBe(FLYING_PX);
+  await emer.click();
+  const sheet = page.getByTestId("emergency-checklists");
+  await expect(sheet.getByTestId("checklist")).toHaveAttribute("data-kind", "emergency");
+  await expect(sheet).toContainText("No emergency checklist yet");
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+
   // The dry run closed from the Profile: on the ground at once, everything
   // back -- the small buttons, and at half the route's box and the tabs.
   await grabberTo(page, "half");

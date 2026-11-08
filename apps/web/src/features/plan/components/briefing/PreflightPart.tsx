@@ -16,6 +16,7 @@ import BriefChecks from "./BriefChecks";
 import { Accordion } from "../../../../components/ui/accordion";
 import { SectionsOpen } from "../../../../components/sectionLayout";
 import PassengerBriefing from "./PassengerBriefing";
+import FlightChecklists from "./FlightChecklists";
 import { passengerMessage } from "../../../../lib/passengers";
 import FuelSection from "./FuelSection";
 import FlightPlanSection from "./FlightPlanSection";
@@ -99,6 +100,12 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart, narr
             .filter(Boolean).join(", ") : null,
         })}
       />
+
+      {/* The airplane's own checklists, kept on this device; never on
+          paper: the pilot's own printed ones are in the airplane. */}
+      <div className="print:hidden">
+        <FlightChecklists />
+      </div>
 
       {/* The mock oral, the developer's until a CFI has reviewed its
           answers; never on paper. */}

@@ -1,7 +1,7 @@
 import Foundation
 
 // The pilot's own records on the gateway, past what Pilot.swift reads:
-// their airplanes with checklists, squawks, inspections and VOR checks,
+// their airplanes with squawks, inspections and VOR checks,
 // the logbook written to, the account's contact and its deletion, and the
 // instructor's side of training. Shapes as services/gateway/openapi.json
 // gives them, in its own camelCase names; dates are the "2026-10-25"
@@ -141,7 +141,9 @@ enum VorCheckKind {
     static func label(_ kind: String) -> String { all.first { $0.value == kind }?.label ?? kind }
 }
 
-/// An airplane's checklist as its owner writes it (ChecklistDto).
+/// An airplane's checklist as the engine reads it from the pilot's text
+/// (ChecklistText), the same shape the watch is sent (WatchChecklist).
+/// It is kept on the device as text (LocalChecklists), not on the gateway.
 struct Checklist: Codable, Equatable, Sendable {
     var sections: [ChecklistSection]
 }
@@ -307,10 +309,6 @@ extension Gateway {
         try await send(OwnAircraftRecord.self, "PUT", "/api/aircraft/\(id)", json: r)
     }
     static func deleteAircraft(_ id: Int64) async throws { try await send("DELETE", "/api/aircraft/\(id)") }
-    static func checklist(_ id: Int64) async throws -> Checklist { try await send(Checklist.self, "GET", "/api/aircraft/\(id)/checklist") }
-    static func saveChecklist(_ id: Int64, _ c: Checklist) async throws -> Checklist {
-        try await send(Checklist.self, "PUT", "/api/aircraft/\(id)/checklist", json: c)
-    }
     static func saveInspections(_ id: Int64, _ r: InspectionsRequest) async throws -> OwnAircraftRecord {
         try await send(OwnAircraftRecord.self, "PUT", "/api/aircraft/\(id)/inspections", json: r)
     }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The picked airplane's checklist as the phone read it from the gateway
+/// The picked airplane's checklist as the phone keeps it
 /// (WatchContext.checklist): its sections as a list, each a page of items
 /// to tick. The ticks are this run's, kept on the watch alone; a
 /// section is reset by swiping its row, and every tick goes when the

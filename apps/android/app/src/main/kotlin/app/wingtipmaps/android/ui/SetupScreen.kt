@@ -8,6 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.briefing.PassengerScreen
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
@@ -50,8 +57,13 @@ import app.wingtipmaps.android.map.MapLayersStore
  * with more than one. The Map section holds what is drawn on the map,
  * as the iOS app's Setup has it: Traffic, for now.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetupScreen(session: Session) {
+    // The plan the root holds (the activity's one Plan), for the
+    // passenger briefing's flight.
+    val plan: Plan = viewModel()
+    var briefing by rememberSaveable { mutableStateOf(false) }
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val loaded by session.loaded.collectAsStateWithLifecycle()
     val problem by session.problem.collectAsStateWithLifecycle()
@@ -103,9 +115,26 @@ fun SetupScreen(session: Session) {
         Text("Map", style = MaterialTheme.typography.titleLarge)
         MapLayerRows()
         TrafficRow()
+        // The passenger briefing for the planned flight (#223), where the
+        // field's "passenger briefing" opens Setup.
+        Text("Flight", style = MaterialTheme.typography.titleLarge)
+        ListItem(
+            headlineContent = { Text("Passenger briefing") },
+            supportingContent = { Text("Brief them, then send them the flight", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { briefing = true },
+        )
         Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Server", style = MaterialTheme.typography.bodyMedium)
             Text(Config.host, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+    if (briefing) {
+        ModalBottomSheet(
+            onDismissRequest = { briefing = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            PassengerScreen(plan)
         }
     }
 }

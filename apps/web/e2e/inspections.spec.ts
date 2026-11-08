@@ -47,7 +47,7 @@ test("an airplane's inspections say how long each is good for, and are saved tog
   });
 });
 
-test("an airplane's checklist is written from its flight manual, then run item by item", async ({ page }) => {
+test("an airplane's checklists are written from its handbook, kept on this device, then run item by item", async ({ page }) => {
   const plane = {
     id: 5, tailNumber: "N12345", typeDesignator: "C172", cruiseTasKt: 110, fuelBurnGph: 8.5, cruisePowerPct: null,
     climbTasKt: null, climbFuelBurnGph: null, usableFuelGal: 40, createdAt: "2026-01-01T00:00:00Z", vorCheck: null, openSquawks: [],
@@ -57,26 +57,24 @@ test("an airplane's checklist is written from its flight manual, then run item b
       eltInspectedOn: null, eltInspectionGoodThrough: null, eltBatteryDueOn: null,
     },
   };
-  let checklist: { sections: unknown[] } = { sections: [] };
   await page.route(url => url.pathname === "/api/aircraft", route => route.fulfill({ json: [plane] }));
-  await page.route(url => url.pathname === "/api/aircraft/5/checklist", async route => {
-    if (route.request().method() === "PUT") checklist = route.request().postDataJSON() as typeof checklist;
-    await route.fulfill({ json: checklist });
-  });
   await page.goto("/app/plan");
   await showTabs(page);
   await openConsole(page);
   const console = page.getByTestId("console-sheet");
   await library(console, "Airplanes");
   await console.getByRole("button", { name: "Edit N12345" }).click();
-  await page.getByRole("button", { name: /^Checklist/ }).click();
+  await page.getByRole("button", { name: /^Checklists/ }).click();
   await expect(console).toContainText("No checklist yet");
   await console.getByTestId("checklist-edit").click();
+  // An empty editor offers the phases' headings alone, nothing under them.
+  await console.getByTestId("checklist-phases").click();
+  await expect(console.getByTestId("checklist-text")).toHaveValue(/^# Preflight inspection\n/);
   await console.getByTestId("checklist-text").fill("# Before takeoff\nFuel selector -- Both\nMixture ..... Rich");
   await console.getByTestId("checklist-save").click();
-  await expect.poll(() => checklist.sections).toEqual([{
-    title: "Before takeoff", items: [{ challenge: "Fuel selector", response: "Both" }, { challenge: "Mixture", response: "Rich" }],
-  }]);
+  // Kept in this browser under the airplane's key, not sent anywhere.
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("wingtip.checklists") ?? "{}") as unknown))
+    .toEqual({ "mine:5": { normal: "# Before takeoff\nFuel selector -- Both\nMixture ..... Rich" } });
   const items = console.getByTestId("checklist-item");
   await expect(items).toHaveCount(2);
   await items.first().click();
@@ -84,6 +82,9 @@ test("an airplane's checklist is written from its flight manual, then run item b
   await expect(console).toContainText("1 of 2");
   await console.getByTestId("checklist-reset").click();
   await expect(items.first()).toHaveAttribute("aria-checked", "false");
+  // The emergency list is the airplane's other, empty until written.
+  await console.getByTestId("checklist-kind").getByText("Emergency").click();
+  await expect(console).toContainText("No emergency checklist yet");
 });
 
 test("a squawk is written with its 91.213(d) deferral, and fixed", async ({ page }) => {

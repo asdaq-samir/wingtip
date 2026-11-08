@@ -225,6 +225,31 @@ request needs an Activity. Setup's Map section has the Traffic switch
 (`TrafficSwitch`, kept in the DataStore settings file under "traffic",
 on until turned off), where the iOS app's Setup has it.
 
+Checklists (#220, `checklist/`): each airplane, by the plan's airplane
+key, keeps two plain texts on the phone, its normal and its emergency
+checklists, in SharedPreferences ("checklists"). They are the engine's
+checklist text (a "#" line a section, "Challenge -- Response" an item),
+read by `checklist_read` as the web and the iPhone read it. Each starts
+empty, and "Start from the phases" fills an empty editor with the
+headings alone, in the order of GAMA Specification No. 1's Sections 4
+and 3 (`ChecklistPhases`); the app ships no handbook's items. The run
+view ticks rows, counts each section's "n of m" and starts over; the
+ticks last while the app runs. The Aircraft screen has Checklist and
+Emergency rows; in the air (own ship on and under way, the engine's
+`underway`) an EMER button under the map's buttons opens the airplane's
+emergency checklists in one tap, in either layout.
+
+Passenger briefing (#223, `briefing/`): Setup's Flight section opens
+the SAFETY briefing's seven items for the planned flight, each with its
+source under it (14 CFR 91.107(a) for the belts, the FAASTeam's
+"Passenger SAFETY briefing" and the Private Pilot ACS PA.II.B.S2 for the
+rest), ticked and kept for that flight. Under them, the flight in a few
+lines as the web's lib/passengers writes it -- the route, leaving now in
+local time and Z, about how long in the air, the landing time, the
+destination's weather in words from the planner's airport card -- and
+Share, Android's share sheet (ACTION_SEND). The live shareable track
+waits for the AWS launch.
+
 Still to come: the tile store and the route's tiles for the air, the
 briefing, the checkpoints and the side view, the altitude wheel, the
 airplane by N-number, widgets, and the brand's own launcher icon: the

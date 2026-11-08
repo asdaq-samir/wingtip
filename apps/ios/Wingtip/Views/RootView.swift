@@ -182,7 +182,8 @@ struct RootView: View {
             // In the strip the field is the way to the assistant, so the
             // sparkle is not drawn.
             MapButtons(following: $following, routeAway: routeAway && plan.course != nil, fitRoute: { fitRequest += 1 },
-                       ask: layoutName == "strip" ? nil : { asking = true })
+                       ask: layoutName == "strip" ? nil : { asking = true },
+                       emergency: { FlightUI.shared.emergency = true })
         }
         .overlay(alignment: .top) {
             VStack(spacing: 8) {

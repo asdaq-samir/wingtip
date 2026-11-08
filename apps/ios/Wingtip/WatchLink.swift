@@ -14,9 +14,9 @@ import WatchConnectivity
 final class WatchLink: NSObject, WCSessionDelegate {
     static let shared = WatchLink()
 
-    /// The checklist of the airplane last fetched, by its N-number, so the
-    /// gateway is asked once an airplane rather than once a tick.
-    private var checklistFor: String?
+    /// The airplane's checklist as last read, with the text it was read
+    /// from, so the engine reads it again only when the text changes.
+    private var checklistText: String?
     private var checklist: Checklist?
     /// The last context sent, so an unchanged one is not sent again.
     private var sentContext: Data?
@@ -24,7 +24,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
     private override init() { super.init() }
 
     /// Activated, then kept up: every few seconds the picked airplane's
-    /// checklist (fetched when the airplane changes) and the fix are sent,
+    /// checklist (kept on this phone) and the fix are sent,
     /// where the phone has a paired watch with the app on it. Returns
     /// only when the task that runs it is cancelled.
     func run(plan: Plan, ownShip: OwnShip) async {
@@ -38,17 +38,19 @@ final class WatchLink: NSObject, WCSessionDelegate {
     private func sync(plan: Plan, ownShip: OwnShip) async {
         let session = WCSession.default
         guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else { return }
-        if plan.tail != checklistFor {
-            checklistFor = plan.tail
-            checklist = nil
-            if let tail = plan.tail { checklist = await fetchChecklist(tail) }
+        // The airplane's normal checklist as kept on this phone
+        // (LocalChecklists), by its N-number, else its type.
+        let text = LocalChecklists.text(for: LocalChecklists.airplane(of: plan), .normal)
+        if text != checklistText {
+            checklistText = text
+            checklist = text.isEmpty ? nil : ChecklistText.parse(text)
         }
         let fix = ownShip.fix.map {
             WatchFix(lat: $0.coordinate.latitude, lon: $0.coordinate.longitude, altitudeFt: $0.altitudeFt,
                      trackDeg: $0.trackDeg, groundspeedKt: $0.groundspeedKt, at: $0.at)
         }
-        // The gateway's checklist re-read as the watch's own type, from the
-        // same JSON: one shape, two compiled copies.
+        // The checklist re-read as the watch's own type, from the same
+        // JSON: one shape, two compiled copies.
         let watchChecklist = checklist.flatMap { c -> WatchChecklist? in
             guard let data = try? JSONEncoder().encode(c) else { return nil }
             return try? JSONDecoder().decode(WatchChecklist.self, from: data)
@@ -66,12 +68,6 @@ final class WatchLink: NSObject, WCSessionDelegate {
             // Sent again next tick; a watch out of reach is not a problem
             // the pilot can act on.
         }
-    }
-
-    private func fetchChecklist(_ tail: String) async -> Checklist? {
-        guard let records = try? await Gateway.aircraftRecords(),
-              let record = records.first(where: { $0.tailNumber == tail }) else { return nil }
-        return try? await Gateway.checklist(record.id)
     }
 
     /// The watch's question answered from the planner. The handler is

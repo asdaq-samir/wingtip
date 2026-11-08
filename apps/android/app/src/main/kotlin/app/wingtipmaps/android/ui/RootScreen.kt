@@ -48,6 +48,8 @@ import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.checklist.ChecklistKind
+import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.OwnTrail
 import app.wingtipmaps.android.flight.Geo
@@ -154,6 +156,11 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     var ownShipOn by rememberSaveable { mutableStateOf(false) }
     var following by rememberSaveable { mutableStateOf(false) }
     var asking by rememberSaveable { mutableStateOf(false) }
+    var emergency by rememberSaveable { mutableStateOf(false) }
+    // Under way: own ship on and at flying speed (the engine's
+    // `underway`), when the strip turns to the airplane and the map
+    // buttons offer the emergency checklists.
+    val flying = ownShipOn && OwnShip.underway(fix?.groundspeedKt)
     // Location is asked precise and approximate together: Android 12 and
     // later ignore a request for precise alone, and let the pilot answer
     // with approximate, which start() reads and the note under the
@@ -294,7 +301,10 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                 problem = if (info == null) chartProblem else null,
                 modifier = Modifier.fillMaxSize(),
             )
-            MapButtons(ownShip = ownShipMode, onOwnShip = onOwnShip, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
+            MapButtons(
+                ownShip = ownShipMode, onOwnShip = onOwnShip, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd),
+                onEmergency = if (flying) ({ emergency = true }) else null,
+            )
             // Why the airplane is not on the map, where the pilot looks
             // for it: beside the button that showed it.
             if (ownShipOn && (approximate || denied)) {
@@ -311,8 +321,17 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             }
         }
     }
+    // The current airplane's emergency checklists, over either layout,
+    // from EMER on the map.
+    if (emergency) {
+        ModalBottomSheet(
+            onDismissRequest = { emergency = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            ChecklistScreen(airplane = state.aircraft, kind = ChecklistKind.EMERGENCY)
+        }
+    }
     if (layout == LayoutPreference.STRIP) {
-        val flying = ownShipOn && OwnShip.underway(fix?.groundspeedKt)
         StripTheme {
             StripLayout(plan = plan, session = session, ownShip = ownShip, flying = flying, map = { mapContent(null, 0.dp) })
         }

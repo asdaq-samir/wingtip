@@ -21,6 +21,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
@@ -35,11 +39,19 @@ enum class OwnShipMode { OFF, READING, FOLLOWING }
  * The buttons over the map, under the status bar at the right, as the
  * iOS app's MapButtons: the location arrow, and under it the sparkle
  * that opens Ask (AskScreen), a question about the flight put to the
- * assistant. A tonal icon button is Material's own 40-dp control with
- * its 48-dp touch target, so nothing is grown to be tappable.
+ * assistant. In flight, EMER under them opens the airplane's emergency
+ * checklists in one tap (#220). A tonal icon button is Material's own
+ * 40-dp control with its 48-dp touch target, so nothing is grown to be
+ * tappable.
  */
 @Composable
-fun MapButtons(ownShip: OwnShipMode, onOwnShip: () -> Unit, onAsk: (() -> Unit)?, modifier: Modifier = Modifier) {
+fun MapButtons(
+    ownShip: OwnShipMode,
+    onOwnShip: () -> Unit,
+    onAsk: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    onEmergency: (() -> Unit)? = null,
+) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(modifier.padding(top = top + 8.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val tint = when (ownShip) {
@@ -67,6 +79,21 @@ fun MapButtons(ownShip: OwnShipMode, onOwnShip: () -> Unit, onAsk: (() -> Unit)?
                 colors = IconButtonDefaults.filledTonalIconButtonColors(contentColor = MaterialTheme.colorScheme.primary),
             ) {
                 Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask about this flight")
+            }
+        }
+        // Only in the air, where an emergency checklist is wanted at
+        // once; on the ground it is on the airplane screen. Its letters in
+        // the error colour, so it is found without reading.
+        if (onEmergency != null) {
+            FilledTonalIconButton(
+                onClick = onEmergency,
+                colors = IconButtonDefaults.filledTonalIconButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                modifier = Modifier.semantics { contentDescription = "Emergency checklists" },
+            ) {
+                Text(
+                    "EMER", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clearAndSetSemantics {},
+                )
             }
         }
     }
