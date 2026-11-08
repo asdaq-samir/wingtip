@@ -49,7 +49,7 @@ workspace.
 |---|---|---|
 | `core` | geo, wmm, grid, sums, time, json, xml | nothing |
 | `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items) | nothing |
-| `weather` | metar, taf, winds, forecast, validity, notam, tfr | core |
+| `weather` | metar, taf, winds, forecast, validity, notam, tfr, cycles | core, flight |
 | `procedures` | figures (debrief, diversion, holding, lost comms, words) | core, flight |
 | `radio` | clearance, readback, atis | core |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), aircraft | core |
@@ -68,7 +68,16 @@ Why these lines:
   91.159's cruising altitudes, 91.151's reserve, the atmosphere). It is a
   crate of its own, not part of `brief`, because `procedures` (the
   diversion's triangle, the fuel strip's reserve) uses it and `brief`
-  sits above `procedures`.
+  sits above `procedures`; `weather` reads it too, for the standard
+  atmosphere's lapse rate a temperature aloft is carried past its levels
+  with (winds.rs).
+- `weather` reads the products the hosts fetch: the AWC's cache files
+  into the shapes the weather store keeps (`forecast::awc`), what they
+  say along a route (`forecast::route`), a field's hours for the airport
+  card (`forecast::hours`) and the winds and temperatures aloft at an
+  altitude (winds.rs). The basic VFR minimums its "VFR flight not
+  recommended" reasons are held to are `airspace`'s (rules.rs), so
+  call.rs hands them in.
 - `procedures` sits just above them because its `figures::words` (a number
   written as the web writes it) is shared by the Go / No-Go, runways,
   routes, the airspace rules and the wording.

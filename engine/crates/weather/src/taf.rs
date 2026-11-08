@@ -14,6 +14,10 @@ use crate::{json, time};
 pub struct Period {
     pub from: i64,
     pub to: i64,
+    /// The end of a BECMG's, TEMPO's or PROB's own window as sent: a
+    /// BECMG's change is under way until then and holds after it, so its
+    /// `to` runs on to the next prevailing group (AC 00-45H, the TAF).
+    pub by: Option<i64>,
     /// "" for the forecast's first part, else FM, TEMPO, BECMG or PROB.
     pub change: String,
     pub probability: Option<u32>,
@@ -178,7 +182,7 @@ pub fn parse(raw: &str, near: i64) -> Option<Taf> {
             }
             let Some((from, to)) = words.get(i).and_then(|t| window(t, issued)) else { continue };
             i += 1;
-            groups.push((Period { from, to, change: change.into(), probability, ..Default::default() }, vec![]));
+            groups.push((Period { from, to, by: Some(to), change: change.into(), probability, ..Default::default() }, vec![]));
             continue;
         }
         groups.last_mut().unwrap().1.push(w);

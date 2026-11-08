@@ -272,6 +272,36 @@ services:
       <<: *python-healthcheck
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
 
+  # The weather the planner reads, fetched on a schedule (services/weather):
+  # METARs, TAFs, SIGMETs, PIREPs and G-AIRMETs from aviationweather.gov,
+  # the GFS's winds aloft and GLMP from NOMADS, TFRs from tfr.faa.gov and
+  # the radar's time from IEM, each written to the weather store on the
+  # data folder the planner mounts (data/raw/weather, wingtip.weather_store),
+  # so no pilot's request waits on a live fetch (#535). Fast while the
+  # planner is being used, slow otherwise. Its health check at :8000 says
+  # how fresh each product is (`docker compose exec weather python3 -c
+  # "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/').read().decode())"`).
+  # Mounts the project as the planner does, so its code is the checkout's.
+  weather:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: services/weather/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    volumes:
+      - .:/workspace
+    environment:
+      # Its own code first, then the planner's folder for wingtip.
+      PYTHONPATH: /workspace/services/weather:/workspace/services/planner
+    # Python, the engine, and a GLMP issue's two grids at their largest
+    # while it reads them: well under this, which keeps it from crowding
+    # the planner (infra/docker-compose.prod.yml has the same).
+    mem_limit: 384m
+    healthcheck:
+      <<: *python-healthcheck
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+
   # Where the local stack's sign-in emails go: an inbox of its own at
   # http://localhost:8025, sent nowhere. A mail host is what makes
   # signing in possible, so the local stack runs the way a deployment

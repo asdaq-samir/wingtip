@@ -1,0 +1,92 @@
+{
+ "_note": "The weather reading moved into the engine (#482 phase 2) from the planner's wingtip.weather and the web's lib/hourly: each case's answer is what the planner's Python (or the web's reading) gave for it. engine/facade/tests/weather_along.rs asks the engine each by name; the planner and the web ask the same names.",
+ "tafWindow": [
+  {
+   "fcsts": [
+    {"timeFrom": 0, "timeTo": 100, "change": "", "ceiling_ft": 4000, "ceiling_unknown": false, "visibility_sm": 6},
+    {"timeFrom": 20, "timeTo": 40, "change": "TEMPO", "ceiling_ft": null, "ceiling_unknown": false, "visibility_sm": 0.5},
+    {"timeFrom": 50, "timeTo": 60, "change": "BECMG", "ceiling_ft": 800, "ceiling_unknown": false, "visibility_sm": 6}
+   ],
+   "start": 25, "end": 30,
+   "worst": {"ceiling_ft": 4000, "ceiling_unknown": false, "visibility_sm": 0.5}
+  },
+  {
+   "fcsts": [
+    {"timeFrom": 0, "timeTo": 100, "change": "", "ceiling_ft": 4000, "ceiling_unknown": false, "visibility_sm": 6},
+    {"timeFrom": 20, "timeTo": 40, "change": "TEMPO", "ceiling_ft": null, "ceiling_unknown": false, "visibility_sm": 0.5},
+    {"timeFrom": 50, "timeTo": 60, "change": "BECMG", "ceiling_ft": 800, "ceiling_unknown": false, "visibility_sm": 6}
+   ],
+   "start": 70, "end": 80,
+   "worst": {"ceiling_ft": 800, "ceiling_unknown": false, "visibility_sm": 6}
+  },
+  {
+   "fcsts": [
+    {"timeFrom": 0, "timeTo": 100, "change": "", "ceiling_ft": null, "ceiling_unknown": true, "visibility_sm": 10}
+   ],
+   "start": 10, "end": 20,
+   "worst": {"ceiling_ft": null, "ceiling_unknown": true, "visibility_sm": 10}
+  },
+  {
+   "fcsts": [
+    {"timeFrom": 0, "timeTo": 100, "change": "", "ceiling_ft": 4000, "ceiling_unknown": false, "visibility_sm": 6}
+   ],
+   "start": 200, "end": 300,
+   "worst": null
+  }
+ ],
+ "vfrNotRecommended": [
+  {
+   "idents": ["KAAA", "KBBB", "KCCC"],
+   "metars": {"KAAA": {"flight_category": "LIFR"}, "KBBB": {"flight_category": null, "ceiling_unknown": true}, "KCCC": null},
+   "forecast": {"min_ceiling_ft": 1200, "min_visibility_sm": 0.75, "ceiling_unknown_at": ["KDDD", "KEEE"]},
+   "reasons": [
+    "KAAA currently reporting LIFR",
+    "KBBB currently reporting a ceiling of unknown height",
+    "forecast ceiling of unknown height at KDDD, KEEE",
+    "forecast visibility as low as 0.75 sm along the route"
+   ]
+  },
+  {
+   "idents": ["KAAA"],
+   "metars": {"KAAA": {"flight_category": "MVFR"}},
+   "forecast": {"min_ceiling_ft": 900, "min_visibility_sm": 3, "ceiling_unknown_at": []},
+   "reasons": ["forecast ceiling as low as 900 ft along the route"]
+  }
+ ],
+ "freezingLevel": [
+  {"profile": [[2500, 4], [5000, -1]], "level": {"ft": 4500.0, "at_or_below": false}},
+  {"profile": [[2500, 0], [5000, -6]], "level": {"ft": 2500, "at_or_below": true}},
+  {"profile": [[2500, 12], [5000, 7]], "level": null}
+ ],
+ "temperatureAt": [
+  {"profile": [[3000, 10], [6000, 4]], "altitude_ft": 4500, "temp_c": 7.0},
+  {"profile": [[3000, 10], [6000, 4]], "altitude_ft": 9000, "temp_c": -1.9436},
+  {"profile": [], "altitude_ft": 9000, "temp_c": null}
+ ],
+ "windAtAltitude": [
+  {"levels": {"3000": {"wind_dir_true_deg": 350, "wind_speed_kt": 10}, "6000": {"wind_dir_true_deg": 30, "wind_speed_kt": 30}},
+   "altitude_ft": 4500, "wind": {"wind_dir_true_deg": 10.0, "wind_speed_kt": 20.0}},
+  {"levels": {"3000": {"wind_dir_true_deg": null, "wind_speed_kt": 3}, "6000": {"wind_dir_true_deg": 270, "wind_speed_kt": 25}},
+   "altitude_ft": 3000, "wind": {"wind_dir_true_deg": 270, "wind_speed_kt": 25}},
+  {"levels": {"3000": {"wind_dir_true_deg": null, "wind_speed_kt": 3}},
+   "altitude_ft": 3000, "wind": null}
+ ],
+ "forecastHour": [
+  {"hours_ahead": null, "period": "06"},
+  {"hours_ahead": 2, "period": "06"},
+  {"hours_ahead": 6, "period": "06"},
+  {"hours_ahead": 10, "period": "12"},
+  {"hours_ahead": 15, "period": "12"},
+  {"hours_ahead": 20, "period": "24"}
+ ],
+ "fieldHours": [
+  {
+   "metar": {"raw": "KDLH 021253Z 27012KT 10SM FEW040 05/01 A3001", "observed_at": "2026-11-02T12:53:00Z", "flight_category": "VFR", "ceiling_ft": null, "visibility_sm": 10, "wind_dir_true_deg": 270, "wind_speed_kt": 12},
+   "taf": "TAF KDLH 021120Z 0212/0312 27012KT P6SM BKN040 FM021500 30015G25KT 2SM -SN OVC008 TEMPO 0216/0218 1/2SM +SN VV002",
+   "now": 1793624400000,
+   "count": 4,
+   "categories": ["VFR", "VFR", "IFR", "IFR", "IFR"],
+   "at_times": [null, null, null, "LIFR", "LIFR"]
+  }
+ ]
+}

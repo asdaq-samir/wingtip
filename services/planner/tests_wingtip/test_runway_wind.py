@@ -46,21 +46,15 @@ def test_calm_keeps_the_runway_the_last_wind_favoured():
     assert wind == {"end": "27", "headwind_kt": 0.0, "crosswind_kt": 0.0, "gust_crosswind_kt": None, "in_use": True}
 
 
-def test_a_fields_last_wind_is_its_newest_report_with_a_direction(monkeypatch):
-    from wingtip import weather
+def test_a_fields_last_wind_is_the_one_the_weather_service_kept():
+    # The newest of its METARs with a direction and some speed
+    # (services/weather/app/aviationweather.py keeps them, "recent-winds").
+    import time
 
-    reports = [{"obsTime": 300, "wdir": 0, "wspd": 0}, {"obsTime": 200, "wdir": "VRB", "wspd": 3},
-               {"obsTime": 100, "wdir": 270, "wspd": 8}, {"obsTime": 50, "wdir": 90, "wspd": 6}]
+    from wingtip import weather, weather_store
 
-    class Answer:
-        def raise_for_status(self):
-            pass
-
-        def json(self):
-            return reports
-
-    monkeypatch.setattr(weather, "_RECENT_WIND", {})
-    monkeypatch.setattr(weather.requests, "get", lambda *a, **kw: Answer())
+    weather_store.write("recent-winds", {"KDLH": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 8.0, "observed": time.time() - 600}},
+                        fetched_at=time.time(), until=None)
     assert weather.recent_wind("KDLH") == {"wind_dir_true_deg": 270.0, "wind_speed_kt": 8.0}
 
 

@@ -68,9 +68,94 @@ pub fn py_mod(a: f64, m: f64) -> f64 {
     }
 }
 
+/// (cross-track, along-track) of a point from the great circle a -> b, in
+/// nautical miles, both signed (wingtip.geo's _track): cross-track positive
+/// right of course, along-track negative behind the start. The standard
+/// spherical identities: xtd = asin(sin(d13/R) sin(t13 - t12)) R, atd =
+/// acos(cos(d13/R) / cos(xtd/R)) R, signed by cos(t13 - t12).
+pub fn track_nm(lat: f64, lon: f64, a: (f64, f64), b: (f64, f64)) -> (f64, f64) {
+    let to_point = distance_nm(a.0, a.1, lat, lon);
+    let offset = (bearing_deg(a.0, a.1, lat, lon) - bearing_deg(a.0, a.1, b.0, b.1)).to_radians();
+    let angular = to_point / EARTH_RADIUS_NM;
+    let cross = (angular.sin() * offset.sin()).clamp(-1.0, 1.0).asin() * EARTH_RADIUS_NM;
+    let ratio = (angular.cos() / (cross / EARTH_RADIUS_NM).cos()).clamp(-1.0, 1.0);
+    let c = offset.cos();
+    let sign = if c < 0.0 { -1.0 } else if c > 0.0 { 1.0 } else { 0.0 };
+    (cross, ratio.acos() * EARTH_RADIUS_NM * sign)
+}
+
+/// A padded (min_lat, min_lon, max_lat, max_lon) box round the route a ->
+/// b (wingtip.geo.corridor_bbox): `buffer_nm` a minute of latitude a mile,
+/// and of longitude cos(latitude) of a mile, taken at the box's poleward
+/// edge, where a degree is shortest. A coarse prefilter: the corridor
+/// itself is held by a cross-track or a crossing test after it.
+pub fn corridor_bbox(a: (f64, f64), b: (f64, f64), buffer_nm: f64) -> (f64, f64, f64, f64) {
+    let pad_lat = buffer_nm / 60.0;
+    let widest = (a.0.abs().max(b.0.abs()) + pad_lat).min(89.0);
+    let pad_lon = pad_lat / widest.to_radians().cos().max(0.05);
+    (a.0.min(b.0) - pad_lat, a.1.min(b.1) - pad_lon, a.0.max(b.0) + pad_lat, a.1.max(b.1) + pad_lon)
+}
+
+/// Whether a path of (lat, lon) points crosses or lies in a polygon given
+/// as its ring of (lat, lon) points, on a plane of degrees as the
+/// planner's shapely test read them (LineString.intersects(Polygon)): a
+/// segment of the path crossing or touching an edge, or a point of the
+/// path inside the ring (even-odd, which reads a ring that crosses
+/// itself much as shapely's buffer(0) mended it).
+pub fn path_meets_polygon(path: &[(f64, f64)], ring: &[(f64, f64)]) -> bool {
+    if ring.len() < 3 || path.is_empty() {
+        return false;
+    }
+    let n = ring.len();
+    let inside = |p: (f64, f64)| {
+        let mut holds = false;
+        for i in 0..n {
+            let (a, b) = (ring[i], ring[(i + 1) % n]);
+            if (a.0 > p.0) != (b.0 > p.0) {
+                let lon = a.1 + (p.0 - a.0) / (b.0 - a.0) * (b.1 - a.1);
+                if p.1 < lon {
+                    holds = !holds;
+                }
+            }
+        }
+        holds
+    };
+    if path.iter().any(|&p| inside(p)) {
+        return true;
+    }
+    type P = (f64, f64);
+    let cross = |o: P, a: P, b: P| (a.0 - o.0) * (b.1 - o.1) - (a.1 - o.1) * (b.0 - o.0);
+    let within = |a: P, b: P, p: P| p.0 >= a.0.min(b.0) && p.0 <= a.0.max(b.0) && p.1 >= a.1.min(b.1) && p.1 <= a.1.max(b.1);
+    let meet = |p1: P, p2: P, q1: P, q2: P| {
+        let (d1, d2, d3, d4) = (cross(q1, q2, p1), cross(q1, q2, p2), cross(p1, p2, q1), cross(p1, p2, q2));
+        if d1 * d2 < 0.0 && d3 * d4 < 0.0 {
+            return true;
+        }
+        (d1 == 0.0 && within(q1, q2, p1)) || (d2 == 0.0 && within(q1, q2, p2))
+            || (d3 == 0.0 && within(p1, p2, q1)) || (d4 == 0.0 && within(p1, p2, q2))
+    };
+    path.windows(2).any(|s| (0..n).any(|i| meet(s[0], s[1], ring[i], ring[(i + 1) % n])))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_path_meets_a_polygon_by_crossing_or_inside() {
+        let square = [(0.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0)];
+        assert!(path_meets_polygon(&[(0.5, -1.0), (0.5, 2.0)], &square));
+        assert!(path_meets_polygon(&[(0.2, 0.2), (0.4, 0.4)], &square));
+        assert!(!path_meets_polygon(&[(2.0, 2.0), (3.0, 3.0)], &square));
+    }
+
+    #[test]
+    fn track_is_signed() {
+        let (x, a) = track_nm(0.0, 0.5, (0.0, 0.0), (0.0, 1.0));
+        assert!(x.abs() < 1e-6 && (a - 30.0).abs() < 0.1, "{x} {a}");
+        let (x, a) = track_nm(0.1, -0.5, (0.0, 0.0), (0.0, 1.0));
+        assert!(x < 0.0 && a < 0.0, "{x} {a}");
+    }
 
     #[test]
     fn distances_are_vfr_geos() {

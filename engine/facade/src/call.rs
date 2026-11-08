@@ -458,12 +458,46 @@
 //!   1.1) and visibility in statute miles from the groups a host's reader
 //!   found, `{"layers"?: [{"cover", "base_ft"?}], "vertical_visibility_ft"?,
 //!   "visibility"?: {"value", "unit": "sm"|"m"}, "cavok"?}`;
-//! - `taf_hour`: `{"before_worse", "at_times", "at_times_gust_kt",
-//!   "at_times_thunder", "at_times_chance"}`, an hour of a TAF from its
-//!   groups in force (AC 00-45H), from `{"prevailing": {"category"?,
-//!   "gust_kt"?, "thunder"?}, "becoming"? (a BECMG under way), "before"?
-//!   (the prevailing weather before it, the same shape), "supplemental":
-//!   [{"category"?, "gust_kt"?, "thunder"?, "chance"?}]}`;
+//! - `field_hours`: a field's weather hour by hour for the airport card,
+//!   `[{"at" (ms), "now", "category", "ceiling_ft", "visibility_sm", "sky",
+//!   "precip", "wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt",
+//!   "at_times", "at_times_gust_kt", "at_times_thunder", "at_times_chance"}]`,
+//!   Now from the METAR and each whole hour its TAF covers read from the
+//!   TAF's groups in force (AC 00-45H), from `{"metar"?: the planner's
+//!   report, "taf"?: the TAF as sent, "now" (ms), "count"?}`.
+//!
+//! The weather as the planner reads it (crate::forecast::awc and ::route,
+//! crate::winds; #482 phase 2), from the products the weather service
+//! fetches -- the engine never fetches:
+//!
+//! - `awc_metars_read`, `awc_tafs_read`, `awc_airsigmets_read`,
+//!   `awc_pireps_read`, `awc_gairmets_read` from `{"text"}`, the AWC's
+//!   national cache XML: the shapes the weather store keeps;
+//!   `weather_held_until` (Unix seconds or null) from `{"product":
+//!   "metars"|"tafs"|"airsigmets"|"pireps"|"gairmets", "data", "fetched"}`;
+//!   `gairmet_hazards`: `{code: words}` from `{}`;
+//! - `taf_window`: `{"periods", "worst": {"ceiling_ft", "ceiling_unknown",
+//!   "visibility_sm"}|null, "current", "prevailing"}` from `{"fcsts",
+//!   "start", "end"?}`; `tafs_along_route`: `{"min_ceiling_ft",
+//!   "min_visibility_sm", "ceiling_unknown_at", "stations"}` from `{"tafs",
+//!   "from": [lat, lon], "to", "corridor_nm"?, "start", "end"?}`;
+//!   `vfr_not_recommended_reasons` (AIM 7-1-5; 91.155(c), (d)): a list of
+//!   reasons from `{"idents", "metars", "forecast"}`;
+//! - `sigmets_along_route` from `{"advisories", "from", "to",
+//!   "corridor_nm"?, "now"}`; `pireps_along_route` from `{"reports",
+//!   "path", "corridor_nm"?, "now"}`; `pireps_in_box` from `{"reports",
+//!   "box": [s, w, n, e], "now"}`; `gairmets_along_route` from
+//!   `{"advisories", "path", "start", "end"}`;
+//! - `freezing_level`: `{"ft", "at_or_below"}` or null, and
+//!   `temperature_at` from `{"profile": [[altitude_ft, temp_c]],
+//!   "altitude_ft"}`; `wind_at_altitude`: `{"wind_dir_true_deg",
+//!   "wind_speed_kt"}` or null (a list of them for `"altitudes"`) from
+//!   `{"levels": {altitude_ft: {"wind_dir_true_deg", "wind_speed_kt"}},
+//!   "altitude_ft"}`; `forecast_hour`: "06", "12" or "24" from
+//!   `{"hours_ahead"?}`.
+//!
+//! The traffic list's filters and the registry's airplanes, as above:
+//!
 //! - `traffic_kind` (GDL 90 Table 11's emitter categories) from
 //!   `{"category"?}`; `emitter_category`, the category's DO-260B name
 //!   ("rotorcraft", "glider", ...) or null, from `{"category"?}`; `altitude_band` (14 CFR 71.33(a)) from
@@ -804,7 +838,7 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         "airspace_column" => crate::rules::column_json(ask.v),
         "mode_c_veil" => crate::rules::veil_json(ask.v),
         "notams_fns" | "notam_text" | "metar_read" | "taf_read" | "winds_read" | "tfr_detail_read" | "ceiling_ft"
-        | "sky_ceiling" | "report_flight_category" | "vfr_basic_minimums" => weather_rule(&ask),
+        | "sky_ceiling" | "report_flight_category" | "vfr_basic_minimums" | "vfr_not_recommended_reasons" => weather_rule(&ask),
         "reserve_min" | "isa_temp_c" | "density_ratio" | "density_altitude_ft" | "pressure_altitude_ft" | "is_eastbound"
         | "lowest_vfr_cruising_altitude" | "distance_nm" | "region_of" | "descent_ft_per_nm" | "wind_correction_deg"
         | "groundspeed_kt" => flight_rule(&ask),
@@ -989,6 +1023,31 @@ fn weather_rule(ask: &Ask) -> Result<String, String> {
                 ask.opt_num("visibility_sm")?,
             );
             json::opt_string(&mut out, category);
+            Ok(out)
+        }
+        // The forecast's along-route reasons, held to the basic VFR
+        // minimums the airspace rules keep (91.155(c), (d)), which the
+        // weather crate is under.
+        "vfr_not_recommended_reasons" => {
+            let idents: Vec<&str> = match ask.v.get("idents") {
+                Some(Value::Array(items)) => items.iter().filter_map(Value::as_str).collect(),
+                _ => Vec::new(),
+            };
+            let reasons = crate::forecast::route::vfr_not_recommended_reasons(
+                &idents,
+                ask.v.get("metars").unwrap_or(&Value::Null),
+                ask.v.get("forecast").unwrap_or(&Value::Null),
+                crate::rules::SURFACE_AREA_CEILING_FT,
+                crate::rules::SURFACE_AREA_VISIBILITY_SM,
+            );
+            let mut out = String::from("[");
+            for (i, r) in reasons.iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                json::string(&mut out, r);
+            }
+            out.push(']');
             Ok(out)
         }
         _ => {

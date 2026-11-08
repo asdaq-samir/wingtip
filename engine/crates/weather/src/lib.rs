@@ -19,4 +19,4 @@ pub mod winds;
 
 // The modules below this crate by the names they had when the engine was
 // one crate, so the code reads them as crate::json and so on.
-use wingtip_core::{json, time, xml};
+use wingtip_core::{geo, json, time, xml};

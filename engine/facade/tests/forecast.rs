@@ -155,17 +155,21 @@ fn gusts_and_thunder_at_times_only_beyond_the_prevailing() {
 }
 
 #[test]
-fn the_hour_through_the_call() {
+fn the_hours_through_the_call() {
+    // A PROB30 group's IFR with a 28 kt gust: a chance of it at times, the
+    // TAF read by the engine itself (the web's metar-taf-parser no more).
+    let now = 1_793_624_400_000.0; // 2026-11-02T13:00Z
     let answer = ask(
-        "taf_hour",
-        json!({"prevailing": {"category": "VFR", "gust_kt": null, "thunder": false}, "becoming": false,
-               "supplemental": [{"category": "IFR", "gust_kt": 28, "thunder": false, "chance": true}]}),
+        "field_hours",
+        json!({"taf": "TAF KDLH 021120Z 0212/0312 27012KT P6SM BKN040 PROB30 0214/0216 2SM BR OVC008 27028G28KT", "now": now, "count": 2}),
     );
-    assert_eq!(
-        answer,
-        json!({"before_worse": false, "at_times": "IFR", "at_times_gust_kt": 28.0, "at_times_thunder": false, "at_times_chance": true})
-    );
-    assert!(call("taf_hour", "{}").is_err());
+    let hours = answer.as_array().unwrap();
+    assert_eq!(hours.len(), 3);
+    assert_eq!(hours[0]["now"], json!(true));
+    assert_eq!(hours[1]["at_times"], json!("IFR"));
+    assert_eq!(hours[1]["at_times_chance"], json!(true));
+    assert_eq!(hours[1]["at_times_gust_kt"], json!(28.0));
+    assert!(call("field_hours", "{}").is_err());
 }
 
 // --- A report's ceiling and visibility from a host's reader -----------------

@@ -6,26 +6,19 @@ in sight. From the same aviationweather.gov products the briefing reads
 (wingtip.weather's held copies), so the map and the Brief never disagree.
 The radar and the satellite picture are tiles the browser draws itself
 (the Iowa Environmental Mesonet's NEXRAD and GOES mosaics); `radar_valid`
-says when the radar was made.
+says when the radar was made, as the weather service last read it
+(services/weather/app/radar.py).
 """
 from __future__ import annotations
 
 import math
-import time
 
-import requests
-
-from . import weather
+from . import weather, weather_store
 
 #: A SIGMET is a flight's for as long as it is valid; a G-AIRMET is a
 #: snapshot valid at its time, three hours apart (wingtip.weather): the one
 #: nearest the time asked for is drawn, within this.
 GAIRMET_NEAREST_S = 90 * 60
-
-#: The radar mosaic's own record of when it was made (IEM's n0q JSON).
-RADAR_META_URL = "https://mesonet.agron.iastate.edu/data/gis/images/4326/USCOMP/n0q_0.json"
-_RADAR_TTL_S = 120
-_radar: dict = {"at": 0.0, "valid": None}
 
 
 def _in_box(coords: list, box: tuple) -> bool:
@@ -81,23 +74,14 @@ def advisories_in(box: tuple, at: float) -> list[dict]:
 
 
 def pireps_in(box: tuple, now: float | None = None) -> list[dict]:
-    """The pilot reports of the last PIREP_MAX_AGE_S made in `box`, at or
-    under PIREP_MAX_ALT_FT -- a light airplane's sky (wingtip.weather) --
-    urgent ones last, so they are drawn on top."""
-    now = time.time() if now is None else now
-    south, west, north, east = box
+    """The pilot reports still told made in `box` -- the last 90 minutes,
+    at or under 18,000 ft, a light airplane's sky, the engine's
+    (wingtip.weather.pireps_in_box) -- urgent ones last, so they are drawn
+    on top."""
     try:
-        reports = weather._dataset("pireps")
+        return weather.pireps_in_box(box, now)
     except weather.WeatherServiceError:
         return []
-    found = [
-        {k: v for k, v in r.items() if k != "observed"}
-        for r in reports
-        if r["observed"] is not None and now - r["observed"] <= weather.PIREP_MAX_AGE_S
-        and (r["altitude_ft"] is None or r["altitude_ft"] <= weather.PIREP_MAX_ALT_FT)
-        and south <= r["lat"] <= north and west <= r["lon"] <= east
-    ]
-    return sorted(found, key=lambda r: r["urgent"])
 
 
 def winds_in(box: tuple, altitude_ft: float, fcst_hr: str) -> dict | None:
@@ -131,16 +115,8 @@ def winds_in(box: tuple, altitude_ft: float, fcst_hr: str) -> dict | None:
 
 
 def radar_valid() -> str | None:
-    """When the radar mosaic the map draws was made, ISO UTC, held two
-    minutes; None where IEM does not answer (the tiles may still draw)."""
-    now = time.time()
-    if now - _radar["at"] < _RADAR_TTL_S:
-        return _radar["valid"]
-    try:
-        resp = requests.get(RADAR_META_URL, timeout=5)
-        resp.raise_for_status()
-        valid = resp.json().get("meta", {}).get("valid")
-    except (requests.RequestException, ValueError):
-        valid = _radar["valid"]
-    _radar.update(at=now, valid=valid)
-    return valid
+    """When the radar mosaic the map draws was made, ISO UTC, as the
+    weather service last read it from IEM's own record of it (every two
+    minutes); None where it has none (the tiles may still draw)."""
+    record = weather_store.read("radar")
+    return (record.data or {}).get("valid") if record else None
