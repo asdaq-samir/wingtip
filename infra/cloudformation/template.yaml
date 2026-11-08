@@ -157,7 +157,9 @@ Resources:
       RouteTableId: !Ref PublicRouteTable
 
   # ---------------------------------------------------------------------
-  # Images: the three the server runs, pushed by promote.yml's push-ecr.
+  # Images: the five the server runs and the charts job's (the refresh
+  # task's, and the server's hourly overlays), pushed by promote.yml's
+  # push-ecr.
   # ---------------------------------------------------------------------
   GatewayRepository:
     Type: AWS::ECR::Repository
@@ -205,6 +207,16 @@ Resources:
       LifecyclePolicy:
         LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
 
+  # The charts job (services/jobs/charts): the refresh task's image, and
+  # the server's hourly overlays.
+  ChartsRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: wingtip/charts
+      EmptyOnDelete: true
+      LifecyclePolicy:
+        LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
+
   # ---------------------------------------------------------------------
   # Storage
   # ---------------------------------------------------------------------
@@ -218,9 +230,10 @@ Resources:
         RestrictPublicBuckets: true
       LifecycleConfiguration:
         Rules:
-          # A cycle's tiles age out after the next two cycles have come:
-          # a browser on an old serving.json for its five minutes still
-          # finds its tiles.
+          # A cycle's archives age out after the next two cycles have come:
+          # a planner on an old serving.json for its minute still finds
+          # them, and an archive packed again (published under a new name)
+          # leaves the old one to this.
           - Id: OldCycles
             Status: Enabled
             Prefix: tiles/
@@ -323,6 +336,7 @@ Resources:
                   - !GetAtt IngestRepository.Arn
                   - !GetAtt AssistantRepository.Arn
                   - !GetAtt WeatherRepository.Arn
+                  - !GetAtt ChartsRepository.Arn
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: [!Ref DbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
@@ -598,8 +612,14 @@ Resources:
 
   # ---------------------------------------------------------------------
   # CloudFront: one distribution on the app's domain.
-  # - /tiles/*       S3, the chart tiles: a month at the edge (each tile
-  #                  carries its own immutable Cache-Control).
+  # - /tiles/*       S3, the chart cycle: serving.json, and one PMTiles
+  #                  archive per kind and density (wingtip.tile_archive),
+  #                  which the planner reads a tile at a time by range
+  #                  requests; a month at the edge (each its own immutable
+  #                  Cache-Control, its contents in its name).
+  # - /api/planner/chart-tile/*
+  #                  the server, cached: a tile the planner read out of its
+  #                  archive, its cycle and revision in its address.
   # - /app/assets/*  the server, cached: fingerprinted, a year, immutable
   #                  (WebMvcConfig's own header).
   # - the chart, the airport search, the stock aircraft
@@ -704,8 +724,20 @@ Resources:
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods: [GET, HEAD]
             CachedMethods: [GET, HEAD]
-            Compress: false  # PNGs, already compressed
+            Compress: false  # archives read in byte ranges: a compressed answer would not be their bytes
             CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # managed CachingOptimized
+          # The map's chart tiles, through the planner: a cycle is kept as
+          # one archive per kind (#535), so CloudFront no longer has a file
+          # per tile to answer from. Keyed by the address alone, ?c= the
+          # cycle and ?r= the revision among it, for the planner's own
+          # Cache-Control (a day here at most, the policy's ceiling).
+          - PathPattern: api/planner/chart-tile/*
+            TargetOriginId: server
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            Compress: false  # PNGs, already compressed
+            CachePolicyId: !Ref SharedAnswersCachePolicy
           - PathPattern: app/assets/*
             TargetOriginId: server
             ViewerProtocolPolicy: redirect-to-https
@@ -788,11 +820,12 @@ Resources:
           - { ErrorCode: 504, ErrorCachingMinTTL: 0 }
 
   # ---------------------------------------------------------------------
-  # Chart tiles, once per cycle: a Fargate Spot task runs wingtip.charts'
-  # refresh every day -- a no-op until the FAA publishes a new cycle, then
-  # it fetches the country's sheets, draws the pyramid and publishes it to
-  # the tiles bucket (charts.publish), serving.json last, so every planner
-  # and browser moves to the new cycle at once. Spot: an interrupted run
+  # Chart tiles, once per cycle: a Fargate Spot task runs the charts job's
+  # refresh (services/jobs/charts) every day -- a no-op until the FAA
+  # publishes a new cycle, then it fetches the country's sheets, draws the
+  # pyramid, packs each kind into its archives and publishes them to the
+  # tiles bucket (wingtip.charts.publish), serving.json last, so every
+  # planner moves to the new cycle at once. Spot: an interrupted run
   # starts over the next day, the old cycle served until then. Under $1
   # a cycle.
   # ---------------------------------------------------------------------
@@ -864,16 +897,19 @@ Resources:
       # Two workers drawing tiles, and the country's sheets plus their
       # pyramid on the task's own disk: 6 GB of sheets and 7.4 GB of
       # tiles (1.5 million of them) for the 09-03-2026 cycle, and about
-      # 25 GB more of the 512-pixel "@2x" tiles from the 12-24-2026 cycle.
+      # 29 GB more of the 512-pixel "@2x" palette tiles from the
+      # 12-24-2026 cycle; then each kind's archive written beside its
+      # loose tiles before they go, the sectional's @2x the largest.
       Cpu: "2048"
       Memory: "8192"
-      EphemeralStorage: { SizeInGiB: 60 }
+      EphemeralStorage: { SizeInGiB: 100 }
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       TaskRoleArn: !GetAtt ChartRefreshTaskRole.Arn
       ContainerDefinitions:
         - Name: chart-refresh
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/wingtip/planner:${ImageTag}"
-          Command: ["python", "-m", "wingtip.charts", "refresh", "--workers", "2"]
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/wingtip/charts:${ImageTag}"
+          # The image's entry point is `python -m charts`.
+          Command: ["refresh", "--workers", "2"]
           Environment:
             - { Name: CHART_TILES_BUCKET, Value: !Ref ChartTilesBucket }
             - { Name: CHART_TILES_URL, Value: !Sub "https://${PublicHost}/tiles" }
@@ -1021,6 +1057,7 @@ Resources:
                   - !GetAtt IngestRepository.Arn
                   - !GetAtt AssistantRepository.Arn
                   - !GetAtt WeatherRepository.Arn
+                  - !GetAtt ChartsRepository.Arn
               # The server changes with each Spot interruption, so deploys
               # find it by its Name tag and may run only on that.
               - Effect: Allow

@@ -142,20 +142,18 @@ class Settings(BaseSettings):
     registry_refresh: bool = True
     #: Whether the cycle pack is built once a cycle (0 on a test stack).
     cycle_pack: bool = True
-    #: Whether the map's overlay tiles are built from the cycle pack once a cycle.
-    overlay_tiles: bool = True
     #: Whether the chart's landmark cells are read at start (0 in CI).
     landmarks_build: bool = True
     #: Where the landmark cells are kept; None means beside the cycle's tiles.
     chart_landmarks_dir: Path | None = None
-    #: Whether the planner refreshes the chart cycle on its own (0 in production).
+    #: Whether the planner starts the charts job when a cycle or its overlay tiles are due (0 in production, which schedules it).
     charts_auto_refresh: bool = True
     #: Whether the planner fetches a new edition of the FAA's NASR files and
     #: obstacle file on its own (0 on a test stack): on in production, whatever the charts do.
     faa_data_auto_refresh: bool = True
     #: The "HH:MM-HH:MM" window a cycle's render may start in, or blank for any time.
     charts_refresh_window: str = "01:00-06:00"
-    #: How many render processes a cycle refresh gets.
+    #: How many render processes the charts job's run of a cycle gets (compose passes it to both).
     charts_refresh_workers: int = 1
     #: Whether the chart model reads tiles in the planner's own process pool.
     chart_reads_in_process: bool = True
@@ -171,7 +169,7 @@ class Settings(BaseSettings):
     gateway_url: str = "http://gateway:8080"
 
     read_switches = field_validator(
-        "charts_fetch_for_tiles", "adsbfi_open_data", "registry_refresh", "cycle_pack", "overlay_tiles", "landmarks_build",
+        "charts_fetch_for_tiles", "adsbfi_open_data", "registry_refresh", "cycle_pack", "landmarks_build",
         "charts_auto_refresh", "faa_data_auto_refresh", "chart_reads_in_process", mode="before")(_switch)
 
     @field_validator("chart_tiles_url", "dev_services_url", mode="before")

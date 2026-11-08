@@ -70,7 +70,6 @@ from PIL import Image
 from .config import (
     REQUEST_HEADERS,
     CHART_TILE_CACHE_DIR,
-    CHART_TILES_BUCKET,
     CHART_TILES_PREFIX,
     CHART_TILES_URL,
     CHARTS_DIR,
@@ -89,7 +88,7 @@ from .config import (
     VFR_TAC_MIN_ZOOM,
     get_settings,
 )
-from . import chart_faces
+from . import chart_faces, tile_archive
 from .geo import tile_lat_lon, tile_xy
 
 log = logging.getLogger(__name__)
@@ -1101,11 +1100,31 @@ def rasters_covering(kind: ChartKind, bbox: Box, cycle: str | None = None) -> tu
     return rasters, complete
 
 
+def _archive_path(kind_key: str, cycle: str, scale: int = 1, root: Path | None = None) -> Path:
+    """Where a kind's finished pyramid at one density is kept: one archive
+    beside the cycle's pyramid record (wingtip.tile_archive)."""
+    return (root or CHART_TILE_CACHE_DIR) / cycle / tile_archive.archive_name(kind_key, scale)
+
+
+def _archive(kind_key: str, cycle: str, scale: int = 1):
+    """The kind's archive the planner serves its tiles from, or None
+    where there is none and tiles are loose files drawn on request: on
+    disk, or, where the tiles are published (CHART_TILES_URL), the
+    published copy the pointer names, read by range requests."""
+    if not CHART_TILES_URL:
+        return tile_archive.on_disk(_archive_path(kind_key, cycle, scale))
+    serving_cycle()  # the pointer, held beside the cycle it names
+    pointer = _serving_cache.get("pointer") or {}
+    name = ((pointer.get("archives") or {}).get(kind_key) or {}).get(str(scale)) if pointer.get("cycle") == cycle else None
+    return tile_archive.over_http(f"{CHART_TILES_URL}/{cycle}/{name}", requests) if name else None
+
+
 def tile_png(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> bytes | None:
-    """The tile's PNG bytes -- from the pyramid when there is one, else
-    rendered on first request and cached on disk for the cycle; None
-    where no chart of this kind covers it (a 404 for the map's tile
-    layer to leave blank). `scale` 2 is the high-density tile."""
+    """The tile's PNG bytes -- from the kind's archive when its pyramid is
+    finished, where a tile it lacks is no tile; else rendered on first
+    request and cached on disk for the cycle; None where no chart of
+    this kind covers it (a 404 for the map's tile layer to leave blank).
+    `scale` 2 is the high-density tile."""
     chart_kind = KINDS[kind]
     # Whole numbers, whatever the caller handed in: the tile's file is
     # named by them under the cache (CodeQL's py/path-injection).
@@ -1113,6 +1132,14 @@ def tile_png(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> by
     if not (chart_kind.min_zoom <= zoom <= chart_kind.max_zoom) or scale not in TILE_SCALES:
         return None
     cycle = serving_cycle_of(kind)
+    archive = _archive(kind, cycle, scale)
+    if archive is not None:
+        try:
+            return archive.get(zoom, x, y)
+        except (OSError, requests.RequestException):
+            # The published copy out of reach for now: drawn here instead,
+            # as before there was one.
+            log.warning("%s tile %d/%d/%d not read from its archive", kind, zoom, x, y, exc_info=True)
     path = _tile_path(chart_kind, cycle, x, y, zoom, scale)
     none_marker = path.with_suffix(".none")
     try:
@@ -1161,7 +1188,14 @@ def tile_image(x: int, y: int, zoom: int, kind: str = "sec") -> Image.Image | No
 
 
 def tile_cached(x: int, y: int, zoom: int, kind: str = "sec") -> bool:
-    return _tile_path(KINDS[kind], serving_cycle_of(kind), x, y, zoom).exists()
+    cycle = serving_cycle_of(kind)
+    archive = _archive(kind, cycle)
+    if archive is not None:
+        try:
+            return archive.has(zoom, x, y)
+        except (OSError, requests.RequestException):
+            return False
+    return _tile_path(KINDS[kind], cycle, x, y, zoom).exists()
 
 
 def prepare_for_bbox(bbox: Box, kinds: tuple = tuple(KINDS)) -> list:
@@ -1285,13 +1319,6 @@ def tile_scales(kind: str) -> list[int]:
     if record is None:
         return list(TILE_SCALES)
     return sorted(s for s in record.get("scales", [1]) if s in TILE_SCALES)
-
-
-def tiles_base_url() -> str | None:
-    """Where the browser should fetch tiles from instead of this
-    planner, when the pyramid is published: the map appends
-    /<cycle>/<kind>/{z}/{x}/{y}.png."""
-    return CHART_TILES_URL
 
 
 def status() -> dict:
@@ -1644,8 +1671,9 @@ def render_pyramid(kind: ChartKind, zooms: tuple | None = None, workers: int = 4
     _write_pyramid_status(cycle, record)
     if since is not None:
         # Every tile drawn again, under URLs browsers hold for weeks: a
-        # new revision, and the publish ledger struck for this kind.
-        _bump_revision(cycle, strike=lambda key: key.startswith(f"{kind.key}/"))
+        # new revision. The kind's archive, packed again from them, is
+        # published under a new name (publish).
+        _bump_revision(cycle)
     log.info("%s %s: pass finished, %d tiles written, %d finished at its end", cycle, kind.key, total, promoted)
     missing = sorted(set(COVERAGE.get(kind.key, {})) - set(record["sheets"]))
     if missing:
@@ -1664,19 +1692,29 @@ _TILES_REVISION = "revision"
 
 
 def tiles_revision(cycle: str) -> int:
+    """The cycle's revision: the disk's, or where the tiles are published
+    (CHART_TILES_URL) the pointer's, which publish writes from the disk's."""
+    if CHART_TILES_URL:
+        serving_cycle()
+        pointer = _serving_cache.get("pointer") or {}
+        if pointer.get("cycle") == cycle:
+            return int(pointer.get("revision") or 0)
+    return _disk_revision(cycle)
+
+
+def _disk_revision(cycle: str) -> int:
     try:
         return int((CHART_TILE_CACHE_DIR / cycle / _TILES_REVISION).read_text())
     except (OSError, ValueError):
         return 0
 
 
-def _rerender_tile(args: tuple) -> bool:
-    """One cached tile rendered again from the sheets as they are now,
-    the same way `tile_png` would render it, and written over the old
-    one. A top-level function because it runs in a worker process, so
-    the tile cache it writes into comes with the job (_render_row says
-    why)."""
-    kind_key, cycle, x, y, zoom, scale, root = args
+def _rerender_tile(args: tuple) -> bytes | None | bool:
+    """One tile rendered again from the sheets as they are now, the same
+    way `tile_png` would render it: its PNG, None where no sheet draws it
+    any more, or False where a sheet it needs could not be had. A
+    top-level function because it runs in a worker process."""
+    kind_key, cycle, x, y, zoom, scale = args
     kind = KINDS[kind_key]
     rasters, complete = rasters_covering(kind, tile_bbox_wgs84(x, y, zoom), cycle)
     if not complete:
@@ -1687,60 +1725,138 @@ def _rerender_tile(args: tuple) -> bool:
         # has every sheet.
         return False
     rgba = render_tile(rasters, x, y, zoom, scale) if rasters else None
-    path = _tile_path(kind, cycle, x, y, zoom, scale, Path(root))
-    if rgba is None:
-        path.unlink(missing_ok=True)
-        return False
-    _write_atomically(path, encode_png(rgba))
-    return True
+    return None if rgba is None else encode_png(rgba)
 
 
 def rerender_tiles(kind: ChartKind, boxes: list, cycle: str, workers: int = 2) -> int:
-    """Every tile of `kind` already cached for `cycle` that touches one
-    of `boxes`, rendered again -- after a sheet changed on disk -- then
-    the cycle's revision bumped so browsers ask for them afresh, and the
-    tiles struck off the publish ledger so the next `publish` uploads
-    them again. Tiles not yet cached are left to render on demand.
-    Returns the number rewritten. Every scale of a tile cached at it
-    (TILE_SCALES) is drawn again."""
+    """Every tile of `kind` already drawn for `cycle` -- in its archive or
+    a loose file -- that touches one of `boxes`, rendered again after a
+    sheet changed on disk, then the cycle's revision bumped so browsers
+    ask for them afresh. An archive is written again whole with them in
+    it, under a new published name (publish). Tiles not yet drawn are
+    left to render on demand. Returns the number rewritten. Every scale
+    of a tile drawn at it (TILE_SCALES) is drawn again."""
+    archives = {scale: tile_archive.on_disk(_archive_path(kind.key, cycle, scale)) for scale in TILE_SCALES}
     tiles = set()
     for zoom in range(kind.min_zoom, kind.max_zoom + 1):
         for box in boxes:
             x0, x1, y0, y1 = _tile_range(box, zoom)
-            tiles.update((x, y, zoom, scale) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)
-                         for scale in TILE_SCALES if _tile_path(kind, cycle, x, y, zoom, scale).exists())
-    root = CHART_TILE_CACHE_DIR
-    jobs = [(kind.key, cycle, x, y, zoom, scale, str(root))
-            for x, y, zoom, scale in sorted(tiles, key=lambda t: (t[3], t[2], t[1], t[0]))]
+            tiles.update(
+                (x, y, zoom, scale) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1) for scale in TILE_SCALES
+                if (archives[scale].has(zoom, x, y) if archives[scale] else _tile_path(kind, cycle, x, y, zoom, scale).exists()))
+    order = sorted(tiles, key=lambda t: (t[3], t[2], t[1], t[0]))
+    jobs = [(kind.key, cycle, x, y, zoom, scale) for x, y, zoom, scale in order]
     log.info("%s %s: rendering %d tiles again", cycle, kind.key, len(jobs))
     if workers > 0 and len(jobs) > 1:
         with ProcessPoolExecutor(max_workers=workers) as pool:
-            written = sum(pool.map(_rerender_tile, jobs, chunksize=16))
+            drawn = list(pool.map(_rerender_tile, jobs, chunksize=16))
     else:
-        written = sum(map(_rerender_tile, jobs))
+        drawn = list(map(_rerender_tile, jobs))
 
-    stale = {str(_tile_path(kind, cycle, x, y, zoom, scale).relative_to(root / cycle)) for x, y, zoom, scale in tiles}
-    _bump_revision(cycle, strike=stale.__contains__)
+    written = 0
+    replaced: dict = {scale: {} for scale in TILE_SCALES}
+    for (x, y, zoom, scale), data in zip(order, drawn):
+        if data is False:
+            continue
+        if archives[scale]:
+            replaced[scale][(zoom, x, y)] = data
+        else:
+            path = _tile_path(kind, cycle, x, y, zoom, scale)
+            if data is None:
+                path.unlink(missing_ok=True)
+            else:
+                _write_atomically(path, data)
+        written += data is not None
+    for scale, these in replaced.items():
+        if these:
+            _rewrite_archive(kind, cycle, scale, these)
+    _bump_revision(cycle)
     return written
 
 
-def _bump_revision(cycle: str, strike) -> None:
-    """The cycle's tile revision one higher, and the publish ledger's
-    entries `strike` says are stale taken off it, so the next publish
-    uploads them again. Both files written whole; the callers hold the
-    refresh lock, which `publish` takes too, so neither is written back
-    stale by a run beside them."""
+def _rewrite_archive(kind: ChartKind, cycle: str, scale: int, replaced: dict) -> int:
+    """The kind's archive written again with `replaced` -- (z, x, y) to
+    the tile's new PNG, or None to leave it out -- in place of its own."""
+    old = tile_archive.on_disk(_archive_path(kind.key, cycle, scale))
+    kept = [(z, x, y, n, read) for z, x, y, n, read in old.tiles() if (z, x, y) not in replaced]
+    new = [(z, x, y, len(data), lambda d=data: d) for (z, x, y), data in replaced.items() if data is not None]
+    return tile_archive.write(_archive_path(kind.key, cycle, scale), kept + new, _archive_metadata(kind, cycle, scale))
+
+
+def _bump_revision(cycle: str) -> None:
+    """The cycle's tile revision one higher, written whole; the callers
+    hold the refresh lock, which `publish` takes too."""
     root = CHART_TILE_CACHE_DIR / cycle
     root.mkdir(parents=True, exist_ok=True)
-    _write_atomically(root / _TILES_REVISION, str(tiles_revision(cycle) + 1).encode())
-    ledger = root / _PUBLISHED
-    try:
-        published = set(json.loads(ledger.read_text()))
-    except (OSError, ValueError):
-        return
-    kept = sorted(key for key in published if not strike(key))
-    if len(kept) != len(published):
-        _write_atomically(ledger, json.dumps(kept).encode())
+    _write_atomically(root / _TILES_REVISION, str(_disk_revision(cycle) + 1).encode())
+
+
+# ---------------------------------------------------------------------------
+# A finished pyramid, packed
+# ---------------------------------------------------------------------------
+#
+# A pass draws loose files -- a tile is composited from one sheet after
+# another, and a pass cut short resumes from what is on disk -- and a
+# finished kind is then packed into one archive per density
+# (wingtip.tile_archive), its loose files removed: a cycle was about 1.4
+# million files on disk and as many objects in S3, and is now a few dozen.
+
+
+def _archive_metadata(kind: ChartKind, cycle: str, scale: int) -> dict:
+    return {"name": f"FAA {kind.key} {cycle}", "kind": kind.key, "cycle": cycle, "scale": scale,
+            "renderer": RENDERER_VERSION, "attribution": "FAA aeronautical charts"}
+
+
+def pack_pyramid(kind: ChartKind, cycle: str, scale: int = 1) -> int:
+    """A kind's loose tiles of one density, the pass's and any drawn on
+    request, packed into its archive, which then replaces any archive
+    before it; the loose files, their `.none` markers and any `.partial`
+    go. Returns how many tiles the archive holds; with no loose tiles,
+    nothing is written and the archive there is kept."""
+    name = re.compile(r"(\d+)\.png" if scale == 1 else rf"(\d+)@{scale}x\.png")
+    tiles, base = [], CHART_TILE_CACHE_DIR / cycle / kind.key
+    for z_dir in (os.scandir(base) if base.is_dir() else ()):
+        if not z_dir.name.isdigit():
+            continue
+        for x_dir in os.scandir(z_dir.path):
+            if not x_dir.name.isdigit():
+                continue
+            for f in os.scandir(x_dir.path):
+                if match := name.fullmatch(f.name):
+                    tiles.append((int(z_dir.name), int(x_dir.name), int(match[1]), f.stat().st_size,
+                                  lambda p=f.path: Path(p).read_bytes()))
+    count = tile_archive.write(_archive_path(kind.key, cycle, scale), tiles, _archive_metadata(kind, cycle, scale))
+    if not count:
+        return 0
+    suffix = "" if scale == 1 else f"@{scale}x"
+    for z, x, y, _, _ in tiles:
+        folder = base / str(z) / str(x)
+        for leftover in (f"{y}{suffix}.png", f"{y}{suffix}.none", f"{y}{suffix}.partial"):
+            (folder / leftover).unlink(missing_ok=True)
+    for folder in [*sorted(base.rglob("*"), key=lambda p: len(p.parts), reverse=True), base]:
+        if folder.is_dir() and not any(folder.iterdir()):
+            folder.rmdir()
+    log.info("%s %s%s: %d tiles packed into %s", cycle, kind.key, suffix, count, _archive_path(kind.key, cycle, scale).name)
+    return count
+
+
+def pack_complete(cycle: str, kinds: tuple = tuple(KINDS)) -> dict:
+    """Every finished kind of `cycle` packed, at each density its passes
+    drew (its record's scales): {kind key: tiles packed}. What a refresh
+    does once its passes end, and the one-off conversion of a cycle
+    rendered before there were archives (the charts job's `pack`)."""
+    packed = {}
+    for key in kinds:
+        record = pyramid_status(cycle).get(key, {})
+        # A pass under way, or cut short, keeps the last finished pass's
+        # record -- complete -- beside half a pyramid of loose tiles,
+        # which would replace the whole archive.
+        if not pyramid_complete(cycle, (key,)) or record.get("current_pass"):
+            continue
+        count = sum(pack_pyramid(KINDS[key], cycle, scale) for scale in record.get("scales", [1]) if scale in TILE_SCALES)
+        if count:
+            packed[key] = count
+    return packed
 
 
 def unmask_prepared(cycle: str | None = None, workers: int = 2, again: bool = False) -> dict:
@@ -1796,10 +1912,11 @@ def unmask_prepared(cycle: str | None = None, workers: int = 2, again: bool = Fa
 # date or the map quietly flies stale charts. `refresh` is that job:
 # the whole prepare-and-render for the FAA's current cycle when it is
 # not complete on disk yet, then the previous cycle's files go. The
-# planner runs it in a subprocess of its own once a day (and at
-# start-up), so the serving process stays the size it is; the tile
-# endpoints switch to the new cycle only when `serving_cycle` sees its
-# pyramid complete.
+# charts job runs it (services/jobs/charts: on AWS a scheduled task, on a
+# machine of one's own a container the planner starts through the
+# dev-services sidecar), so the serving process stays the size it is; the
+# tile endpoints switch to the new cycle only when `serving_cycle` sees
+# its pyramid complete.
 
 _REFRESH_LOCK = "refresh.lock"
 
@@ -1807,8 +1924,8 @@ _REFRESH_LOCK = "refresh.lock"
 @contextlib.contextmanager
 def refresh_lock(wait: bool = False):
     """The lock every run that renders the cycle's tiles holds for its
-    whole life -- `refresh`, `pyramid` and `unmask`, from the planner's
-    subprocess or a shell in another container -- yielding whether it
+    whole life -- `refresh`, `pyramid` and `unmask`, from the charts job's
+    container or a shell in another one -- yielding whether it
     got it. `wait` blocks until it is free; otherwise it yields False at
     once when another run holds it. The kernel lets go when the process
     ends, however it ends.
@@ -1859,6 +1976,8 @@ def refresh(kinds: tuple = tuple(KINDS), workers: int = 2, prune: bool = True,
         for key in todo:
             log.info("cycle %s: rendering the %s pyramid", cycle, key)
             render_pyramid(KINDS[key], workers=workers, cycle=cycle)
+    # Each finished kind's loose tiles into its archives.
+    pack_complete(cycle, kinds)
     if publish_bucket and pyramid_complete(cycle, kinds):
         publish(cycle, publish_bucket, client=client)
     if prune and pyramid_complete(cycle, kinds):
@@ -1889,54 +2008,66 @@ def _bucket_cycle(bucket: str, prefix: str = CHART_TILES_PREFIX, client=None) ->
     return json.loads(body).get("cycle")
 
 
-def publish(cycle: str, bucket: str, prefix: str = CHART_TILES_PREFIX, workers: int = 32, client=None) -> int:
-    """Upload a complete cycle's tiles to s3://bucket/prefix/<cycle>/
-    with the headers a CDN wants, then point prefix/serving.json at
-    the cycle so every planner and browser switches at once. Resumable:
-    what was uploaded is remembered beside the tiles, so a task killed
-    half-way picks up where it stopped. Returns the tiles uploaded."""
-    from concurrent.futures import ThreadPoolExecutor
+def _published_name(path: Path) -> str:
+    """An archive's name in the bucket: its own (sec@2x) and a mark of
+    its contents, so an archive packed again -- a sheet cleaned, a new
+    renderer -- is a new object, and nothing a planner or the CDN keeps
+    of the old one is read against the new one's directory."""
+    import hashlib
 
+    st = path.stat()
+    mark = hashlib.sha256(f"{st.st_size}:{st.st_mtime_ns}".encode()).hexdigest()[:12]
+    return f"{path.name.removesuffix('.pmtiles')}-{mark}.pmtiles"
+
+
+def publish(cycle: str, bucket: str, prefix: str = CHART_TILES_PREFIX, client=None) -> int:
+    """Upload a complete cycle's archives (wingtip.tile_archive) to
+    s3://bucket/prefix/<cycle>/, then point prefix/serving.json at the
+    cycle -- each kind's archive by density, the revision -- so every
+    planner switches at once. The planner reads a tile from its archive
+    by a range request; the archives were 1.4 million tile objects.
+    Resumable: what was uploaded is remembered beside the archives, so a
+    task killed half-way picks up where it stopped. Returns the archives
+    uploaded."""
     if client is None:
         import boto3
 
         client = boto3.client("s3")
+    pack_complete(cycle)
     root = CHART_TILE_CACHE_DIR / cycle
     ledger = root / _PUBLISHED
     try:
         done = set(json.loads(ledger.read_text()))
     except (OSError, ValueError):
         done = set()
-    todo = [p for p in root.rglob("*.png") if str(p.relative_to(root)) not in done]
-    log.info("publishing cycle %s: %d tiles to upload (%d already there)", cycle, len(todo), len(done))
-
-    def upload(path: Path) -> str:
-        key = str(path.relative_to(root))
-        client.put_object(
-            Bucket=bucket, Key=f"{prefix}/{cycle}/{key}", Body=path.read_bytes(), ContentType="image/png",
-            CacheControl="public, max-age=2419200, immutable",
-        )
-        return key
-
+    archives: dict = {}
     uploaded = 0
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        for i, key in enumerate(pool.map(upload, todo), 1):
-            done.add(key)
+    for path in sorted(root.glob("*.pmtiles")):
+        stem = path.name.removesuffix(".pmtiles")
+        kind_key, _, density = stem.partition("@")
+        if kind_key not in KINDS:
+            continue
+        name = _published_name(path)
+        if name not in done:
+            # upload_file: in parts, a sectional's @2x archive being GBs.
+            client.upload_file(str(path), bucket, f"{prefix}/{cycle}/{name}", ExtraArgs={
+                "ContentType": "application/vnd.pmtiles", "CacheControl": "public, max-age=2419200, immutable"})
+            done.add(name)
             uploaded += 1
-            if i % 5000 == 0:
-                _write_atomically(ledger, json.dumps(sorted(done)).encode())
-                log.info("  %d of %d uploaded", i, len(todo))
-    _write_atomically(ledger, json.dumps(sorted(done)).encode())
+            _write_atomically(ledger, json.dumps(sorted(done)).encode())
+            log.info("  %s uploaded as %s", path.name, name)
+        archives.setdefault(kind_key, {})[density.removesuffix("x") or "1"] = name
 
     progress = pyramid_status(cycle)
     pointer = {"cycle": cycle, "kinds": {k: p["tiles"] for k, p in progress.items()},
                "scales": {k: p.get("scales", [1]) for k, p in progress.items()},
+               "archives": archives, "revision": _disk_revision(cycle),
                "published_at": datetime.now(tz=timezone.utc).isoformat()}
     client.put_object(
         Bucket=bucket, Key=f"{prefix}/serving.json", Body=json.dumps(pointer).encode(),
         ContentType="application/json", CacheControl="public, max-age=300",
     )
-    log.info("cycle %s published: %d tiles uploaded, serving.json points at it", cycle, uploaded)
+    log.info("cycle %s published: %d archives uploaded, serving.json points at it", cycle, uploaded)
     return uploaded
 
 
@@ -1964,32 +2095,6 @@ def refresh_running() -> bool:
         return not got
 
 
-def refresh_in_background(workers: int = 2, nice: int = 10) -> bool:
-    """Start `python -m wingtip.charts refresh` as a subprocess, unless one
-    is running. Returns whether one was started. Its log goes beside
-    the tiles (refresh.log); it takes the refresh lock itself, which is
-    how `refresh_running` knows. Niced (where `nice` exists): it is hours
-    of every core it is given, and the planner serving tiles beside it
-    -- and, on a machine that is also somebody's desk, the browser
-    looking at them -- come first."""
-    import shutil
-    import subprocess
-    import sys
-
-    if refresh_running():
-        return False
-    CHART_TILE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    log_file = (CHART_TILE_CACHE_DIR / "refresh.log").open("ab")
-    command = [sys.executable, "-m", "wingtip.charts", "refresh", "--workers", str(workers)]
-    if nice and shutil.which("nice"):
-        command = ["nice", "-n", str(nice), *command]
-    process = subprocess.Popen(command, stdout=log_file, stderr=subprocess.STDOUT, start_new_session=True)
-    # Waited on, so a finished refresh does not linger as a zombie.
-    threading.Thread(target=process.wait, name="chart-refresh-reaper", daemon=True).start()
-    log.info("chart refresh started (pid %d)", process.pid)
-    return True
-
-
 def refresh_due() -> bool:
     """Whether the FAA's current cycle is not yet complete on disk, or
     was drawn under another renderer."""
@@ -2000,7 +2105,7 @@ def face_gaps(charts: list | None = None) -> list[tuple]:
     """Adjacent sectional faces that fail to meet: (a, b, gap in
     degrees) for every pair whose faces leave daylight between them
     along a shared edge that no third sheet fills. The seam check
-    `python -m wingtip.charts check` prints; an empty list is what a
+    the charts job's `check` prints (services/jobs/charts); an empty list is what a
     healthy cycle looks like (the sheets overlap by a tenth of a
     degree to a degree), except that the FAA charts no sheet over the
     open Gulf between the Caribbean 1 chart and Jacksonville, and that
@@ -2038,101 +2143,3 @@ def face_gaps(charts: list | None = None) -> list[tuple]:
                 if unfilled(strip, a, b):
                     gaps.append((a, b, round(bs - an, 3)))
     return gaps
-
-
-def _main(argv: list | None = None) -> int:
-    """`python -m wingtip.charts prepare` fetches every sheet;
-    `python -m wingtip.charts pyramid` renders every tile; `refresh` does
-    both for the FAA's current cycle and prunes the old ones; `check`
-    looks for daylight between adjacent sheets; `unmask` takes the
-    masked lines out of sheets prepared before `prepare` did it itself
-    and renders their tiles again. All resume."""
-    import argparse
-
-    parser = argparse.ArgumentParser(description="FAA VFR charts: fetch every sheet, render every tile.")
-    sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("prepare", "pyramid", "refresh", "check", "publish", "unmask"):
-        p = sub.add_parser(name)
-        if name in ("prepare", "pyramid"):
-            p.add_argument("--kind", nargs="+", choices=list(KINDS), default=list(KINDS))
-        if name == "prepare":
-            p.add_argument("--redetect", action="store_true", help="run the face detection again on sheets already on disk")
-        if name in ("pyramid", "refresh", "unmask"):
-            p.add_argument("--workers", type=int, default=4 if name == "pyramid" else 2)
-        if name == "unmask":
-            p.add_argument("--cycle", help="the cycle whose sheets and tiles to clean; the served one by default")
-            p.add_argument("--again", action="store_true",
-                           help="look again at sheets already cleaned, along the borders of what was taken out")
-        if name == "pyramid":
-            p.add_argument("--zooms", help="e.g. 5-12; the kind's own range by default")
-            p.add_argument("--scales", default=",".join(map(str, TILE_SCALES)),
-                           help="the densities to draw, e.g. 2 to add the high-density tiles to a finished pyramid")
-            p.add_argument("--tiles-dir", help="render into this folder instead of the tile cache -- a staging "
-                                               "pyramid to swap in whole while the old one keeps serving")
-        if name in ("refresh", "publish"):
-            p.add_argument("--bucket", default=CHART_TILES_BUCKET,
-                           help="S3 bucket to publish the complete cycle to (CHART_TILES_BUCKET by default)")
-        if name == "publish":
-            p.add_argument("--cycle", help="the cycle to publish; the served one by default")
-    args = parser.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    if getattr(args, "tiles_dir", None):
-        global CHART_TILE_CACHE_DIR
-        CHART_TILE_CACHE_DIR = Path(args.tiles_dir)
-
-    # The runs that write the cycle's tiles, or its publish ledger, hold
-    # the refresh lock for their whole life. A refresh or a pyramid that
-    # finds it held leaves the running one to it; an unmask waits, then
-    # renders its tiles again on what that run left; a publish waits
-    # rather than write back a ledger an unmask has struck tiles off.
-    if args.command in ("refresh", "pyramid", "unmask", "publish"):
-        wait = args.command in ("unmask", "publish")
-        with refresh_lock(wait=wait) as got:
-            if not got:
-                log.info("a refresh, pyramid or unmask is already running on %s; leaving it to that",
-                         CHART_TILE_CACHE_DIR)
-                return 0 if args.command == "refresh" else 1
-            return _run(args, parser)
-    return _run(args, parser)
-
-
-def _run(args, parser) -> int:
-    if args.command == "prepare":
-        charts = prepare_all(tuple(args.kind), redetect=args.redetect)
-        log.info("%d charts ready under %s", len(charts), CHARTS_DIR)
-        return 0
-    if args.command == "unmask":
-        changed = unmask_prepared(args.cycle, workers=args.workers, again=args.again)
-        log.info("masked lines removed: %s", {k: len(v) for k, v in changed.items()} or "none left to remove")
-        return 0
-    if args.command == "refresh":
-        cycle = refresh(workers=args.workers, publish_bucket=args.bucket)
-        log.info("cycle %s complete; serving %s", cycle, serving_cycle())
-        return 0
-    if args.command == "publish":
-        if not args.bucket:
-            parser.error("publish needs --bucket or CHART_TILES_BUCKET")
-        count = publish(args.cycle or serving_cycle(), args.bucket)
-        log.info("%d tiles uploaded", count)
-        return 0
-    if args.command == "check":
-        gaps = face_gaps()
-        for a, b, gap in gaps:
-            print(f"GAP {gap:.3f} deg between {a} and {b}")
-        print(f"{len(gaps)} gaps between adjacent sheets ({serving_cycle()})")
-        return 1 if gaps else 0
-    zooms = None
-    if args.zooms:
-        lo, _, hi = args.zooms.partition("-")
-        zooms = tuple(range(int(lo), int(hi or lo) + 1))
-    for key in args.kind:
-        kind = KINDS[key]
-        scales = tuple(int(s) for s in args.scales.split(",") if int(s) in TILE_SCALES)
-        count = render_pyramid(kind, zooms=zooms and tuple(z for z in zooms if kind.min_zoom <= z <= kind.max_zoom),
-                               workers=args.workers, scales=scales)
-        log.info("%s: %d tiles written under %s", key, count, CHART_TILE_CACHE_DIR)
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(_main())

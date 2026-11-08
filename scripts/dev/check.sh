@@ -4,7 +4,7 @@
 # Docker (the Mac has no node, npm or pytest), each area in its own turn of
 # scripts/dev/one-at-a-time.sh, and warm from the first run of any worktree.
 #
-#   scripts/dev/check.sh <area>...       web py planner ingest assistant weather engine java ios android
+#   scripts/dev/check.sh <area>...       web py planner ingest assistant weather jobs engine java ios android
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas
@@ -37,7 +37,7 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 
-AREAS="web py planner ingest assistant weather engine java ios android"
+AREAS="web py planner ingest assistant weather jobs engine java ios android"
 RUST_IMAGE=rust:1.89-slim-bookworm
 
 # The areas a list of changed paths touches, one per line in AREAS' order:
@@ -65,6 +65,10 @@ areas_for() {
     case "$path" in
       services/ingest/*|services/planner/wingtip/*|engine/*) found+="ingest " ;;
       services/assistant/*) found+="assistant " ;;
+    esac
+    case "$path" in
+      services/jobs/*|services/planner/wingtip/*|services/planner/requirements-wingtip*.txt|services/planner/pytest_guards.py|engine/*)
+        found+="jobs " ;;
     esac
     case "$path" in
       engine/*|apps/web/src/lib/fixtures/*|services/planner/tests_wingtip/fixtures/native/*) found+="engine " ;;
@@ -249,6 +253,7 @@ run_area() {
     ingest) run_py services/ingest requirements-dev.txt 3.14 ingest tests ;;
     assistant) run_py services/assistant requirements-dev.txt 3.14 app tests ;;
     weather) run_py services/weather requirements-dev.txt 3.14 app tests ;;
+    jobs) run_py services/jobs requirements-dev-jobs.txt 3.14 charts charts/tests ;;
     engine)
       # CI's own cargo test line (ci.yml's test job), so the crates tested
       # here are always the ones tested there.
