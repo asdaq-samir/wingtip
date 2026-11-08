@@ -17954,7 +17954,10 @@
     "fuel_stops",
     "fields_along",
     "class_b_entered",
-    "class_b_detours"
+    "class_b_detours",
+    "ahead_frame",
+    "alerts_ahead",
+    "congested_points"
   ],
   "additionalProperties": false,
   "definitions": {
