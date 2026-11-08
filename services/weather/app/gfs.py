@@ -22,26 +22,28 @@ The GFS runs four times a day (00, 06, 12 and 18Z); NOMADS posts each
 run's 0.25-degree files hourly to 120 hours and three-hourly after that
 (its directory gfs.YYYYMMDD/HH/atmos: f000 to f120, then f123, f126...).
 
-Held, not fetched per plan: each period's copy is read at the planner's
-start and on its refresh (warm), and a copy past FRESH_S that is still
-inside its own window is served at once while a newer one downloads on a
-thread of its own, so a plan waits on NOMADS only when nothing valid is
-held.
+Fetched on the weather service's schedule (app.main), each period a
+product of its own ("winds-06", "-12", "-24"), and stored with the end of
+its window as the time it may be served to (the engine's rule for when a
+winds forecast stops counting, validity.rs): the planner reads it
+(wingtip.weather._fd_stations) and never waits on NOMADS. Moved from the
+planner's wingtip.modelwinds (#535).
 """
 from __future__ import annotations
 
+import json
 import logging
 import math
-import threading
 import time
 from datetime import datetime, timedelta, timezone
 
 import gribberish
 import numpy as np
 import requests
-
-from .config import REQUEST_HEADERS as HEADERS
-from .units import M_TO_FT
+import wingtip_native
+from wingtip import weather_store
+from wingtip.config import REQUEST_HEADERS as HEADERS
+from wingtip.units import M_TO_FT
 
 log = logging.getLogger(__name__)
 
@@ -57,28 +59,57 @@ POSTED_AFTER = timedelta(hours=4)
 RUNS_TRIED = 3
 #: The last forecast hour NOMADS posts hourly; three-hourly after it.
 HOURLY_TO = 120
-#: A copy is asked for again after this: the hour the periods' windows
-#: move on by, and a new run every six.
-FRESH_S = 3600
-#: The planner's refresh reads a copy again once it is this old, so the
-#: hourly read happens there rather than under a pilot's plan.
-REFRESH_AFTER_S = FRESH_S - 15 * 60
 NOT_UP_RETRY_S = 300
-#: A failed read with nothing valid to serve is remembered this long, so
-#: every lookup of an outage is not a download of its own.
-FAILED_RETRY_S = 60
 
-# The stations the planner finds the nearest of to a leg: the CONUS FB
-# stations (FD1US1, as issued 2026-11-03), kept as the places the model
-# is read at.
-FB_STATIONS = (
-    "ABI ABQ ABR ACK ACY AGC ALB ALS AMA AST ATL AVP AXN BAM BCE BDL BFF BGR BHM BIH BIL BLH BML BNA BOI BOS BRL BRO "
-    "BUF CAE CAR CGI CHS CLE CLL CMH COU CRP CRW CSG CVG CZI DAL DBQ DEN DIK DLH DLN DRT DSM ECK EKN ELP ELY EMI EVV "
-    "EYW FAT FLO FMN FOT FSD FSM FWA GAG GCK GEG GFK GGW GJT GLD GPI GRB GRI GSP GTF HAT HOU HSV ICT ILM IMB IND INK "
-    "INL JAN JAX JFK JOT LAS LBB LCH LIT LKV LND LOU LRD LSE LWS MBW MCW MEM MGM MIA MKC MKG MLB MLS MOB MOT MQT MRF "
-    "MSP MSY OKC OMA ONL ONT ORF OTH PDX PFN PHX PIE PIH PIR PLB PRC PSB PSX PUB PWM RAP RBL RDM RDU RIC RKS RNO ROA "
-    "ROW SAC SAN SAT SAV SBA SEA SFO SGF SHV SIY SLC SLN SPI SPS SSM STL SYR TCC TLH TRI TUL TUS TVC TYS WJF YKM ZUN"
-).split()
+# The places the model is read at: the CONUS FB stations (FD1US1, as
+# issued 2026-11-03), each where OurAirports puts the US airport whose
+# local code it is (ourairports.com's airports.csv, read 2026-11-08) --
+# the match the planner made at every read before the split, kept as a
+# table so this service never loads the 80,000-row airport file. Eleven
+# of the list name no airport there (CZI, ECK, EMI, HAT, IMB, MBW, MQT,
+# PFN, PLB, SSM, ZUN: VORs) and were never read, as before.
+STATIONS = {
+    "ABI": (32.4113, -99.6819), "ABQ": (35.04, -106.6089), "ABR": (45.4491, -98.4218), "ACK": (41.2531, -70.0602),
+    "ACY": (39.4562, -74.5775), "AGC": (40.3544, -79.9302), "ALB": (42.7483, -73.8017), "ALS": (37.4349, -105.867),
+    "AMA": (35.2179, -101.7064), "AST": (46.158, -123.879), "ATL": (33.6367, -84.4281), "AVP": (41.3371, -75.7242),
+    "AXN": (45.8663, -95.3947), "BAM": (40.599, -116.874), "BCE": (37.7064, -112.145), "BDL": (41.9386, -72.688),
+    "BFF": (41.874, -103.596), "BGR": (44.8064, -68.8267), "BHM": (33.5629, -86.7507), "BIH": (37.3731, -118.364),
+    "BIL": (45.8089, -108.5412), "BLH": (33.6192, -114.717), "BML": (44.5754, -71.1759), "BNA": (36.1245, -86.6782),
+    "BOI": (43.5644, -116.223), "BOS": (42.362, -71.0079), "BRL": (40.7832, -91.1255), "BRO": (25.9072, -97.4252),
+    "BUF": (42.9405, -78.7322), "CAE": (33.9382, -81.123), "CAR": (46.8715, -68.0179), "CGI": (37.2253, -89.5708),
+    "CHS": (32.8962, -80.0382), "CLE": (41.4117, -81.8498), "CLL": (30.5886, -96.3638), "CMH": (39.998, -82.8919),
+    "COU": (38.8181, -92.2196), "CRP": (27.7704, -97.5012), "CRW": (38.3731, -81.5932), "CSG": (32.5164, -84.9396),
+    "CVG": (39.0488, -84.6678), "DAL": (32.8448, -96.8477), "DBQ": (42.402, -90.7095), "DEN": (39.86, -104.6738),
+    "DIK": (46.7975, -102.8019), "DLH": (46.8419, -92.1987), "DLN": (45.2554, -112.553), "DRT": (29.3742, -100.927),
+    "DSM": (41.534, -93.6567), "EKN": (38.8898, -79.8577), "ELP": (31.8099, -106.3756), "ELY": (39.2997, -114.842),
+    "EVV": (38.037, -87.5324), "EYW": (24.5561, -81.7596), "FAT": (36.7758, -119.718), "FLO": (34.1854, -79.7239),
+    "FMN": (36.7412, -108.23), "FOT": (40.5539, -124.133), "FSD": (43.5855, -96.7412), "FSM": (35.3366, -94.3674),
+    "FWA": (40.9789, -85.1945), "GAG": (36.2955, -99.7764), "GCK": (37.9275, -100.724), "GEG": (47.6199, -117.534),
+    "GFK": (47.9493, -97.1761), "GGW": (48.2125, -106.615), "GJT": (39.1267, -108.5294),
+    "GLD": (39.3707, -101.6998), "GPI": (48.3105, -114.256), "GRB": (44.4835, -88.1308), "GRI": (40.9675, -98.3096),
+    "GSP": (34.8957, -82.2189), "GTF": (47.482, -111.371), "HOU": (29.6453, -95.2768), "HSV": (34.6362, -86.7744),
+    "ICT": (37.6503, -97.4286), "ILM": (34.2723, -77.9051), "IND": (39.7173, -86.2944), "INK": (31.7796, -103.201),
+    "INL": (48.5662, -93.4031), "JAN": (32.3112, -90.0759), "JAX": (30.4925, -81.6878), "JFK": (40.6394, -73.7793),
+    "JOT": (41.5178, -88.1755), "LAS": (36.0834, -115.1518), "LBB": (33.6636, -101.823), "LCH": (30.1261, -93.2233),
+    "LIT": (34.7292, -92.2236), "LKV": (42.1611, -120.399), "LND": (42.8152, -108.73), "LOU": (38.228, -85.6637),
+    "LRD": (27.5438, -99.4616), "LSE": (43.879, -91.2567), "LWS": (46.3745, -117.015), "MCW": (43.1598, -93.3297),
+    "MEM": (35.0438, -89.9763), "MGM": (32.3006, -86.394), "MIA": (25.796, -80.2898), "MKC": (39.1232, -94.5928),
+    "MKG": (43.1695, -86.2382), "MLB": (28.102, -80.6411), "MLS": (46.4273, -105.8854), "MOB": (30.6912, -88.2428),
+    "MOT": (48.258, -101.2791), "MRF": (30.3696, -104.0159), "MSP": (44.8801, -93.2217), "MSY": (29.9934, -90.2647),
+    "OKC": (35.3934, -97.5982), "OMA": (41.3032, -95.8941), "ONL": (42.4689, -98.687), "ONT": (34.056, -117.601),
+    "ORF": (36.8953, -76.201), "OTH": (43.4171, -124.246), "PDX": (45.5887, -122.598), "PHX": (33.4353, -112.0059),
+    "PIE": (27.9102, -82.6874), "PIH": (42.9098, -112.596), "PIR": (44.3827, -100.286), "PRC": (34.6535, -112.4199),
+    "PSB": (40.8844, -78.0873), "PSX": (28.7275, -96.251), "PUB": (38.2891, -104.497), "PWM": (43.6462, -70.3093),
+    "RAP": (44.0453, -103.057), "RBL": (40.1507, -122.252), "RDM": (44.2541, -121.15), "RDU": (35.8787, -78.7873),
+    "RIC": (37.5052, -77.3197), "RKS": (41.5942, -109.065), "RNO": (39.4991, -119.768), "ROA": (37.3255, -79.9754),
+    "ROW": (33.3016, -104.531), "SAC": (38.5125, -121.493), "SAN": (32.7336, -117.19), "SAT": (29.5337, -98.4698),
+    "SAV": (32.1266, -81.2), "SBA": (34.4262, -119.84), "SEA": (47.4479, -122.3103), "SFO": (37.6198, -122.3748),
+    "SGF": (37.245, -93.3886), "SHV": (32.4447, -93.8267), "SIY": (41.7814, -122.468), "SLC": (40.7889, -111.9799),
+    "SLN": (38.791, -97.6522), "SPI": (39.8441, -89.6779), "SPS": (33.9888, -98.4919), "STL": (38.7487, -90.37),
+    "SYR": (43.1112, -76.1063), "TCC": (35.1828, -103.603), "TLH": (30.4012, -84.3543), "TRI": (36.4752, -82.4074),
+    "TUL": (36.1971, -95.8862), "TUS": (32.115, -110.9381), "TVC": (44.7414, -85.5822), "TYS": (35.811, -83.994),
+    "WJF": (34.7411, -118.219), "YKM": (46.5682, -120.544),
+}
 
 # Each period a plan reads: the forecast hour it is valid at, as hours
 # from the current hour, and the window around that valid time it is for
@@ -91,7 +122,7 @@ FB_STATIONS = (
 # hours ahead, 12 to fifteen, 24 to twenty-seven. A forecast hour is
 # never used outside its window (stations, _in_window).
 _PERIODS = {"06": (3, 4, 3), "12": (9, 3, 6), "24": (21, 6, 6)}
-#: The periods, in order, as wingtip.weather reads them.
+#: The periods, in order: wingtip.weather_store.WIND_PERIODS.
 PERIODS = tuple(_PERIODS)
 
 
@@ -99,89 +130,23 @@ class ModelWindsUnavailable(RuntimeError):
     """NOMADS did not give a GFS run."""
 
 
-_HELD: dict = {}
+#: (run, step) -> when NOMADS last said it was not posted yet.
 _NOT_UP: dict = {}
-_FAILED: dict = {}
-#: One download at a time for each period, not for all three: a plan for
-#: now does not wait on the 24-hour period's download.
-_LOCKS = {hr: threading.Lock() for hr in _PERIODS}
 
 
-def stations(fcst_hr: str = "06"):
-    """The stations with the GFS's levels at each, for `fcst_hr`'s period:
-    an FdStations whose `period` is {"valid_at", "use_from", "use_to",
-    "run", "forecast_hour"} and `modelled` True. A copy held is served
-    while it is inside its own window; one past FRESH_S is read again on
-    a thread of its own meanwhile. Raises ModelWindsUnavailable where no
-    valid copy is held and none can be had."""
+def fetch_period(fcst_hr: str) -> None:
+    """`fcst_hr`'s period read from NOMADS and stored ("winds-<fcst_hr>"):
+    {"stations": {ident: {altitude_ft: {"wind_dir_true_deg",
+    "wind_speed_kt", "temp_c"}}}, "period": period_of(...)}, served to the
+    end of its window. Raises ModelWindsUnavailable where no run can be
+    had, the stored copy left in place."""
     now = time.time()
-    held = _HELD.get(fcst_hr)
-    if held is not None and _in_window(held[1], now):
-        if now - held[0] >= FRESH_S:
-            _read_behind(fcst_hr)
-        return held[1]
-    return _read(fcst_hr, force=False)
-
-
-def warm(force: bool = False) -> None:
-    """Every period read now where its copy is past REFRESH_AFTER_S (all of
-    them with `force`): the planner's start and its periodic refresh, so a
-    pilot's plan finds them held. A period NOMADS cannot give is logged;
-    its copy held, if still in its window, is served on."""
-    for fcst_hr in _PERIODS:
-        held = _HELD.get(fcst_hr)
-        if not force and held is not None and time.time() - held[0] < REFRESH_AFTER_S:
-            continue
-        try:
-            _read(fcst_hr, force=True)
-        except ModelWindsUnavailable as err:
-            log.warning("modelled winds for the %s-hour period not read: %s", fcst_hr, err)
-
-
-def _read_behind(fcst_hr: str) -> None:
-    lock = _LOCKS.setdefault(fcst_hr, threading.Lock())
-    if lock.locked():
-        return
-
-    def run() -> None:
-        try:
-            _read(fcst_hr, force=True)
-        except ModelWindsUnavailable as err:
-            log.warning("modelled winds for the %s-hour period not refreshed: %s", fcst_hr, err)
-
-    threading.Thread(target=run, name=f"modelwinds-{fcst_hr}", daemon=True).start()
-
-
-def _read(fcst_hr: str, force: bool):
-    """The period read from NOMADS under its lock, and held. Without
-    `force` a copy someone else has just read is served instead, and a
-    failure remembered for FAILED_RETRY_S is raised again. A read that
-    fails serves the copy held while it is still in its window."""
-    from .weather import FdStations
-
-    with _LOCKS.setdefault(fcst_hr, threading.Lock()):
-        now = time.time()
-        held = _HELD.get(fcst_hr)
-        if not force:
-            if held is not None and now - held[0] < FRESH_S and _in_window(held[1], now):
-                return held[1]
-            failed = _FAILED.get(fcst_hr)
-            if failed is not None and now - failed[0] < FAILED_RETRY_S:
-                raise failed[1]
-        at = datetime.fromtimestamp(now, timezone.utc)
-        try:
-            fields, run, step = _fetch(fcst_hr, at)
-        except ModelWindsUnavailable as err:
-            _FAILED[fcst_hr] = (now, err)
-            if held is not None and _in_window(held[1], now):
-                return held[1]
-            raise
-        out = FdStations(_at_stations(fields))
-        out.period = period_of(run, step, fcst_hr)
-        out.modelled = True
-        _HELD[fcst_hr] = (now, out)
-        _FAILED.pop(fcst_hr, None)
-        return out
+    fields, run, step = _fetch(fcst_hr, datetime.fromtimestamp(now, timezone.utc))
+    period = period_of(run, step, fcst_hr)
+    until = json.loads(wingtip_native.call("weather_expires_at", json.dumps(
+        {"product": "winds", "valid_to": _iso_s(period["use_to"])})))
+    weather_store.write(f"winds-{fcst_hr}", {"stations": _at_stations(fields), "period": period},
+                        fetched_at=now, until=until, meta={"run": period["run"], "forecast_hour": step})
 
 
 def period_of(run: datetime, step: int, fcst_hr: str) -> dict:
@@ -198,19 +163,6 @@ def period_of(run: datetime, step: int, fcst_hr: str) -> dict:
         "run": _iso(run),
         "forecast_hour": step,
     }
-
-
-def _in_window(stations_held, now: float) -> bool:
-    """Whether a copy held may still be served: not past the end of its
-    window, by the engine's rule for when a winds forecast stops counting
-    (validity.rs, `weather_expires_at`). Its later periods are for later
-    flights, so it is served before its window starts as the FB's 12- and
-    24-hour forecasts were."""
-    from .weather import _expires_at
-
-    period = getattr(stations_held, "period", None) or {}
-    until = _expires_at("winds", _iso_s(period["use_to"])) if period.get("use_to") else None
-    return until is not None and now < until
 
 
 def _fetch(fcst_hr: str, now: datetime) -> tuple[dict, datetime, int]:
@@ -287,12 +239,8 @@ def _at_stations(fields: dict) -> dict:
     {altitude_ft: {"wind_dir_true_deg", "wind_speed_kt", "temp_c"}}}, each
     level at its own geopotential height, which the planner's altitude
     interpolation takes as it did the FB's columns."""
-    from . import airports
-    from .weather import _station_rows
-
-    codes, lats, lons = _station_rows(set(FB_STATIONS), airports.load_airports())
     out = {}
-    for code, lat, lon in zip(codes, np.degrees(lats), np.degrees(lons)):
+    for code, (lat, lon) in STATIONS.items():
         levels = {}
         for hpa in LEVELS_HPA:
             height_m = _at(fields[("HGT", hpa)], lat, lon)
@@ -320,18 +268,6 @@ def _at(field: tuple, lat: float, lon: float) -> float | None:
         return None
     value = float(values[i, j])
     return None if math.isnan(value) else value
-
-
-def held(fcst_hr: str) -> tuple[float, dict] | None:
-    """When `fcst_hr`'s copy held was read (UNIX seconds) and its period,
-    for the Status page; None where none is."""
-    got = _HELD.get(fcst_hr)
-    return (got[0], got[1].period) if got is not None else None
-
-
-def failing(fcst_hr: str) -> bool:
-    """Whether the last read of `fcst_hr`'s period failed."""
-    return fcst_hr in _FAILED
 
 
 def _iso(at: datetime) -> str:

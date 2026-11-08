@@ -41,6 +41,7 @@ updates:
       - /ml
       - /services/planner
       - /services/ingest
+      - /services/weather
     multi-ecosystem-group: monthly
     patterns: ["*"]
     ignore:

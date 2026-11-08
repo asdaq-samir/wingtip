@@ -195,6 +195,16 @@ Resources:
       LifecyclePolicy:
         LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
 
+  # The weather service (services/weather), which fetches the weather the
+  # planner reads into the store on the data disk.
+  WeatherRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: wingtip/weather
+      EmptyOnDelete: true
+      LifecyclePolicy:
+        LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
+
   # ---------------------------------------------------------------------
   # Storage
   # ---------------------------------------------------------------------
@@ -312,6 +322,7 @@ Resources:
                   - !GetAtt PlannerRepository.Arn
                   - !GetAtt IngestRepository.Arn
                   - !GetAtt AssistantRepository.Arn
+                  - !GetAtt WeatherRepository.Arn
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: [!Ref DbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
@@ -1009,6 +1020,7 @@ Resources:
                   - !GetAtt PlannerRepository.Arn
                   - !GetAtt IngestRepository.Arn
                   - !GetAtt AssistantRepository.Arn
+                  - !GetAtt WeatherRepository.Arn
               # The server changes with each Spot interruption, so deploys
               # find it by its Name tag and may run only on that.
               - Effect: Allow

@@ -70,9 +70,10 @@ logging.basicConfig(level=get_settings().log_level)
 
 log = logging.getLogger(__name__)
 
-# Inside the datasets' own five-minute time-to-live, so a held copy is
-# replaced before a request could find it stale.
-WEATHER_REFRESH_S = 240
+# How often the loop below looks at what is due (the chart cycle, the
+# FAA's editions, the registry). The weather is the weather service's
+# (services/weather), which keeps it in the store the planner reads.
+LOOP_EVERY_S = 240
 # How often the FAA's files are checked for a new edition.
 EDITIONS_CHECK_EVERY_S = 6 * 3600
 #: Whether the FAA's aircraft registry is downloaded and read here
@@ -287,8 +288,7 @@ def _warm_reference_data() -> None:
     # And the chart's lakes and towns, read once a cycle under the
     # sectionals on disk (app.landmarks), so a new route's corridor read
     # takes them from there in under half the time. In a thread of its
-    # own: a first build is many minutes, and the weather below is kept
-    # warm meanwhile. Imported here, not at the top, so a planner with it
+    # own: a first build is many minutes. Imported here, not at the top, so a planner with it
     # off (LANDMARKS_BUILD=0, infra/docker-compose.ci.yml) never loads the reader.
     def _build_landmarks() -> None:
         from . import landmarks
@@ -302,16 +302,10 @@ def _warm_reference_data() -> None:
     if get_settings().landmarks_build:
         threading.Thread(target=_build_landmarks, name="landmark-cells", daemon=True).start()
 
-    # Then keep the weather warm: the METAR/TAF/SIGMET files and the
-    # winds product are fetched again every few minutes, inside their
-    # own time-to-live, so no pilot's request ever pays for a download
-    # -- on a slow aviationweather.gov day the first plan after an
-    # expiry was observed waiting close to a minute. While the planner is
-    # in use (weather.in_use: asked in the last quarter of an hour), and
-    # each only if it has changed: it downloaded all eight every four
-    # minutes round the clock, nobody planning. A refresh that fails is
-    # logged and the held copies go on being served. Once an hour, the
-    # chart cycle is checked (app.chart_refresh decides what that starts).
+    # Then, once an hour, the chart cycle is checked (app.chart_refresh
+    # decides what that starts). The weather is not this loop's: the
+    # weather service (services/weather) fetches it on its own schedule
+    # into the store the planner reads (wingtip.weather_store, #535).
     last_cycle_check = time.time()
     # The FAA's files a new edition at a time (check_faa_editions): checked
     # now, and four times a day.
@@ -341,13 +335,7 @@ def _warm_reference_data() -> None:
                 registry.refresh()
             except Exception:  # noqa: BLE001 -- the next check tries again; the held copy is served
                 log.warning("aircraft registry not refreshed", exc_info=True)
-        time.sleep(WEATHER_REFRESH_S)
-        try:
-            if weather.in_use():
-                weather.refresh()
-                log.info("weather refreshed")
-        except Exception:  # noqa: BLE001 -- the next tick tries again; requests serve what is held
-            log.warning("weather refresh failed", exc_info=True)
+        time.sleep(LOOP_EVERY_S)
         if chart_refresh.AUTO_REFRESH and time.time() - last_cycle_check >= chart_refresh.CHECK_EVERY_S:
             last_cycle_check = time.time()
             chart_refresh.maybe_refresh()

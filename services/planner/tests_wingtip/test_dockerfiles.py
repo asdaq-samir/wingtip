@@ -27,6 +27,7 @@ IMAGES = {
     "services/planner/Dockerfile": "planner",
     "services/ingest/Dockerfile": "ingest",
     "services/assistant/Dockerfile": "assistant",
+    "services/weather/Dockerfile": "weather",
     "ml/Dockerfile.ml": "ml",
     "ml/Dockerfile.processing": "pipeline-processing",
     "ml/Dockerfile.training": "pipeline-training",

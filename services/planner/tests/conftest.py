@@ -10,6 +10,21 @@ from app import chart_model, chart_scorer, detection, planning, prefetch, checkp
 
 
 @pytest.fixture(autouse=True)
+def _weather_store_of_its_own(tmp_path_factory, monkeypatch):
+    """Each test's weather store an empty folder of its own: none reads the
+    copies the weather service keeps in data/raw/weather, or leaves the
+    planner's `asked` mark there (wingtip.weather_store). A test about the
+    weather writes what it wants in it."""
+    from wingtip import weather_store
+
+    monkeypatch.setenv("WEATHER_STORE", str(tmp_path_factory.mktemp("weather")))
+    monkeypatch.setitem(weather_store._ASKED, "at", 0.0)
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
 def _fresh_caches():
     """The app remembers per-route work (cruise altitude, model scores,
     corridor detections) across requests, so a test that monkeypatches

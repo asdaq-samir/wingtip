@@ -12,6 +12,7 @@
 !services/planner/
 !services/ingest/
 !services/assistant/
+!services/weather/
 !services/gateway/
 !apps/web/
 !ml/requirements-*.txt
@@ -22,6 +23,7 @@ services/planner/tests/
 services/planner/tests_wingtip/
 services/ingest/tests/
 services/assistant/tests/
+services/weather/tests/
 **/__pycache__/
 **/*.pyc
 **/node_modules/

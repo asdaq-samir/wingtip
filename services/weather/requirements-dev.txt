@@ -1,0 +1,8 @@
+# CI and the checks only (.github/workflows/ci.yml's test-weather job,
+# scripts/dev/check.sh weather): the service's own list, wingtip's (which
+# the base image installs), and what the tests need on top.
+-r requirements.txt
+-r ../planner/requirements-wingtip.txt
+pytest
+pytest-randomly==5.0.0   # every run in a new random order, --randomly-seed=N repeats one (docs/CI.md, "Flaky tests")
+ruff

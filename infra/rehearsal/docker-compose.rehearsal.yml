@@ -47,6 +47,11 @@ services:
     volumes: !override
       - ${REHEARSAL_DIR:?}/data:/workspace/data
 
+  weather:
+    logging: !override { driver: json-file, options: { max-size: "20m", max-file: "5" } }
+    volumes: !override
+      - ${REHEARSAL_DIR:?}/data:/workspace/data
+
   gateway:
     logging: !override { driver: json-file, options: { max-size: "20m", max-file: "5" } }
     environment:

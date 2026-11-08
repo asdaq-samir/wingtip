@@ -345,6 +345,27 @@ jobs:
       - run: ruff check app tests
       - run: pytest tests/ -v
 
+  # The weather service's suite (services/weather): its fetches and parsers,
+  # and the planner's readers over what it stores (wingtip.weather_store),
+  # with wingtip and the engine it imports. The network is stubbed.
+  test-weather:
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes]
+    if: needs.changes.outputs.test-weather == 'true'
+    defaults:
+      run:
+        working-directory: services/weather
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+        with:
+          python-version: "3.14"
+      - run: pip install uv
+      - run: uv pip install --system -r requirements-dev.txt
+      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
+      - run: ruff check app tests
+      - run: pytest tests/ -v
+
   # What this run has to do, from what changed: the one job the test
   # jobs and the image builds wait on, and quick (a checkout and a diff).
   # Each test job and each image then runs only if something it reads
@@ -376,6 +397,7 @@ jobs:
       test-planner: ${{ steps.plan.outputs.test-planner }}
       test-ingest: ${{ steps.plan.outputs.test-ingest }}
       test-assistant: ${{ steps.plan.outputs.test-assistant }}
+      test-weather: ${{ steps.plan.outputs.test-weather }}
       docs: ${{ steps.plan.outputs.docs }}
       infra: ${{ steps.plan.outputs.infra }}
       android: ${{ steps.plan.outputs.android }}
@@ -483,6 +505,13 @@ jobs:
             test-assistant:
               - services/assistant/**
               - .ruff.toml
+            # The weather service, and wingtip, whose store and readers it
+            # is tested against.
+            test-weather:
+              - services/weather/**
+              - services/planner/wingtip/**
+              - services/planner/requirements-wingtip.txt
+              - engine/**
             # The two APIs the phones call, for api-compat.
             api:
               - services/planner/openapi.json
@@ -553,6 +582,10 @@ jobs:
             assistant:
               - services/assistant/**
               - services/Dockerfile.base
+            weather:
+              - services/weather/**
+              - services/Dockerfile.base
+              - services/planner/wingtip/**
               - services/planner/requirements-wingtip.txt
               - engine/**
             # apps/web/** rather than the files the Dockerfile copies: a file
@@ -578,11 +611,11 @@ jobs:
           # Every image this workflow builds, each a target of
           # .github/images.hcl, which has its context and Dockerfile.
           IMAGES = ("base", "ml", "pipeline-processing", "pipeline-training",
-                    "planner", "ingest", "assistant", "gateway")
+                    "planner", "ingest", "assistant", "weather", "gateway")
           due = lambda name: everything or name in changed
           images = [{"service": s} for s in IMAGES if due(s)]
           outputs = {"images": json.dumps(images)}
-          for name in ("test-root", "test-web", "test-gateway", "test-planner", "test-ingest", "test-assistant",
+          for name in ("test-root", "test-web", "test-gateway", "test-planner", "test-ingest", "test-assistant", "test-weather",
                        "docs", "infra", "api"):
               outputs[name] = "true" if due(name) else "false"
           # The phones' builds gate a merge: a pull request, or a run
@@ -2004,7 +2037,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, docs, infra, api-compat]
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat]
     if: always()
     steps:
       - name: Every job passed or was not needed

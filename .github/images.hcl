@@ -27,7 +27,7 @@ variable "PUSH" {
 # Promote workflow walks, promoting each this commit built.
 group "default" {
   targets = ["base", "ml", "pipeline-processing", "pipeline-training",
-             "planner", "ingest", "assistant", "gateway"]
+             "planner", "ingest", "assistant", "weather", "gateway"]
 }
 
 function "image" {
@@ -121,6 +121,17 @@ target "assistant" {
   cache-from = image("assistant").cache-from
   cache-to   = image("assistant").cache-to
   output     = image("assistant").output
+}
+
+# The weather service (services/weather), on the same base as the planner.
+target "weather" {
+  context    = "."
+  dockerfile = "services/weather/Dockerfile"
+  contexts   = { wingtip-base = "target:base" }
+  tags       = image("weather").tags
+  cache-from = image("weather").cache-from
+  cache-to   = image("weather").cache-to
+  output     = image("weather").output
 }
 
 target "gateway" {
