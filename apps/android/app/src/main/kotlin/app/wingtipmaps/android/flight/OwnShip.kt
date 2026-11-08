@@ -92,6 +92,11 @@ class OwnShip private constructor(private val context: Context) {
     private val _ahead = MutableStateFlow<List<AheadAlert>>(emptyList())
     val ahead: StateFlow<List<AheadAlert>> = _ahead.asStateFlow()
 
+    /** The ground under the airplane from the packs kept on the phone,
+     *  asked with what is ahead: the glide ring's ground (InFlight). */
+    private val _groundFt = MutableStateFlow<Double?>(null)
+    val groundFt: StateFlow<Double?> = _groundFt.asStateFlow()
+
     private val provider: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var asking: Job? = null
@@ -258,6 +263,10 @@ class OwnShip private constructor(private val context: Context) {
         if (!underway(gs)) return
         asking?.cancel()
         asking = scope.launch {
+            // The packs' answer is asked either way, for the ground under
+            // the airplane the glide ring stands on, network or none.
+            val offline = CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)
+            _groundFt.value = offline?.groundFt
             val alerts = try {
                 Planner.ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)
             } catch (e: CancellationException) {
@@ -265,7 +274,7 @@ class OwnShip private constructor(private val context: Context) {
             } catch (e: Exception) {
                 // No planner in the air: the same alerts from the packs
                 // kept for the route (CyclePacks.ahead).
-                CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)?.alerts ?: return@launch
+                offline?.alerts ?: return@launch
             }
             _ahead.value = alerts
         }

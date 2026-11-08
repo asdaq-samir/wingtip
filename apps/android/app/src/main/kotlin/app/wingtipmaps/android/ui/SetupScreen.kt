@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
 
 /**
@@ -96,6 +97,7 @@ fun SetupScreen(session: Session) {
         ProblemLine(problem)
         Text("Map", style = MaterialTheme.typography.titleLarge)
         TrafficRow()
+        SpokenAlertsRow()
         Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Server", style = MaterialTheme.typography.bodyMedium)
             Text(Config.host, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -120,5 +122,22 @@ private fun TrafficRow() {
         trailingContent = { Switch(checked = on, onCheckedChange = null) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Switch, onValueChange = traffic::setOn),
+    )
+}
+
+/**
+ * The alerts ahead said aloud (SpokenAlerts), as the iOS app's Setup has
+ * it: off until the pilot turns it on, the row the toggle as Traffic's.
+ */
+@Composable
+private fun SpokenAlertsRow() {
+    val context = LocalContext.current
+    val spoken = remember(context) { SpokenAlerts.of(context) }
+    val on by spoken.on.collectAsStateWithLifecycle()
+    ListItem(
+        headlineContent = { Text("Speak Alerts Ahead") },
+        trailingContent = { Switch(checked = on, onCheckedChange = null) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Switch, onValueChange = spoken::setOn),
     )
 }

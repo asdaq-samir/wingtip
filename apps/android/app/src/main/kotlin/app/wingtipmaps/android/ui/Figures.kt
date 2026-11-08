@@ -8,13 +8,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.flight.InFlight
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.Locale
@@ -55,13 +58,24 @@ fun hoursMinutes(minutes: Double): String {
  */
 @Composable
 fun FiguresStrip(state: Plan.State) {
-    val distance = state.totals?.distanceNm ?: state.course?.distanceNm
-    val fuel = stripFuel(state.totals)
-    val warn = fuel.short.isNotEmpty()
+    // In the air on the route -- moving, within 3 nm of the line (the
+    // engine's `in_flight`, InFlight) -- the figures count down from where
+    // the airplane is, as the iPhone's do: what is left to the destination
+    // at the groundspeed now, and the fuel still required.
+    val flight by InFlight.shared.state.collectAsStateWithLifecycle()
+    val progress = flight.progress?.takeIf { it.onRoute }
+    val warn = stripFuel(state.totals).short.isNotEmpty()
+    val fuel = stripFuel(state.totals, burntGal = progress?.burntGal)
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
         Figure("TO", if (state.routed) state.dest else "—")
-        Figure("DIST", distance?.let(::nm) ?: "—")
-        Figure("ETE", state.totals?.eteMin?.let(::hoursMinutes) ?: "—")
+        if (progress != null) {
+            Figure("DIST", nm(progress.destination?.distanceNm ?: progress.leftNm))
+            Figure("ETE", progress.destination?.eteMin?.let(::hoursMinutes) ?: "—")
+        } else {
+            val distance = state.totals?.distanceNm ?: state.course?.distanceNm
+            Figure("DIST", distance?.let(::nm) ?: "—")
+            Figure("ETE", state.totals?.eteMin?.let(::hoursMinutes) ?: "—")
+        }
         Figure("FUEL", fuel.requiredGal?.let(::gal) ?: "—", warn = warn)
     }
 }
@@ -70,6 +84,7 @@ fun FiguresStrip(state: Plan.State) {
 private class StripFuelAsk(
     @SerialName("fuel_required_gal") val fuelRequiredGal: Double?,
     @SerialName("fuel_margin_gal") val fuelMarginGal: Double?,
+    @SerialName("burnt_gal") val burntGal: Double? = null,
 )
 
 /** The engine's answer to strip_fuel. */
@@ -84,8 +99,8 @@ class StripFuel(
 
 /** The strip's fuel from the planner's totals, as the engine works it for
  *  the three apps; none where the engine cannot answer. */
-fun stripFuel(totals: NavLogTotals?): StripFuel =
-    runCatching { Engine.call<StripFuelAsk, StripFuel>("strip_fuel", StripFuelAsk(totals?.fuelRequiredGal, totals?.fuelMarginGal)) }
+fun stripFuel(totals: NavLogTotals?, burntGal: Double? = null): StripFuel =
+    runCatching { Engine.call<StripFuelAsk, StripFuel>("strip_fuel", StripFuelAsk(totals?.fuelRequiredGal, totals?.fuelMarginGal, burntGal)) }
         .getOrDefault(StripFuel())
 
 /** One figure of the strip, its name over it. */

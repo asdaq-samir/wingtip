@@ -26,6 +26,17 @@ suspend fun Planner.ahead(lat: Double, lon: Double, trackDeg: Double, groundspee
     return Gateway.json.decodeFromString<AheadAnswer>(fetch("/api/airspace/ahead", query, timeoutMs = IN_FLIGHT_MS)).alerts
 }
 
+@Serializable
+private class NearestAnswer(val airports: List<NearestAirport>)
+
+/** The fields nearest a point (/api/airports/nearest), nearest first, as
+ *  the iOS app's Planner.nearest: asked in the air (Nearest, the glide
+ *  ring's ground), so it waits no longer than IN_FLIGHT_MS. */
+suspend fun Planner.nearest(lat: Double, lon: Double, limit: Int = 10): List<NearestAirport> =
+    Gateway.json.decodeFromString<NearestAnswer>(
+        fetch("/api/airports/nearest", mapOf("lat" to lat.toString(), "lon" to lon.toString(), "limit" to limit.toString()), timeoutMs = IN_FLIGHT_MS),
+    ).airports
+
 /** The airplanes heard about a point (/api/traffic), out to a radius in nm. */
 suspend fun Planner.traffic(lat: Double, lon: Double, radiusNm: Double): TrafficAnswer =
     Gateway.json.decodeFromString(

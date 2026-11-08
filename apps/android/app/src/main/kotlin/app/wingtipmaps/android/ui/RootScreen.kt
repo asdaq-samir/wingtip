@@ -45,8 +45,10 @@ import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.OwnTrail
+import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.map.ChartMap
 import app.wingtipmaps.android.map.MapLoading
 import app.wingtipmaps.android.notify.Notifications
@@ -104,6 +106,17 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     var ownShipOn by rememberSaveable { mutableStateOf(false) }
     var following by rememberSaveable { mutableStateOf(false) }
     var asking by rememberSaveable { mutableStateOf(false) }
+    // In the air (#218): each fix asked of the engine once for the
+    // instruments, the strip's figures and the glide ring (InFlight), again
+    // when the route changes under it; what is ahead said aloud where the
+    // pilot asked (SpokenAlerts); Nearest one tap from the bar.
+    val ahead by ownShip.ahead.collectAsStateWithLifecycle()
+    val groundFt by ownShip.groundFt.collectAsStateWithLifecycle()
+    val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
+    var nearestOpen by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(groundFt) { InFlight.shared.terrainFt = groundFt }
+    LaunchedEffect(fix, ownShipOn, state.course, state.legs) { InFlight.shared.took(if (ownShipOn) fix else null, state) }
+    LaunchedEffect(ahead) { SpokenAlerts.of(context).hear(ahead) }
     // Location is asked precise and approximate together: Android 12 and
     // later ignore a request for precise alone, and let the pilot answer
     // with approximate, which start() reads and the note under the
@@ -204,6 +217,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                 opensAt = opensAt,
                 ownShip = if (ownShipOn) fix else null,
                 trail = flown,
+                glide = if (ownShipOn) inFlight.glide?.ring.orEmpty() else emptyList(),
                 follow = following,
                 onDragged = { following = false },
                 onRevealed = { revealed = true },
@@ -215,6 +229,16 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                 modifier = Modifier.fillMaxSize(),
             )
             MapButtons(ownShip = ownShipMode, onOwnShip = onOwnShip, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
+            // What is ahead and the flight's instruments, at the top left of
+            // the buttons where nothing else was (#218).
+            if (ownShipOn && !approximate && !denied) {
+                InFlightTop(
+                    state = inFlight,
+                    ahead = ahead,
+                    onNearest = { nearestOpen = true },
+                    modifier = Modifier.align(Alignment.TopStart),
+                )
+            }
             // Why the airplane is not on the map, where the pilot looks
             // for it: beside the button that showed it.
             if (ownShipOn && (approximate || denied)) {
@@ -230,6 +254,19 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                 )
             }
         }
+    }
+    // Nearest, from the instruments bar: a field tapped opens its card in
+    // the Airport tab.
+    if (nearestOpen) {
+        NearestSheet(
+            fix = fix,
+            onOpen = { ident ->
+                airport = ident
+                tab = Tabs.AIRPORT.ordinal
+                nearestOpen = false
+            },
+            onClose = { nearestOpen = false },
+        )
     }
     // The strip (the other session's StripLayout: one field, the flight
     // as one strip, the owner's pick of 2026-11-04), tried beside the
