@@ -54,7 +54,19 @@ print("\n".join(lines))
 echo "go-live: $(git log --oneline -1 | cut -c1-72)"
 # The web build's packages for this tree, then every service rebuilt
 # and restarted where its image or settings changed.
-docker compose -p wingtip run --rm --no-deps --entrypoint sh web-build -c "npm ci --no-audit --no-fund" >/dev/null
+# The packages are installed with the web build stopped: an install
+# beside a running build left half-written packages (2026-11-08).
+docker compose -p wingtip stop web-build >/dev/null 2>&1 || true
+docker compose -p wingtip run --rm --no-deps --entrypoint sh web-build -c "npm ci --no-audit --no-fund" 2>&1 | grep -iE "^npm (error|err)" || true
+# The Mac's address can change (DHCP): the phone's address in .env and
+# the gateway's certificate follow it; the phone keeps trusting the same
+# authority, so it needs nothing new.
+ip=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || true)
+if [ -n "$ip" ] && ! grep -q "^PHONE_BASE_URL=https://$ip:8443" "$main/.env" 2>/dev/null; then
+  echo "go-live: the Mac is now $ip; new certificate and PHONE_BASE_URL"
+  sh "$main/infra/local-https/make-certs.sh" "$ip" >/dev/null
+  sed -i '' -E "s#^PHONE_BASE_URL=.*#PHONE_BASE_URL=https://$ip:8443#" "$main/.env"
+fi
 docker compose -p wingtip up -d --build --remove-orphans
 for _ in $(seq 1 40); do
   docker compose -p wingtip ps --format '{{.Health}}' | grep -q starting || break
