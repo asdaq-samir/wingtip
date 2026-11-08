@@ -9,7 +9,7 @@ import com.northflyers.wingtip.dto.LogbookEntryRequest;
 import com.northflyers.wingtip.dto.RemindersDto;
 import com.northflyers.wingtip.dto.LogbookImportRequest;
 import com.northflyers.wingtip.dto.LogbookImportResult;
-import com.northflyers.wingtip.service.CurrencyService;
+import com.northflyers.wingtip.service.PlannerClient;
 import com.northflyers.wingtip.service.LogbookService;
 import com.northflyers.wingtip.service.PilotService;
 import jakarta.validation.Valid;
@@ -27,7 +27,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * The pilot's logbook and their currency (see {@link CurrencyService}):
+ * The pilot's logbook and their currency (worked out by the engine, asked
+ * through the planner: {@link PlannerClient#currency}):
  * the entries, newest first, added, changed and taken out one at a
  * time, and where the pilot stands -- passengers by day and at night,
  * the flight review, the medical -- with the two dates they give.
@@ -38,12 +39,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class LogbookController {
 
     private final LogbookService logbook;
-    private final CurrencyService currency;
+    private final PlannerClient planner;
     private final PilotService pilots;
 
-    public LogbookController(LogbookService logbook, CurrencyService currency, PilotService pilots) {
+    public LogbookController(LogbookService logbook, PlannerClient planner, PilotService pilots) {
         this.logbook = logbook;
-        this.currency = currency;
+        this.planner = planner;
         this.pilots = pilots;
     }
 
@@ -101,7 +102,7 @@ public class LogbookController {
     }
 
     private CurrencyDto currencyOf(Pilot pilot) {
-        return currency.currency(logbook.list(pilot), pilot.getFlightReviewOn(), pilot.getMedicalExpiresOn(),
+        return planner.currency(logbook.list(pilot), pilot.getFlightReviewOn(), pilot.getMedicalExpiresOn(),
                 pilot.getIpcOn(), LocalDate.now());
     }
 

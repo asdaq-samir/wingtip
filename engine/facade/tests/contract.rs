@@ -182,6 +182,16 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("logbook_csv_read", json!({ "text": case["text"] }));
     }
 
+    let currency = fixture("currency.json");
+    for case in currency["currency"].as_array().unwrap() {
+        let at = |k: &str| case.get(k).cloned().unwrap_or(Value::Null);
+        c.ask("pilot_currency", json!({ "entries": case["entries"], "today": case["today"], "flight_review_on": at("flightReviewOn"),
+            "medical_expires_on": at("medicalExpiresOn"), "ipc_on": at("ipcOn") }));
+    }
+    for case in currency["experience"].as_array().unwrap() {
+        c.ask("pilot_experience", json!({ "entries": case["entries"], "today": case["today"] }));
+    }
+
     let holds = fixture("holds.json");
     for case in holds["parse"].as_array().unwrap() {
         let read = c.ask("hold_read", json!({ "text": case["text"] }));
@@ -292,6 +302,24 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     c.ask("distance_nm", json!({ "lat1": 46.84, "lon1": -92.19, "lat2": 38.75, "lon2": -90.37 }));
     c.ask("region_of", json!({ "lat": 41.9, "lon": -87.9 }));
     c.ask("descent_ft_per_nm", json!({}));
+    // The names that replaced wingtip_native's own functions (#482 phase 0).
+    c.ask("wind_correction_deg", json!({ "true_course_deg": 360, "wind_from_deg": 270, "wind_kt": 20, "tas_kt": 110 }));
+    c.ask("groundspeed_kt", json!({ "true_course_deg": 360, "wind_from_deg": 270, "wind_kt": 20, "tas_kt": 110, "wca_deg": -10.5 }));
+    c.ask("hold_entry", json!({ "arrival_deg": 150, "inbound_deg": 360 }));
+    c.ask("hold_entry", json!({ "arrival_deg": 150, "inbound_deg": 360, "turns": "left" }));
+    c.ask("magnetic_variation", json!({ "lat": 46.84, "lon": -92.19, "year": 2026.5 }));
+    let debriefed = call("debrief_marked", &json!({ "debrief": {
+        "legs": [{ "from": "A", "to": "B", "worst_alt_ft": 150, "worst_off_nm": 1.2 }],
+        "passes": [{ "name": "B", "category": "destination", "due_min": 18, "passed_min": 21 }],
+        "patterns": [{ "ident": "B", "alt_ft": 1800, "pattern_ft": 1700 }],
+        "notes": [],
+    } }).to_string()).unwrap();
+    let debriefed: Value = serde_json::from_str(&debriefed).unwrap();
+    // PA.VI.A's tolerances: 200 ft held, a pattern within 100 ft (PA.III.B.S5).
+    assert_eq!(debriefed["debrief"]["legs"][0]["ok"], json!(true));
+    assert_eq!(debriefed["debrief"]["patterns"][0]["ok"], json!(true));
+    assert_eq!(debriefed["tolerances"]["altitude_ft"], json!(200.0));
+    c.ask("debrief_marked", json!({ "debrief": { "legs": [], "passes": [], "patterns": [] } }));
 
     // The approaches at KBUR, as the planner's /api/procedure draws them.
     let kbur = fixture("approachKbur.json");

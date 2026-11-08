@@ -42,6 +42,16 @@
 //!   "points": [{"t", "lat", "lon", "alt_ft"?}]}`, with the fields'
 //!   pattern altitudes, which the planner looks up, as `"patterns":
 //!   {ident: ft}`;
+//! - `debrief_marked`: the web's debrief (snake_case, unmarked) marked as
+//!   `debrief` marks its own, `{"debrief", "tolerances"}`, from
+//!   `{"debrief"}`;
+//! - `hold_entry`: a route hold's entry, "direct", "teardrop" or
+//!   "parallel" (AIM 5-3-8 j.3), from `{"arrival_deg", "inbound_deg",
+//!   "turns"?: "right"|"left"}`;
+//! - `wind_correction_deg`, `groundspeed_kt`: the nav log's wind triangle
+//!   a side at a time (a crosswind past the airspeed held at 90 degrees),
+//!   from `{"true_course_deg", "wind_from_deg", "wind_kt", "tas_kt"}`, and
+//!   `"wca_deg"` (the correction) for the ground speed;
 //! - `debrief_airborne`: the track's flights as [first, last] indices,
 //!   from `{"points"}`;
 //! - `read_clearance`: an ATC clearance heard, read into its items as the
@@ -159,7 +169,14 @@
 //!   [{"code", "voided"?}]}`;
 //! - `endorsement_render`: an endorsement's words as they will be signed,
 //!   from `{"template", "student", "fields"?: {name: text}}`;
-//! - `acs_codes`: the ACS codes in pasted text, each once, from `{"text"}`.
+//! - `acs_codes`: the ACS codes in pasted text, each once, from `{"text"}`;
+//! - `pilot_currency`: where the pilot stands on a day, the gateway's
+//!   CurrencyDto (14 CFR 61.56(c), 61.57(a)-(d)), from `{"entries":
+//!   [LogbookEntry], "flight_review_on"?, "medical_expires_on"?,
+//!   "ipc_on"?, "today"}`, days as "YYYY-MM-DD";
+//! - `pilot_experience`: 61.109(a)'s aeronautical experience item by
+//!   item, `[ExperienceItemDto]`, from `{"entries": [LogbookEntry],
+//!   "today"}`.
 //!
 //! The things that move (crate::motion), each from the web's own shapes
 //! in snake_case:
@@ -312,7 +329,8 @@
 //!   `weather_in_force`: whether it still counts at `now`, from the same
 //!   with `"now"` and, for a forecast, `"valid_from"?`;
 //! - `magnetic_variation`: degrees east, the World Magnetic Model's (wmm,
-//!   as wingtip.magnetic), from `{"lat", "lon", "date": "YYYY-MM-DD"}`.
+//!   as wingtip.magnetic), from `{"lat", "lon", "date": "YYYY-MM-DD"}`, or
+//!   `"year"`, the model's decimal year, in place of the date.
 //!
 //! The planner's own rules, moved here from its Python (#482 phase 0) so
 //! the phones and the web answer as it does:
@@ -441,7 +459,7 @@
 
 use crate::figures::{debrief, diversion, holding, lost_comms, strip};
 use crate::json::{self, Value};
-use crate::pilot::{checklist, csv, endorsements, handbook, logbook};
+use crate::pilot::{checklist, csv, currency, endorsements, handbook, logbook};
 
 /// A list of strings as a JSON array.
 fn strings(out: &mut String, items: &[String]) {
@@ -577,6 +595,12 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             };
             Ok(debrief::answer_json(&checkpoints, &points, &patterns))
         }
+        "debrief_marked" => debrief_marked_rule(&ask),
+        "hold_entry" => {
+            let mut out = String::new();
+            json::string(&mut out, holding::entry(ask.num("arrival_deg")?, ask.num("inbound_deg")?, ask.opt_str("turns")? != "left").key());
+            Ok(out)
+        }
         "debrief_airborne" => {
             let runs = debrief::airborne(&points(&ask)?);
             let mut out = String::from("[");
@@ -665,6 +689,22 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             json::string(&mut out, &endorsements::render(ask.str("template")?, ask.opt_str("student")?, &field));
             Ok(out)
         }
+        "pilot_currency" => {
+            let entries = currency::entries(name, ask.list("entries")?)?;
+            let date = |key: &str| match ask.v.get(key) {
+                None | Some(Value::Null) => Ok(None),
+                Some(Value::String(s)) => Ok(Some(s.as_str())),
+                Some(_) => Err(format!("pilot_currency: \"{key}\" is not a day")),
+            };
+            let dates = currency::Dates {
+                flight_review_on: date("flight_review_on")?,
+                medical_expires_on: date("medical_expires_on")?,
+                ipc_on: date("ipc_on")?,
+                today: ask.str("today")?,
+            };
+            currency::currency_json(name, &entries, &dates)
+        }
+        "pilot_experience" => currency::experience_json(name, &currency::entries(name, ask.list("entries")?)?, ask.str("today")?),
         "acs_codes" => {
             let mut out = String::new();
             strings(&mut out, &endorsements::acs_codes(ask.str("text")?));
@@ -732,22 +772,29 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         "notams_fns" | "notam_text" | "metar_read" | "taf_read" | "winds_read" | "tfr_detail_read" | "ceiling_ft"
         | "sky_ceiling" | "report_flight_category" | "vfr_basic_minimums" => weather_rule(&ask),
         "reserve_min" | "isa_temp_c" | "density_ratio" | "density_altitude_ft" | "pressure_altitude_ft" | "is_eastbound"
-        | "lowest_vfr_cruising_altitude" | "distance_nm" | "region_of" | "descent_ft_per_nm" => flight_rule(&ask),
+        | "lowest_vfr_cruising_altitude" | "distance_nm" | "region_of" | "descent_ft_per_nm" | "wind_correction_deg"
+        | "groundspeed_kt" => flight_rule(&ask),
         "words_num" | "words_one" | "words_to_fixed" | "words_grouped" | "words_alt_ft" | "words_flight_level"
         | "words_ceiling_and_visibility" => words_rule(&ask),
         "magnetic_variation" => {
-            let date = ask.str("date")?;
-            let bad = || format!("magnetic_variation: \"date\" is not YYYY-MM-DD: {date:?}");
-            let mut parts = date.splitn(3, '-').map(|p| p.parse::<i64>().map_err(|_| bad()));
-            let (year, month, day) = (parts.next().ok_or_else(bad)??, parts.next().ok_or_else(bad)??, parts.next().ok_or_else(bad)??);
-            if !(1..=12).contains(&month) || day < 1 || day > crate::time::days_in_month(year, month as u32) as i64 {
-                return Err(bad());
-            }
-            // The model's time, a decimal year, as wingtip.magnetic works it out.
-            let start = crate::time::days_from_civil(year, 1, 1);
-            let of_year = crate::time::days_from_civil(year + 1, 1, 1) - start;
-            let day_of_year = crate::time::days_from_civil(year, month as u32, day as u32) - start + 1;
-            let decimal = crate::wmm::decimal_year(year as i32, day_of_year as u32, of_year as u32);
+            // The model's time, a decimal year: as given (the planner's
+            // test against pygeomag asks at any instant), else the day's.
+            let decimal = match ask.opt_num("year")? {
+                Some(year) => year,
+                None => {
+                    let date = ask.str("date")?;
+                    let bad = || format!("magnetic_variation: \"date\" is not YYYY-MM-DD: {date:?}");
+                    let mut parts = date.splitn(3, '-').map(|p| p.parse::<i64>().map_err(|_| bad()));
+                    let (year, month, day) = (parts.next().ok_or_else(bad)??, parts.next().ok_or_else(bad)??, parts.next().ok_or_else(bad)??);
+                    if !(1..=12).contains(&month) || day < 1 || day > crate::time::days_in_month(year, month as u32) as i64 {
+                        return Err(bad());
+                    }
+                    let start = crate::time::days_from_civil(year, 1, 1);
+                    let of_year = crate::time::days_from_civil(year + 1, 1, 1) - start;
+                    let day_of_year = crate::time::days_from_civil(year, month as u32, day as u32) - start + 1;
+                    crate::wmm::decimal_year(year as i32, day_of_year as u32, of_year as u32)
+                }
+            };
             let mut out = String::new();
             json::number(&mut out, crate::wmm::declination(ask.num("lat")?, ask.num("lon")?, decimal));
             Ok(out)
@@ -909,6 +956,67 @@ fn weather_rule(ask: &Ask) -> Result<String, String> {
     }
 }
 
+/// The web's debrief (its figures, snake_case, with no marks) marked as
+/// /api/debrief marks its own -- each leg, pass and pattern against ACS
+/// PA.VI.A's tolerances -- with the tolerances beside it: `{"debrief",
+/// "tolerances"}`. The rest of the debrief goes back as it came.
+fn debrief_marked_rule(ask: &Ask) -> Result<String, String> {
+    let n = ask.name;
+    let Some(Value::Object(members)) = ask.v.get("debrief") else {
+        return Err(format!("{n}: \"debrief\" is not an object"));
+    };
+    let num = |v: &Value, k: &str| opt_num_in(n, v, k);
+    let opt = |v: Option<f64>| v.map_or(Value::Null, Value::Number);
+    let mut marked: Vec<(String, Value)> = Vec::new();
+    for (key, value) in members {
+        let items = || value.as_array().ok_or_else(|| format!("{n}: \"{key}\" is not a list"));
+        let with = |item: &Value, extra: Vec<(&str, Value)>| -> Result<Value, String> {
+            let Value::Object(fields) = item else { return Err(format!("{n}: an item of \"{key}\" is not an object")) };
+            let mut fields = fields.clone();
+            fields.retain(|(k, _)| !extra.iter().any(|(e, _)| e == k));
+            fields.extend(extra.into_iter().map(|(k, v)| (k.to_owned(), v)));
+            Ok(Value::Object(fields))
+        };
+        let value = match key.as_str() {
+            "legs" => Value::Array(
+                items()?
+                    .iter()
+                    .map(|l| with(l, vec![("ok", Value::Bool(debrief::leg_ok(num(l, "worst_alt_ft")?, num(l, "worst_off_nm")?)))]))
+                    .collect::<Result<_, _>>()?,
+            ),
+            "passes" => Value::Array(
+                items()?
+                    .iter()
+                    .map(|p| {
+                        let category = p.get("category").and_then(Value::as_str).unwrap_or("");
+                        let (landed, late, ok) = debrief::pass_marks(category, num(p, "due_min")?, num(p, "passed_min")?);
+                        with(p, vec![("landed", Value::Bool(landed)), ("late_min", opt(late)), ("ok", ok.map_or(Value::Null, Value::Bool))])
+                    })
+                    .collect::<Result<_, _>>()?,
+            ),
+            "patterns" => Value::Array(
+                items()?
+                    .iter()
+                    .map(|e| {
+                        let alt = num(e, "alt_ft")?.ok_or_else(|| format!("{n}: a pattern's \"alt_ft\" is missing"))?;
+                        let pattern = num(e, "pattern_ft")?.ok_or_else(|| format!("{n}: a pattern's \"pattern_ft\" is missing"))?;
+                        let (off, ok) = debrief::pattern_marks(alt, pattern);
+                        with(e, vec![("off_ft", Value::Number(off)), ("ok", Value::Bool(ok))])
+                    })
+                    .collect::<Result<_, _>>()?,
+            ),
+            _ => value.clone(),
+        };
+        marked.push((key.clone(), value));
+    }
+    let mut out = String::from("{\"debrief\":");
+    json::value(&mut out, &Value::Object(marked));
+    out.push_str(",\"tolerances\":");
+    out.push_str(&debrief::tolerances_json());
+    out.push('}');
+    Ok(out)
+}
+
 /// The flight's figures (crate::flight, geo, phone, motion) as the
 /// planner's wingtip_native functions of the same names work them out.
 fn flight_rule(ask: &Ask) -> Result<String, String> {
@@ -924,6 +1032,14 @@ fn flight_rule(ask: &Ask) -> Result<String, String> {
         "distance_nm" => crate::geo::distance_nm(ask.num("lat1")?, ask.num("lon1")?, ask.num("lat2")?, ask.num("lon2")?),
         "descent_ft_per_nm" => crate::motion::profile::DESCENT_FT_PER_NM,
         "is_eastbound" => return Ok(flight::is_eastbound(ask.num("magnetic_course_deg")?).to_string()),
+        "wind_correction_deg" => flight::wind_correction_deg(ask.num("true_course_deg")?, ask.num("wind_from_deg")?, ask.num("wind_kt")?, ask.num("tas_kt")?),
+        "groundspeed_kt" => flight::groundspeed_kt(
+            ask.num("true_course_deg")?,
+            ask.num("wind_from_deg")?,
+            ask.num("wind_kt")?,
+            ask.num("tas_kt")?,
+            ask.num("wca_deg")?,
+        ),
         _ => {
             json::string(&mut out, &crate::pack_query::region_of(ask.num("lat")?, ask.num("lon")?));
             return Ok(out);

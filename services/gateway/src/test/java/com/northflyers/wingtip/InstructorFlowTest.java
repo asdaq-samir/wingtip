@@ -21,6 +21,7 @@ import com.northflyers.wingtip.repository.PilotRepository;
 import com.northflyers.wingtip.service.FlightService;
 import com.northflyers.wingtip.service.InstructorService;
 import com.northflyers.wingtip.service.Mailer;
+import com.northflyers.wingtip.service.PlannerClient;
 import com.northflyers.wingtip.service.TrainingService;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -76,6 +77,11 @@ class InstructorFlowTest {
 
     @MockitoBean
     private Mailer mail;
+
+    /** The planner, which works 61.109 out (tested in the engine): no
+     *  experience logged here. */
+    @MockitoBean
+    private PlannerClient planner;
 
     private static final Instant NOW = Instant.parse("2026-10-13T18:00:00Z");
     private static final LocalDate TODAY = LocalDate.ofInstant(NOW, ZoneOffset.UTC);

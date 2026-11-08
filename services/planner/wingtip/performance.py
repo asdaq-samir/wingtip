@@ -35,7 +35,7 @@ book figures, and the handbook governs.
 from functools import lru_cache
 from typing import NamedTuple
 
-import wingtip_native
+from .engine import ask as engine
 
 #: The altitude a profile's cruise TAS and fuel burn are the aeroplane's
 #: at, on a standard day: the middle of where a light single cruises
@@ -75,19 +75,19 @@ _HIGHEST_FT = 60000.0
 
 def isa_temp_c(altitude_ft: float) -> float:
     """A standard day's temperature at a pressure altitude."""
-    return wingtip_native.isa_temp_c(altitude_ft)
+    return engine("isa_temp_c", altitude_ft=altitude_ft)
 
 
 def density_ratio(altitude_ft: float, oat_c: float) -> float:
     """Sigma: the air's density at a pressure altitude and temperature,
     over a standard day's at sea level."""
     # The engine's (wingtip_engine::flight), the same atmosphere.
-    return wingtip_native.density_ratio(altitude_ft, oat_c)
+    return engine("density_ratio", altitude_ft=altitude_ft, oat_c=oat_c)
 
 
 def density_altitude_ft(sigma: float) -> float:
     """The altitude at which a standard day's air has density sigma."""
-    return wingtip_native.density_altitude_ft(sigma)
+    return engine("density_altitude_ft", sigma=sigma)
 
 
 def full_throttle_power(sigma: float) -> float:

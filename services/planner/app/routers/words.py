@@ -28,7 +28,6 @@ from wingtip import notams, tfr
 
 from .. import exposure
 from ..router_basics import load_route
-from ..figures import debrief as debrief_rules
 from ..figures.schemas import Debrief, DebriefAnswer, DebriefTolerances
 from ..gonogo import ask as engine
 from ..gonogo.schemas import RiskAssessment
@@ -146,14 +145,7 @@ def debrief_of(raw: dict) -> DebriefAnswer:
         return DebriefAnswer.model_validate(raw)
     # The web's twin keeps no marks (FlightPage works them beside each
     # figure), so they are put on here as /api/debrief puts them on.
-    figures = debrief_rules.marked({"profile": [], "planned": [], "line": [], **_snake(raw)})
-    return DebriefAnswer(
-        debrief=Debrief.model_validate(figures),
-        tolerances=DebriefTolerances(
-            altitude_ft=debrief_rules.ALTITUDE_FT, course_deg=debrief_rules.COURSE_DEG, off_route_nm=debrief_rules.OFF_ROUTE_NM,
-            eta_min=debrief_rules.ETA_MIN, pattern_nm=debrief_rules.PATTERN_NM, pattern_ft=debrief_rules.PATTERN_FT,
-        ),
-    )
+    return DebriefAnswer.model_validate(engine("debrief_marked", debrief={"profile": [], "planned": [], "line": [], **_snake(raw)}))
 
 
 class ChangesAsk(BaseModel):

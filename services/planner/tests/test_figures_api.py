@@ -1,6 +1,10 @@
 """The four figures' endpoints through their models, the planner's airport
 data and air stubbed: POST /api/debrief, GET /api/diversion, GET
-/api/holding and POST /api/lost-comms."""
+/api/holding and POST /api/lost-comms. The rules themselves are the
+engine's, held to the web's cases in engine/facade/tests/figures.rs; these
+hold the endpoints to carrying them across."""
+import math
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
@@ -8,9 +12,39 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.routers import figures
 
-from .test_figures_debrief import CHECKPOINTS, flown
-
 client = TestClient(app)
+
+#: A flight due north along 88 W (apps/web/src/lib/debrief.test.ts's): A at
+#: 42 N, a lake 30 nm on, B 30 nm past it, 18 minutes a leg at 3,500 ft.
+CHECKPOINTS = [
+    {"sequence_no": 0, "name": "A", "category": "departure", "lat": 42, "lon": -88, "along_track_nm": 0,
+     "true_course_deg": None, "ete_min": None, "altitude_ft": None},
+    {"sequence_no": 1, "name": "Lake", "category": "lake", "lat": 42.5, "lon": -88, "along_track_nm": 30,
+     "true_course_deg": 0, "ete_min": 18, "altitude_ft": 3500},
+    {"sequence_no": 2, "name": "B", "category": "destination", "lat": 43, "lon": -88, "along_track_nm": 60,
+     "true_course_deg": 0, "ete_min": 18, "altitude_ft": 3500},
+]
+
+
+def flown() -> list[dict]:
+    """Flown every 5 s: two minutes' taxi, then north at 100 kt half a mile
+    east of the line, climbing at 500 fpm to 3,600; 3,800 for two minutes
+    on the second leg; down at 500 fpm to 1,800 in the last 4 nm; taxi."""
+    t0 = datetime(2026, 10, 2, 15, tzinfo=timezone.utc).timestamp() * 1000
+    lon = -88 + 0.5 / (60 * math.cos(42.5 * math.pi / 180))
+    points = [{"t": t0 + s * 1000, "lat": 42 - 0.002 + (s / 3600) * (10 / 60), "lon": lon, "alt_ft": 700} for s in range(0, 120, 5)]
+    off = t0 + 120_000
+    for s in range(0, 36 * 60 + 1, 5):
+        nm = (s / 3600) * 100
+        alt = min(3600, 700 + (s / 60) * 500)
+        if 40 < nm < 40 + 100 / 30:
+            alt = 3800
+        if nm > 56:
+            alt = max(1800, 3600 - (nm - 56) * 600)
+        points.append({"t": off + s * 1000, "lat": 42 + nm / 60, "lon": lon, "alt_ft": alt})
+    on = off + 36 * 60_000
+    points += [{"t": on + s * 1000, "lat": 43 + (s / 3600) * (10 / 60), "lon": lon, "alt_ft": 700} for s in range(5, 120, 5)]
+    return points
 
 
 def _places(monkeypatch, elevation=700.0):

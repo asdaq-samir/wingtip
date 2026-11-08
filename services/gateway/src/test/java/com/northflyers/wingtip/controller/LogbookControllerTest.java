@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.northflyers.wingtip.domain.LogbookEntry;
 import com.northflyers.wingtip.domain.Pilot;
 import com.northflyers.wingtip.dto.CurrencyDto;
-import com.northflyers.wingtip.service.CurrencyService;
+import com.northflyers.wingtip.service.PlannerClient;
 import com.northflyers.wingtip.service.LogbookService;
 import com.northflyers.wingtip.service.PilotService;
 import java.time.LocalDate;
@@ -31,7 +31,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** The logbook's HTTP contract: 401 signed out, a bad entry 400, a good
- *  one 200, someone else's entry 404, and the currency as computed. */
+ *  one 200, someone else's entry 404, and the currency as the planner
+ *  gives it. */
 @WebMvcTest(LogbookController.class)
 @Import(com.northflyers.wingtip.security.SecurityConfig.class)
 class LogbookControllerTest {
@@ -43,7 +44,7 @@ class LogbookControllerTest {
     private LogbookService logbook;
 
     @MockitoBean
-    private CurrencyService currency;
+    private PlannerClient planner;
 
     @MockitoBean
     private PilotService pilotService;
@@ -99,7 +100,7 @@ class LogbookControllerTest {
     void currency_returns200_asComputed() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
         given(logbook.list(any())).willReturn(List.of());
-        given(currency.currency(any(), any(), any(), any(), any())).willReturn(new CurrencyDto(
+        given(planner.currency(any(), any(), any(), any(), any())).willReturn(new CurrencyDto(
                 LocalDate.of(2026, 12, 19), null, LocalDate.of(2025, 6, 14), LocalDate.of(2027, 6, 30), null, 4.0, 0, 3.4, 9, 4,
                 LocalDate.of(2027, 3, 31), null, LocalDate.of(2027, 9, 30), 6, true, true));
 

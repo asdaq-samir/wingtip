@@ -310,3 +310,41 @@ fn a_figure_typed_in_is_held_to_the_bounds_the_page_is_read_by() {
     assert_eq!(within("serviceCeilingFt", 30001.0), json!(false));
     assert!(call("handbook_within", r#"{"key": "wingspan", "value": 3}"#).is_err());
 }
+
+// --- Currency and 61.109 -----------------------------------------------------
+
+/// A pilot's currency (14 CFR 61.56, 61.57) and a student's 61.109(a)
+/// experience, held to the shared fixture (currency.json) the planner's
+/// test reads too.
+#[test]
+fn currency_and_experience_answer_the_shared_fixture() {
+    let fixture = fixture("currency.json");
+    for case in fixture["currency"].as_array().unwrap() {
+        let at = |k: &str| case.get(k).cloned().unwrap_or(Value::Null);
+        let got = ask(
+            "pilot_currency",
+            json!({ "entries": case["entries"], "today": case["today"], "flight_review_on": at("flightReviewOn"),
+                "medical_expires_on": at("medicalExpiresOn"), "ipc_on": at("ipcOn") }),
+        );
+        for (key, want) in case["expected"].as_object().unwrap() {
+            assert_eq!(&got[key], want, "{}: {key}", case["name"]);
+        }
+    }
+    for case in fixture["experience"].as_array().unwrap() {
+        let got = ask("pilot_experience", json!({ "entries": case["entries"], "today": case["today"] }));
+        let items = got.as_array().unwrap();
+        assert_eq!(items.len(), 12, "61.109(a)'s twelve items");
+        for (key, want) in case["expected"].as_object().unwrap() {
+            let item = items.iter().find(|i| i["key"] == key.as_str()).unwrap_or_else(|| panic!("no {key}"));
+            assert_eq!(item["have"].as_f64(), want[0].as_f64(), "{}: {key}", case["name"]);
+            assert_eq!(item["met"], want[1], "{}: {key}", case["name"]);
+        }
+    }
+}
+
+#[test]
+fn currency_refuses_a_day_that_is_none() {
+    let e = call("pilot_currency", &json!({ "entries": [{ "flownOn": "2026-02-30" }], "today": "2026-10-11" }).to_string()).unwrap_err();
+    assert!(e.contains("not a day"), "{e}");
+    assert!(call("pilot_experience", &json!({ "entries": [], "today": "today" }).to_string()).is_err());
+}
