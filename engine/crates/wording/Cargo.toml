@@ -14,3 +14,8 @@ name = "wingtip_wording"
 wingtip-core = { path = "../core" }
 wingtip-procedures = { path = "../procedures" }
 wingtip-airspace = { path = "../airspace" }
+# The radio script's runway words and pattern exit (brief's runway pick)
+# and its ten-mile altitude (route's motion::profile). Without route's
+# default features, so a host that leaves route options out keeps them out.
+wingtip-brief = { path = "../brief" }
+wingtip-route = { path = "../route", default-features = false }

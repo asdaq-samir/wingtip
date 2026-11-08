@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { Briefing, Leg } from "./api/types";
 import { compassWord, entryFor, exitFor, runwayInUse, type RunwayEnd } from "./pattern";
-import { callSign, placeName, radioScript, spokenAltitude, spokenRunway, spokenTail } from "./radio";
+import { callSign, placeName, radioScript } from "./radio";
 
 type Facilities = Briefing["airports"][string];
 
@@ -41,18 +41,12 @@ const DACY: Facilities = {
 const leg = (from: string, to: string, course: number, altitude = 5500): Leg => ({ from, to, true_course_deg: course, altitude_ft: altitude } as Leg);
 
 describe("spoken as the AIM speaks it", () => {
-  test("registrations, altitudes and runways", () => {
-    expect(spokenTail("N345SP")).toBe("Three Four Five Sierra Papa");
-    expect(spokenTail("n19")).toBe("One Niner");
+  // Altitudes and runways as spoken are the engine's own tests
+  // (wording/script.rs); the call sign and the place name by name here.
+  test("registrations and fields", () => {
     expect(callSign("Cessna", "N345SP")).toBe("Cessna Three Four Five Sierra Papa");
+    expect(callSign("Cessna", "n19")).toBe("Cessna One Niner");
     expect(callSign("Piper", null)).toBe("Piper [your registration]");
-    expect(spokenAltitude(3500)).toBe("three thousand five hundred");
-    expect(spokenAltitude(10500)).toBe("one zero thousand five hundred");
-    expect(spokenAltitude(2000)).toBe("two thousand");
-    expect(spokenAltitude(800)).toBe("eight hundred");
-    expect(spokenRunway("27")).toBe("two seven");
-    expect(spokenRunway("09L")).toBe("niner left");
-    expect(spokenRunway("06")).toBe("six");
     expect(placeName("Waukegan National Airport", "KUGN")).toBe("Waukegan");
     expect(placeName("Lake In The Hills Airport", "3CK")).toBe("Lake In The Hills");
     expect(placeName(null, "C81")).toBe("C81");

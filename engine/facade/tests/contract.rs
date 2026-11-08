@@ -501,6 +501,23 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         "fixes": [{ "ident": "VPNEAR", "lat": 0.5, "lon": -0.2, "vfr": true, "kind": "VFR waypoint" }] }));
     assert_eq!(ways[0]["ident"], "VPNEAR");
 
+    // The web's rules moved into the engine (webRules.json): a field's TAF,
+    // the radio calls and a student's solo endorsement.
+    let web = fixture("webRules.json");
+    for case in web["fieldTaf"].as_array().unwrap() {
+        c.ask("field_taf", case["input"].clone());
+    }
+    for case in web["callSign"].as_array().unwrap() {
+        c.ask("radio_call_sign", json!({ "make": case["make"], "tail": case["tail"] }));
+    }
+    for case in web["placeName"].as_array().unwrap() {
+        c.ask("radio_place_name", json!({ "name": case["name"], "ident": case["ident"] }));
+    }
+    c.ask("radio_script", web["radioScript"]["input"].clone());
+    for case in web["soloStanding"].as_array().unwrap() {
+        c.ask("solo_standing", json!({ "until": case["until"], "today": case["today"] }));
+    }
+
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.
     assert!(c.checked.len() >= 30, "only {} names were checked: {:?}", c.checked.len(), c.checked);

@@ -3,7 +3,8 @@
 //!
 //! - wording: the FAA's capitals in sentence case, names, the advisories'
 //!   intensities, a field's radio and fuel, a VOR's radial, Morse and
-//!   service volume.
+//!   service volume, and the radio calls for a route (over wingtip-brief's
+//!   runway words and wingtip-route's descent).
 
 pub mod wording;
 

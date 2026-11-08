@@ -160,6 +160,9 @@
 //!   `{"cruiseTasKt"?, "cruisePowerPct"?, "fuelBurnGph"?, "usableFuelGal"?,
 //!   "climbTasKt"?, "serviceCeilingFt"?}` each `{"value", "words"}`, from
 //!   `{"text"}`, the text read off its photo;
+//! - `solo_standing`: `{"days", "standing"}` ("ok", "caution" within 7
+//!   days, "stop", "unknown") from `{"until"?, "today"}`, a student's
+//!   61.87(n) solo endorsement on the instructor's list;
 //! - `endorsement_lapse`: the warning an instructor sees once their date
 //!   has passed on the day of signing (14 CFR 61.197(a), (e)), or null,
 //!   from `{"until"?, "until_kind"?: "RE"|"EXP", "signed_on"}`, days as
@@ -294,6 +297,14 @@
 //!   3-2-1's "Class B"), from `{"text"?}`, or each of `{"texts": [text]}`
 //!   as a list, a long list's rows in one call; `title_case` and
 //!   `place_name` (a town as it is spelt, "McCook") the same way;
+//! - `radio_script`: a route's radio calls (AIM 4-2, AC 90-66C), `[{"title",
+//!   "ident", "kind", "calls": [{"to", "mhz", "words", "note"?,
+//!   "listen"?}]}]` from `{"call_sign", "airports": [{"ident", "name"?,
+//!   "airspace_class"?, "frequencies", "pattern_altitude_ft"?, "takeoff"?,
+//!   "landing"?: {"ident", "traffic"?}}], "legs"}`; `radio_call_sign` from
+//!   `{"make", "tail"?}` ("Cessna Three Four Five Sierra Papa", AIM 4-2-4);
+//!   `radio_place_name`, a field as a pilot calls it, from `{"name"?,
+//!   "ident"}`;
 //! - `sigmet_hazard` from `{"hazard"?, "kind"?}`; `gairmet_title` from
 //!   `{"hazard", "severity"?}`; `pirep_conditions`, a string or null, from
 //!   `{"turbulence"?, "icing"?}`;
@@ -507,7 +518,11 @@
 //!   "wind_speed_kt"}` or null (a list of them for `"altitudes"`) from
 //!   `{"levels": {altitude_ft: {"wind_dir_true_deg", "wind_speed_kt"}},
 //!   "altitude_ft"}`; `forecast_hour`: "06", "12" or "24" from
-//!   `{"hours_ahead"?}`.
+//!   `{"hours_ahead"?}`;
+//! - `field_taf`: the TAF that speaks for a field, its own or the nearest
+//!   within 25 nm, `{"index", "nm", "reach_nm"}` (index null for none, nm
+//!   null for its own) from `{"ident", "at"?: {"lat", "lon"}, "stations":
+//!   [{"icao_id", "lat"?, "lon"?}]}`.
 //!
 //! The traffic list's filters and the registry's airplanes, as above:
 //!
@@ -764,6 +779,20 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             let warning = endorsements::lapse_warning(text("until")?, text("until_kind")?, ask.str("signed_on")?)?;
             let mut out = String::new();
             json::opt_string(&mut out, warning.as_deref());
+            Ok(out)
+        }
+        "solo_standing" => {
+            let until = match ask.v.get("until") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(s)) => Some(s.as_str()),
+                Some(_) => return Err("solo_standing: \"until\" is not a string".to_owned()),
+            };
+            let (days, standing) = endorsements::solo_standing(until, ask.str("today")?)?;
+            let mut out = String::from("{\"days\":");
+            json::opt_number(&mut out, days.map(|d| d as f64));
+            out.push_str(",\"standing\":");
+            json::string(&mut out, standing);
+            out.push('}');
             Ok(out)
         }
         "endorsements_in_force" => {

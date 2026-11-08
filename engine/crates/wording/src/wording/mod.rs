@@ -11,12 +11,13 @@
 pub mod faa;
 pub mod navaid;
 pub mod radio;
+pub mod script;
 
 use crate::json::{self, Value};
 use radio::Frequency;
 
 /// The names this module answers.
-pub const NAMES: [&str; 19] = [
+pub const NAMES: [&str; 22] = [
     "faa_words",
     "title_case",
     "place_name",
@@ -36,6 +37,9 @@ pub const NAMES: [&str; 19] = [
     "morse",
     "service_volume",
     "navaid_hours",
+    "radio_script",
+    "radio_call_sign",
+    "radio_place_name",
 ];
 
 fn opt_text<'a>(name: &str, v: &'a Value, key: &str) -> Result<Option<&'a str>, String> {
@@ -242,6 +246,10 @@ pub fn answer(name: &str, v: &Value) -> Result<String, String> {
         "morse" => Ok(quoted(&navaid::morse(opt_text(name, v, "ident")?.unwrap_or("")))),
         "service_volume" => Ok(opt_quoted(navaid::service_volume(opt_text(name, v, "code")?.unwrap_or("")))),
         "navaid_hours" => Ok(opt_quoted(navaid::hours(opt_text(name, v, "hours")?.unwrap_or("")).as_deref())),
+        // The radio calls for a route (script, AIM 4-2, AC 90-66C).
+        "radio_script" => script::script_json(name, v, |a| frequencies(name, a)),
+        "radio_call_sign" => Ok(quoted(&script::call_sign(opt_text(name, v, "make")?.unwrap_or(""), opt_text(name, v, "tail")?))),
+        "radio_place_name" => Ok(quoted(&script::place_name(opt_text(name, v, "name")?, opt_text(name, v, "ident")?.unwrap_or("")))),
         _ => Err(format!("the engine has no rule called {name:?}")),
     }
 }

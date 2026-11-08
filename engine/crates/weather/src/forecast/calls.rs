@@ -1,12 +1,12 @@
 //! The forecast's rules as crate::call answers them, JSON in and out; the
 //! names and their inputs are listed in call.rs with the others.
 
-use super::{awc, category_of, hours, route};
+use super::{awc, category_of, field, hours, route};
 use crate::json::{self, Value};
 use crate::{metar, winds};
 
 /// The names this module answers.
-pub const NAMES: [&str; 21] = [
+pub const NAMES: [&str; 22] = [
     "flight_category",
     "ceiling_visibility",
     "field_hours",
@@ -28,6 +28,7 @@ pub const NAMES: [&str; 21] = [
     "service_ceiling_on_the_day",
     "wind_at_altitude",
     "forecast_hour",
+    "field_taf",
 ];
 
 type R<T> = Result<T, String>;
@@ -298,6 +299,34 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             }
         }
         "forecast_hour" => json::string(&mut out, winds::forecast_hour(opt_num(name, v, "hours_ahead")?)),
+        "field_taf" => {
+            let at = match v.get("at") {
+                None | Some(Value::Null) => None,
+                Some(p) => Some((num(name, p, "lat")?, num(name, p, "lon")?)),
+            };
+            let stations = list(name, v, "stations")?
+                .iter()
+                .map(|s| {
+                    let icao_id = s.get("icao_id").and_then(Value::as_str).ok_or_else(|| format!("{name}: a station has no \"icao_id\""))?;
+                    let at = match (opt_num(name, s, "lat")?, opt_num(name, s, "lon")?) {
+                        (Some(lat), Some(lon)) => Some((lat, lon)),
+                        _ => None,
+                    };
+                    Ok(field::Station { icao_id, at })
+                })
+                .collect::<R<Vec<_>>>()?;
+            let found = field::field_taf(text(name, v, "ident")?, at, &stations);
+            out.push_str("{\"index\":");
+            match found {
+                Some((i, _)) => out.push_str(&i.to_string()),
+                None => out.push_str("null"),
+            }
+            out.push_str(",\"nm\":");
+            json::opt_number(&mut out, found.and_then(|(_, nm)| nm));
+            out.push_str(",\"reach_nm\":");
+            json::number(&mut out, field::TAF_REACH_NM);
+            out.push('}');
+        }
         _ => return Err(format!("the engine has no rule called {name:?}")),
     }
     Ok(out)

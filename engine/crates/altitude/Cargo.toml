@@ -13,4 +13,5 @@ name = "wingtip_altitude"
 [dependencies]
 wingtip-core = { path = "../core" }
 wingtip-flight = { path = "../flight" }
+wingtip-weather = { path = "../weather" }
 wingtip-procedures = { path = "../procedures" }

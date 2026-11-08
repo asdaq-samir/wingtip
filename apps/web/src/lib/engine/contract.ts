@@ -622,6 +622,84 @@ export type RoutePositionAnswer = {
 } | null;
 export type WorkingsRightAnswer = boolean;
 export type VorCheckLimitDegAnswer = number;
+export type FieldHoursAnswer = FieldHour[];
+export type AwcTafsReadAnswer = {}[];
+export type AwcAirsigmetsReadAnswer = {}[];
+export type AwcPirepsReadAnswer = {}[];
+export type AwcGairmetsReadAnswer = {}[];
+export type WeatherHeldUntilAnswer = number | null;
+export type VfrNotRecommendedReasonsAnswer = string[];
+export type SigmetsAlongRouteAnswer = {}[];
+export type PirepsAlongRouteAnswer = {}[];
+export type PirepsInBoxAnswer = {}[];
+export type GairmetsAlongRouteAnswer = {}[];
+export type FreezingLevelAnswer = {
+  ft: number;
+  at_or_below: boolean;
+} | null;
+export type TemperatureAtAnswer = number | null;
+export type WindAtAltitudeAnswer = WindAloft | null | (WindAloft | null)[];
+export type ForecastHourAnswer = "06" | "12" | "24";
+export type LegalCruisingAltitudesAnswer = number[];
+export type TightCruisingAltitudeAnswer = number | null;
+export type HighestUnderCloudsFtAnswer = number;
+export type CloudClearanceAtFtAnswer = number;
+export type AltitudeWheelAnswer = number[];
+export type VfrFloorsAnswer = {
+  floor_ft: number;
+  lowest_ground_ft: number;
+  highest_ft: number;
+  highest_is_obstacle: boolean;
+  obstacle_type?: string | null;
+  clearance_ft: number;
+  congested?: boolean | null;
+}[];
+export type IfrFloorsAnswer = {
+  floor_ft: number;
+  highest_ft: number;
+  highest_is_obstacle: boolean;
+  mountainous: boolean;
+}[];
+export type IfrObstacleRadiusNmAnswer = number;
+export type AirwayFloorFtAnswer = number | null;
+export type AltitudeBlockedAnswer = boolean;
+export type MountainousAtAnswer = boolean;
+export type AltitudeAnywayAnswer = number | null;
+export type NavLogLegsAnswer = NavLogLeg[];
+export type NavLogWithClimbsAnswer = NavLogLeg[];
+export type NavLogWithDescentsAnswer = NavLogLeg[];
+export type NavLogCandidatesAnswer = number[][] | null;
+export type NavLogLegsAtAnswer = NavLogLeg[];
+export type NavLogJoinPlansAnswer = NavLogPlan[];
+export type NavLogJoinFiguresAnswer = NavLogFigure[];
+export type NavLogRacetrackAnswer = [number, number][];
+export type NavLogApproachEndAnswer = {
+  end_altitude_ft: number;
+  end_before_nm: number;
+  end_fix: string | null;
+} | null;
+export type FrdNearAnswer = {
+  base: string;
+  course_deg: number;
+  distance_nm: number;
+  radial: boolean;
+  ident: string;
+} | null;
+export type ServiceCeilingOnTheDayAnswer = number;
+export type RadioScriptAnswer = {
+  title: string;
+  ident: string;
+  kind: "departure" | "arrival";
+  calls: {
+    to: string;
+    mhz: number | null;
+    words: string;
+    note?: string;
+    listen?: boolean;
+  }[];
+}[];
+export type RadioCallSignAnswer = string;
+export type RadioPlaceNameAnswer = string;
 
 /**
  * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. The one source of their shapes: apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
@@ -1461,13 +1539,6 @@ export interface EngineContract {
     answer: FlightCategoryAnswer;
   };
   /**
-   * An hour of a TAF from its groups in force (AC 00-45H).
-   */
-  taf_hour: {
-    input: TafHourInput;
-    answer: TafHourAnswer;
-  };
-  /**
    * An airplane's kind from its ADS-B emitter category (GDL 90 Table 11).
    */
   traffic_kind: {
@@ -2173,6 +2244,461 @@ export interface EngineContract {
   vor_check_limit_deg: {
     input: VorCheckLimitDegInput;
     answer: VorCheckLimitDegAnswer;
+  };
+  /**
+   * A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as AC 00-45H sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
+   */
+  field_hours: {
+    input: FieldHoursInput;
+    answer: FieldHoursAnswer;
+  };
+  /**
+   * The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1), visibility, wind, altimeter, temperature and dewpoint, and where it is.
+   */
+  awc_metars_read: {
+    input: AwcMetarsReadInput;
+    answer: AwcMetarsReadAnswer;
+  };
+  /**
+   * The Aviation Weather Center's national tafs cache file (XML) read into the shape the weather store keeps: [{icaoId, lat, lon, elevation_ft, raw, fcsts}], each station's latest TAF, its periods in time order.
+   */
+  awc_tafs_read: {
+    input: AwcTafsReadInput;
+    answer: AwcTafsReadAnswer;
+  };
+  /**
+   * The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
+   */
+  awc_airsigmets_read: {
+    input: AwcAirsigmetsReadInput;
+    answer: AwcAirsigmetsReadAnswer;
+  };
+  /**
+   * The Aviation Weather Center's national pireps cache file (XML) read into the shape the weather store keeps: The PIREPs (UA, UUA), not the AIREPs: [{observed_at, observed, lat, lon, altitude_ft, aircraft, urgent, turbulence, icing, raw}].
+   */
+  awc_pireps_read: {
+    input: AwcPirepsReadInput;
+    answer: AwcPirepsReadAnswer;
+  };
+  /**
+   * The Aviation Weather Center's national gairmets cache file (XML) read into the shape the weather store keeps: The G-AIRMET areas a VFR flight is told of: [{hazard (words), severity, due_to, valid_at, valid, issued, altitude_low_ft, from_freezing_level, altitude_high_ft, coords}].
+   */
+  awc_gairmets_read: {
+    input: AwcGairmetsReadInput;
+    answer: AwcGairmetsReadAnswer;
+  };
+  /**
+   * To when a stored copy may be served when later fetches fail, by its product's own validity (AC 00-45H): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
+   */
+  weather_held_until: {
+    input: WeatherHeldUntilInput;
+    answer: WeatherHeldUntilAnswer;
+  };
+  /**
+   * The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (AC 00-45H).
+   */
+  gairmet_hazards: {
+    input: GairmetHazardsInput;
+    answer: GairmetHazardsAnswer;
+  };
+  /**
+   * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).
+   */
+  taf_window: {
+    input: TafWindowInput;
+    answer: TafWindowAnswer;
+  };
+  /**
+   * The lowest forecast ceiling and visibility among the TAF stations near a route over a window, each station's own worst kept (14 CFR 91.155's cloud clearance is held to them).
+   */
+  tafs_along_route: {
+    input: TafsAlongRouteInput;
+    answer: TafsAlongRouteAnswer;
+  };
+  /**
+   * "VFR flight not recommended" (AIM 7-1-5) as its reasons, in briefing order: either end reporting IFR or LIFR or a ceiling of unknown height, then the forecast along the route under 14 CFR 91.155(c), (d)'s basic minimums or of unknown height.
+   */
+  vfr_not_recommended_reasons: {
+    input: VfrNotRecommendedReasonsInput;
+    answer: VfrNotRecommendedReasonsAnswer;
+  };
+  /**
+   * The SIGMETs in force whose area the route crosses (AC 00-45H).
+   */
+  sigmets_along_route: {
+    input: SigmetsAlongRouteInput;
+    answer: SigmetsAlongRouteAnswer;
+  };
+  /**
+   * The PIREPs of the last 90 minutes at or under 18,000 ft within the corridor of the route, urgent first, then in route order, each with along_track_nm.
+   */
+  pireps_along_route: {
+    input: PirepsAlongRouteInput;
+    answer: PirepsAlongRouteAnswer;
+  };
+  /**
+   * The PIREPs still told (the last 90 minutes, at or under 18,000 ft) in a box, the urgent last.
+   */
+  pireps_in_box: {
+    input: PirepsInBoxInput;
+    answer: PirepsInBoxAnswer;
+  };
+  /**
+   * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (AC 00-45H).
+   */
+  gairmets_along_route: {
+    input: GairmetsAlongRouteInput;
+    answer: GairmetsAlongRouteAnswer;
+  };
+  /**
+   * Where a temperature profile crosses 0 C, by linear interpolation; at_or_below where it is already freezing at the lowest level; null where it stays above freezing.
+   */
+  freezing_level: {
+    input: FreezingLevelInput;
+    answer: FreezingLevelAnswer;
+  };
+  /**
+   * The temperature at an altitude from a profile: interpolated between levels, past the ends the nearest level's difference from a standard day kept (ICAO standard lapse rate).
+   */
+  temperature_at: {
+    input: TemperatureAtInput;
+    answer: TemperatureAtAnswer;
+  };
+  /**
+   * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
+   */
+  wind_at_altitude: {
+    input: WindAtAltitudeInput;
+    answer: WindAtAltitudeAnswer;
+  };
+  /**
+   * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, AC 00-45H).
+   */
+  forecast_hour: {
+    input: ForecastHourInput;
+    answer: ForecastHourAnswer;
+  };
+  /**
+   * Every legal cruising altitude for a magnetic course from the floor up to the ceiling, ascending: under VFR 14 CFR 91.159(a)'s thousands plus 500 under Class A (71.33), and every 500 ft up to rule_from_ft (3,000 ft over the lowest ground); under IFR 91.179(b)'s thousands (FAA Order JO 7110.65 TBL 4-5-1) to FL410.
+   */
+  legal_cruising_altitudes: {
+    input: LegalCruisingAltitudesInput;
+    answer: LegalCruisingAltitudesAnswer;
+  };
+  /**
+   * Where no 500 ft step fits under a ceiling, the highest whole hundred under it that clears the floor, below where 14 CFR 91.159 begins; null where nothing fits.
+   */
+  tight_cruising_altitude: {
+    input: TightCruisingAltitudeInput;
+    answer: TightCruisingAltitudeAnswer;
+  };
+  /**
+   * The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.
+   */
+  highest_under_clouds_ft: {
+    input: HighestUnderCloudsFtInput;
+    answer: HighestUnderCloudsFtAnswer;
+  };
+  /**
+   * The distance 14 CFR 91.155(a) keeps below the clouds at an altitude: 1,000 ft at or above 10,000 ft MSL, 500 ft below.
+   */
+  cloud_clearance_at_ft: {
+    input: CloudClearanceAtFtInput;
+    answer: CloudClearanceAtFtAnswer;
+  };
+  /**
+   * The altitude wheel's rows, highest first: the legal altitudes given, the one flown, and every 500 ft from 1,000 ft to 17,500 ft under Class A (14 CFR 71.33, 91.135) besides (the owner's pick, 2026-10-20).
+   */
+  altitude_wheel: {
+    input: AltitudeWheelInput;
+    answer: AltitudeWheelAnswer;
+  };
+  /**
+   * The VFR floor of each piece of the route between consecutive breaks: the ground plus 1,000 ft, or a DOF obstacle's top plus 14 CFR 91.119's clearance where it stands (1,000 ft over a congested area, (b); 500 elsewhere, (c); 1,000 where the towns are not known), rounded up to the next 100 ft; with 91.119's own minimum under it.
+   */
+  vfr_floors: {
+    input: VfrFloorsInput;
+    answer: VfrFloorsAnswer;
+  };
+  /**
+   * Each leg's minimum IFR altitude (14 CFR 91.177(a)(2)): the highest of the ground given and the DOF obstacles within 4 nm of its course, plus 1,000 ft, or 2,000 ft over a mountainous area (Part 95 subpart B), rounded up to the next 100 ft.
+   */
+  ifr_floors: {
+    input: IfrFloorsInput;
+    answer: IfrFloorsAnswer;
+  };
+  /**
+   * How far from the course 14 CFR 91.177(a)(2) takes the highest obstacle: 4 nm.
+   */
+  ifr_obstacle_radius_nm: {
+    input: IfrObstacleRadiusNmInput;
+    answer: IfrObstacleRadiusNmAnswer;
+  };
+  /**
+   * An airway segment's minimum IFR altitude (14 CFR 91.177(a)(1)): its MEA, else its GNSS MEA; null where it publishes neither.
+   */
+  airway_floor_ft: {
+    input: AirwayFloorFtInput;
+    answer: AirwayFloorFtAnswer;
+  };
+  /**
+   * Whether a cruising altitude enters a prohibited area (14 CFR 73.83) between its floor and ceiling, an AGL ceiling or none taken as unlimited.
+   */
+  altitude_blocked: {
+    input: AltitudeBlockedInput;
+    answer: AltitudeBlockedAnswer;
+  };
+  /**
+   * Whether a point is in a designated mountainous area (14 CFR Part 95 subpart B, 95.11 to 95.21).
+   */
+  mountainous_at: {
+    input: MountainousAtInput;
+    answer: MountainousAtAnswer;
+  };
+  /**
+   * The planner's altitude selection from the data it read: each leg's band (the floor up to the lowest of the Class B shelf, 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace; under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.
+   */
+  select_cruise_altitude: {
+    input: SelectCruiseAltitudeInput;
+    answer: SelectCruiseAltitudeAnswer;
+  };
+  /**
+   * The altitude a route with no legal one is flown at anyway (the owner's warn, never limit): the lowest over the floor everywhere on the course's own altitudes (14 CFR 91.159, 91.179(b)); null where no floor is known.
+   */
+  altitude_anyway: {
+    input: AltitudeAnywayInput;
+    answer: AltitudeAnywayAnswer;
+  };
+  /**
+   * Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, whether Class B is what stops it, and all of it as one message.
+   */
+  no_altitude: {
+    input: NoAltitudeInput;
+    answer: NoAltitudeAnswer;
+  };
+  /**
+   * An airplane's cruise at an altitude in air at oat_c (a standard day's where null): its power at the cruise setting or full throttle (Gagg and Ferrar), TAS as the cube root of power over density, burn with power, and the density altitude.
+   */
+  performance_cruise: {
+    input: PerformanceCruiseInput;
+    answer: PerformanceCruiseAnswer;
+  };
+  /**
+   * A best-rate climb's minutes and gallons, its rate falling with density altitude to 100 fpm at the service ceiling (PHAK ch. 11), in air isa_dev_c warmer than a standard day; nothing for a descent.
+   */
+  performance_climb: {
+    input: PerformanceClimbInput;
+    answer: PerformanceClimbAnswer;
+  };
+  /**
+   * One leg from start to end at an altitude in the air given (wingtip.navlog.assemble_leg): true course and distance, the airplane's cruise in its air, the wind triangle (PHAK ch. 16), magnetic heading (true less variation, east positive), ground speed, time and fuel; an unflyable leg's time is null.
+   */
+  navlog_leg: {
+    input: NavLogLegOneInput;
+    answer: NavLogLegOneAnswer;
+  };
+  /**
+   * A leg between each consecutive pair of fixes, all at altitude_ft, each in its own air (air, one a leg).
+   */
+  navlog_legs: {
+    input: NavLogLegsInput;
+    answer: NavLogLegsAnswer;
+  };
+  /**
+   * The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc).
+   */
+  navlog_with_climbs: {
+    input: NavLogWithClimbsInput;
+    answer: NavLogWithClimbsAnswer;
+  };
+  /**
+   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude at a step down; the times and fuel unchanged.
+   */
+  navlog_with_descents: {
+    input: NavLogWithDescentsInput;
+    answer: NavLogWithDescentsAnswer;
+  };
+  /**
+   * The legs' totals: miles (procedures' miles more included), time and fuel (null while a leg is unflyable), unflyable legs and legs with no winds aloft.
+   */
+  navlog_totals: {
+    input: NavLogTotalsOfInput;
+    answer: NavLogTotalsOfAnswer;
+  };
+  /**
+   * The fuel required: the start, taxi and takeoff allowance (the C172S POH's 1.4 gal where the profile has none), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
+   */
+  navlog_fuel_plan: {
+    input: NavLogFuelPlanInput;
+    answer: NavLogFuelPlanAnswer;
+  };
+  /**
+   * The leg from the destination on to the IFR alternate for 14 CFR 91.167(a)(2)'s fuel, at the last altitude in its air, or in still air (still_air) where none was read or the leg cannot be flown in it.
+   */
+  navlog_alternate_leg: {
+    input: NavLogAlternateLegInput;
+    answer: NavLogAlternateLegAnswer;
+  };
+  /**
+   * The altitudes each leg's plans may fly, held under 12,500 ft (14 CFR 91.211) where a leg has a choice and the airplane carries no oxygen: the ones the planner looks the air up at. Null where a leg has none.
+   */
+  navlog_candidates: {
+    input: NavLogCandidatesInput;
+    answer: NavLogCandidatesAnswer;
+  };
+  /**
+   * The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel, each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.
+   */
+  navlog_plans: {
+    input: NavLogPlansInput;
+    answer: NavLogPlansAnswer;
+  };
+  /**
+   * The legs flown at the altitude target_ft picked on the wheel: each leg at it where legal, else at its nearest legal altitude (the lower on a tie), with their climbs.
+   */
+  navlog_legs_at: {
+    input: NavLogLegsAtInput;
+    answer: NavLogLegsAtAnswer;
+  };
+  /**
+   * A route with stops' four plans from each hop's: steps in turn, times and fuel summed (null where a hop's is), the tailwind weighed by each hop's length; none where a hop has none.
+   */
+  navlog_join_plans: {
+    input: NavLogJoinPlansInput;
+    answer: NavLogJoinPlansAnswer;
+  };
+  /**
+   * A route with stops' figures at each altitude any hop offers, each hop at its own nearest; times and fuel unknown and none flown everywhere where a hop offers none.
+   */
+  navlog_join_figures: {
+    input: NavLogJoinFiguresInput;
+    answer: NavLogJoinFiguresAnswer;
+  };
+  /**
+   * The leg with a pilot's hold flown on it (AIM 5-3-8): its minutes at the leg's TAS and cruise burn added to the leg's time and fuel, and the hold's entry from the course flown to the fix (j.3) and its no-wind racetrack in true degrees.
+   */
+  navlog_hold: {
+    input: NavLogHoldInput;
+    answer: NavLogLeg1;
+  };
+  /**
+   * One turn round a hold's racetrack from the fix, [lat, lon] pairs: standard-rate turns (3 degrees a second) and legs of leg_nm, true degrees.
+   */
+  navlog_racetrack: {
+    input: NavLogRacetrackInput;
+    answer: NavLogRacetrackAnswer;
+  };
+  /**
+   * Where a flight landing by an instrument approach comes down to: the first fix not of the missed approach with an altitude under the cruise -- the chart's lowest for it, else its highest (CIFP, ARINC 424-18 5.29; AIM 5-4-5) -- and that fix's distance from the field, as navlog_with_descents takes them. Null where no fix is under the cruise: down to the pattern.
+   */
+  navlog_approach_end: {
+    input: NavLogApproachEndInput;
+    answer: NavLogApproachEndAnswer;
+  };
+  /**
+   * Route options' frame, before the planner reads for it: the grid's corner, cells (0.25 degrees) and samples a cell's side, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159 under its ceiling and Class A's 18,000 ft, 71.33), the flight's time, the cruising altitudes the winds are wanted at, the lowest cruise the water's glide is judged from, whether METARs are read (a flight leaving within two hours), the grid's box and the box the fixes and fields are wanted in.
+   */
+  route_options_frame: {
+    input: RouteOptionsInput;
+    answer: RouteOptionsFrameAnswer;
+  };
+  /**
+   * The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route and the most filed one with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
+   */
+  route_options: {
+    input: RouteOptionsInput;
+    answer: RouteOptionsAnswer;
+  };
+  /**
+   * The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in.
+   */
+  terrain_way_frame: {
+    input: TerrainWayFrameInput;
+    answer: TerrainWayFrameAnswer;
+  };
+  /**
+   * A way round high ground (route/options/terrain.rs): the fields with fuel and the way's own turns (ident null, for the planner to name off a fix) to fly by, in order, every leg clear of cells whose highest ground with 1,000 ft (14 CFR 91.119) and the coarse read's 1,000 is over the highest cruising altitude the airplane reaches; [] where the straight line is clear, null where there is no way in reach.
+   */
+  terrain_way_round: {
+    input: TerrainWayRoundInput;
+    answer: TerrainWayStone[] | null;
+  };
+  /**
+   * A point named as the pilot's own point off the nearest fix a pilot knows (a navaid or a VFR waypoint) within max_nm (40 by default), else the nearest of any kind: its course magnetic, a VOR's radial by the station's own variation (AIM 1-1-3), any other by the World Magnetic Model's at now_s, to the degree, and its distance to a tenth of a mile; null with no fix near.
+   */
+  frd_near: {
+    input: FrdNearInput;
+    answer: FrdNearAnswer;
+  };
+  /**
+   * The fuel stops a flight too long for its tanks needs (route/options/fuel.rs): the fields with fuel no more than 30 nm off its line on a paved runway of 2,500 ft, chained so every landing keeps the reserve (14 CFR 91.151(a), 91.167(a)(3)) at the flight's own burn and minutes a mile, the tanks filled at each, the quickest trip with ground_min (30) a stop, among first stops within 5 minutes of it the one nearest the line then the one whose landings keep the most fuel, at most 8 stops; and up to 4 other first stops. Both empty where none is needed or no field reaches.
+   */
+  fuel_stops: {
+    input: FuelStopsInput;
+    answer: FuelStopsAnswer;
+  };
+  /**
+   * The public fields along a route for the map's Stops (route/options/fuel.rs): those on a paved runway of 2,500 ft no more than 30 nm off each flight's line, not the route's own, each on the first flight it is near with its miles from that flight's departure and the miles it adds; the 40 nearest the line, in route order.
+   */
+  fields_along: {
+    input: FieldsAlongInput;
+    answer: FieldAlong[];
+  };
+  /**
+   * Whether a straight leg flown at altitude_ft enters Class B (route/options/classb.rs): a shelf whose floor is at or under it and whose ceiling at or over it, which the leg goes into (14 CFR 91.131(a): an ATC clearance before entering). Under a shelf or over the top, it does not.
+   */
+  class_b_entered: {
+    input: ClassBEnteredInput;
+    answer: boolean;
+  };
+  /**
+   * Named fixes to fly through so neither leg comes within a mile of the Class B whose floor is under below_ft (route/options/classb.rs): those adding the least distance first, a VFR waypoint before a GPS fix that saves under 10 nm, at most 5, none adding over 40 nm.
+   */
+  class_b_detours: {
+    input: ClassBDetoursInput;
+    answer: ClassBDetour[];
+  };
+  /**
+   * The airplane's service ceiling on the day: the book figure, a density altitude, found as an altitude in the forecast temperatures to the nearest 100 ft (FAA-H-8083-25C ch. 11); the book figure where the profile is empty.
+   */
+  service_ceiling_on_the_day: {
+    input: ServiceCeilingOnTheDayInput;
+    answer: ServiceCeilingOnTheDayAnswer;
+  };
+  /**
+   * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).
+   */
+  field_taf: {
+    input: FieldTafInput;
+    answer: FieldTafAnswer;
+  };
+  /**
+   * A route's radio calls, field by field (AIM 4-2, AC 90-66C): the broadcast to listen to first, the tower's or the CTAF's calls, flight following, and the arrival, figures as spoken (AIM 4-2-8, 4-2-9).
+   */
+  radio_script: {
+    input: RadioScriptInput;
+    answer: RadioScriptAnswer;
+  };
+  /**
+   * The airplane's call sign as spoken: its make and its registration, the N dropped (AIM 4-2-4), or a blank for the registration.
+   */
+  radio_call_sign: {
+    input: RadioCallSignInput;
+    answer: RadioCallSignAnswer;
+  };
+  /**
+   * What a pilot calls a field: its name without Airport, International and the like; its ident where nothing is left.
+   */
+  radio_place_name: {
+    input: RadioPlaceNameInput;
+    answer: RadioPlaceNameAnswer;
+  };
+  /**
+   * A student's 61.87(n) solo endorsement on the instructor's list: the days to its last good day and its standing, caution within 7 days (the owner's choice).
+   */
+  solo_standing: {
+    input: SoloStandingInput;
+    answer: SoloStandingAnswer;
   };
 }
 export interface HoldingInput {
@@ -4179,43 +4705,6 @@ export interface FlightCategoryInput {
    */
   ceiling_unknown?: boolean | null;
 }
-export interface TafHourInput {
-  prevailing: TafFiguresIn;
-  /**
-   * A BECMG under way.
-   */
-  becoming?: boolean | null;
-  /**
-   * The prevailing weather before the BECMG.
-   */
-  before?: TafFiguresIn | null;
-  supplemental?:
-    | {
-        category?: string | null;
-        gust_kt?: number | null;
-        thunder?: boolean | null;
-        chance?: boolean | null;
-      }[]
-    | null;
-}
-/**
- * A TAF group's figures.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "TafFiguresIn".
- */
-export interface TafFiguresIn {
-  category?: string | null;
-  gust_kt?: number | null;
-  thunder?: boolean | null;
-}
-export interface TafHourAnswer {
-  before_worse: boolean;
-  at_times: string | null;
-  at_times_gust_kt: number | null;
-  at_times_thunder: boolean;
-  at_times_chance: boolean;
-}
 export interface TrafficKindInput {
   category?: string | null;
 }
@@ -5372,4 +5861,1434 @@ export interface InspectionsDueAnswer {
 }
 export interface VorCheckLimitDegInput {
   kind: "VOT" | "REPAIR_STATION" | "GROUND" | "AIRBORNE" | "RADIAL" | "DUAL";
+}
+export interface FieldHoursInput {
+  /**
+   * The field's report as the planner gives it.
+   */
+  metar?: {} | null;
+  /**
+   * The TAF as sent.
+   */
+  taf?: string | null;
+  /**
+   * ms
+   */
+  now: number;
+  /**
+   * Hours after Now; 24 where not given.
+   */
+  count?: number | null;
+}
+/**
+ * One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (AC 00-45H's change groups).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "FieldHour".
+ */
+export interface FieldHour {
+  /**
+   * The hour's start, ms; Now's the report's time (or now).
+   */
+  at: number;
+  now: boolean;
+  category: "VFR" | "MVFR" | "IFR" | "LIFR" | null;
+  ceiling_ft: number | null;
+  visibility_sm: number | null;
+  sky: "clear" | "partly" | "cloudy" | null;
+  precip: "thunder" | "snow" | "rain" | null;
+  /**
+   * True; null where variable.
+   */
+  wind_dir_true_deg: number | null;
+  wind_speed_kt: number | null;
+  wind_gust_kt: number | null;
+  /**
+   * A TEMPO's or PROB's category this hour where worse than the prevailing one.
+   */
+  at_times: "VFR" | "MVFR" | "IFR" | "LIFR" | null;
+  at_times_gust_kt: number | null;
+  at_times_thunder: boolean;
+  /**
+   * The worse weather at times comes only from a PROB group (AC 00-45H).
+   */
+  at_times_chance: boolean;
+}
+export interface AwcMetarsReadInput {
+  text: string;
+}
+export interface AwcMetarsReadAnswer {}
+export interface AwcTafsReadInput {
+  text: string;
+}
+export interface AwcAirsigmetsReadInput {
+  text: string;
+}
+export interface AwcPirepsReadInput {
+  text: string;
+}
+export interface AwcGairmetsReadInput {
+  text: string;
+}
+export interface WeatherHeldUntilInput {
+  product: "metars" | "tafs" | "airsigmets" | "pireps" | "gairmets";
+  data?: unknown;
+  fetched: number;
+}
+export interface GairmetHazardsInput {}
+export interface GairmetHazardsAnswer {
+  hazards: {
+    [k: string]: string;
+  };
+  snapshot_s: number;
+}
+export interface TafWindowInput {
+  fcsts: TafPeriod[];
+  start: number;
+  end?: number | null;
+}
+/**
+ * One period of a TAF as the weather store keeps it (awc_tafs_read; taf_read's fcsts): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "TafPeriod".
+ */
+export interface TafPeriod {
+  timeFrom: number;
+  timeTo: number;
+  change?: string | null;
+  probability?: number | null;
+  wind_dir_true_deg?: number | null;
+  wind_speed_kt?: number | null;
+  wind_gust_kt?: number | null;
+  visibility_sm?: number | null;
+  ceiling_ft?: number | null;
+  ceiling_unknown?: boolean | null;
+  wx?: string | null;
+}
+export interface TafWindowAnswer {
+  periods: TafPeriod[];
+  worst: WeatherWorst | null;
+  current: TafPeriod | null;
+  prevailing: TafPeriod | null;
+}
+/**
+ * The worst a TAF forecasts in a window, TEMPO and PROB groups included.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "WeatherWorst".
+ */
+export interface WeatherWorst {
+  ceiling_ft: number | null;
+  ceiling_unknown: boolean;
+  visibility_sm: number | null;
+}
+export interface TafsAlongRouteInput {
+  tafs: {}[];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  from: [number, number];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  to: [number, number];
+  corridor_nm?: number | null;
+  start: number;
+  end?: number | null;
+}
+export interface TafsAlongRouteAnswer {
+  min_ceiling_ft: number | null;
+  min_visibility_sm: number | null;
+  ceiling_unknown_at: string[];
+  stations: {}[];
+}
+export interface VfrNotRecommendedReasonsInput {
+  idents?: string[];
+  metars?: {} | null;
+  forecast?: {} | null;
+}
+export interface SigmetsAlongRouteInput {
+  advisories: {}[];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  from: [number, number];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  to: [number, number];
+  corridor_nm?: number | null;
+  now: number;
+}
+export interface PirepsAlongRouteInput {
+  reports: {}[];
+  /**
+   * The route flown, [[lat, lon], ...].
+   */
+  path: [number, number][];
+  corridor_nm?: number | null;
+  now: number;
+}
+export interface PirepsInBoxInput {
+  reports: {}[];
+  /**
+   * [south, west, north, east]
+   *
+   * @minItems 4
+   * @maxItems 4
+   */
+  box: [number, number, number, number];
+  now: number;
+}
+export interface GairmetsAlongRouteInput {
+  advisories: {}[];
+  /**
+   * The route flown, [[lat, lon], ...].
+   */
+  path: [number, number][];
+  start: number;
+  end: number;
+}
+export interface FreezingLevelInput {
+  /**
+   * [[altitude_ft, temp_c], ...]
+   */
+  profile?: [number, number][];
+}
+export interface TemperatureAtInput {
+  /**
+   * [[altitude_ft, temp_c], ...]
+   */
+  profile?: [number, number][];
+  altitude_ft: number;
+}
+export interface WindAtAltitudeInput {
+  /**
+   * A station's levels by altitude in feet, as the weather store keeps them.
+   */
+  levels: {
+    [k: string]: {
+      wind_dir_true_deg?: number | null;
+      wind_speed_kt?: number | null;
+      temp_c?: number | null;
+    };
+  };
+  altitude_ft?: number | null;
+  altitudes?: number[] | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "WindAloft".
+ */
+export interface WindAloft {
+  wind_dir_true_deg: number;
+  wind_speed_kt: number;
+}
+export interface ForecastHourInput {
+  hours_ahead?: number | null;
+}
+export interface LegalCruisingAltitudesInput {
+  floor_ft: number;
+  ceiling_ft?: number | null;
+  magnetic_course_deg: number;
+  rule_from_ft?: number | null;
+  rules?: "vfr" | "ifr" | null;
+}
+export interface TightCruisingAltitudeInput {
+  floor_ft: number;
+  ceiling_ft?: number | null;
+  rule_from_ft?: number | null;
+}
+export interface HighestUnderCloudsFtInput {
+  cloud_base_ft: number;
+}
+export interface CloudClearanceAtFtInput {
+  altitude_ft: number;
+}
+export interface AltitudeWheelInput {
+  legal_ft?: number[];
+  flown_ft?: number | null;
+}
+export interface VfrFloorsInput {
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  breaks_nm: number[];
+  /**
+   * The ground along the direct line, feet MSL; congested null where the towns could not be read.
+   */
+  ground: {
+    along_nm: number[];
+    high_ft: number[];
+    low_ft: number[];
+    congested?: boolean[] | null;
+  };
+  obstacles?: {
+    lat: number;
+    lon: number;
+    amsl_ft: number;
+    type?: string | null;
+    congested?: boolean | null;
+  }[];
+}
+export interface IfrFloorsInput {
+  legs: {
+    /**
+     * [lat, lon], degrees.
+     *
+     * @minItems 2
+     * @maxItems 2
+     */
+    a: [number, number];
+    /**
+     * [lat, lon], degrees.
+     *
+     * @minItems 2
+     * @maxItems 2
+     */
+    b: [number, number];
+    ground_ft: number;
+  }[];
+  obstacles?: {
+    lat: number;
+    lon: number;
+    amsl_ft: number;
+  }[];
+}
+export interface IfrObstacleRadiusNmInput {}
+export interface AirwayFloorFtInput {
+  mea_ft?: number | null;
+  gnss_mea_ft?: number | null;
+}
+export interface AltitudeBlockedInput {
+  altitude_ft: number;
+  areas?: {
+    type?: string | null;
+    floor_ft?: number | null;
+    ceiling_ft?: number | null;
+    ceiling_ref?: string | null;
+  }[];
+}
+export interface MountainousAtInput {
+  lat: number;
+  lon: number;
+}
+export interface SelectCruiseAltitudeInput {
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  fixes?: [number, number][] | null;
+  breaks_nm?: number[];
+  rules?: "vfr" | "ifr" | null;
+  class_b_cleared?: boolean | null;
+  /**
+   * vfr_floors' or ifr_floors' answer, a floor a leg.
+   */
+  floors?: {}[];
+  airway?: {
+    mea_ft?: number | null;
+    gnss_mea_ft?: number | null;
+    maa_ft?: number | null;
+  } | null;
+  airspace_ceilings_ft?: (number | null)[];
+  service_ceilings_ft: number[];
+  variation_deg?: number | null;
+  leg_variations_deg?: number[];
+  stations?: {
+    icaoId?: string | null;
+    lat?: number;
+    lon?: number;
+    ceiling_ft?: number | null;
+    elevation_ft?: number | null;
+  }[];
+  min_ceiling_ft?: number | null;
+  special_use?: {}[];
+  freezing?: {
+    ft?: number | null;
+    at_or_below?: boolean | null;
+  } | null;
+  hazards?: {}[];
+  weather_unavailable?: string[];
+}
+export interface SelectCruiseAltitudeAnswer {
+  rules: "vfr" | "ifr";
+  recommended_ft: number | null;
+  candidates_ft: number[];
+  course_magnetic_deg: number;
+  eastbound: boolean;
+  hemispheric_rule_from_ft: number;
+  floor_ft: number;
+  airspace_ceiling_ft?: number | null;
+  class_b_cleared?: boolean;
+  service_ceiling_ft: number;
+  cloud_base_ft?: number | null;
+  cloud_station?: string | null;
+  cloud_ceiling_ft?: number | null;
+  cloud_clearance_kept: boolean;
+  freezing_level_ft?: number | null;
+  freezing_level_at_or_below?: boolean;
+  icing_possible: boolean | null;
+  band_ceiling_ft?: number | null;
+  segments: AltitudeSegment[];
+  mountainous: boolean;
+}
+/**
+ * One leg's band: its floor (91.119 under VFR, 91.177(a) under IFR), the ceilings over it, its legal altitudes by its own magnetic course, and what its floor was found from.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "AltitudeSegment".
+ */
+export interface AltitudeSegment {
+  from_nm: number;
+  to_nm: number;
+  floor_ft: number;
+  airspace_ceiling_ft?: number | null;
+  service_ceiling_ft: number;
+  cloud_base_ft?: number | null;
+  cloud_station?: string | null;
+  cloud_ceiling_ft?: number | null;
+  cloud_clearance_kept: boolean;
+  band_ceiling_ft?: number | null;
+  course_magnetic_deg: number;
+  eastbound: boolean;
+  hemispheric_rule_from_ft: number;
+  candidates_ft: number[];
+  tight: boolean;
+  highest_ft?: number | null;
+  highest_is_obstacle?: boolean | null;
+  obstacle_type?: string | null;
+  obstacle_clearance_ft?: number | null;
+  congested?: boolean | null;
+  mountainous?: boolean;
+  airway?: {} | null;
+}
+export interface AltitudeAnywayInput {
+  selection: {};
+}
+export interface NoAltitudeInput {
+  selection: {};
+  between?: string[] | null;
+  via?: {
+    ident?: string;
+    added_nm?: number;
+  } | null;
+  where?: string | null;
+}
+export interface NoAltitudeAnswer {
+  title: string;
+  brief: string;
+  reasons: string[];
+  advice: string;
+  class_b: boolean;
+  detail: string;
+}
+export interface PerformanceCruiseInput {
+  profile: NavLogProfile;
+  altitude_ft: number;
+  oat_c?: number | null;
+}
+/**
+ * An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogProfile".
+ */
+export interface NavLogProfile {
+  /**
+   * At its cruise power at cruise_altitude_ft (else 6,000 ft) on a standard day.
+   */
+  cruise_tas_kt?: number;
+  fuel_burn_gph?: number;
+  service_ceiling_ft?: number;
+  cruise_power_pct?: number | null;
+  cruise_altitude_ft?: number | null;
+  climb_tas_kt?: number | null;
+  climb_fuel_burn_gph?: number | null;
+  climb_rate_fpm_sea_level?: number | null;
+  taxi_fuel_gal?: number | null;
+  usable_fuel_gal?: number | null;
+  supplemental_oxygen?: boolean | null;
+  pressurized?: boolean | null;
+  [k: string]: unknown;
+}
+export interface PerformanceCruiseAnswer {
+  tas_kt: number;
+  fuel_burn_gph: number;
+  power_pct: number;
+  density_altitude_ft: number;
+}
+export interface PerformanceClimbInput {
+  profile: NavLogProfile;
+  from_ft: number;
+  to_ft: number;
+  isa_dev_c?: number | null;
+}
+export interface PerformanceClimbAnswer {
+  minutes: number;
+  gallons: number;
+}
+export interface NavLogLegOneInput {
+  start: {
+    lat: number;
+    lon: number;
+  };
+  end: {
+    lat: number;
+    lon: number;
+  };
+  altitude_ft: number;
+  profile: NavLogProfile;
+  wind?: NavLogWind | null;
+  oat_c?: number | null;
+  variation_deg: number;
+}
+/**
+ * The wind aloft, the direction it blows from in true degrees, carried onto the leg as it is.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogWind".
+ */
+export interface NavLogWind {
+  wind_dir_true_deg: number;
+  wind_speed_kt: number;
+  [k: string]: unknown;
+}
+/**
+ * A nav log leg (PHAK ch. 16's dead reckoning); null time, ground speed and fuel is an unflyable leg. Members the log does not know (procedure, hold, airway) are carried through.
+ */
+export interface NavLogLegOneAnswer {
+  from?: string | null;
+  to?: string | null;
+  true_course_deg?: number;
+  distance_nm: number;
+  altitude_ft: number;
+  wind?: NavLogWind | null;
+  wca_deg?: number;
+  true_heading_deg?: number;
+  magnetic_variation_deg?: number;
+  magnetic_heading_deg?: number;
+  groundspeed_kt?: number | null;
+  ete_min?: number | null;
+  fuel_gal?: number | null;
+  tas_kt?: number;
+  fuel_burn_gph?: number;
+  power_pct?: number;
+  oat_c?: number | null;
+  density_altitude_ft?: number;
+  climb_min?: number | null;
+  toc?: NavLogTop | null;
+  tod?: NavLogTop | null;
+  [k: string]: unknown;
+}
+/**
+ * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogTop".
+ */
+export interface NavLogTop {
+  along_nm: number;
+  ete_min: number;
+  fuel_gal?: number | null;
+  altitude_ft: number;
+  to_ft?: number;
+  pattern?: boolean;
+  fix?: string | null;
+  fpm?: number;
+  tas_kt?: number;
+  groundspeed_kt?: number;
+  lat?: number;
+  lon?: number;
+  [k: string]: unknown;
+}
+export interface NavLogLegsInput {
+  fixes: NavLogFix[];
+  altitude_ft: number;
+  profile: NavLogProfile;
+  air: NavLogLegAir[];
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogFix".
+ */
+export interface NavLogFix {
+  name?: string | null;
+  category?: string | null;
+  lat: number;
+  lon: number;
+  [k: string]: unknown;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogLegAir".
+ */
+export interface NavLogLegAir {
+  /**
+   * Magnetic variation, east positive.
+   */
+  variation_deg: number;
+  at: NavLogAirAt[];
+}
+/**
+ * A leg's air at one altitude, looked up at its midpoint: no wind is no winds-aloft station near, no temperature a standard day.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogAirAt".
+ */
+export interface NavLogAirAt {
+  altitude_ft: number;
+  wind?: NavLogWind | null;
+  oat_c?: number | null;
+}
+/**
+ * A nav log leg (PHAK ch. 16's dead reckoning); null time, ground speed and fuel is an unflyable leg. Members the log does not know (procedure, hold, airway) are carried through.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogLeg".
+ */
+export interface NavLogLeg {
+  from?: string | null;
+  to?: string | null;
+  true_course_deg?: number;
+  distance_nm: number;
+  altitude_ft: number;
+  wind?: NavLogWind | null;
+  wca_deg?: number;
+  true_heading_deg?: number;
+  magnetic_variation_deg?: number;
+  magnetic_heading_deg?: number;
+  groundspeed_kt?: number | null;
+  ete_min?: number | null;
+  fuel_gal?: number | null;
+  tas_kt?: number;
+  fuel_burn_gph?: number;
+  power_pct?: number;
+  oat_c?: number | null;
+  density_altitude_ft?: number;
+  climb_min?: number | null;
+  toc?: NavLogTop | null;
+  tod?: NavLogTop | null;
+  [k: string]: unknown;
+}
+export interface NavLogWithClimbsInput {
+  legs: NavLogLeg[];
+  start_altitude_ft?: number | null;
+  profile: NavLogProfile;
+}
+export interface NavLogWithDescentsInput {
+  legs: NavLogLeg[];
+  fixes: NavLogFix[];
+  end_altitude_ft?: number | null;
+  end_before_nm?: number | null;
+  end_fix?: string | null;
+}
+export interface NavLogTotalsOfInput {
+  legs: NavLogLeg[];
+}
+export interface NavLogTotalsOfAnswer {
+  distance_nm: number;
+  procedure_nm: number;
+  ete_min: number | null;
+  fuel_gal: number | null;
+  unflyable_legs: number;
+  legs_without_wind: number;
+}
+export interface NavLogFuelPlanInput {
+  total_fuel_gal?: number | null;
+  profile: NavLogProfile;
+  night?: boolean | null;
+  rules?: "vfr" | "ifr" | null;
+  alternate_gal?: number | null;
+}
+export interface NavLogFuelPlanAnswer {
+  reserve_min: number;
+  reserve_gal: number;
+  taxi_gal: number;
+  fuel_required_gal: number | null;
+  usable_fuel_gal: number | null;
+  fuel_margin_gal: number | null;
+  night: boolean | null;
+  rules: string;
+}
+export interface NavLogAlternateLegInput {
+  dest: {
+    ident: string;
+    lat: number;
+    lon: number;
+    [k: string]: unknown;
+  };
+  alternate: {
+    ident: string;
+    lat: number;
+    lon: number;
+    [k: string]: unknown;
+  };
+  altitude_ft: number;
+  profile: NavLogProfile;
+  air?: {
+    variation_deg: number;
+    wind?: NavLogWind | null;
+    oat_c?: number | null;
+  } | null;
+}
+export interface NavLogAlternateLegAnswer {
+  ident: string;
+  distance_nm: number;
+  ete_min: number;
+  fuel_gal: number;
+  altitude_ft: number;
+  still_air: boolean;
+}
+export interface NavLogCandidatesInput {
+  segments: NavLogSegment[];
+  legs: number;
+  profile: NavLogProfile;
+}
+/**
+ * The altitude selection's segment for a leg: its legal altitudes (14 CFR 91.119, 91.159, the airspace, the clouds and the service ceiling).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogSegment".
+ */
+export interface NavLogSegment {
+  candidates_ft?: number[] | null;
+  [k: string]: unknown;
+}
+export interface NavLogPlansInput {
+  fixes: NavLogFix[];
+  segments: NavLogSegment[];
+  profile: NavLogProfile;
+  departure_elevation_ft?: number | null;
+  air: NavLogLegAir[];
+}
+export interface NavLogPlansAnswer {
+  plans: {
+    [k: string]: NavLogPlan;
+  };
+  by_altitude: NavLogFigure[];
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogPlan".
+ */
+export interface NavLogPlan {
+  kind?: string;
+  steps: NavLogStep[];
+  needs_oxygen: boolean;
+  ete_min: number | null;
+  fuel_gal: number | null;
+  climb_penalty_min: number;
+  tailwind_kt: number | null;
+  unflyable_legs: number;
+  legs_without_wind: number;
+  legs?: NavLogLeg[];
+  totals?: NavLogTotals;
+  [k: string]: unknown;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogStep".
+ */
+export interface NavLogStep {
+  from?: string | null;
+  to?: string | null;
+  altitude_ft: number;
+  distance_nm: number;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogTotals".
+ */
+export interface NavLogTotals {
+  distance_nm: number;
+  procedure_nm: number;
+  ete_min: number | null;
+  fuel_gal: number | null;
+  unflyable_legs: number;
+  legs_without_wind: number;
+}
+/**
+ * The route flown at one altitude for the altitude wheel: each leg at it where legal, else at its nearest legal one.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogFigure".
+ */
+export interface NavLogFigure {
+  altitude_ft: number;
+  ete_min: number | null;
+  fuel_gal: number | null;
+  tailwind_kt: number | null;
+  everywhere: boolean;
+}
+export interface NavLogLegsAtInput {
+  fixes: NavLogFix[];
+  segments: NavLogSegment[];
+  profile: NavLogProfile;
+  departure_elevation_ft?: number | null;
+  air: NavLogLegAir[];
+  target_ft: number;
+}
+export interface NavLogJoinPlansInput {
+  by_hop: NavLogPlan[][];
+  lengths: number[];
+}
+export interface NavLogJoinFiguresInput {
+  by_hop: NavLogFigure[][];
+  lengths: number[];
+}
+export interface NavLogHoldInput {
+  leg: NavLogLeg;
+  before?: NavLogLeg | null;
+  hold: {
+    fix: string;
+    inbound: number;
+    right: boolean;
+    leg_min?: number | null;
+    leg_nm?: number | null;
+    turns?: number | null;
+    minutes?: number | null;
+  };
+  fix: {
+    lat: number;
+    lon: number;
+  };
+  variation_deg: number;
+  at_end?: boolean | null;
+}
+/**
+ * A nav log leg (PHAK ch. 16's dead reckoning); null time, ground speed and fuel is an unflyable leg. Members the log does not know (procedure, hold, airway) are carried through.
+ */
+export interface NavLogLeg1 {
+  from?: string | null;
+  to?: string | null;
+  true_course_deg?: number;
+  distance_nm: number;
+  altitude_ft: number;
+  wind?: NavLogWind | null;
+  wca_deg?: number;
+  true_heading_deg?: number;
+  magnetic_variation_deg?: number;
+  magnetic_heading_deg?: number;
+  groundspeed_kt?: number | null;
+  ete_min?: number | null;
+  fuel_gal?: number | null;
+  tas_kt?: number;
+  fuel_burn_gph?: number;
+  power_pct?: number;
+  oat_c?: number | null;
+  density_altitude_ft?: number;
+  climb_min?: number | null;
+  toc?: NavLogTop | null;
+  tod?: NavLogTop | null;
+  [k: string]: unknown;
+}
+export interface NavLogRacetrackInput {
+  fix: {
+    lat: number;
+    lon: number;
+  };
+  inbound_true_deg: number;
+  right?: boolean | null;
+  tas_kt: number;
+  leg_nm: number;
+  steps?: number | null;
+}
+export interface NavLogApproachEndInput {
+  fixes: {
+    ident?: string | null;
+    lat: number;
+    lon: number;
+    min_ft?: number | null;
+    max_ft?: number | null;
+    missed?: boolean | null;
+  }[];
+  cruise_ft?: number | null;
+  field: {
+    lat: number;
+    lon: number;
+  };
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsInput".
+ */
+export interface RouteOptionsInput {
+  dep: RouteOptionsEnd;
+  dest: RouteOptionsEnd;
+  profile: RouteOptionsProfile;
+  depart_s: number;
+  now_s?: number | null;
+  min_ceiling_ft?: number | null;
+  min_visibility_sm?: number | null;
+  current?: [number, number][] | null;
+  current_idents?: string[] | null;
+  current_landed?: boolean[] | null;
+  filed?: {
+    points: [number, number][];
+    idents: string[];
+  } | null;
+  night?: boolean | null;
+  terrain_ft?: number[] | null;
+  water_far?: string | null;
+  tafs?: RouteOptionsReport[] | null;
+  metars?: RouteOptionsReport[] | null;
+  sigmets?: RouteOptionsAdvisory[] | null;
+  gairmets?: RouteOptionsAdvisory[] | null;
+  sua?: RouteOptionsArea[] | null;
+  tfrs?: RouteOptionsArea[] | null;
+  winds?: RouteOptionsStation[] | null;
+  fields?: RouteOptionsField[] | null;
+  food?: boolean | null;
+  fixes?: RouteOptionsFix[] | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsEnd".
+ */
+export interface RouteOptionsEnd {
+  ident?: string;
+  lat: number;
+  lon: number;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsProfile".
+ */
+export interface RouteOptionsProfile {
+  cruise_tas_kt: number;
+  fuel_burn_gph: number;
+  usable_fuel_gal?: number | null;
+  taxi_fuel_gal?: number | null;
+  service_ceiling_ft?: number | null;
+}
+/**
+ * A field's weather: a TAF (its worst over the flight, with the weather of every group then) or a METAR.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsReport".
+ */
+export interface RouteOptionsReport {
+  ident: string;
+  lat: number;
+  lon: number;
+  wx?: string[] | string | null;
+  ceiling_ft?: number | null;
+  visibility_sm?: number | null;
+  ceiling_unknown?: boolean | null;
+}
+/**
+ * A SIGMET (valid_from, valid_to) or a G-AIRMET (valid, its snapshot), its area as [lat, lon] points, as the AWC sends it.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsAdvisory".
+ */
+export interface RouteOptionsAdvisory {
+  hazard?: string | null;
+  coords: [number, number][];
+  altitude_low_ft?: number | null;
+  valid_from?: number | null;
+  valid_to?: number | null;
+  valid?: number | null;
+  raw?: string | null;
+}
+/**
+ * A special-use area (type P, R, MOA, W, A ...) or a TFR in force (notam_id, title): its rings of [lat, lon], an odd number of them holding a point inside.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsArea".
+ */
+export interface RouteOptionsArea {
+  type?: string | null;
+  name?: string | null;
+  notam_id?: string | null;
+  title?: string | null;
+  rings: [number, number][][];
+}
+/**
+ * An FD station and its wind [from true, kt] at each of the frame's altitudes_ft, null where it gives none.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsStation".
+ */
+export interface RouteOptionsStation {
+  lat: number;
+  lon: number;
+  winds: (number[] | null)[];
+}
+/**
+ * A public field selling 100LL (NASR APT_BASE), its longest open paved runway and whether there is somewhere to eat (null: not read yet).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsField".
+ */
+export interface RouteOptionsField {
+  ident: string;
+  name?: string;
+  lat: number;
+  lon: number;
+  runway_ft?: number | null;
+  food?: boolean | null;
+}
+/**
+ * A fix as the planner reads it (wingtip.fixes): a navaid with its own magnetic variation (east positive), a VFR waypoint or any other.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsFix".
+ */
+export interface RouteOptionsFix {
+  ident: string;
+  lat: number;
+  lon: number;
+  navaid?: boolean | null;
+  vfr?: boolean | null;
+  kind?: string | null;
+  mag_var?: number | null;
+}
+export interface RouteOptionsFrameAnswer {
+  lat0: number;
+  lon0: number;
+  rows: number;
+  cols: number;
+  cell_deg: number;
+  per_cell: number;
+  top_ft: number;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  window: [number, number];
+  altitudes_ft: number[];
+  lowest_cruise_ft: number;
+  metars: boolean;
+  /**
+   * @minItems 4
+   * @maxItems 4
+   */
+  bbox: [number, number, number, number];
+  /**
+   * @minItems 4
+   * @maxItems 4
+   */
+  data_box: [number, number, number, number];
+}
+export interface RouteOptionsAnswer {
+  options: RouteOption[];
+  own: RouteOption;
+  filed: RouteOption | null;
+  current_path: [number, number][];
+  direct: number[];
+  ends: number[];
+  current: number[];
+  current_along: RouteOptionsAlong;
+  current_marginal: number[];
+  hazards: RouteOptionsHazard[];
+  unchecked: string[];
+  food_unread: RouteOptionsFoodUnread[];
+}
+/**
+ * One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOption".
+ */
+export interface RouteOption {
+  kind: string;
+  kinds: string[];
+  title: string;
+  stops: string[];
+  fuel: string[];
+  food: string[];
+  path: [number, number][];
+  distance_nm: number;
+  air_min: number;
+  ground_min: number;
+  fuel_gal: number;
+  landings: number;
+  crosses: number[];
+  marginal: number[];
+  bands: RouteOptionsBand[];
+  tail_kt: number;
+  floor_ft: number;
+  water_nm: number;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsBand".
+ */
+export interface RouteOptionsBand {
+  kind: "vfr" | "mvfr" | "ifr" | "storm";
+  min: number;
+}
+/**
+ * What a way meets: its weather as runs by the minutes they last, the mean wind along it (positive a tailwind), its floor (the highest ground with 14 CFR 91.119's 1,000 ft) and its miles out of glide of dry land.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsAlong".
+ */
+export interface RouteOptionsAlong {
+  bands: RouteOptionsBand[];
+  tail_kt: number;
+  floor_ft: number;
+  water_nm: number;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsHazard".
+ */
+export interface RouteOptionsHazard {
+  kind: string;
+  name: string;
+}
+export interface RouteOptionsFoodUnread {
+  ident: string;
+  lat: number;
+  lon: number;
+}
+export interface TerrainWayFrameInput {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  ceiling_ft: number;
+}
+export interface TerrainWayFrameAnswer {
+  lat0: number;
+  lon0: number;
+  rows: number;
+  cols: number;
+  cell_deg: number;
+  per_cell: number;
+  top_ft: number;
+  /**
+   * @minItems 4
+   * @maxItems 4
+   */
+  data_box: [number, number, number, number];
+}
+export interface TerrainWayRoundInput {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  ceiling_ft: number;
+  terrain_ft: number[];
+  fields?: TerrainWayField[] | null;
+}
+export interface TerrainWayField {
+  ident: string;
+  name: string;
+  lat: number;
+  lon: number;
+}
+export interface TerrainWayStone {
+  ident: string | null;
+  name: string | null;
+  lat: number;
+  lon: number;
+}
+export interface FrdNearInput {
+  lat: number;
+  lon: number;
+  max_nm?: number | null;
+  now_s: number;
+  fixes: RouteOptionsFix[];
+}
+export interface FuelStopsInput {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  fuel_per_nm: number;
+  min_per_nm: number;
+  usable_gal: number;
+  taxi_gal: number;
+  reserve_gal: number;
+  ground_min?: number | null;
+  skip?: string[] | null;
+  fields?: FuelField[] | null;
+}
+/**
+ * A public field as NASR's APT_BASE has it (its ICAO ident where it has one, and the FAA's), with what fuel it sells and its longest open paved runway (OurAirports' runways).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "FuelField".
+ */
+export interface FuelField {
+  ident: string;
+  faa_ident?: string | null;
+  name?: string | null;
+  city?: string | null;
+  lat: number;
+  lon: number;
+  elevation_ft?: number | null;
+  fuel_types?: string | null;
+  runway_ft?: number | null;
+}
+export interface FuelStopsAnswer {
+  stops: FuelStop[];
+  choices: FuelStop[];
+}
+/**
+ * A field to land at for fuel: its miles from the flight's departure and those it adds to the straight line, the fuel left on landing and the minutes flown to it.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "FuelStop".
+ */
+export interface FuelStop {
+  ident: string;
+  name: string;
+  city: string;
+  lat: number;
+  lon: number;
+  runway_ft: number;
+  elevation_ft: number | null;
+  fuel_types: string;
+  from_nm: number;
+  added_nm: number;
+  lands_with_gal: number;
+  minutes: number;
+}
+export interface FieldsAlongInput {
+  flights: FieldsAlongFlight[];
+  skip?: string[] | null;
+  fields?: FuelField[] | null;
+}
+export interface FieldsAlongFlight {
+  departure: string;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+}
+export interface FieldAlong {
+  ident: string;
+  name: string;
+  city: string;
+  lat: number;
+  lon: number;
+  runway_ft: number;
+  elevation_ft: number | null;
+  from_nm: number;
+  added_nm: number;
+  flight: number;
+  departure: string;
+  fuel_types: string[];
+}
+export interface ClassBEnteredInput {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  altitude_ft: number;
+  shelves?: ClassBShelf[] | null;
+}
+/**
+ * A Class B shelf other than the flight's own (whose surface area holds one of its ends), as the FAA's Class Airspace shapefile has it: its floor and ceiling, ft MSL, and its rings of [lat, lon].
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ClassBShelf".
+ */
+export interface ClassBShelf {
+  floor_ft_msl?: number | null;
+  ceiling_ft_msl?: number | null;
+  rings: [number, number][][];
+}
+export interface ClassBDetoursInput {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  below_ft: number;
+  shelves?: ClassBShelf[] | null;
+  fixes?: ClassBDetourFix[] | null;
+}
+export interface ClassBDetourFix {
+  ident: string;
+  lat: number;
+  lon: number;
+  vfr?: boolean | null;
+  kind?: string | null;
+}
+export interface ClassBDetour {
+  ident: string;
+  kind: string;
+  added_nm: number;
+}
+export interface ServiceCeilingOnTheDayInput {
+  /**
+   * The handbook's service ceiling, a standard day's.
+   */
+  service_ceiling_ft: number;
+  /**
+   * The forecast temperatures aloft, [[altitude_ft, temp_c], ...].
+   */
+  profile: [number, number][];
+}
+export interface FieldTafInput {
+  ident: string;
+  /**
+   * Where the field is; null where it is not known (its own TAF only).
+   */
+  at?: {
+    lat: number;
+    lon: number;
+  } | null;
+  stations: {
+    icao_id: string;
+    lat?: number | null;
+    lon?: number | null;
+  }[];
+}
+export interface FieldTafAnswer {
+  /**
+   * The station's index in `stations`; null for none within reach.
+   */
+  index: number | null;
+  /**
+   * How far the nearest is; null for the field's own.
+   */
+  nm: number | null;
+  /**
+   * How far a TAF is taken to speak for a field without its own.
+   */
+  reach_nm: number;
+}
+export interface RadioScriptInput {
+  /**
+   * As spoken (radio_call_sign).
+   */
+  call_sign: string;
+  airports: {
+    ident: string;
+    name?: string | null;
+    airspace_class?: string | null;
+    frequencies: {
+      type?: string | null;
+      description?: string | null;
+      frequency_mhz?: number | null;
+    }[];
+    pattern_altitude_ft?: number | null;
+    /**
+     * The runway end the host picked (gonogo_runway_flown); null where none has a heading.
+     */
+    takeoff?: {
+      /**
+       * As painted, "27".
+       */
+      ident: string;
+      /**
+       * "left" or "right" (91.126(b)(1)).
+       */
+      traffic?: string | null;
+    } | null;
+    /**
+     * The runway end the host picked (gonogo_runway_flown); null where none has a heading.
+     */
+    landing?: {
+      /**
+       * As painted, "27".
+       */
+      ident: string;
+      /**
+       * "left" or "right" (91.126(b)(1)).
+       */
+      traffic?: string | null;
+    } | null;
+  }[];
+  legs: {
+    from: string;
+    to: string;
+    true_course_deg: number;
+    altitude_ft: number;
+  }[];
+}
+export interface RadioCallSignInput {
+  make: string;
+  tail?: string | null;
+}
+export interface RadioPlaceNameInput {
+  name?: string | null;
+  ident: string;
+}
+export interface SoloStandingInput {
+  /**
+   * The last day it is good, YYYY-MM-DD; null for none on record.
+   */
+  until?: string | null;
+  today: string;
+}
+export interface SoloStandingAnswer {
+  days: number | null;
+  standing: "ok" | "caution" | "stop" | "unknown";
 }
