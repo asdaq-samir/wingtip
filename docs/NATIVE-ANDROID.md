@@ -38,7 +38,11 @@ owner's word. Its package is `app.wingtipmaps.android.native`.
     opens);
   - `tiles/TileTemplate.kt`: the tile address, the web app's and the iOS
     app's;
-  - `map/ChartMap.kt`: the chart on MapLibre, and the route's line;
+  - `map/`: the map. `ChartMap` (the MapLibre view, its camera, the
+    route, own ship and the path flown), `MapStyle` (the first style as
+    JSON: the chart and the overlay tiles' layers, the web's
+    `glStyle.ts` and `glOverlays.ts`), `OverlayPictures` (the symbols'
+    pictures, drawn with Canvas) and `MapLoading` (the turning mark);
   - `ui/`: Material 3 screens. `RootScreen` (the map under a bottom
     sheet with the four tabs: FPL, Airport, Aircraft, Setup, and the
     figures' strip at the sheet's foot), one file per tab, `Theme` and
@@ -89,13 +93,49 @@ owner's word. Its package is `app.wingtipmaps.android.native`.
 
 The map is MapLibre Native (`org.maplibre.gl:android-sdk`): the open
 native map, with no API key, no account and no vendor's usage terms,
-which is why it draws the chart rather than Google Maps. The style is
-empty but for one raster source over the FAA chart's tiles
-(`TileTemplate`) and the route's line: the chart is the whole picture,
-as it is on the website, and no vendor's base map lies under it. Its
-tiles go through the app's own OkHttp client, so a tile through the
-gateway carries the session's cookie and every tile is kept in the one
-cache.
+which is why it draws the chart rather than Google Maps. No vendor's
+base map lies under the chart: the FAA's chart is the whole picture, as
+it is on the website. Its tiles go through the app's own OkHttp client,
+so a tile through the gateway carries the session's cookie and every
+tile is kept in the one cache.
+
+The web's map is MapLibre GL JS, so the phone's style follows it
+closely (`map/MapStyle.kt` beside `apps/web/src/lib/map/gl/glStyle.ts`
+and `glOverlays.ts`):
+
+- **The chart** is the base layer's tiles, the 512-pixel `@2x` tiles
+  on any screen denser than 1x where the kind was drawn at them
+  (`chart_layers[].scales`), with the raster source's `tileSize` kept at
+  256 as the web's; the same chart at a region's level under it; a touch
+  more contrast and colour by day, dimmed in the dark theme
+  (`chartPaint`).
+- **The overlays** -- Class B, C and D with their altitudes in a dark
+  tab on each ring, the airports in the sectional's symbols (blue
+  towered, magenta not; R, M and H for private, military and heliport),
+  the VORs on their blue tags, the low enroute fixes, the VFR waypoints
+  and, close in, the runways -- come from the planner's PMTiles archive
+  of the cycle (`/api/overlay-tiles`, `wingtip.vector_tiles`), read in
+  byte ranges by MapLibre Native's own `pmtiles://` source (11.7 and
+  later). They are in the first style with the chart, so they draw per
+  tile with it and follow a pinch; nothing is asked of the planner or the
+  engine for the view. The archive's name is kept in the app's files
+  (`Charts`), and the first style waits at most 1.5 s for it.
+- **The labels** are Inter at weight 700 as on the web, as signed
+  distance field glyphs in the app's assets (`assets/glyphs/Inter-Bold`,
+  written by `scripts/build/map-glyphs.py` from the web's Inter), so no
+  glyph server is asked.
+- **The map is shown as one thing**: Wingtip's mark turns in the middle
+  of what the sheet leaves (`MapLoading`, still with the system's
+  animations off) until the map is first at rest with the chart and the
+  overlays drawn, or 2.5 s after its style was set, then fades out over
+  150 ms. The map opens on the airplane's last position (kept by
+  `OwnShip`, at most once a minute) or the whole country, with the sheet's
+  peek as its padding as it is when the map opens.
+
+Not yet on the phone: the airports' weather pips (the METARs of the
+view), the settings that hide layers, taps and cards on the overlays,
+the terminal area chart, and the engine's in-view readers (`InView.kt`)
+as the overlays' source in the air with no signal.
 
 ## Building
 

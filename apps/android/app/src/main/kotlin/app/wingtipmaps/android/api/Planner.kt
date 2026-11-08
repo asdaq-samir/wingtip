@@ -85,6 +85,15 @@ object Planner {
     /** Which chart the map draws and where its tiles are (/api/chart). */
     suspend fun chart(): ChartInfo = Gateway.json.decodeFromString(fetch("/api/chart"))
 
+    /** The cycle's overlay tiles' archive (/api/overlay-tiles); null where
+     *  the planner has not built it yet (404, after the cycle pack). */
+    suspend fun overlayTiles(): OverlayTiles? =
+        try {
+            Gateway.json.decodeFromString<OverlayTiles>(fetch("/api/overlay-tiles"))
+        } catch (e: Failure) {
+            if (e.status == 404) null else throw e
+        }
+
     @Serializable
     private class Airports(val airports: List<AirportSuggestion>)
 

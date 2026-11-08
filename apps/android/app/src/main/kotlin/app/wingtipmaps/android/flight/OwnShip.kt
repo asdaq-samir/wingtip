@@ -12,6 +12,7 @@ import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.location.LocationCompat
 import androidx.core.location.altitude.AltitudeConverterCompat
 import app.wingtipmaps.android.api.AheadAlert
@@ -97,6 +98,21 @@ class OwnShip private constructor(private val context: Context) {
     private var aheadEvery: Ticker.Registration? = null
     private var reading = false
     private var serving = false
+
+    /** Where the airplane last was, kept across launches so the map opens
+     *  on it (the web's useOwnShip lastFix): written at most once a
+     *  minute, the position alone. */
+    private val kept = context.getSharedPreferences("own-ship", Context.MODE_PRIVATE)
+    private var keptAtMs = 0L
+
+    /** The last position kept, latitude and longitude; null before the
+     *  first fix the phone ever read. */
+    val lastPosition: Pair<Double, Double>?
+        get() = if (!kept.contains("lat")) {
+            null
+        } else {
+            Double.fromBits(kept.getLong("lat", 0)) to Double.fromBits(kept.getLong("lon", 0))
+        }
 
     /** The geoid's conversion, one fix at a time and in order, off the
      *  main thread: its first call reads the model from disk. */
@@ -195,6 +211,13 @@ class OwnShip private constructor(private val context: Context) {
         // alerts.
         if (_fix.value.let { it != null && fix.atMs <= it.atMs }) return
         _fix.value = fix
+        if (fix.atMs - keptAtMs >= KEEP_EVERY_MS) {
+            keptAtMs = fix.atMs
+            kept.edit {
+                putLong("lat", fix.lat.toRawBits())
+                putLong("lon", fix.lon.toRawBits())
+            }
+        }
         // The path flown, and the phone's position kept with the screen
         // off only while flying: the service is started as the airplane
         // reaches flying speed and stopped as it slows below it.
@@ -265,6 +288,8 @@ class OwnShip private constructor(private val context: Context) {
          *  never the ellipsoid's height in its place. */
         fun mslFeet(mslMeters: Double?): Double? = mslMeters?.let { it * FT_PER_M }
 
+        /** How often the position is kept for the next launch's map. */
+        const val KEEP_EVERY_MS = 60_000L
         /** One fix a second. */
         const val EVERY_MS = 1000L
         /** How often what is ahead is asked while moving; the planner looks

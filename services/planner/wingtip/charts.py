@@ -1017,19 +1017,13 @@ def encode_png(rgba: np.ndarray) -> bytes:
     sheet's palette to begin with, so the quantiser has nothing to
     approximate. The octree quantiser is the one that keeps alpha.
 
-    A 512-pixel "@2x" tile is the exception: it is the sheet resampled
-    (Lanczos, in RGB) to twice its pixels, so its edges are new colours
-    the palette never had, and quantising them back to 256 threw away
-    the smooth edges of lines and lettering that make it worth drawing
-    -- the owner found the map less crisp than ForeFlight's on an iPhone
-    (2026-11-07). It is kept in full colour, losslessly: RGB where every
-    pixel is opaque, RGBA where the sheet's edge leaves some clear."""
-    if rgba.shape[0] > 256:
-        opaque = bool((rgba[:, :, 3] == 255).all())
-        image = Image.fromarray(rgba[:, :, :3] if opaque else rgba, "RGB" if opaque else "RGBA")
-        buffer = io.BytesIO()
-        image.save(buffer, format="PNG", optimize=True)
-        return buffer.getvalue()
+    A 512-pixel "@2x" tile is the sheet resampled (Lanczos) to twice its
+    pixels, so its edges are colours the sheet never had; 256 of them
+    still hold those edges: on 150 sampled @2x tiles the palette came
+    to 40.9 dB PSNR against the full-colour original, with no
+    difference to see side by side at twice the size, at a quarter of
+    the bytes -- 29 GB for a cycle's @2x tiles where full colour (kept
+    from 2026-11-07 to 11-08) took 115 (the owner, 2026-11-08)."""
     image = Image.fromarray(rgba, "RGBA").quantize(256, method=Image.Quantize.FASTOCTREE)
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
