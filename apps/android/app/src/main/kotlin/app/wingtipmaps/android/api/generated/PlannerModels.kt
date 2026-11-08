@@ -1069,6 +1069,14 @@ data class OverlayTilesLayer (
 )
 
 /**
+ * The browser key for Google's Map Tiles API (routers/basemaps).
+ */
+@Serializable
+data class GoogleMaps (
+    val key: String
+)
+
+/**
  * A field's instrument procedures, approaches first, from the CIFP
  * of the AIRAC cycle that took effect on `cycle` (YYMMDD); none for a
  * field with none.

@@ -26,10 +26,13 @@ object OverlayPictures {
      *  symbol is laid out without its picture. [density] is the screen's
      *  pixels to a dp. */
     fun addTo(builder: Style.Builder, density: Float) {
+        // 2 inks, 4 sizes, 5 pips and 4 uses: 160 small pictures, as the web's.
         for (towered in listOf(true, false)) {
             for (size in MapStyle.SIZES) {
-                for (use in MapStyle.USES) {
-                    builder.withImage(MapStyle.airportMarkId(towered, size, use), airport(towered, size, use, density))
+                for (pip in MapStyle.PIPS) {
+                    for (use in MapStyle.USES) {
+                        builder.withImage(MapStyle.airportMarkId(towered, size, pip, use), airport(towered, size, pip, use, density))
+                    }
                 }
             }
         }
@@ -38,6 +41,12 @@ object OverlayPictures {
         builder.withImage("nav|vfr", triangle(12f, 6f, 1f, 11.2f, 10.4f, 0.8f, ink(MapStyle.VFR_GREEN), Color.WHITE, 1.4f, density))
         stretched(builder, MapStyle.NAV_TAG, tag(density), 4f, density)
         stretched(builder, MapStyle.AIRSPACE_TAB, airspaceTab(density), 4f, density)
+        for (near in listOf(true, false)) {
+            for (hasTrack in listOf(true, false)) {
+                builder.withImage(MapStyle.trafficIconId(near, hasTrack), airplane(near, hasTrack, density))
+            }
+        }
+        stretched(builder, MapStyle.TRAFFIC_TAG, trafficTag(density), 4f, density)
     }
 
     /** A picture `inset` dp each way kept as drawn and the middle
@@ -85,8 +94,10 @@ object OverlayPictures {
     /** A field's mark (the web's sectionalAirportSvg): a solid disc, blue
      *  towered and magenta not, edged in white; a private field the
      *  guide's small circle with an "R", a military one with an "M", a
-     *  heliport with an "H". */
-    private fun airport(towered: Boolean, size: String, use: String, density: Float): Bitmap {
+     *  heliport with an "H"; its weather (its METAR's flight category's
+     *  colour, `pip`) a small dot at its lower right, edged in white,
+     *  where it has a report. */
+    private fun airport(towered: Boolean, size: String, pip: String, use: String, density: Float): Bitmap {
         val colour = ink(if (towered) MapStyle.BLUE else MapStyle.MAGENTA)
         val letter = when (use) {
             "private" -> "R"
@@ -109,7 +120,49 @@ object OverlayPictures {
                 drawCircle(0f, 0f, r, fill(colour))
                 drawCircle(0f, 0f, r, stroke(Color.WHITE, 1.5f))
             }
+            if (pip.isNotEmpty()) {
+                drawCircle(5.5f, 5.5f, 3f, fill(ink(pip)))
+                drawCircle(5.5f, 5.5f, 3f, stroke(Color.WHITE, 1.2f))
+            }
         }
+    }
+
+    /** How big a traffic airplane is drawn, dp (the web's TRAFFIC_MARK, 16
+     *  at the owner's ask, 2026-10-28), the chevron in its 22-unit box. */
+    private const val TRAFFIC_MARK = 16f
+
+    /** An airplane of the traffic (the web's trafficIcon): a chevron
+     *  pointing up, which the layer turns to its track, in its colour with
+     *  a white casing; a dot where it sends no track. The casing 2 dp on
+     *  the screen however the box is scaled. */
+    private fun airplane(near: Boolean, hasTrack: Boolean, density: Float): Bitmap {
+        val colour = ink(if (near) MapStyle.TRAFFIC_NEAR else MapStyle.TRAFFIC_FAR)
+        val scale = TRAFFIC_MARK / 22f
+        // A little room round the box for the casing's outer half.
+        return picture(TRAFFIC_MARK + 4f, density, origin = 2f) {
+            scale(scale, scale)
+            val casing = 2f / scale
+            if (hasTrack) {
+                val chevron = Path().apply {
+                    moveTo(11f, 2f)
+                    lineTo(18f, 19f)
+                    lineTo(11f, 14.5f)
+                    lineTo(4f, 19f)
+                    close()
+                }
+                drawPath(chevron, fill(colour))
+                drawPath(chevron, stroke(Color.WHITE, casing))
+            } else {
+                drawCircle(11f, 11f, 5f, fill(colour))
+                drawCircle(11f, 11f, 5f, stroke(Color.WHITE, casing))
+            }
+        }
+    }
+
+    /** The dark tag under an airplane its height and callsign sit on (the
+     *  web's #1f2933 at 80 %), stretched to the text. */
+    private fun trafficTag(density: Float): Bitmap = picture(12f, density) {
+        drawRoundRect(RectF(0f, 0f, 12f, 12f), 3f, 3f, fill(Color.argb(204, 0x1f, 0x29, 0x33)))
     }
 
     /** The VOR's hexagon: white, edged in the chart's blue, a dot at its

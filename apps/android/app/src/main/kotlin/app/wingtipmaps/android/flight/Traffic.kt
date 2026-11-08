@@ -5,7 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.preferencesDataStore
+import app.wingtipmaps.android.settings
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.api.name
@@ -26,10 +26,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.roundToInt
-
-/** The app's settings file (Jetpack DataStore), for the few switches a
- *  flight piece keeps: the traffic layer on or off. */
-private val Context.settings: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 /**
  * The traffic layer's switch, kept in the app's settings file under
@@ -134,7 +130,11 @@ class Traffic private constructor(private val context: Context, private val tick
         }
         if (!on.value) return
         val age = answer.ageS ?: 0.0
-        val planes = answer.aircraft.filter { (it.seenS ?: 0.0) + age <= STALE_S }
+        val heard = answer.aircraft.filter { (it.seenS ?: 0.0) + age <= STALE_S }
+        // Own ship's own transponder, heard by the receivers on the ground,
+        // is not traffic to itself (the engine's `own_ship_hex`).
+        val own = ownShipHex(heard.map { it.copy(seenS = (it.seenS ?: 0.0) + age) }, fix)
+        val planes = heard.filter { it.hex != own }
         _planes.value = planes
         _marks.value = marks(planes, fix?.altitudeFt)
         _source.value = answer.source
@@ -215,6 +215,29 @@ class Traffic private constructor(private val context: Context, private val tick
 
         @Serializable
         private class MarksAsk(@SerialName("own_ft") val ownFt: Double?, val planes: List<PlaneAsk>)
+
+        @Serializable
+        private class EngineFix(
+            val lat: Double,
+            val lon: Double,
+            @SerialName("heading_deg") val headingDeg: Double?,
+            @SerialName("speed_kt") val speedKt: Double?,
+            @SerialName("altitude_ft") val altitudeFt: Double?,
+        )
+
+        @Serializable
+        private class OwnAsk(val planes: List<TrafficAircraft>, val fix: EngineFix?)
+
+        /** Which airplane heard is own ship's own transponder -- the one
+         *  nearest the fix, within half a mile and 400 ft, going the same
+         *  way at about the same speed (the engine's `own_ship_hex`, the
+         *  web's ownShipHex) -- or null; each airplane's `seen_s` with the
+         *  answer's age in it. */
+        fun ownShipHex(planes: List<TrafficAircraft>, fix: OwnShip.Fix?): String? {
+            if (fix == null || planes.isEmpty()) return null
+            val ask = OwnAsk(planes, EngineFix(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt, fix.altitudeFt))
+            return runCatching { Engine.call<OwnAsk, String?>("own_ship_hex", ask) }.getOrNull()
+        }
 
         /** Each airplane's mark, in one call (the engine's `traffic_marks`,
          *  the web app's trafficLabel); none where the engine cannot answer. */

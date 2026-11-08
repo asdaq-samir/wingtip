@@ -4,6 +4,7 @@ import app.wingtipmaps.android.engine.Engine
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.acos
+import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -37,6 +38,19 @@ object Geo {
         val y = sin(dLon) * cos(la2)
         val x = cos(la1) * sin(la2) - sin(la1) * cos(la2) * cos(dLon)
         return ((atan2(y, x) / RAD) + 360) % 360
+    }
+
+    /** The point `nm` along a great circle from a point on a true
+     *  bearing: where an airplane is, carried on along its track between
+     *  reports (the web's lib/map/traffic carriedOn). */
+    fun destination(lat: Double, lon: Double, bearingDeg: Double, nm: Double): Pair<Double, Double> {
+        val d = nm / EARTH_NM
+        val b = bearingDeg * RAD
+        val la1 = lat * RAD
+        val lo1 = lon * RAD
+        val la2 = asin(sin(la1) * cos(d) + cos(la1) * sin(d) * cos(b))
+        val lo2 = lo1 + atan2(sin(b) * sin(d) * cos(la1), cos(d) - sin(la1) * sin(la2))
+        return la2 / RAD to ((lo2 / RAD + 540) % 360 - 180)
     }
 
     @Serializable

@@ -134,7 +134,7 @@ private fun SuggestionRow(found: AirportSuggestion, onOpen: () -> Unit) {
 
 /** The field's card, the part of it phase 0 shows. */
 @Composable
-private fun PlaceCard(place: AirportPlace) {
+fun PlaceCard(place: AirportPlace) {
     Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(place.name, style = MaterialTheme.typography.titleLarge)
         val where = listOfNotNull(place.ident, place.municipality, place.region).joinToString(" · ")
