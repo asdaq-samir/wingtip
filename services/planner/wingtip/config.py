@@ -112,6 +112,9 @@ class Settings(BaseSettings):
     charts_fetch_for_tiles: bool = True
     #: wingtip.filed_routes' SQLite store of the FAA's filed routes.
     filed_store: Path = DATA_DIR / "raw" / "faa_filed" / "filed.sqlite"
+    #: Where the weather service (services/weather) writes the weather it
+    #: fetches and the planner reads it (wingtip.weather_store).
+    weather_store: Path = DATA_DIR / "raw" / "weather"
     #: wingtip.notams' SQLite store of NOTAMs.
     notam_store: Path = DATA_DIR / "raw" / "faa_notams" / "notams.sqlite"
     #: SageMaker's channel folders and model folder, set only inside a Training Job (wingtip.pipeline).

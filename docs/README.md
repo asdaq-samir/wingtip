@@ -97,11 +97,19 @@ Four layers, each with one job:
   input and answer are typed in `engine/contract/engine.schema.json`, from which
   the web's and the phones' types are generated.
 - **The planner** (`planner` over `services/planner/wingtip`, FastAPI):
-  works out a flight. It fetches the FAA's and the weather's data, reads
-  the chart and scores the checkpoints with the chart model in its own
-  process, runs the AI features (the assistant, the written briefing) with the
-  Anthropic SDK, and asks the engine every rule through
-  `wingtip_native.call`.
+  works out a flight. It fetches the FAA's data, reads the weather the
+  weather service keeps (below), reads the chart and scores the
+  checkpoints with the chart model in its own process, runs the AI
+  features (the assistant, the written briefing) with the Anthropic SDK,
+  and asks the engine every rule through `wingtip_native.call`.
+- **The weather service** (`weather`, `services/weather`): fetches the
+  weather on a schedule -- aviationweather.gov's METARs, TAFs, SIGMETs,
+  PIREPs and G-AIRMETs, the GFS's winds aloft and GLMP from NOMADS,
+  tfr.faa.gov's TFRs and the radar's time -- parses each and writes it to
+  the weather store on the data volume (`data/raw/weather`,
+  `wingtip.weather_store`), which the planner reads, so no pilot's
+  request waits on a live fetch (#535). Decoding rules (the ceiling, the
+  flight category, each product's validity) stay in the engine.
 - **Spring Boot** (`services/gateway`, the `gateway` service): who the pilot
   is and what they saved -- accounts, sign-in, aircraft, flights,
   logbook and endorsements, the public API, scheduled mail. It holds no
@@ -135,6 +143,7 @@ The system runs today as six Docker services (`retrain` is the training image ru
 | `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and model training, run as one-off jobs; `retrain` is the whole training run (`python -m wingtip.pipeline run`) in the training image, the container the developer console's Retrain starts |
 | `ml` | Jupyter environment for model development and experimentation -- on demand, behind the `notebooks` profile: `docker compose up ml` |
 | `planner` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather, and the Claude features (the written briefing, checkpoint notes, words, the assistant) -- with the engine inside it for every rule |
+| `weather` | The weather the planner reads, fetched on a schedule into the weather store (`services/weather/README.md`): fast while a pilot is planning, slow otherwise; its health check says how fresh each product is |
 
 ![Current local architecture](architecture-current.svg)
 
@@ -182,7 +191,8 @@ comes from): the FAA's own VFR Sectional tile service — which the
 checkpoint detector reads directly — plus FAA NASR airport, navaid and
 obstacle datasets, FAA Class B/C/D airspace shapefiles, NOAA aviation
 weather (METARs, TAFs and SIGMETs from aviationweather.gov's cache
-files, refreshed every few minutes, rather than a query per route),
+files, fetched every few minutes by the weather service rather than a
+query per route),
 the magnetic-declination model, and OpenStreetMap via the Overpass API
 for the tabular feature pipeline.
 
@@ -394,7 +404,7 @@ $32 a month) and the runbook.
 
 | Local component | AWS target |
 |---|---|
-| `gateway`, `planner` | One EC2 server (`infra/docker-compose.prod.yml`), behind Caddy and CloudFront |
+| `gateway`, `planner`, `weather` | One EC2 server (`infra/docker-compose.prod.yml`), behind Caddy and CloudFront; `weather` held to 384 MB |
 | `db` | Postgres on the same server, dumped to S3 nightly |
 | Chart tiles | A Fargate Spot task per 56-day cycle, published to S3, served by CloudFront |
 | Mailpit | Amazon SES |
@@ -694,6 +704,7 @@ CI job breakdown is in the [Appendix](#appendix).
 | `docker compose run --rm pipeline-training python -m wingtip.model_registry evaluate` | Runs `evaluate`/`promote` | — |
 | `docker compose run --rm pipeline-training run` | The whole training run, every stage in order (`pipeline.run()`); each model promoted only if it beats the one serving. The console's Retrain starts the same thing as the `retrain` container (`docker compose create retrain` once) | — |
 | `docker compose up planner` | Planning + chart-vision API; `gateway` proxies to it and starts it | `8084` |
+| `docker compose up weather` | The weather service: fetches the weather into `data/raw/weather` for the planner | — |
 
 Notes:
 
@@ -754,9 +765,10 @@ empty commit:
 | `test-gateway` | `mvn test` — gateway's JUnit suite, including the Testcontainers Postgres test |
 | `e2e` | The browser suite (`apps/web/e2e`, Playwright) against the stack a pilot uses — the gateway and the planner built from the commit, Postgres and Mailpit — under `infra/docker-compose.ci.yml`, with the planner's reference data (about a gigabyte it fetches for itself) kept in the Actions cache between runs. Run on every push, and on a pull request that touches anything the stack is built from. Its images and the page are built once for each content key by `build (e2e)` and pulled by all eight shards, on a push and on a pull request from one of this repository's branches; only a fork's or Dependabot's pull request, whose token cannot push, has each shard build its own. |
 | `test-planner` | ruff + pytest over `services/planner/tests/` — its own dependency set (`services/planner/requirements-dev.txt`), separate from `test`'s unrelated `services/planner/wingtip` ones |
+| `test-weather` | ruff + pytest over `services/weather/tests/` — the weather service's fetches and parsers, and the planner's readers over what it stores |
 | `docs` | Regenerates Javadoc + godoc on every push/PR. wingtip's `pdoc` is made by the `test` job from the packages its tests have just installed, and uploaded as `pdoc-wingtip`. Output uploads as a `documentation` artifact. |
 | `build-images` | Builds every service Dockerfile, publishes each to GHCR on push to `main`. Every Python image's last build step imports that service's own code and the packages it imports lazily (`import app.main, rasterio.vrt, …`, `import wingtip.pipeline, …`), so a missing dependency fails the build -- here and in a local `docker compose build` alike -- the check that would have caught 2026-09-22's missing `pyproj` in four images |
-| `push-ecr` | Copies the two images the CloudFormation stack deploys (`gateway`, `planner`) from GHCR to ECR as `sha-<commit>` and `latest` via OIDC, the images CI tested rather than a rebuild, in the `production` environment the deploy role trusts; activates automatically once `AWS_ROLE_ARN`/`AWS_REGION` repo variables exist |
+| `push-ecr` | Copies the three images the CloudFormation stack deploys (`gateway`, `planner`, `weather`) from GHCR to ECR as `sha-<commit>` and `latest` via OIDC, the images CI tested rather than a rebuild, in the `production` environment the deploy role trusts; activates automatically once `AWS_ROLE_ARN`/`AWS_REGION` repo variables exist |
 
 `build-images` gates on the test jobs, so a failing test never produces a
 published image. A cold run (every cache empty, every path filter

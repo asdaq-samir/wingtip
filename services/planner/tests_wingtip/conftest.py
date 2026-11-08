@@ -5,6 +5,21 @@ from wingtip.config import get_settings
 
 
 @pytest.fixture(autouse=True)
+def _weather_store_of_its_own(tmp_path_factory, monkeypatch):
+    """Each test's weather store an empty folder of its own: none reads the
+    copies the weather service keeps in data/raw/weather, or leaves the
+    planner's `asked` mark there (wingtip.weather_store). A test about the
+    weather writes what it wants in it."""
+    from wingtip import weather_store
+
+    monkeypatch.setenv("WEATHER_STORE", str(tmp_path_factory.mktemp("weather")))
+    monkeypatch.setitem(weather_store._ASKED, "at", 0.0)
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
 def _no_cycle_pack(tmp_path_factory, monkeypatch):
     """No test reads the cycle pack the planner keeps in data/raw/packs:
     each starts with none, and those that want one write their own."""
