@@ -13,14 +13,10 @@ from fastapi import APIRouter, HTTPException, Query
 from wingtip import airports, navlog, pattern
 from wingtip.weather import WeatherServiceError
 
+from wingtip.engine import ask as engine
+
 from ..router_basics import DEFAULT_AIRCRAFT
-from ..figures import debrief as debrief_rules
-from ..figures import diversion as diversion_rules
-from ..figures import holding as holding_rules
-from ..figures import lost_comms as lost_rules
-from ..figures.schemas import (
-    Debrief, DebriefAnswer, DebriefAsk, DebriefTolerances, Diversion, Holding, LostComms, LostCommsAsk,
-)
+from ..figures.schemas import DebriefAnswer, DebriefAsk, Diversion, Holding, LostComms, LostCommsAsk
 from ..planning import aircraft_profile, forecast_hour_for
 from .plan import CruisePower, CruiseTas
 
@@ -63,14 +59,8 @@ def debrief(ask: DebriefAsk) -> DebriefAnswer:
     checkpoints = [c.model_dump() for c in ask.checkpoints]
     points = sorted((p.model_dump() for p in ask.points), key=lambda p: p["t"])
     patterns = _pattern_altitudes([c["name"] for c in checkpoints if c["category"] in FIELD_CATEGORIES])
-    found = debrief_rules.debrief(checkpoints, points, patterns)
-    return DebriefAnswer(
-        debrief=Debrief(**debrief_rules.marked(found)) if found else None,
-        tolerances=DebriefTolerances(
-            altitude_ft=debrief_rules.ALTITUDE_FT, course_deg=debrief_rules.COURSE_DEG, off_route_nm=debrief_rules.OFF_ROUTE_NM,
-            eta_min=debrief_rules.ETA_MIN, pattern_nm=debrief_rules.PATTERN_NM, pattern_ft=debrief_rules.PATTERN_FT,
-        ),
-    )
+    # The debrief, marked, and its tolerances: the engine's whole answer.
+    return DebriefAnswer.model_validate(engine("debrief", checkpoints=checkpoints, points=points, patterns=patterns))
 
 
 @router.get("/api/diversion")
@@ -108,7 +98,9 @@ def diversion(
         raise HTTPException(503, "The winds aloft could not be fetched for the diversion.") from err
     # The solution, its steps and the estimates checked, all in the
     # engine's words (wingtip_engine::figures::diversion).
-    worked = diversion_rules.drill(leg, place["ident"], {"mh": mh, "gs": gs, "ete": ete, "fuel": fuel})
+    worked = engine("diversion", true_course_deg=leg["true_course_deg"], distance_nm=leg["distance_nm"], tas_kt=leg["tas_kt"],
+                    fuel_burn_gph=leg["fuel_burn_gph"], magnetic_variation_deg=leg["magnetic_variation_deg"], wind=leg["wind"],
+                    to=place["ident"], mh=mh, gs=gs, ete=ete, fuel=fuel)
     return Diversion(
         to=place["ident"], name=place.get("name") or place["ident"], altitude_ft=altitude_ft,
         tas_kt=leg["tas_kt"], fuel_burn_gph=leg["fuel_burn_gph"], magnetic_variation_deg=leg["magnetic_variation_deg"],
@@ -135,25 +127,8 @@ def holding(
     reference, magnetic as a clearance gives it) and the altitude, the
     inbound and outbound headings and the outbound time that make the
     inbound leg a minute (a minute and a half above 14,000 ft MSL)."""
-    found = holding_rules.holding_entry(inbound, heading, turns)
-    # No altitude is taken as at or below 14,000 ft MSL, as the web's page
-    # does with its field blank: a minute's leg.
-    at = altitude_ft if altitude_ft is not None else 0
-    wind, problem = None, None
-    if tas_kt is not None and wind_from is not None and wind_kt is not None and altitude_ft is not None:
-        worked = holding_rules.holding_wind(inbound, tas_kt, wind_from, wind_kt, altitude_ft)
-        if worked:
-            words = holding_rules.wind_words(worked)
-            wind = {**worked, "inbound_words": words["inbound"], "outbound_words": words["outbound"], "time_words": words["time"]}
-        else:
-            problem = "A wind stronger than the airplane holds no heading."
-    return Holding(
-        entry=found["entry"], entry_name=holding_rules.ENTRY_NAME[found["entry"]],
-        steps=holding_rules.entry_steps(found["entry"], inbound, turns, at),
-        either=found["either"], either_name=holding_rules.ENTRY_NAME[found["either"]] if found["either"] else None,
-        approach_relative=holding_rules.approach_relative(inbound, heading),
-        wind=wind, wind_problem=problem,
-    )
+    return Holding.model_validate(engine("holding", inbound=inbound, heading=heading, turns=turns, tas_kt=tas_kt,
+                                         wind_from=wind_from, wind_kt=wind_kt, altitude_ft=altitude_ft))
 
 
 @router.post("/api/lost-comms")
@@ -165,10 +140,6 @@ def lost_comms(ask: LostCommsAsk) -> LostComms:
     to leave the clearance limit. A POST for the segments' list; it
     changes nothing."""
     segments = [{"name": s.name or "Segment", "minimum_ft": s.minimum_ft} for s in ask.segments]
-    flown = lost_rules.segment_altitudes(segments, ask.assigned_ft, ask.expected_ft, ask.expected_from)
-    return LostComms(
-        vfr=lost_rules.VFR_WORDS,
-        routes=lost_rules.ROUTES,
-        segments=[{**f, "words": lost_rules.fly_words(f)} for f in flown],
-        leave=lost_rules.leave_limit(ask.approach_fix, ask.efc.strip(), ask.eta.strip()),
-    )
+    return LostComms.model_validate(engine(
+        "lost_comms", segments=segments, assigned_ft=ask.assigned_ft, expected_ft=ask.expected_ft, expected_from=ask.expected_from,
+        approach_fix=ask.approach_fix, efc=ask.efc.strip(), eta=ask.eta.strip()))

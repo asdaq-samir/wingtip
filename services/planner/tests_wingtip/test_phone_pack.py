@@ -28,6 +28,7 @@ from shapely.geometry import Point, Polygon
 import wingtip_native
 from wingtip import airspace_at, geo, sua
 from wingtip import cycle_pack
+from wingtip.engine import ask as engine
 
 FIXTURES = Path(__file__).parent / "fixtures" / "native"
 PHONE = FIXTURES / "phone"
@@ -71,7 +72,7 @@ def phone(chicago, tmp_path):
 
 
 def _pack_at(folder: Path, lat: float, lon: float):
-    path = folder / f"{wingtip_native.region_of(lat, lon)}.pack"
+    path = folder / f"{engine('region_of', lat=lat, lon=lon)}.pack"
     return cycle_pack.Pack(path).mapped if path.exists() else None
 
 
@@ -104,7 +105,7 @@ def test_the_regions_are_named_alike_in_python_and_rust():
     points += list(zip(rng.uniform(-89, 89, 2000), rng.uniform(-180, 180, 2000)))
     for lat, lon in points:
         name = cycle_pack.region_of(lat, lon)
-        assert wingtip_native.region_of(lat, lon) == name, (lat, lon)
+        assert engine("region_of", lat=lat, lon=lon) == name, (lat, lon)
         west, south, east, north = cycle_pack.region_bounds(name)
         assert south <= lat < north and west <= lon < east, (lat, lon, name)
 
@@ -113,7 +114,7 @@ def test_the_engines_distance_is_vfr_geos():
     rng = np.random.default_rng(11)
     for lat, lon in zip(rng.uniform(20, 65, 500), rng.uniform(-160, -65, 500)):
         lat2, lon2 = lat + rng.uniform(-3, 3), lon + rng.uniform(-4, 4)
-        assert abs(wingtip_native.distance_nm(lat, lon, lat2, lon2) - geo.distance_nm(lat, lon, lat2, lon2)) < 1e-9
+        assert abs(engine("distance_nm", lat1=lat, lon1=lon, lat2=lat2, lon2=lon2) - geo.distance_nm(lat, lon, lat2, lon2)) < 1e-9
 
 
 def test_the_real_taps_answer_as_the_planner_at_any_ground(chicago, phone):

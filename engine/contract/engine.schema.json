@@ -231,6 +231,51 @@
       ],
       "additionalProperties": false
     },
+    "hold_entry": {
+      "description": "The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "HoldEntryInput",
+          "type": "object",
+          "properties": {
+            "arrival_deg": {
+              "type": "number",
+              "description": "The magnetic course flown to the fix."
+            },
+            "inbound_deg": {
+              "type": "number",
+              "description": "The hold's inbound course."
+            },
+            "turns": {
+              "enum": [
+                "right",
+                "left",
+                null
+              ],
+              "description": "Right where not given (standard)."
+            }
+          },
+          "required": [
+            "arrival_deg",
+            "inbound_deg"
+          ]
+        },
+        "answer": {
+          "title": "HoldEntryAnswer",
+          "enum": [
+            "direct",
+            "teardrop",
+            "parallel"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "lost_comms": {
       "description": "The planner's /api/lost-comms answer (14 CFR 91.185): VFR's words, the routes in the rule's order (c)(1), each segment's altitude (c)(2) and when to leave the clearance limit (c)(3).",
       "type": "object",
@@ -678,6 +723,89 @@
               "type": "null"
             }
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "wind_correction_deg": {
+      "description": "The nav log's wind correction angle, degrees, + right (the E6B's wind triangle); a crosswind past the airspeed held at 90.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "WindCorrectionDegInput",
+          "type": "object",
+          "properties": {
+            "true_course_deg": {
+              "type": "number"
+            },
+            "wind_from_deg": {
+              "type": "number"
+            },
+            "wind_kt": {
+              "type": "number"
+            },
+            "tas_kt": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "true_course_deg",
+            "wind_from_deg",
+            "wind_kt",
+            "tas_kt"
+          ]
+        },
+        "answer": {
+          "title": "WindCorrectionDegAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "groundspeed_kt": {
+      "description": "The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GroundspeedKtInput",
+          "type": "object",
+          "properties": {
+            "true_course_deg": {
+              "type": "number"
+            },
+            "wind_from_deg": {
+              "type": "number"
+            },
+            "wind_kt": {
+              "type": "number"
+            },
+            "tas_kt": {
+              "type": "number"
+            },
+            "wca_deg": {
+              "type": "number",
+              "description": "The wind correction angle (wind_correction_deg)."
+            }
+          },
+          "required": [
+            "true_course_deg",
+            "wind_from_deg",
+            "wind_kt",
+            "tas_kt",
+            "wca_deg"
+          ]
+        },
+        "answer": {
+          "title": "GroundspeedKtAnswer",
+          "type": "number"
         }
       },
       "required": [
@@ -1171,6 +1299,75 @@
       ],
       "additionalProperties": false
     },
+    "debrief_marked": {
+      "description": "The web's debrief (its figures, snake_case, no marks) marked against ACS PA.VI.A's tolerances as `debrief` marks its own, with the tolerances.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DebriefMarkedInput",
+          "type": "object",
+          "properties": {
+            "debrief": {
+              "type": "object",
+              "description": "The debrief's figures as `debrief` gives them, unmarked: legs, passes, patterns and the rest."
+            }
+          },
+          "required": [
+            "debrief"
+          ]
+        },
+        "answer": {
+          "title": "DebriefMarkedAnswer",
+          "type": "object",
+          "properties": {
+            "debrief": {
+              "type": "object"
+            },
+            "tolerances": {
+              "type": "object",
+              "properties": {
+                "altitude_ft": {
+                  "type": "number"
+                },
+                "course_deg": {
+                  "type": "number"
+                },
+                "off_route_nm": {
+                  "type": "number"
+                },
+                "eta_min": {
+                  "type": "number"
+                },
+                "pattern_nm": {
+                  "type": "number"
+                },
+                "pattern_ft": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "altitude_ft",
+                "course_deg",
+                "off_route_nm",
+                "eta_min",
+                "pattern_nm",
+                "pattern_ft"
+              ]
+            }
+          },
+          "required": [
+            "debrief",
+            "tolerances"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "checklist_read": {
       "description": "A checklist typed as text read into the gateway's ChecklistDto.",
       "type": "object",
@@ -1655,6 +1852,246 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "pilot_currency": {
+      "description": "Where the pilot stands on a day, from the logbook and the dates they give: passengers by day (14 CFR 61.57(a)) and at night (61.57(b)), the flight review (61.56(c)), the medical, the logbook's totals and instrument currency (61.57(c)(1), (d)). The gateway's CurrencyDto.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PilotCurrencyInput",
+          "type": "object",
+          "properties": {
+            "entries": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LogbookEntry"
+              }
+            },
+            "flight_review_on": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The last flight review, YYYY-MM-DD."
+            },
+            "medical_expires_on": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The day the medical expires, as the pilot gives it, YYYY-MM-DD."
+            },
+            "ipc_on": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The last instrument proficiency check (61.57(d)), YYYY-MM-DD."
+            },
+            "today": {
+              "type": "string",
+              "description": "YYYY-MM-DD."
+            }
+          },
+          "required": [
+            "entries",
+            "today"
+          ]
+        },
+        "answer": {
+          "title": "PilotCurrencyAnswer",
+          "type": "object",
+          "properties": {
+            "dayPassengersUntil": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "90 days after the third most recent landing (61.57(a)); null with fewer than three."
+            },
+            "nightPassengersUntil": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "90 days after the third most recent night full-stop landing (61.57(b))."
+            },
+            "flightReviewOn": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "YYYY-MM-DD; null where none can be had."
+            },
+            "flightReviewUntil": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The end of the 24th calendar month after the flight review's (61.56(c))."
+            },
+            "medicalExpiresOn": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "YYYY-MM-DD; null where none can be had."
+            },
+            "totalHours": {
+              "type": "number",
+              "description": "Every entry's hours, to the tenth."
+            },
+            "nightHours": {
+              "type": "number",
+              "description": "To the tenth."
+            },
+            "crossCountryHours": {
+              "type": "number",
+              "description": "To the tenth."
+            },
+            "landings": {
+              "type": "integer"
+            },
+            "flights": {
+              "type": "integer"
+            },
+            "instrumentCurrentUntil": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The last day of instrument currency (61.57(c)(1), or 61.57(d)'s check); in the past where it has lapsed, null where none is logged."
+            },
+            "ipcOn": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "YYYY-MM-DD; null where none can be had."
+            },
+            "ipcNeededAfter": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The day after which only an instrument proficiency check restores it: six calendar months past instrumentCurrentUntil (61.57(d))."
+            },
+            "approachesInWindow": {
+              "type": "integer",
+              "description": "Approaches logged in the 6 calendar months before this one (61.57(c)(1)(i))."
+            },
+            "holdingInWindow": {
+              "type": "boolean",
+              "description": "Holding logged in them (61.57(c)(1)(ii))."
+            },
+            "trackingInWindow": {
+              "type": "boolean",
+              "description": "Intercepting and tracking courses logged in them (61.57(c)(1)(iii))."
+            }
+          },
+          "required": [
+            "dayPassengersUntil",
+            "nightPassengersUntil",
+            "flightReviewOn",
+            "flightReviewUntil",
+            "medicalExpiresOn",
+            "totalHours",
+            "nightHours",
+            "crossCountryHours",
+            "landings",
+            "flights",
+            "instrumentCurrentUntil",
+            "ipcOn",
+            "ipcNeededAfter",
+            "approachesInWindow",
+            "holdingInWindow",
+            "trackingInWindow"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "pilot_experience": {
+      "description": "A student's aeronautical experience for a private pilot certificate, airplane single-engine (14 CFR 61.109(a)), item by item as the logbook shows it on the day. The gateway's ExperienceItemDto each.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PilotExperienceInput",
+          "type": "object",
+          "properties": {
+            "entries": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LogbookEntry"
+              }
+            },
+            "today": {
+              "type": "string",
+              "description": "YYYY-MM-DD."
+            }
+          },
+          "required": [
+            "entries",
+            "today"
+          ]
+        },
+        "answer": {
+          "title": "PilotExperienceAnswer",
+          "type": "array",
+          "items": {
+            "title": "ExperienceItem",
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "rule": {
+                "type": "string",
+                "description": "Its paragraph, \"61.109(a)(5)(ii)\"."
+              },
+              "label": {
+                "type": "string"
+              },
+              "have": {
+                "type": "number"
+              },
+              "need": {
+                "type": "number"
+              },
+              "unit": {
+                "enum": [
+                  "h",
+                  "landings",
+                  "flights"
+                ]
+              },
+              "met": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "key",
+              "rule",
+              "label",
+              "have",
+              "need",
+              "unit",
+              "met"
+            ],
+            "additionalProperties": false
           }
         }
       },
@@ -2232,12 +2669,15 @@
             "date": {
               "type": "string",
               "description": "YYYY-MM-DD."
+            },
+            "year": {
+              "type": "number",
+              "description": "The model's decimal year (2026.5 mid-2026), in place of the date."
             }
           },
           "required": [
             "lat",
-            "lon",
-            "date"
+            "lon"
           ]
         },
         "answer": {
@@ -11704,12 +12144,16 @@
   "required": [
     "holding",
     "holding_leg_minutes",
+    "hold_entry",
     "lost_comms",
     "diversion",
     "wind_triangle",
+    "wind_correction_deg",
+    "groundspeed_kt",
     "diversion_reasonable",
     "debrief",
     "debrief_airborne",
+    "debrief_marked",
     "checklist_read",
     "checklist_write",
     "csv_rows",
@@ -11720,6 +12164,8 @@
     "endorsements_in_force",
     "endorsement_render",
     "acs_codes",
+    "pilot_currency",
+    "pilot_experience",
     "read_clearance",
     "read_atis",
     "cleared_route",
@@ -13628,6 +14074,105 @@
         "segment"
       ],
       "description": "What a lesson's step shows on the map: a fix ringed, a part of the procedure's line drawn over."
+    },
+    "LogbookEntry": {
+      "type": "object",
+      "description": "The gateway's LogbookEntry, camelCase: the columns the currency and 61.109 rules read. A column missing or null is none of it.",
+      "properties": {
+        "flownOn": {
+          "type": "string",
+          "description": "YYYY-MM-DD."
+        },
+        "totalHours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "nightHours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "crossCountryHours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "dayLandings": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Every landing, by day or at night (61.57(a))."
+        },
+        "nightLandings": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Landings to a full stop at night (61.57(b))."
+        },
+        "dualHours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "soloHours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "instrumentHours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "toweredLandings": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "distanceNm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "longestLegNm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "approaches": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "holding": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "tracking": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "flownOn"
+      ]
     },
     "MetarWindIn": {
       "title": "MetarWindIn",

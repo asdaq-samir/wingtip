@@ -16,11 +16,14 @@ build time from `services/planner/openapi.json` by the pom's
 openapi-generator plugin), which asks the Rust engine; Spring keeps identity and persistence, the
 things it is good at. The owner kept Java here on that line on
 2026-11-06 rather than folding it into the Python: the HTTP boundary is
-already clean and a merge would give a pilot nothing. Some rules are
-still in this app -- currency (14 CFR 61.56, 61.57), the 61.109
-checklist, endorsements and an instructor's dates -- and issue #482
-moves them into the engine, so a reminder will ask the planner whether
-a pilot is current rather than work it out; add no new ones here.
+already clean and a merge would give a pilot nothing. A pilot's
+currency (14 CFR 61.56, 61.57) and a student's 61.109 experience are the
+engine's: this app sends the logbook to the planner (`PlannerClient`,
+POST /api/pilot/currency and /api/pilot/experience) and keeps what it
+answers, a reminder email included. Some rules are still here -- the
+endorsements' validity and the 61.93 checks of a solo cross-country,
+the inspections' calendar months -- and issue #482 moves them into the
+engine; add no new ones here.
 
 ## Contents
 

@@ -246,9 +246,11 @@ run_area() {
         -e CARGO_TARGET_DIR=/target -w "/w/$key" "$RUST_IMAGE" sh -c "$cmd"
       ;;
     java)
-      docker run --rm -v "$here/services/gateway":/build -v /build/target -v fp-m2:/root/.m2 \
+      # services/, not the gateway alone: the pom generates the planner's
+      # models from ../planner/openapi.json.
+      docker run --rm -v "$here/services":/services -v /services/gateway/target -v fp-m2:/root/.m2 \
         -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
-        -w /build maven:3.9-eclipse-temurin-25 mvn -B -q test
+        -w /services/gateway maven:3.9-eclipse-temurin-25 mvn -B -q test
       ;;
     ios)
       local sim

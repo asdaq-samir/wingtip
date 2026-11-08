@@ -41,9 +41,10 @@ enum Engine {
         pack.withUnsafeBytes { raw in wt_pack_verify(raw.bindMemory(to: UInt8.self).baseAddress, raw.count) } == 1
     }
 
-    /// The region whose pack holds a point ("n40w088").
+    /// The region whose pack holds a point ("n40w088"), the engine's
+    /// `region_of` by name.
     static func region(lat: Double, lon: Double) -> String {
-        taken(wt_region_of(lat, lon)) ?? ""
+        (try? call("region_of", json: ["lat": lat, "lon": lon]) as String) ?? ""
     }
 
     /// What the radio said, all the phone can make of it with no signal

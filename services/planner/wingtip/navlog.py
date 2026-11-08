@@ -29,14 +29,17 @@ def wind_correction_angle_deg(true_course_deg: float, wind_dir_true_deg: float, 
     the right of true course (add to get true heading); negative, left.
     """
     # The engine's (wingtip_engine::flight), the phones' same triangle.
-    return wingtip_native.wind_correction_deg(true_course_deg, wind_dir_true_deg, wind_speed_kt, tas_kt)
+    return json.loads(wingtip_native.call("wind_correction_deg", json.dumps({
+        "true_course_deg": true_course_deg, "wind_from_deg": wind_dir_true_deg, "wind_kt": wind_speed_kt, "tas_kt": tas_kt})))
 
 
 def groundspeed_kt(true_course_deg: float, wind_dir_true_deg: float, wind_speed_kt: float, tas_kt: float, wca_deg: float) -> float:
     """True airspeed minus the wind's component along the course, once
     wca_deg (the wind correction angle) has already pointed the aircraft's
     nose to hold that course -- standard wind-triangle groundspeed."""
-    return wingtip_native.groundspeed_kt(true_course_deg, wind_dir_true_deg, wind_speed_kt, tas_kt, wca_deg)
+    return json.loads(wingtip_native.call("groundspeed_kt", json.dumps({
+        "true_course_deg": true_course_deg, "wind_from_deg": wind_dir_true_deg, "wind_kt": wind_speed_kt, "tas_kt": tas_kt,
+        "wca_deg": wca_deg})))
 
 
 def assemble_leg(
@@ -188,8 +191,8 @@ def totals(leg_list: list) -> dict:
 # 14 CFR 91.151: VFR needs fuel to the destination plus 30 minutes at
 # normal cruise by day, 45 at night -- the engine's figures
 # (wingtip_engine::flight), the phones' same.
-DAY_RESERVE_MIN = wingtip_native.reserve_min(False, False)
-NIGHT_RESERVE_MIN = wingtip_native.reserve_min(False, True)
+DAY_RESERVE_MIN = json.loads(wingtip_native.call("reserve_min", json.dumps({"ifr": False, "night": False})))
+NIGHT_RESERVE_MIN = json.loads(wingtip_native.call("reserve_min", json.dumps({"ifr": False, "night": True})))
 
 
 #: Fuel for engine start, taxi and takeoff, where a profile has no figure
@@ -209,7 +212,7 @@ def fuel_plan(total_fuel_gal: float | None, aircraft_profile: dict, night: bool 
     or night, after `alternate_gal`, the fuel from the destination to the
     alternate (91.167(a)(2)), where one is filed. The minutes are the
     engine's (flight.rs reserve_min)."""
-    reserve_min = wingtip_native.reserve_min(rules == "ifr", bool(night))
+    reserve_min = json.loads(wingtip_native.call("reserve_min", json.dumps({"ifr": rules == "ifr", "night": bool(night)})))
     reserve_gal = round(reserve_min / 60 * aircraft_profile["fuel_burn_gph"], 2)
     taxi_gal = aircraft_profile.get("taxi_fuel_gal", DEFAULT_TAXI_FUEL_GAL)
     required = None if total_fuel_gal is None else round(total_fuel_gal + taxi_gal + alternate_gal + reserve_gal, 1)

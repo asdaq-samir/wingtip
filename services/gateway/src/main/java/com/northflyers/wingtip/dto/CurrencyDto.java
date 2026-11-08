@@ -5,8 +5,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.lang.Nullable;
 
 /**
- * Where the pilot stands, from the logbook and the two dates they give
- * (see {@code CurrencyService}): the last day they may carry passengers
+ * Where the pilot stands, from the logbook and the dates they give, as
+ * the engine's pilot_currency works it out (asked through PlannerClient,
+ * whose answer has these members): the last day they may carry passengers
  * by day and at night, the last day of their flight review's 24
  * calendar months and of their medical -- each null where it cannot be
  * had -- the logbook's totals, and their instrument currency.

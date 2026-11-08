@@ -3,16 +3,20 @@ package com.northflyers.wingtip;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.northflyers.wingtip.domain.Pilot;
+import com.northflyers.wingtip.dto.CurrencyDto;
 import com.northflyers.wingtip.repository.PilotRepository;
+import com.northflyers.wingtip.service.PlannerClient;
 import com.northflyers.wingtip.service.ReminderService;
 import java.time.LocalDate;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,9 +49,18 @@ class ReminderSendTest {
     @Autowired private PilotRepository pilots;
     @Autowired private JdbcTemplate jdbc;
     @MockitoBean private JavaMailSender mail;
+    @MockitoBean private PlannerClient planner;
     @Value("${MAIL_FROM:no-reply@northflyers.com}") private String from;
 
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 11);
+
+    /** The planner works the currency out (the engine's rule, tested
+     *  there); here it answers with the medical's day as the pilot gave it. */
+    @BeforeEach
+    void plannerGivesTheMedical() {
+        given(planner.currency(any(), any(), any(), any(), any())).willAnswer(ask -> new CurrencyDto(
+                null, null, null, null, ask.getArgument(2), 0, 0, 0, 0, 0, null, null, null, 0, false, false));
+    }
 
     private Pilot pilotWithMedicalEnding(LocalDate on, boolean asked) {
         Pilot pilot = new Pilot(UUID.randomUUID() + "@example.com", "Test Pilot", "sub-" + UUID.randomUUID());

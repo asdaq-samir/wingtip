@@ -53,21 +53,6 @@ Java_app_wingtipmaps_android_engine_Engine_callNative(JNIEnv *env, jclass cls, j
     return out;
 }
 
-// The name of the region whose pack holds a point ("n40w088"), for the
-// packs the later phases keep for the air.
-JNIEXPORT jstring JNICALL
-Java_app_wingtipmaps_android_engine_Engine_regionOf(JNIEnv *env, jclass cls, jdouble lat, jdouble lon)
-{
-    (void)cls;
-    char *region = wt_region_of(lat, lon);
-    if (region == NULL) {
-        return NULL;
-    }
-    jstring out = (*env)->NewStringUTF(env, region);
-    wt_string_free(region);
-    return out;
-}
-
 // The packs kept on the phone (engine/Packs.kt, CyclePacks.kt): each
 // pack a direct ByteBuffer over its memory-mapped file, read in place
 // through GetDirectBufferAddress for the one call and never copied, as

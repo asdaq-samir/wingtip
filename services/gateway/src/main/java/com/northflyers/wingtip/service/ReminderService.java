@@ -24,8 +24,10 @@ import org.springframework.transaction.support.TransactionTemplate;
  * asked: 30 days before and again 7 days before the flight review's last
  * day (14 CFR 61.56(c)), the medical's (61.23), passengers by day and at
  * night (61.57(a), (b)) and instrument currency (61.57(c)) -- each as the
- * Logbook works it out (CurrencyService). Every morning (14:00 UTC, the
- * contiguous U.S.'s morning) one email lists what is coming up; each
+ * engine works it out, asked through the planner (PlannerClient#currency),
+ * a planner out of reach leaving the pilot's email for the next day.
+ * Every morning (14:00 UTC, the contiguous U.S.'s morning) one email
+ * lists what is coming up; each
  * reminder is sent once, recorded with what it was of and its day, so a
  * day missed sends it the next and a day repeated sends nothing twice.
  * Where the email cannot be sent, nothing is recorded, and it is tried
@@ -44,16 +46,16 @@ public class ReminderService {
 
     private final PilotRepository pilots;
     private final LogbookRepository logbook;
-    private final CurrencyService currency;
+    private final PlannerClient planner;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transaction;
     private final Mailer mail;
 
-    public ReminderService(PilotRepository pilots, LogbookRepository logbook, CurrencyService currency, JdbcTemplate jdbc,
+    public ReminderService(PilotRepository pilots, LogbookRepository logbook, PlannerClient planner, JdbcTemplate jdbc,
                            TransactionTemplate transaction, Mailer mail) {
         this.pilots = pilots;
         this.logbook = logbook;
-        this.currency = currency;
+        this.planner = planner;
         this.jdbc = jdbc;
         this.transaction = transaction;
         this.mail = mail;
@@ -98,7 +100,7 @@ public class ReminderService {
     /** The pilot's reminders due today and not yet sent, in one email.
      *  @return how many it held */
     public int sendTo(Pilot pilot, LocalDate today) {
-        CurrencyDto c = currency.currency(logbook.findByPilotIdOrderByFlownOnDescIdDesc(pilot.getId()),
+        CurrencyDto c = planner.currency(logbook.findByPilotIdOrderByFlownOnDescIdDesc(pilot.getId()),
                 pilot.getFlightReviewOn(), pilot.getMedicalExpiresOn(), pilot.getIpcOn(), today);
         List<Reminder> due = due(c, today);
         if (due.isEmpty()) {

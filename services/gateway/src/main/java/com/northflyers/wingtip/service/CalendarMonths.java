@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 
 /**
- * The FAA's "calendar months", which every dated rule here counts in: the
- * flight review (14 CFR 61.56(c), 24), the annual and the ELT (91.409(a),
+ * The FAA's "calendar months", which the aircraft's inspections count in:
+ * the annual and the ELT (14 CFR 91.409(a),
  * 91.207(d), 12), the static system and transponder checks (91.411(a),
  * 91.413(a), 24). Something done "within the preceding N calendar months"
  * is good to the last day of the Nth month after the one it was done in,
