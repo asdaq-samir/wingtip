@@ -6,6 +6,7 @@ import FullscreenButton from "./FullscreenButton";
 import MyPositionButton from "./MyPositionButton";
 import MapSettingsButton from "./MapSettingsButton";
 import RadioButton from "./RadioButton";
+import EmergencyButton from "./EmergencyButton";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useIsMobile } from "../hooks/use-mobile";
 import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "./mapChrome";
@@ -26,7 +27,8 @@ import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "./mapChrome";
  * In flight (useFlyingMode, the canvas's Flying screen, 2026-11-03) the
  * stack is two 60-point words a hand finds in turbulence -- NRST, the
  * fields nearest own ship, and D→, direct to the next landing -- and the
- * microphone's circle grows to the same size where it is; the settings,
+ * microphone's circle grows to the same size where it is; under them
+ * EMER, the airplane's emergency checklists (EmergencyButton); the settings,
  * the arrow and the rest wait for the ground. The map follows the
  * airplane in flight (OwnShipLayer), so the arrow is not missed.
  */
@@ -123,6 +125,9 @@ export default function MapControls() {
                 (the owner's yes to the run's own controls back,
                 2026-11-04). */}
             <MyPositionButton />
+            {/* The airplane's emergency checklists, one tap (#220): added
+                last, the stack above it where it was. */}
+            <EmergencyButton />
           </>
         ) : (
           <>

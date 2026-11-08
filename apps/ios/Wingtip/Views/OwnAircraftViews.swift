@@ -159,8 +159,8 @@ struct AircraftFormView: View {
     }
 }
 
-/// One of the pilot's airplanes: its figures to edit, its checklist and
-/// squawks, its inspections and VOR check, and Delete.
+/// One of the pilot's airplanes: its figures to edit, its checklists
+/// (normal and emergency, on this device) and squawks, its inspections and VOR check, and Delete.
 struct OwnAircraftPage: View {
     @State var record: OwnAircraftRecord
     var onChange: () -> Void
@@ -183,7 +183,8 @@ struct OwnAircraftPage: View {
                 } label: {
                     LabeledContent("Figures", value: Self.figuresLine(record)).lineLimit(2)
                 }
-                NavigationLink("Checklist") { ChecklistView(aircraft: record) }
+                // Its checklists, kept on this device (LocalChecklists).
+                ChecklistRows(airplane: record.tailNumber)
                 NavigationLink {
                     SquawksView(aircraft: record) { Task { await reload() } }
                 } label: {
@@ -401,89 +402,6 @@ struct VorCheckSection: View {
         let request = VorCheckRequest(checkedOn: Day.string(checkedOn), errorDeg: Double(errorText.trimmingCharacters(in: .whitespaces)) ?? 0,
                                       kind: kind, place: trimmed.isEmpty ? nil : trimmed)
         do { record = try await Gateway.recordVorCheck(record.id, request); problem = nil; onChange() } catch { problem = error.localizedDescription }
-    }
-}
-
-/// An airplane's checklist, as its owner writes it from the flight manual:
-/// run, each item ticked as it is done, a section's count by its title --
-/// or written as plain text (ChecklistText). The ticks are this run's.
-struct ChecklistView: View {
-    let aircraft: OwnAircraftRecord
-    @State private var checklist: Checklist?
-    @State private var ticked: Set<String> = []
-    @State private var writing: String?
-    @State private var problem: String?
-    @State private var saving = false
-
-    var body: some View {
-        List {
-            if let writing {
-                Section {
-                    TextEditor(text: Binding(get: { writing }, set: { self.writing = $0 }))
-                        .font(.body.monospaced())
-                        .frame(minHeight: 280)
-                        .accessibilityLabel("\(aircraft.tailNumber) checklist")
-                } footer: {
-                    Text("# Before takeoff\nFuel selector -- Both\nMixture -- Rich").font(.footnote.monospaced())
-                }
-                Section {
-                    Button(saving ? "Saving…" : "Save Checklist") { Task { await save(writing) } }.disabled(saving)
-                    Button("Cancel") { self.writing = nil }
-                }
-            } else if let checklist {
-                if checklist.sections.isEmpty { Text("No checklist yet").foregroundStyle(.secondary) }
-                ForEach(Array(checklist.sections.enumerated()), id: \.offset) { s, section in
-                    Section {
-                        ForEach(Array(section.items.enumerated()), id: \.offset) { i, item in
-                            let key = "\(s):\(i)"
-                            let on = ticked.contains(key)
-                            Button {
-                                if on { ticked.remove(key) } else { ticked.insert(key) }
-                            } label: {
-                                HStack {
-                                    Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Color.accentColor : Color.secondary)
-                                    Text(item.challenge).foregroundStyle(on ? .secondary : .primary)
-                                    Spacer()
-                                    if let response = item.response { Text(response).foregroundStyle(.secondary) }
-                                }
-                            }
-                            .accessibilityAddTraits(on ? .isSelected : [])
-                        }
-                    } header: {
-                        HStack {
-                            Text(section.title)
-                            Spacer()
-                            Text("\(section.items.indices.filter { ticked.contains("\(s):\($0)") }.count) of \(section.items.count)").monospacedDigit()
-                        }
-                    }
-                }
-                Section {
-                    if !checklist.sections.isEmpty {
-                        Button("Start Over") { ticked = [] }.disabled(ticked.isEmpty)
-                    }
-                    Button(checklist.sections.isEmpty ? "Write the Checklist" : "Edit the Checklist") { writing = ChecklistText.text(of: checklist) }
-                }
-            } else if problem == nil {
-                ProgressView()
-            }
-            ProblemLine(problem)
-        }
-        .navigationTitle("\(aircraft.tailNumber) Checklist")
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            do { checklist = try await Gateway.checklist(aircraft.id) } catch { problem = "The checklist could not be fetched: \(error.localizedDescription)" }
-        }
-    }
-
-    private func save(_ text: String) async {
-        saving = true
-        defer { saving = false }
-        do {
-            checklist = try await Gateway.saveChecklist(aircraft.id, ChecklistText.parse(text))
-            writing = nil
-            ticked = []
-            problem = nil
-        } catch { problem = error.localizedDescription }
     }
 }
 

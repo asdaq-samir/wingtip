@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { PASSENGER_ITEMS, passengerMessage } from "./passengers";
 
 describe("the passengers' briefing", () => {
-  it("cites 91.107 for what it asks, and says the rest is practice", () => {
+  it("cites 91.107 for what it asks, and the FAA's SAFETY briefing for the rest", () => {
     expect(PASSENGER_ITEMS.filter(i => i.rule.startsWith("14 CFR 91.107")).map(i => i.key)).toEqual(["pax-belts", "pax-fastened"]);
-    expect(PASSENGER_ITEMS.filter(i => i.rule === "Good practice")).toHaveLength(3);
+    const rest = PASSENGER_ITEMS.filter(i => !i.rule.startsWith("14 CFR"));
+    expect(rest.map(i => i.key)).toEqual(["pax-air", "pax-fire", "pax-exits", "pax-traffic", "pax-questions"]);
+    expect(rest.every(i => i.rule.startsWith("FAA Safety Briefing"))).toBe(true);
   });
 
   it("tells them where to, when, and the weather there", () => {

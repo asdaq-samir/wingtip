@@ -28,7 +28,8 @@ export default function PassengerBriefing({ flight, message }: { flight: string;
     <AccordionSection title="Passengers">
       <div className="space-y-4" data-testid="passengers">
         {/* 91.107 asks the first two of the pilot in command before every
-            takeoff; the rest is good practice. */}
+            takeoff; the rest is the FAA's SAFETY briefing, each row's
+            source under it (lib/passengers). */}
         <ListGroup title={`Brief them · ${done} of ${PASSENGER_ITEMS.length}`}>
           {PASSENGER_ITEMS.map(item => (
             <ListRow

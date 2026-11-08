@@ -6,6 +6,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import app.wingtipmaps.android.checklist.ChecklistKind
+import app.wingtipmaps.android.checklist.ChecklistScreen
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -69,6 +79,7 @@ fun AircraftScreen(plan: Plan) {
     val problem by model.problem.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
     var expanded by remember { mutableStateOf(false) }
+    var checklist by remember { mutableStateOf<ChecklistKind?>(null) }
     val picked = profiles.firstOrNull { it.name == state.aircraft }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -95,6 +106,29 @@ fun AircraftScreen(plan: Plan) {
         }
         ProblemLine(problem)
         picked?.let { ProfileFigures(it) }
+        // The airplane's own checklists (#220), kept on this phone: the
+        // normal procedures, and the emergency ones a tap away.
+        ChecklistKind.entries.forEach { kind ->
+            ListItem(
+                headlineContent = { Text(if (kind == ChecklistKind.NORMAL) "Checklist" else "Emergency") },
+                supportingContent = {
+                    Text(
+                        if (kind == ChecklistKind.NORMAL) "This airplane's normal procedures" else "This airplane's emergency procedures",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { checklist = kind },
+            )
+        }
+    }
+    checklist?.let { kind ->
+        ModalBottomSheet(
+            onDismissRequest = { checklist = null },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            ChecklistScreen(airplane = state.aircraft, kind = kind)
+        }
     }
 }
 

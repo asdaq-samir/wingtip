@@ -426,7 +426,7 @@ export function AircraftPanel() {
   // The airplane's checklist, a page of the form's (ChecklistPage).
   const checklistPages = editing
     ? {
-      [`checklist-${editing.id}`]: { title: `${editing.tailNumber} checklist`, content: <ChecklistPage aircraft={editing} /> },
+      [`checklist-${editing.id}`]: { title: `${editing.tailNumber} checklists`, content: <ChecklistPage airplane={`mine:${editing.id}`} name={editing.tailNumber} /> },
       [`squawks-${editing.id}`]: { title: `${editing.tailNumber} squawks`, content: <SquawksPage aircraft={editing} /> },
     }
     : {};
@@ -615,7 +615,7 @@ export function AircraftPanel() {
               </ListGroup>
               {editing && (
                 <ListGroup>
-                  <PageRow page={`checklist-${editing.id}`} title="Checklist" description="Yours, from its flight manual, to run" />
+                  <PageRow page={`checklist-${editing.id}`} title="Checklists" description="Normal and emergency, yours from its handbook, kept on this device" />
                   <PageRow
                     page={`squawks-${editing.id}`} title="Squawks" description="What was found, and its fix"
                     value={editing.openSquawks?.length ? `${editing.openSquawks.length} open` : undefined}

@@ -167,6 +167,17 @@ struct BriefView: View {
                 } else {
                     ProgressView("Fetching the briefing…")
                 }
+                // The passengers' briefing (91.107, the SAFETY briefing) and
+                // the flight to send them, after the weather.
+                if plan.routed {
+                    Section {
+                        NavigationLink {
+                            PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents))
+                        } label: {
+                            Label("Passenger Briefing", systemImage: "person.2")
+                        }
+                    }
+                }
             }
         }
         .navigationTitle("Brief")

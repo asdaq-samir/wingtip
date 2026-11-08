@@ -6,7 +6,10 @@ import SwiftUI
 /// that opens Ask (AskView), a question about the flight put to the
 /// assistant. With a route entered and the map panned off it, the
 /// arrow's other face fits the course again; tapped then, the arrow
-/// comes back to bring the map to the position.
+/// comes back to bring the map to the position. Last, EMER: the
+/// airplane's emergency checklist in one tap (#220), on the ground as in
+/// the air, as its siblings are always there and an engine fire during
+/// start is one of the emergencies.
 struct MapButtons: View {
     @Binding var following: Bool
     let routeAway: Bool
@@ -14,6 +17,8 @@ struct MapButtons: View {
     /// Opens Ask; nil in the strip layout, where the field is the way in
     /// and no sparkle is drawn.
     let ask: (() -> Void)?
+    /// Opens the airplane's emergency checklist (FlightUI.emergency).
+    let emergency: () -> Void
 
     var body: some View {
         VStack(spacing: 10) {
@@ -39,6 +44,19 @@ struct MapButtons: View {
                 .background(.regularMaterial, in: Circle())
                 .foregroundStyle(Color.accentColor)
             }
+            // Red, the system's colour for what is urgent, as an emergency
+            // is; the word shrinks with a large text size before the round
+            // button would grow.
+            Button(action: emergency) {
+                Text("EMER")
+                    .font(.caption2.weight(.heavy))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(width: 44, height: 44)
+            }
+            .accessibilityLabel("Emergency checklists")
+            .background(.regularMaterial, in: Circle())
+            .foregroundStyle(.red)
         }
         .padding(.trailing, 12)
         .padding(.top, 12)
@@ -47,5 +65,5 @@ struct MapButtons: View {
 
 #Preview("MapButtons") {
     @Previewable @State var following = true
-    MapButtons(following: $following, routeAway: false, fitRoute: {}, ask: {})
+    MapButtons(following: $following, routeAway: false, fitRoute: {}, ask: {}, emergency: {})
 }

@@ -30,6 +30,8 @@ final class FlightUI {
     var fixFrom: String?
     /// A procedure's fix whose crossing altitude is asked for.
     var crossAt: String?
+    /// The airplane's emergency checklist up, from the map's EMER button.
+    var emergency = false
 }
 
 /// The sheets over the tabs, as Maps stacks a place's card over its
@@ -37,10 +39,28 @@ final class FlightUI {
 struct FlightSheets: ViewModifier {
     /// On iPad the inspector holds them (SplitLayout), not a sheet.
     @Environment(\.splitLayout) private var split
+    @Environment(Plan.self) private var plan
+
+    /// The emergency checklist from here, or from over a card already up
+    /// (inside), since one view presents one sheet at a time and the map's
+    /// EMER button is still in reach above a card at half height.
+    private func emergencyShown(inside: Bool) -> Binding<Bool> {
+        Binding(
+            get: {
+                let ui = FlightUI.shared
+                let cardUp = !split && ui.card != nil
+                return ui.emergency && (inside ? cardUp : !cardUp)
+            },
+            set: { if !$0 { FlightUI.shared.emergency = false } }
+        )
+    }
 
     func body(content: Content) -> some View {
         @Bindable var ui = FlightUI.shared
         content
+            .sheet(isPresented: emergencyShown(inside: false)) {
+                EmergencyChecklistSheet(airplane: LocalChecklists.airplane(of: plan))
+            }
             .sheet(item: split ? .constant(nil) : $ui.card, onDismiss: {
                 // Its card put away, the airplane is no longer tracked.
                 if case .airplane = FlightUI.shared.card {} else { Tracking.shared.track(nil) }
@@ -54,6 +74,9 @@ struct FlightSheets: ViewModifier {
                 }
                 .presentationDetents([.medium, .large])
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+                .sheet(isPresented: emergencyShown(inside: true)) {
+                    EmergencyChecklistSheet(airplane: LocalChecklists.airplane(of: plan))
+                }
             }
             .modifier(PointAlerts())
     }

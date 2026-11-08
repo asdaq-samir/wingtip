@@ -37,6 +37,9 @@ struct AircraftView: View {
                         // set from the handbook, or read off a photo of it.
                         NavigationLink("Planning figures") { AirplaneFiguresView() }
                     }
+                    // The airplane's checklists, normal and emergency, kept on
+                    // this device by its N-number, else by its type.
+                    ChecklistRows(airplane: LocalChecklists.airplane(of: plan))
                 }
                 if session.signedIn || !own.isEmpty {
                     Section("Yours") {

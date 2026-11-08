@@ -184,6 +184,38 @@ owner, 2026-11-03):
   moment the pilot first asks for one. The entitlement is in
   project.yml.
 
+## Checklists and the passenger briefing
+
+Each airplane's checklists (#220; the owner's decision of 2026-11-08:
+free, kept on the device) are two plain texts, normal and emergency,
+kept in UserDefaults by the N-number, else by the type's profile where
+no N-number is picked (`Wingtip/Checklists.swift`, `LocalChecklists`),
+and read by the engine's `checklist_read` (`ChecklistText`); the gateway's
+checklist is no longer asked for. They start empty: "Start from the
+Phases" puts in the headings only, the phases of a handbook's Normal
+Procedures and the emergencies of its Emergency Procedures (GAMA
+Specification No. 1, Sections 4 and 3; `ChecklistPhases`, the same lists
+as the web's and Android's), never a manufacturer's words. Each is
+edited as text and run with its items ticked, a section's "n of m" by its
+title, and Start Over (`Views/ChecklistViews.swift`, `ChecklistModel`).
+They open from the Aircraft tab and from each of the pilot's airplanes,
+and the emergency list from the map's EMER button, under the location
+arrow and Ask at its top right, as a sheet in one tap (`FlightUI.emergency`,
+presented by `FlightSheets`, over a card already up where there is one).
+The watch is sent the normal list.
+
+The Brief's Passenger Briefing (#223, `Wingtip/Passengers.swift`,
+`Views/PassengerBriefingView.swift`) is the FAASTeam's SAFETY briefing
+(FAA Safety Briefing, Jan/Feb 2007 and Jul/Aug 2014), each item with its
+source under it -- 14 CFR 91.107(a)(1) the only one a regulation asks
+for, (a)(2) and (3) the belts fastened, the ACS's PA.II.B.S2 for the
+doors and the propeller -- ticked for the flight (its route and day) and
+kept on the device. Under them, the flight in a few lines for the
+passengers -- the fields by name, leaving on the phone's clock and in
+UTC, about how long in the air, landing, and the destination's weather in
+words where it reports -- sent with the share sheet. The live track for
+passengers waits for the server on AWS.
+
 ## The Apple Watch app
 
 `apps/ios/WingtipWatch/` (the owner's ask, 2026-11-03) is a companion of the
@@ -197,7 +229,7 @@ and items, ticked on the wrist, a section reset by a swipe) and Nearest
 
 The watch links no engine (the XCFramework has no watchOS slice) and
 calls no server. The phone (`Wingtip/WatchLink.swift`) sends the
-airplane's checklist, as the gateway gave it, and the pilot's fix as the
+airplane's normal checklist, as kept on the phone, and the pilot's fix as the
 WatchConnectivity application context, and answers the watch's nearest
 question from the planner (`Planner.nearest`; the cycle packs give the
 airspace at a point only, so offline the watch is told the planner is

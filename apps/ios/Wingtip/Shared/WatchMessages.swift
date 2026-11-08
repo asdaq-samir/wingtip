@@ -42,10 +42,10 @@ struct WatchFix: Codable, Equatable, Sendable {
     var at: Date
 }
 
-/// An airplane's checklist in the gateway's own shape (ChecklistDto:
-/// `sections`, each `title` and `items`, each `challenge` and `response`),
-/// so the phone encodes the Checklist it has fetched and the watch reads
-/// these from the same bytes.
+/// An airplane's checklist in the engine's shape (`sections`, each
+/// `title` and `items`, each `challenge` and `response`), so the phone
+/// encodes the Checklist it has read and the watch reads these from the
+/// same bytes.
 struct WatchChecklist: Codable, Equatable, Sendable {
     var sections: [WatchChecklistSection]
 }
