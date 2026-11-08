@@ -213,10 +213,13 @@ def test_totals_carry_the_fuel_check(messages, monkeypatch):
     assert t["taxi_gal"] == 1.4    # the C172S handbook's start, taxi and takeoff allowance
     assert t["fuel_required_gal"] == round(t["fuel_gal"] + 1.4 + 4.25, 1)
     assert t["usable_fuel_gal"] == 40 and t["fuel_margin_gal"] == round(40 - t["fuel_required_gal"], 1)
-    # The climb from the 900 ft field to 4,500 ft is on the first leg.
+    # The climb from the 900 ft field to 4,500 ft is flown on its legs: the
+    # first, 2 nm to the lake the stub puts beside the field, is climb all
+    # the way, and the climb tops out on the second; no leg after it climbs.
     legs = [m for m in lines if m["type"] == "leg"]
-    assert legs[0]["climb_min"] > 0 and legs[1]["climb_min"] == 0
-    assert legs[0]["ete_min"] > legs[1]["ete_min"] and legs[0]["fuel_gal"] > legs[1]["fuel_gal"]
+    assert legs[0]["climb_min"] == pytest.approx(legs[0]["ete_min"], abs=0.1)
+    assert 0 < legs[1]["climb_min"] < legs[1]["ete_min"]
+    assert all(leg["climb_min"] == 0 for leg in legs[2:])
 
     # A pilot's own tanks, too small: the margin goes negative.
     short = messages(client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH", "usable_fuel_gal": 5}))[-1]

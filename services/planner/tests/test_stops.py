@@ -114,15 +114,18 @@ def test_the_leg_into_a_stop_says_its_time_on_the_ground(messages):
 
 
 def test_each_flight_climbs_from_its_field_and_comes_down_to_its_own_pattern():
-    # The stub's 10 nm legs at 4,500 ft, the fields at 900: the climb
-    # tops out on each flight's first leg, and each comes down to 1,900,
-    # 2,600 ft at three to one, 7.8 nm out -- on the leg into the field.
+    # The legs at 4,500 ft, the fields at 900: each flight climbs from its
+    # own field and tops out once -- C81's on its second leg, past the lake
+    # the stub puts 2 nm out, KMSN's on its first -- and each comes down to
+    # 1,900, 2,600 ft at three to one, 7.8 nm out, on the leg into the field.
     legs = client.get("/api/plan", params=VIA_MADISON).json()["legs"]
 
-    assert [leg["from"] for leg in legs if leg["toc"]] == ["C81", "KMSN"]
-    tods = [(leg["to"], leg["tod"]) for leg in legs if leg["tod"]]
-    assert [to for to, _ in tods] == ["KMSN", "KDLH"]
-    assert all(tod["to_ft"] == 1900.0 and tod["pattern"] and tod["along_nm"] == 2.2 for _, tod in tods)
+    assert [leg["from"] for leg in legs if leg["toc"]] == ["Lake", "KMSN"]
+    assert legs[0]["from"] == "C81" and legs[0]["climb_min"] == pytest.approx(legs[0]["ete_min"], abs=0.1)
+    tods = [(leg, leg["tod"]) for leg in legs if leg["tod"]]
+    assert [leg["to"] for leg, _ in tods] == ["KMSN", "KDLH"]
+    assert all(tod["to_ft"] == 1900.0 and tod["pattern"] for _, tod in tods)
+    assert all(leg["distance_nm"] - tod["along_nm"] == pytest.approx(7.8, abs=0.1) for leg, tod in tods)
 
 
 def test_the_stream_runs_through_the_stop_and_ends_on_the_hops_totals(messages):
