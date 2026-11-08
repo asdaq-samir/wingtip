@@ -686,6 +686,24 @@ export type FrdNearAnswer = {
   ident: string;
 } | null;
 export type ServiceCeilingOnTheDayAnswer = number;
+export type OwnAltitudeCautionAnswer = {
+  from_ident: string;
+  to_ident: string;
+  altitude_ft: number;
+  reasons: string[];
+} | null;
+export type FloorCautionAnswer = string | null;
+export type OxygenCautionAnswer = string[];
+export type ProhibitedCautionAnswer = string[];
+export type IfrAlternatesRankedAnswer = {}[];
+/**
+ * An area's outline: polygons, each its outer ring and its holes, each ring [[lon, lat], ...].
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "AheadPolygons".
+ */
+export type AheadPolygons = [number, number][][][];
+export type CongestedPointsAnswer = boolean[];
 export type RadioScriptAnswer = {
   title: string;
   ident: string;
@@ -700,6 +718,11 @@ export type RadioScriptAnswer = {
 }[];
 export type RadioCallSignAnswer = string;
 export type RadioPlaceNameAnswer = string;
+export type IsNightAnswer = boolean;
+export type NightOnTheWayAnswer = boolean;
+export type NightAtEitherEndAnswer = boolean;
+export type CheckpointsSelectAnswer = number[];
+export type BelowVfrMinimumsAnswer = boolean;
 
 /**
  * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. The one source of their shapes: apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
@@ -2666,6 +2689,76 @@ export interface EngineContract {
     answer: ServiceCeilingOnTheDayAnswer;
   };
   /**
+   * What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, into Class B (91.131), over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.
+   */
+  own_altitude_caution: {
+    input: OwnAltitudeCautionInput;
+    answer: OwnAltitudeCautionAnswer;
+  };
+  /**
+   * What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
+   */
+  floor_caution: {
+    input: FloorCautionInput;
+    answer: FloorCautionAnswer;
+  };
+  /**
+   * What 14 CFR 91.211(a) asks of a flight up to an altitude in an unpressurised airplane: over 12,500 ft MSL the crew past 30 minutes, over 14,000 the crew throughout, over 15,000 every occupant. Empty where the profile carries oxygen or is pressurised.
+   */
+  oxygen_caution: {
+    input: OxygenCautionInput;
+    answer: OxygenCautionAnswer;
+  };
+  /**
+   * Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
+   */
+  prohibited_caution: {
+    input: ProhibitedCautionInput;
+    answer: ProhibitedCautionAnswer;
+  };
+  /**
+   * Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.
+   */
+  ifr_alternate_destination: {
+    input: IfrAlternateDestinationInput;
+    answer: IfrAlternateDestinationAnswer;
+  };
+  /**
+   * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).
+   */
+  ifr_alternate_check: {
+    input: IfrAlternateCheckInput;
+    answer: IfrAlternateCheckAnswer;
+  };
+  /**
+   * The fields offered as the IFR alternate: those that will do, or that meet the standard minimums and publish their own, good first then nearest, `limit` of them.
+   */
+  ifr_alternates_ranked: {
+    input: IfrAlternatesRankedInput;
+    answer: IfrAlternatesRankedAnswer;
+  };
+  /**
+   * Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.
+   */
+  ahead_frame: {
+    input: AheadFrameInput;
+    answer: AheadFrameAnswer;
+  };
+  /**
+   * What is ahead of own ship from the planner's data (ahead.rs): the Class B, C and D (91.129-91.131), special-use areas (91.133, AIM 3-4) and TFRs (91.137-91.145, 99.7) its track goes into in the next five minutes, and the ground or a DOF obstacle it comes within 500 ft of in the next minute (borrowed from 91.119(c)); warnings first, then the soonest. Nothing under 40 kt. Advisory: not a TAWS (TSO-C151). A list given as null was not read, and is named in `unavailable`.
+   */
+  alerts_ahead: {
+    input: AlertsAheadInput;
+    answer: AlertsAheadAnswer;
+  };
+  /**
+   * Whether each point is over a congested area or within 2,000 ft of one (14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet'), east-west by the cosine of the point's latitude, from the towns the planner reads (Census urban areas and gazetteer places).
+   */
+  congested_points: {
+    input: CongestedPointsInput;
+    answer: CongestedPointsAnswer;
+  };
+  /**
    * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).
    */
   field_taf: {
@@ -2699,6 +2792,48 @@ export interface EngineContract {
   solo_standing: {
     input: SoloStandingInput;
     answer: SoloStandingAnswer;
+  };
+  /**
+   * Whether an instant is night at a point (14 CFR 1.1: outside civil twilight, the sun's centre six degrees below the horizon), by NOAA's solar calculation; a polar day is night or day all day.
+   */
+  is_night: {
+    input: IsNightInput;
+    answer: IsNightAnswer;
+  };
+  /**
+   * Dawn and dusk (the beginning of morning and the end of evening civil twilight, 14 CFR 1.1) of the civil day whose solar noon falls on the UTC day `day_s` lies in; null each in a polar day, `night_all_day` then saying which kind.
+   */
+  civil_twilight: {
+    input: CivilTwilightInput;
+    answer: CivilTwilightAnswer;
+  };
+  /**
+   * Whether any of a trip from `start` to `end` of `minutes` (its stops' time on the ground counted), leaving at `depart_s`, falls in the night, judged every half hour along the straight line: 14 CFR 91.151(a)(2)'s 45 minutes then.
+   */
+  night_on_the_way: {
+    input: NightOnTheWayInput;
+    answer: NightOnTheWayAnswer;
+  };
+  /**
+   * Whether a flight is at night leaving `start` at `depart_s` or arriving at `end` at `arrive_s` (14 CFR 1.1; 91.151(a)'s reserve).
+   */
+  night_at_either_end: {
+    input: NightAtEitherEndInput;
+    answer: NightAtEitherEndAnswer;
+  };
+  /**
+   * The nav log's checkpoints from the chart model's scored candidates, as their indices in route order: greedy by score, at least `min_spacing_nm` apart (10), none under `min_score` (2.5; null for every score), at most `max_count`, and with `length_nm` none within 3 nm of a hop's ends.
+   */
+  checkpoints_select: {
+    input: CheckpointsSelectInput;
+    answer: CheckpointsSelectAnswer;
+  };
+  /**
+   * Whether a ceiling or a visibility is under 14 CFR 91.155(c), (d)'s basic VFR minimums (1,000 ft, 3 sm); a missing figure is below nothing.
+   */
+  below_vfr_minimums: {
+    input: BelowVfrMinimumsInput;
+    answer: BelowVfrMinimumsAnswer;
   };
 }
 export interface HoldingInput {
@@ -6762,6 +6897,9 @@ export interface RouteOptionsInput {
     points: [number, number][];
     idents: string[];
   } | null;
+  /**
+   * Night at either end (14 CFR 91.151's 45 minutes) as the host judged it; missing or null, the engine judges it over the flight's window (sun.rs).
+   */
   night?: boolean | null;
   terrain_ft?: number[] | null;
   water_far?: string | null;
@@ -7195,6 +7333,265 @@ export interface ServiceCeilingOnTheDayInput {
    */
   profile: [number, number][];
 }
+export interface OwnAltitudeCautionInput {
+  /**
+   * select_cruise_altitude's answer: its `rules` and `segments`.
+   */
+  selection: {};
+  legs: {
+    altitude_ft: number;
+  }[];
+  /**
+   * [from_ident, to_ident]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  between: [string, string];
+  /**
+   * The airplane: `supplemental_oxygen` or `pressurized` true takes 91.211's cautions away.
+   */
+  profile?: {} | null;
+}
+export interface FloorCautionInput {
+  /**
+   * A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested.
+   */
+  segment: {};
+  altitude_ft: number;
+}
+export interface OxygenCautionInput {
+  highest_ft?: number | null;
+  profile?: {} | null;
+}
+export interface ProhibitedCautionInput {
+  selection: {};
+}
+export interface IfrAlternateDestinationInput {
+  ident: string;
+  /**
+   * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+   */
+  approaches: {
+    any: boolean;
+    precision: boolean;
+    alternate_minimums_url?: string | null;
+  };
+  /**
+   * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+   */
+  forecast?: {
+    ceiling_ft?: number | null;
+    ceiling_unknown?: boolean | null;
+    visibility_sm?: number | null;
+    raw?: string | null;
+  } | null;
+}
+export interface IfrAlternateDestinationAnswer {
+  ident: string;
+  approach: boolean;
+  ceiling_ft: number | null;
+  visibility_sm: number | null;
+  taf: string | null;
+  required: boolean;
+  reasons: string[];
+}
+export interface IfrAlternateCheckInput {
+  ident: string;
+  /**
+   * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+   */
+  approaches: {
+    any: boolean;
+    precision: boolean;
+    alternate_minimums_url?: string | null;
+  };
+  /**
+   * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+   */
+  forecast?: {
+    ceiling_ft?: number | null;
+    ceiling_unknown?: boolean | null;
+    visibility_sm?: number | null;
+    raw?: string | null;
+  } | null;
+}
+export interface IfrAlternateCheckAnswer {
+  ident: string;
+  approach: boolean;
+  precision: boolean;
+  minimums: {
+    ceiling_ft: number;
+    visibility_sm: number;
+  } | null;
+  alternate_minimums_url: string | null;
+  ceiling_ft: number | null;
+  visibility_sm: number | null;
+  taf: string | null;
+  good: boolean | null;
+  meets_standard: boolean;
+  reasons: string[];
+}
+export interface IfrAlternatesRankedInput {
+  checks: {}[];
+  limit?: number;
+}
+export interface AheadFrameInput {
+  lat: number;
+  lon: number;
+  /**
+   * True track over the ground.
+   */
+  track_deg: number;
+  gs_kt: number;
+  /**
+   * GPS altitude, feet MSL.
+   */
+  alt_ft?: number | null;
+  vs_fpm?: number | null;
+}
+export interface AheadFrameAnswer {
+  /**
+   * [south, west, north, east].
+   *
+   * @minItems 4
+   * @maxItems 4
+   */
+  box: [number, number, number, number];
+  /**
+   * [south, west, north, east].
+   *
+   * @minItems 4
+   * @maxItems 4
+   */
+  near_box: [number, number, number, number];
+  /**
+   * Three rows: the track, left of it, right of it.
+   */
+  lats: number[][];
+  lons: number[][];
+}
+export interface AlertsAheadInput {
+  lat: number;
+  lon: number;
+  track_deg: number;
+  gs_kt: number;
+  alt_ft?: number | null;
+  vs_fpm?: number | null;
+  /**
+   * Unix seconds.
+   */
+  now: number;
+  /**
+   * The ground under the airplane.
+   */
+  ground_ft?: number | null;
+  airspace?:
+    | {
+        name: string;
+        class: string;
+        floor_ft?: number | null;
+        /**
+         * None: up to Class A.
+         */
+        ceiling_ft?: number | null;
+        polygons: AheadPolygons;
+      }[]
+    | null;
+  special_use?:
+    | {
+        name: string;
+        /**
+         * P, R, MOA, W or A.
+         */
+        type: string;
+        floor_ft?: number | null;
+        floor_ref?: string | null;
+        ceiling_ft?: number | null;
+        ceiling_ref?: string | null;
+        times_of_use?: string | null;
+        /**
+         * The ground under the area, for AGL heights.
+         */
+        ground_ft?: number | null;
+        polygons: AheadPolygons;
+      }[]
+    | null;
+  tfrs?:
+    | {
+        notam_id: string;
+        title?: string | null;
+        rule?: string | null;
+        floor_ft?: number | null;
+        floor_ref?: string | null;
+        ceiling_ft?: number | null;
+        ceiling_ref?: string | null;
+        /**
+         * Unix seconds.
+         */
+        effective?: number | null;
+        /**
+         * Unix seconds.
+         */
+        expires?: number | null;
+        ground_ft?: number | null;
+        polygons: AheadPolygons;
+      }[]
+    | null;
+  near_field?: {
+    distance_nm: number;
+    elevation_ft?: number | null;
+  } | null;
+  /**
+   * The ground at ahead_frame's swath, its rows.
+   */
+  swath_ground_ft?: number[][] | null;
+  obstacles?:
+    | {
+        lat: number;
+        lon: number;
+        amsl_ft: number;
+        type?: string | null;
+      }[]
+    | null;
+}
+export interface AlertsAheadAnswer {
+  alerts: {
+    id: string;
+    kind: "airspace" | "special_use" | "tfr" | "terrain" | "obstacle";
+    level: "warning" | "caution";
+    name: string;
+    class: string | null;
+    need: string;
+    inside: boolean;
+    seconds: number;
+    distance_nm: number | null;
+    lat: number | null;
+    lon: number | null;
+    floor_ft: number | null;
+    ceiling_ft: number | null;
+    top_ft: number | null;
+    clearance_ft: number | null;
+    times_of_use: string | null;
+    notam_id: string | null;
+  }[];
+  unavailable: string[];
+  tfrs_as_of: number | null;
+}
+export interface CongestedPointsInput {
+  /**
+   * Each town's outline.
+   */
+  areas: AheadPolygons[];
+  /**
+   * [[lat, lon], ...].
+   */
+  points: [number, number][];
+  /**
+   * For each point, the indices of the areas to measure it against; null, all of them.
+   */
+  candidates?: number[][] | null;
+}
 export interface FieldTafInput {
   ident: string;
   /**
@@ -7291,4 +7688,125 @@ export interface SoloStandingInput {
 export interface SoloStandingAnswer {
   days: number | null;
   standing: "ok" | "caution" | "stop" | "unknown";
+}
+export interface IsNightInput {
+  lat: number;
+  /**
+   * East positive.
+   */
+  lon: number;
+  /**
+   * UNIX seconds, UTC.
+   */
+  at_s: number;
+}
+export interface CivilTwilightInput {
+  lat: number;
+  lon: number;
+  /**
+   * Any instant of the UTC day, UNIX seconds.
+   */
+  day_s: number;
+}
+export interface CivilTwilightAnswer {
+  dawn_s: number | null;
+  dusk_s: number | null;
+  night_all_day: boolean | null;
+}
+export interface NightOnTheWayInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  depart_s: number;
+  minutes: number;
+}
+export interface NightAtEitherEndInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  depart_s: number;
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  arrive_s: number;
+}
+export interface CheckpointsSelectInput {
+  candidates: {
+    along_track_nm?: number | null;
+    predicted_score?: number | null;
+  }[];
+  min_spacing_nm?: number | null;
+  max_count?: number | null;
+  /**
+   * Missing: 2.5; null: every score.
+   */
+  min_score?: number | null;
+  length_nm?: number | null;
+}
+export interface BelowVfrMinimumsInput {
+  ceiling_ft?: number | null;
+  visibility_sm?: number | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "IfrAlternateIn".
+ */
+export interface IfrAlternateIn {
+  ident: string;
+  /**
+   * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+   */
+  approaches: {
+    any: boolean;
+    precision: boolean;
+    alternate_minimums_url?: string | null;
+  };
+  /**
+   * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+   */
+  forecast?: {
+    ceiling_ft?: number | null;
+    ceiling_unknown?: boolean | null;
+    visibility_sm?: number | null;
+    raw?: string | null;
+  } | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "IfrAlternateCheck".
+ */
+export interface IfrAlternateCheck {
+  ident: string;
+  approach: boolean;
+  precision: boolean;
+  minimums: {
+    ceiling_ft: number;
+    visibility_sm: number;
+  } | null;
+  alternate_minimums_url: string | null;
+  ceiling_ft: number | null;
+  visibility_sm: number | null;
+  taf: string | null;
+  good: boolean | null;
+  meets_standard: boolean;
+  reasons: string[];
 }
