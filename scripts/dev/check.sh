@@ -30,6 +30,8 @@
 # its own path in the engine's container, so Cargo keys its own crates by
 # worktree (another worktree's older files can never pass for built) and
 # shares only the third-party ones.
+# CHECK_NO_CACHE=1 builds the images again without BuildKit's layer cache
+# (its cache mounts stay), for an image whose key missed a change.
 # Each image keeps its newest three tags; `docker volume rm` any of the
 # volumes at any time costs one cold run.
 set -euo pipefail
@@ -113,11 +115,11 @@ web_image() {
   local node tag ctx
   node=$(tr -d ' \n' < "$here/apps/web/.nvmrc")
   tag=wingtip-check-web:$({ echo "node $node"; cat "$here/apps/web/package.json" "$here/apps/web/package-lock.json"; } | sha)
-  if ! docker image inspect "$tag" >/dev/null 2>&1; then
+  if [ -n "${CHECK_NO_CACHE:-}" ] || ! docker image inspect "$tag" >/dev/null 2>&1; then
     ctx=$(mktemp -d)
     cp "$here/apps/web/package.json" "$here/apps/web/package-lock.json" "$ctx/"
     echo "check: building $tag (web's packages changed)" >&2
-    docker build -q -t "$tag" --build-arg NODE="$node" -f - "$ctx" >/dev/null <<'EOF'
+    docker build -q ${CHECK_NO_CACHE:+--no-cache} -t "$tag" --build-arg NODE="$node" -f - "$ctx" >/dev/null <<'EOF'
 ARG NODE
 FROM node:${NODE}-slim
 COPY package.json package-lock.json /
@@ -192,9 +194,9 @@ RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv \\
     uv pip install --system -q /wheels/*.whl
 EOF
   tag=$name:$( (cd "$ctx" && find . -type f | LC_ALL=C sort | xargs shasum -a 256) | sha)
-  if ! docker image inspect "$tag" >/dev/null 2>&1; then
-    echo "check: building $tag ($dir's requirements or engine/ changed)" >&2
-    docker build -q -t "$tag" "$ctx" >/dev/null
+  if [ -n "${CHECK_NO_CACHE:-}" ] || ! docker image inspect "$tag" >/dev/null 2>&1; then
+    echo "check: building $tag ($dir's requirements or engine/ changed${CHECK_NO_CACHE:+, or CHECK_NO_CACHE})" >&2
+    docker build -q ${CHECK_NO_CACHE:+--no-cache} -t "$tag" "$ctx" >/dev/null
     prune_tags "$name"
   fi
   rm -rf "$ctx"
