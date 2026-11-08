@@ -29,12 +29,19 @@ class PlannerClientPilotTest {
     private final List<JsonNode> asked = new CopyOnWriteArrayList<>();
     private volatile int status = 200;
     private volatile String answer = "{}";
+    /** How many of the next requests have their connection dropped unanswered. */
+    private volatile int dropped = 0;
 
     @BeforeEach
     void startPlanner() throws IOException {
         planner = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         planner.createContext("/api/pilot/", exchange -> {
             asked.add(PlannerClient.DATES.readTree(exchange.getRequestBody()));
+            if (dropped > 0) {
+                dropped--;
+                exchange.close();
+                return;
+            }
             byte[] body = answer.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(status, body.length);
             exchange.getResponseBody().write(body);
@@ -57,6 +64,20 @@ class PlannerClientPilotTest {
         Pilot pilot = new Pilot("pilot@example.com", "A. Pilot", "sub-1");
         return List.of(new LogbookEntry(pilot).set(LocalDate.of(2026, 9, 20), "N12345", "C172", null, 1.5, 0, 0, 3, 1, null)
                 .instrument(6, true, false));
+    }
+
+    /** A connection the planner closed while it sat in the pool (uvicorn
+     *  keeps one 5 s) is asked again once, not reported unreachable; two
+     *  in a row are. */
+    @Test
+    void aRuleAskedOnAClosedConnectionIsAskedAgainOnce() {
+        answer = "[]";
+        dropped = 1;
+        assertThat(client().experience(logbook(), LocalDate.of(2026, 10, 11))).isEmpty();
+        assertThat(asked).hasSize(2);
+        dropped = 2;
+        assertThatThrownBy(() -> client().experience(logbook(), LocalDate.of(2026, 10, 11)))
+                .isInstanceOf(PlannerClient.Unavailable.class).hasMessageContaining("could not be reached");
     }
 
     @Test

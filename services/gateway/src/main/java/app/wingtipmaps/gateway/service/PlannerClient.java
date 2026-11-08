@@ -19,6 +19,7 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -284,13 +285,30 @@ public class PlannerClient {
         return read(post("/api/aircraft/inspections", body, "the inspections"), Inspections.class, "the inspections");
     }
 
+    /**
+     * A rule asked of the planner by name. Each is a pure answer from what
+     * is sent, so one that fails to reach it is sent once more: the
+     * client's pooled connection may be one the planner (uvicorn, 5 s
+     * keep-alive) has already closed while it sat idle, and the JDK does
+     * not resend a POST on its own. That failed every rule asked after a
+     * quiet minute -- a pilot's currency, a student's experience -- with
+     * "could not be reached", several at once (the end-of-wave browser
+     * run, 2026-11-08). A timeout is not tried again.
+     */
     private String post(String path, ObjectNode body, String what) {
         HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + path))
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .timeout(RULE_TIMEOUT)
                 .build();
-        return send(request, "the planner", what);
+        try {
+            return send(request, "the planner", what);
+        } catch (Unavailable unreached) {
+            if (!(unreached.getCause() instanceof IOException) || unreached.getCause() instanceof HttpTimeoutException) {
+                throw unreached;
+            }
+            return send(request, "the planner", what);
+        }
     }
 
     private static <T> T read(String answer, Class<T> type, String what) {
