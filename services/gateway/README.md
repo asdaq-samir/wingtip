@@ -191,6 +191,22 @@ env var name must match `application.yml` exactly — Spring's relaxed
 binding does *not* map `PLANNER_SERVICE_BASE_URL` onto a property with a
 hyphen in it.
 
+**The paperwork is one list, read by the apps and the reminder emails
+alike.** `PaperworkService` gathers what falls due for a pilot -- the
+flight review, the medical, passengers by day and at night, instrument
+currency (14 CFR 61.56(c), 61.23, 61.57(a)-(c)) -- and for each of their
+airplanes the annual, the 100-hour where the owner says it is flown for
+hire (91.409(a), (b)), the ELT's inspection and battery (91.207(d), (c)),
+the static system (91.411(a)), the transponder (91.413(a)), the VOR check
+(91.171(a)(2)) and the owner's own due items, an AD's status kept as
+91.417(a)(2)(v) asks (`aircraft_due_items`, V32). Every day in it is the
+engine's (through the planner) or the owner's; the service only names
+each one, cites its rule and counts the days and hours left.
+`GET /api/paperwork` is the apps' "Coming up"; `ReminderService` emails
+the dated ones 30 and 7 days before, keyed in `reminders_sent` by what
+they are ("aircraft-12-annual", "item-40"), so each is sent once. The
+VOR check and hour-counted items are listed but not emailed.
+
 **Sign-in is conditional, and three-way.** `oauth2Login` registers
 only when `OAuthClientsConfig` actually produced a client registration
 (real Google or Apple credentials, `oauth` profile active), so local

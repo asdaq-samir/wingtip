@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Controller, useForm, type UseFormRegisterReturn } from "react-hook-form";
+import { Controller, useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { numberOrNull, optionalHours, pastDay, requiredPastDay, textOrNull, z } from "../../lib/formSchema";
 import { toast } from "../../lib/toast";
@@ -43,6 +43,9 @@ import { aircraftListQuery, aircraftProfilesQuery, flightsQuery } from "../../li
 import QueryState from "../../components/QueryState";
 import { SwipeToDelete } from "../../components/SwipeToDelete";
 import { callEngine } from "../../lib/engine/engine";
+import TogglePill from "../../components/TogglePill";
+import { daysBetween, daysWords, dueTone } from "../../lib/paperwork";
+import DueItemsGroup from "./DueItemsGroup";
 
 // Mirrors services/gateway's own AircraftRequest validation
 // (@NotBlank/@Positive in dto/AircraftRequest.java) so a bad value is
@@ -220,18 +223,24 @@ const inspectionsSchema = z.object({
   annualOn: pastDay, staticCheckOn: pastDay, transponderCheckOn: pastDay, eltInspectedOn: pastDay,
   eltBatteryDueOn: z.string(),
   hundredHourAtHours: optionalHours, hoursNow: optionalHours,
+  forHire: z.boolean(),
 });
 type InspectionsValues = z.infer<typeof inspectionsSchema>;
 
-/** How a last good day stands today: in green to it, red past it. */
+/** How a last good day stands today: in green to it, red past it, and the
+ *  days left to it -- amber within the reminders' 30 (lib/paperwork). */
 function Standing({ through, testId }: { through: string | null | undefined; testId: string }) {
   if (!through) return null;
   const today = localDay();
   const good = through >= today;
+  const days = daysBetween(today, through);
   return (
-    <span className={cn(good ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid={testId}>
-      {good ? `To ${through}` : `Past due since ${through}`}
-    </span>
+    <>
+      <span className={cn(good ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid={testId}>
+        {good ? `To ${through}` : `Past due since ${through}`}
+      </span>
+      {good && <span className={FINDING_TONE[dueTone({ daysLeft: days, hoursLeft: null })]} data-testid={`${testId}-days`}> · {daysWords(days)}</span>}
+    </>
   );
 }
 
@@ -245,7 +254,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
   const queryClient = useQueryClient();
   const id = useId();
   const recorded = aircraft.inspections;
-  const { register, handleSubmit, formState: { errors } } = useForm<InspectionsValues>({
+  const { register, control, handleSubmit, formState: { errors } } = useForm<InspectionsValues>({
     resolver: zodResolver(inspectionsSchema),
     defaultValues: {
       annualOn: recorded?.annualOn ?? "", staticCheckOn: recorded?.staticCheckOn ?? "",
@@ -253,11 +262,17 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
       eltBatteryDueOn: recorded?.eltBatteryDueOn ?? "",
       hundredHourAtHours: recorded?.hundredHourAtHours == null ? "" : String(recorded.hundredHourAtHours),
       hoursNow: recorded?.hoursNow == null ? "" : String(recorded.hoursNow),
+      forHire: !!recorded?.forHire,
     },
   });
+  const forHire = useWatch({ control, name: "forHire" });
   const save = useMutation({
     mutationFn: (request: InspectionsRequest) => api.aircraft.inspections(aircraft.id, request),
-    onSuccess: () => { toast.success("Inspections Saved"); void queryClient.invalidateQueries({ queryKey: ["aircraft"] }); },
+    onSuccess: () => {
+      toast.success("Inspections Saved");
+      void queryClient.invalidateQueries({ queryKey: ["aircraft"] });
+      void queryClient.invalidateQueries({ queryKey: ["paperwork"] });
+    },
   });
   // A button inside the airplane's form, as the VOR check's Record is.
   const onSave = handleSubmit(values => save.mutate({
@@ -265,6 +280,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
     transponderCheckOn: textOrNull(values.transponderCheckOn), eltInspectedOn: textOrNull(values.eltInspectedOn),
     eltBatteryDueOn: textOrNull(values.eltBatteryDueOn),
     hundredHourAtHours: numberOrNull(values.hundredHourAtHours), hoursNow: numberOrNull(values.hoursNow),
+    forHire: values.forHire,
   }));
   const today = localDay();
   const due = recorded?.hundredHourDueAtHours;
@@ -299,9 +315,17 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
           id={`${id}-battery`} type="date" className="h-8 w-40" {...register("eltBatteryDueOn")} data-testid="inspection-eltBattery-date"
         /></FieldHit>
       </ListRow>
+      {/* Whether the 100-hour is owed at all: carrying anyone for hire, or
+          flight instruction for hire in an airplane the instructor
+          provides (91.409(b)). Only then is it listed and reminded of. */}
+      <ListRow title="Flown for hire" description="Hire or instruction for hire: the 100-hour, 91.409(b)">
+        <Controller control={control} name="forHire" render={({ field }) => (
+          <TogglePill pressed={field.value} onPressedChange={field.onChange} label={field.value ? "Yes" : "No"} testId="inspection-forHire" />
+        )} />
+      </ListRow>
       <ListRow
         id={`${id}-at`} title="Hours at last 100-hour"
-        description={due != null ? <>Due at {due.toFixed(1)} h{recorded?.hoursNow != null && (
+        description={!forHire ? "Time in service, at the last annual or 100-hour" : due != null ? <>Due at {due.toFixed(1)} h{recorded?.hoursNow != null && (
           <span className={cn(recorded.hoursNow < due ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid="inspection-hundredHour">
             {recorded.hoursNow < due ? `, ${(due - recorded.hoursNow).toFixed(1)} h to go` : ", due now"}
           </span>
@@ -626,6 +650,7 @@ export function AircraftPanel() {
                 </ListGroup>
               )}
               {editing && <InspectionsGroup key={editing.id} aircraft={editing} />}
+              {editing && <DueItemsGroup aircraft={editing} />}
               {editing && <VorCheckGroup aircraft={editing} />}
               {editingId !== null && (
                 <ListGroup>

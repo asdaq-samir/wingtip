@@ -94,6 +94,9 @@ fun SetupScreen(session: Session) {
             }
         }
         ProblemLine(problem)
+        // What falls due, the pilot's and their airplanes': under the
+        // account it belongs to.
+        signedIn?.let { ComingUpSection(signedInAs = it.email ?: it.displayName ?: "") }
         Text("Map", style = MaterialTheme.typography.titleLarge)
         TrafficRow()
         Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {

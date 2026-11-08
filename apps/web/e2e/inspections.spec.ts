@@ -18,7 +18,9 @@ test("an airplane's inspections say how long each is good for, and are saved tog
       hundredHourAtHours: 1200.5, hoursNow: 1250, hundredHourDueAtHours: 1300.5,
       staticCheckOn: null, staticCheckGoodThrough: null, transponderCheckOn: null, transponderCheckGoodThrough: null,
       eltInspectedOn: "2026-02-01", eltInspectionGoodThrough: "2099-02-28", eltBatteryDueOn: "2099-06-01",
+      forHire: true,
     },
+    dueItems: [],
   };
   const saved: Record<string, unknown>[] = [];
   await page.route(url => url.pathname === "/api/aircraft", route => route.fulfill({ json: [plane] }));
@@ -43,8 +45,57 @@ test("an airplane's inspections say how long each is good for, and are saved tog
   await page.getByTestId("inspections-save").click();
   await expect.poll(() => saved.at(-1)).toMatchObject({
     annualOn: "2026-09-20", transponderCheckOn: "2025-03-02", hoursNow: 1262.3, hundredHourAtHours: 1200.5,
-    eltInspectedOn: "2026-02-01", eltBatteryDueOn: "2099-06-01", staticCheckOn: null,
+    eltInspectedOn: "2026-02-01", eltBatteryDueOn: "2099-06-01", staticCheckOn: null, forHire: true,
   });
+  // Not flown for hire, the 100-hour is not owed (91.409(b)): its standing
+  // goes, and the toggle's word is saved with the rest.
+  await page.getByTestId("inspection-forHire").click();
+  await expect(page.getByTestId("inspection-hundredHour")).toHaveCount(0);
+  await page.getByTestId("inspections-save").click();
+  await expect.poll(() => saved.at(-1)).toMatchObject({ forHire: false });
+});
+
+test("an AD is kept on the airplane with its next due day, and comes up in the Logbook", async ({ page }) => {
+  const plane = {
+    id: 5, tailNumber: "N12345", typeDesignator: "C172", cruiseTasKt: 110, fuelBurnGph: 8.5, cruisePowerPct: null,
+    climbTasKt: null, climbFuelBurnGph: null, usableFuelGal: 40, createdAt: "2026-01-01T00:00:00Z", vorCheck: null, openSquawks: [],
+    inspections: null, dueItems: [] as Record<string, unknown>[],
+  };
+  const written: Record<string, unknown>[] = [];
+  await page.route(url => url.pathname === "/api/aircraft", route => route.fulfill({ json: [plane] }));
+  await page.route(url => url.pathname === "/api/aircraft/5/due-items", async route => {
+    const body = route.request().postDataJSON() as Record<string, unknown>;
+    written.push(body);
+    plane.dueItems = [{ id: 1, ...body }];
+    await route.fulfill({ json: { id: 1, ...body } });
+  });
+  await page.route(url => url.pathname === "/api/paperwork", route => route.fulfill({ json: {
+    today: "2026-11-08",
+    items: [{ what: "item", title: "Oil filter adapter", rule: "AD 2011-10-09, 14 CFR 39.7", aircraftId: 5, tailNumber: "N12345",
+      itemId: 1, dueOn: "2099-12-01", daysLeft: 26690, dueAtHours: null, hoursLeft: null }],
+  } }));
+  await page.goto("/app/plan");
+  await showTabs(page);
+  await openConsole(page);
+  const console = page.getByTestId("console-sheet");
+  await library(console, "Airplanes");
+  await console.getByRole("button", { name: "Edit N12345" }).click();
+  await console.getByTestId("due-item-add").click();
+  await console.getByTestId("due-item-title").fill("Oil filter adapter");
+  await console.getByTestId("due-item-reference").fill("AD 2011-10-09");
+  await console.getByTestId("due-item-method").fill("Inspect each 100 h");
+  await console.getByTestId("due-item-dueOn").fill("2099-12-01");
+  await console.getByTestId("due-item-save").click();
+  await expect.poll(() => written[0]).toMatchObject({
+    kind: "AD", title: "Oil filter adapter", reference: "AD 2011-10-09", method: "Inspect each 100 h", dueOn: "2099-12-01", dueAtHours: null,
+  });
+
+  await page.goto("/app/plan");
+  await showTabs(page);
+  await openConsole(page);
+  await library(page.getByTestId("console-sheet"), "Logbook");
+  await expect(page.getByTestId("coming-up")).toContainText("N12345 · Oil filter adapter");
+  await expect(page.getByTestId("coming-up")).toContainText("AD 2011-10-09, 14 CFR 39.7");
 });
 
 test("an airplane's checklist is written from its flight manual, then run item by item", async ({ page }) => {

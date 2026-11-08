@@ -35,7 +35,10 @@ public record AircraftDto(
                 example = "B1")
         @Nullable String surveillance,
         @Schema(description = "Its flight plan's item 19 A/, its colour and markings", example = "White Blue")
-        @Nullable String colour) {
+        @Nullable String colour,
+        @Schema(description = "What else falls due on it as its owner keeps it: ADs (14 CFR 91.417(a)(2)(v)) and "
+                + "other items")
+        List<DueItemDto> dueItems) {
 
     @Schema(description = "A VOR check for IFR (14 CFR 91.171)")
     public record VorCheckDto(
@@ -66,6 +69,9 @@ public record AircraftDto(
             @Nullable LocalDate eltInspectedOn,
             @Nullable LocalDate eltInspectionGoodThrough,
             @Schema(description = "The date the ELT's battery is to be replaced by, as marked on it (91.207(c))")
-            @Nullable LocalDate eltBatteryDueOn) {
+            @Nullable LocalDate eltBatteryDueOn,
+            @Schema(description = "Whether it carries people or is given for flight instruction for hire, when the "
+                    + "100-hour inspection applies (91.409(b))")
+            boolean forHire) {
     }
 }

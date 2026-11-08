@@ -305,6 +305,12 @@ export type ChecklistDto = Gateway["ChecklistDto"];
 export type Squawk = Gateway["SquawkDto"];
 export type SquawkRequest = Gateway["SquawkRequest"];
 export type Reminders = Gateway["RemindersDto"];
+/** An airplane's due item: an AD's status (14 CFR 91.417(a)(2)(v)) or another. */
+export type DueItem = Gateway["DueItemDto"];
+export type DueItemRequest = Gateway["DueItemRequest"];
+/** What falls due for the pilot and their airplanes (GET /api/paperwork). */
+export type Paperwork = Gateway["PaperworkDto"];
+export type Due = Gateway["DueDto"];
 export type LogbookImportResult = Gateway["LogbookImportResult"];
 export type FlightPlanFilingRequest = Gateway["FlightPlanFilingRequest"];
 export type FlightServiceStatus = Gateway["FlightServiceStatus"];

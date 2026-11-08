@@ -28,6 +28,13 @@
             "format" : "double",
             "type" : "number"
           },
+          "dueItems" : {
+            "description" : "What else falls due on it as its owner keeps it: ADs (14 CFR 91.417(a)(2)(v)) and other items",
+            "items" : {
+              "$ref" : "#/components/schemas/DueItemDto"
+            },
+            "type" : "array"
+          },
           "equipment" : {
             "description" : "Its flight plan's item 10a, its navigation, communication and approach equipment (AIM Appendix 4, TBL 4-2)",
             "example" : "SDFGRY",
@@ -76,7 +83,7 @@
             "description" : "Its last VOR check for IFR (14 CFR 91.171): when, how, where, the bearing error, and the last day it is good for -- 30 days on, if the error was within the check's limit"
           }
         },
-        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "equipment", "fuelBurnGph", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
+        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "dueItems", "equipment", "fuelBurnGph", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
         "type" : "object"
       },
       "AircraftRequest" : {
@@ -636,6 +643,129 @@
         "required" : [ "deviceCode", "expiresIn", "interval", "userCode", "verificationPath" ],
         "type" : "object"
       },
+      "DueDto" : {
+        "description" : "One thing that falls due: the pilot's currency, an airplane's inspection, or an item its owner keeps",
+        "properties" : {
+          "aircraftId" : {
+            "description" : "The airplane's, for an airplane's",
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
+          "daysLeft" : {
+            "description" : "Days from today to dueOn: 0 today, below 0 past",
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
+          "dueAtHours" : {
+            "description" : "The time in service it is due at",
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "dueOn" : {
+            "description" : "The last day it is good for, or the day it is due",
+            "format" : "date",
+            "type" : [ "string", "null" ]
+          },
+          "hoursLeft" : {
+            "description" : "Hours from the time in service now, where the owner gave it",
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "itemId" : {
+            "description" : "The due item's, for an owner's item",
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
+          "rule" : {
+            "description" : "The rule that asks for it, or an AD's number",
+            "example" : 14,
+            "type" : [ "string", "null" ]
+          },
+          "tailNumber" : {
+            "type" : [ "string", "null" ]
+          },
+          "title" : {
+            "example" : "Annual inspection",
+            "type" : "string"
+          },
+          "what" : {
+            "description" : "What it is, as a key: flight-review, medical, day-passengers, night-passengers, instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item",
+            "example" : "annual",
+            "type" : "string"
+          }
+        },
+        "required" : [ "aircraftId", "daysLeft", "dueAtHours", "dueOn", "hoursLeft", "itemId", "rule", "tailNumber", "title", "what" ],
+        "type" : "object"
+      },
+      "DueItemDto" : {
+        "properties" : {
+          "dueAtHours" : {
+            "description" : "The time in service the next action is required at, if by hours",
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "dueOn" : {
+            "description" : "The day the next action is required, if by day",
+            "format" : "date",
+            "type" : [ "string", "null" ]
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "kind" : {
+            "enum" : [ "AD", "OTHER" ],
+            "type" : "string"
+          },
+          "method" : {
+            "description" : "The method of compliance (91.417(a)(2)(v))",
+            "type" : [ "string", "null" ]
+          },
+          "reference" : {
+            "description" : "An AD's number and revision date, or the item's own reference",
+            "example" : "AD 2011-10-09",
+            "type" : [ "string", "null" ]
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "dueAtHours", "dueOn", "id", "kind", "method", "reference", "title" ],
+        "type" : "object"
+      },
+      "DueItemRequest" : {
+        "properties" : {
+          "dueAtHours" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "dueOn" : {
+            "format" : "date",
+            "type" : [ "string", "null" ]
+          },
+          "kind" : {
+            "enum" : [ "AD", "OTHER" ],
+            "type" : "string"
+          },
+          "method" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
+          "reference" : {
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
+          "title" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "dueAtHours", "dueOn", "kind", "method", "reference", "title" ],
+        "type" : "object"
+      },
       "EndorsementDto" : {
         "properties" : {
           "code" : {
@@ -1139,6 +1269,10 @@
             "format" : "date",
             "type" : [ "string", "null" ]
           },
+          "forHire" : {
+            "description" : "Whether it carries people or is given for flight instruction for hire, when the 100-hour inspection applies (91.409(b))",
+            "type" : "boolean"
+          },
           "hoursNow" : {
             "format" : "double",
             "type" : [ "number", "null" ]
@@ -1168,7 +1302,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "annualGoodThrough", "annualOn", "eltBatteryDueOn", "eltInspectedOn", "eltInspectionGoodThrough", "hoursNow", "hundredHourAtHours", "hundredHourDueAtHours", "staticCheckGoodThrough", "staticCheckOn", "transponderCheckGoodThrough", "transponderCheckOn" ],
+        "required" : [ "annualGoodThrough", "annualOn", "eltBatteryDueOn", "eltInspectedOn", "eltInspectionGoodThrough", "forHire", "hoursNow", "hundredHourAtHours", "hundredHourDueAtHours", "staticCheckGoodThrough", "staticCheckOn", "transponderCheckGoodThrough", "transponderCheckOn" ],
         "type" : "object"
       },
       "InspectionsRequest" : {
@@ -1184,6 +1318,9 @@
           "eltInspectedOn" : {
             "format" : "date",
             "type" : [ "string", "null" ]
+          },
+          "forHire" : {
+            "type" : [ "boolean", "null" ]
           },
           "hoursNow" : {
             "format" : "double",
@@ -1202,7 +1339,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "annualOn", "eltBatteryDueOn", "eltInspectedOn", "hoursNow", "hundredHourAtHours", "staticCheckOn", "transponderCheckOn" ],
+        "required" : [ "annualOn", "eltBatteryDueOn", "eltInspectedOn", "forHire", "hoursNow", "hundredHourAtHours", "staticCheckOn", "transponderCheckOn" ],
         "type" : "object"
       },
       "InstructorDto" : {
@@ -1566,6 +1703,23 @@
           }
         },
         "required" : [ "email" ],
+        "type" : "object"
+      },
+      "PaperworkDto" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DueDto"
+            },
+            "type" : "array"
+          },
+          "today" : {
+            "description" : "The day the days left are counted from",
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "required" : [ "items", "today" ],
         "type" : "object"
       },
       "PilotContactRequest" : {
@@ -2485,6 +2639,114 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ChecklistDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "aircraft-controller" ]
+      }
+    },
+    "/api/aircraft/{id}/due-items" : {
+      "post" : {
+        "operationId" : "addDueItem",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DueItemRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DueItemDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "aircraft-controller" ]
+      }
+    },
+    "/api/aircraft/{id}/due-items/{itemId}" : {
+      "delete" : {
+        "operationId" : "deleteDueItem",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "itemId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "aircraft-controller" ]
+      },
+      "put" : {
+        "operationId" : "updateDueItem",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "itemId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DueItemRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DueItemDto"
                 }
               }
             },
@@ -4012,6 +4274,24 @@
         },
         "summary" : "The signed-in pilot's telephone number and home base",
         "tags" : [ "pilot-controller" ]
+      }
+    },
+    "/api/paperwork" : {
+      "get" : {
+        "operationId" : "due",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaperworkDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "paperwork-controller" ]
       }
     },
     "/api/planner/**" : {

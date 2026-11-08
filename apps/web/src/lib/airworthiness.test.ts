@@ -11,7 +11,7 @@ const GOOD: Inspections = {
   staticCheckOn: "2025-01-10", staticCheckGoodThrough: "2027-01-31",
   transponderCheckOn: "2025-01-10", transponderCheckGoodThrough: "2027-01-31",
   eltInspectedOn: "2026-02-01", eltInspectionGoodThrough: "2027-02-28",
-  eltBatteryDueOn: "2028-06-01",
+  eltBatteryDueOn: "2028-06-01", forHire: true,
 };
 const DAY = "2026-10-05";
 
@@ -49,6 +49,8 @@ describe("the airplane's inspections, on the day", () => {
     expect(inspectionFactors({ ...GOOD, transponderCheckGoodThrough: "2026-09-30" }, DAY, false)).toMatchObject([{ key: "transponder", points: 3 }]);
     expect(keys({ ...GOOD, hoursNow: 1300.5 })).toEqual(["hundredHour"]);
     expect(keys({ ...GOOD, hoursNow: 1300.4 })).toEqual([]);
+    // Not flown for hire, the 100-hour is not owed (14 CFR 91.409(b)).
+    expect(keys({ ...GOOD, hoursNow: 1300.5, forHire: false })).toEqual([]);
   });
 
   test("an inoperative item not deferred for this kind of flight stops it; other squawks are a caution", () => {

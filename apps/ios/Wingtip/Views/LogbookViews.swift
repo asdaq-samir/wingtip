@@ -33,6 +33,10 @@ struct LogbookView: View {
     @State private var importing = false
     @State private var imported: String?
     @State private var exportFile: URL?
+    @State private var paperwork: Paperwork?
+    /// A file read, shown before its flights go in.
+    @State private var preview: (name: String, read: LogbookCSV.Imported)?
+    @State private var sending = false
 
     /// The flight in the form: a new one, or one logged.
     struct Editing: Identifiable {
@@ -45,6 +49,7 @@ struct LogbookView: View {
             if !session.signedIn {
                 ContentUnavailableView("Sign in for your logbook", systemImage: "book.closed", description: Text("Your logbook and currency are kept with your account."))
             } else {
+                comingUpSection
                 currencySection
                 instrumentSection
                 if let currency, currency.flights > 0 {
@@ -60,9 +65,13 @@ struct LogbookView: View {
                 // same day, airplane, route and time).
                 Section("File") {
                     if let imported { Text(imported).font(.footnote).foregroundStyle(.secondary) }
-                    Button { importing = true } label: { Label("Import a Logbook", systemImage: "square.and.arrow.down") }
-                    if let exportFile {
-                        ShareLink(item: exportFile) { Label("Export as CSV", systemImage: "square.and.arrow.up") }
+                    if let preview {
+                        previewRows(preview.name, preview.read)
+                    } else {
+                        Button { importing = true } label: { Label("Import a Logbook", systemImage: "square.and.arrow.down") }
+                        if let exportFile {
+                            ShareLink(item: exportFile) { Label("Export as CSV", systemImage: "square.and.arrow.up") }
+                        }
                     }
                 }
                 Section("Flights") {
@@ -116,6 +125,52 @@ struct LogbookView: View {
         .refreshable { await load() }
     }
 
+    // What falls due, the pilot's and their airplanes', soonest first, each
+    // with its rule (14 CFR 61.56(c), 61.23, 61.57; 91.409, 91.207, 91.411,
+    // 91.413, 91.171; an AD's own number) and the days or hours left: the
+    // gateway's list, the one the reminder emails are made from.
+    @ViewBuilder private var comingUpSection: some View {
+        if let items = paperwork?.items {
+            Section("Coming Up") {
+                if items.isEmpty {
+                    Text("Nothing dated yet: your flight review, medical and airplanes' inspections show here once given.")
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(items, id: \.key) { d in
+                    LabeledContent {
+                        Text(d.when).monospacedDigit().foregroundStyle(d.tone)
+                    } label: {
+                        Text(d.named)
+                        Text([d.rule, d.dueOn.map(Day.said)].compactMap { $0 }.joined(separator: " · "))
+                    }
+                }
+            }
+        }
+    }
+
+    /// The flights a file gave, before they go in: how many, the first few,
+    /// the rows left out with their lines and why.
+    @ViewBuilder private func previewRows(_ name: String, _ read: LogbookCSV.Imported) -> some View {
+        let n = read.entries.count
+        Text("\(name): \(n) flight\(n == 1 ? "" : "s") read\(read.skipped.isEmpty ? "" : ", \(read.skipped.count) row\(read.skipped.count == 1 ? "" : "s") left out").")
+            .font(.footnote).foregroundStyle(.secondary)
+        ForEach(Array(read.entries.prefix(5).enumerated()), id: \.offset) { _, e in
+            LabeledContent {
+                Text(Formats.hours(e.totalHours)).monospacedDigit()
+            } label: {
+                Text(Day.said(e.flownOn) + (e.route.map { " · \($0)" } ?? ""))
+                Text([e.aircraft, e.aircraftType].compactMap { $0 }.joined(separator: " · "))
+            }
+        }
+        if n > 5 { Text("And \(n - 5) more").font(.footnote).foregroundStyle(.secondary) }
+        ForEach(read.skipped.prefix(3), id: \.line) { s in
+            Text("Line \(s.line): \(s.reason)").font(.footnote).foregroundStyle(.secondary)
+        }
+        Button(sending ? "Importing…" : "Import \(n) Flight\(n == 1 ? "" : "s")") { Task { await send(read) } }
+            .disabled(sending || n == 0)
+        Button("Cancel", role: .cancel) { preview = nil }
+    }
+
     private func row(_ e: LogbookEntry) -> some View {
         let landings = e.dayLandings + e.nightLandings
         return VStack(alignment: .leading, spacing: 2) {
@@ -162,7 +217,7 @@ struct LogbookView: View {
             }
             Toggle(isOn: Binding(get: { reminders?.on ?? false }, set: { on in Task { await remind(on) } })) {
                 Text("Email reminders")
-                Text("30 and 7 days before each runs out")
+                Text("30 and 7 days before each runs out, your airplanes' too")
             }
             .disabled(reminders == nil)
         }
@@ -212,6 +267,7 @@ struct LogbookView: View {
             entries = list
             currency = try await Gateway.currency()
             reminders = try? await Gateway.reminders()
+            paperwork = try? await Gateway.paperwork()
             problem = nil
             exportFile = Self.write(list)
         } catch { problem = "Your logbook could not be fetched: \(error.localizedDescription)" }
@@ -224,17 +280,29 @@ struct LogbookView: View {
         do { try LogbookCSV.csv(entries).write(to: url, atomically: true, encoding: .utf8); return url } catch { return nil }
     }
 
-    /// A CSV picked in Files: read on the phone (LogbookCSV), sent as
-    /// entries, and what was left out said in a line.
+    /// A CSV picked in Files: read on the phone (LogbookCSV) and shown
+    /// before anything is sent.
     private func bringIn(_ result: Result<URL, any Error>) async {
         do {
             let url = try result.get()
             let opened = url.startAccessingSecurityScopedResource()
             defer { if opened { url.stopAccessingSecurityScopedResource() } }
             let text = try String(contentsOf: url, encoding: .utf8)
-            let read = LogbookCSV.read(text)
-            let answer = read.entries.isEmpty ? LogbookImportResult(added: 0, duplicates: 0) : try await Gateway.importLogbook(read.entries)
+            imported = nil
+            preview = (url.lastPathComponent, LogbookCSV.read(text))
+        } catch {
+            problem = "Could not import the logbook: \(error.localizedDescription)"
+        }
+    }
+
+    /// The flights shown, sent; what was left out said in a line.
+    private func send(_ read: LogbookCSV.Imported) async {
+        sending = true
+        defer { sending = false }
+        do {
+            let answer = try await Gateway.importLogbook(read.entries)
             imported = LogbookCSV.summary(read, answer)
+            preview = nil
             await load()
         } catch {
             problem = "Could not import the logbook: \(error.localizedDescription)"

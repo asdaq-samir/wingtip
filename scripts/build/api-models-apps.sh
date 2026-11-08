@@ -54,7 +54,7 @@ PLANNER=(
 # a switch of its own.
 GATEWAY=(
   AircraftRequest CurrencyDatesRequest InspectionsRequest InstructorRequest
-  SquawkRequest VorCheckRequest LogbookImportResult FlightServiceStatus
+  SquawkRequest VorCheckRequest LogbookImportResult FlightServiceStatus PaperworkDto DueDto
 )
 
 "$docker" run --rm -v "$here:/w" -w /w node:24-slim sh -ec '

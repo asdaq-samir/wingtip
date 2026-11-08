@@ -17,7 +17,9 @@ export function inspectionsInput(i: Inspections) {
     annual_good_through: i.annualGoodThrough ?? null, elt_inspection_good_through: i.eltInspectionGoodThrough ?? null,
     elt_battery_due_on: i.eltBatteryDueOn ?? null, static_check_good_through: i.staticCheckGoodThrough ?? null,
     transponder_check_good_through: i.transponderCheckGoodThrough ?? null,
-    hundred_hour_due_at_hours: i.hundredHourDueAtHours ?? null, hours_now: i.hoursNow ?? null,
+    // The 100-hour is owed only by an airplane flown for hire (14 CFR
+    // 91.409(b)), as its owner says: not one, not weighed.
+    hundred_hour_due_at_hours: i.forHire ? i.hundredHourDueAtHours ?? null : null, hours_now: i.hoursNow ?? null,
   };
 }
 

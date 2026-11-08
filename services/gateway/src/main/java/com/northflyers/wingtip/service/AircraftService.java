@@ -59,7 +59,8 @@ public class AircraftService {
     /** The airplane's inspections and tests, as its owner records them. */
     public Optional<Aircraft> recordInspections(Pilot pilot, Long id, InspectionsRequest r) {
         return get(pilot, id).map(a -> aircraft.save(a.recordInspections(r.annualOn(), r.hundredHourAtHours(), r.hoursNow(),
-                r.staticCheckOn(), r.transponderCheckOn(), r.eltInspectedOn(), r.eltBatteryDueOn())));
+                r.staticCheckOn(), r.transponderCheckOn(), r.eltInspectedOn(), r.eltBatteryDueOn())
+                .forHire(r.forHire() == null ? a.isForHire() : r.forHire())));
     }
 
     /** @return true if an aircraft was actually deleted */
