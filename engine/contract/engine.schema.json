@@ -17068,6 +17068,610 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "ahead_frame": {
+      "description": "Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AheadFrameInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "track_deg": {
+              "type": "number",
+              "description": "True track over the ground."
+            },
+            "gs_kt": {
+              "type": "number"
+            },
+            "alt_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "GPS altitude, feet MSL."
+            },
+            "vs_fpm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "track_deg",
+            "gs_kt"
+          ]
+        },
+        "answer": {
+          "title": "AheadFrameAnswer",
+          "type": "object",
+          "properties": {
+            "box": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4,
+              "description": "[south, west, north, east]."
+            },
+            "near_box": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4,
+              "description": "[south, west, north, east]."
+            },
+            "lats": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "description": "Three rows: the track, left of it, right of it."
+            },
+            "lons": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "required": [
+            "box",
+            "near_box",
+            "lats",
+            "lons"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "alerts_ahead": {
+      "description": "What is ahead of own ship from the planner's data (ahead.rs): the Class B, C and D (91.129-91.131), special-use areas (91.133, AIM 3-4) and TFRs (91.137-91.145, 99.7) its track goes into in the next five minutes, and the ground or a DOF obstacle it comes within 500 ft of in the next minute (borrowed from 91.119(c)); warnings first, then the soonest. Nothing under 40 kt. Advisory: not a TAWS (TSO-C151). A list given as null was not read, and is named in `unavailable`.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AlertsAheadInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "track_deg": {
+              "type": "number"
+            },
+            "gs_kt": {
+              "type": "number"
+            },
+            "alt_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "vs_fpm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "now": {
+              "type": "number",
+              "description": "Unix seconds."
+            },
+            "ground_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The ground under the airplane."
+            },
+            "airspace": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "class": {
+                    "type": "string"
+                  },
+                  "floor_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "None: up to Class A."
+                  },
+                  "polygons": {
+                    "$ref": "#/definitions/AheadPolygons"
+                  }
+                },
+                "required": [
+                  "name",
+                  "class",
+                  "polygons"
+                ]
+              }
+            },
+            "special_use": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "P, R, MOA, W or A."
+                  },
+                  "floor_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "floor_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "times_of_use": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ground_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The ground under the area, for AGL heights."
+                  },
+                  "polygons": {
+                    "$ref": "#/definitions/AheadPolygons"
+                  }
+                },
+                "required": [
+                  "name",
+                  "type",
+                  "polygons"
+                ]
+              }
+            },
+            "tfrs": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "notam_id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "rule": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "floor_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "floor_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "effective": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Unix seconds."
+                  },
+                  "expires": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Unix seconds."
+                  },
+                  "ground_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "polygons": {
+                    "$ref": "#/definitions/AheadPolygons"
+                  }
+                },
+                "required": [
+                  "notam_id",
+                  "polygons"
+                ]
+              }
+            },
+            "near_field": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "distance_nm": {
+                  "type": "number"
+                },
+                "elevation_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "distance_nm"
+              ]
+            },
+            "swath_ground_ft": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "description": "The ground at ahead_frame's swath, its rows."
+            },
+            "obstacles": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "amsl_ft": {
+                    "type": "number"
+                  },
+                  "type": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "lat",
+                  "lon",
+                  "amsl_ft"
+                ]
+              }
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "track_deg",
+            "gs_kt",
+            "now"
+          ]
+        },
+        "answer": {
+          "title": "AlertsAheadAnswer",
+          "type": "object",
+          "properties": {
+            "alerts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "airspace",
+                      "special_use",
+                      "tfr",
+                      "terrain",
+                      "obstacle"
+                    ]
+                  },
+                  "level": {
+                    "type": "string",
+                    "enum": [
+                      "warning",
+                      "caution"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "class": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "need": {
+                    "type": "string"
+                  },
+                  "inside": {
+                    "type": "boolean"
+                  },
+                  "seconds": {
+                    "type": "number"
+                  },
+                  "distance_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "lon": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "floor_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "top_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "clearance_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "times_of_use": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "notam_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind",
+                  "level",
+                  "name",
+                  "class",
+                  "need",
+                  "inside",
+                  "seconds",
+                  "distance_nm",
+                  "lat",
+                  "lon",
+                  "floor_ft",
+                  "ceiling_ft",
+                  "top_ft",
+                  "clearance_ft",
+                  "times_of_use",
+                  "notam_id"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "unavailable": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "tfrs_as_of": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "alerts",
+            "unavailable",
+            "tfrs_as_of"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "congested_points": {
+      "description": "Whether each point is over a congested area or within 2,000 ft of one (14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet'), east-west by the cosine of the point's latitude, from the towns the planner reads (Census urban areas and gazetteer places).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CongestedPointsInput",
+          "type": "object",
+          "properties": {
+            "areas": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AheadPolygons"
+              },
+              "description": "Each town's outline."
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "description": "[[lat, lon], ...]."
+            },
+            "candidates": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "description": "For each point, the indices of the areas to measure it against; null, all of them."
+            }
+          },
+          "required": [
+            "areas",
+            "points"
+          ]
+        },
+        "answer": {
+          "title": "CongestedPointsAnswer",
+          "type": "array",
+          "items": {
+            "type": "boolean"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -22292,6 +22896,24 @@
         "lon",
         "winds"
       ]
+    },
+    "AheadPolygons": {
+      "description": "An area's outline: polygons, each its outer ring and its holes, each ring [[lon, lat], ...].",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
     }
   }
 }

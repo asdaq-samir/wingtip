@@ -1,7 +1,9 @@
-"""wingtip.alerts: what is ahead of own ship, with the airspace, special-use
-areas, TFRs, ground and obstacles stubbed. Own ship is at 42 N 88 W
-going east at 120 kt -- two miles a minute, 0.0224 degrees of longitude
-a mile there."""
+"""wingtip.alerts, the data the engine's alerts_ahead reads, and the
+engine's answer over it: what is ahead of own ship, with the airspace,
+special-use areas, TFRs, ground and obstacles stubbed. Own ship is at 42 N
+88 W going east at 120 kt -- two miles a minute, 0.0224 degrees of
+longitude a mile there. The engine's own cases are the shared fixture
+apps/web/src/lib/fixtures/ahead.json (engine/facade/tests/ahead.rs)."""
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -142,7 +144,8 @@ def test_rising_ground_within_500_ft_in_the_next_minute_is_a_caution(ahead):
 def test_ground_at_the_airplanes_altitude_within_half_a_minute_is_a_warning(ahead):
     ahead.world["ground_ft"] = lambda lat, lon: 2950.0 if lon > LON + 0.6 * MILE else 800.0
     (alert,) = ahead()["alerts"]
-    assert alert["level"] == "warning" and alert["seconds"] <= alerts.TERRAIN_WARNING_S
+    # Within the engine's half a minute (ahead.rs TERRAIN_WARNING_S).
+    assert alert["level"] == "warning" and alert["seconds"] <= 30
 
 
 def test_descending_into_the_ground_is_seen_before_it_is_reached(ahead):

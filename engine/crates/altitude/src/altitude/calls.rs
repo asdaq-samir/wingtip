@@ -5,11 +5,11 @@
 use super::floor::{self, Ground, Obstacle, IFR_OBSTACLE_RADIUS_NM};
 use super::select::{self, Area};
 use super::words::{self, Via};
-use super::{clouds, cruising, mountainous};
+use super::{clouds, congested, cruising, mountainous};
 use crate::json::{self, Value};
 
 /// The names this module answers.
-pub const NAMES: [&str; 14] = [
+pub const NAMES: [&str; 15] = [
     "legal_cruising_altitudes",
     "tight_cruising_altitude",
     "highest_under_clouds_ft",
@@ -24,6 +24,7 @@ pub const NAMES: [&str; 14] = [
     "altitude_anyway",
     "no_altitude",
     "cloud_clearance_at_ft",
+    "congested_points",
 ];
 
 type R<T> = Result<T, String>;
@@ -114,6 +115,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "tight_cruising_altitude" => Ok(number(cruising::tight(num(name, v, "floor_ft")?, opt_num(name, v, "ceiling_ft")?, opt_num(name, v, "rule_from_ft")?))),
         "highest_under_clouds_ft" => Ok(number(Some(clouds::highest_under_ft(num(name, v, "cloud_base_ft")?)))),
         "cloud_clearance_at_ft" => Ok(number(Some(clouds::clearance_at_ft(num(name, v, "altitude_ft")?)))),
+        "congested_points" => congested_points(name, v),
         "altitude_wheel" => Ok(numbers(&cruising::wheel(&nums(name, v, "legal_ft")?, opt_num(name, v, "flown_ft")?))),
         "ifr_obstacle_radius_nm" => Ok(number(Some(IFR_OBSTACLE_RADIUS_NM))),
         "airway_floor_ft" => Ok(number(floor::published(opt_num(name, v, "mea_ft")?, opt_num(name, v, "gnss_mea_ft")?))),
@@ -215,4 +217,59 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         }
         _ => Err(format!("altitude has no rule called {name:?}")),
     }
+}
+
+/// `congested_points`: for each of `points` ([lat, lon]), whether it is
+/// over one of `areas` or within 91.119(b)'s 2,000 ft of one (congested.rs).
+/// `candidates`, where given, names for each point the areas worth
+/// measuring it against (indices into `areas`: the planner's box query
+/// over the towns), so a route over Chicago measures each obstacle against
+/// the towns near it alone and sends each outline once.
+fn congested_points(name: &str, v: &Value) -> R<String> {
+    let bad = || format!("{name}: an area is not [[[[lon, lat], ...], ...], ...]");
+    let areas: Vec<congested::Area> = list(name, v, "areas")?
+        .iter()
+        .map(|a| {
+            a.as_array().ok_or_else(bad)?.iter()
+                .map(|rings| {
+                    rings.as_array().ok_or_else(bad)?.iter()
+                        .map(|ring| {
+                            ring.as_array().ok_or_else(bad)?.iter()
+                                .map(|p| match p.as_array() {
+                                    Some([x, y]) => Ok((x.as_f64().ok_or_else(bad)?, y.as_f64().ok_or_else(bad)?)),
+                                    _ => Err(bad()),
+                                })
+                                .collect()
+                        })
+                        .collect()
+                })
+                .collect()
+        })
+        .collect::<R<_>>()?;
+    let candidates = match v.get("candidates") {
+        None | Some(Value::Null) => None,
+        Some(Value::Array(c)) => Some(c),
+        Some(_) => return Err(format!("{name}: \"candidates\" is not a list")),
+    };
+    let all: Vec<&congested::Area> = areas.iter().collect();
+    let mut out = String::from("[");
+    for (i, p) in list(name, v, "points")?.iter().enumerate() {
+        let (lat, lon) = point(name, Some(p))?;
+        let near: Vec<&congested::Area> = match candidates {
+            None => all.clone(),
+            Some(c) => c
+                .get(i)
+                .and_then(Value::as_array)
+                .ok_or_else(|| format!("{name}: \"candidates\" has no list for point {i}"))?
+                .iter()
+                .map(|j| j.as_f64().and_then(|j| areas.get(j as usize)).ok_or_else(|| format!("{name}: a candidate is not an area's index")))
+                .collect::<R<_>>()?,
+        };
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(if congested::congested(&near, lat, lon) { "true" } else { "false" });
+    }
+    out.push(']');
+    Ok(out)
 }

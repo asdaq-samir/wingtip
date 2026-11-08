@@ -401,6 +401,16 @@
 //! - `vfr_minimums` (91.155(a)) `{"day", "night"}` or null, from
 //!   `{"class", "altitude_ft", "agl_ft"?}`; `drill_decks`, the light gun's
 //!   and the minimums' cards, from `{}` (crate::drills);
+//! - `ahead_frame` `{"box", "near_box", "lats", "lons"}` from `{"lat",
+//!   "lon", "track_deg", "gs_kt", "alt_ft"?, "vs_fpm"?}`, where the data
+//!   is wanted; then `alerts_ahead` `{"alerts", "unavailable",
+//!   "tfrs_as_of"}` from the same with `"now"`, `"ground_ft"`, the
+//!   `"airspace"`, `"special_use"` and `"tfrs"` with their `"polygons"`,
+//!   `"near_field"`, `"swath_ground_ft"` and the DOF's `"obstacles"`, a
+//!   list null where it was not read (crate::ahead);
+//! - `congested_points` `[bool]` from `{"areas": [polygons], "points":
+//!   [[lat, lon]], "candidates"?: [[index]]}`, 91.119(b)'s 2,000 ft
+//!   (altitude::congested);
 //! - `route_position` `{"along_nm", "total_nm", "left_nm", "off_nm",
 //!   "on_route", "leg", "leg_fraction", "burnt_gal"}` or null, from
 //!   `{"at", "line"? | "points"?, "legs"?}` (motion::along);
@@ -931,6 +941,8 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             Ok(crate::cycles::to_json(&crate::cycles::cycle(kind, effective, on)))
         }
         _ if crate::drills::NAMES.contains(&name) => crate::drills::call(name, ask.v),
+        // What is ahead of own ship from the planner's data (ahead.rs).
+        _ if crate::ahead::NAMES.contains(&name) => crate::ahead::call(name, ask.v),
         _ if crate::pilot::records::NAMES.contains(&name) => crate::pilot::records::call(name, ask.v),
         _ if crate::wording::NAMES.contains(&name) => crate::wording::answer(name, ask.v),
         // A field's weather (forecast::calls), the traffic list's filters and
