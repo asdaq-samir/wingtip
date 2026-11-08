@@ -193,7 +193,7 @@ deleting one only forces a re-download on the next build. `python:3.14-slim`
 is the base of `wingtip-base`, which is in turn the base of every Python
 image above; each is stored once, which is why image sizes are not
 additive. `node:26-slim` and `maven:...` are build-only and
-never ship. `pgvector/pgvector` is the database. `postgres` and
+never ship. `postgres:18-bookworm` is the database; `postgres:18` and
 `testcontainers/ryuk` are started by the JUnit suite ([Section 8](#8-what-gets-tested-and-what-deliberately-doesnt)).
 Intermediate build stages such as `eclipse-temurin:25-jre` do not appear
 in the list at all under the containerd image store.
@@ -727,11 +727,14 @@ startup, in version order, once each, forever. Never edit an already-applied
 migration file — add a new one instead; Flyway (like every migration
 tool) assumes each version's content is immutable once it's run anywhere.
 
-A database made before 2026-11-06 also holds a `nav_log_agent` schema —
-the removed briefing agent's memory and its own small migrations table.
-Nothing reads it any more; it was left in place rather than dropped by a
-new migration, since a destructive migration is a decision to take on
-purpose.
+A database made before 2026-11-06 may still hold a `nav_log_agent`
+schema — the removed briefing agent's memory and its own small migrations
+table — and the `vector` extension it needed. Nothing reads them. They
+are not dropped by a Flyway migration because they cannot be once the
+database runs on plain `postgres`: dropping a `vector` column or the
+extension loads pgvector's library, which only the old
+`pgvector/pgvector:pg18` image has. Drop them by hand on that image (docs/README.md's
+"Database & migrations" says how).
 
 The pattern Flyway replaces: letting your ORM auto-generate schema
 changes at startup based on what your code currently looks like (JPA's

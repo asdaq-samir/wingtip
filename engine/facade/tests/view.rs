@@ -179,7 +179,10 @@ fn the_airports_in_view_are_the_planners_fields() {
         for want in theirs {
             let Some(got) = ours.iter().find(|v| ident(v) == ident(want)) else { continue };
             assert_eq!(keys(got), keys(want), "{tag}: the fields of {}", want["ident"]);
-            for field in ["kind", "military", "private"] {
+            // `towered` was put into the captured answers on 2026-11-08 by
+            // the planner's own rule (wingtip.faa_data.towered_fields, NASR
+            // APT_BASE's TWR_TYPE_CODE), after /api/airports/in-view gained it.
+            for field in ["kind", "military", "private", "towered"] {
                 assert_eq!(got[field], want[field], "{tag}: {} {field}", want["ident"]);
             }
             // A field under a volume the cut lacks (Lewis under Romeoville's

@@ -319,12 +319,29 @@ gateway reaches the planner by its Compose name (`http://planner:8000`).
 
 The gateway owns the `db` Postgres container's `public` schema, managed by
 Flyway's versioned SQL migrations rather than an ORM auto-generating
-schema from code. A database made before 2026-11-06 also holds a
-`nav_log_agent` schema (`route_briefings`, `schema_migrations`): the
-removed briefing agent's similar-routes memory. Nothing reads or writes
-it any more, and it was left in place rather than dropped by a
-migration; drop it by hand (`DROP SCHEMA nav_log_agent CASCADE`) when
-its rows are no longer wanted.
+schema from code. The image is plain `postgres:18-bookworm`.
+
+A database made before 2026-11-06 may also hold a `nav_log_agent`
+schema (`route_briefings`, `schema_migrations`), the removed briefing
+agent's similar-routes memory, and the `vector` extension it used.
+Nothing reads them. Drop both on the old `pgvector/pgvector:pg18` image,
+since dropping them loads pgvector's library, which plain `postgres` does
+not have; a Flyway migration could not do it for the same reason. With
+the gateway stopped:
+
+```sh
+docker compose stop db
+docker run -d --rm --name wingtip-db-pgvector \
+  -v wingtip_pgdata_pg18:/var/lib/postgresql pgvector/pgvector:pg18
+# once `docker exec wingtip-db-pgvector pg_isready -U wingtip` says so:
+docker exec wingtip-db-pgvector psql -U wingtip -d wingtip -c \
+  'DROP SCHEMA IF EXISTS nav_log_agent CASCADE; DROP EXTENSION IF EXISTS vector CASCADE;'
+docker stop wingtip-db-pgvector && docker compose up -d db
+```
+
+Left in place they do the gateway no harm, but a `pg_dump` of the
+database would carry a `CREATE EXTENSION vector` that plain `postgres`
+cannot restore.
 
 ```mermaid
 erDiagram

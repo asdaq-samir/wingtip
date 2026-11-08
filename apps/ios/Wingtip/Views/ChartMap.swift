@@ -1,8 +1,10 @@
 import MapKit
 import SwiftUI
 
-/// The map: the FAA chart as its ground, own ship on it, the fields in
-/// view with their flight categories, and the route's course line.
+/// The map: the FAA chart as its ground over Apple's map, own ship on it,
+/// the fields in view in the sectional's symbols, the airspace, VORs and
+/// runways (ChartOverlays), and the route's course line, shown as one
+/// thing once they are in (the reveal).
 /// MKMapView rather than SwiftUI's Map, for the tile overlay and the
 /// renderers the route and the marks need.
 /// A procedure's path, told from the course line by its class.
@@ -87,6 +89,18 @@ struct ChartMap: UIViewRepresentable {
     @AppStorage(MapExtrasInput.Keys.privateFields) var privateFields = false
     /// The legs a hazard tapped in the Brief is on (HazardLegsViews.swift).
     var hazardLegs: HazardLegs?
+    /// The height the sheet covers at the foot of the map now: the map
+    /// opens with the pilot's position in the middle of what it leaves,
+    /// under the loading mark (MapOpening).
+    var bottomInset: CGFloat = 0
+    /// Told once, when the chart and its overlays are in (or after 2.5 s
+    /// at most): the loading mark then fades and the map shows as one
+    /// thing, as the web map's reveal.
+    var onReveal: (() -> Void)?
+
+    /// The longest the map waits for its chart and overlays before it shows
+    /// what it has, the web map's cap.
+    static let revealCap: Duration = .milliseconds(2500)
 
     func makeUIView(context: Context) -> MKMapView {
         let map = MKMapView()
@@ -99,18 +113,24 @@ struct ChartMap: UIViewRepresentable {
         map.register(AirportMarkView.self, forAnnotationViewWithReuseIdentifier: AirportMarkView.reuse)
         map.register(CheckpointMarkView.self, forAnnotationViewWithReuseIdentifier: CheckpointMarkView.reuse)
         map.register(TrafficMarkView.self, forAnnotationViewWithReuseIdentifier: TrafficMarkView.reuse)
-        map.register(AirportClusterView.self, forAnnotationViewWithReuseIdentifier: AirportClusterView.reuse)
         context.coordinator.extras.attach(to: map)
-        // The chart hides Apple's map; its labels would draw through
-        // where a tile is missing, so none are shown at all.
+        context.coordinator.overlays.attach(to: map)
+        // Apple's map is under the chart and shows close in, where the
+        // chart fades (ChartFade): muted, with no points of interest or
+        // traffic, so the FAA's runways read over its roads.
         let config = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
         config.pointOfInterestFilter = .excludingAll
         config.showsTraffic = false
         map.preferredConfiguration = config
-        // Fresh open at zoom 7 on the position, as the web app does
-        // (lib/map): the Great Lakes until the position comes.
-        map.setRegion(MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 42.3, longitude: -88.0),
-                                         latitudinalMeters: 600_000, longitudinalMeters: 600_000), animated: false)
+        // Where the map opens is set once it has its size and the sheet's
+        // (Coordinator.open); the map shows at the cap at the latest.
+        let coordinator = context.coordinator
+        coordinator.onReveal = onReveal
+        coordinator.overlays.onFirstAnswer = { [weak coordinator] in coordinator?.airspaceAnswered() }
+        Task { @MainActor in
+            try? await Task.sleep(for: Self.revealCap)
+            coordinator.reveal()
+        }
         context.coordinator.locations.requestWhenInUseAuthorization()
         let flight = FlightMapLayer()
         flight.attach(map)
@@ -120,7 +140,10 @@ struct ChartMap: UIViewRepresentable {
 
     func updateUIView(_ map: MKMapView, context: Context) {
         context.coordinator.onAirport = onAirport
-        context.coordinator.dim((ChartNight(rawValue: chartNight) ?? .dimmed).shade(dark: colorScheme == .dark))
+        context.coordinator.onReveal = onReveal
+        let shade = (ChartNight(rawValue: chartNight) ?? .dimmed).shade(dark: colorScheme == .dark)
+        context.coordinator.dim(shade)
+        context.coordinator.open(map, bottomInset: bottomInset)
         context.coordinator.onRegion = onRegion
         context.coordinator.useFields(military: militaryFields, privateFields: privateFields, on: map)
         context.coordinator.show(traffic, ownFt: ownFt, on: map)
@@ -139,10 +162,17 @@ struct ChartMap: UIViewRepresentable {
             context.coordinator.fitted = fitRequest
             map.setVisibleMapRect(line.boundingMapRect, edgePadding: Self.routePadding(in: map), animated: MapMotion.animated)
         }
-        if let template, context.coordinator.overlay?.template != template {
+        // The day's lift on the chart (ChartLift), none on the dimmed one at
+        // night: a change of either draws the chart again from the store.
+        let lift = shade == 0
+        if let template, context.coordinator.overlay?.template != template || context.coordinator.overlay?.lift != lift {
             if let current = context.coordinator.overlay { map.removeOverlay(current) }
-            let overlay = ChartTileOverlay(template: template, minZoom: minZoom, maxZoom: maxZoom)
-            map.addOverlay(overlay, level: .aboveLabels)
+            let overlay = ChartTileOverlay(template: template, minZoom: minZoom, maxZoom: maxZoom, lift: lift)
+            let coordinator = context.coordinator
+            overlay.onTile = { coordinator.chartTile() }
+            // Under everything else drawn over Apple's map: the airspace, the
+            // runways, the course.
+            map.insertOverlay(overlay, at: 0, level: .aboveLabels)
             context.coordinator.overlay = overlay
         }
         if context.coordinator.checkpointsShown != checkpoints {
@@ -260,7 +290,7 @@ struct ChartMap: UIViewRepresentable {
         /// and place each was drawn with.
         private var checkpointMarks: [String: (number: Int, checkpoint: Checkpoint, mark: CheckpointAnnotation)] = [:]
         /// The route's fields (its ends and stops): drawn whatever the
-        /// zoom, never folded into a cluster (AirportAnnotation.priority).
+        /// zoom, never dropped for another (AirportAnnotation.priority).
         var routeIdents: Set<String> = []
         var onAirport: ((String) -> Void)?
 
@@ -315,9 +345,11 @@ struct ChartMap: UIViewRepresentable {
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: any MKOverlay) -> MKOverlayRenderer {
             if let renderer = flight?.renderer(for: overlay) { return renderer }
+            if let renderer = MainActor.assumeIsolated({ overlays.renderer(for: overlay) }) { return renderer }
             if let chart = overlay as? ChartTileOverlay {
                 let renderer = NightTileRenderer(tileOverlay: chart)
                 renderer.shade = shade
+                renderer.alpha = ChartFade.alpha(zoom: Self.zoom(of: mapView))
                 tiles = renderer
                 return renderer
             }
@@ -370,16 +402,14 @@ struct ChartMap: UIViewRepresentable {
                 return view
             }
             if let extra = MainActor.assumeIsolated({ extras.view(for: annotation, on: mapView) }) { return extra }
+            if let overlay = MainActor.assumeIsolated({ overlays.view(for: annotation, on: mapView) }) { return overlay }
             if annotation is CheckpointAnnotation {
                 return mapView.dequeueReusableAnnotationView(withIdentifier: CheckpointMarkView.reuse, for: annotation)
             }
-            // Several fields folded into one where their marks would
-            // overlap (AirportMarkView.cluster): the count in a ring.
-            if annotation is MKClusterAnnotation {
-                return mapView.dequeueReusableAnnotationView(withIdentifier: AirportClusterView.reuse, for: annotation)
-            }
             guard annotation is AirportAnnotation else { return nil }
-            return mapView.dequeueReusableAnnotationView(withIdentifier: AirportMarkView.reuse, for: annotation)
+            let view = mapView.dequeueReusableAnnotationView(withIdentifier: AirportMarkView.reuse, for: annotation)
+            (view as? AirportMarkView)?.scaleSymbol(symbolScale)
+            return view
         }
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
@@ -390,11 +420,145 @@ struct ChartMap: UIViewRepresentable {
         }
 
         /// The first position moves the map there once, at the web app's
-        /// opening zoom; after that the pilot's own panning stands.
+        /// opening zoom, in the middle of what the sheet leaves; after that
+        /// the pilot's own panning stands. Kept on the phone, so the map
+        /// opens there next time (MapOpening).
         func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
-            guard !followed, let at = userLocation.location else { return }
+            guard let at = userLocation.location else { return }
+            if Date().timeIntervalSince(rememberedAt) > 30 {
+                rememberedAt = Date()
+                MapOpening.remember(at.coordinate)
+            }
+            guard !followed else { return }
             followed = true
-            mapView.setRegion(MKCoordinateRegion(center: at.coordinate, latitudinalMeters: 300_000, longitudinalMeters: 300_000), animated: MapMotion.animated)
+            // Before the map shows, it is put there as it opens; after, it
+            // glides there.
+            put(mapView, at: at.coordinate, animated: revealed && MapMotion.animated)
+        }
+
+        // MARK: Opening and showing
+
+        private var rememberedAt = Date.distantPast
+        /// The sheet's height the map was last put in the middle of.
+        private var openedInset: CGFloat?
+        private var opening: CLLocationCoordinate2D?
+        private(set) var revealed = false
+        var onReveal: (() -> Void)?
+        private var chartDrawn = false
+        private var airportsIn = false
+        private var airspaceIn = false
+        private var quiet: Task<Void, Never>?
+
+        /// The map put where it opens, once it has its size, and again as
+        /// the sheet's height changes until the map shows: the position is
+        /// under the loading mark whatever the sheet did meanwhile.
+        @MainActor
+        func open(_ map: MKMapView, bottomInset: CGFloat) {
+            guard map.bounds.width > 0, !revealed, openedInset != bottomInset else { return }
+            openedInset = bottomInset
+            let at = opening ?? map.userLocation.location?.coordinate ?? MapOpening.remembered() ?? MapOpening.fallback
+            put(map, at: at, animated: false)
+        }
+
+        /// A point in the middle of what the sheet leaves, at the opening zoom.
+        @MainActor
+        private func put(_ map: MKMapView, at: CLLocationCoordinate2D, animated: Bool) {
+            guard map.bounds.width > 0 else { return }
+            opening = at
+            let size = map.bounds.size
+            // The view's width in map points at the zoom (MapKit's world is
+            // 2^28 of them, Leaflet's 256 points at zoom 0): a region fitted
+            // by MapKit came out a level short of the web's 8, under the
+            // Class D's and the VORs' zoom.
+            let zoom = MapOpening.zoomAsked ?? MapOpening.zoom
+            let wide = Double(size.width) * MKMapSize.world.width / (256 * pow(2, zoom))
+            // MapKit fits a rect into the view less its safe area, so the rect
+            // is that shape: the full height's would come out a tenth wider.
+            let safe = map.bounds.inset(by: map.safeAreaInsets).size
+            let high = wide * Double(safe.height / max(1, safe.width))
+            let middlePoint = MKMapPoint(at)
+            map.setVisibleMapRect(MKMapRect(x: middlePoint.x - wide / 2, y: middlePoint.y - high / 2, width: wide, height: high), animated: false)
+            let drop = MapOpening.drop(height: size.height, top: map.safeAreaInsets.top, bottomInset: openedInset ?? 0)
+            let middle = map.convert(CGPoint(x: size.width / 2, y: size.height / 2 + drop), toCoordinateFrom: map)
+            map.setCenter(middle, animated: animated)
+        }
+
+        /// A tile of the chart answered: once they stop coming for a moment
+        /// the chart is drawn.
+        @MainActor
+        func chartTile() {
+            guard !revealed else { return }
+            quiet?.cancel()
+            quiet = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(150))
+                guard !Task.isCancelled, let self else { return }
+                self.chartDrawn = true
+                self.revealIfIn()
+            }
+        }
+
+        /// The airspace answered for the first time (ChartOverlays).
+        @MainActor
+        func airspaceAnswered() {
+            airspaceIn = true
+            revealIfIn()
+        }
+
+        /// The fields drawn, as Setup's settings leave them, for their runways.
+        @MainActor
+        var shownPins: [AirportPin] {
+            AirportPin.shown(pins, military: fieldUse.military, privateFields: fieldUse.privateFields)
+        }
+
+        @MainActor
+        private func revealIfIn() {
+            if chartDrawn, airportsIn, airspaceIn { reveal() }
+        }
+
+        /// The map shown, once: the loading mark fades over it.
+        @MainActor
+        func reveal() {
+            guard !revealed else { return }
+            revealed = true
+            onReveal?()
+        }
+
+        /// The web map's zoom of the view (Leaflet's levels).
+        static func zoom(of map: MKMapView) -> Double {
+            MapExtras.zoom(longitudeDelta: map.region.span.longitudeDelta, width: Double(map.bounds.width))
+        }
+
+        // MARK: During a gesture
+
+        let overlays = ChartOverlays()
+        private var liveAirports = ViewFetch()
+        private(set) var symbolScale: CGFloat = 1
+
+        /// The view moving, frame by frame: the chart's fade and the marks'
+        /// size follow the pinch, and the overlays are asked again from the
+        /// packs where the view changes level or leaves what was asked, as
+        /// the web map's do (useGlView), not only once the fingers lift.
+        func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
+            MainActor.assumeIsolated {
+                let zoom = Self.zoom(of: mapView)
+                tiles?.alpha = ChartFade.alpha(zoom: zoom)
+                let scale = SectionalSymbol.scale(zoom: zoom)
+                if abs(scale - symbolScale) > 0.02 {
+                    symbolScale = scale
+                    for case let field as AirportAnnotation in mapView.annotations {
+                        (mapView.view(for: field) as? AirportMarkView)?.scaleSymbol(scale)
+                    }
+                }
+                overlays.moved(mapView, chart: overlay, live: true)
+                let view = ViewBox(mapView.region)
+                guard liveAirports.wants(view, zoom: zoom) else { return }
+                let wide = view.widened
+                if let pins = CyclePacks.shared.airportsInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
+                    _ = liveAirports.ask(view, zoom: zoom)
+                    self.pins = pins
+                    showFields(on: mapView)
+                }
+            }
         }
 
         /// The fields in view, asked for once the map has rested a third
@@ -419,7 +583,11 @@ struct ChartMap: UIViewRepresentable {
             } else {
                 setRouteAway?(false)
             }
-            MainActor.assumeIsolated { extras.regionChanged(mapView) }
+            MainActor.assumeIsolated {
+                extras.regionChanged(mapView)
+                overlays.moved(mapView, chart: overlay, live: false)
+                overlays.runways(mapView, fields: shownPins, chart: overlay)
+            }
             fetching?.cancel()
             let region = mapView.region
             let corner = CLLocation(latitude: region.center.latitude + region.span.latitudeDelta / 2, longitude: region.center.longitude + region.span.longitudeDelta / 2)
@@ -433,10 +601,17 @@ struct ChartMap: UIViewRepresentable {
                 let east = region.center.longitude + region.span.longitudeDelta / 2
                 // From the phone's own packs where the engine has them,
                 // the planner otherwise (PackMapData).
-                guard let pins = try? await PackMapData.airports(south: south, west: west, north: north, east: east), !Task.isCancelled else { return }
+                let pins = try? await PackMapData.airports(south: south, west: west, north: north, east: east)
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
+                    // In, or not to be had: either way the map need not
+                    // wait for them to show.
+                    self.airportsIn = true
+                    self.revealIfIn()
+                    guard let pins else { return }
                     self.pins = pins
                     self.showFields(on: mapView)
+                    self.overlays.runways(mapView, fields: self.shownPins, chart: self.overlay)
                 }
             }
         }
@@ -495,7 +670,7 @@ struct ChartMap: UIViewRepresentable {
         }
 
         /// The marks drawn again as the route changes, for which stand on
-        /// their own and which may cluster (AirportAnnotation.onRoute).
+        /// their own and which may give way (AirportAnnotation.onRoute).
         @MainActor
         func refreshFields(on map: MKMapView) {
             guard !pins.isEmpty else { return }
@@ -512,7 +687,7 @@ struct ChartMap: UIViewRepresentable {
             for mark in new { shown[mark.ident] = mark }
             // A mark kept whose standing changed (a field now on the
             // route, or no longer): its view told again, which sets its
-            // clustering and priority afresh.
+            // priority afresh.
             for (ident, mark) in shown where new.contains(where: { $0.ident == ident }) == false {
                 if let want = fresh[ident], want.onRoute != mark.onRoute {
                     mark.onRoute = want.onRoute
