@@ -266,6 +266,10 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { map ->
             map.getStyle { style ->
                 val paint = MapStyle.chartPaint(night)
+                style.getLayerAs<LineLayer>(ROUTE_CASING)?.setProperties(
+                    PropertyFactory.lineColor(casingColour(night)),
+                    PropertyFactory.lineOpacity(if (night) 0.7f else 0.6f),
+                )
                 for (id in MapStyle.CHART_LAYERS) {
                     style.getLayerAs<RasterLayer>(id)?.setProperties(
                         PropertyFactory.rasterBrightnessMax(paint.brightnessMax),
@@ -561,6 +565,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
         when {
+            style.getLayer(ROUTE_CASING) != null -> style.addLayerBelow(layer, ROUTE_CASING)
             style.getLayer(ROUTE) != null -> style.addLayerBelow(layer, ROUTE)
             else -> below(style, layer, MapStyle.ROUTE_SLOT)
         }
@@ -585,11 +590,24 @@ private class MapHolder(val view: MapView, private val density: Float) {
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
+        // A casing under it keeps it legible: a dark rim by day, a light
+        // one on the dimmed night chart (the web's routeCasingPaint).
+        val casing = LineLayer(ROUTE_CASING, ROUTE).withProperties(
+            PropertyFactory.lineColor(casingColour(night)),
+            PropertyFactory.lineWidth(7f),
+            PropertyFactory.lineOpacity(if (night) 0.7f else 0.6f),
+            PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
+            PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
+        )
+        below(style, casing, MapStyle.ROUTE_SLOT)
         below(style, layer, MapStyle.ROUTE_SLOT)
     }
 
+    private fun casingColour(night: Boolean): Int = if (night) Color.WHITE else Color.rgb(0x1c, 0x1a, 0x17)
+
     private companion object {
         const val ROUTE = "route"
+        const val ROUTE_CASING = "route-casing"
         const val OWN_SHIP = "own-ship"
         const val TRAIL = "trail"
         /** A finger's reach round a mark, and round a line, dp (the web's

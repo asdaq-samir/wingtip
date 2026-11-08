@@ -4,8 +4,11 @@ import type { Course } from "../../../api/types";
 import type { AirspaceClass } from "../../../preferences";
 import { courseColour } from "../../chartColors";
 import { airportMarkIcon, dotIcon, fixMarkIcon } from "../../icons";
-import { useGlData, useGlLayer, useGlMap, useGlTap } from "../glLayer";
-import { CHECKPOINT_SOURCE, ROUTE_SOURCE, glZoom, pointFeatures, routeFeature, routeLayers } from "../glStyle";
+import { usePreferences } from "../../../preferences";
+import { useSunlight } from "../../../sunlight";
+import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
+import { useDarkTheme } from "./ChartGl";
+import { CHECKPOINT_SOURCE, ROUTE_SOURCE, glZoom, pointFeatures, routeCasingPaint, routeFeature, routeLayers } from "../glStyle";
 import { useGlProbe } from "../useGlProbe";
 import { GL_FONT, TAP } from "./common";
 import { useGlMarks, type GlMark } from "../useGlMarks";
@@ -83,6 +86,10 @@ export function RouteGl({ course, checkpoints, candidates, endpoints }: {
   // The line in the route's slot, the marks over every mark on the chart.
   useGlLayer("route", LINE_SOURCES, layers.filter(l => "source" in l && l.source === ROUTE_SOURCE));
   useGlLayer("top", MARK_SOURCES, [CANDIDATE_DOTS, NAMES]);
+  // The casing follows the look, as the chart's paint does (ChartGl).
+  const sunlight = useSunlight();
+  const night = useDarkTheme() && usePreferences(s => s.chartNight) === "dimmed";
+  useGlPaint(["route-casing"], routeCasingPaint(night, sunlight));
   const line = useMemo(() => (course ? routeFeature(course.course_line as [number, number][]) : null), [course]);
   useGlData(ROUTE_SOURCE, line);
   // The course drawn, for the browser tests.
