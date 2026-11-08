@@ -6,6 +6,11 @@
 //! performance's density altitude), so it cannot sit in either.
 //!
 //! - flight: the wind triangle, 91.159's altitudes, 91.151's reserve, the
-//!   atmosphere.
+//!   atmosphere;
+//! - limits: the altitudes a flight may be planned at (71.33, 91.119(c),
+//!   91.121, 91.159, 91.179);
+//! - filing: FAA Form 7233-4's items as AIM Appendix 4 writes them.
 
+pub mod filing;
 pub mod flight;
+pub mod limits;

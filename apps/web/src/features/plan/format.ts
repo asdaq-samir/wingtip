@@ -7,6 +7,15 @@ import { calmOnRunway, isCalm } from "../../lib/wind";
 
 export { altFt, bearing, one };
 
+/** How far below the clouds VFR keeps at a ceiling, feet: 14 CFR 91.155(a)'s
+ *  Class E row as the engine has it (`vfr_minimums`), 500 ft, 1,000 ft at
+ *  or above 10,000 ft MSL. A ceiling in Class A is asked at its floor's foot
+ *  below, where the table still has a row. */
+export function feetBelowClouds(ceilingFt: number | null | undefined): number {
+  const asked = Math.min(ceilingFt ?? 0, callEngine("altitude_limits", {}).class_a_floor_ft - 1);
+  return callEngine("vfr_minimums", { class: "E", altitude_ft: asked })?.day.below_ft ?? 500;
+}
+
 /**
  * The planner's pure half: colours and number formatting.
  *

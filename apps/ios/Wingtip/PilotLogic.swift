@@ -265,13 +265,14 @@ struct AircraftForm: Equatable {
 
 /// Flash-card drills (the web app's lib/drills, kept the same): the
 /// tower's light signals (14 CFR 91.125) and the basic VFR weather
-/// minimums (91.155), each worded as the regulation words it, gone
+/// minimums (91.155), each worded as the regulation words it by the
+/// engine (`drill_decks`), gone
 /// through by Leitner's boxes -- a card known moves up a box and comes
 /// back later, a card missed goes back to the first. Kept on this device.
 enum Drills {
-    enum Light: String, Sendable { case green, red, white }
+    enum Light: String, Sendable, Decodable { case green, red, white }
 
-    struct Card: Equatable, Sendable, Identifiable {
+    struct Card: Equatable, Sendable, Identifiable, Decodable {
         let id: String
         let prompt: String
         let answer: String
@@ -280,7 +281,7 @@ enum Drills {
         var flashing = false
     }
 
-    struct Deck: Sendable {
+    struct Deck: Sendable, Decodable {
         let key: String
         let title: String
         let source: String
@@ -288,50 +289,17 @@ enum Drills {
         let cards: [Card]
     }
 
-    private struct Signal { let id, name: String; let colours: [Light]; let flashing: Bool; let surface, flight: String; var flightDetail: String? = nil }
+    /// Both decks, the engine's (`drill_decks`): 14 CFR 91.125's table and
+    /// 91.155(a)'s, worded there once from the rules the airspace column
+    /// gives each band.
+    private static let decks: [Deck] = (try? Engine.call("drill_decks", json: [:])) ?? []
 
-    // 14 CFR 91.125's table, word for word as the web app has it.
-    private static let signals: [Signal] = [
-        Signal(id: "steady-green", name: "Steady green", colours: [.green], flashing: false, surface: "Cleared for takeoff", flight: "Cleared to land"),
-        Signal(id: "flashing-green", name: "Flashing green", colours: [.green], flashing: true, surface: "Cleared to taxi", flight: "Return for landing",
-               flightDetail: "To be followed by steady green at the proper time."),
-        Signal(id: "steady-red", name: "Steady red", colours: [.red], flashing: false, surface: "Stop", flight: "Give way to other aircraft and continue circling"),
-        Signal(id: "flashing-red", name: "Flashing red", colours: [.red], flashing: true, surface: "Taxi clear of the runway in use", flight: "Airport unsafe: do not land"),
-        Signal(id: "flashing-white", name: "Flashing white", colours: [.white], flashing: true, surface: "Return to starting point on airport", flight: "Not applicable",
-               flightDetail: "Flashing white means nothing to an aircraft in flight."),
-        Signal(id: "alternating", name: "Alternating red and green", colours: [.red, .green], flashing: true, surface: "Exercise extreme caution", flight: "Exercise extreme caution"),
-    ]
+    private static func deck(_ key: String) -> Deck {
+        decks.first { $0.key == key } ?? Deck(key: key, title: "", source: "", url: URL(string: "https://www.ecfr.gov")!, cards: [])
+    }
 
-    static let lightGun = Deck(
-        key: "light-gun", title: "Light gun signals", source: "14 CFR 91.125",
-        url: URL(string: "https://www.ecfr.gov/current/title-14/part-91/section-91.125")!,
-        cards: signals.flatMap { s in [
-            Card(id: "\(s.id)-surface", prompt: "\(s.name), on the ground", answer: s.surface, colours: s.colours, flashing: s.flashing),
-            Card(id: "\(s.id)-flight", prompt: "\(s.name), in flight", answer: s.flight, detail: s.flightDetail, colours: s.colours, flashing: s.flashing),
-        ] })
-
-    // 14 CFR 91.155(a)'s table; Class A from 91.135, the pattern exception 91.155(b)(2).
-    private static let standard = "3 sm; 500 ft below, 1,000 ft above, 2,000 ft horizontal"
-    private static let high = "5 sm; 1,000 ft below, 1,000 ft above, 1 sm horizontal"
-
-    static let vfrMinimums = Deck(
-        key: "vfr-minimums", title: "VFR weather minimums", source: "14 CFR 91.155",
-        url: URL(string: "https://www.ecfr.gov/current/title-14/part-91/section-91.155")!,
-        cards: [
-            Card(id: "a", prompt: "Class A", answer: "Not applicable", detail: "Class A is flown under IFR (91.135)."),
-            Card(id: "b", prompt: "Class B", answer: "3 sm; clear of clouds"),
-            Card(id: "c", prompt: "Class C", answer: standard),
-            Card(id: "d", prompt: "Class D", answer: standard),
-            Card(id: "e-low", prompt: "Class E, below 10,000 ft MSL", answer: standard),
-            Card(id: "e-high", prompt: "Class E, at or above 10,000 ft MSL", answer: high),
-            Card(id: "g-low-day", prompt: "Class G, 1,200 ft or less above the surface, by day", answer: "1 sm; clear of clouds"),
-            Card(id: "g-low-night", prompt: "Class G, 1,200 ft or less above the surface, at night", answer: standard,
-                 detail: "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2))."),
-            Card(id: "g-mid-day", prompt: "Class G, more than 1,200 ft above the surface but below 10,000 ft MSL, by day",
-                 answer: "1 sm; 500 ft below, 1,000 ft above, 2,000 ft horizontal"),
-            Card(id: "g-mid-night", prompt: "Class G, more than 1,200 ft above the surface but below 10,000 ft MSL, at night", answer: standard),
-            Card(id: "g-high", prompt: "Class G, more than 1,200 ft above the surface and at or above 10,000 ft MSL", answer: high),
-        ])
+    static var lightGun: Deck { deck("light-gun") }
+    static var vfrMinimums: Deck { deck("vfr-minimums") }
 
     /// Days until a card in each box comes round again: the first box the
     /// same session.

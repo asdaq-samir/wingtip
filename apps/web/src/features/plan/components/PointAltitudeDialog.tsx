@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import SheetDialog from "../../../components/SheetDialog";
 import { Button } from "../../../components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "../../../components/ui/input-group";
+import { callEngine } from "../../../lib/engine/engine";
 import { TEXT } from "../../../lib/text";
 import { altFt, flightLevel } from "../../../lib/units";
 
@@ -50,7 +51,9 @@ export default function PointAltitudeDialog({ point, onClose, onSet }: {
   const { ident, waypoint, altitude, elevationFt } = shown ?? { ident: "", waypoint: false, altitude: { feet: null, own: false } as PointAltitude };
   // A waypoint's in hundreds of feet, three figures; an airport's in feet.
   const feet = typed ? Number(typed) * (waypoint ? 100 : 1) : NaN;
-  const valid = feet > 0 && feet < 18_000;
+  // Under Class A and at least 500 ft (the engine's altitude_allowed;
+  // 14 CFR 71.33, 91.135, 91.119(c)), as the address takes one.
+  const valid = Number.isFinite(feet) && callEngine("altitude_allowed", { ft: feet });
   return (
     <SheetDialog
       open={!!point} onOpenChange={open => { if (!open) onClose(); }} alert cancel size="sm"

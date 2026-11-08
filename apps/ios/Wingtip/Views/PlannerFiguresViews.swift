@@ -174,7 +174,7 @@ struct DiversionDrillView: View {
     ]
     /// The altitudes the drill can be flown at, VFR's: below 18,000 ft
     /// MSL, the floor of Class A (14 CFR 71.33).
-    private static let altitudes = Array(stride(from: 1500.0, through: 17500.0, by: 500.0))
+    private static let altitudes = Altitudes.vfr(from: 1500)
 
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
     private var checked: Bool { stopped != nil }

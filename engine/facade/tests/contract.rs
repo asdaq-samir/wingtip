@@ -73,6 +73,7 @@ fn code_names() -> BTreeSet<String> {
     names.extend(arms(include_str!("../../crates/brief/src/gonogo/calls.rs"), "pub fn call("));
     for src in [
         include_str!("../../crates/wording/src/wording/mod.rs"),
+        include_str!("../../crates/airspace/src/drills.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
         include_str!("../../crates/route/src/approach/calls.rs"),
@@ -191,6 +192,33 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in currency["experience"].as_array().unwrap() {
         c.ask("pilot_experience", json!({ "entries": case["entries"], "today": case["today"] }));
     }
+
+    c.ask("drill_decks", json!({}));
+    let altitudes = fixture("altitudes.json");
+    for case in altitudes["minimums"].as_array().unwrap() {
+        c.ask("vfr_minimums", json!({ "class": case["class"], "altitude_ft": case["altitude_ft"], "agl_ft": case.get("agl_ft") }));
+    }
+    for case in altitudes["limits"].as_array().unwrap() {
+        c.ask("altitude_limits", json!({ "ifr": case["ifr"] }));
+    }
+    for case in altitudes["allowed"].as_array().unwrap() {
+        c.ask("altitude_allowed", json!({ "ft": case["ft"], "ifr": case["ifr"] }));
+        c.ask("altitude_said", json!({ "ft": case["ft"] }));
+        c.ask("filed_level", json!({ "ft": case["ft"] }));
+    }
+    c.ask("vfr_altitudes", json!({ "from_ft": altitudes["wheel"]["from_ft"] }));
+    let filing = fixture("filingForm.json");
+    for case in filing["cruisingSpeed"].as_array().unwrap() {
+        c.ask("filed_speed", json!({ "tas_kt": case["tasKt"] }));
+    }
+    for case in filing["hhmm"].as_array().unwrap() {
+        c.ask("filed_duration", json!({ "minutes": case["minutes"] }));
+    }
+    for case in filing["route"].as_array().unwrap() {
+        c.ask("filed_route", json!({ "stops": case["stops"], "airways": case["airways"] }));
+    }
+    c.ask("filed_zzzz", json!({ "ident": "C81" }));
+    c.ask("filed_wake", json!({ "max_takeoff_lb": 2550 }));
 
     let holds = fixture("holds.json");
     for case in holds["parse"].as_array().unwrap() {

@@ -13,7 +13,6 @@
  */
 import { callEngine, type EngineAnswer } from "./engine/engine";
 import type { Clearance } from "./clearance";
-import { grouped } from "./units";
 
 /** A part missed or said differently: what the readback had for it
  *  (`said`), null where it was not read back (the engine's contract). */
@@ -66,8 +65,9 @@ export function readbackLines(clearance: Clearance, check: { items: ReadbackItem
 }
 
 /** An altitude as ATC says it (AIM 4-2-9): feet below 18,000, a flight
- *  level from there up. The clearance card writes its altitudes with it. */
-export const altitudeWords = (ft: number) => (ft >= 18000 ? `FL${Math.round(ft / 100)}` : `${grouped(ft)} ft`);
+ *  level from there up, the engine's `altitude_said`. The clearance card
+ *  writes its altitudes with it. */
+export const altitudeWords = (ft: number) => callEngine("altitude_said", { ft });
 
 /** The items of the clearance heard as `cleared` that the readback `said`
  *  missed or had differently (none where it matches), and the warning

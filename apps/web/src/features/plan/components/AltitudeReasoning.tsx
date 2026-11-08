@@ -7,7 +7,15 @@ import { CRUISE_REFERENCE_FT } from "../../../lib/performance";
 import { TEXT } from "../../../lib/text";
 import { flightLevel } from "../../../lib/units";
 import { capitalised, faaWords, suaAltitudes } from "../../../lib/advisories";
-import { altFt, bearing, cruiseByAltitude, describeFuel, describeSteps, describeTime, PLAN_NAME } from "../format";
+import { altFt, bearing, cruiseByAltitude, describeFuel, describeSteps, describeTime, feetBelowClouds, PLAN_NAME } from "../format";
+import { callEngine } from "../../../lib/engine/engine";
+
+/** The least VFR minimums come to, "1,000 ft, 3 sm" (14 CFR 91.155(c),
+ *  (d)), the engine's (`vfr_basic_minimums`). */
+function basicMinimums(): string {
+  const m = callEngine("vfr_basic_minimums", {});
+  return `${altFt(m.ceiling_ft)} ft, ${m.visibility_sm} sm`;
+}
 
 interface Props {
   /** The nav log's own altitude and, unless the pilot typed one, the
@@ -119,12 +127,12 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
     s.airspace_ceiling_ft !== null ? `the Class B shelf at ${altFt(s.airspace_ceiling_ft)} ft` : "no Class B shelf across the route",
   ];
   // The clouds, 14 CFR 91.155's distance below the lowest ceiling the
-  // TAFs near the legs forecast for the flight: 500 ft, or 1,000 ft
-  // where that is at 10,000 ft or above.
+  // TAFs near the legs forecast for the flight, the engine's
+  // (feetBelowClouds).
   // Where the clouds leave no altitude, the band leaves them out, and a
   // sentence of its own under the ceiling says so.
   if (s.cloud_base_ft != null && s.cloud_ceiling_ft != null && s.cloud_clearance_kept) {
-    ceilingParts.push(`${s.cloud_ceiling_ft >= 10000 ? "1,000" : "500"} ft under the clouds forecast at ${
+    ceilingParts.push(`${altFt(feetBelowClouds(s.cloud_ceiling_ft))} ft under the clouds forecast at ${
       altFt(s.cloud_base_ft)} ft near ${s.cloud_station} (14 CFR 91.155)`);
   } else if (!s.weather_unavailable.includes("ceiling_visibility")) {
     ceilingParts.push("no ceiling forecast near the legs");
@@ -298,7 +306,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
           {runsText && ` Leg by leg: ${runsText}. A shelf or a cloud caps only the legs under it.`}
           {cloudsLeaveNone && (
             <span className="text-destructive">
-              {" "}No altitude keeps {(s.cloud_ceiling_ft ?? 0) >= 10000 ? "1,000" : "500"} ft below the clouds forecast at {altFt(s.cloud_base_ft!)} ft near {s.cloud_station} on
+              {" "}No altitude keeps {altFt(feetBelowClouds(s.cloud_ceiling_ft))} ft below the clouds forecast at {altFt(s.cloud_base_ft!)} ft near {s.cloud_station} on
               {" "}{s.segments.some(seg => seg.cloud_clearance_kept) ? "some legs" : "the route"}: VFR is not possible there as
               forecast, and the altitudes there leave the clouds out.
             </span>
@@ -397,7 +405,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
             ? `The forecast ceiling and visibility could not be checked${ifr ? ". " : ", so no altitude is kept under the clouds. "}`
             : `Forecast for the flight, its temporary changes included: ceiling ${
               s.min_ceiling_ft === null ? "none" : `${altFt(s.min_ceiling_ft)} ft`}, visibility ${s.min_visibility_sm ?? "—"} sm${
-              s.low_ceiling_or_visibility && !ifr ? ", below VFR minimums (1,000 ft, 3 sm) somewhere on the way" : ""
+              s.low_ceiling_or_visibility && !ifr ? `, below VFR minimums (${basicMinimums()}) somewhere on the way` : ""
             }. `}
           {capitalised(hazards)}. {freezing}
         </>

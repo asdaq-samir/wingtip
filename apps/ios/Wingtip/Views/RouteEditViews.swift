@@ -135,7 +135,7 @@ enum PointAltitude {
         let digits = typed.filter(\.isNumber)
         guard !digits.isEmpty, digits.count <= (waypoint ? 3 : 5), let figure = Int(digits) else { return nil }
         let feet = waypoint ? figure * 100 : figure
-        return feet > 0 && feet < 18_000 ? feet : nil
+        return Altitudes.allowed(Double(feet)) ? feet : nil
     }
 
     /// A course of 000 to 360, out to 999 nm, as the planner takes a

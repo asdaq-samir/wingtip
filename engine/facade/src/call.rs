@@ -776,6 +776,8 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         | "groundspeed_kt" => flight_rule(&ask),
         "words_num" | "words_one" | "words_to_fixed" | "words_grouped" | "words_alt_ft" | "words_flight_level"
         | "words_ceiling_and_visibility" => words_rule(&ask),
+        "altitude_limits" | "altitude_allowed" | "vfr_altitudes" | "altitude_said" => limits_rule(&ask),
+        "filed_level" | "filed_speed" | "filed_duration" | "filed_wake" | "filed_route" | "filed_zzzz" => filing_rule(&ask),
         "magnetic_variation" => {
             // The model's time, a decimal year: as given (the planner's
             // test against pygeomag asks at any instant), else the day's.
@@ -810,6 +812,7 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             };
             Ok(crate::cycles::to_json(&crate::cycles::cycle(kind, effective, on)))
         }
+        _ if crate::drills::NAMES.contains(&name) => crate::drills::call(name, ask.v),
         _ if crate::wording::NAMES.contains(&name) => crate::wording::answer(name, ask.v),
         // A field's weather (forecast::calls), the traffic list's filters and
         // the registry's airplanes (aircraft::calls).
@@ -1046,6 +1049,86 @@ fn flight_rule(ask: &Ask) -> Result<String, String> {
         }
     };
     json::number(&mut out, figure);
+    Ok(out)
+}
+
+/// The altitudes a flight may be planned at (crate::limits).
+fn limits_rule(ask: &Ask) -> Result<String, String> {
+    use crate::limits;
+    let mut out = String::new();
+    match ask.name {
+        "altitude_limits" => {
+            let ifr = ask.opt_bool("ifr")?;
+            out.push_str("{\"lowest_ft\":");
+            json::number(&mut out, limits::LOWEST_FT);
+            out.push_str(",\"highest_ft\":");
+            json::number(&mut out, limits::highest_ft(ifr));
+            out.push_str(",\"class_a_floor_ft\":");
+            json::number(&mut out, limits::CLASS_A_FLOOR_FT);
+            out.push_str(",\"flight_levels_from_ft\":");
+            json::number(&mut out, limits::FLIGHT_LEVELS_FROM_FT);
+            out.push_str(",\"step_ft\":");
+            json::number(&mut out, limits::STEP_FT);
+            out.push('}');
+        }
+        "altitude_allowed" => out.push_str(if limits::allowed(ask.num("ft")?, ask.opt_bool("ifr")?) { "true" } else { "false" }),
+        "vfr_altitudes" => {
+            out.push('[');
+            for (i, ft) in limits::vfr_altitudes(ask.opt_num("from_ft")?.unwrap_or(1000.0)).iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                json::number(&mut out, *ft);
+            }
+            out.push(']');
+        }
+        // AIM 4-2-9: feet below 18,000 ft, a flight level from there up.
+        "altitude_said" => {
+            let ft = ask.num("ft")?;
+            let said = if limits::is_flight_level(ft) {
+                format!("FL{}", (ft / 100.0).round())
+            } else {
+                crate::figures::words::feet(ft)
+            };
+            json::string(&mut out, &said);
+        }
+        _ => return Err(format!("the engine has no rule called {:?}", ask.name)),
+    }
+    Ok(out)
+}
+
+/// FAA Form 7233-4's items as AIM Appendix 4 writes them (crate::filing).
+fn filing_rule(ask: &Ask) -> Result<String, String> {
+    use crate::filing;
+    let mut out = String::new();
+    match ask.name {
+        "filed_level" => json::string(&mut out, &filing::level(ask.num("ft")?)),
+        "filed_speed" => json::string(&mut out, &filing::speed(ask.num("tas_kt")?)),
+        "filed_duration" => json::string(&mut out, &filing::duration(ask.num("minutes")?)),
+        "filed_wake" => json::opt_string(&mut out, filing::wake(ask.opt_num("max_takeoff_lb")?)),
+        "filed_zzzz" => out.push_str(if filing::needs_zzzz(ask.str("ident")?) { "true" } else { "false" }),
+        _ => {
+            let words = |key: &str| -> Result<Vec<&str>, String> {
+                match ask.v.get(key) {
+                    None | Some(Value::Null) => Ok(Vec::new()),
+                    Some(Value::Array(list)) => list.iter().map(|w| w.as_str().ok_or_else(|| format!("filed_route: \"{key}\" is not a list of strings"))).collect(),
+                    Some(_) => Err(format!("filed_route: \"{key}\" is not a list of strings")),
+                }
+            };
+            let procedure = |key: &str| -> Result<Option<filing::Procedure>, String> {
+                match ask.v.get(key) {
+                    None | Some(Value::Null) => Ok(None),
+                    Some(p) => Ok(Some(filing::Procedure {
+                        id: p.get("id").and_then(Value::as_str).ok_or_else(|| format!("filed_route: \"{key}\" has no \"id\""))?,
+                        transition: p.get("transition").and_then(Value::as_str),
+                    })),
+                }
+            };
+            let (stops, airways) = (words("stops")?, words("airways")?);
+            let (departure, arrival) = (procedure("departure")?, procedure("arrival")?);
+            json::string(&mut out, &filing::route(&stops, |w| airways.contains(&w), departure.as_ref(), arrival.as_ref()));
+        }
+    }
     Ok(out)
 }
 

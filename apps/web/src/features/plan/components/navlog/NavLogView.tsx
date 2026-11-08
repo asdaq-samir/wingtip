@@ -23,7 +23,7 @@ import { routeName } from "../../../../lib/identSchema";
 import { revealRow } from "../../../../lib/revealRow";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
 import { type Description, descriptionKey } from "../../hooks/useCheckpointNotes";
-import { altFt, bearing, clockTime, etaAt, legsWithoutWind, one, plannedWords, windAloft } from "../../format";
+import { altFt, bearing, clockTime, etaAt, feetBelowClouds, legsWithoutWind, one, plannedWords, windAloft } from "../../format";
 import type { BriefingPart } from "../briefing/sections";
 import { isLegPoint, legOf, navLogRows, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
 import LegWorkings from "./LegWorkings";
@@ -836,9 +836,9 @@ export default function NavLogView({
         {nav && cloudsUnplaced && (
           <ListRow
             title={<span className="text-destructive">Too low for VFR under the clouds near {nav.altitude_selection.cloud_station}</span>}
-            // 91.155(a): 1,000 ft below at or above 10,000 ft MSL, as the
-            // planner keeps it (wingtip.altitude) and the reasoning says it.
-            description={`No altitude keeps ${(nav.altitude_selection.cloud_ceiling_ft ?? 0) >= 10_000 ? "1,000" : "500"} ft below the forecast clouds there`}
+            // 91.155(a)'s distance below the clouds, the engine's, as the
+            // reasoning says it.
+            description={`No altitude keeps ${altFt(feetBelowClouds(nav.altitude_selection.cloud_ceiling_ft))} ft below the forecast clouds there`}
           />
         )}
       </ListGroup>

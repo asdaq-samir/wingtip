@@ -596,6 +596,20 @@ export type EmitterCategoryAnswer =
   | null;
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type DescentAltitudeAnswer = number;
+export type VfrMinimumsAnswer = {
+  day: VfrMinimumsRule;
+  night: VfrMinimumsRule;
+} | null;
+export type DrillDecksAnswer = DrillDeck[];
+export type AltitudeAllowedAnswer = boolean;
+export type VfrAltitudesAnswer = number[];
+export type AltitudeSaidAnswer = string;
+export type FiledLevelAnswer = string;
+export type FiledSpeedAnswer = string;
+export type FiledDurationAnswer = string;
+export type FiledWakeAnswer = string | null;
+export type FiledZzzzAnswer = boolean;
+export type FiledRouteAnswer = string;
 
 /**
  * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. The one source of their shapes: apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
@@ -2021,6 +2035,90 @@ export interface EngineContract {
   descent_altitude: {
     input: DescentAltitudeInput;
     answer: DescentAltitudeAnswer;
+  };
+  /**
+   * 14 CFR 91.155(a)'s basic VFR weather minimums for a class at an altitude MSL (the height above the ground counts in Class G alone, 1,200 ft its line, and is taken as above it where not given): the day's and the night's, or null in Class A, which is flown under IFR (91.135) and begins at 18,000 ft MSL whatever class is asked (71.33).
+   */
+  vfr_minimums: {
+    input: VfrMinimumsInput;
+    answer: VfrMinimumsAnswer;
+  };
+  /**
+   * The oral's flash cards in the regulation's words: the tower's light signals (14 CFR 91.125) on the ground and in flight, and the basic VFR weather minimums (91.155(a), worded from the airspace column's own table; Class A from 91.135, the night pattern exception 91.155(b)(2)).
+   */
+  drill_decks: {
+    input: DrillDecksInput;
+    answer: DrillDecksAnswer;
+  };
+  /**
+   * The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.
+   */
+  altitude_limits: {
+    input: AltitudeLimitsInput;
+    answer: AltitudeLimitsAnswer;
+  };
+  /**
+   * Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).
+   */
+  altitude_allowed: {
+    input: AltitudeAllowedInput;
+    answer: AltitudeAllowedAnswer;
+  };
+  /**
+   * Every 500 ft from from_ft (1,000 ft where not given), rounded up to a step, to 17,500 ft, the highest VFR cruising altitude under Class A (91.159(a), 71.33(a)): the altitudes a wheel offers.
+   */
+  vfr_altitudes: {
+    input: VfrAltitudesInput;
+    answer: VfrAltitudesAnswer;
+  };
+  /**
+   * An altitude as ATC says it and the app writes it (AIM 4-2-9): feet below 18,000 ft ("5,500 ft"), a flight level from there up ("FL180"; 14 CFR 91.121(a)(2)).
+   */
+  altitude_said: {
+    input: AltitudeSaidInput;
+    answer: AltitudeSaidAnswer;
+  };
+  /**
+   * The level in item 15 of the flight plan (FAA Form 7233-4, AIM Appendix 4): "F" and three figures, a flight level, at and above 18,000 ft (14 CFR 91.121(a)(2)); "A" and the hundreds of feet in three figures below it ("F350", "A080").
+   */
+  filed_level: {
+    input: FiledLevelInput;
+    answer: FiledLevelAnswer;
+  };
+  /**
+   * Item 15's cruising speed on FAA Form 7233-4: the true airspeed in knots, "N" and four figures (AIM Appendix 4: "N0450").
+   */
+  filed_speed: {
+    input: FiledSpeedInput;
+    answer: FiledSpeedAnswer;
+  };
+  /**
+   * Hours and minutes in four figures, HHMM, as items 16 (total EET) and 19 (endurance) of FAA Form 7233-4 take them (AIM Appendix 4), the minutes rounded first; the caller rounds the time en route up and the endurance down.
+   */
+  filed_duration: {
+    input: FiledDurationInput;
+    answer: FiledDurationAnswer;
+  };
+  /**
+   * Item 9's wake turbulence category: "L" for a maximum certificated takeoff weight of 15,500 lb or less (AIM Appendix 4, from FAA Order JO 7360.1), null where the weight is not known or is more.
+   */
+  filed_wake: {
+    input: FiledWakeInput;
+    answer: FiledWakeAnswer;
+  };
+  /**
+   * Whether a field's identifier has a figure in it (C81, 06A) and so no ICAO four-letter location indicator: filed as ZZZZ with its name in item 18 (DEP/, DEST/, ALTN/; AIM Appendix 4) where a service takes only indicators.
+   */
+  filed_zzzz: {
+    input: FiledZzzzInput;
+    answer: FiledZzzzAnswer;
+  };
+  /**
+   * Item 15's route between the departure and the destination (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.
+   */
+  filed_route: {
+    input: FiledRouteInput;
+    answer: FiledRouteAnswer;
   };
 }
 export interface HoldingInput {
@@ -5032,4 +5130,93 @@ export interface DescentAltitudeInput {
   cruise_ft: number;
   pattern_ft?: number | null;
   nm_out: number;
+}
+export interface VfrMinimumsInput {
+  class: "A" | "B" | "C" | "D" | "E" | "G";
+  altitude_ft: number;
+  agl_ft?: number | null;
+}
+/**
+ * A row of 14 CFR 91.155(a)'s table: the flight visibility in statute miles and the distance from clouds in feet (all three null: clear of clouds), and the row as the drill words it.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "VfrMinimumsRule".
+ */
+export interface VfrMinimumsRule {
+  visibility_sm: number;
+  below_ft: number | null;
+  above_ft: number | null;
+  horizontal_ft: number | null;
+  words: string;
+}
+export interface DrillDecksInput {}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "DrillDeck".
+ */
+export interface DrillDeck {
+  key: "light-gun" | "vfr-minimums";
+  title: string;
+  source: string;
+  url: string;
+  cards: DrillCard[];
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "DrillCard".
+ */
+export interface DrillCard {
+  id: string;
+  prompt: string;
+  answer: string;
+  detail: string | null;
+  colours: ("green" | "red" | "white")[];
+  flashing: boolean;
+}
+export interface AltitudeLimitsInput {
+  ifr?: boolean | null;
+}
+export interface AltitudeLimitsAnswer {
+  lowest_ft: number;
+  highest_ft: number;
+  class_a_floor_ft: number;
+  flight_levels_from_ft: number;
+  step_ft: number;
+}
+export interface AltitudeAllowedInput {
+  ft: number;
+  ifr?: boolean | null;
+}
+export interface VfrAltitudesInput {
+  from_ft?: number | null;
+}
+export interface AltitudeSaidInput {
+  ft: number;
+}
+export interface FiledLevelInput {
+  ft: number;
+}
+export interface FiledSpeedInput {
+  tas_kt: number;
+}
+export interface FiledDurationInput {
+  minutes: number;
+}
+export interface FiledWakeInput {
+  max_takeoff_lb?: number | null;
+}
+export interface FiledZzzzInput {
+  ident: string;
+}
+export interface FiledRouteInput {
+  stops: string[];
+  airways?: string[];
+  departure?: {
+    id: string;
+    transition?: string | null;
+  } | null;
+  arrival?: {
+    id: string;
+    transition?: string | null;
+  } | null;
 }

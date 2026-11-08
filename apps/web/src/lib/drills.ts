@@ -3,7 +3,7 @@
  * student is asked on the oral and has to know cold, as cards to go
  * through until it is -- the tower's light signals (14 CFR 91.125) and
  * the basic VFR weather minimums (91.155), each worded as the regulation
- * words it.
+ * words it, by the engine (`drill_decks`).
  *
  * Spaced repetition by Leitner's boxes: a card known moves up a box and
  * comes back later (the same session, then a day, three, a week, a
@@ -11,6 +11,7 @@
  * again before the session ends. Kept in this browser: a student's own
  * progress, nobody else's to read.
  */
+import { callEngine } from "./engine/engine";
 import { keptStore } from "./storage";
 
 export type Light = "green" | "red" | "white";
@@ -37,53 +38,22 @@ export interface Deck {
 
 export type DeckKey = "light-gun" | "vfr-minimums";
 
-const SIGNALS: { id: string; name: string; colors: Light[]; flashing: boolean; surface: string; flight: string; flightDetail?: string }[] = [
-  { id: "steady-green", name: "Steady green", colors: ["green"], flashing: false, surface: "Cleared for takeoff", flight: "Cleared to land" },
-  { id: "flashing-green", name: "Flashing green", colors: ["green"], flashing: true, surface: "Cleared to taxi", flight: "Return for landing", flightDetail: "To be followed by steady green at the proper time." },
-  { id: "steady-red", name: "Steady red", colors: ["red"], flashing: false, surface: "Stop", flight: "Give way to other aircraft and continue circling" },
-  { id: "flashing-red", name: "Flashing red", colors: ["red"], flashing: true, surface: "Taxi clear of the runway in use", flight: "Airport unsafe: do not land" },
-  { id: "flashing-white", name: "Flashing white", colors: ["white"], flashing: true, surface: "Return to starting point on airport", flight: "Not applicable", flightDetail: "Flashing white means nothing to an aircraft in flight." },
-  { id: "alternating", name: "Alternating red and green", colors: ["red", "green"], flashing: true, surface: "Exercise extreme caution", flight: "Exercise extreme caution" },
-];
+/** The two decks, the engine's (`drill_decks`): 91.125's table and
+ *  91.155(a)'s, worded there once from the rules the airspace column
+ *  uses. Asked once, when a drill first opens (the engine is loaded by
+ *  then). */
+let decks: Record<DeckKey, Deck> | null = null;
 
-const LIGHT_GUN: Deck = {
-  key: "light-gun",
-  title: "Light gun signals",
-  source: "14 CFR 91.125",
-  url: "https://www.ecfr.gov/current/title-14/part-91/section-91.125",
-  cards: SIGNALS.flatMap(s => [
-    { id: `${s.id}-surface`, prompt: `${s.name}, on the ground`, answer: s.surface, light: { colors: s.colors, flashing: s.flashing } },
-    { id: `${s.id}-flight`, prompt: `${s.name}, in flight`, answer: s.flight, detail: s.flightDetail, light: { colors: s.colors, flashing: s.flashing } },
-  ]),
-};
-
-const STANDARD = "3 sm; 500 ft below, 1,000 ft above, 2,000 ft horizontal";
-const HIGH = "5 sm; 1,000 ft below, 1,000 ft above, 1 sm horizontal";
-
-const VFR_MINIMUMS: Deck = {
-  key: "vfr-minimums",
-  title: "VFR weather minimums",
-  source: "14 CFR 91.155",
-  url: "https://www.ecfr.gov/current/title-14/part-91/section-91.155",
-  cards: [
-    { id: "a", prompt: "Class A", answer: "Not applicable", detail: "Class A is flown under IFR (91.135)." },
-    { id: "b", prompt: "Class B", answer: "3 sm; clear of clouds" },
-    { id: "c", prompt: "Class C", answer: STANDARD },
-    { id: "d", prompt: "Class D", answer: STANDARD },
-    { id: "e-low", prompt: "Class E, below 10,000 ft MSL", answer: STANDARD },
-    { id: "e-high", prompt: "Class E, at or above 10,000 ft MSL", answer: HIGH },
-    { id: "g-low-day", prompt: "Class G, 1,200 ft or less above the surface, by day", answer: "1 sm; clear of clouds" },
-    {
-      id: "g-low-night", prompt: "Class G, 1,200 ft or less above the surface, at night", answer: STANDARD,
-      detail: "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2)).",
-    },
-    { id: "g-mid-day", prompt: "Class G, more than 1,200 ft above the surface but below 10,000 ft MSL, by day", answer: "1 sm; 500 ft below, 1,000 ft above, 2,000 ft horizontal" },
-    { id: "g-mid-night", prompt: "Class G, more than 1,200 ft above the surface but below 10,000 ft MSL, at night", answer: STANDARD },
-    { id: "g-high", prompt: "Class G, more than 1,200 ft above the surface and at or above 10,000 ft MSL", answer: HIGH },
-  ],
-};
-
-export const DECKS: Record<DeckKey, Deck> = { "light-gun": LIGHT_GUN, "vfr-minimums": VFR_MINIMUMS };
+export function deckOf(key: DeckKey): Deck {
+  decks ??= Object.fromEntries(callEngine("drill_decks", {}).map(d => [d.key, {
+    ...d,
+    cards: d.cards.map(c => ({
+      id: c.id, prompt: c.prompt, answer: c.answer, detail: c.detail ?? undefined,
+      light: c.colours.length ? { colors: c.colours, flashing: c.flashing } : undefined,
+    })),
+  }])) as Record<DeckKey, Deck>;
+  return decks[key];
+}
 
 /** Days until a card in each box comes round again: the first box the
  *  same session. */

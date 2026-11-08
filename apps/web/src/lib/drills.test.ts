@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { answered, DECKS, dueCards, INTERVAL_DAYS, nextDue, type DeckKey, type Progress } from "./drills";
+import { answered, deckOf, dueCards, INTERVAL_DAYS, nextDue, type DeckKey, type Progress } from "./drills";
 import drillsFixture from "./fixtures/drills.json";
 
 const DAY = 86_400_000;
@@ -7,16 +7,16 @@ const NOW = Date.parse("2026-10-05T12:00:00Z");
 
 describe("the drills", () => {
   test("every light signal on the ground and in flight, as 91.125 has them", () => {
-    const deck = DECKS["light-gun"];
+    const deck = deckOf("light-gun");
     expect(deck.cards).toHaveLength(12);
     expect(deck.cards.find(c => c.id === "steady-red-flight")!.answer).toBe("Give way to other aircraft and continue circling");
     expect(deck.cards.find(c => c.id === "flashing-white-flight")!.answer).toBe("Not applicable");
     expect(deck.cards.find(c => c.id === "alternating-surface")!.light).toEqual({ colors: ["red", "green"], flashing: true });
-    expect(DECKS["vfr-minimums"].cards.map(c => c.id)).toContain("g-low-night");
+    expect(deckOf("vfr-minimums").cards.map(c => c.id)).toContain("g-low-night");
   });
 
   test("a card known goes up a box and away; a card missed comes back at once", () => {
-    const deck = DECKS["vfr-minimums"];
+    const deck = deckOf("vfr-minimums");
     let progress = {};
     expect(dueCards(deck, progress, NOW)).toHaveLength(deck.cards.length);
     progress = answered(progress, "b", true, NOW);
@@ -32,7 +32,7 @@ describe("the drills", () => {
   });
 
   test("cards never seen come before a card missed, and the next day is known", () => {
-    const deck = DECKS["light-gun"];
+    const deck = deckOf("light-gun");
     let progress = answered({}, "steady-green-surface", false, NOW);
     expect(dueCards(deck, progress, NOW)[0]!.id).not.toBe("steady-green-surface");
     progress = Object.fromEntries(deck.cards.map(c => [c.id, { box: 2, due: NOW + DAY }]));
@@ -48,7 +48,7 @@ describe("the drills", () => {
 describe("the shared drills fixture", () => {
   test("the decks, card by card", () => {
     expect(INTERVAL_DAYS).toEqual(drillsFixture.intervalDays);
-    expect(drillsFixture.decks).toEqual(Object.values(DECKS).map(d => ({
+    expect(drillsFixture.decks).toEqual((["light-gun", "vfr-minimums"] as const).map(deckOf).map(d => ({
       key: d.key, title: d.title, source: d.source, url: d.url,
       cards: d.cards.map(c => ({ id: c.id, prompt: c.prompt, answer: c.answer, detail: c.detail ?? null, colours: c.light?.colors ?? [], flashing: c.light?.flashing ?? false })),
     })));
@@ -59,7 +59,7 @@ describe("the shared drills fixture", () => {
   });
 
   test.each(drillsFixture.due)("$deck's cards due", ({ deck, progress, now, ids, next }) => {
-    expect(dueCards(DECKS[deck as DeckKey], progress as Progress, now).map(c => c.id)).toEqual(ids);
-    expect(nextDue(DECKS[deck as DeckKey], progress as Progress, now)).toBe(next);
+    expect(dueCards(deckOf(deck as DeckKey), progress as Progress, now).map(c => c.id)).toEqual(ids);
+    expect(nextDue(deckOf(deck as DeckKey), progress as Progress, now)).toBe(next);
   });
 });

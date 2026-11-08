@@ -71,7 +71,7 @@ struct ClearanceSheet: View {
 
     private static func altitude(_ ft: Int) -> String {
         // AIM 4-2-9: feet below 18,000, a flight level from there up.
-        ft >= 18_000 ? "FL\(ft / 100)" : "\(ft.formatted()) ft"
+        Altitudes.said(Double(ft))
     }
 
     private func placeText(_ place: ClearancePlaces.Place) -> Text {
