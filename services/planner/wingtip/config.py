@@ -94,7 +94,7 @@ def _none_if_blank(value):
 class Settings(BaseSettings):
     """Every environment variable wingtip and the planner read, by its
     own name (case aside; the field `log_level` is LOG_LEVEL), with its
-    default. Unset optional keys (SWIM_*, the ADS-B keys) are None,
+    default. Unset optional keys (the ADS-B keys) are None,
     which is how each feature knows it is off. ANTHROPIC_API_KEY is not here: the anthropic SDK reads it itself."""
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
@@ -126,11 +126,13 @@ class Settings(BaseSettings):
     adsbx_usage_file: Path = DATA_DIR / "raw" / "adsbx_usage.json"
     #: Whether adsb.fi's open data is asked for watched airplanes (0 in production until adsb.fi agrees).
     adsbfi_open_data: bool = True
-    #: Where watched airplanes' recorded tracks are kept.
-    recorded_tracks_dir: Path = DATA_DIR / "raw" / "watched_tracks"
+    #: wingtip.traffic.store's SQLite store of the live feeds (the FAA's radar,
+    #: the followed airplanes and their tracks, where the map looks): written by
+    #: ingest (services/ingest) and the planner both, on the data folder they share.
+    live_store: Path = DATA_DIR / "raw" / "live" / "live.sqlite"
 
     # The planner (services/planner/app)
-    #: The logging level for the planner and its SWIM reader.
+    #: The logging level for the planner.
     log_level: str = "INFO"
     #: Whether the FAA aircraft registry is downloaded and read (0 on a test stack).
     registry_refresh: bool = True
@@ -173,22 +175,6 @@ class Settings(BaseSettings):
     dev_services_url: str | None = None
     #: The gateway's address (GATEWAY_URL), for the status page's health probe.
     gateway_url: str = "http://gateway:8080"
-    #: The FAA SWIM subscription (app.swim_reader): the broker, the account, and the CA store.
-    #: A feed is read only where all of host, username, password and its own VPN and queue are set.
-    swim_host: str | None = None
-    swim_username: str | None = None
-    swim_password: str | None = None
-    swim_trust_store: str = "/etc/ssl/certs"
-    #: Each feed's own broker (where it is not SWIM_HOST), VPN and queue.
-    swim_host_stdds: str | None = None
-    swim_vpn_stdds: str | None = None
-    swim_queue_stdds: str | None = None
-    swim_host_fns: str | None = None
-    swim_vpn_fns: str | None = None
-    swim_queue_fns: str | None = None
-    swim_host_tfms: str | None = None
-    swim_vpn_tfms: str | None = None
-    swim_queue_tfms: str | None = None
 
     read_switches = field_validator(
         "charts_fetch_for_tiles", "adsbfi_open_data", "registry_refresh", "cycle_pack", "overlay_tiles", "landmarks_build",

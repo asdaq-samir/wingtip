@@ -162,7 +162,7 @@ def record(found: list[dict], now: float | None = None) -> int:
 
 
 def heard(xml: str | bytes) -> int:
-    """A TFMData message's routes kept: app.swim's handler for the feed.
+    """A TFMData message's routes kept: ingest's handler for the feed (services/ingest).
     Most of the feed is tracks with no route, looked for in the bytes as
     they come, not decoded or parsed: the whole country's flights a second
     or more, decoded first, kept the planner's CPU busy with nothing asked

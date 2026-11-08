@@ -9,7 +9,7 @@ from .. import weather
 from .common import TrafficUnavailable, _LOCK, _NM_PER_DEG, _clock
 from .adsb_lol import ADSB_LOL_SOURCE, MAX_RADIUS_NM, _FROM_ADSBX, _REGIONS, _covering, _region, _region_answer
 from .adsbx import ADSBX_SOURCE, _adsbx
-from .radar import _LOOKED, _elsewhere_near
+from .radar import _elsewhere_near, looked_at
 from .watched import _WATCH_SOURCE, _watched_near
 
 
@@ -20,10 +20,8 @@ def near(lat: float, lon: float, radius_nm: float) -> dict:
     "age_s"}. Raises TrafficUnavailable where adsb.lol has not answered
     for a minute."""
     radius = min(MAX_RADIUS_NM, radius_nm)
-    with _LOCK:
-        # One view a place, to the tenth of a degree: the map asks again
-        # every few seconds for much the same circle.
-        _LOOKED[(round(lat, 1), round(lon, 1))] = (lat, lon, radius, _clock())
+    # Where the FAA's radar is worth reading (ingest asks radar_wanted).
+    looked_at(lat, lon, radius)
     region = _region(lat, lon, radius)
     credit: dict = {}
     try:
@@ -68,7 +66,7 @@ def near(lat: float, lon: float, radius_nm: float) -> dict:
         base = (credit or ADSB_LOL_SOURCE)["source"]
         named = [base, *sorted(whose - {base})]
         credit = {**(credit or ADSB_LOL_SOURCE), "source": " and ".join(named)}
-    # And the FAA's terminal radar's (app.swim): every airplane with a
+    # And the FAA's terminal radar's (ingest, services/ingest): every airplane with a
     # transponder its STARS facilities track, which no ADS-B network may hear.
     radar = _elsewhere_near(lat, lon, radius, have | {p["hex"] for p in watched})
     return {"aircraft": on_altimeter(planes + watched + radar, lat, lon), "age_s": round(_clock() - at, 1), **credit}

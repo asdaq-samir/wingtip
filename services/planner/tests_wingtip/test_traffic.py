@@ -12,12 +12,12 @@ from cachetools import TTLCache
 
 from wingtip import airports, registry, traffic, weather
 from wingtip.traffic import adsbx as adsbx_part  # the name adsbx is the usage file's fixture
-from wingtip.traffic import adsb_lol, adsbfi, alerts, bases, common, flights, lookup, radar, recorded, routes, view, watched
+from wingtip.traffic import adsb_lol, adsbfi, alerts, bases, common, flights, lookup, radar, recorded, routes, store, view, watched
 from wingtip.config import get_settings
 
 
 # Every part of the package, for standing in for one of its names.
-_PARTS = (traffic, adsb_lol, adsbfi, adsbx_part, alerts, bases, common, flights, lookup, radar, recorded, routes, view, watched)
+_PARTS = (traffic, adsb_lol, adsbfi, adsbx_part, alerts, bases, common, flights, lookup, radar, recorded, routes, store, view, watched)
 
 
 def stand_in(monkeypatch, name, value):
@@ -52,8 +52,8 @@ class Clock:
 @pytest.fixture
 def clock(monkeypatch, tmp_path):
     clock = Clock()
-    # Recorded tracks written here, not to the planner's data.
-    stand_in(monkeypatch, "RECORDED_DIR", tmp_path / "watched_tracks")
+    # Recorded tracks, the radar and the views are in the live store, which
+    # the suite's conftest puts in each test's own folder.
     stand_in(monkeypatch, "_REGIONS", {})
     stand_in(monkeypatch, "_STATE", {"next_ask": 0.0, "last_ask": -1e9, "search_at": -1e9, "blocked_until": -1e9})
     stand_in(monkeypatch, "_FLIGHTS", {})
@@ -74,11 +74,6 @@ def clock(monkeypatch, tmp_path):
     # adsb.fi not asked over the network here: its own test turns it on.
     monkeypatch.setenv("ADSBFI_OPEN_DATA", "0")
     get_settings.cache_clear()
-    stand_in(monkeypatch, "_RECORDED", {})
-    stand_in(monkeypatch, "_ELSEWHERE", {})
-    stand_in(monkeypatch, "_FOLLOWED", set())
-    stand_in(monkeypatch, "_FOLLOWED_READ", {"done": False})
-    stand_in(monkeypatch, "_LOOKED", {})
     # No METAR near: pressure altitudes as sent (on_altimeter's own test).
     monkeypatch.setattr(weather, "nearest_report", lambda lat, lon, **kw: None)
     return clock
@@ -1083,16 +1078,14 @@ def test_a_followed_airplane_is_asked_of_adsb_fi_in_the_background_and_stays_fol
     """The owner's N3429J (2026-10-19): FlightAware listed its day's two
     flights, the planner nothing -- recorded only while its card was open,
     and its following lost to a restart. Followed, it is asked of adsb.fi
-    each round, card open or not, and stays followed by its file."""
+    each round (ingest's), card open or not, and stays followed in the store."""
     monkeypatch.setenv("ADSBFI_OPEN_DATA", "1")
     get_settings.cache_clear()
     stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
     traffic.follow("a128b9")
-    assert (tmp_path / "watched_tracks" / "a128b9.json").exists()
-    # A restart: nothing in memory, the file still there.
-    stand_in(monkeypatch, "_FOLLOWED", set())
-    stand_in(monkeypatch, "_FOLLOWED_READ", {"done": False})
-    stand_in(monkeypatch, "_RECORDED", {})
+    # A restart: the store opened again, the airplane still followed.
+    store.reset()
+    assert traffic.followed() == {"a128b9"}
     urls = []
 
     def get(url, **kwargs):
@@ -1141,8 +1134,8 @@ def test_a_watched_flight_is_kept_across_a_restart_and_listed_with_the_archives(
     for k in range(12):
         wall["now"] = 1791800000.0 + 20 * k
         recorded._record("a128b9", common._aircraft({**CESSNA, "lat": 42.30 + 0.01 * k, "seen_pos": 0}))
-    # A restart: nothing in memory, the file read back.
-    stand_in(monkeypatch, "_RECORDED", {})
+    # A restart: the store opened again, the track read back.
+    store.reset()
     assert len(recorded._recorded("a128b9")) == 12
     stand_in(monkeypatch, "_trace", lambda hex_id: None)
     stand_in(monkeypatch, "_day_trace", lambda hex_id, day: traffic.UNREAD)
@@ -1153,7 +1146,7 @@ def test_a_watched_flight_is_kept_across_a_restart_and_listed_with_the_archives(
 
 
 def test_the_faa_radars_airplanes_are_on_the_map_and_a_followed_ones_flight_recorded(clock, monkeypatch):
-    """SWIM's terminal radar (app.swim) hears what no ADS-B network may: an
+    """SWIM's terminal radar (ingest) hears what no ADS-B network may: an
     airplane it tracks is on the map where adsb.lol's region left it out,
     and one whose card has been opened has its flight recorded, a point a
     quarter minute, card open or not."""
@@ -1184,18 +1177,21 @@ def test_the_faa_radars_airplanes_are_on_the_map_and_a_followed_ones_flight_reco
 def test_the_faa_radar_is_read_around_the_places_the_map_shows_traffic(clock, monkeypatch):
     """The radar is wanted around each place the map asked about within a
     minute, once a place however often it asks, and for the followed
-    airplanes wherever they are (app.swim reads no others)."""
+    airplanes wherever they are (ingest reads no others). The views are
+    written to the live store on the wall clock, which ingest reads them by."""
+    wall = {"now": 1791800000.0}
+    stand_in(monkeypatch, "_wall", lambda: wall["now"])
     traffic.follow("a3c858")
     assert traffic.radar_wanted() == ([], {"a3c858"})
     stand_in(monkeypatch, "_region_answer", lambda region: (clock.now, []))
     traffic.near(42.36, -88.14, 30)
     traffic.near(42.37, -88.13, 30)
-    clock.now += traffic.LOOKED_S / 2
+    wall["now"] += traffic.LOOKED_S / 2
     traffic.near(33.94, -118.41, 200)
     assert traffic.radar_wanted() == ([(42.37, -88.13, 30), (33.94, -118.41, traffic.MAX_RADIUS_NM)], {"a3c858"})
-    clock.now += traffic.LOOKED_S / 2 + 1
+    wall["now"] += traffic.LOOKED_S / 2 + 1
     assert traffic.radar_wanted() == ([(33.94, -118.41, traffic.MAX_RADIUS_NM)], {"a3c858"})
-    clock.now += traffic.LOOKED_S
+    wall["now"] += traffic.LOOKED_S
     assert traffic.radar_wanted() == ([], {"a3c858"})
 
 
@@ -1229,12 +1225,12 @@ def test_the_globe_turning_the_planner_away_is_not_asked_again_for_a_while(clock
         assert get.call_count == 2
 
 
-def test_an_address_that_is_not_six_hex_digits_names_no_file(monkeypatch, tmp_path):
-    """A track's file is named by the airplane's ICAO address alone: one
-    that is not six hex digits (from a feed or a request) names no file, so
-    nothing is written or read outside the directory."""
-    stand_in(monkeypatch, "RECORDED_DIR", tmp_path / "data" / "watched_tracks")
-    assert recorded._recorded_file("../../escaped") is None
-    assert recorded._recorded_file("~a1b2c3") == tmp_path / "data" / "watched_tracks" / "a1b2c3.json"
-    recorded._save_recorded("../../escaped", [{"t": 1.0}])
-    assert not any(tmp_path.rglob("escaped*"))
+def test_an_address_that_is_not_six_hex_digits_is_neither_followed_nor_recorded():
+    """A track is kept by the airplane's ICAO address alone: one that is not
+    six hex digits (from a feed or a request) is not kept, so junk ids
+    cannot grow the store; a TIS-B one's "~" and its case are set aside."""
+    traffic.follow("../../escaped")
+    recorded._record("../../escaped", {"lat": 1.0, "lon": 1.0})
+    assert traffic.followed() == set() and recorded._recorded("../../escaped") == []
+    traffic.follow("~A1B2C3")
+    assert traffic.followed() == {"a1b2c3"}

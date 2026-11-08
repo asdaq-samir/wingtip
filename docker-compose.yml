@@ -252,8 +252,38 @@ services:
       # ADS-B Exchange through RapidAPI, the traffic's fallback where
       # adsb.lol turns the planner away (wingtip.traffic): off without it.
       ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
-      # The FAA's SWIM feeds (app.swim): STDDS's terminal radar tracks; off
-      # without them. The owner's SCDS subscription's login and queue.
+      # Traces to Jaeger, with the tracing profile up and TRACING=1 (see
+      # the jaeger service below); unset, the planner sends none.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      OTEL_SERVICE_NAME: planner
+    healthcheck:
+      <<: *python-healthcheck
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+
+  # The live feeds, read always (services/ingest): the FAA's SWIM feeds
+  # (STDDS's terminal radar, FNS's NOTAMs, TFMS's flight plans) and the
+  # followed airplanes' adsb.fi rounds, written into the SQLite stores
+  # under data/raw that the planner reads (the live store, wingtip.traffic.store;
+  # the NOTAM and filed-route stores). No port: nothing calls it. The
+  # project mounted as the planner's is, so both see one data folder and
+  # ingest runs this checkout's code.
+  ingest:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: services/ingest/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    volumes:
+      - .:/workspace
+    # Production is one 4 GB server: ingest is a few threads and a SQLite
+    # connection, 186 MB with wingtip's imports (docker stats, 2026-11-08),
+    # so it is held to twice that, well below what would crowd the planner.
+    mem_limit: 384m
+    environment:
+      PYTHONPATH: /workspace/services/ingest:/workspace/services/planner
+      # The FAA's SWIM feeds (ingest.swim); each off without its own. The
+      # owner's SCDS subscriptions' login and queues.
       SWIM_HOST: ${SWIM_HOST:-}
       SWIM_USERNAME: ${SWIM_USERNAME:-}
       SWIM_PASSWORD: ${SWIM_PASSWORD:-}
@@ -264,13 +294,10 @@ services:
       SWIM_HOST_TFMS: ${SWIM_HOST_TFMS:-}
       SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
       SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
-      # Traces to Jaeger, with the tracing profile up and TRACING=1 (see
-      # the jaeger service below); unset, the planner sends none.
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
-      OTEL_SERVICE_NAME: planner
     healthcheck:
       <<: *python-healthcheck
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      # Its beat in the live store, written every ten seconds (ingest.health).
+      test: ["CMD", "python", "-m", "ingest.health"]
 
   # Where the local stack's sign-in emails go: an inbox of its own at
   # http://localhost:8025, sent nowhere. A mail host is what makes
