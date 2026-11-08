@@ -8,7 +8,7 @@ export const GL_FONT_BOLD = ["Inter Bold"];
 export const LABEL_HALO = { "text-halo-color": "#ffffff", "text-halo-width": 2 } as const;
 
 /** A tap's reach and order: a mark within a finger's half-width (a 44 pt
- *  target), a line within AirspaceLayer's TAP_PX; the route's airports
+ *  target), a line within 10 px; the route's airports
  *  before its checkpoints before anything on the chart under them. */
 export const TAP = {
   mark: 22,

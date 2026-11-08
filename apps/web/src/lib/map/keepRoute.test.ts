@@ -5,14 +5,14 @@ import { corridorTiles, CORRIDOR_NM } from "./keepRoute";
  * The tiles a route keeps for the air.
  *
  * Which tile a point falls in is the Web Mercator formula written out
- * in keepRoute, not Leaflet's projection. It has to pick exactly the
+ * in keepRoute, not the map's projection. It has to pick exactly the
  * tiles the slippy-map scheme defines, because the service worker
  * matches on URL: a tile computed one way and requested another is a
  * tile that was fetched for nothing and is missing when the connection
  * goes.
  *
  * The reference below is that scheme's own definition, which is what
- * every tile server and Leaflet itself implement.
+ * every tile server and MapLibre itself implement.
  */
 function referenceTile(lat: number, lon: number, zoom: number) {
   const n = 2 ** zoom;

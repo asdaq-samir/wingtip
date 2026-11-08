@@ -195,10 +195,9 @@ test("a pinch draws the course line again at its own width as it zooms, not scal
 
 test("a pinch out fills the chart's edges with tiles before the fingers lift, under half a level", async ({ page }) => {
   // The owner's notice (2026-10-16): "map is updating fine while panning
-  // but not when zooming in or out". Leaflet asks for a pinch's tiles only
-  // as it crosses half a level; the chart's layers ask as the map moves
-  // (LIVE_TILES), a pinch's frames among them, so a pinch out short of
-  // that fills the edges it bares as it goes. Kept so.
+  // but not when zooming in or out". The chart's raster sources ask for
+  // tiles as the map moves, a pinch's frames among them, so a pinch out
+  // short of half a level fills the edges it bares as it goes. Kept so.
   await openOnC81(page);
   await page.route(url => url.pathname.startsWith("/api/planner/chart-tile/"), route => route.fulfill({ body: PIXEL, contentType: "image/png" }));
   await page.goto("/app/plan");

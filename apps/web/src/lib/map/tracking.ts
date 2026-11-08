@@ -20,7 +20,7 @@ export interface PathPoint {
  * (`hex`, the address's `?flight=`), whether the map keeps it in the
  * middle (`follow`), its last report, and the path it has flown since its
  * trace was read; and the airplanes of the last answer, for the Aircraft
- * card's list (`seen`). TrafficLayer writes the reports in as they come;
+ * card's list (`seen`). TrafficGl writes the reports in as they come;
  * the cards (AircraftCard, FlightCard) read them, and pick a flight with
  * PlanWorkspace's own `pick`, which puts it in the address.
  */
@@ -67,6 +67,6 @@ export function reported(report: Report) {
 }
 
 /** The airplanes the Aircraft pill's Map switch leaves on the map, the
- *  rest faded (TrafficLayer); none while it is off. At the owner's ask:
+ *  rest faded (TrafficGl); none while it is off. At the owner's ask:
  *  "Map: show only these". */
 export const useTrafficFocus = create<{ on: boolean; only: ReadonlySet<string> | null }>(() => ({ on: false, only: null }));

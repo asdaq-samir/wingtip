@@ -7,25 +7,20 @@ import { TEXT } from "../text";
 
 /**
  * What every card on either map is made of: what the thing is, where it
- * is, and whatever that particular card can do about it, in one corner.
+ * is, and whatever that particular card can do about it.
  *
  * Measured before this existed, across the three cards a pilot can
- * open: two different close buttons -- Leaflet's own 24x24 glyph jammed
- * into the very corner on two of them, the app's 32x32 button inset by
- * 14 and 25 on the third -- and three sizes of corner control (32, 36
- * and 40). Each was reasonable where it was written and none of them
- * agreed.
+ * open: two different close buttons and three sizes of corner control
+ * (32, 36 and 40). Each was reasonable where it was written and none of
+ * them agreed. Now every one is a card in the map's panel (SheetCard,
+ * which the map's openCard and the training map both open), as Maps
+ * opens a place's card in its one sheet, with the panel's close as every
+ * card's. Its words at a list's sizes (TEXT): to a finger the title 17
+ * points and the rest 15, where they were 14 and 12.
  *
- * One size, too: see the width below. Its words at a list's sizes
- * (TEXT): to a finger the title 17 points and the rest 15, where they
- * were 14 and 12.
- *
- * There is no close button on the chart's: a tap on the chart puts a card
- * away, which is what every map does and what Leaflet's `closeOnClick`
- * already did for two of the three. `MapShell` fits the route when the
- * last card closes, so the tap that opened a card and the tap that puts
- * it away are both halves of one gesture. On a phone it is a card in the
- * map's panel instead (MapPopup), with the panel's close as every card's.
+ * A tap on the chart puts a card away (GlMapShell), which is what every
+ * map does, so the tap that opened a card and the tap that puts it away
+ * are both halves of one gesture.
  */
 export function MapCard({ title, subtitle, media, pill, children }: {
   title: ReactNode;
@@ -41,9 +36,9 @@ export function MapCard({ title, subtitle, media, pill, children }: {
   pill?: PillHead;
   children?: ReactNode;
 }) {
-  // On a phone, a card in the map's panel (MapPopup's SheetCard): its mark
-  // and its name in the card's head, at a card's size where its close is,
-  // and the rest the card's body, the panel's width.
+  // Its mark and its name in the sheet card's head (SheetCardHead), at a
+  // card's size where its close is, and the rest the card's body, the
+  // panel's width.
   const inSheet = useContext(SheetCardHead);
   // Given by its strings, not the object, made new at each draw.
   const setPill = inSheet?.setPill;
@@ -53,69 +48,26 @@ export function MapCard({ title, subtitle, media, pill, children }: {
     setPill({ name, line, colour });
     return () => setPill(undefined);
   }, [setPill, name, line, colour]);
-  if (inSheet) {
-    return (
-      <>
-        {inSheet.slot && createPortal(
-          <>
-            {media}
-            <div className="min-w-0 flex-1">
-              {/* At a row's size and on one line each in the bar's row
-                  (inBar), beside its close. */}
-              <h2
-                id={inSheet.headingId} tabIndex={-1}
-                className={cn("flex items-center gap-x-2 font-bold tracking-tight text-foreground outline-none", inSheet.inBar ? cn("truncate", TEXT.row) : cn("flex-wrap", TEXT.card))}
-              >
-                {title}
-              </h2>
-              {subtitle !== undefined && <p className={cn("text-muted-foreground", inSheet.inBar ? cn("truncate", TEXT.note) : TEXT.detail)}>{subtitle}</p>}
-            </div>
-          </>,
-          inSheet.slot,
-        )}
-        <div className={cn("space-y-3", TEXT.detail)}>{children}</div>
-      </>
-    );
-  }
   return (
-    // whitespace-normal: Leaflet's stylesheet sets `white-space: nowrap`
-    // on every tooltip, which is right for a one-line course label and
-    // wrong here -- a raw METAR ran straight off the card's right edge.
-    // It inherits, so setting it on this root is enough.
-    // As wide as its own content, up to a cap, and never narrower than
-    // whatever it is sitting in. All three parts earn their place:
-    //
-    // `w-max` is the content's own preferred width, so a card carrying
-    // an ident and an airport name is that wide and one carrying a raw
-    // METAR runs to the cap and wraps inside it. Needed because a
-    // Leaflet *tooltip* shrink-wraps its content: with `white-space`
-    // normal and no preferred width to measure, the Class B card
-    // collapsed into a narrow column and wrapped the METAR every four
-    // words.
-    //
-    // `min-w-full` is for the other case. A Leaflet *popup* sizes its
-    // own content box and writes a width onto it, never below its
-    // `minWidth` -- so a short card measured 89px inside a 221px box
-    // and sat against its left edge, with 15px of space on one side and
-    // 147px on the other. Filling the box puts that right. In a tooltip
-    // the parent shrink-wraps, so this resolves to nothing and `w-max`
-    // still governs.
-    <div className={cn("w-max min-w-full max-w-[min(22rem,74vw)] space-y-1.5 whitespace-normal", TEXT.detail)}>
-      <div className={cn("flex gap-2", media ? "items-center gap-2.5" : "items-start")}>
-        {media}
-        {/* Beside its mark, set to the left as a row is; with none,
-            centred, and `flex justify-center` rather than `text-center`
-            so a title that is itself a row -- an ident beside its
-            flight-category chip -- centres as a block too. It centres
-            in the space the corner controls leave, not in the card:
-            those are part of the head, and a title that ignored them
-            would sit under the close on a narrow card. */}
-        <div className={cn("min-w-0 flex-1 space-y-0.5", media ? "text-left" : "text-center")}>
-          <div className={cn("flex items-center gap-2 font-semibold", media ? "justify-start" : "justify-center", TEXT.row)}>{title}</div>
-          {subtitle !== undefined && <div className="text-muted-foreground">{subtitle}</div>}
-        </div>
-      </div>
-      {children}
-    </div>
+    <>
+      {inSheet?.slot && createPortal(
+        <>
+          {media}
+          <div className="min-w-0 flex-1">
+            {/* At a row's size and on one line each in the bar's row
+                (inBar), beside its close. */}
+            <h2
+              id={inSheet.headingId} tabIndex={-1}
+              className={cn("flex items-center gap-x-2 font-bold tracking-tight text-foreground outline-none", inSheet.inBar ? cn("truncate", TEXT.row) : cn("flex-wrap", TEXT.card))}
+            >
+              {title}
+            </h2>
+            {subtitle !== undefined && <p className={cn("text-muted-foreground", inSheet.inBar ? cn("truncate", TEXT.note) : TEXT.detail)}>{subtitle}</p>}
+          </div>
+        </>,
+        inSheet.slot,
+      )}
+      <div className={cn("space-y-3", TEXT.detail)}>{children}</div>
+    </>
   );
 }

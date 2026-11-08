@@ -592,7 +592,7 @@ export const api = {
     planner.GET("/api/airspace/ahead", { params: { query: ask } }).then(data<AlertsAhead>),
 
   /** The airplanes ADS-B receivers hear within `radius` nm of a point,
-   *  from adsb.lol's open data (TrafficLayer). */
+   *  from adsb.lol's open data (TrafficGl). */
   traffic: (ask: { lat: number; lon: number; radius: number }) =>
     planner.GET("/api/traffic", { params: { query: ask } }).then(data<Traffic>),
 
@@ -641,12 +641,12 @@ export const api = {
     planner.GET("/api/waypoints/in-view", { params: { query: box } }).then(data<WaypointsInView>).then(r => r.waypoints),
 
   /** The Class B, C and D in the map's view, each one's lines and its
-   *  altitudes, to draw over the chart (AirspaceLayer). */
+   *  altitudes, to draw over the chart (AirspaceGl). */
   airspaceInView: (box: { south: number; west: number; north: number; east: number; classes?: string }) =>
     planner.GET("/api/airspace/in-view", { params: { query: box } }).then(data<AirspaceInView>).then(r => r.volumes),
 
   /** The VORs in the map's view, and with `fixes` the low enroute
-   *  chart's fixes too (NavaidsLayer). */
+   *  chart's fixes too (NavaidsGl). */
   navaidsInView: (box: { south: number; west: number; north: number; east: number }, fixes: boolean) =>
     planner.GET("/api/navaids/in-view", { params: { query: { ...box, fixes } } }).then(data<NavaidsInView>),
 

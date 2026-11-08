@@ -6,9 +6,8 @@ import { useGlMap } from "./glLayer";
  * What a layer has drawn, where, for the browser tests: an empty element
  * in the map's container carrying `data-<name>` as JSON -- each feature
  * drawn, its `fields` and its place in the map's own points -- written
- * each time the map is idle, as the Leaflet canvases wrote theirs
- * (AirportCanvas' data-airport-marks, NavaidCanvas' data-navaid-marks).
- * A canvas drawn by WebGL has no elements for a test to find.
+ * each time the map is idle (data-airport-marks, data-navaid-marks): a
+ * canvas drawn by WebGL has no elements for a test to find.
  */
 export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSONFeature) => Record<string, unknown>) {
   const { map } = useGlMap();

@@ -40,8 +40,8 @@ export function RulerDrawing({ drawn, spoken }: { drawn: Placed | null; spoken: 
     <>
       <div className="sr-only" aria-live="polite" data-testid="ruler-spoken">{spoken}</div>
       {drawn && (
-        // Over the map's marks and popups, under its buttons (Leaflet's
-        // panes reach 700, its controls 800).
+        // Over the map's canvas and marks, under its buttons
+        // (MapControls' 1000).
         <div className="pointer-events-none absolute inset-0 z-[750]" data-testid="map-ruler" aria-hidden="true">
           <svg className="absolute inset-0 h-full w-full overflow-visible">
             {/* A dark casing under a white line, seen on the day chart and the night one. */}

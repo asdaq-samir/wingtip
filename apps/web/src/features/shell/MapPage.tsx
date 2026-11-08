@@ -275,8 +275,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
           >
             Skip to the map
           </a>
-          {/* `isolate`: Leaflet's own panes and controls carry z-indexes
-              up to 1000; contained here, the map is one flat layer under
+          {/* `isolate`: the map's markers and buttons carry z-indexes of
+              their own (MapControls' 1000); contained here, the map is one flat layer under
               the panel and the sheets. The insets as variables, for the
               chart credit (index.css). */}
           <main

@@ -17,12 +17,10 @@ import { usePreferences, type ChartLight } from "./preferences";
  * comes on by itself a banner says so with a one-tap Keep off
  * (SunlightBanner).
  *
- * The airspace rings (AirspaceLinesCanvas) draw on a canvas at their
- * style's own weight (chartColors' LINE_CASING and the class's own
- * weights, module constants read at draw time), which no stylesheet
- * reaches: they stay at their width in sunlight until that layer reads
- * the attribute itself. The course (CourseLine) is Leaflet SVG, whose
- * stroke-width the stylesheet sets.
+ * The chart's tiles take it in their raster paint (glStyle chartPaint).
+ * The airspace rings and the course are WebGL lines whose widths are
+ * paint properties (glStyle), which no stylesheet reaches: they stay at
+ * their width in sunlight.
  */
 
 /** Direct sunlight on the screen: full daylight is 10,000 lux and more

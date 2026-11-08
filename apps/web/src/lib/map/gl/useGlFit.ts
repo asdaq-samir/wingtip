@@ -8,9 +8,9 @@ import { FIT_MARGIN } from "./GlMapShell";
 
 /**
  * The map fitted to `points`, clear of the panel and the map's buttons,
- * flown there in the sheet's time, when `fitKey` changes: MapEffects'
- * FitTo on the WebGL map (Nearest's fields, a leg picked, a procedure, a
- * pattern, the Stops). Not past `maxZoom` (Leaflet's zoom). Own ship stops
+ * flown there in the sheet's time, when `fitKey` changes (Nearest's
+ * fields, a leg picked, a procedure, a pattern, the Stops). Not past
+ * `maxZoom`, in the app's levels. Own ship stops
  * pulling the map back, as a route's fit stops it.
  */
 export function useGlFit(points: { lat: number; lon: number }[], fitKey: string | null, maxZoom = 11, cover = { top: 0, bottom: 0 }) {

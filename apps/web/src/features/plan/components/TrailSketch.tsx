@@ -14,8 +14,8 @@ export interface SketchField {
  * planner's flight answer) north up, fitted to the box, and an arrowhead
  * where it is now along its track. Plain SVG, no map under it: a shape to
  * recognise, the map behind the card the place. In its heights' colours
- * over a white casing, as the map draws the same trace (TrafficLayer's
- * TrackedPath, heightColour), and with the field it left and the one it
+ * over a white casing, as the map draws the same trace (TracksGl's
+ * TrackedPathGl, heightColour), and with the field it left and the one it
  * is bound for where they are known, each a dot and its ident, at the
  * owner's ask ("Can the aircraft trace in the thumbnail have the
  * origin/destination airport? And the trace color green just like on the

@@ -11,9 +11,9 @@ import { TEXT } from "../lib/text";
 /**
  * A card in the map's panel on a phone, opened from anywhere on the page:
  * a control's (ResponsivePopover's -- the Map settings, the approaches, an
- * airplane's form) or a thing tapped on the chart (MapPopup's -- a
+ * airplane's form) or a thing tapped on the chart (the map's openCard -- a
  * checkpoint, a VFR waypoint, a TFR). Each was a sheet floating over the
- * panel, or a Leaflet popup over the chart, two more surfaces over the one
+ * panel, or a popup over the chart, two more surfaces over the one
  * the pilot already had; at the owner's ask ("Yes to all, let's have
  * consistency and common code", 2026-10-27) they are cards in the panel,
  * as Maps opens a place's card in its one sheet.
@@ -190,7 +190,7 @@ export function SheetCard({
         back();
       }}
       // A tap on the chart puts them away, as a tap outside the sheets
-      // they were put away, and as Leaflet's own popup's is -- what the tap
+      // they were put away -- what the tap
       // opens is what shows, where it opened under them out of sight. Not
       // the map's own buttons, nor the panel, its tab bar or anything else
       // on the page. Radix waits for the click, so a pan or a pinch, no

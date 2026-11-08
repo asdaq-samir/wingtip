@@ -6,9 +6,8 @@ import { browserStorage } from "../storage";
 /**
  * Own ship: the phone's position on the chart, from the browser's
  * geolocation, watched while `enabled` and kept centred while
- * `follow`. A zustand store: Leaflet draws it (`createOwnShip`) from
- * `getState()`/`subscribe()`, the map's location arrow switches it
- * (MyPositionButton), and both are remembered per browser (the position
+ * `follow`. A zustand store: the map draws it (OwnShipGl), the map's
+ * location arrow switches it (MyPositionButton), and both are remembered per browser (the position
  * itself is not), so a pilot who turned it on at the desk has it on in
  * the air.
  *
@@ -46,13 +45,13 @@ interface OwnShip {
   fix: Fix | null;
   error: string | null;
   /** Bumped by a tap on the location arrow that starts following: the
-   *  map flies to the position, closing in on it (OwnShipLayer). */
+   *  map flies to the position, closing in on it (OwnShipGl). */
   recentred: number;
   /** The zoom that recentre asked for, or null for the arrow's own close
-   *  in (OwnShipLayer's LOCAL_ZOOM). */
+   *  in (OwnShipGl's LOCAL_ZOOM). */
   recentreZoom: number | null;
   /** Where the position last was, to a few hundred feet, kept in this
-   *  browser: the planner opens there (MapShell), the region's chart
+   *  browser: the planner opens there (GlMapShell), the region's chart
    *  already drawn, rather than on the whole country until a fix comes
    *  and then all over again where it is. */
   lastFix: { lat: number; lon: number } | null;
@@ -62,21 +61,21 @@ interface OwnShip {
    *  one. */
   recentre: (zoom?: number) => void;
   /** Bumped by the location arrow's other face in a dry run, the whole
-   *  route: the map fits the route again (MapShell), and stops following. */
+   *  route: the map fits the route again (GlMapShell), and stops following. */
   routeAsked: number;
   showRoute: () => void;
   /** A route is on the map and not all of it in sight, clear of the
-   *  panel (MapShell): the location arrow offers it back. */
+   *  panel (GlMapShell): the location arrow offers it back. */
   routeOutOfView: boolean;
-  /** A route is on the map (MapShell): the location arrow then only goes
+  /** A route is on the map (GlMapShell): the location arrow then only goes
    *  between the position and the whole route. */
   routeDrawn: boolean;
 }
 
 /** Where the planner opens on the pilot's position: the region a flight
  *  from here goes to, some 100 nm across a phone -- the zoom from which
- *  the Class D rings and every airport are drawn (AirspaceLayer's and
- *  AirportsLayer's FROM_ZOOM), at the owner's ask (2026-11-04: "make the
+ *  the Class D rings and every airport are drawn (glStyle's AIRSPACE_FROM,
+ *  AirportsGl's FROM_ZOOM), at the owner's ask (2026-11-04: "make the
  *  current position zoom level the same as class D airports"); at 7 the
  *  position opened on a chart with the Class B and C alone. */
 export const OPEN_ZOOM = 8;
@@ -189,7 +188,7 @@ export const useOwnShip = create<OwnShip>()(
           set({ enabled: true, error: null });
           startWatching(set);
         } else {
-          // The last position kept, drawn grey (OwnShipLayer); everything
+          // The last position kept, drawn grey (OwnShipGl); everything
           // that measures from own ship reads it only while it is on.
           stopWatching();
           set({ enabled: false, error: null });
@@ -230,7 +229,7 @@ export const useOwnShip = create<OwnShip>()(
 
 /** How often the dry run reports a fix to own ship, ms: four a second, as
  *  a GPS might, not every frame -- each fix moves what follows own ship.
- *  Own ship glides from one to the next over it (OwnShipLayer). */
+ *  Own ship glides from one to the next over it (OwnShipGl). */
 export const SIMULATED_FIX_MS = 250;
 
 /** The zoom a dry run starts at, on its airplane: some fifty miles across
@@ -280,7 +279,7 @@ export function endSimulation() {
 
 /**
  * The planner opened: the map on the pilot's position, as Maps opens on
- * yours -- own ship on and the map brought to it (OwnShipLayer) -- by
+ * yours -- own ship on and the map brought to it (OwnShipGl) -- by
  * default, at the owner's ask (2026-11-04: "By default load the sheet on
  * current location"): on a first visit the browser asks as the page
  * opens, where before it waited for the location arrow (Apple's

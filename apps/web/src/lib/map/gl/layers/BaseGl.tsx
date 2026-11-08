@@ -7,7 +7,7 @@ import { GOOGLE, useGoogleSession } from "../../googleSession";
 import { USGS_URL } from "../../imagery";
 import { useShownOverlay } from "../../useShownOverlay";
 import { useGlLayer, useGlMap, useGlPaint, type Slot } from "../glLayer";
-import { glZoom, leafletZoomOf } from "../glStyle";
+import { appZoomOf, glZoom } from "../glStyle";
 import { useGlView } from "../useGlView";
 
 /** OverlayTiles': how strongly the imagery covers the chart. */
@@ -118,8 +118,8 @@ function Usgs({ opacity }: { opacity: number }) {
  *  stays, enlarged, as before. */
 function CloseBase() {
   const { level } = useGlView();
-  // A level before the fade, so its tiles are in as it starts (useGlView's levels are Leaflet's).
-  return level >= leafletZoomOf(CLOSE_FROM - 1) ? <Google kind="map" opacity={null} /> : null;
+  // A level before the fade, so its tiles are in as it starts (useGlView's levels are the app's).
+  return level >= appZoomOf(CLOSE_FROM - 1) ? <Google kind="map" opacity={null} /> : null;
 }
 
 function Google({ kind, opacity }: { kind: "map" | "satellite"; opacity: number | null }) {

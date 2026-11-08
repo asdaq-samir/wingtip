@@ -69,7 +69,7 @@ interface Props {
    *  of it. */
   procedureCover?: { top: number; bottom: number };
   /** The airport whose card is open, and the way to open one from the
-   *  chart (AirportsLayer) -- or, with null, to put it away. */
+   *  chart (AirportsGl) -- or, with null, to put it away. */
   place: { ident: string; lat: number; lon: number } | null;
   /** The route's departure while it is all there is (no destination yet):
    *  the map brought to it (FitTo), at the owner's screenshot. */
@@ -91,7 +91,7 @@ interface Props {
    *  tap one's row picked in the sheet (StopsCard). */
   stopFields?: StopFieldPin[];
   onPickStopField?: (ident: string) => void;
-  /** The ways FPL's Routes offer beside the route (RouteWaysLayer), a tap one's pick. */
+  /** The ways FPL's Routes offer beside the route (WaysGl), a tap one's pick. */
   ways?: RouteWay[];
   /** The one of them shown (FPL's Routes' card picked), drawn the stronger. */
   wayShown?: string | null;

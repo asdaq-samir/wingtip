@@ -71,7 +71,7 @@ function speedOf(aircraft: AircraftProfile | null | undefined, key: "vref_kt" | 
  * approach as an instructor has it briefed, a Got It a step; Fly takes the
  * airplane fix by fix along it on the map with a coaching word at each and
  * the approach from the side; the quiz asks it back from its own data. Each
- * step rings its fix or draws over its part on the chart (LessonLayer). A
+ * step rings its fix or draws over its part on the chart (LessonGl). A
  * card in the map's panel on a phone, as the hold's is; its subtitle the
  * one line that says it is a training aid.
  */
