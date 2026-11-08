@@ -1,0 +1,254 @@
+//! The nav log's rules and the airplane's performance as crate::call
+//! answers them, JSON in and out; the names and their inputs are listed
+//! in call.rs with the others, and their shapes in
+//! engine/contract/engine.schema.json.
+
+use super::climbs::{approach_end, with_climbs, with_descents, ApproachFix, End};
+use super::holds::{hold_on_leg, Held};
+use super::legs::{alternate_leg, assemble_leg, fuel_plan, legs, totals};
+use super::plans::{candidates, join_figures, join_options, Flights, Plan};
+use super::{read_air, read_leg_air, Obj, Profile, R};
+use crate::json::{self, Value};
+use wingtip_flight::performance::{Climber, REFERENCE_ALTITUDE_FT};
+
+/// The names this module answers.
+pub const NAMES: [&str; 18] = [
+    "performance_reference_ft",
+    "performance_cruise",
+    "performance_climb",
+    "navlog_leg",
+    "navlog_legs",
+    "navlog_with_climbs",
+    "navlog_with_descents",
+    "navlog_approach_end",
+    "navlog_totals",
+    "navlog_fuel_plan",
+    "navlog_alternate_leg",
+    "navlog_candidates",
+    "navlog_plans",
+    "navlog_legs_at",
+    "navlog_join_plans",
+    "navlog_join_figures",
+    "navlog_hold",
+    "navlog_racetrack",
+];
+
+fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
+    match v.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Number(n)) => Ok(Some(*n)),
+        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
+    }
+}
+
+fn num(name: &str, v: &Value, key: &str) -> R<f64> {
+    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
+}
+
+fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
+    match v.get(key) {
+        Some(Value::Array(items)) => Ok(items),
+        _ => Err(format!("{name}: \"{key}\" is missing or not a list")),
+    }
+}
+
+fn objs(name: &str, v: &Value, key: &str) -> R<Vec<Obj>> {
+    list(name, v, key)?.iter().map(|o| Obj::read(name, o)).collect()
+}
+
+fn profile(name: &str, v: &Value) -> R<Profile> {
+    Profile::read(name, v.get("profile").ok_or_else(|| format!("{name}: \"profile\" is missing"))?)
+}
+
+fn place(name: &str, v: &Value, key: &str) -> R<(f64, f64)> {
+    let p = v.get(key).ok_or_else(|| format!("{name}: \"{key}\" is missing"))?;
+    Ok((num(name, p, "lat")?, num(name, p, "lon")?))
+}
+
+fn write(v: &Value) -> String {
+    let mut out = String::new();
+    json::value(&mut out, v);
+    out
+}
+
+fn write_objs(items: Vec<Obj>) -> String {
+    write(&Value::Array(items.into_iter().map(Obj::value).collect()))
+}
+
+fn context<T>(name: &str, r: R<T>) -> R<T> {
+    r.map_err(|e| if e.starts_with(name) { e } else { format!("{name}: {e}") })
+}
+
+fn plan<'a>(name: &'a str, v: &'a Value, p: &'a Profile, air: &'a [super::LegAir]) -> R<Option<Plan<'a>>> {
+    let fixes = list(name, v, "fixes")?;
+    let Some(candidates) = candidates(list(name, v, "segments")?, fixes.len().saturating_sub(1), p)? else { return Ok(None) };
+    p.need(name, &["cruise_tas_kt", "fuel_burn_gph", "service_ceiling_ft"])?;
+    Ok(Some(Plan { flights: Flights::new(name, fixes, p, air)?, candidates, departure_elevation_ft: opt_num(name, v, "departure_elevation_ft")? }))
+}
+
+/// The rule `name` on `v`, its answer as JSON.
+pub fn call(name: &str, v: &Value) -> R<String> {
+    context(name, answer(name, v))
+}
+
+fn answer(name: &str, v: &Value) -> R<String> {
+    Ok(match name {
+        "performance_reference_ft" => write(&Value::Number(REFERENCE_ALTITUDE_FT)),
+        "performance_cruise" => {
+            let p = profile(name, v)?;
+            p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
+            let c = p.airplane.cruise(num(name, v, "altitude_ft")?, opt_num(name, v, "oat_c")?);
+            format!(
+                "{{\"tas_kt\":{},\"fuel_burn_gph\":{},\"power_pct\":{},\"density_altitude_ft\":{}}}",
+                write(&Value::Number(c.tas_kt)),
+                write(&Value::Number(c.fuel_burn_gph)),
+                write(&Value::Number(c.power_pct)),
+                write(&Value::Number(c.density_altitude_ft))
+            )
+        }
+        "performance_climb" => {
+            let p = profile(name, v)?;
+            p.need(name, &["fuel_burn_gph", "service_ceiling_ft"])?;
+            let c = Climber::new(&p.airplane).climb(num(name, v, "from_ft")?, num(name, v, "to_ft")?, opt_num(name, v, "isa_dev_c")?.unwrap_or(0.0));
+            format!("{{\"minutes\":{},\"gallons\":{}}}", write(&Value::Number(c.minutes)), write(&Value::Number(c.gallons)))
+        }
+        "navlog_leg" => {
+            let p = profile(name, v)?;
+            p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
+            let leg = assemble_leg(place(name, v, "start")?, place(name, v, "end")?, num(name, v, "altitude_ft")?, &p, &read_air(name, v)?, num(name, v, "variation_deg")?)?;
+            write(&leg.value())
+        }
+        "navlog_legs" => {
+            let p = profile(name, v)?;
+            p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
+            write_objs(legs(name, list(name, v, "fixes")?, num(name, v, "altitude_ft")?, &p, &read_leg_air(name, v)?)?)
+        }
+        "navlog_with_climbs" => {
+            let p = profile(name, v)?;
+            p.need(name, &["cruise_tas_kt", "fuel_burn_gph", "service_ceiling_ft"])?;
+            write_objs(with_climbs(&objs(name, v, "legs")?, opt_num(name, v, "start_altitude_ft")?, &p, &Climber::new(&p.airplane))?)
+        }
+        "navlog_with_descents" => {
+            let end = End {
+                altitude_ft: opt_num(name, v, "end_altitude_ft")?,
+                before_nm: opt_num(name, v, "end_before_nm")?.unwrap_or(0.0),
+                fix: match v.get("end_fix") {
+                    None | Some(Value::Null) => None,
+                    Some(Value::String(s)) => Some(s.clone()),
+                    Some(_) => return Err(format!("{name}: \"end_fix\" is not a string")),
+                },
+            };
+            write_objs(with_descents(&objs(name, v, "legs")?, &objs(name, v, "fixes")?, &end)?)
+        }
+        "navlog_approach_end" => {
+            let fixes = objs(name, v, "fixes")?
+                .iter()
+                .map(|f| {
+                    Ok(ApproachFix {
+                        ident: f.text("ident").unwrap_or("").to_owned(),
+                        lat: f.num("lat")?,
+                        lon: f.num("lon")?,
+                        min_ft: f.opt("min_ft")?,
+                        max_ft: f.opt("max_ft")?,
+                        missed: f.truthy("missed"),
+                    })
+                })
+                .collect::<R<Vec<_>>>()?;
+            match approach_end(&fixes, opt_num(name, v, "cruise_ft")?, place(name, v, "field")?) {
+                None => "null".to_owned(),
+                Some(end) => format!(
+                    "{{\"end_altitude_ft\":{},\"end_before_nm\":{},\"end_fix\":{}}}",
+                    write(&Value::Number(end.altitude_ft.unwrap_or_default())),
+                    write(&Value::Number(end.before_nm)),
+                    write(&end.fix.map(Value::String).unwrap_or(Value::Null))
+                ),
+            }
+        }
+        "navlog_totals" => write(&totals(&objs(name, v, "legs")?)?),
+        "navlog_fuel_plan" => {
+            let p = profile(name, v)?;
+            p.need(name, &["fuel_burn_gph"])?;
+            let night = match v.get("night") {
+                None | Some(Value::Null) => None,
+                Some(Value::Bool(b)) => Some(*b),
+                Some(_) => return Err(format!("{name}: \"night\" is not true, false or null")),
+            };
+            let rules = match v.get("rules") {
+                None | Some(Value::Null) => "vfr",
+                Some(Value::String(s)) if s == "vfr" || s == "ifr" => s.as_str(),
+                Some(_) => return Err(format!("{name}: \"rules\" is \"vfr\" or \"ifr\"")),
+            };
+            write(&fuel_plan(opt_num(name, v, "total_fuel_gal")?, &p, night, rules, opt_num(name, v, "alternate_gal")?.unwrap_or(0.0)))
+        }
+        "navlog_alternate_leg" => {
+            let p = profile(name, v)?;
+            p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
+            let air = match v.get("air") {
+                None | Some(Value::Null) => None,
+                Some(a @ Value::Object(_)) => Some((read_air(name, a)?, num(name, a, "variation_deg")?)),
+                Some(_) => return Err(format!("{name}: \"air\" is not an object")),
+            };
+            let (dest, alternate) = (v.get("dest").unwrap_or(&Value::Null), v.get("alternate").unwrap_or(&Value::Null));
+            write(&alternate_leg(name, dest, alternate, num(name, v, "altitude_ft")?, &p, air.as_ref().map(|(a, var)| (a, *var)))?)
+        }
+        "navlog_candidates" => {
+            let p = profile(name, v)?;
+            let count = num(name, v, "legs")?;
+            match candidates(list(name, v, "segments")?, count as usize, &p)? {
+                None => "null".to_owned(),
+                Some(c) => write(&Value::Array(c.into_iter().map(|o| Value::Array(o.into_iter().map(Value::Number).collect())).collect())),
+            }
+        }
+        "navlog_plans" => {
+            let p = profile(name, v)?;
+            let air = read_leg_air(name, v)?;
+            match plan(name, v, &p, &air)? {
+                None => "{\"plans\":{},\"by_altitude\":[]}".to_owned(),
+                Some(plan) => write(&plan.plans()?),
+            }
+        }
+        "navlog_legs_at" => {
+            let p = profile(name, v)?;
+            let air = read_leg_air(name, v)?;
+            match plan(name, v, &p, &air)? {
+                None => return Err(format!("{name}: some leg has no legal altitude, so no altitude can be flown on all of them")),
+                Some(plan) => write_objs(plan.legs_at(num(name, v, "target_ft")?)?),
+            }
+        }
+        "navlog_join_plans" | "navlog_join_figures" => {
+            let by_hop = list(name, v, "by_hop")?
+                .iter()
+                .map(|hop| match hop {
+                    Value::Array(items) => items.iter().map(|o| Obj::read(name, o)).collect::<R<Vec<_>>>(),
+                    _ => Err(format!("{name}: a hop's are not a list")),
+                })
+                .collect::<R<Vec<_>>>()?;
+            let lengths = list(name, v, "lengths")?.iter().map(|n| n.as_f64().ok_or_else(|| format!("{name}: a length is not a number"))).collect::<R<Vec<_>>>()?;
+            if lengths.len() != by_hop.len() {
+                return Err(format!("{name}: {} hops and {} lengths", by_hop.len(), lengths.len()));
+            }
+            let joined = if name == "navlog_join_plans" { join_options(&by_hop, &lengths)? } else { join_figures(&by_hop, &lengths)? };
+            write(&Value::Array(joined))
+        }
+        "navlog_hold" => {
+            let leg = Obj::read(name, v.get("leg").unwrap_or(&Value::Null))?;
+            let before = match v.get("before") {
+                None | Some(Value::Null) => leg.clone(),
+                Some(b) => Obj::read(name, b)?,
+            };
+            let hold = Held::read(name, v.get("hold").unwrap_or(&Value::Null))?;
+            let at_end = matches!(v.get("at_end"), Some(Value::Bool(true)));
+            write(&hold_on_leg(&leg, &before, &hold, place(name, v, "fix")?, num(name, v, "variation_deg")?, at_end)?.value())
+        }
+        "navlog_racetrack" => {
+            let right = !matches!(v.get("right"), Some(Value::Bool(false)));
+            let steps = opt_num(name, v, "steps")?.unwrap_or(12.0);
+            if !(1.0..=360.0).contains(&steps) || steps.fract() != 0.0 {
+                return Err(format!("{name}: \"steps\" is a whole number from 1 to 360"));
+            }
+            let path = super::holds::racetrack(place(name, v, "fix")?, num(name, v, "inbound_true_deg")?, right, num(name, v, "tas_kt")?, num(name, v, "leg_nm")?, steps as usize);
+            write(&Value::Array(path.into_iter().map(|(lat, lon)| Value::Array(vec![Value::Number(lat), Value::Number(lon)])).collect()))
+        }
+        _ => return Err(format!("the engine has no rule called {name:?}")),
+    })
+}

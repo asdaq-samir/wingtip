@@ -1,24 +1,16 @@
 """The legal-altitude arithmetic and the four plans -- lowest, highest,
 fastest, economical -- over a small route with hand-set winds, no
-network anywhere:
+network anywhere, the plans the engine's (wingtip_route::navlog, whose
+climbs, descents and penalties are tested in engine/facade/tests/navlog.rs):
 the per-leg wind lookup is stubbed, and the segments come in the shape
 wingtip.altitude.select_cruise_altitude produces."""
-import math
-
 import pytest
 
-from wingtip import navlog, performance
+from wingtip import navlog
 from wingtip.altitude import is_eastbound, legal_cruising_altitudes, lowest_vfr_cruising_altitude
 
 PROFILE = {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_rate_fpm_sea_level": 800.0, "climb_tas_kt": 70.0,
            "service_ceiling_ft": 14000.0}
-
-
-def _climb_min(from_ft, to_ft):
-    """A standard day's climb for PROFILE, worked by hand: the rate falls
-    from 800 fpm by 700 over the 14,000 ft ceiling, 0.05 fpm a foot, so
-    the minutes are 20 ln(rate at the bottom / rate at the top)."""
-    return 20 * math.log((800 - 0.05 * from_ft) / (800 - 0.05 * to_ft))
 
 
 @pytest.fixture(autouse=True)
@@ -57,14 +49,6 @@ def test_below_where_the_rule_begins_every_500_ft_is_legal_too():
     assert legal_cruising_altitudes(1700.0, 2111.0, 328.0, rule_from_ft=3800.0) == [2000.0]
 
 
-def test_climb_penalty_charges_climbs_only():
-    assert navlog.climb_penalty_min(4500.0, 2500.0, PROFILE) == 0.0
-    # 500 to 2,500 ft is 2.8 min, at 70 kt rather than the profile's
-    # 100: 30% of that time is ground not covered.
-    assert navlog.climb_penalty_min(500.0, 2500.0, PROFILE) == pytest.approx(_climb_min(500, 2500) * 0.3, rel=1e-3)
-
-
-# A straight north-east course: three fixes, two legs, each 60 nm.
 FIXES = [
     {"name": "AAA", "category": "departure", "lat": 40.0, "lon": -90.0},
     {"name": "Lake", "category": "lake", "lat": 40.7, "lon": -89.1},
@@ -134,35 +118,6 @@ def test_a_strong_tailwind_pays_for_the_climbs_fuel_too(monkeypatch):
     assert [s["altitude_ft"] for s in plans["economical"]["steps"]] == [9500.0]
 
 
-def test_a_climb_burns_the_aeroplanes_own_climb_fuel_flow():
-    # The climb from the field at 14 gph rather than 1.3 x 8, less as the
-    # air thins (see test_performance).
-    own = {**PROFILE, "climb_fuel_burn_gph": 14.0}
-    legs = navlog.with_climbs([_cruise_leg(60.0, 3500.0)], 500.0, own)
-    climb = performance.climb(own, 500.0, 3500.0)
-    cruise_min = (60.0 - 70 * climb.minutes / 60) / 100 * 60
-    assert legs[0]["fuel_gal"] == pytest.approx(climb.gallons + cruise_min / 60 * 8.0)
-    assert navlog.climb_fuel_penalty_gal(500.0, 3500.0, own) > navlog.climb_fuel_penalty_gal(500.0, 3500.0, PROFILE)
-
-
-def test_a_climb_never_pays_for_itself():
-    # A climb speed typed above the cruise, or a climb burn below it.
-    assert navlog.climb_penalty_min(500.0, 2500.0, {**PROFILE, "climb_tas_kt": 120.0}) == 0.0
-    assert navlog.climb_fuel_penalty_gal(500.0, 2500.0, {**PROFILE, "climb_fuel_burn_gph": 2.0}) == 0.0
-
-
-def test_a_climb_into_warm_air_costs_more(monkeypatch):
-    # The same climb, to a leg 15 degC warmer than a standard day: the
-    # density altitude is higher all the way up, so the climb is slower.
-    monkeypatch.setattr(navlog, "wind_at_altitude", _winds({}))
-    cool = navlog.leg_between(FIXES[0], FIXES[1], 7500.0, PROFILE)
-    monkeypatch.setattr(navlog, "temperature_at_altitude",
-                        lambda lat, lon, alt, fcst_hr="06": performance.isa_temp_c(alt) + 15)
-    warm = navlog.leg_between(FIXES[0], FIXES[1], 7500.0, PROFILE)
-    assert warm["density_altitude_ft"] > cool["density_altitude_ft"] + 1500
-    assert navlog.climb_penalty_min(500.0, 7500.0, PROFILE, warm) > navlog.climb_penalty_min(500.0, 7500.0, PROFILE, cool)
-
-
 def test_a_shelf_over_the_first_leg_makes_the_plans_step(monkeypatch):
     # Under a Class B shelf the first leg can only fly 3,500; past it
     # the band opens up. Highest and fastest step up after the shelf;
@@ -197,108 +152,6 @@ def test_a_leg_with_no_legal_altitude_means_no_plan(monkeypatch):
     assert navlog.altitude_profiles(FIXES, _segments([[3500.0], []]), PROFILE) == {}
 
 
-def _cruise_leg(distance_nm, altitude_ft, gs_kt=100.0):
-    return {
-        "distance_nm": distance_nm, "altitude_ft": altitude_ft, "groundspeed_kt": gs_kt,
-        "ete_min": distance_nm / gs_kt * 60, "fuel_gal": distance_nm / gs_kt * PROFILE["fuel_burn_gph"], "wind": None,
-        "tas_kt": PROFILE["cruise_tas_kt"], "fuel_burn_gph": PROFILE["fuel_burn_gph"], "oat_c": None,
-    }
-
-
-def test_the_climb_from_the_field_is_flown_on_the_first_leg():
-    # 3,000 ft from the field is 4.3 minutes, at 70 kt over the ground:
-    # 5 nm of the first 60 nm leg climbing, the rest at cruise.
-    legs = navlog.with_climbs([_cruise_leg(60.0, 3500.0), _cruise_leg(60.0, 3500.0)], 500.0, PROFILE)
-    climb_min = _climb_min(500, 3500)
-    assert legs[0]["climb_min"] == round(climb_min, 1)
-    assert legs[0]["ete_min"] == pytest.approx(climb_min + (60.0 - 70 * climb_min / 60) / 100 * 60, abs=0.01)
-    assert legs[0]["fuel_gal"] > _cruise_leg(60.0, 3500.0)["fuel_gal"]
-    assert legs[1]["climb_min"] == 0.0 and legs[1]["ete_min"] == pytest.approx(36.0)
-
-
-def test_a_step_up_mid_route_is_climbed_on_the_leg_that_steps():
-    legs = navlog.with_climbs([_cruise_leg(60.0, 3500.0), _cruise_leg(60.0, 5500.0)], None, PROFILE)
-    assert legs[0]["climb_min"] == 0.0            # started level at the first leg's altitude
-    assert legs[1]["climb_min"] == pytest.approx(_climb_min(3500, 5500), abs=0.05)
-
-
-def test_a_climb_longer_than_a_leg_carries_into_the_next():
-    # 9,000 ft from the field is seventeen minutes; a 10 nm first leg at
-    # 70 kt takes 8.6 of them, the rest lands on the second leg.
-    legs = navlog.with_climbs([_cruise_leg(10.0, 9500.0), _cruise_leg(60.0, 9500.0)], 500.0, PROFILE)
-    assert legs[0]["climb_min"] == pytest.approx(8.6, abs=0.05)
-    assert legs[1]["climb_min"] == pytest.approx(_climb_min(500, 9500) - 60 / 7, abs=0.05)
-
-
-def test_the_leg_a_climb_tops_out_on_says_where():
-    # 4.3 minutes from the field at 70 kt over the ground: 5 nm in.
-    legs = navlog.with_climbs([_cruise_leg(60.0, 3500.0), _cruise_leg(60.0, 3500.0)], 500.0, PROFILE)
-    climb_min = _climb_min(500, 3500)
-    assert legs[0]["toc"]["along_nm"] == round(70 * climb_min / 60, 1)
-    assert legs[0]["toc"]["ete_min"] == round(climb_min, 1) and legs[0]["toc"]["altitude_ft"] == 3500.0
-    assert legs[1]["toc"] is None
-
-
-def test_a_climb_that_carries_tops_out_on_the_next_leg():
-    legs = navlog.with_climbs([_cruise_leg(10.0, 9500.0), _cruise_leg(60.0, 9500.0)], 500.0, PROFILE)
-    assert legs[0]["toc"] is None
-    assert legs[1]["toc"]["along_nm"] == pytest.approx(70 * (_climb_min(500, 9500) - 60 / 7) / 60, abs=0.1)
-
-
-def _course_leg(distance_nm, altitude_ft, gs_kt=100.0):
-    return {**_cruise_leg(distance_nm, altitude_ft, gs_kt), "true_course_deg": 45.0, "climb_min": 0.0, "toc": None}
-
-
-def test_the_descent_to_the_pattern_starts_three_miles_out_for_every_thousand_feet():
-    # 5,500 down to a 1,500 ft pattern is 4,000 ft: 12 nm out, at 100 kt
-    # 556 fpm -- 550 to the nearest 50.
-    cruise = [_course_leg(60.0, 5500.0), _course_leg(60.0, 5500.0)]
-    legs = navlog.with_descents(cruise, FIXES, 1500.0)
-    assert legs[0]["tod"] is None
-    tod = legs[1]["tod"]
-    assert tod["along_nm"] == 48.0 and tod["to_ft"] == 1500.0 and tod["pattern"] and tod["fpm"] == 550
-    assert tod["ete_min"] == pytest.approx(28.8) and tod["lat"] > FIXES[1]["lat"]
-    # Flown at the cruise's speed and burn: the times and fuel are the same.
-    assert [leg["ete_min"] for leg in legs] == [leg["ete_min"] for leg in cruise]
-    assert "tod" not in cruise[1]
-
-
-def test_a_step_down_is_a_descent_to_the_lower_level_by_its_fix():
-    legs = navlog.with_descents([_course_leg(60.0, 5500.0), _course_leg(60.0, 3500.0)], FIXES, None)
-    assert legs[0]["tod"]["along_nm"] == 54.0 and legs[0]["tod"]["to_ft"] == 3500.0
-    assert not legs[0]["tod"]["pattern"] and legs[1]["tod"] is None
-
-
-def test_a_descent_to_an_approach_levels_at_its_fix_short_of_the_field():
-    # 5,500 down to an initial approach fix crossed at 3,000, 15 nm out:
-    # 2,500 ft is 7.5 nm, so 22.5 nm before the field, on the last leg.
-    legs = navlog.with_descents([_course_leg(60.0, 5500.0), _course_leg(60.0, 5500.0)], FIXES, 3000.0, 15.0, "ANDOE")
-    tod = legs[1]["tod"]
-    assert tod["along_nm"] == 37.5 and tod["to_ft"] == 3000.0 and tod["fix"] == "ANDOE" and not tod["pattern"]
-    # The rate is the one to level there: 2,500 ft over 7.5 nm at 100 kt.
-    assert tod["fpm"] == round(2500 / (7.5 / 100 * 60) / 50) * 50
-
-
-def test_a_fix_further_out_than_the_last_leg_moves_the_descent_onto_the_leg_before():
-    # The fix 70 nm out, past the last leg's 60: down 7.5 nm before that.
-    legs = navlog.with_descents([_course_leg(60.0, 5500.0), _course_leg(60.0, 5500.0)], FIXES, 3000.0, 70.0, "ANDOE")
-    assert legs[1]["tod"] is None and legs[0]["tod"]["along_nm"] == 42.5 and legs[0]["tod"]["fix"] == "ANDOE"
-
-
-def test_a_cruise_under_the_fixs_altitude_has_no_descent_to_it():
-    legs = navlog.with_descents([_course_leg(60.0, 2500.0)], FIXES[:2], 3000.0, 10.0, "ANDOE")
-    assert legs[0]["tod"] is None
-
-
-def test_a_flight_too_short_for_three_to_one_starts_down_at_the_top_of_its_climb():
-    # 10 nm: the climb to 4,500 takes 5 of them, and 3,000 ft down at
-    # three to one would take 9.
-    climbed = navlog.with_climbs([_course_leg(10.0, 4500.0)], 500.0, PROFILE)
-    tod = navlog.with_descents(climbed, FIXES[:2], 1500.0)[0]["tod"]
-    assert tod["along_nm"] == climbed[0]["toc"]["along_nm"]
-    assert tod["fpm"] > 550
-
-
 def test_a_plan_whose_legs_with_a_wind_have_no_length_has_no_tailwind(monkeypatch):
     # A hop of no length (a stop written as the airport after it) left
     # nothing to weigh the tailwind by: none, not a division by zero.
@@ -324,4 +177,4 @@ def test_the_route_flown_at_each_altitude_any_leg_may_fly_is_given_for_the_wheel
     assert (figures[3500.0]["ete_min"], figures[3500.0]["fuel_gal"]) == (plans["lowest"]["ete_min"], plans["lowest"]["fuel_gal"])
     assert figures[5500.0]["tailwind_kt"] > figures[3500.0]["tailwind_kt"]
     # The four plans are still four.
-    assert set(plans) == set(navlog.PLAN_KINDS)
+    assert list(plans) == ["lowest", "highest", "fastest", "economical"]

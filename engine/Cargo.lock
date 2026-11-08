@@ -1097,6 +1097,7 @@ name = "wingtip-route"
 version = "0.1.0"
 dependencies = [
  "wingtip-core",
+ "wingtip-flight",
  "wingtip-procedures",
 ]
 

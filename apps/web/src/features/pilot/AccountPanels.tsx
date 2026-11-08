@@ -31,7 +31,7 @@ import { cancelled, shareOrCopy } from "../../lib/share";
 import { showError } from "../../lib/problems";
 import RowMenu from "../../components/RowMenu";
 import type { Aircraft, AircraftRequest, FlightSummary, InspectionsRequest, VorCheckRequest } from "../../lib/api/types";
-import { CRUISE_REFERENCE_FT } from "../../lib/performance";
+import { cruiseReferenceFt } from "../../lib/performance";
 import { usePreferences } from "../../lib/preferences";
 import { TEXT } from "../../lib/text";
 import { altFt, feet, nm } from "../../lib/units";
@@ -569,7 +569,7 @@ export function AircraftPanel() {
                   air (wingtip.performance): the handbook cruise table's at this
                   power at the reference altitude on a standard day, which
                   the group's title says. */}
-              <ListGroup title={`Cruise figures at ${altFt(CRUISE_REFERENCE_FT)} ft, standard day`}>
+              <ListGroup title={`Cruise figures at ${altFt(cruiseReferenceFt())} ft, standard day`}>
                 <NumberRow
                   id={`${formId}-power`} title="Cruise power" unit="%" placeholder="65" name="Cruise power in percent"
                   field={register("cruisePowerPct")} error={errors.cruisePowerPct?.message}

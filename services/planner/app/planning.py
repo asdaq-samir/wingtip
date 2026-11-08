@@ -14,6 +14,7 @@ from wingtip import altitude as altitude_module
 from wingtip import ifr as ifr_module
 from wingtip import airspace, geo, navlog, sun, weather
 from wingtip.config import PLAN_LIMIT_S
+from wingtip.engine import ask as engine
 
 
 # How long a caller waits on a computation that is already running before
@@ -233,16 +234,17 @@ def now() -> datetime:
 
 def flight_totals(leg_list: list, profile: dict, r, depart: datetime | None, rules: str = "vfr",
                   alternate: dict | None = None) -> dict:
-    """navlog.totals plus the fuel check. Night is judged at both ends
+    """The legs' totals plus the fuel check, the engine's (navlog_totals,
+    navlog_fuel_plan). Night is judged at both ends
     -- the departure at the departure time, the arrival at the
     destination that many minutes later -- with no departure time taken
     as now, as the winds are: a plan made at 21:00 for "now" leaves at
     night and carries 14 CFR 91.151(a)(2)'s 45 minutes, where it was the
     day's 30 for want of a time. Under IFR the reserve is 45 minutes
-    whatever the hour (navlog.fuel_plan), and `alternate`, the leg on to
+    whatever the hour (14 CFR 91.167(a)(3)), and `alternate`, the leg on to
     the alternate (alternate_leg), is flown before it (14 CFR
     91.167(a)(2))."""
-    t = navlog.totals(leg_list)
+    t = engine("navlog_totals", legs=leg_list)
     # When the plan was made and the winds it flies, for the nav log to
     # say: planned for "now", its winds go out of date as the day goes on.
     t["planned_at"] = now().isoformat().replace("+00:00", "Z")
@@ -252,32 +254,27 @@ def flight_totals(leg_list: list, profile: dict, r, depart: datetime | None, rul
     if t["ete_min"] is not None:
         arrival = depart + timedelta(minutes=t["ete_min"])
         night = night or sun.is_night(r.end[0], r.end[1], arrival)
-    t.update(navlog.fuel_plan(t["fuel_gal"], profile, night, rules, (alternate or {}).get("fuel_gal") or 0.0))
+    t.update(engine("navlog_fuel_plan", total_fuel_gal=t["fuel_gal"], profile=profile, night=bool(night), rules=rules,
+                    alternate_gal=(alternate or {}).get("fuel_gal") or 0.0))
     t["alternate"] = alternate
     return t
 
 
 def alternate_leg(dest: dict, alternate: dict, altitude_ft: float, profile: dict, fcst_hr: str) -> dict:
     """The leg from the destination on to the IFR alternate, for 14 CFR
-    91.167(a)(2)'s fuel: flown at the route's last altitude in its winds
-    (navlog.leg_between), or in still air where the winds cannot be read,
-    which says so."""
-    a = {"name": dest["ident"], "lat": dest["lat"], "lon": dest["lon"]}
-    b = {"name": alternate["ident"], "lat": alternate["lat"], "lon": alternate["lon"]}
+    91.167(a)(2)'s fuel: the engine's (navlog_alternate_leg), flown at the
+    route's last altitude in its winds, or in still air where the winds
+    cannot be read, which says so."""
+    places = [{"lat": dest["lat"], "lon": dest["lon"]}, {"lat": alternate["lat"], "lon": alternate["lon"]}]
     try:
-        leg = navlog.leg_between(a, b, altitude_ft, profile, fcst_hr)
-        still_air = False
+        (leg_air,) = navlog.leg_air(places, [[altitude_ft]], fcst_hr)
+        air = {"variation_deg": leg_air["variation_deg"], "wind": leg_air["at"][0]["wind"], "oat_c": leg_air["at"][0]["oat_c"]}
     except weather.WeatherServiceError:
-        leg, still_air = None, True
-    if leg is None or leg.get("ete_min") is None:
-        distance = geo.distance_nm(a["lat"], a["lon"], b["lat"], b["lon"])
-        minutes = distance / profile["cruise_tas_kt"] * 60
-        leg = {"distance_nm": distance, "ete_min": minutes, "fuel_gal": minutes / 60 * profile["fuel_burn_gph"]}
-        still_air = True
-    return {
-        "ident": alternate["ident"], "distance_nm": round(leg["distance_nm"], 1), "ete_min": round(leg["ete_min"], 1),
-        "fuel_gal": round(leg["fuel_gal"], 2), "altitude_ft": altitude_ft, "still_air": still_air,
-    }
+        air = None
+    return engine("navlog_alternate_leg", dest={"ident": dest["ident"], "lat": dest["lat"], "lon": dest["lon"]},
+                  alternate={"ident": alternate["ident"], "lat": alternate["lat"], "lon": alternate["lon"]},
+                  altitude_ft=altitude_ft, profile=profile, air=air)
+
 
 # The altitude selection re-ran its whole stack -- terrain sampling
 # (USGS EPQS, network), the airspace shapefile, and three separate
@@ -536,7 +533,7 @@ def oxygen_caution(highest_ft: float | None, profile: dict | None) -> list[str]:
     over 12,500 ft MSL the crew's oxygen for any of it past 30 minutes,
     over 14,000 ft for all of it, over 15,000 ft every occupant's. None
     where the profile carries oxygen or a pressurised cabin, as the plans
-    do (navlog.OXYGEN_CAP_FT)."""
+    do (the engine's navlog plans, wingtip_route::navlog::plans::OXYGEN_CAP_FT)."""
     if highest_ft is None or highest_ft <= 12_500 or (profile or {}).get("supplemental_oxygen") or (profile or {}).get("pressurized"):
         return []
     if highest_ft > 15_000:

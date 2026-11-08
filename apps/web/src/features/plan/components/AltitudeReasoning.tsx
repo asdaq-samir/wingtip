@@ -3,7 +3,7 @@ import { cn } from "cn";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../components/ui/accordion";
 import { usePrinting } from "../../../lib/usePrinting";
 import type { AltitudeSegment, Leg, NavLogAltitude } from "../../../lib/api/types";
-import { CRUISE_REFERENCE_FT } from "../../../lib/performance";
+import { cruiseReferenceFt } from "../../../lib/performance";
 import { TEXT } from "../../../lib/text";
 import { flightLevel } from "../../../lib/units";
 import { capitalised, faaWords, suaAltitudes } from "../../../lib/advisories";
@@ -378,7 +378,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
         <>
           {`The airplane's ${aircraft.cruise_tas_kt} kt and ${aircraft.fuel_burn_gph} gph are its cruise${
             aircraft.cruise_power_pct != null ? ` at ${aircraft.cruise_power_pct}% power` : ""} at ${
-            altFt(CRUISE_REFERENCE_FT)} ft on a standard day, and each leg flies them in the forecast air at its altitude:`}
+            altFt(cruiseReferenceFt())} ft on a standard day, and each leg flies them in the forecast air at its altitude:`}
           <ul className="my-1 list-disc pl-4">
             {cruiseInItsAir.map(line => <li key={line}>{line}</li>)}
           </ul>

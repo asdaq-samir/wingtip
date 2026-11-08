@@ -596,6 +596,20 @@ export type EmitterCategoryAnswer =
   | null;
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type DescentAltitudeAnswer = number;
+export type PerformanceReferenceFtAnswer = number;
+export type NavLogLegsAnswer = NavLogLeg[];
+export type NavLogWithClimbsAnswer = NavLogLeg[];
+export type NavLogWithDescentsAnswer = NavLogLeg[];
+export type NavLogCandidatesAnswer = number[][] | null;
+export type NavLogLegsAtAnswer = NavLogLeg[];
+export type NavLogJoinPlansAnswer = NavLogPlan[];
+export type NavLogJoinFiguresAnswer = NavLogFigure[];
+export type NavLogRacetrackAnswer = [number, number][];
+export type NavLogApproachEndAnswer = {
+  end_altitude_ft: number;
+  end_before_nm: number;
+  end_fix: string | null;
+} | null;
 
 /**
  * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. The one source of their shapes: apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
@@ -2021,6 +2035,132 @@ export interface EngineContract {
   descent_altitude: {
     input: DescentAltitudeInput;
     answer: DescentAltitudeAnswer;
+  };
+  /**
+   * The altitude a profile's cruise TAS and fuel burn are taken at on a standard day where it names none: 6,000 ft, a row of every light single's cruise table.
+   */
+  performance_reference_ft: {
+    input: PerformanceReferenceFtInput;
+    answer: PerformanceReferenceFtAnswer;
+  };
+  /**
+   * An airplane's cruise at an altitude in air at oat_c (a standard day's where null): its power at the cruise setting or full throttle (Gagg and Ferrar), TAS as the cube root of power over density, burn with power, and the density altitude.
+   */
+  performance_cruise: {
+    input: PerformanceCruiseInput;
+    answer: PerformanceCruiseAnswer;
+  };
+  /**
+   * A best-rate climb's minutes and gallons, its rate falling with density altitude to 100 fpm at the service ceiling (PHAK ch. 11), in air isa_dev_c warmer than a standard day; nothing for a descent.
+   */
+  performance_climb: {
+    input: PerformanceClimbInput;
+    answer: PerformanceClimbAnswer;
+  };
+  /**
+   * One leg from start to end at an altitude in the air given (wingtip.navlog.assemble_leg): true course and distance, the airplane's cruise in its air, the wind triangle (PHAK ch. 16), magnetic heading (true less variation, east positive), ground speed, time and fuel; an unflyable leg's time is null.
+   */
+  navlog_leg: {
+    input: NavLogLegOneInput;
+    answer: NavLogLegOneAnswer;
+  };
+  /**
+   * A leg between each consecutive pair of fixes, all at altitude_ft, each in its own air (air, one a leg).
+   */
+  navlog_legs: {
+    input: NavLogLegsInput;
+    answer: NavLogLegsAnswer;
+  };
+  /**
+   * The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc).
+   */
+  navlog_with_climbs: {
+    input: NavLogWithClimbsInput;
+    answer: NavLogWithClimbsAnswer;
+  };
+  /**
+   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude at a step down; the times and fuel unchanged.
+   */
+  navlog_with_descents: {
+    input: NavLogWithDescentsInput;
+    answer: NavLogWithDescentsAnswer;
+  };
+  /**
+   * The legs' totals: miles (procedures' miles more included), time and fuel (null while a leg is unflyable), unflyable legs and legs with no winds aloft.
+   */
+  navlog_totals: {
+    input: NavLogTotalsOfInput;
+    answer: NavLogTotalsOfAnswer;
+  };
+  /**
+   * The fuel required: the start, taxi and takeoff allowance (the C172S POH's 1.4 gal where the profile has none), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
+   */
+  navlog_fuel_plan: {
+    input: NavLogFuelPlanInput;
+    answer: NavLogFuelPlanAnswer;
+  };
+  /**
+   * The leg from the destination on to the IFR alternate for 14 CFR 91.167(a)(2)'s fuel, at the last altitude in its air, or in still air (still_air) where none was read or the leg cannot be flown in it.
+   */
+  navlog_alternate_leg: {
+    input: NavLogAlternateLegInput;
+    answer: NavLogAlternateLegAnswer;
+  };
+  /**
+   * The altitudes each leg's plans may fly, held under 12,500 ft (14 CFR 91.211) where a leg has a choice and the airplane carries no oxygen: the ones the planner looks the air up at. Null where a leg has none.
+   */
+  navlog_candidates: {
+    input: NavLogCandidatesInput;
+    answer: NavLogCandidatesAnswer;
+  };
+  /**
+   * The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel, each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.
+   */
+  navlog_plans: {
+    input: NavLogPlansInput;
+    answer: NavLogPlansAnswer;
+  };
+  /**
+   * The legs flown at the altitude target_ft picked on the wheel: each leg at it where legal, else at its nearest legal altitude (the lower on a tie), with their climbs.
+   */
+  navlog_legs_at: {
+    input: NavLogLegsAtInput;
+    answer: NavLogLegsAtAnswer;
+  };
+  /**
+   * A route with stops' four plans from each hop's: steps in turn, times and fuel summed (null where a hop's is), the tailwind weighed by each hop's length; none where a hop has none.
+   */
+  navlog_join_plans: {
+    input: NavLogJoinPlansInput;
+    answer: NavLogJoinPlansAnswer;
+  };
+  /**
+   * A route with stops' figures at each altitude any hop offers, each hop at its own nearest; times and fuel unknown and none flown everywhere where a hop offers none.
+   */
+  navlog_join_figures: {
+    input: NavLogJoinFiguresInput;
+    answer: NavLogJoinFiguresAnswer;
+  };
+  /**
+   * The leg with a pilot's hold flown on it (AIM 5-3-8): its minutes at the leg's TAS and cruise burn added to the leg's time and fuel, and the hold's entry from the course flown to the fix (j.3) and its no-wind racetrack in true degrees.
+   */
+  navlog_hold: {
+    input: NavLogHoldInput;
+    answer: NavLogLeg1;
+  };
+  /**
+   * One turn round a hold's racetrack from the fix, [lat, lon] pairs: standard-rate turns (3 degrees a second) and legs of leg_nm, true degrees.
+   */
+  navlog_racetrack: {
+    input: NavLogRacetrackInput;
+    answer: NavLogRacetrackAnswer;
+  };
+  /**
+   * Where a flight landing by an instrument approach comes down to: the first fix not of the missed approach with an altitude under the cruise -- the chart's lowest for it, else its highest (CIFP, ARINC 424-18 5.29; AIM 5-4-5) -- and that fix's distance from the field, as navlog_with_descents takes them. Null where no fix is under the cruise: down to the pattern.
+   */
+  navlog_approach_end: {
+    input: NavLogApproachEndInput;
+    answer: NavLogApproachEndAnswer;
   };
 }
 export interface HoldingInput {
@@ -5032,4 +5172,431 @@ export interface DescentAltitudeInput {
   cruise_ft: number;
   pattern_ft?: number | null;
   nm_out: number;
+}
+export interface PerformanceReferenceFtInput {}
+export interface PerformanceCruiseInput {
+  profile: NavLogProfile;
+  altitude_ft: number;
+  oat_c?: number | null;
+}
+/**
+ * An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogProfile".
+ */
+export interface NavLogProfile {
+  /**
+   * At its cruise power at cruise_altitude_ft (else 6,000 ft) on a standard day.
+   */
+  cruise_tas_kt?: number;
+  fuel_burn_gph?: number;
+  service_ceiling_ft?: number;
+  cruise_power_pct?: number | null;
+  cruise_altitude_ft?: number | null;
+  climb_tas_kt?: number | null;
+  climb_fuel_burn_gph?: number | null;
+  climb_rate_fpm_sea_level?: number | null;
+  taxi_fuel_gal?: number | null;
+  usable_fuel_gal?: number | null;
+  supplemental_oxygen?: boolean | null;
+  pressurized?: boolean | null;
+  [k: string]: unknown;
+}
+export interface PerformanceCruiseAnswer {
+  tas_kt: number;
+  fuel_burn_gph: number;
+  power_pct: number;
+  density_altitude_ft: number;
+}
+export interface PerformanceClimbInput {
+  profile: NavLogProfile;
+  from_ft: number;
+  to_ft: number;
+  isa_dev_c?: number | null;
+}
+export interface PerformanceClimbAnswer {
+  minutes: number;
+  gallons: number;
+}
+export interface NavLogLegOneInput {
+  start: {
+    lat: number;
+    lon: number;
+  };
+  end: {
+    lat: number;
+    lon: number;
+  };
+  altitude_ft: number;
+  profile: NavLogProfile;
+  wind?: NavLogWind | null;
+  oat_c?: number | null;
+  variation_deg: number;
+}
+/**
+ * The wind aloft, the direction it blows from in true degrees, carried onto the leg as it is.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogWind".
+ */
+export interface NavLogWind {
+  wind_dir_true_deg: number;
+  wind_speed_kt: number;
+  [k: string]: unknown;
+}
+/**
+ * A nav log leg (PHAK ch. 16's dead reckoning); null time, ground speed and fuel is an unflyable leg. Members the log does not know (procedure, hold, airway) are carried through.
+ */
+export interface NavLogLegOneAnswer {
+  from?: string | null;
+  to?: string | null;
+  true_course_deg?: number;
+  distance_nm: number;
+  altitude_ft: number;
+  wind?: NavLogWind | null;
+  wca_deg?: number;
+  true_heading_deg?: number;
+  magnetic_variation_deg?: number;
+  magnetic_heading_deg?: number;
+  groundspeed_kt?: number | null;
+  ete_min?: number | null;
+  fuel_gal?: number | null;
+  tas_kt?: number;
+  fuel_burn_gph?: number;
+  power_pct?: number;
+  oat_c?: number | null;
+  density_altitude_ft?: number;
+  climb_min?: number | null;
+  toc?: NavLogTop | null;
+  tod?: NavLogTop | null;
+  [k: string]: unknown;
+}
+/**
+ * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogTop".
+ */
+export interface NavLogTop {
+  along_nm: number;
+  ete_min: number;
+  fuel_gal?: number | null;
+  altitude_ft: number;
+  to_ft?: number;
+  pattern?: boolean;
+  fix?: string | null;
+  fpm?: number;
+  tas_kt?: number;
+  groundspeed_kt?: number;
+  lat?: number;
+  lon?: number;
+  [k: string]: unknown;
+}
+export interface NavLogLegsInput {
+  fixes: NavLogFix[];
+  altitude_ft: number;
+  profile: NavLogProfile;
+  air: NavLogLegAir[];
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogFix".
+ */
+export interface NavLogFix {
+  name?: string | null;
+  category?: string | null;
+  lat: number;
+  lon: number;
+  [k: string]: unknown;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogLegAir".
+ */
+export interface NavLogLegAir {
+  /**
+   * Magnetic variation, east positive.
+   */
+  variation_deg: number;
+  at: NavLogAirAt[];
+}
+/**
+ * A leg's air at one altitude, looked up at its midpoint: no wind is no winds-aloft station near, no temperature a standard day.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogAirAt".
+ */
+export interface NavLogAirAt {
+  altitude_ft: number;
+  wind?: NavLogWind | null;
+  oat_c?: number | null;
+}
+/**
+ * A nav log leg (PHAK ch. 16's dead reckoning); null time, ground speed and fuel is an unflyable leg. Members the log does not know (procedure, hold, airway) are carried through.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogLeg".
+ */
+export interface NavLogLeg {
+  from?: string | null;
+  to?: string | null;
+  true_course_deg?: number;
+  distance_nm: number;
+  altitude_ft: number;
+  wind?: NavLogWind | null;
+  wca_deg?: number;
+  true_heading_deg?: number;
+  magnetic_variation_deg?: number;
+  magnetic_heading_deg?: number;
+  groundspeed_kt?: number | null;
+  ete_min?: number | null;
+  fuel_gal?: number | null;
+  tas_kt?: number;
+  fuel_burn_gph?: number;
+  power_pct?: number;
+  oat_c?: number | null;
+  density_altitude_ft?: number;
+  climb_min?: number | null;
+  toc?: NavLogTop | null;
+  tod?: NavLogTop | null;
+  [k: string]: unknown;
+}
+export interface NavLogWithClimbsInput {
+  legs: NavLogLeg[];
+  start_altitude_ft?: number | null;
+  profile: NavLogProfile;
+}
+export interface NavLogWithDescentsInput {
+  legs: NavLogLeg[];
+  fixes: NavLogFix[];
+  end_altitude_ft?: number | null;
+  end_before_nm?: number | null;
+  end_fix?: string | null;
+}
+export interface NavLogTotalsOfInput {
+  legs: NavLogLeg[];
+}
+export interface NavLogTotalsOfAnswer {
+  distance_nm: number;
+  procedure_nm: number;
+  ete_min: number | null;
+  fuel_gal: number | null;
+  unflyable_legs: number;
+  legs_without_wind: number;
+}
+export interface NavLogFuelPlanInput {
+  total_fuel_gal?: number | null;
+  profile: NavLogProfile;
+  night?: boolean | null;
+  rules?: "vfr" | "ifr" | null;
+  alternate_gal?: number | null;
+}
+export interface NavLogFuelPlanAnswer {
+  reserve_min: number;
+  reserve_gal: number;
+  taxi_gal: number;
+  fuel_required_gal: number | null;
+  usable_fuel_gal: number | null;
+  fuel_margin_gal: number | null;
+  night: boolean | null;
+  rules: string;
+}
+export interface NavLogAlternateLegInput {
+  dest: {
+    ident: string;
+    lat: number;
+    lon: number;
+    [k: string]: unknown;
+  };
+  alternate: {
+    ident: string;
+    lat: number;
+    lon: number;
+    [k: string]: unknown;
+  };
+  altitude_ft: number;
+  profile: NavLogProfile;
+  air?: {
+    variation_deg: number;
+    wind?: NavLogWind | null;
+    oat_c?: number | null;
+  } | null;
+}
+export interface NavLogAlternateLegAnswer {
+  ident: string;
+  distance_nm: number;
+  ete_min: number;
+  fuel_gal: number;
+  altitude_ft: number;
+  still_air: boolean;
+}
+export interface NavLogCandidatesInput {
+  segments: NavLogSegment[];
+  legs: number;
+  profile: NavLogProfile;
+}
+/**
+ * The altitude selection's segment for a leg: its legal altitudes (14 CFR 91.119, 91.159, the airspace, the clouds and the service ceiling).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogSegment".
+ */
+export interface NavLogSegment {
+  candidates_ft?: number[] | null;
+  [k: string]: unknown;
+}
+export interface NavLogPlansInput {
+  fixes: NavLogFix[];
+  segments: NavLogSegment[];
+  profile: NavLogProfile;
+  departure_elevation_ft?: number | null;
+  air: NavLogLegAir[];
+}
+export interface NavLogPlansAnswer {
+  plans: {
+    [k: string]: NavLogPlan;
+  };
+  by_altitude: NavLogFigure[];
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogPlan".
+ */
+export interface NavLogPlan {
+  kind?: string;
+  steps: NavLogStep[];
+  needs_oxygen: boolean;
+  ete_min: number | null;
+  fuel_gal: number | null;
+  climb_penalty_min: number;
+  tailwind_kt: number | null;
+  unflyable_legs: number;
+  legs_without_wind: number;
+  legs?: NavLogLeg[];
+  totals?: NavLogTotals;
+  [k: string]: unknown;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogStep".
+ */
+export interface NavLogStep {
+  from?: string | null;
+  to?: string | null;
+  altitude_ft: number;
+  distance_nm: number;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogTotals".
+ */
+export interface NavLogTotals {
+  distance_nm: number;
+  procedure_nm: number;
+  ete_min: number | null;
+  fuel_gal: number | null;
+  unflyable_legs: number;
+  legs_without_wind: number;
+}
+/**
+ * The route flown at one altitude for the altitude wheel: each leg at it where legal, else at its nearest legal one.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogFigure".
+ */
+export interface NavLogFigure {
+  altitude_ft: number;
+  ete_min: number | null;
+  fuel_gal: number | null;
+  tailwind_kt: number | null;
+  everywhere: boolean;
+}
+export interface NavLogLegsAtInput {
+  fixes: NavLogFix[];
+  segments: NavLogSegment[];
+  profile: NavLogProfile;
+  departure_elevation_ft?: number | null;
+  air: NavLogLegAir[];
+  target_ft: number;
+}
+export interface NavLogJoinPlansInput {
+  by_hop: NavLogPlan[][];
+  lengths: number[];
+}
+export interface NavLogJoinFiguresInput {
+  by_hop: NavLogFigure[][];
+  lengths: number[];
+}
+export interface NavLogHoldInput {
+  leg: NavLogLeg;
+  before?: NavLogLeg | null;
+  hold: {
+    fix: string;
+    inbound: number;
+    right: boolean;
+    leg_min?: number | null;
+    leg_nm?: number | null;
+    turns?: number | null;
+    minutes?: number | null;
+  };
+  fix: {
+    lat: number;
+    lon: number;
+  };
+  variation_deg: number;
+  at_end?: boolean | null;
+}
+/**
+ * A nav log leg (PHAK ch. 16's dead reckoning); null time, ground speed and fuel is an unflyable leg. Members the log does not know (procedure, hold, airway) are carried through.
+ */
+export interface NavLogLeg1 {
+  from?: string | null;
+  to?: string | null;
+  true_course_deg?: number;
+  distance_nm: number;
+  altitude_ft: number;
+  wind?: NavLogWind | null;
+  wca_deg?: number;
+  true_heading_deg?: number;
+  magnetic_variation_deg?: number;
+  magnetic_heading_deg?: number;
+  groundspeed_kt?: number | null;
+  ete_min?: number | null;
+  fuel_gal?: number | null;
+  tas_kt?: number;
+  fuel_burn_gph?: number;
+  power_pct?: number;
+  oat_c?: number | null;
+  density_altitude_ft?: number;
+  climb_min?: number | null;
+  toc?: NavLogTop | null;
+  tod?: NavLogTop | null;
+  [k: string]: unknown;
+}
+export interface NavLogRacetrackInput {
+  fix: {
+    lat: number;
+    lon: number;
+  };
+  inbound_true_deg: number;
+  right?: boolean | null;
+  tas_kt: number;
+  leg_nm: number;
+  steps?: number | null;
+}
+export interface NavLogApproachEndInput {
+  fixes: {
+    ident?: string | null;
+    lat: number;
+    lon: number;
+    min_ft?: number | null;
+    max_ft?: number | null;
+    missed?: boolean | null;
+  }[];
+  cruise_ft?: number | null;
+  field: {
+    lat: number;
+    lon: number;
+  };
 }

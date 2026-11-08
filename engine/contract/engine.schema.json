@@ -12139,6 +12139,1195 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "performance_reference_ft": {
+      "description": "The altitude a profile's cruise TAS and fuel burn are taken at on a standard day where it names none: 6,000 ft, a row of every light single's cruise table.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PerformanceReferenceFtInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "PerformanceReferenceFtAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "performance_cruise": {
+      "description": "An airplane's cruise at an altitude in air at oat_c (a standard day's where null): its power at the cruise setting or full throttle (Gagg and Ferrar), TAS as the cube root of power over density, burn with power, and the density altitude.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PerformanceCruiseInput",
+          "type": "object",
+          "properties": {
+            "profile": {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            "altitude_ft": {
+              "type": "number"
+            },
+            "oat_c": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "profile",
+            "altitude_ft"
+          ]
+        },
+        "answer": {
+          "title": "PerformanceCruiseAnswer",
+          "type": "object",
+          "properties": {
+            "tas_kt": {
+              "type": "number"
+            },
+            "fuel_burn_gph": {
+              "type": "number"
+            },
+            "power_pct": {
+              "type": "number"
+            },
+            "density_altitude_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "tas_kt",
+            "fuel_burn_gph",
+            "power_pct",
+            "density_altitude_ft"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "performance_climb": {
+      "description": "A best-rate climb's minutes and gallons, its rate falling with density altitude to 100 fpm at the service ceiling (PHAK ch. 11), in air isa_dev_c warmer than a standard day; nothing for a descent.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PerformanceClimbInput",
+          "type": "object",
+          "properties": {
+            "profile": {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            "from_ft": {
+              "type": "number"
+            },
+            "to_ft": {
+              "type": "number"
+            },
+            "isa_dev_c": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "profile",
+            "from_ft",
+            "to_ft"
+          ]
+        },
+        "answer": {
+          "title": "PerformanceClimbAnswer",
+          "type": "object",
+          "properties": {
+            "minutes": {
+              "type": "number"
+            },
+            "gallons": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "minutes",
+            "gallons"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_leg": {
+      "description": "One leg from start to end at an altitude in the air given (wingtip.navlog.assemble_leg): true course and distance, the airplane's cruise in its air, the wind triangle (PHAK ch. 16), magnetic heading (true less variation, east positive), ground speed, time and fuel; an unflyable leg's time is null.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogLegOneInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            "end": {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            "altitude_ft": {
+              "type": "number"
+            },
+            "profile": {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            "wind": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogWind"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "oat_c": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "variation_deg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "start",
+            "end",
+            "altitude_ft",
+            "profile",
+            "variation_deg"
+          ]
+        },
+        "answer": {
+          "title": "NavLogLegOneAnswer",
+          "$ref": "#/definitions/NavLogLeg"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_legs": {
+      "description": "A leg between each consecutive pair of fixes, all at altitude_ft, each in its own air (air, one a leg).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogLegsInput",
+          "type": "object",
+          "properties": {
+            "fixes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogFix"
+              }
+            },
+            "altitude_ft": {
+              "type": "number"
+            },
+            "profile": {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            "air": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogLegAir"
+              }
+            }
+          },
+          "required": [
+            "fixes",
+            "altitude_ft",
+            "profile",
+            "air"
+          ]
+        },
+        "answer": {
+          "title": "NavLogLegsAnswer",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLeg"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_with_climbs": {
+      "description": "The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogWithClimbsInput",
+          "type": "object",
+          "properties": {
+            "legs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogLeg"
+              }
+            },
+            "start_altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "profile": {
+              "$ref": "#/definitions/NavLogProfile"
+            }
+          },
+          "required": [
+            "legs",
+            "profile"
+          ]
+        },
+        "answer": {
+          "title": "NavLogWithClimbsAnswer",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLeg"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_with_descents": {
+      "description": "The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude at a step down; the times and fuel unchanged.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogWithDescentsInput",
+          "type": "object",
+          "properties": {
+            "legs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogLeg"
+              }
+            },
+            "fixes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogFix"
+              }
+            },
+            "end_altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "end_before_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "end_fix": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "legs",
+            "fixes"
+          ]
+        },
+        "answer": {
+          "title": "NavLogWithDescentsAnswer",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLeg"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_totals": {
+      "description": "The legs' totals: miles (procedures' miles more included), time and fuel (null while a leg is unflyable), unflyable legs and legs with no winds aloft.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogTotalsOfInput",
+          "type": "object",
+          "properties": {
+            "legs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogLeg"
+              }
+            }
+          },
+          "required": [
+            "legs"
+          ]
+        },
+        "answer": {
+          "title": "NavLogTotalsOfAnswer",
+          "$ref": "#/definitions/NavLogTotals"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_fuel_plan": {
+      "description": "The fuel required: the start, taxi and takeoff allowance (the C172S POH's 1.4 gal where the profile has none), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogFuelPlanInput",
+          "type": "object",
+          "properties": {
+            "total_fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "profile": {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            "night": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "rules": {
+              "enum": [
+                "vfr",
+                "ifr",
+                null
+              ]
+            },
+            "alternate_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "profile"
+          ]
+        },
+        "answer": {
+          "title": "NavLogFuelPlanAnswer",
+          "type": "object",
+          "properties": {
+            "reserve_min": {
+              "type": "number"
+            },
+            "reserve_gal": {
+              "type": "number"
+            },
+            "taxi_gal": {
+              "type": "number"
+            },
+            "fuel_required_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "usable_fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "fuel_margin_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "night": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "rules": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "reserve_min",
+            "reserve_gal",
+            "taxi_gal",
+            "fuel_required_gal",
+            "usable_fuel_gal",
+            "fuel_margin_gal",
+            "night",
+            "rules"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_alternate_leg": {
+      "description": "The leg from the destination on to the IFR alternate for 14 CFR 91.167(a)(2)'s fuel, at the last altitude in its air, or in still air (still_air) where none was read or the leg cannot be flown in it.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogAlternateLegInput",
+          "type": "object",
+          "properties": {
+            "dest": {
+              "type": "object",
+              "properties": {
+                "ident": {
+                  "type": "string"
+                },
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "ident",
+                "lat",
+                "lon"
+              ],
+              "additionalProperties": true
+            },
+            "alternate": {
+              "type": "object",
+              "properties": {
+                "ident": {
+                  "type": "string"
+                },
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "ident",
+                "lat",
+                "lon"
+              ],
+              "additionalProperties": true
+            },
+            "altitude_ft": {
+              "type": "number"
+            },
+            "profile": {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            "air": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "variation_deg": {
+                      "type": "number"
+                    },
+                    "wind": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/definitions/NavLogWind"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "oat_c": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "variation_deg"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "dest",
+            "alternate",
+            "altitude_ft",
+            "profile"
+          ]
+        },
+        "answer": {
+          "title": "NavLogAlternateLegAnswer",
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "distance_nm": {
+              "type": "number"
+            },
+            "ete_min": {
+              "type": "number"
+            },
+            "fuel_gal": {
+              "type": "number"
+            },
+            "altitude_ft": {
+              "type": "number"
+            },
+            "still_air": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "ident",
+            "distance_nm",
+            "ete_min",
+            "fuel_gal",
+            "altitude_ft",
+            "still_air"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_candidates": {
+      "description": "The altitudes each leg's plans may fly, held under 12,500 ft (14 CFR 91.211) where a leg has a choice and the airplane carries no oxygen: the ones the planner looks the air up at. Null where a leg has none.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogCandidatesInput",
+          "type": "object",
+          "properties": {
+            "segments": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogSegment"
+              }
+            },
+            "legs": {
+              "type": "number"
+            },
+            "profile": {
+              "$ref": "#/definitions/NavLogProfile"
+            }
+          },
+          "required": [
+            "segments",
+            "legs",
+            "profile"
+          ]
+        },
+        "answer": {
+          "title": "NavLogCandidatesAnswer",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_plans": {
+      "description": "The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel, each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogPlansInput",
+          "type": "object",
+          "properties": {
+            "fixes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogFix"
+              }
+            },
+            "segments": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogSegment"
+              }
+            },
+            "profile": {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            "departure_elevation_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "air": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogLegAir"
+              }
+            }
+          },
+          "required": [
+            "fixes",
+            "segments",
+            "profile",
+            "air"
+          ]
+        },
+        "answer": {
+          "title": "NavLogPlansAnswer",
+          "type": "object",
+          "properties": {
+            "plans": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/NavLogPlan"
+              }
+            },
+            "by_altitude": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogFigure"
+              }
+            }
+          },
+          "required": [
+            "plans",
+            "by_altitude"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_legs_at": {
+      "description": "The legs flown at the altitude target_ft picked on the wheel: each leg at it where legal, else at its nearest legal altitude (the lower on a tie), with their climbs.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogLegsAtInput",
+          "type": "object",
+          "properties": {
+            "fixes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogFix"
+              }
+            },
+            "segments": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogSegment"
+              }
+            },
+            "profile": {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            "departure_elevation_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "air": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NavLogLegAir"
+              }
+            },
+            "target_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "fixes",
+            "segments",
+            "profile",
+            "air",
+            "target_ft"
+          ]
+        },
+        "answer": {
+          "title": "NavLogLegsAtAnswer",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLeg"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_join_plans": {
+      "description": "A route with stops' four plans from each hop's: steps in turn, times and fuel summed (null where a hop's is), the tailwind weighed by each hop's length; none where a hop has none.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogJoinPlansInput",
+          "type": "object",
+          "properties": {
+            "by_hop": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/NavLogPlan"
+                }
+              }
+            },
+            "lengths": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "by_hop",
+            "lengths"
+          ]
+        },
+        "answer": {
+          "title": "NavLogJoinPlansAnswer",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogPlan"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_join_figures": {
+      "description": "A route with stops' figures at each altitude any hop offers, each hop at its own nearest; times and fuel unknown and none flown everywhere where a hop offers none.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogJoinFiguresInput",
+          "type": "object",
+          "properties": {
+            "by_hop": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/NavLogFigure"
+                }
+              }
+            },
+            "lengths": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "by_hop",
+            "lengths"
+          ]
+        },
+        "answer": {
+          "title": "NavLogJoinFiguresAnswer",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogFigure"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_hold": {
+      "description": "The leg with a pilot's hold flown on it (AIM 5-3-8): its minutes at the leg's TAS and cruise burn added to the leg's time and fuel, and the hold's entry from the course flown to the fix (j.3) and its no-wind racetrack in true degrees.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogHoldInput",
+          "type": "object",
+          "properties": {
+            "leg": {
+              "$ref": "#/definitions/NavLogLeg"
+            },
+            "before": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogLeg"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "hold": {
+              "type": "object",
+              "properties": {
+                "fix": {
+                  "type": "string"
+                },
+                "inbound": {
+                  "type": "number"
+                },
+                "right": {
+                  "type": "boolean"
+                },
+                "leg_min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "leg_nm": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "turns": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "fix",
+                "inbound",
+                "right"
+              ]
+            },
+            "fix": {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            "variation_deg": {
+              "type": "number"
+            },
+            "at_end": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "leg",
+            "hold",
+            "fix",
+            "variation_deg"
+          ]
+        },
+        "answer": {
+          "title": "NavLogHoldAnswer",
+          "$ref": "#/definitions/NavLogLeg"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_racetrack": {
+      "description": "One turn round a hold's racetrack from the fix, [lat, lon] pairs: standard-rate turns (3 degrees a second) and legs of leg_nm, true degrees.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogRacetrackInput",
+          "type": "object",
+          "properties": {
+            "fix": {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            "inbound_true_deg": {
+              "type": "number"
+            },
+            "right": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "tas_kt": {
+              "type": "number"
+            },
+            "leg_nm": {
+              "type": "number"
+            },
+            "steps": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "fix",
+            "inbound_true_deg",
+            "tas_kt",
+            "leg_nm"
+          ]
+        },
+        "answer": {
+          "title": "NavLogRacetrackAnswer",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_approach_end": {
+      "description": "Where a flight landing by an instrument approach comes down to: the first fix not of the missed approach with an altitude under the cruise -- the chart's lowest for it, else its highest (CIFP, ARINC 424-18 5.29; AIM 5-4-5) -- and that fix's distance from the field, as navlog_with_descents takes them. Null where no fix is under the cruise: down to the pattern.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogApproachEndInput",
+          "type": "object",
+          "properties": {
+            "fixes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "min_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "max_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "missed": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "lat",
+                  "lon"
+                ]
+              }
+            },
+            "cruise_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "field": {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            }
+          },
+          "required": [
+            "fixes",
+            "field"
+          ]
+        },
+        "answer": {
+          "title": "NavLogApproachEndAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "end_altitude_ft": {
+                  "type": "number"
+                },
+                "end_before_nm": {
+                  "type": "number"
+                },
+                "end_fix": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "end_altitude_ft",
+                "end_before_nm",
+                "end_fix"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -12344,7 +13533,25 @@
     "ceiling_visibility",
     "emitter_category",
     "squawk_meaning",
-    "descent_altitude"
+    "descent_altitude",
+    "performance_reference_ft",
+    "performance_cruise",
+    "performance_climb",
+    "navlog_leg",
+    "navlog_legs",
+    "navlog_with_climbs",
+    "navlog_with_descents",
+    "navlog_totals",
+    "navlog_fuel_plan",
+    "navlog_alternate_leg",
+    "navlog_candidates",
+    "navlog_plans",
+    "navlog_legs_at",
+    "navlog_join_plans",
+    "navlog_join_figures",
+    "navlog_hold",
+    "navlog_racetrack",
+    "navlog_approach_end"
   ],
   "additionalProperties": false,
   "definitions": {
@@ -15450,6 +16657,536 @@
         "lat",
         "lon"
       ]
+    },
+    "NavLogProfile": {
+      "title": "NavLogProfile",
+      "type": "object",
+      "properties": {
+        "cruise_tas_kt": {
+          "type": "number",
+          "description": "At its cruise power at cruise_altitude_ft (else 6,000 ft) on a standard day."
+        },
+        "fuel_burn_gph": {
+          "type": "number"
+        },
+        "service_ceiling_ft": {
+          "type": "number"
+        },
+        "cruise_power_pct": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cruise_altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "climb_tas_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "climb_fuel_burn_gph": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "climb_rate_fpm_sea_level": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "taxi_fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "usable_fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "supplemental_oxygen": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "pressurized": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true,
+      "description": "An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none."
+    },
+    "NavLogWind": {
+      "title": "NavLogWind",
+      "type": "object",
+      "properties": {
+        "wind_dir_true_deg": {
+          "type": "number"
+        },
+        "wind_speed_kt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "wind_dir_true_deg",
+        "wind_speed_kt"
+      ],
+      "additionalProperties": true,
+      "description": "The wind aloft, the direction it blows from in true degrees, carried onto the leg as it is."
+    },
+    "NavLogAirAt": {
+      "title": "NavLogAirAt",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": "number"
+        },
+        "wind": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogWind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "oat_c": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "altitude_ft"
+      ],
+      "description": "A leg's air at one altitude, looked up at its midpoint: no wind is no winds-aloft station near, no temperature a standard day."
+    },
+    "NavLogLegAir": {
+      "title": "NavLogLegAir",
+      "type": "object",
+      "properties": {
+        "variation_deg": {
+          "type": "number",
+          "description": "Magnetic variation, east positive."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogAirAt"
+          }
+        }
+      },
+      "required": [
+        "variation_deg",
+        "at"
+      ]
+    },
+    "NavLogFix": {
+      "title": "NavLogFix",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "lat",
+        "lon"
+      ],
+      "additionalProperties": true
+    },
+    "NavLogTop": {
+      "title": "NavLogTop",
+      "type": "object",
+      "properties": {
+        "along_nm": {
+          "type": "number"
+        },
+        "ete_min": {
+          "type": "number"
+        },
+        "fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "altitude_ft": {
+          "type": "number"
+        },
+        "to_ft": {
+          "type": "number"
+        },
+        "pattern": {
+          "type": "boolean"
+        },
+        "fix": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fpm": {
+          "type": "number"
+        },
+        "tas_kt": {
+          "type": "number"
+        },
+        "groundspeed_kt": {
+          "type": "number"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "along_nm",
+        "ete_min",
+        "altitude_ft"
+      ],
+      "additionalProperties": true,
+      "description": "A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg."
+    },
+    "NavLogLeg": {
+      "title": "NavLogLeg",
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "true_course_deg": {
+          "type": "number"
+        },
+        "distance_nm": {
+          "type": "number"
+        },
+        "altitude_ft": {
+          "type": "number"
+        },
+        "wind": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogWind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wca_deg": {
+          "type": "number"
+        },
+        "true_heading_deg": {
+          "type": "number"
+        },
+        "magnetic_variation_deg": {
+          "type": "number"
+        },
+        "magnetic_heading_deg": {
+          "type": "number"
+        },
+        "groundspeed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ete_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tas_kt": {
+          "type": "number"
+        },
+        "fuel_burn_gph": {
+          "type": "number"
+        },
+        "power_pct": {
+          "type": "number"
+        },
+        "oat_c": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "density_altitude_ft": {
+          "type": "number"
+        },
+        "climb_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "toc": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogTop"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tod": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogTop"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "distance_nm",
+        "altitude_ft"
+      ],
+      "additionalProperties": true,
+      "description": "A nav log leg (PHAK ch. 16's dead reckoning); null time, ground speed and fuel is an unflyable leg. Members the log does not know (procedure, hold, airway) are carried through."
+    },
+    "NavLogTotals": {
+      "title": "NavLogTotals",
+      "type": "object",
+      "properties": {
+        "distance_nm": {
+          "type": "number"
+        },
+        "procedure_nm": {
+          "type": "number"
+        },
+        "ete_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unflyable_legs": {
+          "type": "number"
+        },
+        "legs_without_wind": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "distance_nm",
+        "procedure_nm",
+        "ete_min",
+        "fuel_gal",
+        "unflyable_legs",
+        "legs_without_wind"
+      ]
+    },
+    "NavLogStep": {
+      "title": "NavLogStep",
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "altitude_ft": {
+          "type": "number"
+        },
+        "distance_nm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "altitude_ft",
+        "distance_nm"
+      ]
+    },
+    "NavLogPlan": {
+      "title": "NavLogPlan",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogStep"
+          }
+        },
+        "needs_oxygen": {
+          "type": "boolean"
+        },
+        "ete_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "climb_penalty_min": {
+          "type": "number"
+        },
+        "tailwind_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unflyable_legs": {
+          "type": "number"
+        },
+        "legs_without_wind": {
+          "type": "number"
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLeg"
+          }
+        },
+        "totals": {
+          "$ref": "#/definitions/NavLogTotals"
+        }
+      },
+      "required": [
+        "steps",
+        "needs_oxygen",
+        "ete_min",
+        "fuel_gal",
+        "climb_penalty_min",
+        "tailwind_kt",
+        "unflyable_legs",
+        "legs_without_wind"
+      ],
+      "additionalProperties": true
+    },
+    "NavLogFigure": {
+      "title": "NavLogFigure",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": "number"
+        },
+        "ete_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tailwind_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "everywhere": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "altitude_ft",
+        "ete_min",
+        "fuel_gal",
+        "tailwind_kt",
+        "everywhere"
+      ],
+      "description": "The route flown at one altitude for the altitude wheel: each leg at it where legal, else at its nearest legal one."
+    },
+    "NavLogSegment": {
+      "title": "NavLogSegment",
+      "type": "object",
+      "properties": {
+        "candidates_ft": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": true,
+      "description": "The altitude selection's segment for a leg: its legal altitudes (14 CFR 91.119, 91.159, the airspace, the clouds and the service ceiling)."
     }
   }
 }

@@ -48,13 +48,13 @@ workspace.
 | Crate | Modules | Uses |
 |---|---|---|
 | `core` | geo, wmm, grid, sums, time, json, xml | nothing |
-| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere) | nothing |
+| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere), performance (the airplane's cruise and climbs in the day's air) | nothing |
 | `weather` | metar, taf, winds, forecast, validity, notam, tfr | core |
 | `procedures` | figures (debrief, diversion, holding, lost comms, words) | core, flight |
 | `radio` | clearance, readback, atis | core |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109), aircraft | core |
 | `brief` | gonogo, runway | core, flight, procedures |
-| `route` | route, motion, approach | core, procedures |
+| `route` | route, motion, approach, navlog | core, flight, procedures |
 | `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead | core, procedures, radio |
 | `wording` | wording | core, procedures, airspace |
 | `facade/` | call | all of them |
@@ -80,6 +80,9 @@ Why these lines:
   packs through `pack` and `pack_query`, which `radio` is under), and `figures` because `rules` writes its figures with
   `figures::words`; `wording` sits on top of it for `rules`' entry rules
   and call types by class.
+- `route` takes `flight` for the nav log: its legs fly the wind triangle
+  and the airplane's performance, which sit in `flight` because the
+  altitude selection needs the service ceiling on the day from them too.
 - `call.rs` names every rule, so it alone stays in the facade, over all.
 
 Inside a crate, the modules under it are used at the root by the names
@@ -153,6 +156,21 @@ Then the callers switch to the name and the old copy is deleted.
   lib/trafficPattern; wingtip.runway_wind and wingtip.pattern), each a name in
   `call.rs` (`wind_pick`, `runway_end_fit`, `traffic_pattern` ...). The
   Go / No-Go's runway check goes by the same.
+- The nav log is the engine's too (`crates/route`'s navlog, over
+  `crates/flight`'s performance; #482 phase 4): each leg's wind triangle,
+  headings, ground speed, time and fuel with the airplane flown in the
+  leg's own air, the climbs from the field and at each step up, the tops
+  of climb and of descent at three to one (to the pattern, or to an
+  approach's fix), the four altitude plans and the altitude wheel's
+  figures, a route with stops' plans joined, the fuel plan (14 CFR
+  91.151, 91.167) and the IFR alternate's leg, and a pilot's hold flown
+  on its leg (AIM 5-3-8). The planner looks up the air -- the winds and
+  temperatures aloft at each leg's midpoint, at every altitude the plans
+  may fly (`navlog_candidates`), and the variation -- and asks
+  `navlog_plans`, `navlog_legs`, `navlog_with_descents` ... by name;
+  `engine/facade/tests/navlog.rs` holds them to the planner's tests from
+  before the move and to its recorded routes
+  (`services/planner/tests_wingtip/golden`).
 - Instrument approaches are the engine's too (`crates/route`): a flown
   approach debriefed against its procedure -- the final it flew, full
   scale off the course (AIM 1-1-9, 1-1-17), each fix's altitude (AIM

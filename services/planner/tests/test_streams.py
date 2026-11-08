@@ -25,7 +25,7 @@ def test_a_weather_failure_mid_navlog_is_the_streams_last_line(monkeypatch, alti
     def no_winds(*args, **kwargs):
         raise WeatherServiceError("aviationweather.gov request failed: timed out")
 
-    monkeypatch.setattr(navlog, "assemble_leg", no_winds)
+    monkeypatch.setattr(navlog, "wind_at_altitude", no_winds)
 
     resp = client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH"})
 
