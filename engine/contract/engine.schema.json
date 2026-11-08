@@ -16151,6 +16151,902 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "route_options_frame": {
+      "description": "Route options' frame, before the planner reads for it: the grid's corner, cells (0.25 degrees) and samples a cell's side, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159 under its ceiling and Class A's 18,000 ft, 71.33), the flight's time, the cruising altitudes the winds are wanted at, the lowest cruise the water's glide is judged from, whether METARs are read (a flight leaving within two hours), the grid's box and the box the fixes and fields are wanted in.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "$ref": "#/definitions/RouteOptionsInput"
+        },
+        "answer": {
+          "title": "RouteOptionsFrameAnswer",
+          "type": "object",
+          "properties": {
+            "lat0": {
+              "type": "number"
+            },
+            "lon0": {
+              "type": "number"
+            },
+            "rows": {
+              "type": "integer"
+            },
+            "cols": {
+              "type": "integer"
+            },
+            "cell_deg": {
+              "type": "number"
+            },
+            "per_cell": {
+              "type": "integer"
+            },
+            "top_ft": {
+              "type": "number"
+            },
+            "window": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "altitudes_ft": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "lowest_cruise_ft": {
+              "type": "number"
+            },
+            "metars": {
+              "type": "boolean"
+            },
+            "bbox": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            },
+            "data_box": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "lat0",
+            "lon0",
+            "rows",
+            "cols",
+            "cell_deg",
+            "per_cell",
+            "top_ft",
+            "window",
+            "altitudes_ft",
+            "lowest_cruise_ft",
+            "metars",
+            "bbox",
+            "data_box"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "route_options": {
+      "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route and the most filed one with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "$ref": "#/definitions/RouteOptionsInput"
+        },
+        "answer": {
+          "title": "RouteOptionsAnswer",
+          "type": "object",
+          "properties": {
+            "options": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RouteOption"
+              }
+            },
+            "own": {
+              "$ref": "#/definitions/RouteOption"
+            },
+            "filed": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/RouteOption"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "current_path": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "direct": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "ends": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "current": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "current_along": {
+              "$ref": "#/definitions/RouteOptionsAlong"
+            },
+            "current_marginal": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "hazards": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RouteOptionsHazard"
+              }
+            },
+            "unchecked": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "food_unread": {
+              "type": "array",
+              "items": {
+                "title": "RouteOptionsFoodUnread",
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "ident",
+                  "lat",
+                  "lon"
+                ]
+              }
+            }
+          },
+          "required": [
+            "options",
+            "own",
+            "filed",
+            "current_path",
+            "direct",
+            "ends",
+            "current",
+            "current_along",
+            "current_marginal",
+            "hazards",
+            "unchecked",
+            "food_unread"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "terrain_way_frame": {
+      "description": "The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TerrainWayFrameInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "ceiling_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "start",
+            "end",
+            "ceiling_ft"
+          ]
+        },
+        "answer": {
+          "title": "TerrainWayFrameAnswer",
+          "type": "object",
+          "properties": {
+            "lat0": {
+              "type": "number"
+            },
+            "lon0": {
+              "type": "number"
+            },
+            "rows": {
+              "type": "integer"
+            },
+            "cols": {
+              "type": "integer"
+            },
+            "cell_deg": {
+              "type": "number"
+            },
+            "per_cell": {
+              "type": "integer"
+            },
+            "top_ft": {
+              "type": "number"
+            },
+            "data_box": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "lat0",
+            "lon0",
+            "rows",
+            "cols",
+            "cell_deg",
+            "per_cell",
+            "top_ft",
+            "data_box"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "terrain_way_round": {
+      "description": "A way round high ground (route/options/terrain.rs): the fields with fuel and the way's own turns (ident null, for the planner to name off a fix) to fly by, in order, every leg clear of cells whose highest ground with 1,000 ft (14 CFR 91.119) and the coarse read's 1,000 is over the highest cruising altitude the airplane reaches; [] where the straight line is clear, null where there is no way in reach.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TerrainWayRoundInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "ceiling_ft": {
+              "type": "number"
+            },
+            "terrain_ft": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "fields": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "title": "TerrainWayField",
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "ident",
+                  "name",
+                  "lat",
+                  "lon"
+                ]
+              }
+            }
+          },
+          "required": [
+            "start",
+            "end",
+            "ceiling_ft",
+            "terrain_ft"
+          ]
+        },
+        "answer": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "title": "TerrainWayStone",
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "ident",
+              "name",
+              "lat",
+              "lon"
+            ]
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "frd_near": {
+      "description": "A point named as the pilot's own point off the nearest fix a pilot knows (a navaid or a VFR waypoint) within max_nm (40 by default), else the nearest of any kind: its course magnetic, a VOR's radial by the station's own variation (AIM 1-1-3), any other by the World Magnetic Model's at now_s, to the degree, and its distance to a tenth of a mile; null with no fix near.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FrdNearInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "max_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "now_s": {
+              "type": "number"
+            },
+            "fixes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RouteOptionsFix"
+              }
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "now_s",
+            "fixes"
+          ]
+        },
+        "answer": {
+          "title": "FrdNearAnswer",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "base": {
+              "type": "string"
+            },
+            "course_deg": {
+              "type": "integer"
+            },
+            "distance_nm": {
+              "type": "number"
+            },
+            "radial": {
+              "type": "boolean"
+            },
+            "ident": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "base",
+            "course_deg",
+            "distance_nm",
+            "radial",
+            "ident"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "fuel_stops": {
+      "description": "The fuel stops a flight too long for its tanks needs (route/options/fuel.rs): the fields with fuel no more than 30 nm off its line on a paved runway of 2,500 ft, chained so every landing keeps the reserve (14 CFR 91.151(a), 91.167(a)(3)) at the flight's own burn and minutes a mile, the tanks filled at each, the quickest trip with ground_min (30) a stop, among first stops within 5 minutes of it the one nearest the line then the one whose landings keep the most fuel, at most 8 stops; and up to 4 other first stops. Both empty where none is needed or no field reaches.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FuelStopsInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "fuel_per_nm": {
+              "type": "number"
+            },
+            "min_per_nm": {
+              "type": "number"
+            },
+            "usable_gal": {
+              "type": "number"
+            },
+            "taxi_gal": {
+              "type": "number"
+            },
+            "reserve_gal": {
+              "type": "number"
+            },
+            "ground_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "skip": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              }
+            },
+            "fields": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/FuelField"
+              }
+            }
+          },
+          "required": [
+            "start",
+            "end",
+            "fuel_per_nm",
+            "min_per_nm",
+            "usable_gal",
+            "taxi_gal",
+            "reserve_gal"
+          ]
+        },
+        "answer": {
+          "title": "FuelStopsAnswer",
+          "type": "object",
+          "properties": {
+            "stops": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FuelStop"
+              }
+            },
+            "choices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FuelStop"
+              }
+            }
+          },
+          "required": [
+            "stops",
+            "choices"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "fields_along": {
+      "description": "The public fields along a route for the map's Stops (route/options/fuel.rs): those on a paved runway of 2,500 ft no more than 30 nm off each flight's line, not the route's own, each on the first flight it is near with its miles from that flight's departure and the miles it adds; the 40 nearest the line, in route order.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FieldsAlongInput",
+          "type": "object",
+          "properties": {
+            "flights": {
+              "type": "array",
+              "items": {
+                "title": "FieldsAlongFlight",
+                "type": "object",
+                "properties": {
+                  "departure": {
+                    "type": "string"
+                  },
+                  "start": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "end": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
+                },
+                "required": [
+                  "departure",
+                  "start",
+                  "end"
+                ]
+              }
+            },
+            "skip": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              }
+            },
+            "fields": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/FuelField"
+              }
+            }
+          },
+          "required": [
+            "flights"
+          ]
+        },
+        "answer": {
+          "type": "array",
+          "items": {
+            "title": "FieldAlong",
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "city": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "runway_ft": {
+                "type": "integer"
+              },
+              "elevation_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "from_nm": {
+                "type": "number"
+              },
+              "added_nm": {
+                "type": "number"
+              },
+              "flight": {
+                "type": "integer"
+              },
+              "departure": {
+                "type": "string"
+              },
+              "fuel_types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "ident",
+              "name",
+              "city",
+              "lat",
+              "lon",
+              "runway_ft",
+              "elevation_ft",
+              "from_nm",
+              "added_nm",
+              "flight",
+              "departure",
+              "fuel_types"
+            ]
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "class_b_entered": {
+      "description": "Whether a straight leg flown at altitude_ft enters Class B (route/options/classb.rs): a shelf whose floor is at or under it and whose ceiling at or over it, which the leg goes into (14 CFR 91.131(a): an ATC clearance before entering). Under a shelf or over the top, it does not.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ClassBEnteredInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "altitude_ft": {
+              "type": "number"
+            },
+            "shelves": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/ClassBShelf"
+              }
+            }
+          },
+          "required": [
+            "start",
+            "end",
+            "altitude_ft"
+          ]
+        },
+        "answer": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "class_b_detours": {
+      "description": "Named fixes to fly through so neither leg comes within a mile of the Class B whose floor is under below_ft (route/options/classb.rs): those adding the least distance first, a VFR waypoint before a GPS fix that saves under 10 nm, at most 5, none adding over 40 nm.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ClassBDetoursInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "below_ft": {
+              "type": "number"
+            },
+            "shelves": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/ClassBShelf"
+              }
+            },
+            "fixes": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "title": "ClassBDetourFix",
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "vfr": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "ident",
+                  "lat",
+                  "lon"
+                ]
+              }
+            }
+          },
+          "required": [
+            "start",
+            "end",
+            "below_ft"
+          ]
+        },
+        "answer": {
+          "type": "array",
+          "items": {
+            "title": "ClassBDetour",
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "added_nm": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "ident",
+              "kind",
+              "added_nm"
+            ]
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -16424,7 +17320,16 @@
     "navlog_join_figures",
     "navlog_hold",
     "navlog_racetrack",
-    "navlog_approach_end"
+    "navlog_approach_end",
+    "route_options_frame",
+    "route_options",
+    "terrain_way_frame",
+    "terrain_way_round",
+    "frd_near",
+    "fuel_stops",
+    "fields_along",
+    "class_b_entered",
+    "class_b_detours"
   ],
   "additionalProperties": false,
   "definitions": {
@@ -20508,6 +21413,864 @@
       },
       "additionalProperties": true,
       "description": "The altitude selection's segment for a leg: its legal altitudes (14 CFR 91.119, 91.159, the airspace, the clouds and the service ceiling)."
+    },
+    "ClassBShelf": {
+      "description": "A Class B shelf other than the flight's own (whose surface area holds one of its ends), as the FAA's Class Airspace shapefile has it: its floor and ceiling, ft MSL, and its rings of [lat, lon].",
+      "title": "ClassBShelf",
+      "type": "object",
+      "properties": {
+        "floor_ft_msl": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_ft_msl": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "rings": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        }
+      },
+      "required": [
+        "rings"
+      ]
+    },
+    "FuelField": {
+      "description": "A public field as NASR's APT_BASE has it (its ICAO ident where it has one, and the FAA's), with what fuel it sells and its longest open paved runway (OurAirports' runways).",
+      "title": "FuelField",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "faa_ident": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "city": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_types": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runway_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ident",
+        "lat",
+        "lon"
+      ]
+    },
+    "FuelStop": {
+      "description": "A field to land at for fuel: its miles from the flight's departure and those it adds to the straight line, the fuel left on landing and the minutes flown to it.",
+      "title": "FuelStop",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "runway_ft": {
+          "type": "integer"
+        },
+        "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_types": {
+          "type": "string"
+        },
+        "from_nm": {
+          "type": "number"
+        },
+        "added_nm": {
+          "type": "number"
+        },
+        "lands_with_gal": {
+          "type": "number"
+        },
+        "minutes": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "ident",
+        "name",
+        "city",
+        "lat",
+        "lon",
+        "runway_ft",
+        "elevation_ft",
+        "fuel_types",
+        "from_nm",
+        "added_nm",
+        "lands_with_gal",
+        "minutes"
+      ]
+    },
+    "RouteOption": {
+      "description": "One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets.",
+      "title": "RouteOption",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "kinds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fuel": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "food": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "distance_nm": {
+          "type": "number"
+        },
+        "air_min": {
+          "type": "number"
+        },
+        "ground_min": {
+          "type": "number"
+        },
+        "fuel_gal": {
+          "type": "number"
+        },
+        "landings": {
+          "type": "integer"
+        },
+        "crosses": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "marginal": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "bands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RouteOptionsBand"
+          }
+        },
+        "tail_kt": {
+          "type": "number"
+        },
+        "floor_ft": {
+          "type": "integer"
+        },
+        "water_nm": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "kinds",
+        "title",
+        "stops",
+        "fuel",
+        "food",
+        "path",
+        "distance_nm",
+        "air_min",
+        "ground_min",
+        "fuel_gal",
+        "landings",
+        "crosses",
+        "marginal",
+        "bands",
+        "tail_kt",
+        "floor_ft",
+        "water_nm"
+      ]
+    },
+    "RouteOptionsAdvisory": {
+      "description": "A SIGMET (valid_from, valid_to) or a G-AIRMET (valid, its snapshot), its area as [lat, lon] points, as the AWC sends it.",
+      "title": "RouteOptionsAdvisory",
+      "type": "object",
+      "properties": {
+        "hazard": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "coords": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "altitude_low_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "valid_from": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "valid_to": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "valid": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "coords"
+      ]
+    },
+    "RouteOptionsAlong": {
+      "description": "What a way meets: its weather as runs by the minutes they last, the mean wind along it (positive a tailwind), its floor (the highest ground with 14 CFR 91.119's 1,000 ft) and its miles out of glide of dry land.",
+      "title": "RouteOptionsAlong",
+      "type": "object",
+      "properties": {
+        "bands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RouteOptionsBand"
+          }
+        },
+        "tail_kt": {
+          "type": "number"
+        },
+        "floor_ft": {
+          "type": "integer"
+        },
+        "water_nm": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "bands",
+        "tail_kt",
+        "floor_ft",
+        "water_nm"
+      ]
+    },
+    "RouteOptionsArea": {
+      "description": "A special-use area (type P, R, MOA, W, A ...) or a TFR in force (notam_id, title): its rings of [lat, lon], an odd number of them holding a point inside.",
+      "title": "RouteOptionsArea",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notam_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rings": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        }
+      },
+      "required": [
+        "rings"
+      ]
+    },
+    "RouteOptionsBand": {
+      "title": "RouteOptionsBand",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "vfr",
+            "mvfr",
+            "ifr",
+            "storm"
+          ]
+        },
+        "min": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "min"
+      ]
+    },
+    "RouteOptionsEnd": {
+      "title": "RouteOptionsEnd",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "lat",
+        "lon"
+      ]
+    },
+    "RouteOptionsField": {
+      "description": "A public field selling 100LL (NASR APT_BASE), its longest open paved runway and whether there is somewhere to eat (null: not read yet).",
+      "title": "RouteOptionsField",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "runway_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "food": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ident",
+        "lat",
+        "lon"
+      ]
+    },
+    "RouteOptionsFix": {
+      "description": "A fix as the planner reads it (wingtip.fixes): a navaid with its own magnetic variation (east positive), a VFR waypoint or any other.",
+      "title": "RouteOptionsFix",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "navaid": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "vfr": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "kind": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mag_var": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ident",
+        "lat",
+        "lon"
+      ]
+    },
+    "RouteOptionsHazard": {
+      "title": "RouteOptionsHazard",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ]
+    },
+    "RouteOptionsInput": {
+      "title": "RouteOptionsInput",
+      "type": "object",
+      "properties": {
+        "dep": {
+          "$ref": "#/definitions/RouteOptionsEnd"
+        },
+        "dest": {
+          "$ref": "#/definitions/RouteOptionsEnd"
+        },
+        "profile": {
+          "$ref": "#/definitions/RouteOptionsProfile"
+        },
+        "depart_s": {
+          "type": "number"
+        },
+        "now_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "min_ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "min_visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "current": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "current_idents": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "current_landed": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "boolean"
+          }
+        },
+        "filed": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "idents": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "points",
+            "idents"
+          ]
+        },
+        "night": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "terrain_ft": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          }
+        },
+        "water_far": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tafs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RouteOptionsReport"
+          }
+        },
+        "metars": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RouteOptionsReport"
+          }
+        },
+        "sigmets": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RouteOptionsAdvisory"
+          }
+        },
+        "gairmets": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RouteOptionsAdvisory"
+          }
+        },
+        "sua": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RouteOptionsArea"
+          }
+        },
+        "tfrs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RouteOptionsArea"
+          }
+        },
+        "winds": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RouteOptionsStation"
+          }
+        },
+        "fields": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RouteOptionsField"
+          }
+        },
+        "food": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "fixes": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RouteOptionsFix"
+          }
+        }
+      },
+      "required": [
+        "dep",
+        "dest",
+        "profile",
+        "depart_s"
+      ]
+    },
+    "RouteOptionsProfile": {
+      "title": "RouteOptionsProfile",
+      "type": "object",
+      "properties": {
+        "cruise_tas_kt": {
+          "type": "number"
+        },
+        "fuel_burn_gph": {
+          "type": "number"
+        },
+        "usable_fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "taxi_fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "service_ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "cruise_tas_kt",
+        "fuel_burn_gph"
+      ]
+    },
+    "RouteOptionsReport": {
+      "description": "A field's weather: a TAF (its worst over the flight, with the weather of every group then) or a METAR.",
+      "title": "RouteOptionsReport",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "wx": {
+          "type": [
+            "array",
+            "string",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_unknown": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ident",
+        "lat",
+        "lon"
+      ]
+    },
+    "RouteOptionsStation": {
+      "description": "An FD station and its wind [from true, kt] at each of the frame's altitudes_ft, null where it gives none.",
+      "title": "RouteOptionsStation",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "winds": {
+          "type": "array",
+          "items": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "required": [
+        "lat",
+        "lon",
+        "winds"
+      ]
     }
   }
 }

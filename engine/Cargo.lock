@@ -1109,6 +1109,7 @@ dependencies = [
  "wingtip-core",
  "wingtip-flight",
  "wingtip-procedures",
+ "wingtip-weather",
 ]
 
 [[package]]

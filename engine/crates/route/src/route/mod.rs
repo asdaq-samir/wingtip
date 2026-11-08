@@ -2,7 +2,7 @@
 //! them and the planner's query reads them (PlanQuery): the pilot's own
 //! point off a fix and a fix's ident (`points`), the holds put on the
 //! route's points (`holds`), and the instrument procedures and runways
-//! picked at its fields (`picks`).
+//! picked at its fields (`picks`); and the ways to fly it (`options`).
 //!
 //! Each is read at three boundaries -- the web app's address, the
 //! planner's query, the iPhone's route -- and each boundary still decides
@@ -13,6 +13,7 @@
 
 pub mod answers;
 pub mod holds;
+pub mod options;
 pub mod picks;
 pub mod points;
 

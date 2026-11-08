@@ -2499,7 +2499,7 @@ class RouteHazard(BaseModel):
 
 
 class RouteBand(BaseModel):
-    """A run of the weather a way meets (wingtip.route_options._along): VFR,
+    """A run of the weather a way meets (the engine's route_options): VFR,
     marginal (MVFR), IFR or a thunderstorm, and how many minutes of the
     flight it lasts, in the order flown."""
 

@@ -54,7 +54,7 @@ workspace.
 | `radio` | clearance, readback, atis | core |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), aircraft | core |
 | `brief` | gonogo, runway | core, flight, procedures |
-| `route` | route, motion (with along: where the airplane is on the route), approach, navlog | core, flight, procedures |
+| `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route), approach, navlog | core, flight, weather, procedures |
 | `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, procedures, radio |
 | `wording` | wording | core, procedures, airspace |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words) | core, flight, procedures |
@@ -82,6 +82,9 @@ Why these lines:
 - `procedures` sits just above them because its `figures::words` (a number
   written as the web writes it) is shared by the Go / No-Go, runways,
   routes, the airspace rules and the wording.
+- `route` takes `flight` and `weather` for route options
+  (`route/options`): 91.159's cruising altitudes and 91.151's reserve,
+  and a report's flight category, read onto the grid.
 - `gonogo` and `runway` are one crate, `brief`: the Go / No-Go's runway
   check goes by the runway pick, and the runway rules read their input
   with the Go / No-Go's helpers, so each uses the other.
