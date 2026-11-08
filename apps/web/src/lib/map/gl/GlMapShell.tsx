@@ -263,7 +263,15 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     // Whether its first style has the overlay tiles: a map made without
     // them (no archive, or its name too slow to come) keeps the in-view
     // layers for its life.
-    const take = () => { setOverlays(!!m.getSource(OVERLAY_SOURCE)); setMap(m); };
+    const take = () => {
+      // The sheet's room as it is now: follow() moves only a map it has,
+      // so a sheet that settled while this one loaded left it padded for
+      // the sheet as it was, and the pilot's position off the middle --
+      // below the loading mark (MapLoading), which keeps to the sheet.
+      m.setPadding(padOf(insetsRef.current));
+      setOverlays(!!m.getSource(OVERLAY_SOURCE));
+      setMap(m);
+    };
     if (loaded.has(m)) take();
     else m.once("load", take);
     // A map taken up from the last tree is shown already.
