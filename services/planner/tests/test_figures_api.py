@@ -86,7 +86,7 @@ def test_the_diversion_in_the_planners_air_with_the_estimates_checked(monkeypatc
         return {"true_course_deg": 360.0, "distance_nm": 18.0, "tas_kt": 110.0, "fuel_burn_gph": 8.5,
                 "magnetic_variation_deg": -3.0, "wind": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 20.0}}
 
-    monkeypatch.setattr(figures, "navlog", SimpleNamespace(assemble_leg=leg))
+    monkeypatch.setattr(figures, "navlog", SimpleNamespace(leg_from=leg))
     answer = client.get("/api/diversion", params={"lat": 43, "lon": -89, "to": "kmsn", "altitude_ft": 4500, "cruise_tas_kt": 110,
                                                   "mh": 355, "gs": 95, "fuel": 1.4})
     assert answer.status_code == 200, answer.text
@@ -107,7 +107,7 @@ def test_the_diversion_in_the_planners_air_with_the_estimates_checked(monkeypatc
 
 def test_a_diversion_no_heading_holds_says_so(monkeypatch):
     _places(monkeypatch)
-    monkeypatch.setattr(figures, "navlog", SimpleNamespace(assemble_leg=lambda *a: {
+    monkeypatch.setattr(figures, "navlog", SimpleNamespace(leg_from=lambda *a: {
         "true_course_deg": 360.0, "distance_nm": 18.0, "tas_kt": 50.0, "fuel_burn_gph": 5.0, "magnetic_variation_deg": 0.0,
         "wind": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 60.0}}))
     d = client.get("/api/diversion", params={"lat": 43, "lon": -89, "to": "KMSN", "altitude_ft": 4500}).json()

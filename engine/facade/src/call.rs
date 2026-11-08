@@ -528,6 +528,35 @@
 //!   the stock profile's name or null, from `{"manufacturer"?, "model"?,
 //!   "year"?}`, the registry's.
 //!
+//! The nav log and the airplane's performance (crate::navlog, the
+//! planner's wingtip.navlog and wingtip.performance, #482 phase 4), the
+//! air each leg is flown in given by the planner -- `air`, one a leg,
+//! `[{"variation_deg", "at": [{"altitude_ft", "wind"?, "oat_c"?}]}]` --
+//! and the airplane as its profile, `{"cruise_tas_kt", "fuel_burn_gph",
+//! "service_ceiling_ft", "cruise_power_pct"?, "climb_tas_kt"?, ...}`:
+//!
+//! - `performance_reference_ft`, `performance_cruise` from `{"profile",
+//!   "altitude_ft", "oat_c"?}`, `performance_climb` from `{"profile",
+//!   "from_ft", "to_ft", "isa_dev_c"?}`;
+//! - `navlog_leg` from `{"start", "end", "altitude_ft", "profile",
+//!   "wind"?, "oat_c"?, "variation_deg"}`; `navlog_legs` from `{"fixes",
+//!   "altitude_ft", "profile", "air"}`; `navlog_with_climbs` from
+//!   `{"legs", "start_altitude_ft"?, "profile"}`; `navlog_with_descents`
+//!   from `{"legs", "fixes", "end_altitude_ft"?, "end_before_nm"?,
+//!   "end_fix"?}`, the end an approach gives as `navlog_approach_end` from
+//!   `{"fixes", "cruise_ft"?, "field"}`; `navlog_totals` from `{"legs"}`; `navlog_fuel_plan`
+//!   (14 CFR 91.151, 91.167) from `{"total_fuel_gal"?, "profile",
+//!   "night"?, "rules"?, "alternate_gal"?}`; `navlog_alternate_leg` from
+//!   `{"dest", "alternate", "altitude_ft", "profile", "air"?}`;
+//! - `navlog_candidates` from `{"segments", "legs", "profile"}`,
+//!   `navlog_plans` from `{"fixes", "segments", "profile",
+//!   "departure_elevation_ft"?, "air"}` and `navlog_legs_at` with
+//!   `"target_ft"`; `navlog_join_plans` and `navlog_join_figures` from
+//!   `{"by_hop", "lengths"}`;
+//! - `navlog_hold` (AIM 5-3-8) from `{"leg", "before"?, "hold", "fix",
+//!   "variation_deg", "at_end"?}`; `navlog_racetrack` from `{"fix",
+//!   "inbound_true_deg", "right"?, "tas_kt", "leg_nm", "steps"?}`.
+//!
 //! `?` marks a member that may be missing or null. A name not known, or
 //! input not of its shape, is Err with a plain message, never a panic.
 
@@ -912,6 +941,7 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         // Instrument approaches taught and debriefed (approach::calls).
         _ if crate::approach::calls::NAMES.contains(&name) => crate::approach::calls::call(name, ask.v),
         _ if crate::route::answers::NAMES.contains(&name) => crate::route::answers::answer(name, ask.v),
+        _ if crate::navlog::calls::NAMES.contains(&name) => crate::navlog::calls::call(name, ask.v),
         // The things that move (motion::call), then the Go / No-Go's, by
         // their own names (gonogo::calls), last.
         _ => match crate::motion::call(name, ask.v) {

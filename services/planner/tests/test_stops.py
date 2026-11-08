@@ -5,7 +5,7 @@ same stubbed world as test_plan: every hop is read off the same two
 candidates, flies at the one legal altitude, and each leg is 10 nm."""
 import pytest
 from fastapi.testclient import TestClient
-from wingtip import airports, fixes, geo, navlog
+from wingtip import airports, fixes, geo
 from wingtip import altitude as altitude_module
 
 from app import planning, checkpoint_scoring
@@ -13,7 +13,7 @@ from app.router_basics import load_hop, load_route
 from app.main import app
 
 from .conftest import airport, select_cruise_altitude_stub
-from .test_plan import CANDIDATES, _leg
+from .test_plan import CANDIDATES, _air
 
 client = TestClient(app)
 
@@ -25,7 +25,7 @@ def _stubbed_world(monkeypatch, altitude):
     # Each hop's own points, as two corridors' reads are: ids of their own.
     monkeypatch.setattr(checkpoint_scoring, "score", lambda dep, dest: [{**c, "id": f"{dep}:{c['id']}"} for c in CANDIDATES])
     monkeypatch.setattr(altitude_module, "select_cruise_altitude", select_cruise_altitude_stub(altitude))
-    monkeypatch.setattr(navlog, "assemble_leg", _leg)
+    _air(monkeypatch)
     # No chart read to start: every hop's candidates are the stub's.
     monkeypatch.setattr(checkpoint_scoring.chart_model, "corridor", lambda route, wait: None)
 

@@ -48,13 +48,13 @@ workspace.
 | Crate | Modules | Uses |
 |---|---|---|
 | `core` | geo, wmm, grid, sums, time, json, xml | nothing |
-| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items) | nothing |
+| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items) | nothing |
 | `weather` | metar, taf, winds, forecast, validity, notam, tfr, cycles | core, flight |
 | `procedures` | figures (debrief, diversion, holding, lost comms, words) | core, flight |
 | `radio` | clearance, readback, atis | core |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), aircraft | core |
 | `brief` | gonogo, runway | core, flight, procedures |
-| `route` | route, motion (with along: where the airplane is on the route), approach | core, procedures |
+| `route` | route, motion (with along: where the airplane is on the route), approach, navlog | core, flight, procedures |
 | `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, procedures, radio |
 | `wording` | wording | core, procedures, airspace |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words) | core, flight, procedures |
@@ -93,6 +93,9 @@ Why these lines:
 - `altitude` takes `flight` for 91.159's lowest altitude and `procedures`
   for `figures::words`, which its words where no altitude fits are written
   in; nothing above it uses it but the facade.
+- `route` takes `flight` for the nav log: its legs fly the wind triangle
+  and the airplane's performance, which sit in `flight` because the
+  altitude selection needs the service ceiling on the day from them too.
 - `call.rs` names every rule, so it alone stays in the facade, over all.
 
 Inside a crate, the modules under it are used at the root by the names
@@ -166,6 +169,21 @@ Then the callers switch to the name and the old copy is deleted.
   lib/trafficPattern; wingtip.runway_wind and wingtip.pattern), each a name in
   `call.rs` (`wind_pick`, `runway_end_fit`, `traffic_pattern` ...). The
   Go / No-Go's runway check goes by the same.
+- The nav log is the engine's too (`crates/route`'s navlog, over
+  `crates/flight`'s performance; #482 phase 4): each leg's wind triangle,
+  headings, ground speed, time and fuel with the airplane flown in the
+  leg's own air, the climbs from the field and at each step up, the tops
+  of climb and of descent at three to one (to the pattern, or to an
+  approach's fix), the four altitude plans and the altitude wheel's
+  figures, a route with stops' plans joined, the fuel plan (14 CFR
+  91.151, 91.167) and the IFR alternate's leg, and a pilot's hold flown
+  on its leg (AIM 5-3-8). The planner looks up the air -- the winds and
+  temperatures aloft at each leg's midpoint, at every altitude the plans
+  may fly (`navlog_candidates`), and the variation -- and asks
+  `navlog_plans`, `navlog_legs`, `navlog_with_descents` ... by name;
+  `engine/facade/tests/navlog.rs` holds them to the planner's tests from
+  before the move and to its recorded routes
+  (`services/planner/tests_wingtip/golden`).
 - Instrument approaches are the engine's too (`crates/route`): a flown
   approach debriefed against its procedure -- the final it flew, full
   scale off the course (AIM 1-1-9, 1-1-17), each fix's altitude (AIM

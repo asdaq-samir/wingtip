@@ -1,5 +1,6 @@
-"""Records a route's nav log for services/planner/tests_wingtip/test_golden_routes.py: what the
-nav log engine (wingtip.navlog) was given for it -- the fixes, each leg's
+"""Records a route's nav log for services/planner/tests_wingtip/test_golden_routes.py
+and the engine's engine/facade/tests/navlog.rs: what the nav log
+(wingtip.navlog, the engine's wingtip_route::navlog) was given for it -- the fixes, each leg's
 legal altitudes, the aeroplane, the forecast period, the field's
 elevation and the pattern altitude at the end -- every wind,
 temperature and magnetic variation it asked for, and what it made of
@@ -19,6 +20,7 @@ import sys
 from pathlib import Path
 
 from wingtip import navlog
+from wingtip.engine import ask as engine
 
 HERE = Path(__file__).resolve().parent
 
@@ -101,7 +103,8 @@ def expected(given: dict, pattern_ft, choice: str) -> dict:
     plans' altitudes, times and fuel, and the chosen plan's legs."""
     plans = navlog.altitude_profiles(given["fixes"], given["segments"], given["profile"], given["fcst_hr"],
                                      departure_elevation_ft=given["departure_elevation_ft"])
-    legs = navlog.with_descents(plans[choice]["legs"], given["fixes"], pattern_ft)
+    legs = engine("navlog_with_descents", legs=plans[choice]["legs"], fixes=[navlog.engine_fix(f) for f in given["fixes"]],
+                  end_altitude_ft=pattern_ft)
     return {
         "plans": {kind: {"steps": [s["altitude_ft"] for s in p["steps"]], "ete_min": p["ete_min"], "fuel_gal": p["fuel_gal"]}
                   for kind, p in plans.items()},
