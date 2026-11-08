@@ -139,23 +139,18 @@ def route_options(
     # Where there is somewhere to eat at each fuel field the ways weigh
     # (wingtip.nearby, the places kept for it), so a stop with a meal is
     # landed at among chains of as many stops; a field not read yet is
-    # read on the side and taken as having none this time.
-    unread: list[str] = []
-
-    def food(ident: str, lat: float, lon: float) -> bool:
-        has = nearby.food_at(ident)
-        if has is None:
-            unread.append(ident)
-            nearby.read_later(ident, lat, lon)
-        return bool(has)
-
+    # taken as having none this time, and those the ways weighed
+    # (`food_unread`) are read on the side.
     found = wingtip_route_options.options(
         {"ident": dep.upper(), "lat": start["lat"], "lon": start["lon"]},
         {"ident": dest.upper(), "lat": end["lat"], "lon": end["lon"]},
         profile, depart=depart, fcst_hr=forecast_hour_for(depart),
         min_ceiling_ft=min_ceiling_ft, min_visibility_sm=min_visibility_sm, current=current if stops.strip() else None,
-        current_idents=current_idents, current_landed=current_landed, filed=filed, food=food,
+        current_idents=current_idents, current_landed=current_landed, filed=filed, food=nearby.food_at,
     )
+    unread = found.pop("food_unread", None) or []
+    for field in unread:
+        nearby.read_later(field["ident"], field["lat"], field["lon"])
     typed = [s.strip().upper() for s in stops.split(",") if s.strip()]
     chips = _chips(found, typed)
     # The most filed route kept as filed, its airways named, where it

@@ -32,8 +32,8 @@ import shapefile
 from cachetools import TTLCache
 from shapely import STRtree, from_wkb, points as shapely_points, to_wkb
 from shapely.geometry import LineString, Point, shape as shapely_shape
-from shapely.ops import unary_union
 
+from .engine import ask as engine
 from .faa_data import NASR_INDEX_URL, _is_icloud_evicted, download_and_extract, find_current_cycle_page, find_download_link
 
 CONTROLLED_CLASSES = ("B", "C", "D")
@@ -483,30 +483,28 @@ def airspace_ceiling_profile(route_start: tuple, route_end: tuple, fixes: list, 
     return ceilings
 
 
-#: Kept from Class B airspace a route is bent round, as a pilot keeps a
-#: margin from its edge rather than skimming it.
-DETOUR_MARGIN_NM = 1.0
-#: A detour no longer than the route by more than this is offered.
-DETOUR_MAX_ADDED_NM = 40.0
-#: What a fix that is not a VFR waypoint costs in the ranking, in miles:
-#: a VFR pilot flies to the magenta flags on the sectional by eye, and a
-#: GPS fix only where it saves more than this.
-DETOUR_NON_VFR_NM = 10.0
-
-
-#: How many ways round a pilot is offered to choose from.
-DETOUR_CHOICES = 5
-
-#: How far the eased outline _detour_through sorts lines by first may
-#: stray from the Class B's own, in degrees (about 0.1 nm); the real
-#: outline still decides every line near its margin.
-WALL_EASED_DEG = 0.002
-
-#: detour_waypoints by leg and the Class B in its way, bounded. The
-#: airspace changes only with the FAA's chart cycle; six hours is well
+#: detour_waypoints by leg, altitude and the Class B in its way, bounded.
+#: The airspace changes only with the FAA's chart cycle; six hours is well
 #: inside one.
 _DETOURS: TTLCache = TTLCache(maxsize=256, ttl=6 * 3600)
 _DETOURS_LOCK = threading.Lock()
+
+
+def _shelves(polygons: list, own: set) -> list[dict]:
+    """The Class B shelves among `polygons` other than the flight's own
+    (own_class_b), as the engine reads them: floor, ceiling and rings of
+    [lat, lon] (the shapefile's are lon/lat)."""
+    out = []
+    for p in polygons:
+        if p["class"] not in CLEARANCE_CLASSES or p["name"] in own:
+            continue
+        geometry = p["geometry"]
+        rings = []
+        for part in getattr(geometry, "geoms", [geometry]):
+            for ring in (part.exterior, *part.interiors):
+                rings.append([[float(y), float(x)] for x, y in ring.coords])
+        out.append({"floor_ft_msl": p["floor_ft_msl"], "ceiling_ft_msl": p.get("ceiling_ft_msl"), "rings": rings})
+    return out
 
 
 def detour_waypoints(route_start: tuple, route_end: tuple, shp_path, below_ft: float) -> list[dict]:
@@ -514,115 +512,47 @@ def detour_waypoints(route_start: tuple, route_end: tuple, shp_path, below_ft: f
     airspace whose floor is under `below_ft` -- the lowest altitude the
     route can fly there, so a shelf above it is passed under -- the ones
     adding the least distance first, a VFR waypoint (VPBNG, on the
-    sectional) before a GPS fix (wingtip.fixes): at most DETOUR_CHOICES, none
-    further than DETOUR_MAX_ADDED_NM. The route's own surface areas
-    aside, as for the ceiling. Each as {"ident", "kind", "added_nm"}."""
+    sectional) before a GPS fix (wingtip.fixes): the engine's choice
+    (class_b_detours, #482 phase 5), the fixes round the Class B read
+    here. The route's own surface areas aside, as for the ceiling. Each as
+    {"ident", "kind", "added_nm"}."""
     from . import fixes
     from .geo import corridor_bbox
 
-    start_point, end_point = Point(route_start[1], route_start[0]), Point(route_end[1], route_end[0])
-    polygons = load_controlled_airspace(shp_path, corridor_bbox(route_start, route_end, buffer_nm=30.0))
-    own = own_class_b(polygons, start_point, end_point)
-    blocking = [
-        p["geometry"] for p in polygons
-        if p["class"] in CLEARANCE_CLASSES and p["floor_ft_msl"] < below_ft and p["name"] not in own
-    ]
-    if not blocking:
-        return []
-    # The same ways round for every altitude with the same airspace under
-    # it: Atlanta's Class B blocks 8,000 ft and 12,000 ft alike, and each
-    # altitude picked worked them out again (2026-10-21).
-    key = (tuple(route_start), tuple(route_end), tuple(sorted((p["name"], p["floor_ft_msl"], p["geometry"].bounds) for p in polygons
-                                                if p["class"] in CLEARANCE_CLASSES and p["floor_ft_msl"] < below_ft
-                                                and p["name"] not in own)))
+    key = (tuple(route_start), tuple(route_end), below_ft)
     with _DETOURS_LOCK:
         if key in _DETOURS:
             return _DETOURS[key]
-    # Their bounds piece by piece: a union of them all here as well as in
-    # _detour_through was half a second round Atlanta.
-    bounds = [g.bounds for g in blocking]
-    west, south = min(b[0] for b in bounds), min(b[1] for b in bounds)
-    east, north = max(b[2] for b in bounds), max(b[3] for b in bounds)
-    pad = DETOUR_MAX_ADDED_NM / 60.0
-    ways = _detour_through(route_start, route_end, blocking, fixes.within(south - pad, west - pad, north + pad, east + pad))
+    start_point, end_point = Point(route_start[1], route_start[0]), Point(route_end[1], route_end[0])
+    polygons = load_controlled_airspace(shp_path, corridor_bbox(route_start, route_end, buffer_nm=30.0))
+    shelves = _shelves(polygons, own_class_b(polygons, start_point, end_point))
+    if not shelves:
+        return []
+    # The fixes within a degree of the Class B, more than any detour the
+    # engine offers adds; it takes the ones near enough.
+    lats = [pt[0] for shelf in shelves for ring in shelf["rings"] for pt in ring]
+    lons = [pt[1] for shelf in shelves for ring in shelf["rings"] for pt in ring]
+    near = fixes.within(min(lats) - 1.0, min(lons) - 1.0, max(lats) + 1.0, max(lons) + 1.0)
+    ways = engine("class_b_detours", start=list(route_start), end=list(route_end), below_ft=below_ft, shelves=shelves,
+                  fixes=[{"ident": f["ident"], "lat": f["lat"], "lon": f["lon"], "vfr": bool(f.get("vfr")), "kind": f.get("kind") or ""}
+                         for f in near])
     with _DETOURS_LOCK:
         _DETOURS[key] = ways
     return ways
 
 
 def class_b_entered(route_start: tuple, route_end: tuple, shp_path, altitude_ft: float) -> bool:
-    """Whether a straight leg flown at `altitude_ft` enters Class B -- a
-    piece whose floor is at or under it and whose ceiling is at or over
-    it (14 CFR 91.131: an ATC clearance before entering) -- other than its
-    own fields' (own_class_b), which a flight in or out of them enters
-    anyway. Under a shelf or over the top, it does not."""
+    """Whether a straight leg flown at `altitude_ft` enters Class B other
+    than its own fields' (own_class_b), which a flight in or out of them
+    enters anyway: the engine's (class_b_entered, 14 CFR 91.131), on the
+    shelves read here."""
     from .geo import corridor_bbox
 
     start_point, end_point = Point(route_start[1], route_start[0]), Point(route_end[1], route_end[0])
     polygons = load_controlled_airspace(shp_path, corridor_bbox(route_start, route_end, buffer_nm=2.0))
-    own = own_class_b(polygons, start_point, end_point)
-    leg = LineString([(route_start[1], route_start[0]), (route_end[1], route_end[0])])
-    return any(
-        p["class"] in CLEARANCE_CLASSES and p["name"] not in own
-        and p["floor_ft_msl"] <= altitude_ft and (p.get("ceiling_ft_msl") is None or altitude_ft <= p["ceiling_ft_msl"])
-        and p["geometry"].intersects(leg)
-        for p in polygons
-    )
-
-
-def _detour_through(route_start: tuple, route_end: tuple, blocking: list, candidates: list[dict]) -> list[dict]:
-    """detour_waypoints' choice among `candidates` (fixes, as wingtip.fixes
-    has them) round the `blocking` geometries, lon/lat as the shapefile's.
-
-    Measured and tested whole, not a fix at a time: round Atlanta's Class
-    B some eight thousand fixes are near enough to weigh, and one shapely
-    call per leg to each was two seconds of every altitude a pilot picked
-    on a long route (2026-10-21, KSTL-KJAX)."""
-    import numpy as np
-    import shapely
-
-    from .geo import distance_nm
-
-    # The Class B's arcs as the shapefile draws them are tens of thousands
-    # of points round Atlanta, slow to test thousands of lines against.
-    # Eased to within WALL_EASED_DEG (Douglas-Peucker: no point of either
-    # outline further than that from the other), a wall widened by twice
-    # that holds the real one and one narrowed by as much lies inside it:
-    # a line clear of the wider is clear, one into the narrower is not, and
-    # only the few between are tested against the real wall -- the same
-    # answer, quickly.
-    airspace = unary_union(blocking)
-    margin = DETOUR_MARGIN_NM / 60.0
-    exact = airspace.buffer(margin)
-    eased = airspace.simplify(WALL_EASED_DEG)
-    wider, narrower = eased.buffer(margin + 2 * WALL_EASED_DEG), eased.buffer(margin - 2 * WALL_EASED_DEG)
-    for wall in (exact, wider, narrower):
-        shapely.prepare(wall)
-    direct = distance_nm(*route_start, *route_end)
-    if not candidates:
-        return []
-    lat = np.array([fix["lat"] for fix in candidates], dtype=float)
-    lon = np.array([fix["lon"] for fix in candidates], dtype=float)
-    added = distance_nm(route_start[0], route_start[1], lat, lon) + distance_nm(lat, lon, route_end[0], route_end[1]) - direct
-    near = np.flatnonzero(added <= DETOUR_MAX_ADDED_NM)
-    if not len(near):
-        return []
-    starts = np.repeat([[route_start[1], route_start[0]]], len(near), axis=0)
-    ends = np.repeat([[route_end[1], route_end[0]]], len(near), axis=0)
-    vias = np.column_stack([lon[near], lat[near]])
-    legs = (shapely.linestrings(np.stack([starts, vias], axis=1)), shapely.linestrings(np.stack([vias, ends], axis=1)))
-
-    inbound, outbound = legs
-    blocked = shapely.intersects(narrower, inbound) | shapely.intersects(narrower, outbound)
-    unsure = ~blocked & (shapely.intersects(wider, inbound) | shapely.intersects(wider, outbound))
-    blocked[unsure] = shapely.intersects(exact, inbound[unsure]) | shapely.intersects(exact, outbound[unsure])
-    clear = ~blocked
-    ranked = []
-    for i in near[clear]:
-        fix = candidates[i]
-        rank = float(added[i]) + (0.0 if fix.get("vfr") else DETOUR_NON_VFR_NM)
-        ranked.append((rank, {"ident": fix["ident"], "kind": fix.get("kind", "Fix"), "added_nm": round(float(added[i]), 1)}))
-    return [detour for _, detour in sorted(ranked, key=lambda r: (r[0], r[1]["ident"]))[:DETOUR_CHOICES]]
+    shelves = _shelves(polygons, own_class_b(polygons, start_point, end_point))
+    return bool(shelves) and engine("class_b_entered", start=list(route_start), end=list(route_end), altitude_ft=altitude_ft,
+                                    shelves=shelves)
 
 
 def airspace_transits(route_start: tuple, route_end: tuple, shp_path, fixes: list | None = None) -> list:

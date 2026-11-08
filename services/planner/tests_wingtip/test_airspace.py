@@ -234,10 +234,11 @@ def test_an_airports_own_class_is_the_most_restrictive_reaching_the_surface_ther
 # reaches the ground. The detour is the named fix whose two legs keep
 # out of it, adding the least distance, a VFR waypoint before a GPS fix.
 
-from wingtip.airspace import DETOUR_CHOICES, _detour_through  # noqa: E402
-
 # A square of Class B, a tenth of a degree across, on the line from
-# (0, 0) north to (1, 0) -- lon/lat, as the shapefile's.
+# (0, 0) north to (1, 0) -- lon/lat, as the shapefile's. The choice itself
+# is the engine's (class_b_detours, route/options/classb.rs, whose tests
+# hold the margin, the VFR waypoint's preference and the handful); here,
+# that the planner's shelves and fixes reach it.
 _CORE = Polygon([(-0.1, 0.4), (0.1, 0.4), (0.1, 0.6), (-0.1, 0.6)])
 
 
@@ -245,37 +246,25 @@ def _fix(ident, lat, lon, vfr=True):
     return {"ident": ident, "lat": lat, "lon": lon, "vfr": vfr, "kind": "VFR waypoint" if vfr else "GPS waypoint"}
 
 
-def test_the_detour_is_the_shortest_way_round_out_of_the_class_b():
+def test_the_detour_is_the_shortest_way_round_out_of_the_class_b(monkeypatch):
+    from wingtip import fixes
+
     near, far = _fix("VPNEAR", 0.5, -0.2), _fix("VPFAR", 0.5, -0.6)
     through = _fix("VPMID", 0.5, 0.0)  # inside it: no way round at all
+    monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp_path, bbox: [_piece("CHICAGO CLASS B", 0, 10000)])
+    monkeypatch.setattr(airspace, "own_class_b", lambda polygons, start, end: set())
+    monkeypatch.setattr(fixes, "within", lambda south, west, north, east: [far, through, near])
+    airspace._DETOURS.clear()
 
-    ways = _detour_through((0.0, 0.0), (1.0, 0.0), [_CORE], [far, through, near])
+    ways = airspace.detour_waypoints((0.0, 0.0), (1.0, 0.0), "x.shp", 4500)
 
     assert [w["ident"] for w in ways] == ["VPNEAR", "VPFAR"]
     assert ways[0]["kind"] == "VFR waypoint"
     assert 0 < ways[0]["added_nm"] < 5
-
-
-def test_a_leg_skimming_its_edge_is_not_a_way_round():
-    # A mile's margin: a fix just outside the edge has its legs within it.
-    assert _detour_through((0.0, 0.0), (1.0, 0.0), [_CORE], [_fix("VPEDGE", 0.5, -0.105)]) == []
-
-
-def test_a_vfr_waypoint_comes_before_a_gps_fix_that_saves_less_than_ten_miles():
-    gps = _fix("GPSNR", 0.5, -0.15, vfr=False)
-    vfr = _fix("VPOUT", 0.5, -0.25)
-
-    assert [w["ident"] for w in _detour_through((0.0, 0.0), (1.0, 0.0), [_CORE], [gps, vfr])] == ["VPOUT", "GPSNR"]
-
-
-def test_no_fix_within_reach_is_no_detour():
-    assert _detour_through((0.0, 0.0), (1.0, 0.0), [_CORE], [_fix("VPGONE", 0.5, -3.0)]) == []
-
-
-def test_a_handful_to_choose_from_at_most():
-    many = [_fix(f"VP{i:03d}", 0.5, -0.2 - i * 0.01) for i in range(DETOUR_CHOICES + 3)]
-
-    assert len(_detour_through((0.0, 0.0), (1.0, 0.0), [_CORE], many)) == DETOUR_CHOICES
+    # A shelf over the lowest altitude there is passed under.
+    monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp_path, bbox: [_piece("CHICAGO CLASS B", 6000, 10000)])
+    airspace._DETOURS.clear()
+    assert airspace.detour_waypoints((0.0, 0.0), (1.0, 0.0), "y.shp", 4500) == []
 
 
 # --- Whether a leg enters Class B at its altitude --------------------------

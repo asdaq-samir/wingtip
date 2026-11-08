@@ -1,7 +1,11 @@
 """wingtip.route_options: the ways round storms, weather under the pilot's
-minimums, prohibited airspace and high ground, with the fuel stops."""
+minimums, prohibited airspace and high ground, with the fuel stops -- the
+engine's (route_options, engine/crates/route/src/route/options.rs, whose
+own tests hold the grid's measures and the naming of the kinds), asked on
+what the planner reads, here put in by each test."""
 
 import time
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -44,12 +48,11 @@ def sky(monkeypatch):
     data = {"tafs": [], "metars": {}, "airsigmets": [], "gairmets": []}
     monkeypatch.setattr(weather, "_dataset", lambda name: data[name])
     monkeypatch.setattr(weather, "wind_stations", lambda fcst_hr="06": ([], np.array([]), np.array([]), []))
-    monkeypatch.setattr(terrain_detour, "_heights_ft", lambda lats, lons: np.zeros(lats.shape))
+    monkeypatch.setattr(terrain_detour, "heights_ft", lambda lats, lons: np.zeros(lats.shape))
     monkeypatch.setattr(sua, "areas_in", lambda bbox: [])
     monkeypatch.setattr(tfr, "all_tfrs", lambda: [])
     monkeypatch.setattr(sun, "is_night", lambda lat, lon, at: False)
-    monkeypatch.setattr(fuelstops, "paved_runway_ft", lambda ident: 5000)
-    monkeypatch.setattr(fixes, "frd_near", lambda lat, lon, max_nm=0: {"ident": f"P{lat:.2f}/{lon:.2f}", "name": "point"})
+    monkeypatch.setattr(fuelstops, "paved_runways", lambda: defaultdict(lambda: 5000))
     # No fix to turn at unless a test puts one there.
     monkeypatch.setattr(fixes, "within", lambda south, west, north, east: [])
     # Dry land everywhere unless a test floods it.
@@ -85,8 +88,8 @@ def test_a_thunderstorm_on_the_line_is_gone_round_by_twenty_miles(sky):
     fastest = out["options"][0]
     assert fastest["stops"], "a way round needs a turn"
     assert fastest["crosses"] == []
-    # AIM 7-1-29's 20 miles, less the grid's half cell.
-    assert nearest_nm(fastest["path"], 0.0, 2.0) >= route_options.STORM_NM - 8
+    # AIM 7-1-27's 20 miles, less the grid's half cell.
+    assert nearest_nm(fastest["path"], 0.0, 2.0) >= 20.0 - 8
 
 
 def test_the_pilots_minimums_close_what_the_rules_alone_would_not(sky):
@@ -174,13 +177,14 @@ def test_an_ifr_g_airmet_between_the_fields_is_gone_round(sky):
 
 def test_where_nothing_keeps_clear_the_way_crossing_least_is_offered_with_what_it_crosses(monkeypatch, sky):
     # A wall of high ground across the whole grid, over the airplane's reach.
-    monkeypatch.setattr(terrain_detour, "_heights_ft",
+    monkeypatch.setattr(terrain_detour, "heights_ft",
                         lambda lats, lons: np.where(np.abs(lons - 2.0) < 0.3, 20000.0, 0.0))
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     assert out["options"], "a way is offered all the same"
     crossing = out["options"][0]
     assert [out["hazards"][i]["kind"] for i in crossing["crosses"]] == ["terrain"]
-    assert len(crossing["stops"]) <= route_options.MAX_TURNS
+    # The engine's most turns a pilot would fly (MAX_TURNS).
+    assert len(crossing["stops"]) <= 8
 
 
 def test_each_way_says_the_weather_it_meets_its_wind_and_its_floor(sky):
@@ -224,7 +228,7 @@ def test_a_landing_the_pilot_makes_is_a_refuel_not_a_stop_to_add(sky):
     assert own["stops"] == ["MID"]
     assert own["fuel"] == []
     # Its landing counted, with the owner's 30 minutes on the ground.
-    assert own["landings"] == 1 and own["ground_min"] == route_options.TURNAROUND_MIN
+    assert own["landings"] == 1 and own["ground_min"] == 30.0
     # Flown over instead (a fix), the whole 600 nm is one flight that needs a stop.
     over = route_options.options(DEP, dest, PROFILE, fields=table, current=current, current_idents=["MINE"], current_landed=[False])
     assert over["own"]["fuel"], "a stop is needed when nothing is landed at"
@@ -244,7 +248,6 @@ def test_a_way_no_fuel_field_reaches_is_offered_with_that_said(sky):
 
 def test_a_turn_with_no_fix_near_is_a_position_of_the_pilots_own(monkeypatch, sky):
     sky["tafs"].append(taf("STRM", 0.0, 2.0, wx="TSRA"))
-    monkeypatch.setattr(route_options.fixes, "frd_near", lambda lat, lon: None)
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     way = out["options"][0]
     assert way["stops"], "the way round the storm turns somewhere"
@@ -254,7 +257,7 @@ def test_a_turn_with_no_fix_near_is_a_position_of_the_pilots_own(monkeypatch, sk
 def test_terrain_that_cannot_be_read_is_said_not_fatal(monkeypatch, sky):
     def down(lats, lons):
         raise OSError("tiles unreachable")
-    monkeypatch.setattr(terrain_detour, "_heights_ft", down)
+    monkeypatch.setattr(terrain_detour, "heights_ft", down)
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     assert "terrain" in out["unchecked"]
     assert out["options"]
@@ -263,7 +266,7 @@ def test_terrain_that_cannot_be_read_is_said_not_fatal(monkeypatch, sky):
 def test_the_floor_told_is_the_ground_with_its_thousand_feet_alone(sky):
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     # Sea level everywhere: 91.119's 1,000 ft, not the coarse read's margin too.
-    assert out["options"][0]["floor_ft"] == terrain_detour.TERRAIN_MARGIN_FT
+    assert out["options"][0]["floor_ft"] == 1000
 
 
 def test_the_pilots_own_route_is_given_as_a_path_for_the_map(sky):
@@ -324,7 +327,8 @@ def test_the_options_judge_water_from_the_lowest_cruise_and_the_airplanes_speed(
         return np.zeros((rows * per, cols * per), dtype=bool)
     monkeypatch.setattr(water, "out_of_glide_samples", spy)
     route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
-    assert seen["height_ft"] == route_options.LOWEST_CRUISE_FT
+    # The engine's lowest cruise, 2,500 ft (LOWEST_CRUISE_FT).
+    assert seen["height_ft"] == 2500.0
     assert seen["speed_kt"] > 40.0
 
 
@@ -396,35 +400,6 @@ def test_a_fuel_stop_whose_way_in_crosses_a_storm_is_not_landed_at(sky):
         assert "BEHIND" not in option["fuel"]
 
 
-def test_the_fastest_is_the_way_that_is_fastest_whatever_search_found_it(sky):
-    # Two ways a search may find, the one called fastest the slower: the
-    # name goes to the quicker (KSEA to KSFO's "fastest" was 110 minutes
-    # slower than the best weather's, out over the Pacific, 2026-10-25).
-    grid = route_options._Grid((0.0, 0.0), (0.0, 4.0))
-    slow = {"kind": "fastest", "kinds": ["fastest"], "title": "Fastest", "air_min": 600.0, "ground_min": 0.0,
-            "crosses": [], "marginal": [], "landings": 0, "stops": ["A"]}
-    quick = {"kind": "weather", "kinds": ["weather"], "title": "Best weather", "air_min": 490.0, "ground_min": 0.0,
-             "crosses": [], "marginal": [], "landings": 0, "stops": ["B"]}
-    named = route_options._named_by_what_they_are(grid, [slow, quick])
-    assert named == [quick]
-    assert set(quick["kinds"]) == {"weather", "fastest", "stops"} and quick["kind"] == "weather"
-
-
-def test_the_cells_near_a_point_are_the_whole_grids_measure_in_its_box():
-    # near() measures only the box round the point: the same cells as
-    # measuring every one, north and south, wide and narrow, and for a
-    # point off the grid's edge.
-    rng = np.random.default_rng(7)
-    for start, end in [((42.2, -88.0), (39.8, -104.7)), ((25.8, -80.3), (47.5, -122.3)), ((61.2, -150.0), (64.8, -147.9))]:
-        grid = route_options._Grid(start, end)
-        for _ in range(40):
-            lat = rng.uniform(grid.lat0 - 0.5, grid.lat0 + grid.rows * route_options.CELL_DEG + 0.5)
-            lon = rng.uniform(grid.lon0 - 0.5, grid.lon0 + grid.cols * route_options.CELL_DEG + 0.5)
-            nm = float(rng.choice([route_options.STORM_NM, route_options.FIELD_WX_NM, route_options.MARGINAL_NM]))
-            whole = geo.distance_nm(lat, lon, grid.lat_grid, grid.lon_grid) <= nm
-            assert (grid.near(lat, lon, nm) == whole).all()
-
-
 def test_the_most_filed_route_is_flown_over_its_fixes_with_its_fuel_stops_put_in(sky):
     dest = {"ident": "CCC", "lat": 0.0, "lon": 10.0}
     table = fields(*[(f"F{k}", 0.0, float(k)) for k in range(1, 10)])
@@ -443,7 +418,7 @@ def test_a_fuel_stop_with_somewhere_to_eat_is_landed_at_among_chains_of_as_many_
     # stop, and of the fields that would do, the one with a meal.
     dest = {"ident": "CCC", "lat": 0.0, "lon": 10.0}
     table = fields(*[(f"F{k}", 0.0, float(k)) for k in range(1, 10)])
-    out = route_options.options(DEP, dest, PROFILE, fields=table, food=lambda ident, lat, lon: ident == "F6")
+    out = route_options.options(DEP, dest, PROFILE, fields=table, food=lambda ident: ident == "F6")
     own = out["own"]
     assert own["fuel"] == ["F6"] and own["food"] == ["F6"] and own["landings"] == 1
     for option in out["options"]:
@@ -455,5 +430,25 @@ def test_a_meal_never_costs_another_landing(sky):
     # reach, so a second stop -- the one stop elsewhere is kept, no meal.
     dest = {"ident": "CCC", "lat": 0.0, "lon": 10.0}
     table = fields(*[(f"F{k}", 0.0, float(k)) for k in range(1, 10)])
-    out = route_options.options(DEP, dest, PROFILE, fields=table, food=lambda ident, lat, lon: ident == "F1")
+    out = route_options.options(DEP, dest, PROFILE, fields=table, food=lambda ident: ident == "F1")
     assert out["own"]["landings"] == 1 and out["own"]["fuel"] != ["F1"] and out["own"]["food"] == []
+
+
+def test_the_fields_whose_places_to_eat_were_not_read_are_said(sky):
+    # Food not read yet at any field: the stops are chosen as with none,
+    # and the fields weighed are named for the planner to read on the side.
+    dest = {"ident": "CCC", "lat": 0.0, "lon": 10.0}
+    table = fields(*[(f"F{k}", 0.0, float(k)) for k in range(1, 10)])
+    out = route_options.options(DEP, dest, PROFILE, fields=table, food=lambda ident: None)
+    assert out["own"]["landings"] == 1 and out["own"]["food"] == []
+    assert {f["ident"] for f in out["food_unread"]} >= set(out["own"]["fuel"])
+    assert route_options.options(DEP, dest, PROFILE, fields=table)["food_unread"] == []
+
+
+def test_a_source_not_read_is_said_unchecked(monkeypatch, sky):
+    def down(name):
+        raise weather.WeatherServiceError("down")
+    monkeypatch.setattr(weather, "_dataset", down)
+    out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
+    assert {"forecasts and reports", "SIGMETs", "G-AIRMETs"} <= set(out["unchecked"])
+    assert out["options"]

@@ -13467,7 +13467,7 @@
         "type": "object"
       },
       "RouteBand": {
-        "description": "A run of the weather a way meets (wingtip.route_options._along): VFR,\nmarginal (MVFR), IFR or a thunderstorm, and how many minutes of the\nflight it lasts, in the order flown.",
+        "description": "A run of the weather a way meets (the engine's route_options): VFR,\nmarginal (MVFR), IFR or a thunderstorm, and how many minutes of the\nflight it lasts, in the order flown.",
         "properties": {
           "kind": {
             "enum": [

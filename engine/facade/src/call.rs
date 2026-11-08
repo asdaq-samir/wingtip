@@ -818,6 +818,9 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         // Instrument approaches taught and debriefed (approach::calls).
         _ if crate::approach::calls::NAMES.contains(&name) => crate::approach::calls::call(name, ask.v),
         _ if crate::route::answers::NAMES.contains(&name) => crate::route::answers::answer(name, ask.v),
+        // Route options, the way round high ground and a point named off a
+        // fix (route::options).
+        _ if crate::route::options::NAMES.contains(&name) => crate::route::options::call(name, ask.v),
         // The things that move (motion::call), then the Go / No-Go's, by
         // their own names (gonogo::calls), last.
         _ => match crate::motion::call(name, ask.v) {
