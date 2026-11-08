@@ -95,6 +95,21 @@ one job (the owner kept both server languages on this split, 2026-11-06):
     other agents.
   - The integration branch keeps a log of each conflict and how it was
     resolved, for the end-of-wave pass and the pull requests.
+- **Fast turnover** (the owner, 2026-11-08, standing):
+  - Start every independent piece at once; start dependent pieces on
+    the branch they depend on, marking the seams (`TODO(<branch>)`)
+    for the integration merge to wire.
+  - Mechanical work (moves, renames, comment and doc cleanups, lint)
+    goes to a faster model; aviation rules and architecture stay on the
+    strongest one.
+  - The end-of-wave pass is one command, `scripts/dev/validate-wave.sh`
+    on `claude/integration`: every check area, the image builds, the
+    smoke browser tests and the phones, then one list of failures.
+  - Decisions the owner must make are gathered onto one page with a
+    recommendation each, not asked one at a time mid-wave; work that
+    doesn't depend on them goes on.
+  - Agent briefs are short and point at files rather than retyping
+    them; this file stays short, with the how-to in the skills.
 - Claude's review is on demand, not a gate (the owner, 2026-11-06): the
   "review" label on a pull request asks for one. The aviation-check skill
   is still applied to every figure or rule while writing it.
