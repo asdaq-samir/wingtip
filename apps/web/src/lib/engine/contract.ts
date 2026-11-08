@@ -862,7 +862,7 @@ export interface EngineContract {
     answer: DebriefMarkedAnswer;
   };
   /**
-   * A checklist typed as text read into the gateway's ChecklistDto.
+   * A checklist typed as text read into its sections, each with its items' challenge and response, as the apps keep and show it.
    */
   checklist_read: {
     input: ChecklistReadInput;

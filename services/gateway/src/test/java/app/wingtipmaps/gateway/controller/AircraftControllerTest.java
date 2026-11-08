@@ -19,7 +19,6 @@ import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AircraftDto;
 import app.wingtipmaps.gateway.service.AircraftService;
-import app.wingtipmaps.gateway.service.ChecklistService;
 import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.SquawkService;
 import app.wingtipmaps.gateway.service.PilotService;
@@ -52,9 +51,6 @@ class AircraftControllerTest {
 
     @MockitoBean
     private PilotService pilotService;
-
-    @MockitoBean
-    private ChecklistService checklistService;
 
     @MockitoBean
     private SquawkService squawkService;
@@ -293,6 +289,12 @@ class AircraftControllerTest {
                 sampleAircraft().recordInspections(java.time.LocalDate.of(2025, 10, 5), 1200.5, 1290.0,
                         java.time.LocalDate.of(2024, 11, 30), java.time.LocalDate.of(2025, 2, 1),
                         java.time.LocalDate.of(2026, 1, 31), java.time.LocalDate.of(2028, 6, 1))));
+        // The days are the engine's, through the planner (inspections_due):
+        // its answer for the airplane's own dates, which the gateway sends.
+        given(planner.inspections(eq(java.time.LocalDate.of(2025, 10, 5)), eq(java.time.LocalDate.of(2026, 1, 31)),
+                eq(java.time.LocalDate.of(2024, 11, 30)), eq(java.time.LocalDate.of(2025, 2, 1)), eq(1200.5), any(), any(), any()))
+                .willReturn(new PlannerClient.Inspections(java.time.LocalDate.of(2026, 10, 31), java.time.LocalDate.of(2027, 1, 31),
+                        java.time.LocalDate.of(2026, 11, 30), java.time.LocalDate.of(2027, 2, 28), 1300.5, null));
 
         mockMvc.perform(put("/api/aircraft/7/inspections").with(oidcLogin()).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -323,25 +325,6 @@ class AircraftControllerTest {
         org.assertj.core.api.Assertions.assertThat(none.annualGoodThrough()).isNull();
         org.assertj.core.api.Assertions.assertThat(none.hundredHourDueAtHours()).isNull();
         org.assertj.core.api.Assertions.assertThat(none.eltBatteryDueOn()).isNull();
-    }
-
-    /** The checklist: someone else's airplane is a 404, a challenge left
-     *  blank a 400, and a good one comes back as it was sent. */
-    @Test
-    void theChecklistIsTheOwnersAndEachItemNeedsItsChallenge() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-        given(checklistService.get(any(), eq(9L))).willReturn(Optional.empty());
-        mockMvc.perform(get("/api/aircraft/9/checklist").with(oidcLogin())).andExpect(status().isNotFound());
-
-        String body = "{\"sections\":[{\"title\":\"Before takeoff\",\"items\":[{\"challenge\":\"Fuel selector\",\"response\":\"Both\"}]}]}";
-        given(checklistService.replace(any(), eq(7L), any())).willAnswer(call -> Optional.of(call.getArgument(2)));
-        mockMvc.perform(put("/api/aircraft/7/checklist").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.sections[0].items[0].response").value("Both"));
-        mockMvc.perform(put("/api/aircraft/7/checklist").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(body.replace("Fuel selector", " ")))
-                .andExpect(status().isBadRequest());
     }
 
     /** Squawks: another pilot's airplane's a 404; one with no words, or

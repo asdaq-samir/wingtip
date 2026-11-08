@@ -298,7 +298,6 @@ export type AircraftRequest = Gateway["AircraftRequest"];
 export type VorCheckRequest = Gateway["VorCheckRequest"];
 export type InspectionsRequest = Gateway["InspectionsRequest"];
 export type Inspections = Gateway["InspectionsDto"];
-export type ChecklistDto = Gateway["ChecklistDto"];
 export type Squawk = Gateway["SquawkDto"];
 export type SquawkRequest = Gateway["SquawkRequest"];
 export type Reminders = Gateway["RemindersDto"];

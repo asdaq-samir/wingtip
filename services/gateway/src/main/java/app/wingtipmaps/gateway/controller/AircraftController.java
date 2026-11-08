@@ -3,7 +3,6 @@ package app.wingtipmaps.gateway.controller;
 import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.dto.AircraftDto;
 import app.wingtipmaps.gateway.dto.AircraftRequest;
-import app.wingtipmaps.gateway.dto.ChecklistDto;
 import app.wingtipmaps.gateway.dto.DueItemDto;
 import app.wingtipmaps.gateway.dto.DueItemRequest;
 import app.wingtipmaps.gateway.service.DueItemService;
@@ -13,7 +12,6 @@ import app.wingtipmaps.gateway.dto.SquawkDto;
 import app.wingtipmaps.gateway.dto.SquawkRequest;
 import app.wingtipmaps.gateway.dto.VorCheckRequest;
 import app.wingtipmaps.gateway.service.AircraftService;
-import app.wingtipmaps.gateway.service.ChecklistService;
 import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.SquawkService;
 import jakarta.validation.Valid;
@@ -45,16 +43,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class AircraftController {
 
     private final AircraftService aircraftService;
-    private final ChecklistService checklists;
     private final SquawkService squawks;
     private final PilotService pilots;
     private final PlannerClient planner;
     private final DueItemService dueItems;
 
-    public AircraftController(AircraftService aircraftService, ChecklistService checklists, SquawkService squawks,
+    public AircraftController(AircraftService aircraftService, SquawkService squawks,
                               PilotService pilots, PlannerClient planner, DueItemService dueItems) {
         this.aircraftService = aircraftService;
-        this.checklists = checklists;
         this.squawks = squawks;
         this.pilots = pilots;
         this.planner = planner;
@@ -101,19 +97,6 @@ public class AircraftController {
         return PilotResponses.found(pilots, authentication, pilot -> aircraftService
                 .recordInspections(pilot, id, request)
                 .map(this::toDto));
-    }
-
-    /** The airplane's checklist, its sections in order. */
-    @GetMapping("/{id}/checklist")
-    public ResponseEntity<ChecklistDto> checklist(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.found(pilots, authentication, pilot -> checklists.get(pilot, id));
-    }
-
-    /** The airplane's checklist, replaced whole as its editor saves it. */
-    @PutMapping("/{id}/checklist")
-    public ResponseEntity<ChecklistDto> saveChecklist(
-            Authentication authentication, @PathVariable Long id, @Valid @RequestBody ChecklistDto request) {
-        return PilotResponses.found(pilots, authentication, pilot -> checklists.replace(pilot, id, request));
     }
 
     /** The airplane's squawks, newest first. */

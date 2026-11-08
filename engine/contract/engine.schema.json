@@ -1369,7 +1369,7 @@
       "additionalProperties": false
     },
     "checklist_read": {
-      "description": "A checklist typed as text read into the gateway's ChecklistDto.",
+      "description": "A checklist typed as text read into its sections, each with its items' challenge and response, as the apps keep and show it.",
       "type": "object",
       "properties": {
         "input": {

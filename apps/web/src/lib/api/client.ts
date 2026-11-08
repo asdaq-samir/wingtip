@@ -3,7 +3,7 @@ import type { paths } from "./schema";
 import type { paths as AssistantPaths } from "./assistant-schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
-import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, ChecklistDto, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces, DueItem, DueItemRequest, Paperwork } from "./types";
+import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces, DueItem, DueItemRequest, Paperwork } from "./types";
 
 /**
  * Every call the pages make. Both servers' calls go through
@@ -761,11 +761,6 @@ export const api = {
      *  91.411, 91.413, 91.207). */
     inspections: (id: number, request: InspectionsRequest) =>
       gateway.PUT("/api/aircraft/{id}/inspections", { params: { path: { id } }, body: request }).then(data<Aircraft>),
-    /** Its checklist, as its owner wrote it, and that replaced whole. */
-    checklist: (id: number) =>
-      gateway.GET("/api/aircraft/{id}/checklist", { params: { path: { id } } }).then(data<ChecklistDto>),
-    saveChecklist: (id: number, checklist: ChecklistDto) =>
-      gateway.PUT("/api/aircraft/{id}/checklist", { params: { path: { id } }, body: checklist }).then(data<ChecklistDto>),
     /** Its squawks, newest first; one written, changed or fixed, or taken out. */
     squawks: (id: number) => gateway.GET("/api/aircraft/{id}/squawks", { params: { path: { id } } }).then(data<Squawk[]>),
     addSquawk: (id: number, squawk: SquawkRequest) =>

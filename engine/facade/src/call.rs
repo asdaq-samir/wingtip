@@ -142,8 +142,8 @@
 //!   "utc": [day, minute], "local"?: [day, minute]}` (day 0 Sunday; the
 //!   host works the clocks out in the area's own time zone, which the
 //!   engine has no database of).
-//! - `checklist_read`: a checklist typed as text read into the gateway's
-//!   ChecklistDto, `{"sections": [{"title", "items": [{"challenge",
+//! - `checklist_read`: a checklist typed as text read into its sections,
+//!   `{"sections": [{"title", "items": [{"challenge",
 //!   "response"}]}]}`, from `{"text"}`;
 //! - `checklist_write`: that checklist as text again, from `{"checklist"}`;
 //! - `csv_rows`: a CSV file's rows of fields, from `{"text"}`;
@@ -650,7 +650,7 @@ fn strings(out: &mut String, items: &[String]) {
     out.push(']');
 }
 
-/// A ChecklistDto's sections, `{"checklist": {"sections": [...]}}`.
+/// A checklist's sections, `{"checklist": {"sections": [...]}}`.
 fn checklist_sections(ask: &Ask) -> Result<Vec<checklist::Section>, String> {
     let bad = || "checklist_write: \"checklist\" is not {\"sections\": [{\"title\", \"items\": [{\"challenge\", \"response\"}]}]}".to_owned();
     let sections = ask.v.get("checklist").and_then(|c| c.get("sections")).and_then(Value::as_array).ok_or_else(bad)?;

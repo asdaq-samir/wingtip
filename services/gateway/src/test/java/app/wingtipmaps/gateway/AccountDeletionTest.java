@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.wingtipmaps.gateway.domain.Aircraft;
-import app.wingtipmaps.gateway.domain.ChecklistItem;
 import app.wingtipmaps.gateway.domain.DeferredFor;
 import app.wingtipmaps.gateway.domain.Squawk;
 import app.wingtipmaps.gateway.domain.Endorsement;
@@ -19,7 +18,6 @@ import app.wingtipmaps.gateway.domain.MagicLink;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.Subscription;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
-import app.wingtipmaps.gateway.repository.ChecklistItemRepository;
 import app.wingtipmaps.gateway.repository.SquawkRepository;
 import app.wingtipmaps.gateway.repository.EndorsementRepository;
 import app.wingtipmaps.gateway.repository.FlightRepository;
@@ -81,7 +79,6 @@ class AccountDeletionTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private PilotRepository pilots;
     @Autowired private AircraftRepository aircraft;
-    @Autowired private ChecklistItemRepository checklistItems;
     @Autowired private SquawkRepository squawks;
     @Autowired private FlightRepository flights;
     @Autowired private FlightTrackRepository tracks;
@@ -134,7 +131,6 @@ class AccountDeletionTest {
                         .withLeg(4.0, 319.0, 322.0, 116.0, 2.1, 0.3),
                 new FlightCheckpoint(1, "KDLH", "destination", 46.8421, -92.1936, 323.4)), 2500, 323.6, 171.0, 24.2));
         tracks.save(new FlightTrack(flight.getId(), "test", "[[42.3,-88.1],[46.8,-92.2]]", 2));
-        checklistItems.save(new ChecklistItem(plane, 0, "Before takeoff", "Fuel selector", "Both"));
         squawks.save(new Squawk(plane).set(LocalDate.of(2026, 10, 1), "Landing light out", true, DeferredFor.VFR_DAY, null, null));
         logbook.save(new LogbookEntry(pilot).set(LocalDate.of(2026, 10, 1), "N12345", "C172", "C81-KDLH",
                 2.5, 0, 2.5, 1, 0, null));
@@ -186,8 +182,6 @@ class AccountDeletionTest {
                         + "WHERE f.pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject("SELECT count(*) FROM flight_tracks t JOIN flights f ON f.id = t.flight_id "
                         + "WHERE f.pilot_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM aircraft_checklist_items c JOIN aircraft a ON a.id = c.aircraft_id "
-                        + "WHERE a.pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject("SELECT count(*) FROM aircraft_squawks s JOIN aircraft a ON a.id = s.aircraft_id "
                         + "WHERE a.pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject("SELECT count(*) FROM logbook_entries WHERE pilot_id = ?", Integer.class, id),

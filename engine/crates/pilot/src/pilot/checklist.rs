@@ -2,10 +2,10 @@
 //! starting "#" a section, every other line an item, its challenge and its
 //! response split by a dash or a run of dots, as a printed checklist sets
 //! them ("Fuel selector -- Both", "Mixture ..... Rich"). What the editor
-//! shows and what it saves (the gateway's ChecklistDto). An item before
-//! any section is in "Checklist". The gateway's limits are the text's: 40
-//! characters a section's title, 80 a challenge or a response, counted in
-//! UTF-16 code units as Java counts them. The app writes none of its own:
+//! shows and what each app keeps on the device (#220). An item before
+//! any section is in "Checklist". Its limits, which the gateway's stored
+//! copy had: 40 characters a section's title, 80 a challenge or a
+//! response, counted in UTF-16 code units as Java counted them. The app writes none of its own:
 //! the flight manual's is the airplane's.
 //!
 //! The web app's lib/checklist, moved here whole.
@@ -115,7 +115,7 @@ pub fn read(text: &str) -> Vec<Section> {
     sections
 }
 
-/// The checklist as ChecklistDto's JSON, `{"sections": [{"title", "items":
+/// The checklist as JSON, `{"sections": [{"title", "items":
 /// [{"challenge", "response"}]}]}`, a response null where there is none.
 pub fn to_json(sections: &[Section]) -> String {
     let mut out = String::from("{\"sections\":[");

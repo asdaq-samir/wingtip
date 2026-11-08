@@ -8,8 +8,8 @@ import org.springframework.util.StringUtils;
 
 /**
  * What a pilot or a setting typed, made the one way every service keeps
- * it: blank is none, the ends trimmed. The aircraft, logbook, checklist,
- * squawk, contact and instructor fields each carried their own copy.
+ * it: blank is none, the ends trimmed. The aircraft, logbook, squawk,
+ * contact and instructor fields each carried their own copy.
  */
 public final class Typed {
 
