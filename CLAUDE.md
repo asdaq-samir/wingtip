@@ -71,6 +71,29 @@ one job (the owner kept both server languages on this split, 2026-11-06):
     Only then a few grouped pull requests to `main`, which merge by
     themselves once "CI passed" is green (auto-merge-agents.yml); nothing
     merges red, and CI runs once on code that has already passed.
+- **Parallel work that merges cleanly** (the owner, 2026-11-08: "avoid
+  time wasted"):
+  - Split work by area, so two agents never own the same files. Each
+    brief names what the agent owns and what it must leave alone; a
+    change another agent's area needs goes in the report, not the code.
+  - Generated files are never merged by hand. On a conflict in
+    `apps/web/src/lib/engine/contract.ts`, the `.wasm`, the API
+    documents and types, or the phones' generated models, take either
+    side and regenerate with the scripts (`npm run types`,
+    `scripts/build/build-engine-wasm.sh`, `engine-contract-apps.sh`,
+    `api-models-apps.sh`). The integration branch regenerates once after
+    each merge.
+  - Shared lists (`call.rs`, `engine.schema.json`, `docker-compose.yml`,
+    `ci.yml`, `scripts/dev/check.sh`, the CloudFormation template, the
+    docs' service tables): add an entry in its own block, in the list's
+    order, and change no neighbouring line, so merges are additive.
+  - Branches don't merge `main` in during a wave; the integration branch
+    does, once.
+  - Moves and renames across the tree (a folder regroup, a package
+    rename) run alone, at the start or the end of a wave, never beside
+    other agents.
+  - The integration branch keeps a log of each conflict and how it was
+    resolved, for the end-of-wave pass and the pull requests.
 - Claude's review is on demand, not a gate (the owner, 2026-11-06): the
   "review" label on a pull request asks for one. The aviation-check skill
   is still applied to every figure or rule while writing it.
