@@ -7,6 +7,9 @@ use serde_json::{json, Value};
 use std::path::PathBuf;
 use wingtip_engine::call::call;
 
+mod common;
+use common::assert_same;
+
 fn fixture(name: &str) -> Value {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures").join(name);
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
@@ -20,7 +23,7 @@ fn ask(name: &str, input: Value) -> Value {
 fn the_limits_and_the_altitudes_allowed() {
     let f = fixture("altitudes.json");
     for case in f["limits"].as_array().unwrap() {
-        assert_eq!(ask("altitude_limits", json!({ "ifr": case["ifr"] })), case["answer"]);
+        assert_same(&ask("altitude_limits", json!({ "ifr": case["ifr"] })), &case["answer"], case);
     }
     for case in f["allowed"].as_array().unwrap() {
         assert_eq!(ask("altitude_allowed", json!({ "ft": case["ft"], "ifr": case["ifr"] })), case["allowed"], "{case}");
@@ -34,8 +37,8 @@ fn the_limits_and_the_altitudes_allowed() {
     let wheel = ask("vfr_altitudes", json!({ "from_ft": f["wheel"]["from_ft"] }));
     let wheel = wheel.as_array().unwrap();
     assert_eq!(wheel.len() as u64, f["wheel"]["count"].as_u64().unwrap());
-    assert_eq!(wheel[0], f["wheel"]["first"]);
-    assert_eq!(wheel[wheel.len() - 1], f["wheel"]["last"]);
+    assert_same(&wheel[0], &f["wheel"]["first"], "the wheel's first");
+    assert_same(&wheel[wheel.len() - 1], &f["wheel"]["last"], "the wheel's last");
 }
 
 #[test]
@@ -49,7 +52,7 @@ fn the_91_155_table_by_name() {
         for when in ["day", "night"] {
             let Some(want) = case.get(when) else { continue };
             for key in ["visibility_sm", "below_ft", "above_ft", "horizontal_ft"] {
-                assert_eq!(got[when][key], want[key], "{case} {when} {key}");
+                assert_same(&got[when][key], &want[key], format!("{case} {when} {key}"));
             }
         }
     }
@@ -83,12 +86,12 @@ fn where_the_airplane_is_along_the_route() {
 fn what_the_records_say() {
     let f = fixture("records.json");
     for case in f["endorsements"].as_array().unwrap() {
-        assert_eq!(ask("endorsement_records", case["input"].clone()), case["answer"], "{}", case["name"]);
+        assert_same(&ask("endorsement_records", case["input"].clone()), &case["answer"], &case["name"]);
     }
     for case in f["inspections"].as_array().unwrap() {
-        assert_eq!(ask("inspections_due", case["input"].clone()), case["answer"]);
+        assert_same(&ask("inspections_due", case["input"].clone()), &case["answer"], &case["input"]);
     }
-    assert_eq!(ask("planning_figures", json!({})), f["planning"]);
+    assert_same(&ask("planning_figures", json!({})), &f["planning"], "planning_figures");
     for case in f["vorLimits"].as_array().unwrap() {
         assert_eq!(ask("vor_check_limit_deg", json!({ "kind": case["kind"] })).as_f64(), case["limit_deg"].as_f64(), "{case}");
     }

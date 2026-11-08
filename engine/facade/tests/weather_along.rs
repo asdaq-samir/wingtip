@@ -9,6 +9,9 @@ use serde_json::{json, Value};
 use std::path::PathBuf;
 use wingtip_engine::call::call;
 
+mod common;
+use common::assert_same;
+
 fn fixture() -> Value {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/weatherAlong.json");
     serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
@@ -92,6 +95,6 @@ fn the_awc_files_read_and_held() {
     assert!(beside.as_array().unwrap().is_empty());
     // Held to its own valid time.
     let until = ask("weather_held_until", json!({"product": "airsigmets", "data": advisories, "fetched": now}));
-    assert_eq!(until, a["valid_to"]);
+    assert_same(&until, &a["valid_to"], "weather_held_until");
     assert!(call("awc_metars_read", r#"{"text": "<a>"}"#).is_err());
 }

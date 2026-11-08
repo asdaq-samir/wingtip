@@ -8,6 +8,9 @@ use serde_json::{json, Value};
 use std::path::PathBuf;
 use wingtip_engine::call::call;
 
+mod common;
+use common::assert_same;
+
 fn fixture() -> Value {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/altitude.json");
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
@@ -22,7 +25,7 @@ fn the_cruising_altitudes_are_91_159s_and_91_179s() {
     for case in fixture()["legal"].as_array().unwrap() {
         let answer = ask("legal_cruising_altitudes", case["input"].clone());
         let first = case["first"].as_array().unwrap();
-        assert_eq!(&answer.as_array().unwrap()[..first.len()], &first[..], "{}", case["input"]);
+        assert_same(&Value::Array(answer.as_array().unwrap()[..first.len()].to_vec()), &case["first"], &case["input"]);
         if first.is_empty() {
             assert!(answer.as_array().unwrap().is_empty());
         }
