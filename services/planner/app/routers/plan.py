@@ -37,7 +37,7 @@ from wingtip.config import DATA_DIR, VFR_SECTIONAL_MAX_ZOOM, VFR_SECTIONAL_MIN_Z
 from wingtip.weather import WeatherServiceError
 
 from .. import chart_model, foreflight, prefetch
-from ..router_basics import CHART_CACHE, DEFAULT_AIRCRAFT, Route, line, load_route, ndjson
+from ..router_basics import CHART_CACHE, DEFAULT_AIRCRAFT, Route, line, load_route, ndjson, resolve, resolve_stop, stops_of
 from ..planning import (
     alternate_leg, altitude_anyway,
     COMPUTE_LIMIT_S, StillComputing, aircraft_profile, altitude_plans, altitude_waiting_on, class_b_detours, class_b_ways,
@@ -54,6 +54,7 @@ from ..schemas import (
     Checkpoints,
     ChartInfo,
     Course,
+    RouteChecked,
     NavLogAltitude,
     NavLogDone,
     NavLogError,
@@ -1252,6 +1253,22 @@ def route_profile(dep: str, dest: str, stops: str = "") -> RouteProfile:
     r = load_route(dep, dest, stops)
     shp_path = airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR)
     return side_view([(a["lat"], a["lon"]) for a in r.airports], shp_path)
+
+
+@router.get("/api/route-check")
+def route_check(dep: str = "", dest: str = "", stops: str = "") -> RouteChecked:
+    """Whether a route would plan, checked as a typed one is (load_route):
+    a 404 naming an ident that is not one, a 422 for a stop at the point
+    before it or too many stops. With an end missing, each ident given is
+    checked alone. Nothing is read or planned. For the assistant's
+    proposals of a change to the plan; the gateway forwards no app here."""
+    if dep and dest:
+        load_route(dep, dest, stops)
+    else:
+        resolve(*(ident for ident in (dep, dest) if ident))
+        for stop in stops_of(stops):
+            resolve_stop(stop)
+    return RouteChecked(stops=stops_of(stops))
 
 
 @router.get("/api/course")

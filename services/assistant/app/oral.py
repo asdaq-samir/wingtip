@@ -1,7 +1,7 @@
 """A mock oral exam (the roadmap's AI mock oral, the Private Pilot ACS's
 knowledge and risk management elements): an examiner's question about
 the student's own planned flight, and their answer checked -- each
-grounded only in the regulations and the AIM (wingtip.references), the
+grounded only in the regulations and the AIM (app.references), the
 sources quoted word for word.
 
 Two calls to Claude, each made to fill in one tool's fields so what comes
@@ -25,9 +25,10 @@ import json
 import logging
 
 import anthropic
+from fastapi import APIRouter, HTTPException
 
-from wingtip import references
-
+from . import references
+from .schemas import OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest
 from .settings import get_settings
 
 #: The model, as CHECKPOINT_NOTE_MODEL names the notes': the most capable,
@@ -216,3 +217,43 @@ def editions() -> dict:
     was read."""
     _, meta = references.sources()
     return {"cfr_issued": meta.get("cfr_issued"), "aim_fetched": meta.get("aim_fetched")}
+
+
+# --- The endpoints: two billed Claude calls a question; the developer's
+# until a CFI has reviewed its answers (the gateway's rules keep it so). ---
+
+router = APIRouter()
+
+
+def _unavailable(err: Exception) -> HTTPException:
+    return HTTPException(502, f"The mock oral could not reach its examiner: {err}")
+
+
+@router.post("/api/oral/question", response_model=OralQuestion)
+def oral_question(request: OralQuestionRequest) -> OralQuestion:
+    """One question on one of the `focus` ACS elements, set in the flight
+    `plan` describes, not one of those already `asked`; its answer from
+    the sources and the passages it quotes, each checked word for word.
+    A 503 where the sources cannot be had, a 502 where the examiner
+    cannot be reached."""
+    try:
+        asked = ask(request.plan, [f.model_dump() for f in request.focus], request.asked)
+        edition = editions()
+    except OralUnavailable as err:
+        raise _unavailable(err) from err
+    except RuntimeError as err:
+        raise HTTPException(503, str(err)) from err
+    return OralQuestion(**asked, editions=edition)
+
+
+@router.post("/api/oral/grade", response_model=OralGrade)
+def oral_grade(request: OralGradeRequest) -> OralGrade:
+    """The student's answer graded against the question's answer and the
+    sources it was asked from (`source_ids`, as the question gave them)."""
+    try:
+        graded = grade(request.question, request.model_answer, request.key_points, request.source_ids, request.answer)
+    except OralUnavailable as err:
+        raise _unavailable(err) from err
+    except RuntimeError as err:
+        raise HTTPException(503, str(err)) from err
+    return OralGrade(**graded)

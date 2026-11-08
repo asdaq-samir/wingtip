@@ -1,5 +1,5 @@
 """The regulations and the AIM as passages to search and quote from: the
-mock oral's sources (wingtip.oral), so every answer it gives or checks
+mock oral's sources (app.oral), so every answer it gives or checks
 stands on the FAA's own words rather than a model's memory of them.
 
 14 CFR Parts 61 and 91 come from the eCFR's API, a section a source
@@ -31,12 +31,14 @@ from pathlib import Path
 
 import requests
 
-from .config import DATA_DIR
-from .faa_data import FAA_HEADERS
+from .settings import get_settings
 
 log = logging.getLogger(__name__)
 
-CACHE_DIR = DATA_DIR / "raw" / "references"
+CACHE_DIR = get_settings().data_dir / "raw" / "references"
+#: The FAA's site turns away a client that does not look like a browser
+#: (the planner's wingtip.config sends the same).
+FAA_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; wingtip-maps/0.1)"}
 ECFR = "https://www.ecfr.gov/api/versioner/v1"
 AIM = "https://www.faa.gov/air_traffic/publications/atpubs/aim_html"
 CFR_PARTS = ("61", "91")

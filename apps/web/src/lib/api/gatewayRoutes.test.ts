@@ -23,7 +23,7 @@ function gatewayRoutes(): { method: string; pattern: RegExp }[] {
 
 describe("the gateway", () => {
   it("forwards every planner endpoint the web app asks for", () => {
-    const asked = [...read("./client.ts").matchAll(/planner\.(GET|POST|DELETE)\("([^"]+)"/g)].map(m => ({ method: m[1]!, path: m[2]! }));
+    const asked = [...read("./client.ts").matchAll(/(?:planner|assistant)\.(GET|POST|DELETE)\("([^"]+)"/g)].map(m => ({ method: m[1]!, path: m[2]! }));
     expect(asked.length).toBeGreaterThan(30);
     const routes = gatewayRoutes();
     const missing = asked.filter(({ method, path }) =>

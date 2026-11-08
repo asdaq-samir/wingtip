@@ -1,4 +1,4 @@
-# Breaking changes to the planner's or the gateway's API made on purpose,
+# Breaking changes to the planner's, the assistant's or the gateway's API made on purpose,
 # which ci.yml's api-compat job lets through (oasdiff --err-ignore).
 # One line each, dated, with the method and path and oasdiff's own words
 # for the change, as its failure printed them, and why no released app
@@ -17,3 +17,13 @@
 2026-11-07 GET /api/status removed the required property `services/crewai_agent` from the response with the `200` status -- the agent services were removed (#495); only the Dev panel reads /api/status
 2026-11-07 GET /api/status removed the required property `services/nav_log_agent` from the response with the `200` status -- the agent services were removed (#495); only the Dev panel reads /api/status
 2026-11-07 POST /api/comparison api path removed without deprecation -- the LangGraph/CrewAI comparison was a web Dev screen; no phone calls it (#495)
+2026-11-08 POST /api/assistant api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/assistant address, which the gateway now sends there
+2026-11-08 POST /api/briefing/narrative api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/briefing/narrative address, which the gateway now sends there
+2026-11-08 POST /api/checkpoint-notes/generate api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/checkpoint-notes/generate address, which the gateway now sends there
+2026-11-08 POST /api/oral/question api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/oral/question address, which the gateway now sends there
+2026-11-08 POST /api/oral/grade api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/oral/grade address, which the gateway now sends there
+2026-11-08 POST /api/words/notams api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/words/notams address, which the gateway now sends there
+2026-11-08 POST /api/words/weather api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/words/weather address, which the gateway now sends there
+2026-11-08 POST /api/words/risk api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/words/risk address, which the gateway now sends there
+2026-11-08 POST /api/words/debrief api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/words/debrief address, which the gateway now sends there
+2026-11-08 POST /api/words/changes api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/words/changes address, which the gateway now sends there

@@ -1,9 +1,13 @@
 """Short plain-language readings of the planner's own figures -- the
 route's NOTAMs, its weather, the risk picture, a flown flight's debrief,
 what changed in a briefing since the last look -- written by Claude,
-every sentence citing the raw thing it rests on (app.routers.words).
+every sentence citing the raw thing it rests on.
 
-The figures are the planner's and the words the model's. It is given
+The figures are the planner's and the words the model's: each endpoint
+here asks the planner for the sources of its kind (POST
+/api/words/{kind}/sources there, the figures put in lines by the planner's
+routers/words.py, which the gateway does not forward), then the model for
+the words. It is given
 each source as data (a METAR as sent, a NOTAM as sent, a TAF line, a
 hazard's words, a finding's line, a debrief figure's line), told to state
 nothing the sources do not contain, and to name on each sentence the ids
@@ -23,8 +27,10 @@ import html
 import logging
 
 import anthropic
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel, Field
 
+from . import planner
 from .settings import get_settings
 
 #: Haiku, as the checkpoint notes' CHECKPOINT_NOTE_MODEL: the job is short
@@ -183,3 +189,130 @@ def say(ask: str, sources: list[Source], *, most: int = 8, output: type[WordsSai
     kept, cited = checked(said.sentences, sources, most)
     more = {k: v for k, v in said.model_dump().items() if k != "sentences"} if kept else {}
     return answer(sentences=kept, sources=cited, model=WORDS_MODEL, **more)
+
+
+# --- The endpoints ------------------------------------------------------
+
+router = APIRouter()
+
+#: The sentences a reading keeps: a pilot looks and goes (the owner,
+#: 2026-11-03: "make it simpler for them to just look and go"), so a
+#: reading is one to three short sentences with their chips, never a
+#: paragraph; the debrief gets one more for the instructor's line.
+MOST_SENTENCES = 3
+MOST_DEBRIEF_SENTENCES = 4
+
+NOTAMS_ASK = ("Which of these NOTAMs and TFRs matter for this flight, and why: the most important first, one sentence each, "
+              "leaving out those that do not bear on it. At most three sentences, each short: the pilot looks and goes.")
+WEATHER_ASK = ("The weather for this flight as a pilot would brief it: the departure now, each leg at its time, the destination "
+               "at arrival, then what could change it -- the hazards, the pilot reports, the TFRs. Where the figures give a "
+               "reason not to go VFR, say so plainly. At most three sentences, each short: the pilot looks and goes.")
+RISK_ASK = ("Where the risk in this flight is, in the pilot's terms: the weather, the airplane, the pilot's own recency and "
+            "minimums, the plan; and what would lower it, where the findings say. The most important first. Never say the "
+            "flight is safe. At most three sentences, each short: the pilot looks and goes.")
+DEBRIEF_ASK = ("The flight as flown against its plan, as an instructor would debrief it: what was held and what was not, leg by "
+               "leg, the checkpoints' times and the pattern entries, the most important first. Then one paragraph for the "
+               "pilot's instructor, from those sentences alone. At most four sentences, each short: the pilot looks and goes.")
+CHANGES_ASK = ("What changed in this flight's weather since the last look, and what it means for the flight: each change in a "
+               "sentence, the most important first, with both readings where they help. At most three sentences, each short.")
+
+
+class NotamWords(WordsAnswer):
+    """The NOTAM words, with since when the planner has heard the NOTAM
+    feed (ISO 8601 UTC; None where it has not yet): until the feed's
+    first load of what was already in force, the list is not the whole
+    list for a field. `unchecked` names "tfrs" where tfr.faa.gov did not
+    answer, so an empty list does not read as no TFRs."""
+
+    since: str | None = None
+    unchecked: list[str] = []
+
+
+class DebriefWords(WordsSaid):
+    """The debrief's words: the sentences, and one paragraph for the
+    pilot's instructor written from them."""
+
+    instructor_note: str | None = Field(
+        default=None,
+        description="One paragraph for the pilot's instructor, from the sentences above and nothing else: no new figure or fact.",
+    )
+
+
+class DebriefWordsAnswer(WordsAnswer):
+    instructor_note: str | None = None
+
+
+class ChangesWords(WordsAnswer):
+    """Whether anything changed; with nothing changed there are no words."""
+
+    changed: bool
+
+
+def sources_for(kind: str, ask: dict) -> dict:
+    """The planner's sources for a reading of `kind`, from the body the
+    app sent, passed on whole: {"sources": [...], and what else the kind
+    carries}. The planner's refusal (a 422 for a debrief that never flew,
+    a 502 for a briefing it could not have) is this answer's."""
+    try:
+        return planner.post(f"/api/words/{kind}/sources", ask)
+    except planner.PlannerError as err:
+        raise HTTPException(err.status, err.detail) from err
+
+
+def _sources(found: dict) -> list[Source]:
+    return [Source.model_validate(s) for s in found.get("sources") or []]
+
+
+#: The body each reading takes, as the planner's own sources endpoint
+#: reads it (its routers/words.py has the shapes); passed on whole.
+ASK = Body(..., description="The reading's ask, as the planner's POST /api/words/{kind}/sources takes it.")
+
+
+@router.post("/api/words/notams")
+def notam_words(ask: dict = ASK) -> NotamWords:
+    """The NOTAMs that matter for a flight ({dep, dest, stops, depart}), in
+    a few sentences: the NOTAMs in force or to come at every field the
+    route lands at and the TFRs near it, from the planner. With no NOTAM
+    and no TFR there is nothing to say and no call."""
+    found = sources_for("notams", ask)
+    words = say(NOTAMS_ASK, _sources(found), most=MOST_SENTENCES)
+    return NotamWords(**words.model_dump(), since=found.get("since"), unchecked=found.get("unchecked") or [])
+
+
+@router.post("/api/words/weather")
+def weather_words(ask: dict = ASK) -> WordsAnswer:
+    """The weather for a flight as a briefer would say it ({dep, dest,
+    stops, depart, ete_min, fixes, leg_min}, as GET /api/briefing is
+    asked), from the planner's briefing."""
+    return say(WEATHER_ASK, _sources(sources_for("weather", ask)), most=MOST_SENTENCES)
+
+
+@router.post("/api/words/risk")
+def risk_words(ask: dict = ASK) -> WordsAnswer:
+    """Where the risk in a flight is ({verdict, pilot}: the Go / No-Go as
+    the app has it and the pilot's record). Never "safe": the decision is
+    the pilot in command's (14 CFR 91.3), and the briefer is told so."""
+    return say(RISK_ASK, _sources(sources_for("risk", ask)), most=MOST_SENTENCES)
+
+
+@router.post("/api/words/debrief")
+def debrief_words(ask: dict = ASK) -> DebriefWordsAnswer:
+    """A flown flight's debrief ({debrief}) in a few sentences, and a
+    paragraph for the pilot's instructor written from them. A 422 from
+    the planner where there is no debrief: the track never flew."""
+    return say(DEBRIEF_ASK, _sources(sources_for("debrief", ask)), most=MOST_DEBRIEF_SENTENCES,
+               output=DebriefWords, answer=DebriefWordsAnswer)
+
+
+@router.post("/api/words/changes")
+def changes_words(ask: dict = ASK) -> ChangesWords:
+    """What changed in a flight's briefing since the last look ({dep,
+    dest, stops, then, now}), for a watch that reads the briefing again
+    every half hour. The changes are found by the planner, and the words
+    asked only where there is one: most half hours there is none, and no
+    call at all."""
+    changes = _sources(sources_for("changes", ask))
+    if not changes:
+        return ChangesWords(changed=False, sentences=[], sources=[], model=WORDS_MODEL)
+    words = say(CHANGES_ASK, changes, most=MOST_SENTENCES)
+    return ChangesWords(changed=True, **words.model_dump())

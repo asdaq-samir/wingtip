@@ -157,7 +157,7 @@ Resources:
       RouteTableId: !Ref PublicRouteTable
 
   # ---------------------------------------------------------------------
-  # Images: the two the server runs, pushed by promote.yml's push-ecr.
+  # Images: the three the server runs, pushed by promote.yml's push-ecr.
   # ---------------------------------------------------------------------
   GatewayRepository:
     Type: AWS::ECR::Repository
@@ -171,6 +171,16 @@ Resources:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: wingtip/planner
+      EmptyOnDelete: true
+      LifecyclePolicy:
+        LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
+
+  # Every Claude call (services/assistant, issue #535), split out of the
+  # planner: the third image the server runs.
+  AssistantRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: wingtip/assistant
       EmptyOnDelete: true
       LifecyclePolicy:
         LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
@@ -290,6 +300,7 @@ Resources:
                 Resource:
                   - !GetAtt GatewayRepository.Arn
                   - !GetAtt PlannerRepository.Arn
+                  - !GetAtt AssistantRepository.Arn
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: [!Ref DbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
@@ -985,6 +996,7 @@ Resources:
                 Resource:
                   - !GetAtt GatewayRepository.Arn
                   - !GetAtt PlannerRepository.Arn
+                  - !GetAtt AssistantRepository.Arn
               # The server changes with each Spot interruption, so deploys
               # find it by its Name tag and may run only on that.
               - Effect: Allow

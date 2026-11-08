@@ -1,14 +1,15 @@
-"""The words endpoints (app.ai_words): the planner's own figures -- the
-route's NOTAMs, its briefing, its Go / No-Go, a flown flight's debrief,
-what changed in a briefing since the last look -- put into a few plain
-sentences by Claude, each sentence citing the raw source it rests on.
+"""The sources of the readings in words: the planner's own figures --
+the route's NOTAMs, its briefing, its Go / No-Go, a flown flight's
+debrief, what changed in a briefing since the last look -- each put as a
+line a sentence can cite and a pilot can read raw. The assistant service
+(services/assistant, app.words) asks for them here, POST
+/api/words/{kind}/sources, and has Claude put them into a few plain
+sentences; the gateway forwards the apps' POST /api/words/{kind} to it,
+and never these.
 
 The figures come from the planner as its other endpoints give them
 (nothing is fetched here that the briefing, the Go / No-Go or the debrief
-does not fetch already); the words come from the model; the sources go
-back with the words by the ids the sentences cite, for the pilot to read
-raw. A words answer never fails the figures: the model out of reach is a
-200 with no sentences and `unavailable` set.
+does not fetch already).
 
 The ids a sentence cites: "flight:route"; "notam:<id>" ("notam:BJC
 10/060"); "tfr:<notam id>"; "metar:<ident>"; "taf:<station>";
@@ -23,7 +24,7 @@ import time
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from wingtip import notams, tfr
 
 from .. import exposure
@@ -34,7 +35,7 @@ from ..gonogo import ask as engine
 from ..gonogo.schemas import RiskAssessment
 from ..gonogo.words import WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, gairmet_title, num, one, sigmet_hazard
 from ..schemas import Briefing, ForecastStation, GAirmet, Hazard, OnRoute
-from ..ai_words import WORDS_MODEL, Source, WordsAnswer, WordsSaid, say
+from ..schemas import WordsSource as Source, WordsSources
 from . import briefing as briefing_router
 
 router = APIRouter()
@@ -44,14 +45,7 @@ router = APIRouter()
 _UNCHECKED_ID = "unchecked"
 
 
-# --- The asks and the answers -------------------------------------------
-
-#: The sentences a reading keeps: a pilot looks and goes (the owner,
-#: 2026-11-03: "make it simpler for them to just look and go"), so a
-#: reading is one to three short sentences with their chips, never a
-#: paragraph; the debrief gets one more for the instructor's line.
-MOST_SENTENCES = 3
-MOST_DEBRIEF_SENTENCES = 4
+# --- The asks -----------------------------------------------------------
 
 
 class RouteAsk(BaseModel):
@@ -165,37 +159,6 @@ class ChangesAsk(BaseModel):
     stops: list[str] = []
     then: Briefing
     now: Briefing
-
-
-class NotamWords(WordsAnswer):
-    """The NOTAM words, with since when the planner has heard the NOTAM
-    feed (ISO 8601 UTC; None where it has not yet): until the feed's
-    first load of what was already in force, the list is not the whole
-    list for a field. `unchecked` names "tfrs" where tfr.faa.gov did not
-    answer, so an empty list does not read as no TFRs."""
-
-    since: str | None = None
-    unchecked: list[str] = []
-
-
-class DebriefWords(WordsSaid):
-    """The debrief's words: the sentences, and one paragraph for the
-    pilot's instructor written from them."""
-
-    instructor_note: str | None = Field(
-        default=None,
-        description="One paragraph for the pilot's instructor, from the sentences above and nothing else: no new figure or fact.",
-    )
-
-
-class DebriefWordsAnswer(WordsAnswer):
-    instructor_note: str | None = None
-
-
-class ChangesWords(WordsAnswer):
-    """Whether anything changed; with nothing changed there are no words."""
-
-    changed: bool
 
 
 # --- Sources from the planner's figures ---------------------------------
@@ -490,31 +453,18 @@ def briefing_changes(then: Briefing, now: Briefing) -> list[Source]:
 
 # --- The endpoints ------------------------------------------------------
 
-NOTAMS_ASK = ("Which of these NOTAMs and TFRs matter for this flight, and why: the most important first, one sentence each, "
-              "leaving out those that do not bear on it. At most three sentences, each short: the pilot looks and goes.")
-WEATHER_ASK = ("The weather for this flight as a pilot would brief it: the departure now, each leg at its time, the destination "
-               "at arrival, then what could change it -- the hazards, the pilot reports, the TFRs. Where the figures give a "
-               "reason not to go VFR, say so plainly. At most three sentences, each short: the pilot looks and goes.")
-RISK_ASK = ("Where the risk in this flight is, in the pilot's terms: the weather, the airplane, the pilot's own recency and "
-            "minimums, the plan; and what would lower it, where the findings say. The most important first. Never say the "
-            "flight is safe. At most three sentences, each short: the pilot looks and goes.")
-DEBRIEF_ASK = ("The flight as flown against its plan, as an instructor would debrief it: what was held and what was not, leg by "
-               "leg, the checkpoints' times and the pattern entries, the most important first. Then one paragraph for the "
-               "pilot's instructor, from those sentences alone. At most four sentences, each short: the pilot looks and goes.")
-CHANGES_ASK = ("What changed in this flight's weather since the last look, and what it means for the flight: each change in a "
-               "sentence, the most important first, with both readings where they help. At most three sentences, each short.")
 
-
-@router.post("/api/words/notams")
-def notam_words(ask: RouteAsk) -> NotamWords:
-    """The NOTAMs that matter for a flight, in a few sentences. The figures
-    are the planner's: the NOTAMs in force or to come at every field the
-    route lands at, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's
-    FNS), and the TFRs near the route over the briefing's hours
+@router.post("/api/words/notams/sources")
+def notam_sources(ask: RouteAsk) -> WordsSources:
+    """The NOTAMs and TFRs of a flight as sources, with the flight itself
+    first: the NOTAMs in force or to come at every field the route lands
+    at, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's FNS),
+    and the TFRs near the route over the briefing's hours
     (wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of
     flight and an hour past, the route's own time not being known here).
-    The words are the model's; the sources are the pilot's to read raw.
-    With no NOTAM and no TFR there is nothing to say and no call."""
+    None at all where there is no NOTAM and no TFR: nothing to say.
+    `since`, when the NOTAM feed was first heard; `unchecked`, "tfrs"
+    where tfr.faa.gov did not answer."""
     r = load_route(ask.dep, ask.dest, ask.stops)
     fields = list(dict.fromkeys(i for i, a in zip(r.idents, r.airports) if not a.get("fix")))
     start = _start(ask.depart)
@@ -527,34 +477,29 @@ def notam_words(ask: RouteAsk) -> NotamWords:
     except tfr.TfrUnavailable:
         tfrs, unchecked = [], ["tfrs"]
     items = [*map(_notam_source, found), *map(_tfr_source, tfrs)]
-    words = say(NOTAMS_ASK, [_flight_source(r.idents[0], r.idents[-1], ask.stops, start), *items] if items else [], most=MOST_SENTENCES)
-    return NotamWords(**words.model_dump(), since=exposure.iso(notams.since()), unchecked=unchecked)
+    sources = [_flight_source(r.idents[0], r.idents[-1], ask.stops, start), *items] if items else []
+    return WordsSources(sources=sources, since=exposure.iso(notams.since()), unchecked=unchecked)
 
 
-@router.post("/api/words/weather")
-def weather_words(ask: WeatherAsk) -> WordsAnswer:
-    """The weather for a flight as a briefer would say it, in a few
-    sentences. The figures are the planner's briefing (GET /api/briefing,
-    asked here with the same parameters: its METARs, its TAF stations at
-    the flight's time there, its hazards, G-AIRMETs, pilot reports and
-    TFRs, the fields below VFR and its own "VFR flight not recommended");
-    the words are the model's; the sources are the pilot's to read raw. A
-    briefing that cannot be had fails as it does there (a 502)."""
+@router.post("/api/words/weather/sources")
+def weather_sources(ask: WeatherAsk) -> WordsSources:
+    """The briefing of a flight as sources (GET /api/briefing, asked here
+    with the same parameters: its METARs, its TAF stations at the flight's
+    time there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields
+    below VFR and its own "VFR flight not recommended"), the flight first.
+    A briefing that cannot be had fails as it does there (a 502)."""
     raw = briefing_router.briefing(ask.dep, ask.dest, ",".join(ask.stops), ask.depart, ask.ete_min, ask.fixes, ask.leg_min)
     b = Briefing.model_validate(raw)
     flight = _flight_source(ask.dep.upper(), ask.dest.upper(), ask.stops, _start(ask.depart),
                             ask.ete_min if ask.ete_min is not None else briefing_router.DEFAULT_ETE_MIN)
-    return say(WEATHER_ASK, [flight, *_briefing_sources(b)], most=MOST_SENTENCES)
+    return WordsSources(sources=[flight, *_briefing_sources(b)])
 
 
-@router.post("/api/words/risk")
-def risk_words(ask: RiskAsk) -> WordsAnswer:
-    """Where the risk in a flight is, in a few sentences. The figures are
-    the Go / No-Go's (POST /api/go-no-go: its line, each finding's line,
-    the risk assessment's level and every factor it counted) and the
-    pilot's own record as the client sends it; the words are the model's;
-    the sources are the pilot's to read raw. Never "safe": the decision
-    is the pilot in command's (14 CFR 91.3), and the briefer is told so."""
+@router.post("/api/words/risk/sources")
+def risk_sources(ask: RiskAsk) -> WordsSources:
+    """The Go / No-Go as sources (POST /api/go-no-go's line, each
+    finding's line, the risk assessment's level and every factor it
+    counted) and the pilot's own record as the client sends it."""
     v = ask.verdict
     sources = []
     if (line := v.over) is not None:
@@ -568,18 +513,15 @@ def risk_words(ask: RiskAsk) -> WordsAnswer:
             sources.append(Source(id=f"risk:{f.key}", label=f.label, text=f"{f.why or f.label}. {f.points} points.{unlawful}"))
     if ask.pilot:
         sources.append(Source(id="pilot:record", label="The pilot's record", text=_record_lines(ask.pilot)))
-    return say(RISK_ASK, sources, most=MOST_SENTENCES)
+    return WordsSources(sources=sources)
 
 
-@router.post("/api/words/debrief")
-def debrief_words(ask: DebriefWordsAsk) -> DebriefWordsAnswer:
-    """A flown flight's debrief in a few sentences, and a paragraph for
-    the pilot's instructor written from them. The figures are the
-    debrief's (POST /api/debrief: the time in the air, each leg's altitude
-    and course held, each checkpoint's time, each pattern entry, its
-    notes, and the ACS tolerances they are marked against); the words are
-    the model's; the sources are the pilot's to read raw. A 422 where
-    there is no debrief: the track never flew."""
+@router.post("/api/words/debrief/sources")
+def debrief_sources(ask: DebriefWordsAsk) -> WordsSources:
+    """A flown flight's debrief as sources (POST /api/debrief: the time in
+    the air, each leg's altitude and course held, each checkpoint's time,
+    each pattern entry, its notes, and the ACS tolerances they are marked
+    against). A 422 where there is no debrief: the track never flew."""
     try:
         answer = debrief_of(ask.debrief)
     except (ValueError, KeyError, TypeError) as err:
@@ -588,23 +530,14 @@ def debrief_words(ask: DebriefWordsAsk) -> DebriefWordsAnswer:
         raise HTTPException(422, f"The debrief is not in a shape the words can read: {err!r}") from err
     if answer.debrief is None:
         raise HTTPException(422, "There is no debrief to put into words: the track never flew faster than taxiing.")
-    sources = _debrief_sources(answer.debrief, answer.tolerances)
-    return say(DEBRIEF_ASK, sources, most=MOST_DEBRIEF_SENTENCES, output=DebriefWords, answer=DebriefWordsAnswer)
+    return WordsSources(sources=_debrief_sources(answer.debrief, answer.tolerances))
 
 
-@router.post("/api/words/changes")
-def changes_words(ask: ChangesAsk) -> ChangesWords:
-    """What changed in a flight's briefing since the last look, in a few
-    sentences, for a watch that reads the briefing again every half
-    hour. The changes are found here first (briefing_changes), in
-    Python, and the words asked only where there is one: the figures are
-    the planner's two readings, the words the model's, the sources --
-    each change with both readings -- the pilot's to read raw. With no
-    change there is no call at all, which is most half hours: a watch on
-    every saved flight asking the model each time would be the app's
-    largest bill for nothing to say."""
+@router.post("/api/words/changes/sources")
+def changes_sources(ask: ChangesAsk) -> WordsSources:
+    """What changed between two readings of a flight's briefing, each
+    change a source with both readings (briefing_changes), the flight
+    first; none at all where nothing did, which is most half hours of a
+    flight watch, so the assistant asks the model nothing then."""
     changes = briefing_changes(ask.then, ask.now)
-    if not changes:
-        return ChangesWords(changed=False, sentences=[], sources=[], model=WORDS_MODEL)
-    words = say(CHANGES_ASK, [_flight_source(ask.dep.upper(), ask.dest.upper(), ask.stops), *changes], most=MOST_SENTENCES)
-    return ChangesWords(changed=True, **words.model_dump())
+    return WordsSources(sources=[_flight_source(ask.dep.upper(), ask.dest.upper(), ask.stops), *changes] if changes else [])

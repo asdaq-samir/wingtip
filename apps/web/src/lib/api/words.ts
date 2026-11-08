@@ -2,7 +2,7 @@
  * The Brief's and the debrief's plain-language readings, each with the
  * reports it rests on (WordsSection), and the flight watch on the
  * gateway (FlightWatch). The shapes are written by hand, mirroring
- * planner app/ai_words.py for the words and the gateway's
+ * the assistant service's app/words.py for the words and the gateway's
  * FlightWatchController for the watch: `npm run types` has no schema for
  * either yet, and they move to ./types once the documents carry them.
  */

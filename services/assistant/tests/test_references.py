@@ -4,7 +4,7 @@ import time
 import pytest
 import requests
 
-from wingtip import references
+from app import references
 
 PART_91 = """<?xml version="1.0"?>
 <DIV5 N="91" TYPE="PART">

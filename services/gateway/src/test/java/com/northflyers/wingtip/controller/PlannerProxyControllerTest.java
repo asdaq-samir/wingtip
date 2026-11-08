@@ -113,6 +113,9 @@ class PlannerProxyControllerTest {
     @DynamicPropertySource
     static void plannerUrl(DynamicPropertyRegistry registry) {
         registry.add("planner-service.base-url", () -> "http://127.0.0.1:" + upstream.getAddress().getPort());
+        // The assistant on the same fake, under a prefix of its own, so a
+        // test sees which of the two a request was sent to.
+        registry.add("assistant-service.base-url", () -> "http://127.0.0.1:" + upstream.getAddress().getPort() + "/assistant");
     }
 
     @BeforeEach
@@ -139,6 +142,23 @@ class PlannerProxyControllerTest {
         // /api/planner/course upstream is /api/course -- the planner
         // knows nothing about the prefix this app reaches it behind.
         assertThat(received).contains("GET /api/course?dep=C81&dest=KDLH");
+    }
+
+    @Test
+    void everyClaudeCallGoesToTheAssistantAtTheSameAddressAndTheRestToThePlanner() throws Exception {
+        for (String path : new String[] {"/assistant", "/briefing/narrative", "/words/weather", "/checkpoint-notes/generate",
+                "/oral/question", "/oral/grade"}) {
+            finish(mockMvc.perform(post("/api/planner" + path).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                    .andExpect(request().asyncStarted())
+                    .andReturn());
+            assertThat(received).contains("POST /assistant/api" + path);
+        }
+        // A pilot's own note is kept at the planner, which holds the notes.
+        finish(mockMvc.perform(post("/api/planner/checkpoint-notes").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(request().asyncStarted())
+                .andReturn());
+        assertThat(received).contains("POST /api/checkpoint-notes");
+        assertThat(PlannerProxyController.isAssistant("GET", "/api/assistant")).isFalse();
     }
 
     @Test
@@ -248,6 +268,11 @@ class PlannerProxyControllerTest {
         assertThat(PlannerProxyController.isForwarded("POST", "/api/words/weather")).isTrue();
         assertThat(PlannerProxyController.isForwarded("POST", "/api/words/risk")).isTrue();
         assertThat(PlannerProxyController.isForwarded("POST", "/api/assistant")).isTrue();
+        // What the assistant service asks the planner for, and nobody else.
+        assertThat(PlannerProxyController.isForwarded("POST", "/api/words/weather/sources")).isFalse();
+        assertThat(PlannerProxyController.isForwarded("POST", "/api/checkpoint-notes/pending")).isFalse();
+        assertThat(PlannerProxyController.isForwarded("POST", "/api/checkpoint-notes/seed")).isFalse();
+        assertThat(PlannerProxyController.isForwarded("GET", "/api/route-check")).isFalse();
         assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KDLH")).isTrue();
         assertThat(PlannerProxyController.isForwarded("GET", "/api/airports/in-view")).isTrue();
         assertThat(PlannerProxyController.isForwarded("GET", "/api/waypoints/in-view")).isTrue();
@@ -496,7 +521,8 @@ class PlannerProxyControllerTest {
     /** A second MockMvc whose planner points at a port nothing is on. */
     private MockMvc unreachablePlanner() {
         PlannerProxyController controller =
-                new PlannerProxyController(new StreamingProxy(), "http://127.0.0.1:1", pilotService, subscriptions, 40, 20, 150);
+                new PlannerProxyController(new StreamingProxy(), "http://127.0.0.1:1", "http://127.0.0.1:1", pilotService, subscriptions,
+                        40, 20, 150);
         return standaloneSetup(controller)
                 .build();
     }

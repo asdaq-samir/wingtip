@@ -2,9 +2,9 @@
  * The assistant a pilot asks about the flight, in text or by voice
  * (AskCard, RadioLayer's Ask chip): POST /api/planner/assistant through
  * the gateway, the answer streamed back as newline-delimited JSON. The
- * shapes here are written by hand, mirroring planner
- * app/assistant.py: `npm run types` has no schema for it yet, and the
- * planner's OpenAPI document gains it later (then these move to ./types).
+ * shapes here are written by hand, mirroring the assistant service's
+ * app/assistant.py (services/assistant): its stream's events are not in
+ * its OpenAPI document yet (once they are, these move to ./types).
  *
  * The client keeps the conversation: each answer's text goes back as the
  * next `assistant` message and the whole list is sent every time,

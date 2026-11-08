@@ -68,6 +68,13 @@ spring:
 planner-service:
   base-url: ${PLANNER_SERVICE_URL:http://localhost:8084}
 
+# The assistant service: every Claude call (the assistant, the narrative,
+# the words, the checkpoint notes, the mock oral), reached as the planner
+# is, at the same /api/planner/... addresses (PlannerProxyController
+# picks which by path).
+assistant-service:
+  base-url: ${ASSISTANT_SERVICE_URL:http://localhost:8085}
+
 server:
   port: 8080
   servlet:

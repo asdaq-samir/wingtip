@@ -1,6 +1,6 @@
 """The Brief's narrative: the nav log on the pilot's screen told in a
 page of plain words by Claude, streamed as it is written
-(app.routers.narrative).
+(POST /api/briefing/narrative, below).
 
 The nav log is the one the page already shows -- the planner computed
 it seconds earlier, and the pilot may have set an altitude of their own
@@ -11,8 +11,8 @@ is told not to look anything up.
 This used to be two services, nav-log-agent (LangGraph, with a pgvector
 memory of past briefings) and crewai-agent (CrewAI), kept to compare the
 frameworks on one task. The task is one Claude call, so it is one call
-here, with the SDK, as the planner's other Claude features are
-(app.ai_words, app.oral, app.assistant). The memory went with them: it
+here, with the SDK, as the assistant service's other Claude features
+are (app.words, app.oral, app.assistant). The memory went with them: it
 needed a local sentence-transformers model to embed each briefing, and a
 briefing of the route on screen is written from its own figures, not
 from another route's.
@@ -21,22 +21,24 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from collections.abc import Iterator
 from typing import Literal
 
 import anthropic
+from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .schemas import NarrativeDelta, NarrativeDone, NarrativeError
+from .settings import get_settings
 
 log = logging.getLogger(__name__)
 
 # Haiku: on the C81 to KDLH route (2026-10-08) it wrote the whole
 # briefing, three times out of three, for about $0.001 each, where
 # claude-sonnet-5 spent $0.009 and wrote nothing (below). Named by the
-# environment, as the planner's other models are.
-NARRATIVE_MODEL = os.environ.get("NARRATIVE_MODEL", "claude-haiku-5-5")
+# environment, as the assistant's other models are.
+NARRATIVE_MODEL = get_settings().narrative_model
 # The model thinks before it writes, and the thinking counts toward this
 # cap: at 512, claude-sonnet-5 thought until the cap and returned no
 # text at all (stop reason max_tokens); Haiku at 1,536 did the same on
@@ -300,3 +302,21 @@ def stream(request: NarrativeRequest) -> Iterator[str]:
         yield _line(NarrativeError(detail="The narrative came back empty; ask again."))
     else:
         yield _line(NarrativeDone(briefing=briefing))
+
+
+router = APIRouter()
+
+
+@router.post("/api/briefing/narrative", responses={200: {"content": {"application/x-ndjson": {}}}})
+def write_narrative(request: NarrativeRequest) -> StreamingResponse:
+    """The narrative as lines of NarrativeMessage: `delta` (a piece of
+    the text) as Claude writes it, then `done` with the whole briefing,
+    or `error` with why there is none. The body is the nav log the Brief
+    shows -- idents, airplane, cruise altitude and its selection, the
+    legs -- and is checked before Claude is asked, so a nav log the
+    prompt cannot read is a 422 naming the field, not an error line.
+    One billed Claude call a narrative; the gateway lets only a
+    subscribed, signed-in pilot through, within the month's cap and the
+    day's allowance (PlannerProxyController)."""
+    return StreamingResponse(stream(request), media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})

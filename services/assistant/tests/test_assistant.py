@@ -1,6 +1,7 @@
 """The pilot's assistant (app.assistant): the conversation as the API
 takes it, the events it streams, and the sources its tools keep -- with
-the model stood in for, as test_oral stands in for the examiner."""
+the model stood in for, as test_oral stands in for the examiner, and the
+planner's HTTP API answered from each test's own table (conftest)."""
 import json
 from types import SimpleNamespace
 
@@ -11,6 +12,7 @@ from fastapi.testclient import TestClient
 from app import assistant
 from app.assistant import AssistantAsk, Context, OwnShip, Toolbox, Turn
 from app.main import app
+from app.planner import PlannerError
 
 client = TestClient(app)
 
@@ -94,39 +96,57 @@ def test_a_refusal_and_a_cut_off_answer_are_errors_in_words():
     assert cut[-1]["type"] == "error" and "room" in cut[-1]["words"]
 
 
-def test_the_weather_tool_keeps_the_metar_as_sent_as_a_source(monkeypatch):
-    from app.routers import airports
-    from app.schemas import Metar
-
-    metar = Metar(raw="KDLH 031753Z 27012KT 10SM CLR 04/M02 A2992", observed_at="2026-11-03T17:53:00Z", flight_category="VFR")
-    place = SimpleNamespace(ident="KDLH", name="Duluth Intl", elevation_ft=1428.0, metar=metar, nearby_metar=None)
-    monkeypatch.setattr(airports, "airport_place", lambda ident: place)
+def test_the_weather_tool_keeps_the_metar_as_sent_as_a_source(fake_planner):
+    metar = {"raw": "KDLH 031753Z 27012KT 10SM CLR 04/M02 A2992", "observed_at": "2026-11-03T17:53:00Z", "flight_category": "VFR"}
+    fake_planner.answer("/api/airport/KDLH", {"ident": "KDLH", "name": "Duluth Intl", "elevation_ft": 1428.0, "metar": metar,
+                                              "nearby_metar": None})
     box = Toolbox()
-    answer = json.loads(box.by_name["weather_at"].call({"ident": "KDLH"}))
+    answer = json.loads(box.by_name["weather_at"].call({"ident": "kdlh"}))
     assert answer["metar"]["flight_category"] == "VFR" and answer["elevation_ft"] == 1428.0
     assert [s.id for s in box.sources] == ["metar:KDLH"] and box.sources[0].label == "METAR KDLH 1753Z"
 
 
-def test_a_tool_that_fails_tells_the_model_in_the_planners_words(monkeypatch):
-    from app.routers import airports
-
-    def missing(ident):
-        raise HTTPException(404, "No US airport goes by 'ZZZZ'.")
-
-    monkeypatch.setattr(airports, "airport_place", missing)
+def test_a_tool_that_fails_tells_the_model_in_the_planners_words(fake_planner):
+    fake_planner.answer("/api/airport/ZZZZ", PlannerError(404, "No US airport goes by 'ZZZZ'."))
     assert Toolbox().by_name["weather_at"].call({"ident": "ZZZZ"}) == "Error: No US airport goes by 'ZZZZ'."
+    # An ident is a path segment and nothing more: a stray slash cannot
+    # reach another of the planner's paths.
+    fake_planner.answer("/api/airport/APIPLAN", PlannerError(404, "No US airport goes by 'APIPLAN'."))
+    Toolbox().by_name["airport"].call({"ident": "../api/plan"})
+    assert fake_planner.calls[-1][1] == "/api/airport/APIPLAN"
 
 
-def test_a_proposed_change_is_checked_as_a_route_and_follows_the_text_as_an_action(monkeypatch):
-    from app import router_basics
+def test_the_plan_tool_asks_the_planners_plan_with_the_plans_own_fields(fake_planner):
+    fake_planner.answer("/api/plan", lambda q: {
+        "legs": [{"from": "C81", "to": "KDLH", "distance_nm": 300.0, "ete_min": 150.0, "fuel_gal": 25.0, "candidates": []}],
+        "totals": {"distance_nm": 300.0, "ete_min": 150.0, "fuel_gal": 25.0}, "altitude_ft": 5500.0,
+        "altitude_choice": "fastest", "altitude_cautions": [], "candidates": [{"big": True}]})
+    box = Toolbox(Context(dep="C81", dest="KDLH", aircraft="pa28140", depart="2026-11-03T15:10:00Z"))
+    answer = json.loads(box.by_name["plan_flight"].call({}))
 
-    checked = []
-    monkeypatch.setattr(router_basics, "load_route", lambda dep, dest, stops=None: checked.append((dep, dest, stops)))
+    assert fake_planner.calls[0][2] == {"dep": "C81", "dest": "KDLH", "aircraft": "pa28140",
+                                        "depart": "2026-11-03T15:10:00Z", "rules": "vfr"}
+    assert answer["totals"]["ete_min"] == 150.0 and answer["flown"] == "fastest" and "candidates" not in answer
+    assert box.sources[0].text == "The plan C81 to KDLH: 300.0 nm, 150.0 min, 25.0 gal at 5500.0 ft"
+
+
+def test_the_go_no_go_tool_sends_the_pilots_own_minimums_in_the_asks_shape(fake_planner):
+    fake_planner.answer("/api/go-no-go", lambda body: {"line": {"finding": "go", "words": "Go"}, "items": [], "risk": None})
+    box = Toolbox(Context(dep="C81", dest="KDLH", pilot={"personal_minimums": {"ceiling_ft": 3000}, "currency": ["Night not current"]}))
+    box.by_name["go_no_go"].call({})
+    body = fake_planner.calls[0][2]
+    # Currency as lines of words is the model's to read, not the verdict's.
+    assert body["minimums"] == {"ceiling_ft": 3000} and "currency" not in body and "aircraft" not in body
+    assert [s.id for s in box.sources] == ["verdict"]
+
+
+def test_a_proposed_change_is_checked_as_a_route_and_follows_the_text_as_an_action(fake_planner):
+    fake_planner.answer("/api/route-check", lambda q: {"stops": q.get("stops", "").split(",") if q.get("stops") else []})
     box = Toolbox(Context(dep="C81", dest="KDLH", altitude_ft=4500))
     said = json.loads(box.by_name["propose_change"].call({"stops": "krhi", "why": "A fuel stop halfway, with the headwind."}))
     # The route as it would then be, through the planner's own check;
     # the idents upper-cased, the stops a list, nothing computed.
-    assert checked == [("C81", "KDLH", ["KRHI"])]
+    assert fake_planner.calls[0][:3] == ("GET", "/api/route-check", {"dep": "C81", "dest": "KDLH", "stops": "KRHI"})
     assert said == {"proposed": {"stops": ["KRHI"]}, "words": "A fuel stop halfway, with the headwind."}
     runner = iter([FakeStream([], blocks=[tool_use("propose_change", stops="krhi")], stop_reason="tool_use"),
                    FakeStream(["Rhinelander ", "as a stop."], stop_reason="end_turn")])
@@ -138,13 +158,8 @@ def test_a_proposed_change_is_checked_as_a_route_and_follows_the_text_as_an_acti
     assert got[3] == {"type": "action", "change": {"stops": ["KRHI"]}, "words": "A fuel stop halfway, with the headwind."}
 
 
-def test_a_bad_ident_is_an_error_to_the_model_and_never_an_action(monkeypatch):
-    from app import router_basics
-
-    def missing(dep, dest, stops=None):
-        raise HTTPException(404, "No US airport goes by 'ZZZZ'.")
-
-    monkeypatch.setattr(router_basics, "load_route", missing)
+def test_a_bad_ident_is_an_error_to_the_model_and_never_an_action(fake_planner):
+    fake_planner.answer("/api/route-check", PlannerError(404, "No US airport goes by 'ZZZZ'."))
     box = Toolbox(Context(dep="C81", dest="KDLH"))
     assert box.by_name["propose_change"].call({"dest": "zzzz"}) == "Error: No US airport goes by 'ZZZZ'."
     assert box.by_name["propose_change"].call({}) == "Error: nothing to change: give the field that would change."
@@ -154,15 +169,11 @@ def test_a_bad_ident_is_an_error_to_the_model_and_never_an_action(monkeypatch):
     assert [e["type"] for e in got] == ["text", "sources", "done"]
 
 
-def test_a_change_with_no_route_yet_checks_each_ident_alone(monkeypatch):
-    from app import router_basics
-
-    looked = []
-    monkeypatch.setattr(router_basics, "load_route", lambda *args: pytest.fail("no route to load"))
-    monkeypatch.setattr(router_basics, "resolve", lambda *idents: looked.extend(idents))
+def test_a_change_with_no_route_yet_asks_the_check_with_the_one_ident(fake_planner):
+    fake_planner.answer("/api/route-check", {"stops": []})
     box = Toolbox()
     said = json.loads(box.by_name["propose_change"].call({"dest": "kmsn", "altitude_ft": 6500.0, "depart": "2026-11-03T15:10:00Z"}))
-    assert looked == ["KMSN"]
+    assert fake_planner.calls[0][2] == {"dest": "KMSN"}
     assert said["proposed"] == {"dest": "KMSN", "altitude_ft": 6500, "depart": "2026-11-03T15:10:00Z"}
 
 

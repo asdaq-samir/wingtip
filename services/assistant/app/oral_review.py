@@ -8,8 +8,8 @@ one Markdown file to read, mark and hand back, and the same as JSON
 beside it for a page to show. Until enough of them are
 marked right, the mock oral stays the developer's.
 
-    docker exec wingtip-planner-1 sh -c \\
-        'cd /workspace/services/planner && python -m app.oral_review --count 12 --out /workspace/data/oral-review.md'
+    docker exec wingtip-assistant-1 sh -c \\
+        'cd /workspace/services/assistant && python -m app.oral_review --count 12 --out /workspace/data/oral-review.md'
 
 Each question is two billed calls' worth of a large model; --count says
 how many.

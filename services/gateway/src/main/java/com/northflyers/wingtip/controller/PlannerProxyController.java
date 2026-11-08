@@ -44,6 +44,12 @@ import org.springframework.web.util.pattern.PathPatternParser;
  * arrives here, where the session already exists and one set of rules
  * applies.
  *
+ * <p>The assistant service (services/assistant) sits behind the same
+ * door: every Claude call -- the assistant, the narrative, the words, the
+ * checkpoint notes, the mock oral -- is asked at the same
+ * {@code /api/planner/...} address as before and sent there instead
+ * ({@link #isAssistant}), after the same subscription and allowance checks.
+ *
  * <p>Responses are piped rather than buffered, by {@link StreamingProxy},
  * which also owns the pinned HTTP/1.1 client and the error shape.
  * Detection streams newline-delimited JSON a tile block at a time so the
@@ -62,6 +68,8 @@ public class PlannerProxyController {
 
     private static final StreamingProxy.Upstream PLANNER = new StreamingProxy.Upstream(
             "planner service", "planner service unreachable", "planner service timed out");
+    private static final StreamingProxy.Upstream ASSISTANT = new StreamingProxy.Upstream(
+            "assistant service", "assistant service unreachable", "assistant service timed out");
 
     /** The chart tiles, every kind under one path. These carry their
      *  upstream's Cache-Control -- see {@link #forward}. */
@@ -109,8 +117,14 @@ public class PlannerProxyController {
     static final String CYCLE_PACKS_PATH = "/api/cycle-packs";
     private static final String CYCLE_PACK_PATH = "/api/cycle-pack/";
     /** The Brief's narrative: the nav log on screen, told in words by
-     *  Claude (the planner's app.narrative), a paid feature. */
+     *  Claude (the assistant service's app.narrative), a paid feature. */
     static final String NARRATIVE_PATH = "/api/briefing/narrative";
+    /** A note for each checkpoint without one, written by Claude (the
+     *  assistant's app.notes), a paid feature. */
+    static final String NOTES_GENERATE_PATH = "/api/checkpoint-notes/generate";
+    /** The mock oral's two calls (the assistant's app.oral). */
+    static final String ORAL_QUESTION_PATH = "/api/oral/question";
+    static final String ORAL_GRADE_PATH = "/api/oral/grade";
     /** The largest nav log sent to be told in words. A long cross-country
      *  with every leg field is a few tens of KB; the planner also refuses
      *  more than app.narrative.MAX_LEGS legs. Every byte is prompt text a
@@ -122,11 +136,24 @@ public class PlannerProxyController {
      *  before anything here could look, on routes open to anyone. */
     static final int BODY_LIMIT = 4 * 1024 * 1024;
     /** The pilot's assistant: Opus, with up to eight rounds of the
-     *  planner's tools an ask (the planner's app.assistant). */
+     *  planner's tools an ask (the assistant service's app.assistant). */
     static final String ASSISTANT_PATH = "/api/assistant";
     /** The readings in words, one route for each kind (notams, weather,
-     *  risk, debrief, changes): Haiku, a call each (the planner's app.ai_words). */
+     *  risk, debrief, changes): Haiku, a call each (the assistant's app.words). */
     private static final PathPattern WORDS_PATTERN = PathPatternParser.defaultInstance.parse("/api/words/{kind}");
+
+    /** The paths the assistant service answers rather than the planner:
+     *  every Claude call (services/assistant, issue #535), each a POST.
+     *  The apps ask them at the same /api/planner/... addresses as before;
+     *  only where this class sends them changed. */
+    static final Set<String> ASSISTANT_PATHS = Set.of(
+            ASSISTANT_PATH, NARRATIVE_PATH, NOTES_GENERATE_PATH, ORAL_QUESTION_PATH, ORAL_GRADE_PATH);
+
+    /** Whether a forwarded request goes to the assistant service. */
+    static boolean isAssistant(String method, String path) {
+        return "POST".equals(method)
+                && (ASSISTANT_PATHS.contains(path) || WORDS_PATTERN.matches(PathContainer.parsePath(path)));
+    }
     /** The map's FAA overlays as vector tiles (the planner's
      *  wingtip.vector_tiles): the index, kept as the airport search is, and
      *  the cycle's PMTiles archive, its build in its name, kept as an
@@ -238,13 +265,13 @@ public class PlannerProxyController {
             route("POST", "/api/checkpoint-notes"),
             route("POST", "/api/checkpoint-notes/generate"),
             // The words with their sources, for the apps' "In words" sections
-            // (the planner's POST /api/words/{notams,weather,risk,debrief,changes}).
+            // (the assistant's POST /api/words/{notams,weather,risk,debrief,changes}).
             route("POST", "/api/words/{kind}"),
             // The pilot's assistant, streamed line by line (NDJSON) as the
-            // planner answers; StreamingProxy passes each chunk on as it comes.
+            // assistant answers; StreamingProxy passes each chunk on as it comes.
             route("POST", ASSISTANT_PATH),
             // The Brief's narrative, streamed line by line (NDJSON) as
-            // Claude writes it (the planner's app.narrative).
+            // Claude writes it (the assistant's app.narrative).
             route("POST", NARRATIVE_PATH),
             // The developer's.
             route("POST", "/api/oral/question"),
@@ -275,6 +302,7 @@ public class PlannerProxyController {
 
     private final StreamingProxy proxy;
     private final String plannerBaseUrl;
+    private final String assistantBaseUrl;
     private final PilotService pilots;
     private final SubscriptionService subscriptions;
 
@@ -317,6 +345,7 @@ public class PlannerProxyController {
     public PlannerProxyController(
             StreamingProxy proxy,
             @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
+            @Value("${assistant-service.base-url:http://assistant:8000}") String assistantBaseUrl,
             PilotService pilots,
             SubscriptionService subscriptions,
             @Value("${app.paid-calls.per-day:40}") int paidCallsPerDay,
@@ -324,6 +353,7 @@ public class PlannerProxyController {
             @Value("${app.paid-calls.words-per-day:150}") int wordsPerDay) {
         this.proxy = proxy;
         this.plannerBaseUrl = plannerBaseUrl.replaceAll("/+$", "");
+        this.assistantBaseUrl = assistantBaseUrl.replaceAll("/+$", "");
         this.pilots = pilots;
         this.subscriptions = subscriptions;
         this.allowances = new EnumMap<>(Map.of(
@@ -392,7 +422,10 @@ public class PlannerProxyController {
                         + ". " + allowance.still());
             }
         }
-        URI target = URI.create(plannerBaseUrl + path + query(request));
+        // Every Claude call to the assistant service, everything else to
+        // the planner: the same rules above for both, one address for the apps.
+        boolean toAssistant = isAssistant(method, path);
+        URI target = URI.create((toAssistant ? assistantBaseUrl : plannerBaseUrl) + path + query(request));
 
         HttpRequest.BodyPublisher publisher = body == null
                 ? HttpRequest.BodyPublishers.noBody()
@@ -416,7 +449,7 @@ public class PlannerProxyController {
         }
         HttpRequest upstream = upstreamBuilder.build();
 
-        return proxy.exchange(PLANNER, upstream, response -> {
+        return proxy.exchange(toAssistant ? ASSISTANT : PLANNER, upstream, response -> {
             ResponseEntity.BodyBuilder builder = StreamingProxy.unbuffered(
                     ResponseEntity.status(response.statusCode())
                             .header(HttpHeaders.CONTENT_TYPE, StreamingProxy.contentTypeOf(response)));
