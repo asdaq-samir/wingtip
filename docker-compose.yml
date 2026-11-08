@@ -237,6 +237,11 @@ services:
     networks: [default, docker-control]
     volumes:
       - .:/workspace
+      # The live store (wingtip/traffic/store.py) on a Docker volume, not the
+      # Mac's shared folder: its SQLite write-ahead log needs shared memory
+      # between the planner and ingest, which the Mac's file sharing into
+      # Docker does not give, and ingest's writes hung (2026-11-08).
+      - live-store:/workspace/data/raw/live
     environment:
       PYTHONPATH: /workspace/services/planner
       # Not the host's Docker socket -- the dev-services sidecar above,
@@ -280,6 +285,11 @@ services:
         wingtip-base: service:base
     volumes:
       - .:/workspace
+      # The live store (wingtip/traffic/store.py) on a Docker volume, not the
+      # Mac's shared folder: its SQLite write-ahead log needs shared memory
+      # between the planner and ingest, which the Mac's file sharing into
+      # Docker does not give, and ingest's writes hung (2026-11-08).
+      - live-store:/workspace/data/raw/live
     # Production is one 4 GB server: ingest is a few threads and a SQLite
     # connection, 186 MB with wingtip's imports (docker stats, 2026-11-08),
     # so it is held to twice that, well below what would crowd the planner.
@@ -591,6 +601,8 @@ networks:
     internal: true
 
 volumes:
+  # The planner's and ingest's shared live store (see their mounts).
+  live-store:
   pgdata_pg18:
   # gateway's JVM class-data archive -- see JAVA_TOOL_OPTIONS on gateway.
   gateway-cds:
