@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { LocateFixed, MapPin, Navigation2 } from "lucide-react";
 import { cn } from "cn";
@@ -44,8 +44,16 @@ function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: N
   const typed = useTabSearch(s => s.near);
   const [asked, setAsked] = useState("");
   // The field shows the place picked, as it did when it was this card's.
+  // Not emptied as the card first comes up with no place: the field is in
+  // the panel's head, there before the card, and what was typed into it
+  // in that moment was wiped (nearest.spec's smoke test, on a fast stack).
+  const shownFrom = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    useTabSearch.setState({ near: from?.label ?? "" });
+    const label = from?.label ?? null;
+    const first = shownFrom.current === undefined;
+    shownFrom.current = label;
+    if (first && label === null) return;
+    useTabSearch.setState({ near: label ?? "" });
   }, [from?.label]);
   useEffect(() => {
     const later = window.setTimeout(() => setAsked(typed.trim()), TYPING_MS);
