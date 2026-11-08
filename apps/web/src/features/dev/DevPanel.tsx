@@ -20,6 +20,7 @@ import { useRetrain } from "./useRetrain";
 import SpeedPage from "./SpeedPage";
 import { grouped } from "../../lib/units";
 import { ago } from "../../lib/clock";
+import { WINDS_MODELLED } from "../../lib/windsAloft";
 
 const mae = (n: number) => n.toFixed(4);
 
@@ -568,9 +569,10 @@ const DATASET_NAMES: Record<string, string> = {
   airsigmets: "AIRMETs and SIGMETs",
   pireps: "Pilot reports",
   gairmets: "G-AIRMETs",
-  "winds-06": "Winds aloft, next 6 h",
-  "winds-12": "Winds aloft, 12 h",
-  "winds-24": "Winds aloft, 24 h",
+  // The GFS's since the FB ended (lib/windsAloft), as the planner names them.
+  "winds-06": `Winds aloft, ${WINDS_MODELLED}, next 6 h`,
+  "winds-12": `Winds aloft, ${WINDS_MODELLED}, 12 h`,
+  "winds-24": `Winds aloft, ${WINDS_MODELLED}, 24 h`,
 };
 
 /** The FAA charts on disk and the tile pyramid rendered from them, the
