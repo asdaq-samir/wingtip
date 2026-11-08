@@ -49,10 +49,14 @@ const EASTBOUND = "eastbound (0° through 179°)";
 const WESTBOUND = "westbound (180° through 359°)";
 
 /** A course as the rule sorts it: cut to the whole degree, not rounded,
- *  as the planner sorts the exact course (wingtip.altitude.is_eastbound) --
+ *  as the planner sorts the exact course (the engine's is_eastbound) --
  *  a course of 179.6° rounded read "180° is eastbound" -- north as 360,
  *  as every bearing is written (lib/units' bearing). */
 const ruleCourse = (course: number) => bearing(Math.floor(course));
+
+/** The distance 14 CFR 91.155(a) keeps under the clouds at an altitude
+ *  (the engine's cloud_clearance_at_ft). */
+const underClouds = (altitudeFt: number) => callEngine("cloud_clearance_at_ft", { altitude_ft: altitudeFt });
 
 /** "a, b and c" -- the ceiling is the lowest of up to three things. */
 function join(parts: string[]): string {
@@ -127,12 +131,12 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
     s.airspace_ceiling_ft !== null ? `the Class B shelf at ${altFt(s.airspace_ceiling_ft)} ft` : "no Class B shelf across the route",
   ];
   // The clouds, 14 CFR 91.155's distance below the lowest ceiling the
-  // TAFs near the legs forecast for the flight, the engine's
-  // (feetBelowClouds).
+  // TAFs near the legs forecast for the flight, the engine's: 500 ft, or
+  // 1,000 ft where that is at 10,000 ft or above.
   // Where the clouds leave no altitude, the band leaves them out, and a
   // sentence of its own under the ceiling says so.
   if (s.cloud_base_ft != null && s.cloud_ceiling_ft != null && s.cloud_clearance_kept) {
-    ceilingParts.push(`${altFt(feetBelowClouds(s.cloud_ceiling_ft))} ft under the clouds forecast at ${
+    ceilingParts.push(`${altFt(underClouds(s.cloud_ceiling_ft))} ft under the clouds forecast at ${
       altFt(s.cloud_base_ft)} ft near ${s.cloud_station} (14 CFR 91.155)`);
   } else if (!s.weather_unavailable.includes("ceiling_visibility")) {
     ceilingParts.push("no ceiling forecast near the legs");
@@ -306,7 +310,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
           {runsText && ` Leg by leg: ${runsText}. A shelf or a cloud caps only the legs under it.`}
           {cloudsLeaveNone && (
             <span className="text-destructive">
-              {" "}No altitude keeps {altFt(feetBelowClouds(s.cloud_ceiling_ft))} ft below the clouds forecast at {altFt(s.cloud_base_ft!)} ft near {s.cloud_station} on
+              {" "}No altitude keeps {altFt(underClouds(s.cloud_ceiling_ft ?? 0))} ft below the clouds forecast at {altFt(s.cloud_base_ft!)} ft near {s.cloud_station} on
               {" "}{s.segments.some(seg => seg.cloud_clearance_kept) ? "some legs" : "the route"}: VFR is not possible there as
               forecast, and the altitudes there leave the clouds out.
             </span>

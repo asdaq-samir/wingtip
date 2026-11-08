@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from wingtip import sua
+from wingtip.engine import ask as engine
 
 
 def _feature(name, type_code, ring, lower=("0", "FT", "SFC"), upper=("18000", "FT", "MSL"), times="CONTINUOUS"):
@@ -135,12 +136,14 @@ def test_a_service_that_does_not_answer_serves_the_set_read_within_the_cycle(mon
 @pytest.mark.parametrize("altitude, expected", [(4500, True), (18000, True), (18500, False)])
 def test_a_prohibited_area_blocks_the_altitudes_between_its_limits(altitude, expected):
     area = {"type": "P", "floor_ft": 0.0, "ceiling_ft": 18000.0, "ceiling_ref": "MSL"}
-    assert sua.blocked(altitude, [area]) is expected
+    assert engine("altitude_blocked", altitude_ft=altitude, areas=[area]) is expected
 
 
 def test_an_agl_ceiling_is_taken_as_unlimited_and_a_restricted_area_blocks_nothing():
-    assert sua.blocked(30000, [{"type": "P", "floor_ft": 0.0, "ceiling_ft": 3000.0, "ceiling_ref": "AGL"}])
-    assert not sua.blocked(4500, [{"type": "R", "floor_ft": 0.0, "ceiling_ft": 18000.0, "ceiling_ref": "MSL"}])
+    assert engine("altitude_blocked", altitude_ft=30000,
+                  areas=[{"type": "P", "floor_ft": 0.0, "ceiling_ft": 3000.0, "ceiling_ref": "AGL"}])
+    assert not engine("altitude_blocked", altitude_ft=4500,
+                      areas=[{"type": "R", "floor_ft": 0.0, "ceiling_ft": 18000.0, "ceiling_ref": "MSL"}])
 
 
 def test_the_areas_over_a_point_are_those_that_hold_it_lowest_first():

@@ -358,7 +358,20 @@
 //! - `reserve_min` (91.151(a), 91.167(a)(3)) from `{"ifr"?, "night"?}`;
 //!   `isa_temp_c` from `{"altitude_ft"}`, `density_ratio` from
 //!   `{"altitude_ft", "oat_c"}`, `density_altitude_ft` from `{"sigma"}`,
-//!   `pressure_altitude_ft` from `{"elevation_ft", "altimeter_inhg"}`,
+//!   `pressure_altitude_ft` from `{"elevation_ft", "altimeter_inhg"}`;
+//! - the altitude a flight is planned at (crate::altitude, #482 phase 3):
+//!   `legal_cruising_altitudes` (91.159, 91.179(b)) from `{"floor_ft",
+//!   "ceiling_ft"?, "magnetic_course_deg", "rule_from_ft"?, "rules"?}`,
+//!   `tight_cruising_altitude`, `highest_under_clouds_ft` and
+//!   `cloud_clearance_at_ft` (91.155(a)), `altitude_wheel` from
+//!   `{"legal_ft", "flown_ft"?}`, `vfr_floors` (91.119) from `{"start",
+//!   "end", "breaks_nm", "ground": {"along_nm", "high_ft", "low_ft",
+//!   "congested"?}, "obstacles"}`, `ifr_floors` (91.177(a)(2)) from
+//!   `{"legs": [{"a", "b", "ground_ft"}], "obstacles"}`,
+//!   `ifr_obstacle_radius_nm`, `airway_floor_ft`, `altitude_blocked`
+//!   (73.83), `mountainous_at` (Part 95), `select_cruise_altitude` from the
+//!   data the planner read, `altitude_anyway` and `no_altitude` from
+//!   `{"selection", "between"?, "via"?, "where"?}`;
 //!   `is_eastbound` and `lowest_vfr_cruising_altitude` (91.159(a)) from
 //!   `{"magnetic_course_deg", "floor_ft"}`, `distance_nm` from `{"lat1",
 //!   "lon1", "lat2", "lon2"}`, `region_of` from `{"lat", "lon"}`,
@@ -894,6 +907,7 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         // A field's weather (forecast::calls), the traffic list's filters and
         // the registry's airplanes (aircraft::calls).
         _ if crate::forecast::calls::NAMES.contains(&name) => crate::forecast::calls::call(name, ask.v),
+        _ if crate::altitude::calls::NAMES.contains(&name) => crate::altitude::calls::call(name, ask.v),
         _ if crate::aircraft::calls::NAMES.contains(&name) => crate::aircraft::calls::call(name, ask.v),
         // Instrument approaches taught and debriefed (approach::calls).
         _ if crate::approach::calls::NAMES.contains(&name) => crate::approach::calls::call(name, ask.v),

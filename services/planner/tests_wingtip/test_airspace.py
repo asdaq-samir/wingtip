@@ -98,7 +98,11 @@ def test_absent_file_is_rejected(tmp_path):
 # --- the hemispheric cruising-altitude rule ---
 
 from wingtip.airspace import CLEARANCE_CLASSES  # noqa: E402
-from wingtip.altitude import lowest_vfr_cruising_altitude  # noqa: E402
+from wingtip.engine import ask as engine  # noqa: E402
+
+
+def lowest_vfr_cruising_altitude(floor_ft, course):
+    return engine("lowest_vfr_cruising_altitude", floor_ft=floor_ft, magnetic_course_deg=course)
 
 EAST, WEST = 90.0, 270.0
 

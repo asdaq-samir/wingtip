@@ -17,6 +17,7 @@ members = [
     "crates/brief",
     "crates/route",
     "crates/pilot",
+    "crates/altitude",
     "bindings/py",
     "bindings/ffi",
     "bindings/wasm",

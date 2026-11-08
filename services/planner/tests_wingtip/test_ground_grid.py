@@ -37,14 +37,14 @@ def test_a_legs_floor_is_its_highest_cell_with_the_margin_and_its_lowest_ground_
     (segment,) = terrain.floor_profile(START, END, [0.0, TOTAL_NM])
     # 14 CFR 91.119(b)'s 1,000 ft over the ridge and the resampling's 150,
     # rounded up to the hundred.
-    assert segment.floor_ft == 3500
-    assert segment.lowest_ground_ft == 600
+    assert segment["floor_ft"] == 3500
+    assert segment["lowest_ground_ft"] == 600
 
 
 def test_the_ridge_counts_for_the_leg_over_it_alone(grid):
     high, _ = grid
     high[cell(45.0, -89.2)] = 2350
-    floors = [s.floor_ft for s in terrain.floor_profile(START, END, [0.0, TOTAL_NM / 2, TOTAL_NM])]
+    floors = [s["floor_ft"] for s in terrain.floor_profile(START, END, [0.0, TOTAL_NM / 2, TOTAL_NM])]
     assert floors == [2200, 3500]
 
 

@@ -45,6 +45,10 @@
 //!   short-field distances and how an end suits the airplane;
 //! - approach: instrument approaches taught (the brief, the coached dry
 //!   run, the quiz) and debriefed against the procedure flown;
+//! - altitude: the altitude a flight is planned at -- the terrain and
+//!   obstacle floor (14 CFR 91.119), the IFR floor (91.177), the band under
+//!   Class B, the clouds (91.155) and the service ceiling, the cruising
+//!   altitudes by course (91.159, 91.179) and the words where none fits;
 //! - flight: the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere;
 //! - wmm: magnetic variation from the World Magnetic Model;
 //! - forecast: a field's flight category from what is known of its
@@ -64,6 +68,7 @@
 pub mod call;
 
 pub use wingtip_airspace::{ahead, airspace, drills, pack, pack_query, rules, spoken, view};
+pub use wingtip_altitude::altitude;
 pub use wingtip_brief::{gonogo, runway};
 pub use wingtip_procedures::figures;
 pub use wingtip_core::{geo, grid, sums, time, wmm, xml};
