@@ -74,6 +74,7 @@ fn code_names() -> BTreeSet<String> {
     for src in [
         include_str!("../../crates/wording/src/wording/mod.rs"),
         include_str!("../../crates/airspace/src/drills.rs"),
+        include_str!("../../crates/airspace/src/ahead.rs"),
         include_str!("../../crates/pilot/src/pilot/records.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
@@ -522,6 +523,22 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         checks.push(check);
     }
     c.ask("ifr_alternates_ranked", json!({ "checks": checks, "limit": 5 }));
+    // What is ahead of own ship (ahead.rs) and 91.119(b)'s congested areas.
+    let own = json!({ "lat": 42.0, "lon": -88.0, "track_deg": 90.0, "gs_kt": 120.0, "alt_ft": 3000.0, "vs_fpm": 0.0 });
+    let frame = c.ask("ahead_frame", own.clone());
+    let mut given = own.clone();
+    given["now"] = json!(1791655200);
+    given["ground_ft"] = json!(800);
+    given["airspace"] = json!([{ "name": "ROCKFORD CLASS C", "class": "C", "floor_ft": 0, "ceiling_ft": 5000,
+        "polygons": [[[[-87.9, 41.97], [-87.8, 41.97], [-87.8, 42.03], [-87.9, 42.03], [-87.9, 41.97]]]] }]);
+    given["special_use"] = json!([]);
+    given["tfrs"] = json!([]);
+    given["near_field"] = Value::Null;
+    given["swath_ground_ft"] = json!(frame["lats"].as_array().unwrap().iter().map(|r| vec![800.0; r.as_array().unwrap().len()]).collect::<Vec<_>>());
+    given["obstacles"] = json!([{ "lat": 42.0, "lon": -87.98, "amsl_ft": 2700, "type": "TOWER" }]);
+    c.ask("alerts_ahead", given);
+    c.ask("congested_points", json!({ "areas": [[[[[-90.0, 45.0], [-89.98, 45.0], [-89.98, 45.01], [-90.0, 45.01], [-90.0, 45.0]]]]],
+        "points": [[45.005, -89.99], [46.0, -89.0]], "candidates": [[0], []] }));
 
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.

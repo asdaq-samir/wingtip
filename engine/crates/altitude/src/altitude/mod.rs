@@ -9,6 +9,8 @@
 //!   shelf, and the altitude wheel's rows;
 //! - clouds: 91.155's distance under a cloud base, and each leg's lowest
 //!   forecast base from the TAFs near it;
+//! - congested: whether a point is over a congested area, or within
+//!   91.119(b)'s 2,000 ft of one, from the towns the planner reads;
 //! - floor: the terrain and obstacle floor of each leg under VFR (91.119)
 //!   and the minimum IFR altitude (91.177(a)), over Part 95's mountainous
 //!   areas (`mountainous`);
@@ -29,6 +31,7 @@
 pub mod calls;
 pub mod cautions;
 pub mod clouds;
+pub mod congested;
 pub mod cruising;
 pub mod floor;
 pub mod mountainous;
