@@ -75,6 +75,9 @@ one job (the owner kept both server languages on this split, 2026-11-06):
     compose project (`wingtip`), so the main checkout stays on `main`:
     `scripts/dev/go-live.sh` pulls the branch, rebuilds and restarts
     the changed services and the web build, then says what is running.
+    It first runs `scripts/dev/tidy-local.sh`: worktrees and branches
+    already landed, stopped containers and dangling images go, and a
+    running agent's (locked) worktree or one with changes stays.
     The owner is told what to try; the validation runs while they do.
   - At the end of a wave, one validation pass on the integration branch
     on the Mac: every suite, the image builds, the browser tests, the

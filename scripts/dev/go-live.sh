@@ -19,6 +19,8 @@ main=${main%/.git}
 live=${WINGTIP_LIVE_DIR:-$HOME/Developer/wingtip-live}
 export PATH="$PATH:$HOME/.docker/bin"
 
+# Tidy first: merged worktrees and branches, stopped containers.
+"$(dirname "$0")/tidy-local.sh" || true
 git -C "$main" fetch -q origin "$branch"
 if [ ! -d "$live" ]; then
   git -C "$main" worktree add -q --detach "$live" "origin/$branch"
