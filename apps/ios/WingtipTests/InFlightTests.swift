@@ -73,4 +73,16 @@ struct InFlightTests {
         let at = try #require(page.place(fix))
         #expect(at.onPage && abs(at.x - 183) < 2)
     }
+
+    @Test func ownShipGoesWhenItsFixIsStaleOrCoarse() {
+        // AC 120-76D 11.17.2.3 and 11.17.2.4: off within 3 s, none past 30 m.
+        let now = Date()
+        let fix = { (age: TimeInterval, metres: Double) in
+            OwnShip.Fix(coordinate: CLLocationCoordinate2D(latitude: 46.84, longitude: -92.19), altitudeFt: nil, trackDeg: nil,
+                        groundspeedKt: 0, accuracyM: metres, at: now.addingTimeInterval(-age))
+        }
+        #expect(DiagramOwnShipView.usable(fix(1, 5), now: now) != nil)
+        #expect(DiagramOwnShipView.usable(fix(3.5, 5), now: now) == nil)
+        #expect(DiagramOwnShipView.usable(fix(1, 31), now: now) == nil)
+    }
 }

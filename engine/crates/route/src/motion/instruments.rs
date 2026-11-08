@@ -10,9 +10,10 @@
 //!
 //! Figures for a planning aid flown beside the airplane's own
 //! instruments, never in their place: a phone's GPS is not an approved
-//! navigation source, and an electronic flight bag's own ship is for
-//! situational awareness (FAA AC 120-76D, Authorization for Use of
-//! Electronic Flight Bags); the apps say so where they show them.
+//! navigation source, and "the flightcrew's reference for maneuvering the
+//! aircraft in the air is the installed primary flight and navigational
+//! displays" (FAA AC 120-76D, Authorization for Use of Electronic Flight
+//! Bags, 11.17.1); the apps say so where they show them.
 
 use super::{glide, num, opt};
 use crate::geo::{bearing_deg, destination, distance_nm, py_mod};

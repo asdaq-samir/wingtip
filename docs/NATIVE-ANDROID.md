@@ -181,6 +181,28 @@ request needs an Activity. Setup's Map section has the Traffic switch
 (`TrafficSwitch`, kept in the DataStore settings file under "traffic",
 on until turned off), where the iOS app's Setup has it.
 
+In flight (#218, the owner's option A of 2026-11-08), as the iPhone:
+`flight/InFlight.kt` asks the engine once a fix for `in_flight`,
+`vertical_speed` and `glide_ring`; with own ship on and at flying speed
+the top of the map, left of the buttons, shows what is ahead
+(`ui/InFlightViews.kt`'s AlertsBanner, the planner's or the packs'
+alerts, which were worked out and never shown before) over the
+instruments bar -- groundspeed, track, GPS altitude, vertical speed; on
+the route the next field's distance, time to go and desired track, the
+distance off course and the destination's arrival with the fuel the
+plan leaves; Nearest one tap away (a sheet of the nearest fields, which
+are within a still-air glide by `glide_reaches`); and "Planning aid ·
+not for navigation". The glide ring is a dashed line under the route
+(`ChartMap`'s `glide`), over the higher of the packs' ground (ahead's
+`ground_ft`) and the nearest field. FiguresStrip counts down from the
+airplane on the route. Setup's Map section has Speak Alerts Ahead
+(`flight/SpokenAlerts.kt`, Android's TextToSpeech, the iPhone's words).
+A field's card has Diagram with Your Position (`ui/DiagramOwnShip.kt`):
+the FAA's PDF drawn by PdfRenderer, own ship placed by the diagram's own
+latitude and longitude marks, read with Android 15's PDF text (SDK
+extension 13); an older Android shows the diagram without the airplane
+and says why. FIS-B weather from ADS-B In is still to come.
+
 Still to come: the tile store and the route's tiles for the air, the
 briefing, the checkpoints and the side view, the altitude wheel, the
 airplane by N-number, widgets, and the brand's own launcher icon: the

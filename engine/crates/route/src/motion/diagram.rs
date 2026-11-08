@@ -17,7 +17,10 @@
 //! The diagram is the FAA's, for a pilot's situational awareness on the
 //! ground, not for navigation: the airplane's own position against the
 //! signs and markings is what counts (AC 120-74B, Parts 91, 121, 125 and
-//! 135 Flightcrew Procedures During Taxi Operations; AC 120-76D).
+//! 135 Flightcrew Procedures During Taxi Operations; AC 120-76D 11.17.1:
+//! on the ground "use of external visual references is sufficient for
+//! maneuvering"). The apps draw own ship by AC 120-76D 11.17.2: a circle
+//! with no track, and gone once its fix is three seconds old.
 
 use super::num;
 use crate::geo::py_mod;

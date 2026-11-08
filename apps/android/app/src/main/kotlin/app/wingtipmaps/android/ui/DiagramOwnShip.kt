@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,6 +57,7 @@ import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -75,7 +77,12 @@ import java.io.File
  * airplane, and says so.
  *
  * For a pilot's awareness on the ground, not for navigation: the signs,
- * the markings and ATC's taxi instructions are what count (AC 120-74B).
+ * the markings and ATC's taxi instructions are what count (AC 120-74B;
+ * AC 120-76D 11.17.1, "use of external visual references is sufficient
+ * for maneuvering" on the ground). Own ship follows AC 120-76D 11.17.2: a
+ * circle, not an arrow, with no track (11.17.2.2), and gone once the fix
+ * is older than three seconds or worse than 30 m (11.17.2.3, 11.17.2.4's
+ * 30 m), never frozen.
  */
 @Composable
 fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
@@ -83,6 +90,16 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
     var page by remember { mutableStateOf<DiagramPage?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
     val flight by InFlight.shared.state.collectAsStateWithLifecycle()
+    // The clock, each second, so a fix that stops coming takes the
+    // airplane off rather than freezing it.
+    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            nowMs = System.currentTimeMillis()
+        }
+    }
+    val fix = DiagramPage.usable(flight.fix, nowMs)
     LaunchedEffect(url) {
         try {
             page = withContext(Dispatchers.IO) { DiagramPage.read(url, context.cacheDir) }
@@ -103,14 +120,14 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
                 Box(Modifier.weight(1f).fillMaxWidth().background(Color.White), contentAlignment = Alignment.Center) {
                     val shown = page
                     when {
-                        shown != null -> DiagramWithOwnShip(shown, flight.fix)
+                        shown != null -> DiagramWithOwnShip(shown, fix)
                         problem != null -> ProblemLine(problem)
                         else -> CircularProgressIndicator()
                     }
                 }
                 page?.let {
                     Text(
-                        DiagramPage.note(it, flight.fix),
+                        DiagramPage.note(it, fix),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(12.dp),
@@ -145,11 +162,17 @@ private fun DiagramWithOwnShip(page: DiagramPage, fix: OwnShip.Fix?) {
         ) {
             Image(page.image.asImageBitmap(), contentDescription = "Airport diagram", modifier = Modifier.fillMaxSize())
             if (at != null) {
-                val turn = ((page.graticule?.northDeg ?: 0.0) + (fix?.trackDeg ?: 0.0)).toFloat()
+                val track = fix?.trackDeg
+                val turn = ((page.graticule?.northDeg ?: 0.0) + (track ?: 0.0)).toFloat()
                 Canvas(Modifier.fillMaxSize().semantics { contentDescription = "You are here" }) {
                     val centre = Offset((at.x * k).toFloat(), (at.y * k).toFloat())
                     val r = 11.dp.toPx()
                     drawCircle(Color.White, radius = r + 3.dp.toPx(), center = centre)
+                    // No track: a circle, not an arrow (AC 120-76D 11.17.2.2).
+                    if (track == null) {
+                        drawCircle(Color(0xFF007AFF), radius = r * 0.7f, center = centre)
+                        return@Canvas
+                    }
                     rotate(turn, pivot = centre) {
                         val arrow = Path().apply {
                             moveTo(centre.x, centre.y - r)
@@ -204,6 +227,15 @@ class DiagramPage(val image: Bitmap, val width: Float, val height: Float, val gr
 
     companion object {
         private val http = OkHttpClient()
+
+        /** AC 120-76D 11.17.2.3: own ship removed within three seconds of
+         *  its position going; 11.17.2.4: nothing shown past 30 m. */
+        const val STALE_MS = 3_000L
+        const val WORST_M = 30.0
+
+        /** The fix to draw now, null where it is stale or too coarse. */
+        fun usable(fix: OwnShip.Fix?, nowMs: Long): OwnShip.Fix? =
+            fix?.takeIf { nowMs - it.atMs <= STALE_MS && it.accuracyM >= 0 && it.accuracyM <= WORST_M }
 
         /** The line under the page: where the airplane is not drawn, why;
          *  and the planning aid's words with the FAA's credit. */

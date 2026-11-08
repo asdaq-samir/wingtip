@@ -10,8 +10,12 @@ import SwiftUI
 /// (KORD's) is shown without the airplane, and says so.
 ///
 /// For a pilot's awareness on the ground, not for navigation: the signs,
-/// the markings and ATC's taxi instructions are what count (AC 120-74B),
-/// and the sheet says it is a planning aid.
+/// the markings and ATC's taxi instructions are what count (AC 120-74B;
+/// AC 120-76D 11.17.1, "use of external visual references is sufficient
+/// for maneuvering" on the ground), and the sheet says it is a planning
+/// aid. Own ship follows AC 120-76D 11.17.2: a circle, not an arrow, with
+/// no track (11.17.2.2), and gone once the fix is older than three
+/// seconds or worse than 30 m (11.17.2.3, 11.17.2.4's 30 m), never frozen.
 struct DiagramOwnShipView: View {
     let ident: String
     let url: String
@@ -23,11 +27,26 @@ struct DiagramOwnShipView: View {
     @State private var offset: CGSize = .zero
     @State private var settledOffset: CGSize = .zero
 
+    /// AC 120-76D 11.17.2.3: own ship removed within three seconds of its
+    /// position going; 11.17.2.4: nothing shown past 30 m.
+    static let staleS: TimeInterval = 3
+    static let worstM: Double = 30
+
+    /// The fix to draw now, nil where it is stale or too coarse.
+    static func usable(_ fix: OwnShip.Fix?, now: Date) -> OwnShip.Fix? {
+        guard let fix, now.timeIntervalSince(fix.at) <= staleS, fix.accuracyM >= 0, fix.accuracyM <= worstM else { return nil }
+        return fix
+    }
+
     var body: some View {
         NavigationStack {
             Group {
                 if let diagram {
-                    page(diagram)
+                    // Drawn again each second, so a fix that stops coming
+                    // takes the airplane off rather than freezing it.
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        page(diagram, fix: Self.usable(InFlight.shared.fix, now: context.date))
+                    }
                 } else if let problem {
                     ContentUnavailableView {
                         Label("Not shown", systemImage: "exclamationmark.triangle")
@@ -66,21 +85,21 @@ struct DiagramOwnShipView: View {
     private func note(_ diagram: DiagramPage) -> String {
         let aid = "FAA · Planning aid, not for navigation"
         guard diagram.graticule != nil else { return "This diagram has no latitude and longitude marks to place the airplane by. \(aid)" }
-        guard let fix = InFlight.shared.fix else { return "Finding your position… \(aid)" }
+        guard let fix = Self.usable(InFlight.shared.fix, now: Date()) else { return "Finding your position… \(aid)" }
         guard let at = diagram.place(fix), at.onPage else { return "You are off this diagram. \(aid)" }
         return aid
     }
 
-    private func page(_ diagram: DiagramPage) -> some View {
+    private func page(_ diagram: DiagramPage, fix: OwnShip.Fix?) -> some View {
         GeometryReader { geo in
             let fitted = Self.fitted(diagram.size, in: geo.size)
             ZStack(alignment: .topLeading) {
                 Image(uiImage: diagram.image)
                     .resizable()
                     .frame(width: fitted.width, height: fitted.height)
-                if let fix = InFlight.shared.fix, let at = diagram.place(fix), at.onPage {
+                if let fix, let at = diagram.place(fix), at.onPage {
                     let k = fitted.width / diagram.size.width
-                    Image(systemName: "location.north.fill")
+                    Image(systemName: fix.trackDeg == nil ? "circle.fill" : "location.north.fill")
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(.blue)
                         .background(Circle().fill(.white).frame(width: 30, height: 30))

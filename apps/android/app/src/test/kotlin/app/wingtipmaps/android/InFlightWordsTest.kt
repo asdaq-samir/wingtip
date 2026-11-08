@@ -2,9 +2,12 @@ package app.wingtipmaps.android
 
 import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.SpokenAlerts
+import app.wingtipmaps.android.ui.DiagramPage
 import app.wingtipmaps.android.ui.InstrumentsWords
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -47,5 +50,15 @@ class InFlightWordsTest {
         val (again, kept) = SpokenAlerts.toSay(listOf(alert("b", 100.0)), said)
         assertNull(again)
         assertEquals(setOf("b"), kept)
+    }
+
+    @Test
+    fun ownShipGoesWhenItsFixIsStaleOrCoarse() {
+        // AC 120-76D 11.17.2.3 and 11.17.2.4: off within 3 s, none past 30 m.
+        val now = 1_700_000_010_000L
+        fun fix(ageMs: Long, metres: Double) = OwnShip.Fix(46.84, -92.19, null, null, 0.0, metres, now - ageMs)
+        assertNotNull(DiagramPage.usable(fix(1_000, 5.0), now))
+        assertNull(DiagramPage.usable(fix(3_500, 5.0), now))
+        assertNull(DiagramPage.usable(fix(1_000, 31.0), now))
     }
 }
