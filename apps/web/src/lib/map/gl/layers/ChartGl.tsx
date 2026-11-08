@@ -80,7 +80,7 @@ function ChartSources({ spec, night, sunlight }: { spec: ChartStyle; night: bool
 }
 
 /** Whether the page is in the dark theme (next-themes' class on <html>). */
-function useDarkTheme(): boolean {
+export function useDarkTheme(): boolean {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   useEffect(() => {
     const html = document.documentElement;

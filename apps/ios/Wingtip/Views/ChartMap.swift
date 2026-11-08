@@ -10,6 +10,9 @@ import SwiftUI
 /// A procedure's path, told from the course line by its class.
 final class ProcedurePolyline: MKPolyline {}
 
+/// The rim under the course line, so it keeps its contrast on the chart.
+final class CourseCasingPolyline: MKPolyline {}
+
 /// The dry run's airplane: a blue arrow in a white casing, as the web app
 /// draws own ship, turned to its track.
 final class PlaneAnnotation: MKPointAnnotation {
@@ -227,8 +230,13 @@ struct ChartMap: UIViewRepresentable {
         if context.coordinator.courseShown != course {
             context.coordinator.courseShown = course
             if let line = context.coordinator.courseLine { map.removeOverlay(line) }
+            if let casing = context.coordinator.courseCasing { map.removeOverlay(casing) }
+            context.coordinator.courseCasing = nil
             context.coordinator.courseLine = nil
             if let course, course.coordinates.count >= 2 {
+                let casing = CourseCasingPolyline(coordinates: course.coordinates, count: course.coordinates.count)
+                map.addOverlay(casing, level: .aboveLabels)
+                context.coordinator.courseCasing = casing
                 let line = MKPolyline(coordinates: course.coordinates, count: course.coordinates.count)
                 map.addOverlay(line, level: .aboveLabels)
                 context.coordinator.courseLine = line
@@ -276,6 +284,7 @@ struct ChartMap: UIViewRepresentable {
     final class Coordinator: NSObject, MKMapViewDelegate {
         var overlay: ChartTileOverlay?
         var courseLine: MKPolyline?
+        var courseCasing: CourseCasingPolyline?
         var courseShown: Course?
         var hazardLines: [HazardPolyline] = []
         var hazardShown: HazardLegs?
@@ -329,6 +338,7 @@ struct ChartMap: UIViewRepresentable {
         /// renderer once per overlay.
         private var tiles: NightTileRenderer?
         private var courseRenderer: MKPolylineRenderer?
+        private var casingRenderer: MKPolylineRenderer?
         private var shade: CGFloat = 0
 
         func dim(_ shade: CGFloat) {
@@ -336,7 +346,15 @@ struct ChartMap: UIViewRepresentable {
             self.shade = shade
             tiles?.shade = shade
             courseRenderer?.strokeColor = NightPalette.course(night: shade > 0)
+            casingRenderer?.strokeColor = Self.casingColour(night: shade > 0)
+            casingRenderer?.setNeedsDisplay()
             courseRenderer?.setNeedsDisplay()
+        }
+
+        /// A dark rim by day, a light one over the dimmed night chart (as
+        /// the web's routeCasingPaint).
+        private static func casingColour(night: Bool) -> UIColor {
+            night ? UIColor.white.withAlphaComponent(0.7) : UIColor(hex: 0x1C1A17).withAlphaComponent(0.6)
         }
 
         func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
@@ -355,6 +373,15 @@ struct ChartMap: UIViewRepresentable {
             }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
             if let plate = overlay as? PlateMapOverlay { return PlateRenderer(overlay: plate) }
+            if let casing = overlay as? CourseCasingPolyline {
+                let renderer = MKPolylineRenderer(polyline: casing)
+                renderer.strokeColor = Self.casingColour(night: shade > 0)
+                renderer.lineWidth = 7
+                renderer.lineJoin = .round
+                renderer.lineCap = .round
+                casingRenderer = renderer
+                return renderer
+            }
             if let hazard = overlay as? HazardPolyline {
                 // The legs a hazard tapped in the Brief is on, wide in
                 // amber under the course (HazardLegsViews.swift).

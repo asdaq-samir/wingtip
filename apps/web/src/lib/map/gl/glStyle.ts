@@ -221,6 +221,14 @@ export function airspaceLayers(font: string[], tiles = false): LayerSpecificatio
       "icon-text-fit": "both",
       "icon-text-fit-padding": [2, 5, 2, 5],
       "text-padding": 4,
+      // One tab a ring segment at the spacing, never on another tab or
+      // an airport's mark (the marks' layers are above and place first),
+      // read upright; where tabs compete the nearer class wins (B, C, D).
+      "text-allow-overlap": false,
+      "icon-allow-overlap": false,
+      "text-keep-upright": true,
+      "text-max-angle": 30,
+      "symbol-sort-key": ["match", ["get", cls], "B", 0, "C", 1, 2] as never,
     },
     paint: { "text-color": "#ffffff" },
   };
@@ -240,7 +248,7 @@ export interface RoutePoint {
 export const ROUTE_SOURCE = "route";
 export const CHECKPOINT_SOURCE = "checkpoints";
 
-/** The course: a white casing under the magenta core, as CourseLine. */
+/** The course as a line (its casing and core: routeLayers). */
 export function routeFeature(line: [number, number][]): GeoJSON.Feature<GeoJSON.LineString> {
   return { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: line.map(([lat, lon]) => [lon, lat]) } };
 }
@@ -252,16 +260,35 @@ export function pointFeatures(points: RoutePoint[]): GeoJSON.FeatureCollection<G
   };
 }
 
+/** The course's width by zoom, in GL levels: thin over the whole-country
+ *  view, full where a pilot reads a leg. The casing is wider by the same
+ *  steps so a rim of it shows either side. */
+const widthByZoom = (stops: [number, number][]) => ["interpolate", ["linear"], ["zoom"], ...stops.flat()];
+const CORE_WIDTH = widthByZoom([[3, 1.5], [6, 2.5], [10, 3.5], [14, 4.5]]);
+const CASING_WIDTH = widthByZoom([[3, 3.5], [6, 5.5], [10, 7], [14, 8.5]]);
+const CASING_WIDTH_SUN = widthByZoom([[3, 4.5], [6, 7], [10, 8.5], [14, 10]]);
+
+/** The casing under the course so it keeps its contrast against the
+ *  sectional in each look: a dark rim by day, a stronger and wider one in
+ *  sunlight (the chart is lifted there and its pastels wash out the
+ *  magenta), and a light rim at night, where the dimmed chart is dark and
+ *  a dark rim would vanish into it. */
+export function routeCasingPaint(night: boolean, sunlight: boolean): Record<string, unknown> {
+  if (night) return { "line-color": "#ffffff", "line-opacity": 0.7, "line-width": CASING_WIDTH };
+  if (sunlight) return { "line-color": "#14110f", "line-opacity": 0.95, "line-width": CASING_WIDTH_SUN };
+  return { "line-color": "#1c1a17", "line-opacity": 0.6, "line-width": CASING_WIDTH };
+}
+
 export function routeLayers(courseColour = COURSE_MAGENTA): LayerSpecification[] {
   const casing: LineLayerSpecification = {
     id: "route-casing", type: "line", source: ROUTE_SOURCE,
     layout: { "line-join": "round", "line-cap": "round" },
-    paint: { "line-color": "#ffffff", "line-width": 5.5, "line-opacity": 0.85 },
+    paint: routeCasingPaint(false, false) as LineLayerSpecification["paint"],
   };
   const core: LineLayerSpecification = {
     id: "route-core", type: "line", source: ROUTE_SOURCE,
     layout: { "line-join": "round", "line-cap": "round" },
-    paint: { "line-color": courseColour, "line-width": 2.5 },
+    paint: { "line-color": courseColour, "line-width": CORE_WIDTH as never },
   };
   return [casing, core];
 }

@@ -297,6 +297,13 @@ object MapStyle {
                 put("icon-text-fit", "both")
                 put("icon-text-fit-padding", e(2, 5, 2, 5))
                 put("text-padding", 4)
+                // One tab a ring segment, never on another tab or an
+                // airport's mark, read upright; the nearer class wins.
+                put("text-allow-overlap", false)
+                put("icon-allow-overlap", false)
+                put("text-keep-upright", true)
+                put("text-max-angle", 30)
+                put("symbol-sort-key", e("match", e("get", "class"), "B", 0, "C", 1, 2))
             }
             putJsonObject("paint") { put("text-color", "#ffffff") }
         }
