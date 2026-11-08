@@ -1880,8 +1880,14 @@ def pack_pyramid(kind: ChartKind, cycle: str, scale: int = 1) -> int:
     before it; the loose files, their `.none` markers and any `.partial`
     go. Returns how many tiles the archive holds; with no loose tiles,
     nothing is written and the archive there is kept."""
-    name = re.compile(r"(\d+)\.png" if scale == 1 else rf"(\d+)@{scale}x\.png")
-    tiles, base = [], CHART_TILE_CACHE_DIR / cycle / kind.key
+    suffix = "" if scale == 1 else f"@{scale}x"
+    name = re.compile(rf"(\d+){re.escape(suffix)}\.png")
+    # This density's markers: a `.none` says no tile is there, which the
+    # archive says as well by not holding one, and a `.partial` is a tile
+    # drawn again in the archive. Both go with the loose tiles, wherever
+    # they are, not only beside a tile packed.
+    marker = re.compile(rf"\d+{re.escape(suffix)}\.(none|partial)")
+    tiles, markers, base = [], [], CHART_TILE_CACHE_DIR / cycle / kind.key
     for z_dir in (os.scandir(base) if base.is_dir() else ()):
         if not z_dir.name.isdigit():
             continue
@@ -1892,14 +1898,15 @@ def pack_pyramid(kind: ChartKind, cycle: str, scale: int = 1) -> int:
                 if match := name.fullmatch(f.name):
                     tiles.append((int(z_dir.name), int(x_dir.name), int(match[1]), f.stat().st_size,
                                   lambda p=f.path: Path(p).read_bytes()))
+                elif marker.fullmatch(f.name):
+                    markers.append(Path(f.path))
     count = tile_archive.write(_archive_path(kind.key, cycle, scale), tiles, _archive_metadata(kind, cycle, scale))
     if not count:
         return 0
-    suffix = "" if scale == 1 else f"@{scale}x"
     for z, x, y, _, _ in tiles:
-        folder = base / str(z) / str(x)
-        for leftover in (f"{y}{suffix}.png", f"{y}{suffix}.none", f"{y}{suffix}.partial"):
-            (folder / leftover).unlink(missing_ok=True)
+        (base / str(z) / str(x) / f"{y}{suffix}.png").unlink(missing_ok=True)
+    for path in markers:
+        path.unlink(missing_ok=True)
     for folder in [*sorted(base.rglob("*"), key=lambda p: len(p.parts), reverse=True), base]:
         if folder.is_dir() and not any(folder.iterdir()):
             folder.rmdir()
