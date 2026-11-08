@@ -48,7 +48,7 @@ done
 if docker volume inspect "${NEW}_pgdata_pg18" >/dev/null 2>&1; then
   name=wingtip-rename-db
   docker rm -f "$name" >/dev/null 2>&1 || true
-  docker run -d --name "$name" -v "${NEW}_pgdata_pg18":/var/lib/postgresql pgvector/pgvector:pg18 >/dev/null
+  docker run -d --name "$name" -v "${NEW}_pgdata_pg18":/var/lib/postgresql postgres:18-bookworm >/dev/null
   trap 'docker rm -f "$name" >/dev/null 2>&1 || true' EXIT
   for _ in $(seq 1 60); do docker exec "$name" pg_isready -q 2>/dev/null && break; sleep 1; done
   as() { local u=$1; shift; docker exec -i "$name" psql -v ON_ERROR_STOP=1 -qtA -U "$u" -d postgres "$@"; }
