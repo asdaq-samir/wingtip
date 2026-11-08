@@ -17,7 +17,7 @@ import lombok.Getter;
  * A flight in the pilot's logbook, in a paper logbook's columns: the day,
  * the aeroplane, the route, the hours and the landings. The landings are
  * full-stop ones, by day and at night -- what 14 CFR 61.57 counts for
- * carrying passengers (see {@code CurrencyService}).
+ * carrying passengers (the engine's pilot_currency).
  *
  * <p>The aeroplane is text, not a reference to {@link Aircraft}: an
  * entry is a record and outlives the aeroplane's.

@@ -3,9 +3,9 @@ watched airplanes and the FAA's radar merged, set on the nearest altimeter setti
 from __future__ import annotations
 
 import numpy as np
-import wingtip_native
 
 from .. import weather
+from ..engine import ask as engine
 from .common import TrafficUnavailable, _LOCK, _NM_PER_DEG, _clock
 from .adsb_lol import ADSB_LOL_SOURCE, MAX_RADIUS_NM, _FROM_ADSBX, _REGIONS, _covering, _region, _region_answer
 from .adsbx import ADSBX_SOURCE, _adsbx
@@ -100,6 +100,6 @@ def on_altimeter(planes: list[dict], lat: float, lon: float) -> list[dict]:
     # Pressure altitude is the field's height plus a thousand feet an inch
     # under 29.92 (the engine's pressure_altitude_ft): at a field at sea
     # level it is the setting's own shift, the other way.
-    shift = -wingtip_native.pressure_altitude_ft(0.0, setting)
+    shift = -engine("pressure_altitude_ft", elevation_ft=0.0, altimeter_inhg=setting)
     return [{**p, "altitude_ft": round(p["altitude_ft"] + shift), "pressure_altitude": False}
             if p.get("pressure_altitude") and p.get("altitude_ft") is not None else p for p in planes]

@@ -82,12 +82,6 @@ pub unsafe extern "C" fn wt_pack_cycle(ptr: *const u8, len: usize) -> *mut c_cha
     }
 }
 
-/// The name of the region whose pack holds a point ("n40w088").
-#[no_mangle]
-pub extern "C" fn wt_region_of(lat: f64, lon: f64) -> *mut c_char {
-    give(pack_query::region_of(lat, lon))
-}
-
 /// A C string the caller passed, or None for null (or not UTF-8).
 ///
 /// SAFETY: `s` is null or a NUL-terminated string alive for the call.

@@ -79,14 +79,15 @@ def entry(arrival_deg: float, inbound_deg: float, right: bool) -> str:
     (110 to 180) teardrop, the 110 beyond parallel; left turns the
     mirror. The engine's (wingtip_engine::figures::holding), the one copy
     the hold's page and the phones use too."""
-    return wingtip_native.hold_entry(arrival_deg, inbound_deg, right)
+    return json.loads(wingtip_native.call("hold_entry", json.dumps(
+        {"arrival_deg": arrival_deg, "inbound_deg": inbound_deg, "turns": "right" if right else "left"})))
 
 
 def default_leg_min(altitude_ft: float | None) -> float:
     """The inbound leg's minutes where the pilot gave none: a minute at or
     below 14,000 ft MSL, a minute and a half above (AIM 5-3-8 j.4(a)), the
     engine's rule."""
-    return wingtip_native.holding_leg_minutes(altitude_ft)
+    return json.loads(wingtip_native.call("holding_leg_minutes", json.dumps({"altitude_ft": altitude_ft})))
 
 
 def turn_radius_nm(tas_kt: float) -> float:

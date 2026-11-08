@@ -87,11 +87,12 @@ public class InstructorService {
     private final LogbookRepository logbook;
     private final ApproachLessonRepository lessons;
     private final Mailer mail;
+    private final PlannerClient planner;
     private final String publicBaseUrl;
 
     public InstructorService(PilotRepository pilots, InstructorLinkRepository links, SignedEndorsementRepository signed,
                              CrossCountryReviewRepository reviews, EndorsementRepository recorded, FlightRepository flights,
-                             LogbookRepository logbook, ApproachLessonRepository lessons, Mailer mail,
+                             LogbookRepository logbook, ApproachLessonRepository lessons, Mailer mail, PlannerClient planner,
                              @Value("${app.public-base-url:}") String publicBaseUrl) {
         this.pilots = pilots;
         this.links = links;
@@ -102,6 +103,7 @@ public class InstructorService {
         this.logbook = logbook;
         this.lessons = lessons;
         this.mail = mail;
+        this.planner = planner;
         this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
     }
 
@@ -359,7 +361,7 @@ public class InstructorService {
 
     private StudentDto studentOf(InstructorLink l) {
         Pilot student = l.getStudent();
-        var experience = TrainingService.experience(logbook.findByPilotIdOrderByFlownOnDescIdDesc(student.getId()),
+        var experience = planner.experience(logbook.findByPilotIdOrderByFlownOnDescIdDesc(student.getId()),
                 LocalDate.now(ZoneOffset.UTC));
         List<Endorsement> paper = recorded.findByKeyPilotIdOrderByKeyCode(student.getId());
         List<SignedEndorsement> theirs = signed.findByStudentIdOrderBySignedAtDesc(student.getId());

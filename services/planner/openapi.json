@@ -4441,6 +4441,224 @@
         "title": "Course",
         "type": "object"
       },
+      "Currency": {
+        "description": "Where the pilot stands (the engine's pilot_currency): each date\nnull where it cannot be had.",
+        "properties": {
+          "approachesInWindow": {
+            "description": "Approaches logged in the 6 calendar months before this one (61.57(c)(1)(i)).",
+            "title": "Approachesinwindow",
+            "type": "integer"
+          },
+          "crossCountryHours": {
+            "title": "Crosscountryhours",
+            "type": "number"
+          },
+          "dayPassengersUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "90 days after the third most recent landing (14 CFR 61.57(a)).",
+            "title": "Daypassengersuntil"
+          },
+          "flightReviewOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flightreviewon"
+          },
+          "flightReviewUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The end of the 24th calendar month after the flight review's (61.56(c)).",
+            "title": "Flightreviewuntil"
+          },
+          "flights": {
+            "title": "Flights",
+            "type": "integer"
+          },
+          "holdingInWindow": {
+            "title": "Holdinginwindow",
+            "type": "boolean"
+          },
+          "instrumentCurrentUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The last day of instrument currency (61.57(c)(1), or 61.57(d)'s check); in the past where it has lapsed.",
+            "title": "Instrumentcurrentuntil"
+          },
+          "ipcNeededAfter": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The day after which only an instrument proficiency check restores it (61.57(d)).",
+            "title": "Ipcneededafter"
+          },
+          "ipcOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipcon"
+          },
+          "landings": {
+            "title": "Landings",
+            "type": "integer"
+          },
+          "medicalExpiresOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medicalexpireson"
+          },
+          "nightHours": {
+            "title": "Nighthours",
+            "type": "number"
+          },
+          "nightPassengersUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "90 days after the third most recent night full-stop landing (61.57(b)).",
+            "title": "Nightpassengersuntil"
+          },
+          "totalHours": {
+            "title": "Totalhours",
+            "type": "number"
+          },
+          "trackingInWindow": {
+            "title": "Trackinginwindow",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dayPassengersUntil",
+          "nightPassengersUntil",
+          "flightReviewOn",
+          "flightReviewUntil",
+          "medicalExpiresOn",
+          "totalHours",
+          "nightHours",
+          "crossCountryHours",
+          "landings",
+          "flights",
+          "instrumentCurrentUntil",
+          "ipcOn",
+          "ipcNeededAfter",
+          "approachesInWindow",
+          "holdingInWindow",
+          "trackingInWindow"
+        ],
+        "title": "Currency",
+        "type": "object"
+      },
+      "CurrencyAsk": {
+        "description": "The logbook, the dates the pilot gives and the day it is asked for\n(the pilot's own calendar's).",
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/LogbookEntry"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "flightReviewOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flightreviewon"
+          },
+          "ipcOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipcon"
+          },
+          "medicalExpiresOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medicalexpireson"
+          },
+          "today": {
+            "format": "date",
+            "title": "Today",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entries",
+          "today"
+        ],
+        "title": "CurrencyAsk",
+        "type": "object"
+      },
       "CyclePackRegion": {
         "description": "One region's phone pack (wingtip.cycle_pack's write_phone): its bounds in\ndegrees, its size in bytes and its CRC-32 (zlib's), for the phone to\ncheck it whole.",
         "properties": {
@@ -5770,6 +5988,78 @@
           "reasonable"
         ],
         "title": "EstimateCheck",
+        "type": "object"
+      },
+      "ExperienceAsk": {
+        "description": "The student's logbook and the day it is asked for.",
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/LogbookEntry"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "today": {
+            "format": "date",
+            "title": "Today",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entries",
+          "today"
+        ],
+        "title": "ExperienceAsk",
+        "type": "object"
+      },
+      "ExperienceItem": {
+        "description": "One of 14 CFR 61.109(a)'s requirements: how much of it the logbook\nshows of how much, and whether that is met.",
+        "properties": {
+          "have": {
+            "title": "Have",
+            "type": "number"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "met": {
+            "title": "Met",
+            "type": "boolean"
+          },
+          "need": {
+            "title": "Need",
+            "type": "number"
+          },
+          "rule": {
+            "title": "Rule",
+            "type": "string"
+          },
+          "unit": {
+            "enum": [
+              "h",
+              "landings",
+              "flights"
+            ],
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "rule",
+          "label",
+          "have",
+          "need",
+          "unit",
+          "met"
+        ],
+        "title": "ExperienceItem",
         "type": "object"
       },
       "FieldBelowVfr": {
@@ -8077,6 +8367,93 @@
           "arm_in"
         ],
         "title": "LoadingStation",
+        "type": "object"
+      },
+      "LogbookEntry": {
+        "description": "One logbook entry, the columns the rules read; a column missing is\nnone of it.",
+        "properties": {
+          "approaches": {
+            "default": 0,
+            "title": "Approaches",
+            "type": "integer"
+          },
+          "crossCountryHours": {
+            "default": 0,
+            "title": "Crosscountryhours",
+            "type": "number"
+          },
+          "dayLandings": {
+            "default": 0,
+            "description": "Every landing, by day or at night (14 CFR 61.57(a)).",
+            "title": "Daylandings",
+            "type": "integer"
+          },
+          "distanceNm": {
+            "default": 0,
+            "title": "Distancenm",
+            "type": "number"
+          },
+          "dualHours": {
+            "default": 0,
+            "title": "Dualhours",
+            "type": "number"
+          },
+          "flownOn": {
+            "format": "date",
+            "title": "Flownon",
+            "type": "string"
+          },
+          "holding": {
+            "default": false,
+            "title": "Holding",
+            "type": "boolean"
+          },
+          "instrumentHours": {
+            "default": 0,
+            "title": "Instrumenthours",
+            "type": "number"
+          },
+          "longestLegNm": {
+            "default": 0,
+            "title": "Longestlegnm",
+            "type": "number"
+          },
+          "nightHours": {
+            "default": 0,
+            "title": "Nighthours",
+            "type": "number"
+          },
+          "nightLandings": {
+            "default": 0,
+            "description": "Landings to a full stop at night (61.57(b)).",
+            "title": "Nightlandings",
+            "type": "integer"
+          },
+          "soloHours": {
+            "default": 0,
+            "title": "Solohours",
+            "type": "number"
+          },
+          "totalHours": {
+            "default": 0,
+            "title": "Totalhours",
+            "type": "number"
+          },
+          "toweredLandings": {
+            "default": 0,
+            "title": "Toweredlandings",
+            "type": "integer"
+          },
+          "tracking": {
+            "default": false,
+            "title": "Tracking",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "flownOn"
+        ],
+        "title": "LogbookEntry",
         "type": "object"
       },
       "LostComms": {
@@ -20554,6 +20931,88 @@
           }
         },
         "summary": "Add Pick"
+      }
+    },
+    "/api/pilot/currency": {
+      "post": {
+        "description": "The pilot's currency from their logbook (14 CFR 61.56, 61.57).",
+        "operationId": "currency_api_pilot_currency_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CurrencyAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Currency"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Currency"
+      }
+    },
+    "/api/pilot/experience": {
+      "post": {
+        "description": "A student's private pilot experience from their logbook, item by\nitem (14 CFR 61.109(a)).",
+        "operationId": "experience_api_pilot_experience_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperienceAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExperienceItem"
+                  },
+                  "title": "Response Experience Api Pilot Experience Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Experience"
       }
     },
     "/api/places/search": {
