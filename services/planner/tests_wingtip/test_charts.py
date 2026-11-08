@@ -1564,3 +1564,34 @@ def test_a_staged_pass_writes_where_it_was_told_from_its_worker_processes(two_sh
     sheets = [_sheet(tmp_path, "Left", LEFT, 1)]
     assert charts.render_pyramid(charts.SECTIONAL, zooms=(7,), workers=1, charts=sheets, cycle="10-29-2026") > 0
     assert list(staging.rglob("*.png")) and not (tmp_path / "tiles").exists()
+
+
+GB = 2**30
+
+
+def test_pyramid_workers_fit_the_memory_there_is():
+    # The pass that was killed: high-density tiles in a 12 GB Docker VM.
+    # Two fit where three did not; the 1x tiles take more.
+    assert charts.pyramid_workers((1, 2), 11 * GB, 12) == 2
+    assert charts.pyramid_workers((1,), 11 * GB, 12) == 6
+    # Never more than the CPUs, never fewer than one.
+    assert charts.pyramid_workers((1,), 64 * GB, 4) == 4
+    assert charts.pyramid_workers((2,), 2 * GB, 12) == 1
+    assert charts.pyramid_workers((2,), 0, None) == 1
+    # Memory that cannot be read: the old default of four.
+    assert charts.pyramid_workers((2,), None, 12) == 4
+
+
+def test_available_memory_reads_the_containers_limit(tmp_path):
+    cgroup = tmp_path / "sys/fs/cgroup"
+    cgroup.mkdir(parents=True)
+    (cgroup / "memory.max").write_text(f"{12 * GB}\n")
+    (cgroup / "memory.current").write_text(f"{2 * GB}\n")
+    (tmp_path / "proc").mkdir()
+    (tmp_path / "proc/meminfo").write_text(f"MemTotal: 16000000 kB\nMemAvailable: {14 * GB // 1024} kB\n")
+    assert charts.available_memory(tmp_path) == 10 * GB
+    # No limit on the cgroup: the kernel's MemAvailable.
+    (cgroup / "memory.max").write_text("max\n")
+    assert charts.available_memory(tmp_path) == 14 * GB
+    (tmp_path / "proc/meminfo").unlink()
+    assert charts.available_memory(tmp_path) is None

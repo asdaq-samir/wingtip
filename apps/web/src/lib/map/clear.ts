@@ -4,3 +4,7 @@
  *  the buttons ride over the sheet in the corner a route's end often
  *  falls in (C81's mark under the location button, 2026-10-26). */
 export const BUTTONS_CLEAR = 52;
+
+/** Round a fit, over what the panel covers: a margin, and clear of the
+ *  map's buttons at the sides (GlMapShell, useGlFit). */
+export const FIT_MARGIN = { top: 30, bottom: 30, left: 30 + BUTTONS_CLEAR, right: 30 + BUTTONS_CLEAR };

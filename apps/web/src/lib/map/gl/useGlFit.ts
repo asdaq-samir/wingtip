@@ -4,7 +4,7 @@ import { prefersReducedMotion } from "../../motion";
 import { useOwnShip } from "../ownShip";
 import { useGlMap } from "./glLayer";
 import { glZoom } from "./glStyle";
-import { FIT_MARGIN } from "./GlMapShell";
+import { FIT_MARGIN } from "../clear";
 
 /**
  * The map fitted to `points`, clear of the panel and the map's buttons,

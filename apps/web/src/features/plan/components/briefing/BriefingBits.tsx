@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import { cn } from "cn";
 import { OctagonAlert, TriangleAlert } from "lucide-react";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
-import { altFt } from "../../format";
-import { passLine, type SuaWhen, type TfrWhen } from "../../../../lib/passTimes";
-import { FINDING_TONE, type Finding } from "../../../../lib/findings";
+import { passLine, type TfrWhen } from "../../../../lib/passTimes";
+import { FINDING_TONE } from "../../../../lib/findings";
+import { TFR_WORDS } from "./briefingWords";
 
 // The small pieces the briefing's parts share (FlightBriefingView).
 
@@ -25,35 +25,6 @@ export function BriefingNarrativePrintBlock({ text }: { text: string | null }) {
     </div>
   );
 }
-
-/** The altitude range a hazard covers, worded around whichever bound
- *  is actually known -- an advisory with no upper limit reported (or
- *  no lower one) is common, and "—-35,000 ft" reads like a typo. */
-export function hazardAltitudeRange(lowFt: number | null, highFt: number | null): string | null {
-  if (lowFt == null && highFt == null) return null;
-  if (lowFt == null) return `up to ${altFt(highFt)} ft`;
-  if (highFt == null) return `${altFt(lowFt)} ft and above`;
-  return `${altFt(lowFt)}-${altFt(highFt)} ft`;
-}
-
-/** What a special-use area's times of use say for the pass (lib/passTimes). */
-export const SUA_WORDS: Record<SuaWhen, string> = {
-  "active": "scheduled in use then",
-  "by-notam": "not scheduled then, but a NOTAM can activate it",
-  "not-scheduled": "not scheduled then",
-  "unknown": "read its times against yours",
-};
-export const SUA_FINDING: Record<SuaWhen, Finding> = {
-  "active": "stop",
-  "by-notam": "caution",
-  "not-scheduled": "ok",
-  "unknown": "caution",
-};
-export const TFR_WORDS: Record<TfrWhen, string> = {
-  "in-force": "in force then",
-  "before": "before it starts",
-  "after": "after it ends",
-};
 
 /** When the flight gets to a TFR, and whether it is in force then: red
  *  where it is. */

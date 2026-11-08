@@ -92,6 +92,11 @@ npx playwright test --project=mobile --grep @smoke
 
 (34 passed in 52 s on the Mac mini, 2026-11-06.)
 
+On the Mac, a run like that goes through `scripts/dev/one-at-a-time.sh
+"<label>" <command>`, which gives out two turns at once (three swapped the
+24 GB Mac, 2026-11-08) and waits while macOS says memory is short; the
+quick checks before a push are `scripts/dev/check.sh <area>`.
+
 ## API compatibility
 
 The iPhone app in the App Store keeps calling the servers for months

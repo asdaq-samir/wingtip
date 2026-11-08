@@ -154,7 +154,10 @@ docker compose run --rm charts pack      # each finished kind's loose tiles into
 ```
 
 A container of its own, not the planner's: a render inside the serving
-planner's container has had it killed for memory twice.
+planner's container has had it killed for memory twice. The pyramid picks
+its number of workers from the memory the container has left (two for
+the high-density tiles in a 12 GB Docker VM) and logs the pick;
+`--workers` sets it.
 
 All resume where they stopped. The sheets land in
 `data/raw/charts.nosync/<cycle>/`, the tiles in

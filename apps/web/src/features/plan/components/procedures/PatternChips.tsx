@@ -1,17 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { ChevronRight, Wind } from "lucide-react";
 import { cn } from "cn";
-import { GLASS_BUTTON, GLASS_PICKED } from "../../../../components/mapChrome";
 import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import { CollapsibleContent } from "../../../../components/ui/collapsible";
 import { Skeleton } from "../../../../components/ui/skeleton";
 import type { Runway } from "../../../../lib/api/types";
 import { runwayNumber, type RunwayEnd, type WindPick } from "../../../../lib/pattern";
 import { trafficPattern } from "../../../../lib/trafficPattern";
-import { TEXT } from "../../../../lib/text";
-import { altFt } from "../../../../lib/units";
 import type { EndFit } from "../../../../lib/runwayFit";
 import { useOpenRunwayLines, type ProcedureAirport } from "../../hooks/useProceduresRoute";
+import { CHIP } from "../routeListStyle";
 
 /** The value of a choice's "None" (no transition), and a runway line's
  *  with none picked yet: a toggle's value is a string. */
@@ -116,12 +114,6 @@ export const TRAY_HEAD = "relative flex h-[38px] w-11 shrink-0 items-center just
 const TRAY_BODY = "rounded-r-full bg-tint/12 p-[3px] pl-0";
 /** The arrow in a folded line's chip, after its words: a tap opens it. */
 const FOLDED_ARROW = <ChevronRight className="-mr-1 size-3.5 shrink-0" strokeWidth={2.6} aria-hidden />;
-
-export const CHIP = cn(
-  "relative h-8 min-w-11 justify-center rounded-full px-3 font-normal", GLASS_BUTTON, GLASS_PICKED,
-  "after:absolute after:-inset-1.5 after:content-['']",
-  TEXT.detail,
-);
 
 /**
  * A field's traffic pattern, picked by its runway as a chip: the
@@ -351,15 +343,4 @@ export function PatternChips({ airport: a, wind, chosen, landing, note, label, f
  *  (none picked yet) it is the line itself, with nothing to open it. */
 function LineContent({ folds, children }: { folds: boolean; children: ReactNode }) {
   return folds ? <CollapsibleContent asChild>{children}</CollapsibleContent> : children;
-}
-
-/** The runway picked, as its field's info says it: the pattern's side and
- *  height, or with an approach, straight in or a circle to land. */
-export function patternNote(a: ProcedureAirport, chosen: string | null, landing: Landing | null): string | null {
-  if (chosen === null) return null;
-  if (landing) return chosen === landing.runway ? "Straight in" : "Circle to land";
-  const end = (a.runways ?? []).flatMap(r => r.runway_ends ?? []).find(e => runwayNumber(e.ident) === chosen);
-  // Left unless the FAA flags it right (14 CFR 91.126(b)(1)).
-  const side = end ? `Runway ${chosen}, ${end.traffic === "right" ? "right" : "left"} traffic` : `Runway ${chosen}`;
-  return [side, a.patternAltitudeFt != null ? `${altFt(a.patternAltitudeFt)} ft` : null].filter(Boolean).join(" · ");
 }

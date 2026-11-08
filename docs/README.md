@@ -606,6 +606,13 @@ EOF
 docker compose up -d                           # now also https://192.168.1.42:8443
 ```
 
+The long-running services (db, planner, gateway, mailpit, dev-services,
+web-build) are `restart: unless-stopped`: with Docker Desktop set to
+start at login, the stack, the phone's ports included, comes back after a
+reboot, and a service stopped by hand stays stopped. web-build swaps each
+build in whole (`apps/web/README.md`), so the phone never loads half of
+one.
+
 The developer console's other doors (the planner's port, Jupyter) stay
 on loopback unless `DEV_PUBLISH_ADDRESS=0.0.0.0` publishes them too;
 both answer without a password, Jupyter runs code, and the database is

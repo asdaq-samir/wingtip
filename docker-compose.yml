@@ -559,12 +559,15 @@ services:
     working_dir: /w
     volumes:
       - ./apps/web:/w
-    # VITE_KEEP_OUTDIR (read by vite.config.ts): watch mode would
-    # otherwise clear the directory the gateway is serving from at every
-    # rebuild, and a page loading that instant would get nothing.
+    # VITE_PUBLISH_DIR (read by vite.config.ts): each build is written
+    # whole into apps/web/.dist-next and then renamed into dist file by
+    # file, index.html last, so a page loading mid-build gets the old
+    # build or the new one, never half of one; the replaced builds' files
+    # stay an hour for pages already open (2026-11-08, a phone's
+    # "Importing a module script failed").
     environment:
-      VITE_KEEP_OUTDIR: "1"
-    command: ["npx", "--no-install", "vite", "build", "--watch", "--outDir", "dist"]
+      VITE_PUBLISH_DIR: dist
+    command: ["npx", "--no-install", "vite", "build", "--watch"]
     restart: unless-stopped
 
   # Traces of a request from the gateway down through the planner to every

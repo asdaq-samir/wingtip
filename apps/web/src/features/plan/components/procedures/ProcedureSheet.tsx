@@ -13,21 +13,14 @@ import { transitionWords, type PickedProcedure } from "../../../../lib/procedure
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../../../lib/units";
 import { PROCEDURE_STALE_MS, type ProcedureKind } from "../../hooks/useProceduresRoute";
-import { Chips, CHIP, NONE } from "./PatternChips";
+import { Chips, NONE } from "./PatternChips";
+import { CHIP } from "../routeListStyle";
+import { KIND_TITLE } from "./procedureWords";
 
 // The procedures sheet's pages (ProceduresRoute): a kind's list, and one
 // procedure's own page.
 
 type Kind = ProcedureKind;
-
-const KIND_TITLE: Record<Kind, string> = { approach: "Approaches", arrival: "Arrivals", departure: "Departures" };
-/** A kind as a branch's head says it, under the procedure's name. */
-export const KIND_WORD: Record<Kind, string> = { approach: "Approach", arrival: "Arrival", departure: "Departure" };
-
-/** "KDLH approaches": a kind's list's title. */
-export function listTitle(ident: string, kind: Kind): string {
-  return `${ident} ${KIND_TITLE[kind].toLowerCase()}`;
-}
 
 /**
  * One kind of a field's procedures, each by its chart's title, a page of

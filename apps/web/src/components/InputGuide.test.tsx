@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import InputGuide, { ONE_AT_A_TIME, guideFor } from "./InputGuide";
+import InputGuide from "./InputGuide";
+import { ONE_AT_A_TIME, guideFor } from "./guideFor";
 import { gearFor } from "../lib/audioGear";
 
 afterEach(cleanup);

@@ -22,7 +22,7 @@ import { useGlData, useGlLayer, useGlMap } from "../glLayer";
 import { leafletZoomOf } from "../glStyle";
 import { iconMarker } from "../htmlMarker";
 import { useGlLines, type GlRun } from "../useGlLines";
-import { useGlMarks, type GlMark } from "./MarksGl";
+import { useGlMarks, type GlMark } from "../useGlMarks";
 
 /** The level the map is at, Leaflet's, as it changes: what the words on
  *  the procedures and the patterns come in at. */

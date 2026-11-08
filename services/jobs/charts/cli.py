@@ -76,7 +76,10 @@ def main(argv: list | None = None) -> int:
         if name == "prepare":
             p.add_argument("--redetect", action="store_true", help="run the face detection again on sheets already on disk")
         if name in ("run", "pyramid", "refresh", "unmask"):
-            p.add_argument("--workers", type=int, default=4 if name == "pyramid" else 2)
+            # A pyramid's default comes from the memory there is
+            # (wingtip.charts.pyramid_workers): a fixed 4 was killed for
+            # memory at @2x.
+            p.add_argument("--workers", type=int, default=None if name == "pyramid" else 2)
         if name == "unmask":
             p.add_argument("--cycle", help="the cycle whose sheets and tiles to clean; the served one by default")
             p.add_argument("--again", action="store_true",

@@ -13,9 +13,11 @@ import { FuelGauge } from "./FuelGauge";
 import { legOf, rowPoint, type NavLogRow } from "./navlog/rows";
 import { useProceduresRoute, type ProcedureAirport, type ProceduresRouteProps } from "../hooks/useProceduresRoute";
 import { RouteLine } from "./procedures/RouteLine";
-import { FieldStep, pointEnd } from "./procedures/FieldStep";
+import { FieldStep } from "./procedures/FieldStep";
+import { pointEnd } from "./procedures/pointEnd";
 import { HoldRow, NewStopCard, RouteListDrag, Step } from "./procedures/RouteRows";
-import { listTitle, ProcedurePage, ProcedurePicker } from "./procedures/ProcedureSheet";
+import { ProcedurePage, ProcedurePicker } from "./procedures/ProcedureSheet";
+import { listTitle } from "./procedures/procedureWords";
 
 // The list's types and its Routes row, where PlanWorkspace and the
 // routePanel chunk import them from.

@@ -8,6 +8,9 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 engine=$(cd "$here/../.." && pwd)
 out="$engine/../apps/ios/Frameworks/WingtipEngine.xcframework"
+# rustup's cargo, where a shell that has not read ~/.cargo/env (an agent's,
+# a launchd job's) has no Rust on its PATH.
+command -v cargo >/dev/null || PATH=$PATH:$HOME/.cargo/bin
 targets=(aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios)
 rustup target add "${targets[@]}"
 for target in "${targets[@]}"; do
