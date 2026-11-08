@@ -2,13 +2,14 @@ import type {
   ExpressionSpecification, LayerSpecification, Map as MlMap, MapGeoJSONFeature, SourceSpecification,
   SymbolLayerSpecification,
 } from "maplibre-gl";
-import type { AirspaceVolume, OverlayTiles, VorPin } from "../../api/types";
+import type { OverlayTiles } from "../../api/types";
+import type { AirspaceVolume, VorPin } from "../overlayTypes";
 import { usePreferences } from "../../preferences";
 import { BLUE } from "../../useAirspace";
 import { sectionalAirportSvg, TOWERED_BLUE, UNTOWERED_MAGENTA } from "../airportMark";
 import { colourOf } from "../flightCategory";
 import { overlaySource } from "../overlayTiles";
-import { drawSvg, type DrawnImage, type Slot, type Stretch } from "./glLayer";
+import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot, type Stretch } from "./glLayer";
 import { AIRSPACE_TAB, OVERLAY_SOURCE, airspaceLayers, glZoom } from "./glStyle";
 import { GL_FONT_BOLD, LABEL_HALO } from "./layers/common";
 
@@ -258,7 +259,7 @@ export function overlayStyle(tiles: OverlayTiles, origin?: string): { source: So
   const from = (layer: string) => ({ source: OVERLAY_SOURCE, "source-layer": layer });
   const lines: LayerSpecification[] = [
     ...(has.has("runways") ? runwayLayers() : []),
-    ...(has.has("airspace") ? airspaceLayers(GL_FONT_BOLD, true) : []),
+    ...(has.has("airspace") ? airspaceLayers(GL_FONT_BOLD) : []),
   ];
   const marks: LayerSpecification[] = [
     ...(has.has("navaids") ? navaidMarks("navaids", from("navaids"), "vor", { filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]], minzoom: glZoom(VOR_ZOOM) }) : []),
@@ -269,6 +270,21 @@ export function overlayStyle(tiles: OverlayTiles, origin?: string): { source: So
     ...(has.has("airports") ? [airportMarksLayer(from("airports"), tileAirportIcon(new Map()))] : []),
   ];
   return { source: overlaySource(tiles, origin), layers: { lines, marks } };
+}
+
+/** The overlays added to a map made without them (their name came after
+ *  its first style, or the planner built the archive since): the source,
+ *  and each slot's layers first in that slot, under what the page has
+ *  added there, as the first style would have put them. */
+export function addOverlays(map: MlMap, tiles: OverlayTiles, origin?: string) {
+  if (map.getSource(OVERLAY_SOURCE)) return;
+  const style = overlayStyle(tiles, origin);
+  map.addSource(OVERLAY_SOURCE, style.source);
+  SLOTS.forEach((slot, i) => {
+    const ids = map.getStyle().layers.map(l => l.id);
+    const before = ids[i === 0 ? 0 : ids.indexOf(slotId(SLOTS[i - 1]!)) + 1]!;
+    for (const layer of style.layers[slot] ?? []) map.addLayer(layer, before);
+  });
 }
 
 // ---- What changes over them ----------------------------------------------
@@ -333,7 +349,7 @@ export function setAirportWeather(map: MlMap, colours: Map<string, string>) {
 const text = (v: unknown): string | null => (v == null || v === "" ? null : String(v));
 const number = (v: unknown): number | null => (v == null || v === "" || Number.isNaN(Number(v)) ? null : Number(v));
 
-/** A tapped ring of the tiles' `airspace` layer as the in-view volume the
+/** A tapped ring of the tiles' `airspace` layer as the volume the
  *  card reads (AirspaceCardBody): its fields are wingtip.vector_tiles'
  *  (CLASS, NAME, IDENT, the floor and ceiling, TNI, WKHR_CODE/RMK). */
 export function volumeOfTile(f: Pick<MapGeoJSONFeature, "properties">, at: { lat: number; lon: number }): AirspaceVolume {
@@ -351,7 +367,6 @@ export function volumeOfTile(f: Pick<MapGeoJSONFeature, "properties">, at: { lat
     hours_code: text(p.hours_code),
     hours_remark: text(p.hours_remark),
     label_lat: at.lat, label_lon: at.lon,
-    lines: [],
   };
 }
 

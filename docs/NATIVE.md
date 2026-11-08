@@ -237,7 +237,7 @@ these places:
   checkpoints' annotations are diffed, not removed and re-added.
 - **The map's data from the packs** (`PackMapData`): the airports,
   airspace and navaids in view are asked of the engine's pack readers
-  first and of the planner only where no pack answers, so in flight the
+  (the airports of the planner where no pack answers), so in flight the
   map draws with no signal.
 - **Answers cached** (`API/Gateway`): the session keeps a URL cache
   sized for a flight, honouring the planner's and the gateway's

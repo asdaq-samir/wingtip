@@ -1,5 +1,5 @@
 import { faaWords, placeWords } from "../advisories";
-import type { AirspaceVolume } from "../api/types";
+import type { AirspaceVolume } from "./overlayTypes";
 import { altFt } from "../units";
 
 /**

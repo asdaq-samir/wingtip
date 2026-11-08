@@ -73,20 +73,10 @@ test("the imagery over the chart comes in under a finger's pan, before it lifts"
 
 test("a pinch brings in the airports of each level it passes, before the fingers lift", async ({ page }) => {
   await openOnC81(page);
-  // Fields with no report across every box asked for: at the region's
-  // zoom none is drawn, from 8 they are -- regional
-  // fields, as a small one's mark waits for 10 since the owner's "Do two
-  // levels up" (2026-10-29, 507308ae: AirportsLayer's SHOWN_FROM).
-  const grid = (url: string, row: (i: number, j: number, lat: number, lon: number) => object) => {
-    const q = new URL(url).searchParams;
-    const [s, w, n, e] = ["south", "west", "north", "east"].map(k => Number(q.get(k)));
-    const out: object[] = [];
-    for (let i = 1; i < 8; i++) for (let j = 1; j < 8; j++) out.push(row(i, j, s! + ((n! - s!) * i) / 8, w! + ((e! - w!) * j) / 8));
-    return out;
-  };
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({ json: {
-    airports: grid(route.request().url(), (i, j, lat, lon) => ({ ident: `G${i}${j}`, name: "Grid", lat, lon, kind: "medium", flight_category: null, military: null })),
-  } }));
+  // The chart's own fields, from the overlay tiles (the suite's archive
+  // round Chicago, apps/web/e2e/fixtures/overlay-tiles): each kind from
+  // its own level (wingtip.vector_tiles' AIRPORT_MIN_ZOOM), so a pinch in
+  // passes levels that bring in fields not drawn further out.
   await page.goto("/app/plan");
   await settle(page);
   await mapStill(page);
@@ -111,10 +101,10 @@ test("a pinch brings in the airports of each level it passes, before the fingers
     map!.setZoom(7, { animate: false });
   });
   await mapStill(page);
-  // The fields' places on the airports' canvas (AirportCanvas), drawn or
-  // a target for a tap without a mark of their own.
-  const targets = { count: async () => (await airportMarks(page)).length };
-  await expect.poll(() => targets.count(), { timeout: slow(5_000) }).toBe(0);
+  // The fields drawn at the region's level (AirportsGl's probe).
+  const idents = async () => new Set((await airportMarks(page)).map(m => m.ident));
+  await expect.poll(async () => (await idents()).size, { timeout: slow(15_000) }).toBeGreaterThan(0);
+  const before = await idents();
   // Two fingers spreading from 60 to 180 points apart: three times as
   // close, a level and a half in. Each 6 points out at a step, so the
   // second step is past the ruler's 10 (lib/map/ruler's STILL_PX): at 3 a
@@ -130,9 +120,9 @@ test("a pinch brings in the airports of each level it passes, before the fingers
   }
   // A pinch, not a ruler.
   await expect(page.getByTestId("map-ruler")).toHaveCount(0);
-  // Still held: the fields' targets drawn for
-  // the level the pinch is at. They waited for the fingers to lift.
-  await expect.poll(() => targets.count(), { timeout: slow(5_000) }).toBeGreaterThan(0);
+  // Still held: fields drawn for the level the pinch is at that were not
+  // drawn at the region's. They waited for the fingers to lift.
+  await expect.poll(async () => [...(await idents())].some(i => !before.has(i)), { timeout: slow(5_000) }).toBe(true);
   await touch("touchEnd", []);
 });
 

@@ -27,7 +27,7 @@ from wingtip import (
 
 from ..router_basics import DIAGRAM_CACHE, load_route
 from ..schemas import (
-    AirportPhotos, AirportPlace, AirportServices, ForecastWind, AirportsInView, ChartPages, NavaidsInView, NearestAirports,
+    AirportPhotos, AirportPlace, AirportServices, ForecastWind, AirportsInView, ChartPages, NearestAirports,
     PlacesFound,
     PlateOverlay,
     ProcedureDrawing, ProcedureList, StopFields, WaypointsInView,
@@ -339,36 +339,6 @@ def waypoints_in_view(
         {"ident": f["ident"], "lat": f["lat"], "lon": f["lon"], "description": places.describe(f["lat"], f["lon"])}
         for f in found[:limit]
     ]}
-
-
-#: What a VOR's card shows of it (VorPin), from NAV_BASE.
-VOR_FIELDS = ("ident", "name", "kind", "freq", "lat", "lon", "mag_var", "elevation_ft", "channel", "service_volume", "hours")
-
-
-@router.get("/api/navaids/in-view", response_model=NavaidsInView)
-def navaids_in_view(
-    south: float = Query(ge=-90, le=90), west: float = Query(ge=-180, le=180),
-    north: float = Query(ge=-90, le=90), east: float = Query(ge=-180, le=180),
-    with_fixes: bool = Query(default=False, alias="fixes"),
-    limit: int = Query(default=500, ge=1, le=2000),
-) -> NavaidsInView:
-    """The VORs inside the map's view, and with `fixes` the fixes of the
-    low-altitude enroute chart there too (wingtip.fixes), at most `limit` of
-    each: the hexagons and the triangles the map draws over the chart.
-    The map asks for the fixes only close in, where they do not scatter
-    over the whole chart."""
-    if south > north or west > east:
-        raise HTTPException(422, "The box's south is above its north, or its west east of its east.")
-    vors = fixes.vors_within(south, west, north, east)[:limit]
-    found = fixes.enroute_fixes_within(south, west, north, east)[:limit] if with_fixes else []
-    return {
-        "vors": [{
-            **{k: v.get(k) for k in VOR_FIELDS},
-            "restricted": bool(v.get("restricted")),
-            "remarks": fixes.navaid_remarks(v["ident"], v["kind"]),
-        } for v in vors],
-        "fixes": [{"ident": f["ident"], "lat": f["lat"], "lon": f["lon"]} for f in found],
-    }
 
 
 def _notes(ident: str) -> dict:

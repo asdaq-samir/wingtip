@@ -24,7 +24,7 @@ import { CardCloseContext } from "../cardClose";
 import { prefetchRing, registerOverlayProtocol } from "../overlayTiles";
 import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../ownShip";
 import { GlMapContext, SLOTS, adoptLayers, parkLayers, slotId, sweepLayers, type DrawnImage, type GlMapApi, type GlTap, type Slot } from "./glLayer";
-import { OVERLAY_SOURCE, applyOverlayFilters, overlayPictures, overlayStyle } from "./glOverlays";
+import { OVERLAY_SOURCE, addOverlays, applyOverlayFilters, overlayPictures, overlayStyle } from "./glOverlays";
 import { glZoom } from "./glStyle";
 import { RulerGl } from "./layers/RulerGl";
 import { tvPlatform, zoomInKey, zoomOutKey } from "../../tv";
@@ -227,7 +227,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   const known = !!(course ?? chartOnly);
   // The overlay tiles' name and the overlays' pictures, for the map's
   // first style, each waited for at most FIRST_STYLE_WAIT_MS.
-  const { status: tilesStatus } = useQuery(overlayTilesQuery);
+  const { status: tilesStatus, data: tiles } = useQuery(overlayTilesQuery);
   const [drawnPictures, setDrawnPictures] = useState(() => pictures !== null);
   const [waited, setWaited] = useState(false);
   useEffect(() => {
@@ -261,8 +261,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       m = makeMap(holder, onTv, insetsRef.current);
     }
     // Whether its first style has the overlay tiles: a map made without
-    // them (no archive, or its name too slow to come) keeps the in-view
-    // layers for its life.
+    // them (no archive yet, or its name too slow to come) has them added
+    // once they come (below), and draws no overlays till then.
     const take = () => {
       // The sheet's room as it is now: follow() moves only a map it has,
       // so a sheet that settled while this one loaded left it padded for
@@ -291,6 +291,19 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       }, PARK_MS) };
     };
   }, [ready, onTv]);
+
+  // The overlay tiles added to a map made without them, once their name
+  // comes: the airspace, airports and navaids are the tiles' alone.
+  useEffect(() => {
+    if (!map || overlays || !tiles) return;
+    // Said once the style has taken them (its styledata), for the layers'
+    // taps and probes to find them.
+    const taken = () => setOverlays(true);
+    map.once("styledata", taken);
+    addOverlays(map, tiles);
+    overlaysOf.set(map, tiles);
+    return () => { map.off("styledata", taken); };
+  }, [map, overlays, tiles]);
 
   // The settings' filters on the overlay tiles as they change
   // (applyOverlayFilters).

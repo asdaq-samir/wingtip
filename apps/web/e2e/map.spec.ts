@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { airportMark, chartZoom, drawn, beforeTheRoute, openPanel, settle, sideDrawer, slow, tapTheChart, grabberTo, controlsInSight, openNavLog, navLogSheet } from "./helpers";
+import { airportMarks, chartZoom, drawn, mapStill, beforeTheRoute, openPanel, settle, sideDrawer, slow, tapTheChart, grabberTo, controlsInSight, openNavLog, navLogSheet } from "./helpers";
 
 /**
  * The map: its popups, its zoom toggle and the dev page's zoom button,
@@ -183,46 +183,33 @@ test("my position is the location arrow among the map's buttons, on both pages, 
 
 test("the chart's airports keep coming in under a finger's pan, before it lets go", async ({ page }) => {
   // The owner's ask: "can you update the map even while panning ... until
-  // I let go of the finger, the airports don't show up".
-  // The map opening where the pilot last was, at the region's zoom.
-  await page.addInitScript(() => localStorage.setItem("wingtip.ownship",
-    JSON.stringify({ state: { enabled: false, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 })));
-  // One reporting field in the middle of each box the planner is asked
-  // for, named for the question: X1 for the first, X2 for the next.
-  const asked: string[] = [];
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => {
-    const q = new URL(route.request().url()).searchParams;
-    const [south, west, north, east] = ["south", "west", "north", "east"].map(k => Number(q.get(k)));
-    asked.push(`${south},${west},${north},${east}`);
-    return route.fulfill({ json: { airports: [{
-      ident: `X${asked.length}`, name: "Asked for", lat: (south + north) / 2, lon: (west + east) / 2,
-      // An airline airport: at the region's zoom a smaller one wears no
-      // mark yet (SHOWN_FROM, the biggest first).
-      kind: "large", longest_runway_ft: 9500, flight_category: "VFR", military: null,
-    }] } });
-  });
-  await page.goto("/app/plan");
+  // I let go of the finger, the airports don't show up". The fields are
+  // the overlay tiles' (the suite's archive reaches west of Chicago to
+  // 91.5 W, apps/web/e2e/fixtures/overlay-tiles), loaded per tile as the
+  // map moves.
+  // Close in on Campbell (C81), its card's zoom.
+  await page.goto("/app/plan?place=C81");
   await settle(page);
-  // On the airports' canvas (AirportCanvas) with its mark, as a marker
-  // was in the page wherever it was.
-  const drawn = async (ident: string) => !!(await airportMark(page, ident))?.chip;
-  await expect.poll(() => drawn("X1"), { timeout: slow(15_000) }).toBe(true);
-  const first = asked.length;
-  // A pan of a screen and a half to the east, the finger still down: past
-  // the box asked for (the view and a screen round it).
+  await mapStill(page);
+  const idents = async () => new Set((await airportMarks(page)).map(m => m.ident));
+  await expect.poll(async () => (await idents()).size, { timeout: slow(15_000) }).toBeGreaterThan(0);
+  const before = await idents();
+  // A pan to the west of most of a screen, the finger still down, from
+  // the left of the map's own part of the screen (clear of a card at the
+  // side and the sheet at the foot).
   const viewport = page.viewportSize()!;
+  const map = (await page.locator(".maplibregl-map").boundingBox())!;
+  const panel = await sideDrawer(page).boundingBox();
+  const left = panel && panel.width < map.width * 0.8 ? panel.x + panel.width + 20 : map.x + 20;
   const y = viewport.width < 768 ? 160 : viewport.height / 3;
-  // Clear of the map's buttons down the right edge: the food button is
-  // there with no route too since 2026-10-25, and took the press.
-  const from = viewport.width - 90;
-  await page.mouse.move(from, y);
+  const run = (map.x + map.width - 90 - left) * 0.9;
+  await page.mouse.move(left, y);
   await page.mouse.down();
   for (let i = 1; i <= 30; i++) {
-    await page.mouse.move(from - (viewport.width * 1.6 * i) / 30, y);
+    await page.mouse.move(left + (run * i) / 30, y);
     await page.waitForTimeout(40);
   }
-  // Still held: asked again, and the new field's mark drawn.
-  await expect.poll(() => asked.length, { timeout: slow(10_000) }).toBeGreaterThan(first);
-  await expect.poll(() => drawn(`X${asked.length}`)).toBe(true);
+  // Still held: fields drawn that were not in sight before.
+  await expect.poll(async () => [...(await idents())].some(i => !before.has(i)), { timeout: slow(10_000) }).toBe(true);
   await page.mouse.up();
 });

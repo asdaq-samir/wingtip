@@ -1,47 +1,29 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
-import type { FixPin, VorPin } from "../../../api/types";
+import { useEffect } from "react";
+import type { FixPin, VorPin } from "../../overlayTypes";
 import { usePreferences } from "../../../preferences";
-import { FixCard, VorCard, navaidsQuery } from "../../NavaidCards";
+import { FixCard, VorCard } from "../../NavaidCards";
 import { usePointActions } from "../../pointActions";
-import { WaypointCard, waypointsQuery, type Waypoint } from "../../WaypointCard";
-import { addSvgImages, useGlData, useGlLayer, useGlMap, useGlTap } from "../glLayer";
-import { FIX_ZOOM, NAVAID_PICTURES, OVERLAY_SOURCE, navaidMarks, pointOf, setOverlayExclusion, vorOfTile } from "../glOverlays";
-import { useGlView } from "../useGlView";
+import { WaypointCard, type Waypoint } from "../../WaypointCard";
+import { useGlMap, useGlTap } from "../glLayer";
+import { OVERLAY_SOURCE, pointOf, setOverlayExclusion, vorOfTile } from "../glOverlays";
 import { useGlProbe } from "../useGlProbe";
 import { TAP } from "./common";
 
-const NAV = "navaids";
 const VFR = "vfr-waypoints";
-const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
-
-const NONE_VORS: VorPin[] = [];
-const NONE_FIXES: FixPin[] = [];
-
-function point(kind: string, p: { ident: string; lat: number; lon: number; freq?: string | null }, key: string): GeoJSON.Feature {
-  return { type: "Feature", properties: { kind, ident: p.ident, key, ...(p.freq ? { freq: p.freq } : {}) }, geometry: { type: "Point", coordinates: [p.lon, p.lat] } };
-}
-
-function usePictures(): boolean {
-  const { map } = useGlMap();
-  const [ready, setReady] = useState(false);
-  useEffect(() => { void addSvgImages(map, NAVAID_PICTURES).then(() => setReady(true)); }, [map]);
-  return ready;
-}
 
 /**
- * The VORs and, closer in, the low enroute chart's fixes, at NavaidsLayer's
+ * The VORs and, closer in, the low enroute chart's fixes, at glOverlays'
  * zooms and the settings' VORs and Fixes; a tap a station's card (VorCard,
  * FixCard).
  *
- * From the cycle's overlay tiles where the map has them (glOverlays): a
- * card is built from the tapped feature's fields, and the VORs a fix's
- * card and the waypoints' place themselves off are the ones in the tiles
- * loaded. Without them, the planner is asked for the view (navaidsQuery).
+ * The marks are the cycle's overlay tiles' (glOverlays): a card is built
+ * from the tapped feature's fields, and the VORs a fix's card and the
+ * waypoints' place themselves off are the ones in the tiles loaded.
+ * Nothing until the map has the tiles.
  */
 export function NavaidsGl() {
   const { overlays } = useGlMap();
-  return overlays ? <TileNavaids /> : <InViewNavaids />;
+  return overlays ? <TileNavaids /> : null;
 }
 
 /** The VORs of the overlay tiles loaded round the view, as VorPins. */
@@ -85,40 +67,12 @@ function TileNavaids() {
   return null;
 }
 
-function InViewNavaids() {
-  const show = usePreferences(s => s.navaids);
-  const { box, level } = useGlView();
-  const query = navaidsQuery(box, level, show);
-  const { data } = useQuery({ ...query, placeholderData: keepPreviousData });
-  const vors = query.enabled ? data?.vors ?? NONE_VORS : NONE_VORS;
-  const fixes = query.enabled && level >= FIX_ZOOM ? data?.fixes ?? NONE_FIXES : NONE_FIXES;
-  useEffect(() => { usePointActions.setState({ stations: show ? vors : [] }); }, [vors, show]);
-  const ready = usePictures();
-  useGlLayer("marks", { [NAV]: empty() }, navaidMarks(NAV, { source: NAV }));
-  const features = useMemo<GeoJSON.FeatureCollection | null>(() => (ready ? {
-    type: "FeatureCollection",
-    features: [...fixes.map(f => point("fix", f, `fix-${f.ident}`)), ...vors.map(v => point("vor", v, `${v.ident}-${v.lat}`))],
-  } : null), [ready, vors, fixes]);
-  useGlData(NAV, features);
-  useGlProbe("navaid-marks", [NAV], f => ({ ident: f.properties.ident, kind: f.properties.kind }));
-  const { openCard } = useGlMap();
-  useGlTap([NAV], TAP.mark, TAP.rank.mark + 1, feature => {
-    const key = String(feature.properties.key);
-    const vor = vors.find(v => `${v.ident}-${v.lat}` === key);
-    const fix = fixes.find(f => `fix-${f.ident}` === key);
-    if (vor) openCard(<VorCard key={key} vor={vor} />);
-    else if (fix) openCard(<FixCard key={key} fix={fix} vors={vors} />);
-  });
-  return null;
-}
-
-/** The VFR waypoints from zoom 10, as WaypointsLayer: green triangles, a
+/** The VFR waypoints from zoom 10 (glOverlays' FIX_ZOOM): green triangles, a
  *  tap the waypoint's card; the route's own left to it (`exclude`). From
- *  the overlay tiles' fixes where the map has them (FIX_BASE's VFR
- *  waypoints), else asked for the view (waypointsQuery). */
+ *  the overlay tiles' fixes (FIX_BASE's VFR waypoints). */
 export function WaypointsGl({ exclude }: { exclude: Set<string> }) {
   const { overlays } = useGlMap();
-  return overlays ? <TileWaypoints exclude={exclude} /> : <InViewWaypoints exclude={exclude} />;
+  return overlays ? <TileWaypoints exclude={exclude} /> : null;
 }
 
 function TileWaypoints({ exclude }: { exclude: Set<string> }) {
@@ -132,26 +86,6 @@ function TileWaypoints({ exclude }: { exclude: Set<string> }) {
     if (!at) return;
     const w: Waypoint = { ident: String(feature.properties.ident), ...at };
     openCard(<WaypointCard key={w.ident} waypoint={w} />);
-  });
-  return null;
-}
-
-function InViewWaypoints({ exclude }: { exclude: Set<string> }) {
-  const { box, level } = useGlView();
-  const query = waypointsQuery(box, level);
-  const { data } = useQuery({ ...query, placeholderData: keepPreviousData });
-  const shown = useMemo(() => (query.enabled ? (data ?? []).filter(w => !exclude.has(w.ident)) : []), [query.enabled, data, exclude]);
-  const ready = usePictures();
-  useGlLayer("marks", { [VFR]: empty() }, navaidMarks(VFR, { source: VFR }));
-  const features = useMemo<GeoJSON.FeatureCollection | null>(() => (ready ? {
-    type: "FeatureCollection", features: shown.map(w => point("vfr", w, `vfr-${w.ident}`)),
-  } : null), [ready, shown]);
-  useGlData(VFR, features);
-  useGlProbe("navaid-marks", [VFR], f => ({ ident: f.properties.ident, kind: "vfr" }));
-  const { openCard } = useGlMap();
-  useGlTap([VFR], TAP.mark, TAP.rank.mark + 1, feature => {
-    const w: Waypoint | undefined = shown.find(p => p.ident === feature.properties.ident);
-    if (w) openCard(<WaypointCard key={w.ident} waypoint={w} />);
   });
   return null;
 }

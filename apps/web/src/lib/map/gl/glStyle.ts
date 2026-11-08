@@ -2,7 +2,8 @@ import type {
   LayerSpecification, LineLayerSpecification, RasterLayerSpecification,
   RasterSourceSpecification, SymbolLayerSpecification,
 } from "maplibre-gl";
-import type { AirspaceVolume, ChartInfo } from "../../api/types";
+import type { ChartInfo } from "../../api/types";
+import type { AirspaceVolume } from "../overlayTypes";
 import { airspaceLabel } from "../airspaceLabel";
 import { chartPair, tileTemplate } from "../tiles";
 import { COURSE_MAGENTA } from "../chartColors";
@@ -102,8 +103,8 @@ export function chartStyle(chart: ChartInfo, base: string, pinned: boolean, orig
   return { sources, layers, maxZoom: glZoom(baseLayer.max_zoom + OVERZOOM) };
 }
 
-/** Class E is in the style for when the planner serves it: today
- *  /api/airspace/in-view answers B, C and D only (AirspaceVolume). */
+/** Class E has an ink for when the map draws it: the tiles carry it
+ *  (wingtip.vector_tiles), the map draws B, C and D only. */
 type AirspaceClass = AirspaceVolume["airspace_class"] | "E";
 
 /**
@@ -140,34 +141,7 @@ export function airspaceText(volume: AirspaceVolume): string | null {
   return `${volume.airspace_class}: ${label.kind === "shelf" ? `${label.top}–${label.floor}` : label.ceiling}`;
 }
 
-export interface AirspaceProps { id: string; cls: AirspaceClass; label: string }
-
-/**
- * The volumes the planner answered for a box, as GeoJSON lines: each of
- * a volume's lines ([lat, lon] as the planner sends them) one feature,
- * its class and its altitudes as properties. The seam for the vector
- * tiles (claude/vector-tiles): those features from a `vector` source
- * with a `source-layer`, the same layers below reading the same
- * properties, and this and the box's question go.
- */
-export function airspaceFeatures(volumes: AirspaceVolume[]): GeoJSON.FeatureCollection<GeoJSON.LineString, AirspaceProps> {
-  const features: GeoJSON.Feature<GeoJSON.LineString, AirspaceProps>[] = [];
-  for (const v of volumes) {
-    const label = airspaceText(v) ?? "";
-    for (const line of v.lines) {
-      if (line.length < 2) continue;
-      features.push({
-        type: "Feature",
-        properties: { id: v.id, cls: v.airspace_class, label },
-        geometry: { type: "LineString", coordinates: line.map(p => [p[1]!, p[0]!]) },
-      });
-    }
-  }
-  return { type: "FeatureCollection", features };
-}
-
-export const AIRSPACE_SOURCE = "airspace";
-export const AIRSPACE_LINE_LAYERS = (["E", "D", "C", "B"] as const).map(c => `airspace-${c}`);
+export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map(c => `airspace-${c}`);
 
 /** The dark tab an airspace's altitudes sit in (icon-text-fit stretches
  *  it to the text): its id, for the layer that draws it. */
@@ -192,29 +166,27 @@ export const AIRSPACE_TILE_LABEL = ["concat", ["get", "class"], ": ", ["case", [
 /** One line layer a class, drawn from that class's zoom, and the labels
  *  on every line: white bold type in a dark tab, level on the screen,
  *  kept off each other and off the route's marks by MapLibre's own
- *  collision. From the in-view volumes (airspaceFeatures), or with
- *  `tiles` the overlay tiles' `airspace` layer, its rings drawn as lines
- *  and its labels written from its fields (AIRSPACE_TILE_LABEL); Class E
- *  is in the tiles but not drawn, as the in-view answer has none. */
-export function airspaceLayers(font: string[], tiles = false): LayerSpecification[] {
-  const from = tiles ? { source: OVERLAY_SOURCE, "source-layer": "airspace" } : { source: AIRSPACE_SOURCE };
-  const cls = tiles ? "class" : "cls";
-  const lines: LineLayerSpecification[] = (tiles ? (["D", "C", "B"] as const) : (["E", "D", "C", "B"] as const)).map(c => {
+ *  collision. From the overlay tiles' `airspace` layer, its rings drawn
+ *  as lines and its labels written from its fields (AIRSPACE_TILE_LABEL);
+ *  Class E is in the tiles but not drawn. */
+export function airspaceLayers(font: string[]): LayerSpecification[] {
+  const from = { source: OVERLAY_SOURCE, "source-layer": "airspace" };
+  const lines: LineLayerSpecification[] = (["D", "C", "B"] as const).map(c => {
     const ink = AIRSPACE_INK[c];
     return {
       id: `airspace-${c}`, type: "line", ...from, minzoom: glZoom(AIRSPACE_FROM[c]),
-      filter: ["==", ["get", cls], c],
+      filter: ["==", ["get", "class"], c],
       layout: { "line-join": "round", "line-cap": ink.dash ? "butt" : "round" },
       paint: { "line-color": ink.colour, "line-width": ink.width, "line-opacity": ink.opacity, ...(ink.dash ? { "line-dasharray": ink.dash } : {}) },
     };
   });
   const labels: SymbolLayerSpecification = {
     id: "airspace-labels", type: "symbol", ...from, minzoom: glZoom(AIRSPACE_LABELS_FROM),
-    filter: tiles ? ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "ceiling_ft"]] : ["!=", ["get", "label"], ""],
+    filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "ceiling_ft"]],
     layout: {
       "symbol-placement": "line",
       "symbol-spacing": 320,
-      "text-field": tiles ? AIRSPACE_TILE_LABEL as never : ["get", "label"],
+      "text-field": AIRSPACE_TILE_LABEL as never,
       "text-font": font,
       "text-size": 11,
       "text-rotation-alignment": "viewport",

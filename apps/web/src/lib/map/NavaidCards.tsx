@@ -6,9 +6,7 @@ import { TEXT } from "../text";
 import { feet } from "../units";
 import { useOwnFix } from "./ownShip";
 import { PointActions } from "./PointCardActions";
-import { api } from "../api/client";
-import type { FixPin, VorPin } from "../api/types";
-import type { Box } from "./view";
+import type { FixPin, VorPin } from "./overlayTypes";
 import { MapCard } from "./MapCard";
 import { degreesMinutes } from "../coords";
 import { BLUE } from "../useAirspace";
@@ -16,33 +14,10 @@ import { nmAway, useAwayWords } from "../useAway";
 import { PointWhere } from "./PointWhere";
 
 /**
- * The VORs and the low enroute chart's fixes as the map asks for them,
- * and the cards a tap on one opens (the map draws them:
+ * The cards a tap on a VOR or a low enroute chart fix opens (the map
+ * draws them from the overlay tiles:
  * lib/map/gl/layers/NavaidsGl).
  */
-
-/** The VORs from a region's zoom in: a few to a state, each a station a
- *  pilot tunes, and the chart's compass roses round them. */
-const VOR_ZOOM = 8;
-
-/** The enroute chart's fixes only close in: further out there are dozens
- *  to a county, a scatter over the chart's own marks. */
-const FIX_ZOOM = 10;
-
-/** The planner asked for a box's VORs at a zoom, from VOR_ZOOM, and its
- *  fixes with them from FIX_ZOOM; none where the settings' VORs and Fixes
- *  is off. The layer's useQuery and the map's own events (useAhead) ask
- *  it alike. */
-export function navaidsQuery(asked: Box, zoom: number, show: boolean) {
-  const withFixes = zoom >= FIX_ZOOM;
-  return {
-    queryKey: ["navaidsInView", asked.key, withFixes],
-    queryFn: () => api.navaidsInView(asked.box, withFixes),
-    enabled: show && zoom >= VOR_ZOOM,
-    staleTime: Infinity,
-    meta: { silent: true },
-  };
-}
 
 /** A VOR's mark on its card: the sectional's blue hexagon. */
 const HEXAGON = (

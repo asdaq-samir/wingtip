@@ -406,3 +406,48 @@ def test_the_class_b_is_drawn_within_tolerance_of_the_faas_line(built, sources):
     print(f"Class B worst {worst:.2f} m over {compared} points, tolerance {vector_tiles.TOLERANCE_M} m")
     assert compared > 1000
     assert worst <= vector_tiles.TOLERANCE_M
+
+
+def test_the_browser_suites_archive_is_of_this_version():
+    """The e2e stack's archive (apps/web/e2e/fixtures/overlay-tiles, built by
+    scripts/build/e2e-overlay-tiles.sh) holds what the tiles hold now: a
+    VERSION bump without building it again would test the map against
+    tiles no planner writes."""
+    folder = Path(__file__).resolve().parents[3] / "apps" / "web" / "e2e" / "fixtures" / "overlay-tiles"
+    if not folder.parent.is_dir():
+        pytest.skip("the web app's fixtures are not here (a copy of the planner alone)")
+    index = vector_tiles.tiles_index(folder)
+    assert index is not None
+    assert index["version"] == vector_tiles.VERSION
+    assert vector_tiles.tiles_path(index["name"], folder) is not None
+    assert [layer["name"] for layer in index["layers"]] == list(vector_tiles.LAYERS)
+
+
+@NEEDS_TIPPECANOE
+def test_a_runway_is_drawn_where_nasr_surveys_its_ends(built, sources):
+    """O'Hare's 10L/28R in the zoom-12 tiles that hold its ends: each end
+    within TOLERANCE_M of NASR's surveyed position (APT_RWY_END
+    LAT_DECIMAL/LONG_DECIMAL), and the centreline through it. Asked
+    after on Android (2026-11-08), where close in the runways sat beside
+    the chart's own: the chart is registered to its graticule within a
+    pixel or two of zoom 13, but its runway patterns are symbols, drawn
+    wider and longer than the runways, so the surveyed line is the truer
+    of the two, and this keeps it so."""
+    _, path = built
+    _, nasr = sources
+    with open(nasr / "APT_RWY_END.csv") as f:
+        surveyed = {row["RWY_END_ID"]: (float(row["LONG_DECIMAL"]), float(row["LAT_DECIMAL"]))
+                    for row in csv.DictReader(f) if row["RWY_ID"] == "10L/28R"}
+    assert set(surveyed) == {"10L", "28R"}
+    kx, ky = 111_320 * math.cos(math.radians(41.969)), 110_574
+
+    def metres(a, b):
+        return math.hypot((a[0] - b[0]) * kx, (a[1] - b[1]) * ky)
+
+    for end_id, at in surveyed.items():
+        drawn = [f for f in _decode(path, 12, *_tile(*at, 12)).get("runways", [])
+                 if f["properties"]["runway"] == "10L/28R"]
+        end = next(f for f in drawn if f["properties"].get("end_id") == end_id)
+        assert metres(end["geometry"]["coordinates"], at) <= vector_tiles.TOLERANCE_M
+        line = next(f for f in drawn if f["properties"]["part"] == "centreline")["geometry"]["coordinates"]
+        assert min(metres(p, at) for p in line) <= vector_tiles.TOLERANCE_M

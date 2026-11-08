@@ -172,8 +172,9 @@ Then the callers switch to the name and the old copy is deleted.
   `checklist.json` and `logbookCsv.json`.
 - The map's overlays with no network are the engine's too (`crates/airspace`):
   the Class B, C and D, the landing fields and the VORs inside the map's
-  box from the phone's kept packs, each as the planner's in-view endpoint
-  answers it (`wt_airspace_in_view`, `wt_airports_in_view`,
+  box from the phone's kept packs, in the shapes the planner's in-view
+  endpoints answered (the airports' still does; the web's map draws the
+  airspace and navaids from the overlay tiles) (`wt_airspace_in_view`, `wt_airports_in_view`,
   `wt_navaids_in_view`), with what a pack cannot hold -- a live METAR's
   flight category, a navaid's remarks -- answered null or empty.
 - The planner's own copies are going (#482 phase 0): the airspace column

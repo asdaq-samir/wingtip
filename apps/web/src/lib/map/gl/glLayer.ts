@@ -42,12 +42,11 @@ export interface GlMapApi {
   /** A card in the map's sheet (SheetCard), for what a tap on the map
    *  opens; null puts it away. */
   openCard: (card: ReactNode | null) => void;
-  /** Whether the cycle's overlay tiles are in the map's first style
-   *  (glOverlays): its airspace, airports, navaids, fixes and runways
-   *  drawn per tile from the archive, so a layer of them asks the planner
-   *  nothing for the view and only adds its taps, its filters and its
-   *  probes; none where the planner has no archive, and each asks the
-   *  in-view endpoints as before. */
+  /** Whether the map has the cycle's overlay tiles (glOverlays): its
+   *  airspace, airports, navaids, fixes and runways drawn per tile from
+   *  the archive, a layer of them adding only its taps, its filters and
+   *  its probes. False until the archive's name has come (the planner
+   *  builds it once a cycle); the layers draw nothing till then. */
   overlays: boolean;
 }
 

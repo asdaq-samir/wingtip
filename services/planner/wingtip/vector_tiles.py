@@ -525,8 +525,7 @@ def ensure(cache_dir, pack_dir=None, out_dir=None) -> dict | None:
     """The archive built where the one on disk is not of the cycle pack
     the planner holds now (archive_name); None where it already is, there
     is no pack, or no tippecanoe to build with (a planner run outside its
-    image: the map then has no overlay tiles, and asks the in-view
-    endpoints as before)."""
+    image: the map then draws no overlays until there is an archive)."""
     pack = cycle_pack.current(pack_dir)
     if pack is None:
         return None
