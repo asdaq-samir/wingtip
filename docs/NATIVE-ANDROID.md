@@ -234,10 +234,11 @@ empty, and "Start from the phases" fills an empty editor with the
 headings alone, in the order of GAMA Specification No. 1's Sections 4
 and 3 (`ChecklistPhases`); the app ships no handbook's items. The run
 view ticks rows, counts each section's "n of m" and starts over; the
-ticks last while the app runs. The Aircraft screen has Checklist and
-Emergency rows; in the air (own ship on and under way, the engine's
-`underway`) an EMER button under the map's buttons opens the airplane's
-emergency checklists in one tap, in either layout.
+ticks last while the app runs, and signing out forgets the lists
+(`ChecklistStore.forgetAll`). The Aircraft screen has Checklist and
+Emergency rows; on the ground as in the air, as on the iPhone, an EMER
+button under the map's buttons opens the airplane's emergency checklists
+in one tap, in either layout.
 
 Passenger briefing (#223, `briefing/`): Setup's Flight section opens
 the SAFETY briefing's seven items for the planned flight, each with its

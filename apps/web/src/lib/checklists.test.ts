@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CHECKLIST_PHASES, checklistText, phasesText, withChecklist } from "./checklists";
+import { CHECKLIST_PHASES, checklistText, forgetChecklists, phasesText, saveChecklist, useChecklists, withChecklist } from "./checklists";
 import { checklistOf } from "./checklist";
 
 describe("an airplane's checklists, kept on the device", () => {
@@ -11,6 +11,13 @@ describe("an airplane's checklists, kept on the device", () => {
     expect(checklistText(kept, "mine:5", "normal")).toBe("# Before takeoff\nMixture -- Rich");
     expect(checklistText(kept, "mine:5", "emergency")).toContain("Engine fire");
     expect(checklistText(kept, "profile:c172", "emergency")).toBe("");
+  });
+
+  it("are all forgotten when the pilot signs out", () => {
+    saveChecklist("mine:5", "emergency", "# Engine fire in flight\nMixture -- Idle cutoff");
+    expect(checklistText(useChecklists.getState().value, "mine:5", "emergency")).toContain("Engine fire");
+    forgetChecklists();
+    expect(useChecklists.getState().value).toEqual({});
   });
 
   it("forget a list written blank, and an airplane with none left", () => {

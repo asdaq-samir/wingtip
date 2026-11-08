@@ -96,7 +96,7 @@ fun SetupScreen(session: Session) {
             !loaded -> CircularProgressIndicator(Modifier.size(24.dp))
             signedIn != null -> {
                 Text(signedIn.email ?: signedIn.displayName ?: "Signed in", style = MaterialTheme.typography.bodyLarge)
-                OutlinedButton(onClick = session::signOut) { Text("Sign Out") }
+                OutlinedButton(onClick = { session.signOut(context) }) { Text("Sign Out") }
             }
             else -> {
                 OutlinedTextField(

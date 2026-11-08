@@ -60,8 +60,9 @@ enum ChecklistPhases {
 /// them (the owner's decision on #220, 2026-11-08: free, and local), by
 /// the airplane's N-number, else the type's name where none is picked.
 /// Kept as text, so headings not yet written under stay there to write
-/// under next time. Signing out leaves them: they are the airplane's,
-/// not the account's, and are on no server to fetch again.
+/// under next time. Signing out forgets them (Session.forgetPilot), as it
+/// forgets the rest the device kept of the pilot's (the owner's
+/// "sign-out clears", 2026-10-20, held for the checklists on 2026-11-08).
 enum LocalChecklists {
     static let prefix = "checklist:"
 

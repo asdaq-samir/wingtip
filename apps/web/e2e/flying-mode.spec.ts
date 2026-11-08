@@ -46,8 +46,9 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   for (const button of buttons) {
     await expect(button).toBeVisible();
     const box = (await button.boundingBox())!;
-    expect(Math.round(box.width)).toBe(FLYING_PX);
-    expect(Math.round(box.height)).toBe(FLYING_PX);
+    const name = await button.getAttribute("data-testid");
+    expect(Math.round(box.width), `${name}'s width`).toBe(FLYING_PX);
+    expect(Math.round(box.height), `${name}'s height`).toBe(FLYING_PX);
   }
   await expect(page.getByTestId("map-settings-button")).toHaveCount(0);
 
@@ -72,6 +73,15 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await expect(head).toHaveCount(0);
   await expect(page.getByTestId("flying-nearest")).toHaveCount(0);
   await expect(page.getByTestId("map-settings-button")).toBeVisible();
+  // EMER stays on the ground, small, last of the map's buttons, as the
+  // iPhone has it (the owner, 2026-11-08), and opens the same lists.
+  const groundEmer = page.getByTestId("map-emergency");
+  await expect(groundEmer).toBeVisible();
+  expect(Math.round((await groundEmer.boundingBox())!.width)).toBeLessThan(FLYING_PX);
+  await groundEmer.click();
+  await expect(page.getByTestId("emergency-checklists").getByTestId("checklist")).toHaveAttribute("data-kind", "emergency");
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("emergency-checklists")).toHaveCount(0);
   const mic = (await page.locator("[data-map-food]").getByTestId("radio-button").boundingBox())!;
   expect(Math.round(mic.width)).toBeLessThan(FLYING_PX);
   await closeProfile(page);

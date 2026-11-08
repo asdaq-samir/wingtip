@@ -26,6 +26,15 @@ struct ChecklistsTests {
         #expect(d.string(forKey: LocalChecklists.key("N3429J", .normal)) == nil)
     }
 
+    @Test func signingOutForgetsThem() throws {
+        let d = try defaults()
+        LocalChecklists.save("# Engine fire in flight\nMixture -- Idle cutoff\n", for: "N3429J", .emergency, in: d)
+        d.set("kept", forKey: "unrelated")
+        Session.forgetPilot(d)
+        #expect(LocalChecklists.text(for: "N3429J", .emergency, in: d) == "")
+        #expect(d.string(forKey: "unrelated") == "kept")
+    }
+
     @Test func theAirplaneIsItsNNumberElseItsType() {
         let plan = Plan()
         #expect(LocalChecklists.airplane(of: plan) == "C172")

@@ -28,8 +28,9 @@ import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "./mapChrome";
  * stack is two 60-point words a hand finds in turbulence -- NRST, the
  * fields nearest own ship, and D→, direct to the next landing -- and the
  * microphone's circle grows to the same size where it is; under them
- * EMER, the airplane's emergency checklists (EmergencyButton); the settings,
- * the arrow and the rest wait for the ground. The map follows the
+ * EMER, the airplane's emergency checklists (EmergencyButton), which the
+ * ground's buttons end with too; the settings, the arrow and the rest wait
+ * for the ground. The map follows the
  * airplane in flight (OwnShipGl), so the arrow is not missed.
  */
 /** The microphone's pill, in RadioLayer's chunk with the rest of the
@@ -127,7 +128,7 @@ export default function MapControls() {
             <MyPositionButton />
             {/* The airplane's emergency checklists, one tap (#220): added
                 last, the stack above it where it was. */}
-            <EmergencyButton />
+            <EmergencyButton flying />
           </>
         ) : (
           <>
@@ -139,6 +140,9 @@ export default function MapControls() {
             {/* Draws itself only where full screen actually works: a desktop
                 browser and an iPad, never an iPhone. */}
             <FullscreenButton />
+            {/* The emergency checklists on the ground too, last, as the
+                iPhone's map buttons have them (the owner, 2026-11-08). */}
+            <EmergencyButton flying={false} />
           </>
         )}
       </div>

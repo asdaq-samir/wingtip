@@ -1,10 +1,12 @@
 package app.wingtipmaps.android
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
+import app.wingtipmaps.android.checklist.ChecklistStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -88,13 +90,16 @@ class Session : ViewModel() {
         }
     }
 
-    /** Signing out ends the session on the gateway (the owner's pick:
-     *  sign-out clears, as the web app's useLogout does). */
-    fun signOut() {
+    /** Signing out ends the session on the gateway and forgets what the
+     *  phone kept of the pilot's, their airplanes' checklists (the owner's
+     *  pick: sign-out clears, as the web app's useLogout does). */
+    fun signOut(context: Context) {
+        val checklists = ChecklistStore.of(context.applicationContext)
         viewModelScope.launch {
             runCatching { Gateway.signOut() }
             _pilot.value = null
             _linkSent.value = false
+            checklists.forgetAll()
         }
     }
 }

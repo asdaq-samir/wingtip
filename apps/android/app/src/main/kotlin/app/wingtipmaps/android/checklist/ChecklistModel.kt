@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.checklist
 
 import android.app.Application
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,7 +32,7 @@ class ChecklistModel(app: Application) : AndroidViewModel(app) {
         val problem: String? = null,
     )
 
-    private val store = ChecklistStore(PreferencesStore(app.getSharedPreferences("checklists", Context.MODE_PRIVATE)))
+    private val store = ChecklistStore.of(app)
     private val ticks = mutableMapOf<Pair<String, ChecklistKind>, Set<String>>()
 
     private val _state = MutableStateFlow(State())

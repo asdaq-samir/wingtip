@@ -160,8 +160,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     var asking by rememberSaveable { mutableStateOf(false) }
     var emergency by rememberSaveable { mutableStateOf(false) }
     // Under way: own ship on and at flying speed (the engine's
-    // `underway`), when the strip turns to the airplane and the map
-    // buttons offer the emergency checklists.
+    // `underway`), when the strip turns to the airplane.
     val flying = ownShipOn && OwnShip.underway(fix?.groundspeedKt)
     // In the air (#218): each fix asked of the engine once for the
     // instruments, the strip's figures and the glide ring (InFlight), again
@@ -317,7 +316,10 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             )
             MapButtons(
                 ownShip = ownShipMode, onOwnShip = onOwnShip, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd),
-                onEmergency = if (flying) ({ emergency = true }) else null,
+                // On the ground as in the air, as the iPhone has it (the
+                // owner, 2026-11-08): an engine fire during start is one of
+                // the emergencies.
+                onEmergency = { emergency = true },
             )
             // What is ahead and the flight's instruments, at the top left of
             // the buttons where nothing else was (#218).

@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.checklist
 
+import android.content.Context
 import android.content.SharedPreferences
 import app.wingtipmaps.android.engine.Engine
 import kotlinx.serialization.Serializable
@@ -30,7 +31,7 @@ data class ChecklistItem(val challenge: String, val response: String? = null)
 @Serializable
 data class ChecklistSection(val title: String, val items: List<ChecklistItem> = emptyList())
 
-/** The engine's ChecklistRead, the gateway's ChecklistDto. */
+/** The engine's ChecklistRead. */
 @Serializable
 data class ChecklistRead(val sections: List<ChecklistSection> = emptyList())
 
@@ -44,6 +45,9 @@ interface TextStore {
 
     /** The text kept under `key`; null takes it away. */
     fun write(key: String, value: String?)
+
+    /** Every text kept taken away. */
+    fun clear()
 }
 
 /** A TextStore over the app's SharedPreferences. */
@@ -52,6 +56,10 @@ class PreferencesStore(private val prefs: SharedPreferences) : TextStore {
 
     override fun write(key: String, value: String?) {
         prefs.edit().apply { if (value == null) remove(key) else putString(key, value) }.apply()
+    }
+
+    override fun clear() {
+        prefs.edit().clear().apply()
     }
 }
 
@@ -72,6 +80,17 @@ class ChecklistStore(private val store: TextStore) {
      *  airplane is back to having none. */
     fun save(airplane: String, kind: ChecklistKind, text: String) {
         store.write(key(airplane, kind), text.takeIf { it.isNotBlank() })
+    }
+
+    /** Every airplane's lists forgotten, as signing out forgets what the
+     *  phone kept of the pilot's (the owner's "sign-out clears",
+     *  2026-10-20, held for the checklists on 2026-11-08). */
+    fun forgetAll() = store.clear()
+
+    companion object {
+        /** The phone's own keeping: a SharedPreferences file of their own. */
+        fun of(context: Context) =
+            ChecklistStore(PreferencesStore(context.getSharedPreferences("checklists", Context.MODE_PRIVATE)))
     }
 }
 

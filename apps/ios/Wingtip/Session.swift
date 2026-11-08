@@ -74,11 +74,13 @@ final class Session {
         Tracking.shared.forgetFavorites()
     }
 
-    /// The figures kept per N-number on this device, the pilot's own;
-    /// the Favorites are the store's (Tracking.forgetFavorites), and the
-    /// old key of theirs is gone with the first launch's migration.
+    /// The figures kept per N-number on this device, the pilot's own, and
+    /// their airplanes' checklists (LocalChecklists); the Favorites are
+    /// the store's (Tracking.forgetFavorites), and the old key of theirs
+    /// is gone with the first launch's migration.
     static func forgetPilot(_ defaults: UserDefaults = .standard) {
-        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(TailFigures.prefix) || key == KeptAirplane.key {
+        for key in defaults.dictionaryRepresentation().keys
+        where key.hasPrefix(TailFigures.prefix) || key.hasPrefix(LocalChecklists.prefix) || key == KeptAirplane.key {
             defaults.removeObject(forKey: key)
         }
     }

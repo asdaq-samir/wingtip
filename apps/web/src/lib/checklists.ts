@@ -38,6 +38,14 @@ export function saveChecklist(airplane: string, kind: ChecklistKind, text: strin
   useChecklists.setState(s => ({ value: withChecklist(s.value, airplane, kind, text) }));
 }
 
+/** Every airplane's lists forgotten, as signing out forgets what this
+ *  device kept of the pilot's (the owner's "sign-out clears", 2026-10-20,
+ *  held for the checklists on 2026-11-08): the next person to pick up the
+ *  device starts from the empty headings, not another pilot's airplanes. */
+export function forgetChecklists(): void {
+  useChecklists.setState({ value: {} });
+}
+
 /**
  * The headings a list can start from, and nothing under them: the phases
  * in the order a pilot's operating handbook sets its procedures, under

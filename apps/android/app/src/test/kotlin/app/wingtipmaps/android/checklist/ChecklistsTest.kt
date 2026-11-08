@@ -14,6 +14,8 @@ class MemoryStore : TextStore {
     override fun write(key: String, value: String?) {
         if (value == null) kept.remove(key) else kept[key] = value
     }
+
+    override fun clear() = kept.clear()
 }
 
 /** The checklists kept per airplane (ChecklistStore), the phases'
@@ -41,6 +43,18 @@ class ChecklistsTest {
         // Read again through a new store over the same keeping, as at the
         // next launch; the airplane's key is read whatever its case.
         assertEquals("# Climb\nFlaps -- Up", ChecklistStore(memory).text("PA28", ChecklistKind.NORMAL))
+    }
+
+    @Test
+    fun signingOutForgetsEveryAirplanesLists() {
+        val memory = MemoryStore()
+        val store = ChecklistStore(memory)
+        store.save("c172", ChecklistKind.EMERGENCY, "# Engine fire in flight\nMixture -- Idle cutoff")
+        store.save("pa28", ChecklistKind.NORMAL, "# Climb\nFlaps -- Up")
+        store.forgetAll()
+        assertEquals("", store.text("c172", ChecklistKind.EMERGENCY))
+        assertEquals("", store.text("pa28", ChecklistKind.NORMAL))
+        assertTrue(memory.kept.isEmpty())
     }
 
     @Test

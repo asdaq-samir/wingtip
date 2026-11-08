@@ -43,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -163,6 +164,7 @@ fun StripLayout(
     // the handle and the field's row; in the air the ribbon and the next
     // checkpoint too, since they are what is glanced at.
     val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val appContext = LocalContext.current
     val peek = (if (flying && rows.isNotEmpty()) 268.dp else 116.dp) + navigationBar
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -172,7 +174,7 @@ fun StripLayout(
             Column(Modifier.fillMaxWidth().fillMaxHeight(0.7f)) {
                 FieldRow(
                     suggestions = StripData.suggestions(state), pilot = pilot, flying = flying, problem = strip.problem,
-                    onLine = submit, onOpen = model::open, onSignOut = session::signOut,
+                    onLine = submit, onOpen = model::open, onSignOut = { session.signOut(appContext) },
                     onProblem = model::say,
                 )
                 if (flying && rows.isNotEmpty()) {

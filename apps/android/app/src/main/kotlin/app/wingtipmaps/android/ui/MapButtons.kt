@@ -39,8 +39,8 @@ enum class OwnShipMode { OFF, READING, FOLLOWING }
  * The buttons over the map, under the status bar at the right, as the
  * iOS app's MapButtons: the location arrow, and under it the sparkle
  * that opens Ask (AskScreen), a question about the flight put to the
- * assistant. In flight, EMER under them opens the airplane's emergency
- * checklists in one tap (#220). A tonal icon button is Material's own
+ * assistant. EMER under them opens the airplane's emergency checklists in
+ * one tap (#220), on the ground as in the air, as the iPhone's does. A tonal icon button is Material's own
  * 40-dp control with its 48-dp touch target, so nothing is grown to be
  * tappable.
  */
@@ -81,9 +81,9 @@ fun MapButtons(
                 Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask about this flight")
             }
         }
-        // Only in the air, where an emergency checklist is wanted at
-        // once; on the ground it is on the airplane screen. Its letters in
-        // the error colour, so it is found without reading.
+        // Always there, last, as the iPhone's is (the owner, 2026-11-08);
+        // null only where a caller has no checklists to open. Its letters
+        // in the error colour, so it is found without reading.
         if (onEmergency != null) {
             FilledTonalIconButton(
                 onClick = onEmergency,
