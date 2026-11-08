@@ -10,6 +10,7 @@
 
 pub mod awc;
 pub mod calls;
+pub mod field;
 pub mod hours;
 pub mod route;
 

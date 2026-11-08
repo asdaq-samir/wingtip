@@ -539,6 +539,22 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     c.ask("alerts_ahead", given);
     c.ask("congested_points", json!({ "areas": [[[[[-90.0, 45.0], [-89.98, 45.0], [-89.98, 45.01], [-90.0, 45.01], [-90.0, 45.0]]]]],
         "points": [[45.005, -89.99], [46.0, -89.0]], "candidates": [[0], []] }));
+    // The web's rules moved into the engine (webRules.json): a field's TAF,
+    // the radio calls and a student's solo endorsement.
+    let web = fixture("webRules.json");
+    for case in web["fieldTaf"].as_array().unwrap() {
+        c.ask("field_taf", case["input"].clone());
+    }
+    for case in web["callSign"].as_array().unwrap() {
+        c.ask("radio_call_sign", json!({ "make": case["make"], "tail": case["tail"] }));
+    }
+    for case in web["placeName"].as_array().unwrap() {
+        c.ask("radio_place_name", json!({ "name": case["name"], "ident": case["ident"] }));
+    }
+    c.ask("radio_script", web["radioScript"]["input"].clone());
+    for case in web["soloStanding"].as_array().unwrap() {
+        c.ask("solo_standing", json!({ "until": case["until"], "today": case["today"] }));
+    }
 
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.

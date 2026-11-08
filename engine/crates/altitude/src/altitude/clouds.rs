@@ -17,8 +17,10 @@ pub const CLOUD_CLEARANCE_HIGH_FROM_FT: f64 = 10000.0;
 /// A TAF speaks for the field it is issued for and a few miles around
 /// (the NWS's terminal forecast area, 5 sm of the runways, with the
 /// vicinity out to 10): a leg takes the forecasts of the stations this
-/// close to its own line, a planning choice wider than either.
-pub const CLOUD_STATION_RADIUS_NM: f64 = 25.0;
+/// close to its own line, a planning choice wider than either -- the same
+/// reach a field without a TAF of its own is briefed from
+/// (wingtip_weather::forecast::field::TAF_REACH_NM).
+pub const CLOUD_STATION_RADIUS_NM: f64 = wingtip_weather::forecast::field::TAF_REACH_NM;
 
 /// The highest altitude that keeps 91.155's distance below a cloud base
 /// (MSL): 500 ft under it, or 1,000 ft under it where that is at or above

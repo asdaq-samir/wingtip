@@ -17978,6 +17978,441 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "field_taf": {
+      "description": "The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FieldTafInput",
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "at": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ],
+              "description": "Where the field is; null where it is not known (its own TAF only)."
+            },
+            "stations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "icao_id": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "lon": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "icao_id"
+                ]
+              }
+            }
+          },
+          "required": [
+            "ident",
+            "stations"
+          ]
+        },
+        "answer": {
+          "title": "FieldTafAnswer",
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "The station's index in `stations`; null for none within reach."
+            },
+            "nm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "How far the nearest is; null for the field's own."
+            },
+            "reach_nm": {
+              "type": "number",
+              "description": "How far a TAF is taken to speak for a field without its own."
+            }
+          },
+          "required": [
+            "index",
+            "nm",
+            "reach_nm"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "radio_script": {
+      "description": "A route's radio calls, field by field (AIM 4-2, AC 90-66C): the broadcast to listen to first, the tower's or the CTAF's calls, flight following, and the arrival, figures as spoken (AIM 4-2-8, 4-2-9).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RadioScriptInput",
+          "type": "object",
+          "properties": {
+            "call_sign": {
+              "type": "string",
+              "description": "As spoken (radio_call_sign)."
+            },
+            "airports": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "airspace_class": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "frequencies": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "frequency_mhz": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "pattern_altitude_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "takeoff": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "ident": {
+                        "type": "string",
+                        "description": "As painted, \"27\"."
+                      },
+                      "traffic": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "\"left\" or \"right\" (91.126(b)(1))."
+                      }
+                    },
+                    "required": [
+                      "ident"
+                    ],
+                    "description": "The runway end the host picked (gonogo_runway_flown); null where none has a heading."
+                  },
+                  "landing": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "ident": {
+                        "type": "string",
+                        "description": "As painted, \"27\"."
+                      },
+                      "traffic": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "\"left\" or \"right\" (91.126(b)(1))."
+                      }
+                    },
+                    "required": [
+                      "ident"
+                    ],
+                    "description": "The runway end the host picked (gonogo_runway_flown); null where none has a heading."
+                  }
+                },
+                "required": [
+                  "ident",
+                  "frequencies"
+                ]
+              }
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "true_course_deg": {
+                    "type": "number"
+                  },
+                  "altitude_ft": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to",
+                  "true_course_deg",
+                  "altitude_ft"
+                ]
+              }
+            }
+          },
+          "required": [
+            "call_sign",
+            "airports",
+            "legs"
+          ]
+        },
+        "answer": {
+          "title": "RadioScriptAnswer",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "ident": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "departure",
+                  "arrival"
+                ]
+              },
+              "calls": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string"
+                    },
+                    "mhz": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "words": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "listen": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "to",
+                    "mhz",
+                    "words"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "title",
+              "ident",
+              "kind",
+              "calls"
+            ]
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "radio_call_sign": {
+      "description": "The airplane's call sign as spoken: its make and its registration, the N dropped (AIM 4-2-4), or a blank for the registration.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RadioCallSignInput",
+          "type": "object",
+          "properties": {
+            "make": {
+              "type": "string"
+            },
+            "tail": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "make"
+          ]
+        },
+        "answer": {
+          "title": "RadioCallSignAnswer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "radio_place_name": {
+      "description": "What a pilot calls a field: its name without Airport, International and the like; its ident where nothing is left.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RadioPlaceNameInput",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ident": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ident"
+          ]
+        },
+        "answer": {
+          "title": "RadioPlaceNameAnswer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "solo_standing": {
+      "description": "A student's 61.87(n) solo endorsement on the instructor's list: the days to its last good day and its standing, caution within 7 days (the owner's choice).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "SoloStandingInput",
+          "type": "object",
+          "properties": {
+            "until": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The last day it is good, YYYY-MM-DD; null for none on record."
+            },
+            "today": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "today"
+          ]
+        },
+        "answer": {
+          "title": "SoloStandingAnswer",
+          "type": "object",
+          "properties": {
+            "days": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "standing": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "caution",
+                "stop",
+                "unknown"
+              ]
+            }
+          },
+          "required": [
+            "days",
+            "standing"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -18270,7 +18705,12 @@
     "ifr_alternates_ranked",
     "ahead_frame",
     "alerts_ahead",
-    "congested_points"
+    "congested_points",
+    "field_taf",
+    "radio_script",
+    "radio_call_sign",
+    "radio_place_name",
+    "solo_standing"
   ],
   "additionalProperties": false,
   "definitions": {

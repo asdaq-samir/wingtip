@@ -1,0 +1,87 @@
+{
+  "_note": "Rules the web app held and the engine now answers (#482 phase 1): the TAF that speaks for a field (field_taf), the radio calls for a route (radio_script, radio_call_sign, radio_place_name; AIM 4-2, AC 90-66C) and a student's solo endorsement's standing (solo_standing, 14 CFR 61.87(n), the owner's week). engine/facade/tests/web_rules.rs holds the engine to it; the web's tests read it too.",
+  "fieldTaf": [
+    {
+      "about": "a three-letter ident's own TAF is K and the ident",
+      "input": { "ident": "UGN", "at": null, "stations": [{ "icao_id": "KRFD", "lat": 42.195, "lon": -89.097 }, { "icao_id": "KUGN", "lat": 42.422, "lon": -87.868 }] },
+      "answer": { "index": 1, "nm": null, "reach_nm": 25 }
+    },
+    {
+      "about": "a field with none of its own reads the nearest within 25 nm (C81 to KUGN, about 11 nm)",
+      "input": { "ident": "C81", "at": { "lat": 42.324, "lon": -88.074 }, "stations": [{ "icao_id": "KRFD", "lat": 42.195, "lon": -89.097 }, { "icao_id": "KUGN", "lat": 42.422, "lon": -87.868 }] },
+      "index": 1,
+      "nm_under": 12
+    },
+    {
+      "about": "none within reach",
+      "input": { "ident": "C81", "at": { "lat": 42.324, "lon": -88.074 }, "stations": [{ "icao_id": "KRFD", "lat": 42.195, "lon": -89.097 }] },
+      "answer": { "index": null, "nm": null, "reach_nm": 25 }
+    }
+  ],
+  "callSign": [
+    { "make": "Cessna", "tail": "N345SP", "said": "Cessna Three Four Five Sierra Papa" },
+    { "make": "Cessna", "tail": "n19", "said": "Cessna One Niner" },
+    { "make": "Piper", "tail": null, "said": "Piper [your registration]" }
+  ],
+  "placeName": [
+    { "name": "Waukegan National Airport", "ident": "KUGN", "said": "Waukegan" },
+    { "name": "Lake In The Hills Airport", "ident": "3CK", "said": "Lake In The Hills" },
+    { "name": null, "ident": "C81", "said": "C81" }
+  ],
+  "radioScript": {
+    "input": {
+      "call_sign": "Cessna Three Four Five Sierra Papa",
+      "airports": [
+        {
+          "ident": "C81", "name": "Dacy Airport", "airspace_class": "G", "pattern_altitude_ft": 1913,
+          "frequencies": [
+            { "type": "A/D", "description": "CHICAGO APP/DEP", "frequency_mhz": 120.55 },
+            { "type": "UNIC", "description": "CTAF/UNICOM", "frequency_mhz": 122.7 }
+          ],
+          "takeoff": { "ident": "27", "traffic": "left" }, "landing": { "ident": "27", "traffic": "left" }
+        },
+        {
+          "ident": "KUGN", "name": "Waukegan National Airport", "airspace_class": "D", "pattern_altitude_ft": 1727,
+          "frequencies": [
+            { "type": "ATIS", "description": "ATIS", "frequency_mhz": 132.4 },
+            { "type": "A/D", "description": "CHICAGO APP/DEP", "frequency_mhz": 120.55 },
+            { "type": "GND", "description": "GND", "frequency_mhz": 121.65 },
+            { "type": "TWR", "description": "TWR", "frequency_mhz": 120.05 },
+            { "type": "CTAF", "description": "CTAF", "frequency_mhz": 120.05 }
+          ],
+          "takeoff": { "ident": "23", "traffic": "right" }, "landing": { "ident": "23", "traffic": "right" }
+        }
+      ],
+      "legs": [
+        { "from": "C81", "to": "Lake", "true_course_deg": 45, "altitude_ft": 5500 },
+        { "from": "Lake", "to": "KUGN", "true_course_deg": 45, "altitude_ft": 3500 }
+      ]
+    },
+    "phases": [
+      {
+        "title": "Leaving C81", "kind": "departure",
+        "calls": [
+          { "to": "Dacy traffic", "mhz": 122.7, "words": "Dacy traffic, Cessna Three Four Five Sierra Papa, taxiing to runway two seven, Dacy." },
+          { "to": "Dacy traffic", "mhz": 122.7, "words": "Dacy traffic, Cessna Three Four Five Sierra Papa, departing runway two seven, departing the pattern to the northeast, climbing to five thousand five hundred, Dacy." },
+          { "to": "Chicago Departure", "mhz": 120.55, "words": "Chicago Departure, Cessna Three Four Five Sierra Papa, VFR request." },
+          { "to": "Chicago Departure", "mhz": 120.55, "words": "Cessna Three Four Five Sierra Papa, [distance] northeast of Dacy, five thousand five hundred, request flight following to Waukegan." }
+        ]
+      },
+      {
+        "title": "Into KUGN", "kind": "arrival",
+        "calls": [
+          { "to": "Waukegan ATIS", "mhz": 132.4, "words": "The weather, the runway in use and the information letter.", "listen": true },
+          { "to": "Waukegan Tower", "mhz": 120.05, "words": "Waukegan Tower, Cessna Three Four Five Sierra Papa, ten miles southwest, three thousand five hundred, with information [letter], landing.", "note_has": "self-announce on the CTAF, 120.05" },
+          { "to": "Waukegan Ground", "mhz": 121.65, "words": "Waukegan Ground, Cessna Three Four Five Sierra Papa, clear of runway two three at [taxiway], taxi to [where you are going]." }
+        ]
+      }
+    ]
+  },
+  "soloStanding": [
+    { "until": null, "today": "2026-11-08", "days": null, "standing": "unknown" },
+    { "until": "2026-11-16", "today": "2026-11-08", "days": 8, "standing": "ok" },
+    { "until": "2026-11-15", "today": "2026-11-08", "days": 7, "standing": "caution" },
+    { "until": "2026-11-08", "today": "2026-11-08", "days": 0, "standing": "caution" },
+    { "until": "2026-11-07", "today": "2026-11-08", "days": -1, "standing": "stop" }
+  ]
+}
