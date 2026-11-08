@@ -82,7 +82,7 @@ function altitudeChoiceOf(value: string | null): AltitudeChoice {
 }
 
 /** Where along each way its chip sits, a share of its length, by the
- *  way's place among all those offered (RouteWaysLayer's `share`). */
+ *  way's place among all those offered. */
 const WAY_CHIP_SHARES = [0.2, 0.4, 0.6, 0.8];
 
 interface FuelCard { stops: string[]; added: string[]; nm: number; air: number; ground: number; landings: number }

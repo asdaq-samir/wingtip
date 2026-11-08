@@ -2,7 +2,8 @@ import type {
   LayerSpecification, LineLayerSpecification, RasterLayerSpecification,
   RasterSourceSpecification, SymbolLayerSpecification,
 } from "maplibre-gl";
-import type { AirspaceVolume, ChartInfo } from "../../api/types";
+import type { ChartInfo } from "../../api/types";
+import type { AirspaceVolume } from "../overlayTypes";
 import { airspaceLabel } from "../airspaceLabel";
 import { chartPair, tileTemplate } from "../tiles";
 import { COURSE_MAGENTA } from "../chartColors";
@@ -12,23 +13,25 @@ import { COURSE_MAGENTA } from "../chartColors";
  * the map to be clear and crisp and the overlay items need to be seen as
  * part of the map and not buggy overlay"): the FAA chart, the airspace,
  * the route and its checkpoints drawn by MapLibre GL in one WebGL map,
- * where Leaflet draws the chart as images and every overlay on a canvas
- * or an SVG of its own that it scales by CSS under a pinch and draws
- * again at the pinch's end. Plain data here, no map: what GlMap hands
+ * each in the frame the chart is drawn in, so nothing lags it under a
+ * pinch. Plain data here, no map: what GlMap hands
  * MapLibre, and what the tests read.
  */
 
-/** Leaflet's zoom less one: MapLibre's world is 512 px across at zoom 0,
- *  Leaflet's 256, so the same view is a level lower in MapLibre. Every
- *  zoom this app names (AirspaceLayer's FROM_ZOOM, ownShip's OPEN_ZOOM, a
- *  chart layer's min_zoom) is Leaflet's, and goes through this. A raster
- *  source's own minzoom and maxzoom are the tiles' {z}, which need none. */
-export const glZoom = (leafletZoom: number) => leafletZoom - 1;
-export const leafletZoomOf = (glZoomLevel: number) => glZoomLevel + 1;
+/** MapLibre's zoom from the app's. The app counts its levels as the
+ *  chart's tiles do, the world 256 px across at zoom 0 (their {z});
+ *  MapLibre's world is 512 px across at zoom 0, so the same view is a
+ *  level lower there. Every zoom this app names (AIRSPACE_FROM, ownShip's
+ *  OPEN_ZOOM, a chart layer's min_zoom) is in the app's levels, and goes
+ *  through this. A raster source's own minzoom and maxzoom are the tiles'
+ *  {z}, which need none. */
+export const glZoom = (appZoom: number) => appZoom - 1;
+/** The app's level from MapLibre's zoom. */
+export const appZoomOf = (glZoomLevel: number) => glZoomLevel + 1;
 
-/** As ChartTiles: the chart enlarged two levels past its own last zoom. */
+/** The chart enlarged two levels past its own last zoom. */
 export const OVERZOOM = 2;
-/** As ChartTiles: a region's level of the chart under it, where the
+/** A region's level of the chart under it, where the
  *  chart's own tiles are not in yet. */
 export const UNDERLAY_ZOOM = 5;
 
@@ -52,15 +55,15 @@ export interface ChartStyle {
   maxZoom: number;
 }
 
-/** The chart's ink by day and dimmed at night, as index.css dims the
- *  Leaflet tiles (`brightness(0.5) contrast(1.15)`) and brightens them in
- *  sunlight (`contrast(1.25) saturate(1.2)`). By day a touch more
+/** The chart's ink by day, dimmed at night (half the brightness, a
+ *  little more contrast) and brightened in sunlight (a fifth more
+ *  contrast and colour). By day a touch more
  *  contrast and colour than the scan (0.1 each), as ForeFlight's chart
  *  reads beside ours (the owner's screenshots, 2026-11-07). */
 export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecification["paint"] {
   return {
-    // Each tile drawn in the frame it comes, as Leaflet's fadeAnimation
-    // false (MapShell): a fade on every pan nobody asked for.
+    // Each tile drawn in the frame it comes: a fade on every pan is
+    // movement nobody asked for.
     "raster-fade-duration": 0,
     // Smooth, not nearest: past the chart's last zoom the owner chose the
     // smooth enlargement ForeFlight shows over hard blocks (index.css,
@@ -74,7 +77,7 @@ export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecif
 }
 
 /**
- * The FAA chart as ChartTiles draws it: the base chart (the sectional or
+ * The FAA chart: the base chart (the sectional or
  * an IFR enroute chart, per the preferences), the same chart at a
  * region's level under it, and the terminal sheet over it while pinned --
  * the same tile addresses (tiles.ts tileTemplate, with the cycle and the
@@ -100,12 +103,12 @@ export function chartStyle(chart: ChartInfo, base: string, pinned: boolean, orig
   return { sources, layers, maxZoom: glZoom(baseLayer.max_zoom + OVERZOOM) };
 }
 
-/** Class E is in the style for when the planner serves it: today
- *  /api/airspace/in-view answers B, C and D only (AirspaceVolume). */
+/** Class E has an ink for when the map draws it: the tiles carry it
+ *  (wingtip.vector_tiles), the map draws B, C and D only. */
 type AirspaceClass = AirspaceVolume["airspace_class"] | "E";
 
 /**
- * The airspace's inks, AirspaceLayer's (airspaceMarks): the FAA's
+ * The airspace's inks: the FAA's
  * sectional symbology (Aeronautical Chart User's Guide, VFR Terms and
  * Symbols, Airspace) -- Class B solid blue, Class C solid magenta, Class
  * D dashed blue, Class E (surface) dashed magenta, drawn here faded -- in
@@ -122,7 +125,7 @@ export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number
   E: { colour: "#e02ad8", dash: [10 / 3, 5 / 3], opacity: 0.45, width: 3, label: "#8a1f87" },
 };
 
-/** From which Leaflet zoom each class is drawn, AirspaceLayer's:
+/** From which zoom each class is drawn, in the app's levels:
  *  B from 6, C from 7, D (and E) and every label from 8. */
 export const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 6, C: 7, D: 8, E: 8 };
 export const AIRSPACE_LABELS_FROM = 8;
@@ -138,34 +141,7 @@ export function airspaceText(volume: AirspaceVolume): string | null {
   return `${volume.airspace_class}: ${label.kind === "shelf" ? `${label.top}–${label.floor}` : label.ceiling}`;
 }
 
-export interface AirspaceProps { id: string; cls: AirspaceClass; label: string }
-
-/**
- * The volumes the planner answered for a box, as GeoJSON lines: each of
- * a volume's lines ([lat, lon] as the planner sends them) one feature,
- * its class and its altitudes as properties. The seam for the vector
- * tiles (claude/vector-tiles): those features from a `vector` source
- * with a `source-layer`, the same layers below reading the same
- * properties, and this and the box's question go.
- */
-export function airspaceFeatures(volumes: AirspaceVolume[]): GeoJSON.FeatureCollection<GeoJSON.LineString, AirspaceProps> {
-  const features: GeoJSON.Feature<GeoJSON.LineString, AirspaceProps>[] = [];
-  for (const v of volumes) {
-    const label = airspaceText(v) ?? "";
-    for (const line of v.lines) {
-      if (line.length < 2) continue;
-      features.push({
-        type: "Feature",
-        properties: { id: v.id, cls: v.airspace_class, label },
-        geometry: { type: "LineString", coordinates: line.map(p => [p[1]!, p[0]!]) },
-      });
-    }
-  }
-  return { type: "FeatureCollection", features };
-}
-
-export const AIRSPACE_SOURCE = "airspace";
-export const AIRSPACE_LINE_LAYERS = (["E", "D", "C", "B"] as const).map(c => `airspace-${c}`);
+export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map(c => `airspace-${c}`);
 
 /** The dark tab an airspace's altitudes sit in (icon-text-fit stretches
  *  it to the text): its id, for the layer that draws it. */
@@ -190,29 +166,27 @@ export const AIRSPACE_TILE_LABEL = ["concat", ["get", "class"], ": ", ["case", [
 /** One line layer a class, drawn from that class's zoom, and the labels
  *  on every line: white bold type in a dark tab, level on the screen,
  *  kept off each other and off the route's marks by MapLibre's own
- *  collision. From the in-view volumes (airspaceFeatures), or with
- *  `tiles` the overlay tiles' `airspace` layer, its rings drawn as lines
- *  and its labels written from its fields (AIRSPACE_TILE_LABEL); Class E
- *  is in the tiles but not drawn, as the in-view answer has none. */
-export function airspaceLayers(font: string[], tiles = false): LayerSpecification[] {
-  const from = tiles ? { source: OVERLAY_SOURCE, "source-layer": "airspace" } : { source: AIRSPACE_SOURCE };
-  const cls = tiles ? "class" : "cls";
-  const lines: LineLayerSpecification[] = (tiles ? (["D", "C", "B"] as const) : (["E", "D", "C", "B"] as const)).map(c => {
+ *  collision. From the overlay tiles' `airspace` layer, its rings drawn
+ *  as lines and its labels written from its fields (AIRSPACE_TILE_LABEL);
+ *  Class E is in the tiles but not drawn. */
+export function airspaceLayers(font: string[]): LayerSpecification[] {
+  const from = { source: OVERLAY_SOURCE, "source-layer": "airspace" };
+  const lines: LineLayerSpecification[] = (["D", "C", "B"] as const).map(c => {
     const ink = AIRSPACE_INK[c];
     return {
       id: `airspace-${c}`, type: "line", ...from, minzoom: glZoom(AIRSPACE_FROM[c]),
-      filter: ["==", ["get", cls], c],
+      filter: ["==", ["get", "class"], c],
       layout: { "line-join": "round", "line-cap": ink.dash ? "butt" : "round" },
       paint: { "line-color": ink.colour, "line-width": ink.width, "line-opacity": ink.opacity, ...(ink.dash ? { "line-dasharray": ink.dash } : {}) },
     };
   });
   const labels: SymbolLayerSpecification = {
     id: "airspace-labels", type: "symbol", ...from, minzoom: glZoom(AIRSPACE_LABELS_FROM),
-    filter: tiles ? ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "ceiling_ft"]] : ["!=", ["get", "label"], ""],
+    filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "ceiling_ft"]],
     layout: {
       "symbol-placement": "line",
       "symbol-spacing": 320,
-      "text-field": tiles ? AIRSPACE_TILE_LABEL as never : ["get", "label"],
+      "text-field": AIRSPACE_TILE_LABEL as never,
       "text-font": font,
       "text-size": 11,
       "text-rotation-alignment": "viewport",
@@ -240,7 +214,7 @@ export interface RoutePoint {
 export const ROUTE_SOURCE = "route";
 export const CHECKPOINT_SOURCE = "checkpoints";
 
-/** The course: a white casing under the magenta core, as CourseLine. */
+/** The course's line, drawn as a white casing under a magenta core (RouteGl). */
 export function routeFeature(line: [number, number][]): GeoJSON.Feature<GeoJSON.LineString> {
   return { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: line.map(([lat, lon]) => [lon, lat]) } };
 }

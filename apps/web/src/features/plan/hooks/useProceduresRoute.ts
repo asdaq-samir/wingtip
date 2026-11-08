@@ -335,7 +335,7 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     })),
   });
   // Each field's approach in the route, and whether its plate publishes
-  // circling minimums -- the one plate the map draws (PlateLayer).
+  // circling minimums -- the one plate the map draws (PlatesGl).
   const approachesIn = inRoute.filter(p => p.kind === "approach");
   const plates = useQueries({ queries: approachesIn.map(p => plateQuery(p.ident, p.id)) });
   const landingOf = (ident: string): Landing | null => {

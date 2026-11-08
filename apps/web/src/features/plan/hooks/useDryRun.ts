@@ -9,7 +9,7 @@ import { legOf, navLogRows, type RouteEnds } from "../components/navlog/rows";
  * for it: started from the side view's play, at the owner's ask ("a dry
  * run of the flight with altitude and speed profile as well as the
  * calculations at the bottom"), the replay's airplane flown along the
- * course (DryRunLayer), its controls and chart in the side view's place,
+ * course (ReplayGl), its controls and chart in the side view's place,
  * its figures as it goes under them. Put away with its close, or as the
  * replay is another's (a past flight's).
  *

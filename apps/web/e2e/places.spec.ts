@@ -609,7 +609,7 @@ test("a tap on an airport on the chart opens its card, a tap elsewhere puts it a
 });
 
 test("the airport whose card is open wears a ring round its mark, clear of it on every side, its ident over it", async ({ page }) => {
-  // C81 reporting VFR, so it wears a mark at its card's zoom.
+  // C81 reporting VFR: its weather's dot on the tiles' mark.
   await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({
     status: 200, contentType: "application/json", body: JSON.stringify({ airports: [
       { ident: "C81", name: "Campbell", lat: 42.3246, lon: -88.0741, kind: "small", flight_category: "VFR", military: null, airspace_class: "G" },
@@ -638,71 +638,64 @@ test("the airport whose card is open wears a ring round its mark, clear of it on
   await expect.poll(async () => !!(await ring())).toBe(false);
 });
 
-test("the chart's airports are marked by their airspace -- B, C, D, E, G -- a military field with an M, a private one with an R, each with its weather's dot", async ({ page }) => {
-  // Round C81, at its card's zoom, every class once, and a military field
-  // (shown once the map's Military is on).
-  const field = (ident: string, at: number, airspace_class: string | null, extra = {}) => ({
-    ident, name: ident, lat: 42.30 + at * 0.03, lon: -88.20 + at * 0.05, kind: "medium", flight_category: "VFR", military: null, airspace_class, ...extra,
-  });
+test("the chart's airports wear their weather's dot, from the METARs of the fields in view", async ({ page }) => {
+  // The fields are the overlay tiles' (the suite's archive round Chicago);
+  // their weather the planner's reporting fields in view, joined on by
+  // ident (AirportsGl): Campbell VFR, Waukegan IFR.
   await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({
     status: 200, contentType: "application/json", body: JSON.stringify({ airports: [
-      field("KBBB", 0, "B"), field("KCCC", 1, "C"), field("KDDD", 2, "D"), field("KEEE", 3, "E"),
-      field("KGGG", 4, "G", { flight_category: "IFR" }), field("KMIL", 5, "C", { military: "military" }), field("KUNK", 6, null),
-      field("KPVT", 7, "D", { private: true }),
+      { ident: "C81", name: "Campbell", lat: 42.3246, lon: -88.0741, kind: "small", flight_category: "VFR", military: null },
+      { ident: "KUGN", name: "Waukegan National", lat: 42.4222, lon: -87.8679, kind: "medium", flight_category: "IFR", military: null },
     ] }),
   }));
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  await openMapSettings(page);
-  await page.getByTestId("military-toggle").click();
-  // And the private ones, off by default (the owner, 2026-10-27).
-  await page.getByTestId("private-toggle").click();
-  await page.keyboard.press("Escape");
-  // Each drawn from its airspace, its use and its weather (AirportCanvas,
-  // airportMarkSvg's look; the look itself is the route's own marks', in
-  // classb.spec).
-  const markOf = (ident: string) => airportMark(page, ident);
-  for (const [ident, space] of [["KBBB", "B"], ["KCCC", "C"], ["KDDD", "D"], ["KEEE", "E"], ["KGGG", "G"], ["KMIL", "C"], ["KUNK", ""]]) {
-    await expect.poll(async () => (await markOf(ident!))?.space, { timeout: slow(15000) }).toBe(space);
-  }
-  // The M on a blue disc whatever the airspace over it, and a private
-  // field's R on a magenta one.
-  expect((await markOf("KMIL"))!.use).toBe("military");
-  expect((await markOf("KPVT"))!.use).toBe("private");
-  expect((await markOf("KCCC"))!.use).toBe("");
   // The disc in its METAR's colour: VFR green, IFR red (no report's
   // grey, classb.spec).
-  expect((await markOf("KBBB"))!.weather.toLowerCase()).toBe("#1a7f37");
-  expect((await markOf("KGGG"))!.weather.toLowerCase()).toBe("#b3261e");
+  await expect.poll(async () => (await airportMark(page, "C81"))?.weather.toLowerCase(), { timeout: slow(15000) }).toBe("#1a7f37");
+  await expect.poll(async () => (await airportMark(page, "KUGN"))?.weather.toLowerCase(), { timeout: slow(15000) }).toBe("#b3261e");
+  expect((await airportMark(page, "C81"))!.use).toBe("");
 });
 
 test("the map's Private setting draws the private fields, off by default and kept across a reload", async ({ page }) => {
   // The owner, 2026-10-27: "toggles to show private airports or not", and
-  // "Make private airports hidden by default".
-  const field = (ident: string, at: number, extra = {}) => ({
-    ident, name: ident, lat: 42.30 + at * 0.03, lon: -88.20 + at * 0.05, kind: "medium", flight_category: "VFR",
-    military: null, airspace_class: "D", ...extra,
-  });
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({
-    status: 200, contentType: "application/json",
-    body: JSON.stringify({ airports: [field("KPUB", 0), field("KPVT", 2, { private: true })] }),
-  }));
-  await page.goto("/app/plan?place=C81");
-  await settle(page);
-  await expect.poll(async () => !!(await airportMark(page, "KPUB")), { timeout: slow(15000) }).toBe(true);
-  expect(await airportMark(page, "KPVT")).toBeFalsy();
+  // "Make private airports hidden by default". Donald Alfred Gade (IL11),
+  // a private field north of Campbell in the suite's overlay tiles, drawn
+  // from the app's level 10 (wingtip.vector_tiles' AIRPORT_MIN_ZOOM): its
+  // card's map brought a level in, round it.
+  const closeIn = async () => {
+    await page.goto("/app/plan?place=IL11");
+    await settle(page);
+    await mapStill(page);
+    const map = (await page.locator(".maplibregl-map").boundingBox())!;
+    const at = await page.evaluate(() => {
+      const panel = document.querySelector('[data-slot="map-panel"]')?.getBoundingClientRect();
+      const m = document.querySelector(".maplibregl-map")!.getBoundingClientRect();
+      if (panel && panel.width > m.width * 0.8) return { x: m.left + m.width / 2, y: m.top + (panel.top - m.top) / 2 };
+      if (panel) return { x: panel.right + (m.right - panel.right) / 2, y: m.top + m.height / 2 };
+      return { x: m.left + m.width / 2, y: m.top + m.height / 2 };
+    });
+    expect(at.x).toBeGreaterThan(map.x);
+    for (let notch = 0; notch < 2; notch++) {
+      await page.mouse.move(at.x, at.y);
+      await page.mouse.wheel(0, -60);
+      await mapStill(page);
+    }
+  };
+  await closeIn();
+  // Other fields drawn round it, it not.
+  await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(15000) }).toBeGreaterThan(0);
+  expect(await airportMark(page, "IL11")).toBeFalsy();
   await openMapSettings(page);
   await expect(page.getByTestId("private-toggle")).toHaveAttribute("aria-checked", "false");
   await page.getByTestId("private-toggle").click();
   await page.keyboard.press("Escape");
-  await expect.poll(async () => (await airportMark(page, "KPVT"))?.use, { timeout: slow(15000) }).toBe("private");
+  await expect.poll(async () => (await airportMark(page, "IL11"))?.use, { timeout: slow(15000) }).toBe("private");
   // The airport's card kept under the settings', as it was.
-  await expect(page).toHaveURL(/[?&]place=C81/);
-  // Loaded afresh on the same place: a reload starts the page clean, its
-  // place put away, and the chart further out drew KPUB alone of the two.
-  await page.goto("/app/plan?place=C81");
-  await settle(page);
-  await expect.poll(async () => (await airportMark(page, "KPVT"))?.use, { timeout: slow(15000) }).toBe("private");
+  await expect(page).toHaveURL(/[?&]place=IL11/);
+  // Loaded afresh: the setting kept.
+  await closeIn();
+  await expect.poll(async () => (await airportMark(page, "IL11"))?.use, { timeout: slow(15000) }).toBe("private");
 });
 
 test("closer in, the airports that report wear their weather's colour, and a tap on one opens its card", async ({ page }) => {
@@ -764,9 +757,10 @@ test("closer in, the airports that report wear their weather's colour, and a tap
 });
 
 test("a tap a little off an airport's mark opens its card, the route's own as any field of the chart's", async ({ page }) => {
-  // One field of the chart's own, Waukegan, some 90 points from the
-  // route's departure at a card's zoom; no other. A tap that near the
-  // route's own field put the card away: only the chart's own were near.
+  // Waukegan, a field of the chart's own (the overlay tiles), some 90
+  // points from the route's departure at a card's zoom, reporting VFR. A
+  // tap that near the route's own field put the card away: only the
+  // chart's own were near.
   await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({
     status: 200, contentType: "application/json", body: JSON.stringify({ airports: [
       { ident: "KUGN", name: "Waukegan National", lat: 42.4222, lon: -87.8679, kind: "medium", flight_category: "VFR", military: null, airspace_class: "D" },

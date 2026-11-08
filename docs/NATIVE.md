@@ -237,8 +237,10 @@ these places:
   checkpoints' annotations are diffed, not removed and re-added.
 - **The map's data from the packs** (`PackMapData`, `Views/ChartOverlays`):
   the airports, airspace and navaids in view are asked of the engine's
-  pack readers first and of the planner only where no pack answers, so in
-  flight the map draws with no signal. They are asked again during a
+  pack readers (the airports of the planner where no pack answers; the
+  planner's airspace and navaid in-view answers are gone since the web
+  draws them from the overlay tiles), so in flight the map draws with no
+  signal. They are asked again during a
   pinch, not only once the fingers lift, whenever the view changes level
   or leaves the box already asked for (`ViewFetch`, as the web's
   useGlView), the packs answering at once.

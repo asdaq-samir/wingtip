@@ -9,14 +9,14 @@ import { useOwnShip } from "../../ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
 
-/** OwnShipLayer's: the location arrow's close-in, Leaflet's zoom. */
+/** The location arrow's close-in, in the app's levels. */
 const LOCAL_ZOOM = 9;
 
 /**
  * Own ship as a MapLibre marker: an element the map places in the same
  * frame it draws the chart, so it stays on its point through a pinch, at
  * the GPS's heading on the map (rotationAlignment). Followed while the
- * location arrow says so, a drag ending that as on the Leaflet map; the
+ * location arrow says so, a drag ending that; the
  * arrow's tap flies to it (recentred); grey at its last place when own
  * ship is turned off (the owner, 2026-10-06).
  */
@@ -44,7 +44,7 @@ export function OwnShipGl() {
     const m = marker.current;
     if (!m) return;
     if (!fix) { m.remove(); return; }
-    // The Leaflet map's own mark (icons.ts ownShipHtml, the same
+    // The app's own mark (icons.ts ownShipHtml, with the
     // `data-own-ship` the specs find), turned by the marker to the heading.
     const heading = enabled ? fix.headingDeg : null;
     const { size, html } = ownShipHtml(heading == null ? null : 0, !enabled, look, enabled && (simulated || underway(fix)));

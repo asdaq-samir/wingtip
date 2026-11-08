@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { AirspaceVolume, ChartInfo } from "../../api/types";
-import { absoluteTiles, airspaceFeatures, airspaceLayers, chartPaint, chartStyle, DAY_CONTRAST, DAY_SATURATION, glZoom } from "./glStyle";
+import type { ChartInfo } from "../../api/types";
+import type { AirspaceVolume } from "../overlayTypes";
+import { absoluteTiles, airspaceLayers, airspaceText, OVERLAY_SOURCE, chartPaint, chartStyle, DAY_CONTRAST, DAY_SATURATION, glZoom } from "./glStyle";
 
 const chart = {
   chart_cycle: "10-29-2026", chart_revision: 6, chart_tiles_base: null,
@@ -11,13 +12,13 @@ const chart = {
 } as unknown as ChartInfo;
 
 describe("chartStyle", () => {
-  it("asks for the tiles ChartTiles asks for, at the same zooms", () => {
+  it("asks for the chart's tiles at the chart's own zooms", () => {
     const style = chartStyle(chart, "sec", false, "https://wingtip.test")!;
     expect(style.sources.chart!.tiles).toEqual(["https://wingtip.test/api/planner/chart-tile/sec/{z}/{x}/{y}.png?c=10-29-2026&r=6"]);
     expect(style.sources.chart).toMatchObject({ minzoom: 3, maxzoom: 12, tileSize: 256 });
-    // The region's level under it, as ChartTiles' underlay.
+    // The region's level under it, while the chart's own tiles come in.
     expect(style.sources["chart-under"]).toMatchObject({ minzoom: 5, maxzoom: 5 });
-    // Two levels past the chart's last, in MapLibre's zoom (Leaflet's less one).
+    // Two levels past the chart's last, in MapLibre's zoom (the app's less one).
     expect(style.maxZoom).toBe(13);
     expect(style.layers.map(l => l.id)).toEqual(["chart-under", "chart"]);
   });
@@ -40,21 +41,22 @@ describe("chartStyle", () => {
   });
 });
 
-describe("airspaceFeatures", () => {
+describe("airspaceLayers", () => {
   const volume = {
     id: "ORD-B-1", airspace_class: "B", floor_ft: 3000, floor_sfc: false, ceiling_ft: 10000, ceiling_excluded: false,
-    lines: [[[41.9, -87.9], [42.0, -87.8]], [[41.0, -87.0]]],
   } as unknown as AirspaceVolume;
 
-  it("makes each of a volume's lines a feature in [lon, lat], with its altitudes", () => {
-    const { features } = airspaceFeatures([volume]);
-    // The one-point line is dropped: no line to draw.
-    expect(features).toHaveLength(1);
-    expect(features[0]!.geometry.coordinates).toEqual([[-87.9, 41.9], [-87.8, 42.0]]);
-    expect(features[0]!.properties).toEqual({ id: "ORD-B-1", cls: "B", label: "B: 100–30" });
+  it("writes a volume's altitudes as the chart's tab does", () => {
+    expect(airspaceText(volume)).toBe("B: 100–30");
   });
 
-  it("draws each class from AirspaceLayer's zoom, the labels from 8", () => {
+  it("draws the tiles' rings, Class E left out", () => {
+    const layers = airspaceLayers(["Inter"]);
+    expect(layers.map(l => l.id)).toEqual(["airspace-D", "airspace-C", "airspace-B", "airspace-labels"]);
+    expect(layers.every(l => "source" in l && l.source === OVERLAY_SOURCE)).toBe(true);
+  });
+
+  it("draws each class from its own zoom, the labels from 8", () => {
     const layers = airspaceLayers(["Inter"]);
     const from = Object.fromEntries(layers.map(l => [l.id, l.minzoom]));
     expect(from).toMatchObject({ "airspace-B": glZoom(6), "airspace-C": glZoom(7), "airspace-D": glZoom(8), "airspace-labels": glZoom(8) });

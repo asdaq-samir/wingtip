@@ -14,14 +14,14 @@ import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, tra
 import { trafficCredit } from "../../trafficCredit";
 import { reported, useTracking, useTrafficFocus, type Report } from "../../tracking";
 import { useGlMap } from "../glLayer";
-import { glZoom, leafletZoomOf } from "../glStyle";
+import { appZoomOf, glZoom } from "../glStyle";
 import { fadeInMarker, iconMarker, setMarkerIcon } from "../htmlMarker";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";
 
-/** TrafficLayer's: asked every five seconds, each airplane carried on
+/** Asked every five seconds, each airplane carried on
  *  between answers a frame at a time (more often closer in), blended over
  *  a second onto where the next answer puts it; heights from zoom 9 and
- *  call signs from 10 (Leaflet's zooms). */
+ *  call signs from 10, in the app's levels. */
 const EVERY_MS = 5000;
 const FRAME_MS = 100;
 const frameMs = (zoom: number) => Math.min(1000, FRAME_MS * 2 ** Math.max(0, 10 - Math.round(zoom)));
@@ -42,7 +42,7 @@ interface Target {
 }
 
 /**
- * The airplanes ADS-B receivers hear about the map (TrafficLayer), drawn
+ * The airplanes ADS-B receivers hear about the map, drawn
  * bold as the thing on the map that moves most: each the app's own
  * traffic mark (icons.ts trafficIcon) as a MapLibre marker, which the map
  * places in the frame it draws the chart. A tap tracks one (tracking's
@@ -68,7 +68,7 @@ export function TrafficGl() {
 function viewOf(map: ReturnType<typeof useGlMap>["map"]) {
   const c = map.getCenter();
   const ne = map.getBounds().getNorthEast();
-  return { lat: c.lat, lon: c.lng, radiusNm: Math.min(165, Math.max(10, c.distanceTo(ne) / M_PER_NM)), zoom: leafletZoomOf(map.getZoom()) };
+  return { lat: c.lat, lon: c.lng, radiusNm: Math.min(165, Math.max(10, c.distanceTo(ne) / M_PER_NM)), zoom: appZoomOf(map.getZoom()) };
 }
 
 function Traffic() {
@@ -201,7 +201,7 @@ function Traffic() {
   useEffect(() => {
     let timer = 0;
     const step = () => {
-      timer = window.setTimeout(step, frameMs(leafletZoomOf(map.getZoom())));
+      timer = window.setTimeout(step, frameMs(appZoomOf(map.getZoom())));
       if (map.isZooming()) return;
       const now = Date.now();
       const { hex: tracked, follow } = useTracking.getState();

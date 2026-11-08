@@ -85,22 +85,6 @@ struct VorPin: Decodable, Equatable, Sendable {
     let lon: Double
 }
 
-extension Planner {
-    /// The Class B, C and D in the box (/api/airspace/in-view).
-    static func airspace(south: Double, west: Double, north: Double, east: Double) async throws -> [AirspaceVolume] {
-        struct Answer: Decodable { let volumes: [AirspaceVolume] }
-        let box = ["south": String(south), "west": String(west), "north": String(north), "east": String(east)]
-        return try await fetch(Answer.self, "/api/airspace/in-view", box).volumes
-    }
-
-    /// The VORs in the box (/api/navaids/in-view).
-    static func vors(south: Double, west: Double, north: Double, east: Double) async throws -> [VorPin] {
-        struct Answer: Decodable { let vors: [VorPin] }
-        let box = ["south": String(south), "west": String(west), "north": String(north), "east": String(east)]
-        return try await fetch(Answer.self, "/api/navaids/in-view", box).vors
-    }
-}
-
 // MARK: - When to ask again
 
 /// The view's box as south, west, north, east.
@@ -473,8 +457,6 @@ final class ChartOverlays {
     private var runwayEnds: [String: [RunwayEndAnnotation]] = [:]
     private var runwaysKept: [String: [RunwayShape]] = [:]
     private var runwaysAsking: Set<String> = []
-    private var airspaceTask: Task<Void, Never>?
-    private var vorTask: Task<Void, Never>?
     /// Told once, the first time the airspace is answered (or cannot be):
     /// the map shows itself with its rings on (ChartMap's reveal).
     var onFirstAnswer: (() -> Void)?
@@ -574,20 +556,10 @@ final class ChartOverlays {
             }
             return
         }
-        guard !live else { return }
-        let box = airspaceFetch.ask(view, zoom: zoom)
-        airspaceTask?.cancel()
-        airspaceTask = Task { [weak self, weak map] in
-            let volumes = try? await Planner.airspace(south: box.south, west: box.west, north: box.north, east: box.east)
-            guard !Task.isCancelled, let self, let map else { return }
-            if let volumes {
-                self.take(volumes, map: map, zoom: MapExtras.zoom(longitudeDelta: map.region.span.longitudeDelta, width: Double(map.bounds.width)), chart: chart)
-            } else {
-                // Asked again at the next rest.
-                self.airspaceFetch.forget()
-                self.firstAnswer()
-            }
-        }
+        // No pack for the box: the airspace comes from the packs alone
+        // (the planner's /api/airspace/in-view is gone, the web drawing it
+        // from the overlay tiles), so the reveal waits for nothing here.
+        firstAnswer()
     }
 
     private func take(_ fresh: [AirspaceVolume], map: MKMapView, zoom: Double, chart: (any MKOverlay)?) {
@@ -669,14 +641,8 @@ final class ChartOverlays {
             if let answer = try? Planner.snakeCase.decode(Answer.self, from: data) { takeVors(answer.vors, map: map) }
             return
         }
-        guard !live else { return }
-        let box = vorFetch.ask(view, zoom: zoom)
-        vorTask?.cancel()
-        vorTask = Task { [weak self, weak map] in
-            let found = try? await Planner.vors(south: box.south, west: box.west, north: box.north, east: box.east)
-            guard !Task.isCancelled, let self, let map else { return }
-            if let found { self.takeVors(found, map: map) } else { self.vorFetch.forget() }
-        }
+        // No pack for the box: no VORs, as the planner's
+        // /api/navaids/in-view is gone (the packs alone answer it).
     }
 
     private func takeVors(_ found: [VorPin], map: MKMapView) {

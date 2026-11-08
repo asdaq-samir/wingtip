@@ -2,13 +2,14 @@ import type {
   ExpressionSpecification, LayerSpecification, Map as MlMap, MapGeoJSONFeature, SourceSpecification,
   SymbolLayerSpecification,
 } from "maplibre-gl";
-import type { AirspaceVolume, OverlayTiles, VorPin } from "../../api/types";
+import type { OverlayTiles } from "../../api/types";
+import type { AirspaceVolume, VorPin } from "../overlayTypes";
 import { usePreferences } from "../../preferences";
 import { BLUE } from "../../useAirspace";
 import { sectionalAirportSvg, TOWERED_BLUE, UNTOWERED_MAGENTA } from "../airportMark";
 import { colourOf } from "../flightCategory";
 import { overlaySource } from "../overlayTiles";
-import { drawSvg, type DrawnImage, type Slot, type Stretch } from "./glLayer";
+import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot, type Stretch } from "./glLayer";
 import { AIRSPACE_TAB, OVERLAY_SOURCE, airspaceLayers, glZoom } from "./glStyle";
 import { GL_FONT_BOLD, LABEL_HALO } from "./layers/common";
 
@@ -30,7 +31,7 @@ export { OVERLAY_SOURCE };
 
 // ---- The marks' pictures --------------------------------------------------
 
-/** The chart's own ink for a fix (NavaidCanvas' FIX_INK). */
+/** The chart's own ink for a fix. */
 export const FIX_INK = "#1c1a17";
 /** A VFR waypoint's ink on the WebGL map: ForeFlight's green triangle, at
  *  the owner's ask (2026-11-07, from its screenshots), where the
@@ -39,7 +40,7 @@ export const VFR_GREEN = "#148a3b";
 
 type Picture = [id: string, svg: () => string, stretch?: Stretch];
 
-/** The navaids' pictures, NavaidCanvas' own: the VOR's hexagon, a fix's
+/** The navaids' pictures: the VOR's hexagon, a fix's
  *  triangle, a VFR waypoint's green one (FAA Aeronautical Chart User's
  *  Guide, Radio Aids to Navigation; VFR waypoints), and the VOR's blue
  *  ident box, stretched to its ident. */
@@ -95,7 +96,7 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
 
 // ---- The layers -----------------------------------------------------------
 
-/** The airports' zooms, Leaflet's (AirportsLayer's): the farthest out any
+/** The airports' zooms, in the app's levels: the farthest out any
  *  is drawn. Within it each field is in the tiles from its own zoom by
  *  its rank (wingtip.vector_tiles.AIRPORT_MIN_ZOOM): towered, then the
  *  long hard runways, other public fields, private ones, heliports. */
@@ -146,7 +147,7 @@ export function airportMarksLayer(from: { source: string; "source-layer"?: strin
       // frame by frame (a zoom expression, not the page's state).
       "icon-size": ["interpolate", ["linear"], ["zoom"], glZoom(AIRPORTS_FARTHEST_ZOOM), 0.7, glZoom(10), 1, glZoom(13), 1.25],
       "icon-allow-overlap": false,
-      // Out at a few states, a mark's room is AirportsLayer's 80 px apart;
+      // Out at a few states, a mark keeps some 80 px from the next;
       // closer in, its own: every field at a field's own scale.
       "icon-padding": ["step", ["zoom"], 27, glZoom(7), 2],
       "symbol-sort-key": ["get", "rank"],
@@ -196,7 +197,7 @@ export function navaidMarks(
   ];
 }
 
-/** NavaidsLayer's zooms, Leaflet's: the VORs from a region's, the fixes
+/** The navaids' zooms, in the app's levels: the VORs from a region's, the fixes
  *  and the VFR waypoints from 10 (NavaidCards, WaypointCard). */
 export const VOR_ZOOM = 8;
 export const FIX_ZOOM = 10;
@@ -258,7 +259,7 @@ export function overlayStyle(tiles: OverlayTiles, origin?: string): { source: So
   const from = (layer: string) => ({ source: OVERLAY_SOURCE, "source-layer": layer });
   const lines: LayerSpecification[] = [
     ...(has.has("runways") ? runwayLayers() : []),
-    ...(has.has("airspace") ? airspaceLayers(GL_FONT_BOLD, true) : []),
+    ...(has.has("airspace") ? airspaceLayers(GL_FONT_BOLD) : []),
   ];
   const marks: LayerSpecification[] = [
     ...(has.has("navaids") ? navaidMarks("navaids", from("navaids"), "vor", { filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]], minzoom: glZoom(VOR_ZOOM) }) : []),
@@ -269,6 +270,21 @@ export function overlayStyle(tiles: OverlayTiles, origin?: string): { source: So
     ...(has.has("airports") ? [airportMarksLayer(from("airports"), tileAirportIcon(new Map()))] : []),
   ];
   return { source: overlaySource(tiles, origin), layers: { lines, marks } };
+}
+
+/** The overlays added to a map made without them (their name came after
+ *  its first style, or the planner built the archive since): the source,
+ *  and each slot's layers first in that slot, under what the page has
+ *  added there, as the first style would have put them. */
+export function addOverlays(map: MlMap, tiles: OverlayTiles, origin?: string) {
+  if (map.getSource(OVERLAY_SOURCE)) return;
+  const style = overlayStyle(tiles, origin);
+  map.addSource(OVERLAY_SOURCE, style.source);
+  SLOTS.forEach((slot, i) => {
+    const ids = map.getStyle().layers.map(l => l.id);
+    const before = ids[i === 0 ? 0 : ids.indexOf(slotId(SLOTS[i - 1]!)) + 1]!;
+    for (const layer of style.layers[slot] ?? []) map.addLayer(layer, before);
+  });
 }
 
 // ---- What changes over them ----------------------------------------------
@@ -333,7 +349,7 @@ export function setAirportWeather(map: MlMap, colours: Map<string, string>) {
 const text = (v: unknown): string | null => (v == null || v === "" ? null : String(v));
 const number = (v: unknown): number | null => (v == null || v === "" || Number.isNaN(Number(v)) ? null : Number(v));
 
-/** A tapped ring of the tiles' `airspace` layer as the in-view volume the
+/** A tapped ring of the tiles' `airspace` layer as the volume the
  *  card reads (AirspaceCardBody): its fields are wingtip.vector_tiles'
  *  (CLASS, NAME, IDENT, the floor and ceiling, TNI, WKHR_CODE/RMK). */
 export function volumeOfTile(f: Pick<MapGeoJSONFeature, "properties">, at: { lat: number; lon: number }): AirspaceVolume {
@@ -351,7 +367,6 @@ export function volumeOfTile(f: Pick<MapGeoJSONFeature, "properties">, at: { lat
     hours_code: text(p.hours_code),
     hours_remark: text(p.hours_remark),
     label_lat: at.lat, label_lon: at.lon,
-    lines: [],
   };
 }
 

@@ -123,14 +123,7 @@ export type OralGradeRequest = Schemas["OralGradeRequest"];
 export type OralCitation = Schemas["OralCitation"];
 export type AirportPin = Schemas["AirportPin"];
 export type AirportsInView = Schemas["AirportsInView"];
-export type WaypointsInView = Schemas["WaypointsInView"];
-/** The Class B, C and D in the map's view, and the VORs and fixes
- *  (AirspaceLayer, NavaidsLayer). */
-export type AirspaceVolume = Schemas["AirspaceVolume"];
-export type AirspaceInView = Schemas["AirspaceInView"];
-export type VorPin = Schemas["VorPin"];
-export type FixPin = Schemas["FixPin"];
-export type NavaidsInView = Schemas["NavaidsInView"];
+/** The cycle's overlay tiles' archive (lib/map/overlayTiles). */
 export type OverlayTiles = Schemas["OverlayTiles"];
 export type ModelComparisonEntry = Schemas["ModelComparisonEntry"];
 export type ModelComparison = Schemas["ModelComparison"];

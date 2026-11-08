@@ -4,6 +4,7 @@ import { altFt, bearing, flightLevel, one } from "../../lib/units";
 import { clockTime, duration, zuluTime } from "../../lib/clock";
 import { callEngine } from "../../lib/engine/engine";
 import { calmOnRunway, isCalm } from "../../lib/wind";
+import { modelledWinds } from "../../lib/windsAloft";
 
 export { altFt, bearing, one };
 
@@ -51,11 +52,11 @@ export function plannedWords(t: Totals | null): string {
   if (!t?.planned_at) return "";
   const planned = `Planned ${zuluTime(new Date(t.planned_at))}`;
   if (!t.winds) return planned;
-  // The winds are the GFS model's since the FB ended (NWS SCN 26-47):
-  // said so, with the run and forecast hour ("GFS 12Z +6 h").
+  // The winds are the GFS model's since the FB ended (NWS SCN 26-47;
+  // lib/windsAloft): said so, with the run and forecast hour ("GFS 12Z +6 h").
   const w = t.winds;
   const run = w.run ? ` ${zuluTime(new Date(w.run)).slice(0, 2)}Z${w.forecast_hour != null ? ` +${w.forecast_hour} h` : ""}` : "";
-  const which = w.modelled ? `modelled winds (GFS${run})` : "winds";
+  const which = w.modelled ? modelledWinds(run) : "winds";
   return `${planned} · ${which} for use ${zuluTime(new Date(w.use_from)).slice(0, 4)}–${zuluTime(new Date(w.use_to))}`;
 }
 

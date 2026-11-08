@@ -10,21 +10,21 @@ import { chartPaint, chartStyle, type ChartStyle } from "../glStyle";
 const CHART_LAYERS = ["chart-under", "chart", "chart-terminal"];
 
 /**
- * The FAA chart as ChartTiles draws it (glStyle's chartStyle): the base
+ * The FAA chart (glStyle's chartStyle): the base
  * chart, the region's level under it and the terminal sheet over it while
  * pinned, made again as the base, the pin or the cycle changes; dimmed at
- * night and brightened in sunlight as index.css does Leaflet's tiles.
+ * night and brightened in sunlight (glStyle's chartPaint).
  */
 export function ChartGl({ course, previewing = false }: { course: Course | null; previewing?: boolean }) {
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const chart = course ?? chartOnly ?? null;
   const base = usePreferences(s => s.base);
-  // Pinned, or a Class B chip hovered (ClassBGl), as ChartTiles' previewing.
+  // Pinned, or a Class B chip hovered (ClassBGl's `previewing`).
   const pinned = usePreferences(s => s.tac) || previewing;
   const chartNight = usePreferences(s => s.chartNight);
   const sunlight = useSunlight();
   const dark = useDarkTheme();
-  // On <html> as ChartTiles puts it, for index.css's night colours.
+  // On <html>, for index.css's night colours.
   useEffect(() => { document.documentElement.dataset.chartNight = chartNight; }, [chartNight]);
   const spec = useMemo(() => (chart ? chartStyle(chart, base, pinned, window.location.origin) : null), [chart, base, pinned]);
   // The base and the terminal sheet each made again only as its own tiles
@@ -58,7 +58,7 @@ function ChartSources({ spec, night, sunlight }: { spec: ChartStyle; night: bool
     map.setMaxZoom(spec.maxZoom);
     // The frame the chart's first tile is drawn in, for the speed
     // measurements (a canvas is no Largest Contentful Paint candidate, as
-    // Leaflet's tile images are): `chart-drawn`, once a page.
+    // an image is): `chart-drawn`, once a page.
     const drawn = (e: { sourceId?: string; tile?: unknown }) => {
       if (e.sourceId !== "chart" || !e.tile) return;
       map.off("sourcedata", drawn);

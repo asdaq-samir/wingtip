@@ -23,7 +23,7 @@ const FlightChart = lazy(loadFlightChart);
  * marked and said over it, its controls on it -- from the start again,
  * play or pause, how fast, and the close (a past flight's replay's chart,
  * PastFlightChart), the airplane flown along the course on the map
- * (DryRunLayer). In FPL's foot in the side view's place, the flight's
+ * (ReplayGl). In FPL's foot in the side view's place, the flight's
  * figures under it as it goes (DryRunFigures); the chart growing with the
  * sheet.
  */

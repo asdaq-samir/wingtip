@@ -4,9 +4,9 @@ import { airportMark, drawn, openMapSettings, slow } from "./helpers";
 /**
  * The Class B, C and D over the chart, with their altitudes as the
  * sectional words them, written along their lines as ForeFlight's, and
- * the VORs (AirspaceLayer, NavaidsLayer): on
+ * the VORs (AirspaceGl, NavaidsGl, from the overlay tiles): on
  * unless turned off, the owner's pick of the map's looks. Against the
- * real planner and its FAA airspace file, as the point is that the lines
+ * real planner and its overlay tiles of the FAA airspace file, as the point is that the lines
  * and numbers are Chicago's own.
  */
 
@@ -22,15 +22,15 @@ const vors = async (page: Page): Promise<string[]> =>
   (await drawn(page, "navaid-marks")).filter(m => m.kind === "vor").map(m => String(m.ident));
 
 test("Chicago's airspace is drawn over the chart with its altitudes, and the switch takes it off", async ({ page }) => {
-  // The planner's own answer, through the gateway: O'Hare's Class B
-  // shelves, Midway's Class C and Wheeling's Class D under the Bravo.
-  const answer = await page.request.get("/api/planner/airspace/in-view?south=41.5&west=-88.5&north=42.5&east=-87.5");
+  // The planner's overlay tiles, through the gateway: the cycle's archive
+  // and its airspace layer (in CI the suite's own, round Chicago).
+  const answer = await page.request.get("/api/planner/overlay-tiles");
   expect(answer.ok()).toBe(true);
-  const volumes: { ident: string | null; airspace_class: string; floor_sfc: boolean; ceiling_ft: number; ceiling_excluded: boolean }[] =
-    (await answer.json()).volumes;
-  expect(volumes.filter(v => v.ident === "ORD" && v.airspace_class === "B").length).toBeGreaterThanOrEqual(7);
-  expect(volumes.some(v => v.ident === "MDW" && v.airspace_class === "C" && v.floor_sfc && v.ceiling_ft === 3600)).toBe(true);
-  expect(volumes.some(v => v.ident === "PWK" && v.airspace_class === "D" && v.ceiling_excluded && v.ceiling_ft === 3000)).toBe(true);
+  const tiles: { name: string; layers: { name: string; features: number }[] } = await answer.json();
+  expect(tiles.layers.find(l => l.name === "airspace")!.features).toBeGreaterThan(10);
+  const header = await page.request.get(`/api/planner/overlay-tiles/${tiles.name}.pmtiles`, { headers: { Range: "bytes=0-6" } });
+  expect(header.status()).toBe(206);
+  expect((await header.body()).toString("latin1")).toBe("PMTiles");
 
   // O'Hare's card brings the map in on it, close enough for the labels.
   await page.goto("/app/plan?place=KORD");

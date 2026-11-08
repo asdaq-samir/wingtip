@@ -202,7 +202,7 @@ function CardSection({ title, onMore, right, children, testId }: {
  * right under them its four tabs, back at the owner's ask: Info (its
  * details, frequencies, lights and services), Weather (the weather there
  * hour by hour, G1, over the reports as sent), Runways and Charts. Opened
- * by a tap on the airport on the chart (AirportsLayer), and held in the
+ * by a tap on the airport on the chart (AirportsGl), and held in the
  * address (`?place=KDLH`), so a link lands on it.
  *
  * How far it is is from the pilot's own position when it is known, and
@@ -242,7 +242,7 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
   // it opened with for as long as it stayed (the audit's finding).
   const { data: place, isLoading, error, refetch, isFetching } = useQuery({ ...airportQuery(ident), refetchInterval: 5 * 60_000 });
   // What the map knows of it already -- its name and its weather's
-  // colour, from the chip that was tapped (AirportsLayer, ClassBLayer) --
+  // colour, from the chip that was tapped (AirportsGl, ClassBGl) --
   // at once: the card read "Looking the airport up…" until its own
   // answer came, a second or more on a phone while the chart's tiles
   // loaded.

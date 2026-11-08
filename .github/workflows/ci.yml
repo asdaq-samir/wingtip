@@ -917,6 +917,14 @@ jobs:
           # Not `cp -n`: Ubuntu 26.04's cp fails a copy -n skips, and a
           # shard whose planner cache came back with the file stopped here.
           [ -e data/raw/elevation_cache.csv ] || cp apps/web/e2e/fixtures/elevation_cache.csv data/raw/elevation_cache.csv
+          # The map's overlay tiles: this planner builds no cycle pack
+          # (CYCLE_PACK=0), so no archive of its own, and the map's
+          # airspace, airports and navaids are the archive's alone. The
+          # suite's own, cut round Chicago (scripts/build/e2e-overlay-tiles.sh),
+          # copied over whatever the cache brought back.
+          mkdir -p data/raw/packs/tiles
+          rm -f data/raw/packs/tiles/*.pmtiles
+          cp apps/web/e2e/fixtures/overlay-tiles/* data/raw/packs/tiles/
           chmod -R a+rwX data
           echo "$(($(date +%s) - T0)) the planner's data" >> /tmp/e2e-out/timeline
           touch /tmp/e2e-out/data.ready

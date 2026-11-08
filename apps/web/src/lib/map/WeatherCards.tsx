@@ -1,6 +1,7 @@
 import type { MapPirep, StationWind, WeatherArea } from "../api/types";
 import { faaWords } from "../advisories";
 import { altitudeWords, areaWords, routeThrough } from "../weatherMap";
+import { WINDS_MODELLED } from "../windsAloft";
 import { MapCard } from "./MapCard";
 
 /**
@@ -50,10 +51,11 @@ export function PirepCard({ pirep }: { pirep: MapPirep }) {
   );
 }
 
-/** A station's wind aloft's card, on either map. */
+/** A station's wind aloft's card, on either map: the station, the
+ *  altitude and whose winds they are, the GFS's (lib/windsAloft). */
 export function WindCard({ wind, altitudeFt }: { wind: StationWind; altitudeFt: number }) {
   return (
-    <MapCard title={`${String(Math.round(wind.dir_true_deg)).padStart(3, "0")}° true at ${Math.round(wind.speed_kt)} kt`} subtitle={`${wind.ident} · at ${altitudeWords(altitudeFt)}`}>
+    <MapCard title={`${String(Math.round(wind.dir_true_deg)).padStart(3, "0")}° true at ${Math.round(wind.speed_kt)} kt`} subtitle={`${wind.ident} · at ${altitudeWords(altitudeFt)} · ${WINDS_MODELLED}`}>
       {wind.temp_c != null && <p className="text-left" data-testid="wind-card">{wind.temp_c > 0 ? "+" : ""}{wind.temp_c} °C</p>}
     </MapCard>
   );

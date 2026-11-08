@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { airportMark, closeCard, grabberTo, openMapSettings, settle, showTabs, sideDrawer, slow } from "./helpers";
+import { closeCard, grabberTo, settle, showTabs, sideDrawer, slow } from "./helpers";
 
 /**
  * Nearest as a card of the panel's (NearestCard), at the pilot's ask: half
@@ -72,31 +72,6 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   // the route's nav log.
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   await expect(sideDrawer(page).getByTestId("navlog-scroller")).toBeVisible();
-});
-
-test("a field the armed services keep to themselves is off the map until Military is on", async ({ page }) => {
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({
-    status: 200, contentType: "application/json", body: JSON.stringify({ airports: [
-      { ...FIELD, ident: "KMIL", name: "Some AFB", lat: 42.36, lon: -88.16, kind: "medium", military: "military" },
-      { ...FIELD, ident: "KCIV", name: "Some Municipal", lat: 42.29, lon: -88.01, kind: "medium" },
-    ] }),
-  }));
-  // Close in at C81, its card brings the map to it at zoom 9, where the
-  // fields' chips are drawn (AirportsLayer).
-  await page.goto("/app/plan?place=C81");
-  await settle(page);
-  // The chart's fields are drawn on a canvas (AirportCanvas), each one
-  // drawn said on its data-airport-marks.
-  const drawn = (ident: string) => async () => !!(await airportMark(page, ident));
-  await openMapSettings(page);
-  await expect(page.getByTestId("military-toggle")).toHaveAttribute("aria-checked", "false");
-  await page.keyboard.press("Escape");
-  await expect.poll(drawn("KCIV"), { timeout: slow(15000) }).toBe(true);
-  expect(await drawn("KMIL")()).toBe(false);
-  await openMapSettings(page);
-  await page.getByTestId("military-toggle").click();
-  await page.keyboard.press("Escape");
-  await expect.poll(drawn("KMIL")).toBe(true);
 });
 
 

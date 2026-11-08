@@ -561,9 +561,9 @@ def _sua_alt(areas: list[dict]) -> tuple[bytes, bytes]:
 
 def _controlled_numbers(pack: Pack) -> list[int | None]:
     """Each airspace record's number among the Class B, C and D in the
-    national file's order -- what wingtip.airspace_map numbers a volume's
-    `id` by, so the phone's map keys a volume as the planner does from
-    one box to the next -- and None for a Class E."""
+    national file's order -- what the engine's in-view answer numbers a
+    volume's `id` by, so the phone's map keys a volume the same from one
+    box to the next -- and None for a Class E."""
     from . import airspace
 
     numbers: list[int | None] = []
@@ -574,8 +574,8 @@ def _controlled_numbers(pack: Pack) -> list[int | None]:
 
 
 def _volume_drawn(record: dict, number: int | None) -> dict:
-    """wingtip.airspace_at's volume, with what the map's volume in view
-    (wingtip.airspace_map's AirspaceVolume) says of it besides: its number,
+    """wingtip.airspace_at's volume, with what the phone's map says of a
+    volume besides (the engine's in-view answer): its number,
     whether its top is "to but not including" its ceiling (UPPER_DESC
     TNI) and when it is in effect (WKHR_CODE, WKHR_RMK, as wingtip.airspace
     reads them): the phone's `airspace.attr`."""
@@ -681,7 +681,7 @@ def write_phone(pack: Pack, out_dir: Path, veil: list[dict]) -> dict:
                     struct.pack("<BB6xddII", ord((v["class"] or "E")[0]), _FLOOR_REFS[v["floor_ref"]],
                                 v["floor_ft"], v["ceiling_ft"], *span) for v, span in zip(volumes, spans)))
                 w.put("airspace.names", run)
-                # What the map's volume says besides (wingtip.airspace_map), one
+                # What the phone's map says of a volume besides, one
                 # object a volume, in the layer's order: the engine's `view`
                 # reads it, and answers each field null from a pack without it.
                 w.put("airspace.attr", json.dumps(

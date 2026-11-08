@@ -9,7 +9,7 @@ import { cn } from "cn";
  * the one shell the FAA's charts (ChartViewer) and a field's runway
  * sketch (SketchViewer) open in, so the two read as one viewer. On a
  * file of its own, not the chart viewer's, so the sketch's chunk never
- * carries Leaflet.
+ * carries MapLibre.
  */
 export default function FullScreenViewer({ title, testId, closeTestId, onClose, children }: {
   title: ReactNode;

@@ -141,7 +141,7 @@ function insetsOf(s: PanelState, d: Detents, onPhone: boolean, fromBottom: boole
 }
 
 /** What a phone's sheet says as it sets off for another size, on its
- *  "sheetturn" event: the room it will leave the map (MapShell). */
+ *  "sheetturn" event: the room it will leave the map (GlMapShell). */
 export interface SheetTurn { insets: MapInsets }
 
 /**

@@ -282,25 +282,6 @@ def within(south: float, west: float, north: float, east: float) -> list[dict]:
     ]
 
 
-def vors_within(south: float, west: float, north: float, east: float) -> list[dict]:
-    """The VORs, VOR/DMEs and VORTACs in service inside the box, by
-    ident, for the map's VOR marks."""
-    return sorted(
-        (f for f in within(south, west, north, east) if f.get("navaid") and f["kind"] in VOR_KINDS),
-        key=lambda f: f["ident"],
-    )
-
-
-def enroute_fixes_within(south: float, west: float, north: float, east: float) -> list[dict]:
-    """The fixes on the low-altitude enroute chart inside the box, by
-    ident, for the map's fix marks. Not the VFR waypoints, which the map
-    draws as the sectional's diamonds of their own."""
-    return sorted(
-        (f for f in within(south, west, north, east) if f.get("enroute_low") and not f["vfr"]),
-        key=lambda f: f["ident"],
-    )
-
-
 _REMARKS: tuple[float, dict[tuple[str, str], list[str]]] | None = None
 
 

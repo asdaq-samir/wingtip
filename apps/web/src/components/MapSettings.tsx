@@ -110,7 +110,7 @@ export default function MapSettings() {
             airports alone. */}
         <SwitchRow title="VFR Checkpoints" on={prefs.waypoints} onChange={prefs.setWaypoints} testId="waypoints-toggle" />
         {/* The Class B, C and D's lines and altitudes over the chart
-            (AirspaceLayer), and the VORs and enroute fixes (NavaidsLayer):
+            (AirspaceGl), and the VORs and enroute fixes (NavaidsGl):
             on unless turned off, the owner's pick of the map's looks. */}
         <SwitchRow title="Airspace" on={prefs.airspace} onChange={prefs.setAirspace} testId="airspace-toggle" />
         <SwitchRow title="VORs and Fixes" on={prefs.navaids} onChange={prefs.setNavaids} testId="navaids-toggle" />
@@ -118,7 +118,7 @@ export default function MapSettings() {
             turned off, as a pilot must know of every one near the route
             (14 CFR 91.103). */}
         <SwitchRow title="TFRs" on={prefs.tfrs} onChange={prefs.setTfrs} testId="tfrs-toggle" />
-        {/* The airplanes ADS-B receivers hear about the map (TrafficLayer),
+        {/* The airplanes ADS-B receivers hear about the map (TrafficGl),
             from adsb.lol: off unless turned on, as it asks a third party
             every five seconds. Setup's Controls has it too, for the
             cockpit, as iOS has Wi-Fi in Control Center and Settings. */}
@@ -182,7 +182,7 @@ export default function MapSettings() {
             }))}
           />
         </ListRow>
-        {/* Own ship's path flown (OwnTrailLayer), put away here: it starts
+        {/* Own ship's path flown (OwnTrailGl), put away here: it starts
             again by itself with the next flight. */}
         <ListRow title="Clear Your Path" disabled={!trailed} onClick={clearOwnTrail} data-testid="own-trail-clear" />
       </ListGroup>

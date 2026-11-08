@@ -30,9 +30,7 @@ export function isInkLook(): boolean {
 /** One of the ink look's own inks (index.css's --ink-magenta and
  *  --ink-brown on html[data-brand="ink"], the magenta with a shade for
  *  the night), as a value for what a token does not reach: a map layer's paint, a
- *  marker's html. An SVG path with a class
- *  takes the stylesheet's instead (CourseLine's course-core, the
- *  course-ink class on a hold's and a way's line). The light value where
+ *  marker's html. The light value where
  *  the stylesheet is not loaded (a test), or the look is not yet on
  *  <html> (the render it changes in: BrandLook sets it after). */
 function inkToken(name: "--ink-magenta" | "--ink-brown", light: string): string {

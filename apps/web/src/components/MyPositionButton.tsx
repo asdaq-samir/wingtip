@@ -9,7 +9,7 @@ import { APPROXIMATE_M, ownShipAvailable, useOwnShip } from "../lib/map/ownShip"
  * My position, among the map's buttons, as Maps and every map app has
  * it: the location arrow. A tap shows where the phone is, flies the map
  * there closing in on it, and keeps the map on it; once the map is
- * panned away (OwnShipLayer stops following) a tap brings it back the
+ * panned away (OwnShipGl stops following) a tap brings it back the
  * same way; a tap while it is following puts the position away. The
  * arrow is iOS's, drawn fine: filled while the map follows, an outline
  * otherwise, and pulsing while the GPS has nothing yet. It was two switches at the
@@ -47,7 +47,7 @@ export default function MyPositionButton() {
   // face: the whole route, at the owner's ask ("Can the locator button
   // change to fit line during dry run when plane is centered on the
   // screen"). Tapped, the map fits the route and the arrow comes back,
-  // to bring the map back in on the airplane (OwnShipLayer, DRY_RUN_ZOOM).
+  // to bring the map back in on the airplane (OwnShipGl, DRY_RUN_ZOOM).
   const simulated = useOwnShip(s => s.simulated);
   const showRoute = useOwnShip(s => s.showRoute);
   // And with a route entered and the map panned or zoomed off it, own

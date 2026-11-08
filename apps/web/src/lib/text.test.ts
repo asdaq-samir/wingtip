@@ -9,7 +9,6 @@ const FILES = [
   "features/pilot/SignInModal.tsx",
   "features/pilot/LinkSignIn.tsx",
   "features/plan/components/PlaceCard.tsx",
-  "lib/map/AirportCard.tsx",
   "components/AccordionSection.tsx",
 ];
 

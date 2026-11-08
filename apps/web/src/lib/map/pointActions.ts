@@ -5,7 +5,7 @@ import type { Station } from "../navaid";
 export type ChartPoint = { ident: string; lat: number; lon: number };
 
 /**
- * What the map's point cards (a VOR's, a fix's, NavaidsLayer) can do with
+ * What the map's point cards (a VOR's, a fix's, NavaidCards) can do with
  * the route, given by the planner's page (PlanWorkspace) while there is a
  * route to do it to: Add to Route, the point a stop where it fits best;
  * Direct To, from where the airplane is to the point and on along the
@@ -20,7 +20,7 @@ export const usePointActions = create<{
   /** The route's course line, [lat, lon], for an area's card to say
    *  whether the route goes through it (a TFR's). */
   courseLine: readonly (readonly [number, number])[] | null;
-  /** The VORs on the map (NavaidsLayer), for a point's place off the
+  /** The VORs on the map (NavaidsGl), for a point's place off the
    *  nearest. */
   stations: readonly Station[];
 }>(() => ({ addToRoute: null, directTo: null, avoidClassB: null, courseLine: null, stations: [] }));

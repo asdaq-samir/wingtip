@@ -4,7 +4,7 @@ import type { PastFlightPoint } from "../api/types";
 /**
  * A past flight of a tracked airplane, picked from its card's Past
  * flights (FlightCard), as FlightAware shows one: its path on the map in
- * its heights' colours (TrafficLayer's PastFlightPath), its track log,
+ * its heights' colours (TracksGl's PastFlightGl), its track log,
  * and its replay -- the airplane flown along it again at 10, 50 or 200
  * times, from where the pilot left it.
  */

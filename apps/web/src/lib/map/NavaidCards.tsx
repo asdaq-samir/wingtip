@@ -6,7 +6,7 @@ import { TEXT } from "../text";
 import { feet } from "../units";
 import { useOwnFix } from "./ownShip";
 import { PointActions } from "./PointCardActions";
-import type { FixPin, VorPin } from "../api/types";
+import type { FixPin, VorPin } from "./overlayTypes";
 import { MapCard } from "./MapCard";
 import { degreesMinutes } from "../coords";
 import { BLUE } from "../useAirspace";
@@ -14,8 +14,8 @@ import { nmAway, useAwayWords } from "../useAway";
 import { PointWhere } from "./PointWhere";
 
 /**
- * The cards a tap on a VOR or a low enroute chart's fix opens (the map
- * asks for them in navaidsQuery and draws them in
+ * The cards a tap on a VOR or a low enroute chart fix opens (the map
+ * draws them from the overlay tiles:
  * lib/map/gl/layers/NavaidsGl).
  */
 

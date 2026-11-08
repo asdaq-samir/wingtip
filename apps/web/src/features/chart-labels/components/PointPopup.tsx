@@ -33,10 +33,10 @@ interface Props {
 
 
 /**
- * Everything about the selected point, in one Leaflet popup pinned above
- * it -- the info that used to be a separate tooltip, and the rating/
- * category controls that used to live in the sidebar, combined so
- * there's one place on screen this happens, right where the point is.
+ * Everything about the selected point, in one card in the map's panel
+ * (ChartMap's SheetCard) -- the info that used to be a separate tooltip,
+ * and the rating/category controls that used to live in the sidebar,
+ * combined so there's one place on screen this happens.
  */
 export default function PointPopup({
   point, place, bearingDeg, departureIdent, onRate, onCategoryChange, onRemove,
@@ -46,7 +46,6 @@ export default function PointPopup({
   // walk, and needs a way off itself just as much as any other point
   // does (this used to be endpoint-only content with no arrows at all,
   // which meant landing on departure via "Start" had no way forward).
-  // The close sits at the row's end, where Leaflet's own would be.
   /** The two steps, drawn either side of the title: the card's heading
    *  reads "back, where you are, forward", which is what a rating pass
    *  is doing. At the icon buttons' one size, 36 with a 20 glyph, their
@@ -114,12 +113,6 @@ export default function PointPopup({
         </>
       }
     >
-      {/* No flex-wrap: Leaflet measures a popup's width by briefly
-          forcing everything onto one line, and a row that's still
-          allowed to wrap at that moment gets measured at whatever
-          narrower, wrapped width it happens to collapse to instead of
-          its real one-line width -- pinning this row flat gives it (and
-          so the popup) a stable, correctly-measured width instead. */}
       {/* The drawer's own six (WaypointPanel): 36 by 32, eight apart, so
           each one's 44-point hit area (index.css) meets the next one's
           rather than taking its taps -- four apart they overlapped. The

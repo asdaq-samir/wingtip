@@ -21,7 +21,7 @@ import { useGlLines, type GlRun } from "../useGlLines";
 /** Every track's white casing, so it reads over any chart. */
 const CASING = { colour: "#ffffff", width: 6, opacity: 0.85 };
 
-/** Where own ship has flown, at the pilot's ask (OwnTrailLayer): blue on
+/** Where own ship has flown, at the pilot's ask: blue on
  *  a white casing, joined to the position now. */
 export function OwnTrailGl() {
   const path = useOwnTrail(s => s.path);
@@ -36,8 +36,8 @@ export function OwnTrailGl() {
   return null;
 }
 
-/** A saved flight's flown track over its route, from its debrief
- *  (FlownTrackLayer): black where it kept to the course, red where off. */
+/** A saved flight's flown track over its route, from its debrief:
+ *  black where it kept to the course, red where off. */
 export function FlownTrackGl({ course }: { course: Course }) {
   const track = useFlownTrack(s => s.track);
   const runs = useMemo<GlRun[] | null>(() => {
@@ -56,8 +56,8 @@ export function FlownTrackGl({ course }: { course: Course }) {
   return null;
 }
 
-/** The legs a hazard in the Brief is on, at the pilot's tap
- *  (LegHighlightLayer): a wide orange band under the course, fitted. */
+/** The legs a hazard in the Brief is on, at the pilot's tap:
+ *  a wide orange band under the course, fitted. */
 export function LegHighlightGl({ course }: { course: Course }) {
   const shown = useLegHighlight(s => s.shown);
   const clear = useLegHighlight(s => s.clear);
@@ -106,7 +106,7 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
         marker.current.setLngLat([here.lon, here.lat]);
         setMarkerIcon(marker.current, icon);
       }
-      // Kept in sight while it plays, as the Leaflet replay keeps it.
+      // Kept in sight while it plays.
       if (usePastFlight.getState().playing) {
         const p = map.project([here.lon, here.lat]);
         const { clientWidth: w, clientHeight: h } = map.getContainer();
@@ -137,7 +137,7 @@ export function PastFlightGl({ hex, id }: { hex: string; id: number }) {
   return <ReplayGl />;
 }
 
-/** The tracked airplane's path so far (TrafficLayer's TrackedPath), in its
+/** The tracked airplane's path so far, in its
  *  heights' colours. */
 export function TrackedPathGl({ hex }: { hex: string }) {
   const { data } = useQuery(flightQuery(hex));

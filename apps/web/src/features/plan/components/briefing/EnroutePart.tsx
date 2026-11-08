@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "../../../../components/ui/a
 import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { TEXT } from "../../../../lib/text";
+import { WINDS_MODELLED_LABEL } from "../../../../lib/windsAloft";
 import type { Course, Leg } from "../../../../lib/api/types";
 import type { FlightBriefing } from "../../hooks/useFlightBriefing";
 import { altFt, ceilingAndVisibility, clockTime, windAloft } from "../../format";
@@ -155,7 +156,9 @@ function AdverseConditions({ vm }: { vm: FlightBriefing }) {
 function WindsAloft({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
   const { stretches } = vm;
   return (
-    <AccordionSection title="Winds Aloft">
+    // Whose winds, under the title as the nav log says it: the GFS's,
+    // modelled, since the FB ended (lib/windsAloft).
+    <AccordionSection title="Winds Aloft" description={stretches.some(st => st.wind) ? WINDS_MODELLED_LABEL : undefined}>
       {!stretches.some(st => st.wind) ? (
         <p>{legs.length ? "No winds-aloft data available for this route." : "Waiting on the nav log's legs…"}</p>
       ) : (

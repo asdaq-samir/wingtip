@@ -4,7 +4,7 @@ import { TEXT } from "../lib/text";
 
 /**
  * What the map's chrome shares -- the panel over it (MapPanel), its
- * buttons (MapControls) and the map itself (MapShell) -- kept apart
+ * buttons (MapControls) and the map itself (GlMapShell) -- kept apart
  * from the components so each file exports components only.
  */
 
@@ -19,13 +19,13 @@ export type PanelState = "peek" | "half" | "full";
 /** What the panel covers of the map where it has settled -- the capsule
  *  at rest, the half sheet out -- in pixels from each edge, so the map
  *  can fit a route clear of it and keep its chart credit in sight
- *  (MapShell, index.css). */
+ *  (GlMapShell, index.css). */
 export interface MapInsets {
   top: number;
   bottom: number;
   left: number;
   /** Where the panel has settled: at rest (its capsule, or a desktop's
-   *  corner) or out. The map follows a change of this (MapShell), not
+   *  corner) or out. The map follows a change of this (GlMapShell), not
    *  every change of the size -- a notice under the route, the head
    *  measured again -- which would take the map from under a pilot's
    *  finger as the plan streams in. */
@@ -112,7 +112,7 @@ export const GLASS_SHEET = "bg-[var(--sheet)] shadow-[0_-1px_12px_rgb(0_0_0/0.12
  *  recording, is 98% of the way in 0.17 to 0.23 s whatever the distance,
  *  and this curve is 98% of the way at 89% of its time -- 0.27 s here.
  *  It was 0.45 s. The map's own move to a route as the sheet settles
- *  (MapShell) takes it too, so the two arrive together. */
+ *  (GlMapShell) takes it too, so the two arrive together. */
 export const SHEET_SECONDS = 0.3;
 /** How far the sheet goes in SHEET_SECONDS: the pill to half on an iPhone
  *  16 Pro, the move the owner likes ("Pill to half card and back eases

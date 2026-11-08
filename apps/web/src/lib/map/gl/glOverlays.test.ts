@@ -32,7 +32,7 @@ describe("the overlay tiles' layers", () => {
     expect(layers.marks!.map(l => l.id)).toEqual([
       "navaids", "navaids-idents", "fixes", "fixes-idents", "vfr-waypoints", "vfr-waypoints-idents", "airports",
     ]);
-    // Each class from AirspaceLayer's zoom, as the in-view rings.
+    // Each class from its own zoom (AIRSPACE_FROM).
     const from = Object.fromEntries(layers.lines!.map(l => [l.id, l.minzoom]));
     expect(from).toMatchObject({ "airspace-B": glZoom(6), "airspace-C": glZoom(7), "airspace-D": glZoom(8) });
   });
@@ -66,7 +66,7 @@ describe("the overlay tiles' layers", () => {
 });
 
 describe("a tapped tile feature", () => {
-  it("is the volume the airspace card reads, its tab's words the in-view rings'", () => {
+  it("is the volume the airspace card reads, its tab's words the chart's", () => {
     const shelf = volumeOfTile({ properties: { class: "B", name: "CHICAGO CLASS B", floor_ft: 3000, ceiling_ft: 10000, number: 7 } }, { lat: 42, lon: -88 });
     expect(shelf).toMatchObject({ id: "tile-7", airspace_class: "B", floor_ft: 3000, floor_sfc: false, ceiling_ft: 10000, ceiling_excluded: false });
     expect(airspaceText(shelf)).toBe("B: 100–30");

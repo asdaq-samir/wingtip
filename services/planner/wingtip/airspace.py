@@ -163,7 +163,7 @@ _ALL_AIRSPACE_LOCK = threading.Lock()
 # v2: the cached records gained an "ident" field, and a cache written
 # before that has no way to say so -- a new suffix rebuilds rather
 # than reading records that are missing a key every caller now reads.
-# v4: and an "upper_desc", for the map's labels (wingtip.airspace_map).
+# v4: and an "upper_desc", for the map's labels (the phone pack, the overlay tiles).
 # v5: and the "hours_code" and "hours_remark", for the map's cards.
 _CONTROLLED_CACHE_SUFFIX = ".controlled.v5.pkl"
 

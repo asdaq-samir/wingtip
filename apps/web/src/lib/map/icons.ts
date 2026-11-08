@@ -10,7 +10,6 @@ export function divIcon(options: IconLike["options"]): IconLike {
 import { ownShipSvg, type OwnShipLook } from "./ownShipLook";
 import type { AirspaceClass } from "../preferences";
 import { inkOn } from "../scoreScale";
-import { textWidth } from "../textWidth";
 import { AIRPORT_MARK, airportMarkSvg, text } from "./airportMark";
 import { MAP_BLUE, WAYPOINT_MAGENTA } from "./chartColors";
 
@@ -49,8 +48,8 @@ export function made<A extends unknown[]>(make: (...args: A) => IconLike): (...a
  *  target is the chip, where its neighbours' are close: grown to 44 every
  *  chip's box lay over the next one's, and a tap on a chip in sight went
  *  to the one beside it (KORD's, under a neighbour's, 2026-10-07). A tap a
- *  little off a field's chip is its own all the same (AirportsLayer's
- *  near miss). */
+ *  little off a field's chip is its own all the same: the map gives a tap
+ *  to the nearest mark within a finger's reach (gl/layers/common's TAP). */
 const TAP = 44;
 
 /**
@@ -87,29 +86,10 @@ export const dotIcon = made(function dotIcon(fill: string, label?: string | numb
   });
 });
 
-/** Own ship: the arrow, or the plane the pilot picked (lib/map/ownShipLook),
- *  blue in a white casing so it holds over any chart colour, turned to the
- *  GPS heading -- the arrow a plain dot while stationary, when there is
- *  none; a plane nose up then, as it is drawn in the settings. */
-/** Own ship's mark, one icon for its look, nose up: the layer turns its
- *  nose to the heading (OwnShipLayer), round through a turn as an airplane
- *  comes round, where a new icon a degree snapped it to each heading and
- *  had the marker build its element, its SVG and its shadow again four
- *  times a second in a dry run. `headingDeg` says only whether there is
- *  one: the arrow with none is a dot. */
-export function ownShipIcon(headingDeg: number | null, off = false, look: OwnShipLook = "arrow", moving = false) {
-  return ownShipIconMade(headingDeg == null ? null : 0, off, look, moving && !off);
-}
-
-const ownShipIconMade = made((headingDeg: number | null, off: boolean, look: OwnShipLook, moving: boolean) => makeOwnShipIcon(headingDeg, off, look, moving));
-
-function makeOwnShipIcon(headingDeg: number | null, off: boolean, look: OwnShipLook, moving: boolean) {
-  const { size, html } = ownShipHtml(headingDeg, off, look, moving);
-  return divIcon({ className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2], html });
-}
-
-/** Own ship's mark as markup and its box, px: the marker of OwnShipGl, each turning it to the
- *  heading as it draws it. */
+/** Own ship's mark as markup and its box, px, nose up: OwnShipGl's marker
+ *  turns it to the heading as it draws it, round through a turn as an
+ *  airplane comes round, rather than the mark being made again for each
+ *  heading. The arrow with no heading, or off, is a dot. */
 export function ownShipHtml(headingDeg: number | null, off: boolean, look: OwnShipLook, moving: boolean): { size: number; html: string } {
   // Grey where own ship is off: the last position, no longer watched, as
   // Maps greys its dot when it stops knowing where you are. iOS's blue.
@@ -127,66 +107,6 @@ export function ownShipHtml(headingDeg: number | null, off: boolean, look: OwnSh
         beam),
   };
 }
-
-/** How far a checkpoint's name sits from its point: clear of its numbered
- *  dot (dotIcon's 24, and a margin). */
-export const CHECKPOINT_LABEL_GAP = 16;
-/** Its height, for the labels to be kept from one another (RouteMap). */
-export const CHECKPOINT_LABEL_HEIGHT = 20;
-/** A checkpoint label's width as drawn (checkpointLabelIcon): its name in
- *  the page's own bold 12, 6 either side --
- *  for the labels to be kept from one another and the screen's edge
- *  (RouteMap). A width per letter guessed short: FOREST VIEW, its bold
- *  capitals wider than the guess, ran off a phone's screen. */
-export function checkpointLabelWidth(name: string): number {
-  const known = labelWidths.get(name);
-  if (known != null) return known;
-  const width = typeof document === "undefined" ? null : textWidth(name, `700 12px ${getComputedStyle(document.body).fontFamily}`);
-  const out = width == null ? name.length * 8 + 12 : Math.ceil(width + 12);
-  // Measured once a name: the labels are placed again at every move that
-  // ends, and each measure read the page's styles.
-  if (width != null) labelWidths.set(name, out);
-  return out;
-}
-const labelWidths = new Map<string, number>();
-
-/** An airport chip's width (airportIcon). */
-const airportChipWidth = (ident: string) => Math.max(40, Math.ceil(ident.length * 7.5) + 22);
-
-export { AIRPORT_MARK };
-/** How far an airport mark's ident runs right of the field: for a label to keep off both. */
-export const airportMarkReach = (ident: string) => AIRPORT_MARK / 2 + 2 + Math.ceil(ident.length * 7.5);
-
-/**
- * A checkpoint's name beside its dot, as ForeFlight labels a flight
- * plan's waypoints, in sentence case as it is given ("River near
- * Lenroot"; RouteMap's labelOf), on a dark label that holds on the
- * chart's paper and its linework both, after the dot -- or before it
- * where there is no room after (the screen's edge, another name). Not a
- * target: a tap there is the dot's or the chart's.
- */
-export const checkpointLabelIcon = made(function checkpointLabelIcon(name: string, side: "right" | "left" = "right") {
-  return divIcon({
-    className: "",
-    iconSize: [0, 0],
-    iconAnchor: [side === "right" ? -CHECKPOINT_LABEL_GAP : CHECKPOINT_LABEL_GAP, CHECKPOINT_LABEL_HEIGHT / 2],
-    html: `<span data-checkpoint-label="" class="pointer-events-none absolute ${side === "right" ? "left-0" : "right-0"} top-0 whitespace-nowrap rounded-md bg-[#1f2933]/85 px-1.5 text-[12px] font-bold leading-[20px] text-white shadow-[0_1px_3px_rgba(0,0,0,.4)]">${text(name)}</span>`,
-  });
-});
-
-/**
- * The glide ring's reach, said on the ring at its top, at the owner's ask
- * ("can the glide ring have a label?"): in the ring's orange over white,
- * as the ring is drawn, centred on its line. Not a target.
- */
-export const glideLabelIcon = made(function glideLabelIcon(words: string) {
-  return divIcon({
-    className: "",
-    iconSize: [0, 0],
-    iconAnchor: [0, 0],
-    html: `<span data-glide-label="" class="pointer-events-none absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border-[1.5px] border-[#ea580c] bg-white px-1.5 text-[12px] font-bold leading-[18px] text-[#c2410c] shadow-[0_1px_3px_rgba(0,0,0,.3)]">${text(words)}</span>`,
-  });
-});
 
 /**
  * The ring round the airport whose card is open: the selected
@@ -232,23 +152,6 @@ export const fixMarkIcon = made(function fixMarkIcon(label: string) {
 });
 
 /**
- * A field nobody asked about -- a training corridor's endpoint: its ident
- * on a white chip, the white casing and the dark hairline round it so it
- * holds on the chart's paper and its linework alike. The box is sized
- * from the ident, with the chip centred in it.
- */
-export const airportIcon = made(function airportIcon(ident: string) {
-  const width = airportChipWidth(ident);
-  return divIcon({
-    className: "",
-    iconSize: [width, 24], iconAnchor: [width / 2, 12],
-    html:
-      `<span class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border-2 border-white px-1.5 py-0.5 text-[11px] font-bold shadow-sm outline outline-1 outline-[rgba(10,20,28,.45)]"` +
-      ` style="background-color:#ffffff;color:#1c1a17">${text(ident)}</span>`,
-  });
-});
-
-/**
  * An airport on the map, at the pilot's ask, as ForeFlight marks them
  * from the sectional's own symbols: a ring with four ticks (the chart's
  * sign of a field with services) in the look its airspace has
@@ -286,7 +189,7 @@ export const airportMarkIcon = made(function airportMarkIcon(
  *  trend line kept their width on screen. */
 const TRAFFIC_MARK = 16;
 
-/** An airplane of the traffic (TrafficLayer): a chevron turned to its
+/** An airplane of the traffic (TrafficGl, TracksGl): a chevron turned to its
  *  track in its colour with a white casing, a line out ahead of it to
  *  where it will be in a minute (`trendPx` long, as ForeFlight's
  *  TrafficTrend vector), and under it its height (trafficLabel) and its

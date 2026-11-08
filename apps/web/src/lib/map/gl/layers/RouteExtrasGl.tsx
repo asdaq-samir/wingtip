@@ -19,16 +19,16 @@ import { PROCEDURE_INK, PROCEDURE_WORDS_FROM_ZOOM, STALE_INK, fixIcon } from "..
 import { WAY_SHARES, wayAt, wayIcon, type RouteWay } from "../../routeWays";
 import { BREAK_PIN, FUEL_PIN, stackedPin, type StopPin } from "../../stopPins";
 import { useGlData, useGlLayer, useGlMap } from "../glLayer";
-import { leafletZoomOf } from "../glStyle";
+import { appZoomOf } from "../glStyle";
 import { iconMarker } from "../htmlMarker";
 import { useGlLines, type GlRun } from "../useGlLines";
 import { useGlMarks, type GlMark } from "../useGlMarks";
 
-/** The level the map is at, Leaflet's, as it changes: what the words on
+/** The level the map is at, the app's, as it changes: what the words on
  *  the procedures and the patterns come in at. */
 function useGlLevel(): number {
   const { map } = useGlMap();
-  const read = () => Math.floor(leafletZoomOf(map.getZoom()) + 1e-9);
+  const read = () => Math.floor(appZoomOf(map.getZoom()) + 1e-9);
   const [level, setLevel] = useState(read);
   useEffect(() => {
     const zoomed = () => setLevel(read());
@@ -39,7 +39,7 @@ function useGlLevel(): number {
   return level;
 }
 
-/** FPL's Routes' other ways beside the route (RouteWaysLayer): each a wide
+/** FPL's Routes' other ways beside the route: each a wide
  *  faint magenta line, the one shown solid, with its chip a tap picks. */
 export function WaysGl({ ways, shown, onPick }: { ways: RouteWay[]; shown: string | null; onPick: (key: string) => void }) {
   const runs = useMemo<GlRun[]>(() => ways.map(w => ({ points: w.path, colour: COURSE_MAGENTA, width: w.key === shown ? 7 : 6, opacity: w.key === shown ? 1 : 0.35 })), [ways, shown]);
@@ -55,7 +55,7 @@ export function WaysGl({ ways, shown, onPick }: { ways: RouteWay[]; shown: strin
 const pair = (p: LatLon): [number, number] => [p.lat, p.lon];
 const along = (a: LatLon, b: LatLon, f: number): LatLon => ({ lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f });
 
-/** The traffic patterns picked (PatternLayer): each circuit teal on a white
+/** The traffic patterns picked: each circuit teal on a white
  *  casing, its entry dashed, arrows and words from zoom 11. */
 export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
   const level = useGlLevel();
@@ -80,7 +80,7 @@ export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
   return null;
 }
 
-/** The instrument procedures picked (ProcedureLayer): their lines in the
+/** The instrument procedures picked: their lines in the
  *  approach's ink on a white casing, the missed dashed, holds, and each
  *  fix a diamond with its altitudes and speed from zoom 9; a tap a fix's
  *  card. */
@@ -115,8 +115,8 @@ export function ProceduresGl({ drawings, crossings, directs, onFix }: {
   return null;
 }
 
-/** Each approach's plate under its lines where it could be placed
- *  (PlateLayer): an image source on its four corners over a white sheet. */
+/** Each approach's plate under its lines where it could be placed:
+ *  an image source on its four corners over a white sheet. */
 export function PlatesGl({ drawings }: { drawings: ProcedureDrawing[] }) {
   const shown = usePreferences(s => s.plates);
   const approaches = shown ? drawings.filter(d => d.kind === "approach") : [];
@@ -228,7 +228,7 @@ export function PickedGl({ focus, held, onHold }: {
   return null;
 }
 
-/** The approach lesson's step (LessonLayer): its part of the procedure
+/** The approach lesson's step: its part of the procedure
  *  in a wide blue band, its fix ringed, its airplane flown along. */
 export function LessonGl() {
   const { map } = useGlMap();

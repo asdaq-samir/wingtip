@@ -7,6 +7,7 @@ import {
 } from "./ui/dropdown-menu";
 import { useWeatherLayers, type WindsAt } from "../lib/map/weatherLayers";
 import { TEXT } from "../lib/text";
+import { WINDS_MODELLED_LABEL } from "../lib/windsAloft";
 
 /** The winds aloft's altitudes: the plan's cruise, or one of the FD
  *  product's own, written FL and hundreds of feet as the map's weather
@@ -18,7 +19,7 @@ const WINDS: { value: WindsAt; label: string }[] = [
 ];
 
 /**
- * The weather the map draws (lib/map/WeatherLayer), first in the map's
+ * The weather the map draws (WeatherGl), first in the map's
  * own button's sheet, at the owner's pick (the canvas's map weather, A:
  * "A layers button on the map"): the radar, the satellite picture, the
  * SIGMETs and G-AIRMETs, the pilot reports, each on or off, and the winds
@@ -42,7 +43,8 @@ export default function WeatherSettings() {
       <ListRow title="PIREPs">
         <TogglePill pressed={pireps} onPressedChange={on => set({ pireps: on })} icon={pireps ? <Eye /> : <EyeOff />} label="Show" testId="weather-pireps-toggle" />
       </ListRow>
-      <ListRow title="Winds aloft">
+      {/* Whose winds the barbs draw, under the row's title: the GFS's (lib/windsAloft). */}
+      <ListRow title="Winds aloft" description={WINDS_MODELLED_LABEL}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button

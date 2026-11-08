@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { aheadOf, within, type Box } from "../view";
 import { useGlMap } from "./glLayer";
-import { leafletZoomOf } from "./glStyle";
+import { appZoomOf } from "./glStyle";
 
 /** The whole level a zoom is at: every layer draws by whole levels
  *  (zoom >= FROM_ZOOM), the same under a pinch as at rest. */
@@ -12,8 +12,8 @@ export interface GlView {
    *  what the overlays ask the planner for, each box asked once and
    *  cached. */
   box: Box;
-  /** The whole level the map is at, in the app's levels (Leaflet's, which
-   *  every layer's FROM_ZOOM is written in: MapLibre's zoom plus one). */
+  /** The whole level the map is at, in the app's levels, which every
+   *  layer's FROM_ZOOM is written in: MapLibre's zoom plus one (glStyle). */
   level: number;
 }
 
@@ -28,13 +28,13 @@ export interface GlView {
  *  answer on screen while the next is fetched (placeholderData). */
 export function useGlView(): GlView {
   const { map } = useGlMap();
-  const [view, setView] = useState<GlView>(() => ({ box: aheadOf(map.getBounds()), level: levelOf(leafletZoomOf(map.getZoom())) }));
+  const [view, setView] = useState<GlView>(() => ({ box: aheadOf(map.getBounds()), level: levelOf(appZoomOf(map.getZoom())) }));
   useEffect(() => {
     let frame = 0;
     const look = () => setView(was => {
       const bounds = map.getBounds();
       const box = within(bounds, was.box) ? was.box : aheadOf(bounds);
-      const level = levelOf(leafletZoomOf(map.getZoom()));
+      const level = levelOf(appZoomOf(map.getZoom()));
       return box === was.box && level === was.level ? was : { box, level };
     });
     const moved = () => {

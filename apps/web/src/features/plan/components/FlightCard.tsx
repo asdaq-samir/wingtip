@@ -219,7 +219,7 @@ const townOf = (field: { city?: string | null; region?: string | null; name?: st
  * redesign (A2, 2026-10-29), as an airport's is: its photo across the top
  * (Planespotters', its photographer named), where it has flown a swipe
  * across, its callsign large over them with what it is and who flies it;
- * Follow (the map keeps it in the middle, TrafficLayer), Alert, Debrief
+ * Follow (the map keeps it in the middle, TrafficGl), Alert, Debrief
  * and the star under them; its flight in a card; and one scroll of what it
  * is and its earlier flights, where they were two tabs. Seconds-old
  * internet data from adsb.lol's receivers: for knowing what is about, not

@@ -41,7 +41,7 @@ export const zoomInKey = (event: KeyboardEvent) =>
 export const zoomOutKey = (event: KeyboardEvent) =>
   event.key === "PageDown" || event.key === "ChannelDown" || event.keyCode === 428;
 
-/** Whether the remote is on the map: focus on Leaflet's container or
+/** Whether the remote is on the map: focus on MapLibre's container or
  *  anything in it (its zoom buttons, a marker). */
 function onMap(): boolean {
   const active = document.activeElement;
@@ -102,7 +102,7 @@ function registerChannelKeys(platform: TvPlatform) {
  * the screen (the W3C's spatial navigation, by its polyfill); its Back
  * closing what is open, as Escape does (lib/backNavigation), then leaving the app.
  * On the map the arrows pan it and OK and a channel up and down zoom it
- * (MapShell, TvMapKeys), and Back takes the remote off it.
+ * (GlMapShell), and Back takes the remote off it.
  */
 export function startTv(platform: TvPlatform) {
   document.documentElement.dataset.tv = platform;

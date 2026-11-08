@@ -173,7 +173,7 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   const selectedContent = useMemo(() => {
     // Not with the panel all the way up over the map: the rating card is
     // the panel's then (RatingCard), the list over it what is walked. On a
-    // phone the point's card in the panel (MapPopup) covered the list and
+    // phone the point's card in the panel (SheetCard) covered the list and
     // its rating card, a row picked taking the list away (dev-page:67).
     if (!point || panel === "full") return null;
     // Same idea as the arrow keys: which screen side is "forward" (step
@@ -249,8 +249,8 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // keys does (`focus` above) and the same as a tap on a marker does on
   // the planner's map. It used to select without moving, which made the
   // same gesture mean two different things on two maps.
-  /** Leaflet closing the card -- a tap on the chart -- has to clear the
-   *  selection too, or React would open it straight back up. */
+  /** The card put away -- its close, Escape, a tap on the chart -- has
+   *  to clear the selection too, or React would open it straight back up. */
   const deselect = useCallback(() => select(null), [select]);
 
   const onSelect = useCallback((picked: Point) => {

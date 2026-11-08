@@ -47,11 +47,11 @@ const ApproachLesson = lazy(() => import("./ApproachLesson"));
  *
  * A pattern is picked by its runway, as a chip, the runway the wind
  * favours marked (the redesign's A); it is drawn on the map
- * (PatternLayer). An instrument procedure from the FAA's CIFP
+ * (PatternsGl). An instrument procedure from the FAA's CIFP
  * (wingtip.procedures) is picked in a sheet of its own, as ForeFlight's
  * Procedure Advisor picks one: the field's of that kind, then the one
  * procedure, its transition chosen, the map above the sheet drawing it
- * as it is chosen (`onPreview`, ProcedureLayer), its fixes listed, and
+ * as it is chosen (`onPreview`, ProceduresGl), its fixes listed, and
  * Add to Route at the foot. Its close goes back to the list.
  *
  * The view: its state, its asks and the runways picked into the wind are

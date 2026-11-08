@@ -7,9 +7,8 @@ import { fixRadialDistance } from "../navaid";
 import { TEXT } from "../text";
 
 /**
- * The card a tap on a VFR waypoint opens (the map asks for them in
- * waypointsQuery and draws them in lib/map/gl/layers/NavaidsGl's
- * WaypointsGl).
+ * The card a tap on a VFR waypoint opens (the map draws them from the
+ * overlay tiles: lib/map/gl/layers/NavaidsGl's WaypointsGl).
  */
 
 export type Waypoint = { ident: string; lat: number; lon: number; description?: string | null };

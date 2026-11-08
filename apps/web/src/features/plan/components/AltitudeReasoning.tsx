@@ -6,6 +6,7 @@ import type { AltitudeSegment, Leg, NavLogAltitude } from "../../../lib/api/type
 import { CRUISE_REFERENCE_FT } from "../../../lib/performance";
 import { TEXT } from "../../../lib/text";
 import { flightLevel } from "../../../lib/units";
+import { WINDS_MODELLED } from "../../../lib/windsAloft";
 import { capitalised, faaWords, suaAltitudes } from "../../../lib/advisories";
 import { altFt, bearing, cruiseByAltitude, describeFuel, describeSteps, describeTime, PLAN_NAME } from "../format";
 
@@ -345,8 +346,10 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
     }),
     body: (
       <>
-        Lowest and highest keep to the bottom and the top of the legal altitudes; fastest takes the winds aloft for
-        the least time, and economical for the least fuel, every climb counted.{" "}
+        {/* The winds named as the nav log names them: the GFS's, modelled
+            (lib/windsAloft). */}
+        Lowest and highest keep to the bottom and the top of the legal altitudes; fastest takes the winds aloft,
+        {` ${WINDS_MODELLED}, `}for the least time, and economical for the least fuel, every climb counted.{" "}
         {nav.options.map(o => (
           `${PLAN_NAME[o.kind]}: ${describeSteps(o)}, ${describeTime(o)}, ${describeFuel(o)}`
           + (o.climb_penalty_min > 0 ? `, ${Math.round(o.climb_penalty_min)} min of it climbing` : "")

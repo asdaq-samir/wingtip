@@ -61,6 +61,18 @@ C81 -> KDLH read the corridor's sectional tiles: 185 s of a 215 s run
 with the charts left out. The other jobs keep the charts in a cache of
 their own, so this one is separate (`tests-raw-planner-v2-`).
 
+The browser suite's planner builds no cycle pack (`CYCLE_PACK=0` in
+`infra/docker-compose.ci.yml`, 400 MB a run), so no overlay tiles of its
+own, and the map's airspace, airports, navaids and fixes are drawn from
+the tiles alone. The e2e job copies the suite's own archive
+(`apps/web/e2e/fixtures/overlay-tiles`, 2.2 MB, the box 91.5 W to 87.2 W,
+41.4 N to 43.4 N: Chicago, C81 and the fields west of them) into
+`data/raw/packs/tiles` before the planner starts. It is built from a
+local stack's cycle pack by `scripts/build/e2e-overlay-tiles.sh`, again
+whenever `wingtip.vector_tiles.VERSION` changes (test_vector_tiles checks
+it). Specs about the chart's fields use the real ones in that box; a
+mocked `/api/airports/in-view` only gives them their weather.
+
 A pull request merges once "CI passed" is green; Claude's review no
 longer gates it and runs only when the "review" label is put on the pull
 request (the owner, 2026-11-06), so agents run the checks that cover their

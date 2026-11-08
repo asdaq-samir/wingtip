@@ -1,5 +1,5 @@
 import { faaWords, placeWords } from "../advisories";
-import type { AirspaceVolume } from "../api/types";
+import type { AirspaceVolume } from "./overlayTypes";
 import { altFt } from "../units";
 
 /**
@@ -34,7 +34,7 @@ export function airspaceLabel(
   return { kind: "shelf", top: `${volume.ceiling_excluded ? "-" : ""}${hundreds(volume.ceiling_ft)}`, floor: volume.floor_sfc ? "SFC" : hundreds(volume.floor_ft) };
 }
 
-/** The figures of a volume's card (AirspaceLayer), as the pilot reads
+/** The figures of a volume's card (AirspaceCard), as the pilot reads
  *  them: its name, floor, ceiling and hours. */
 export type AirspaceFacts = { name: string; floor: string; ceiling: string; hours: string | null };
 

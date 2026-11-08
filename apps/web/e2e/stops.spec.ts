@@ -751,10 +751,8 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
   expect(answer.ok()).toBe(true);
   expect((await answer.json()).waypoints.map((w: { ident: string }) => w.ident)).toContain("VPBNG");
 
-  // One waypoint, where it is: VPBNG, by Campbell. In close enough for
+  // VPBNG, by Campbell, from the map's overlay tiles. In close enough for
   // the waypoints' marks -- the wheel over C81, a level at a time.
-  await page.route(url => url.pathname.endsWith("/waypoints/in-view"), route =>
-    route.fulfill({ json: { waypoints: [{ ident: "VPBNG", lat: 42.2673, lon: -88.1311, description: "3 nm SW of Campbell" }] } }));
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   const departure = page.locator(".maplibregl-marker", { hasText: "C81" }).first();
   await expect(departure).toBeVisible({ timeout: slow(30000) });
@@ -777,7 +775,7 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
     await page.waitForTimeout(600);
   }
   // The waypoint drawn, its magenta triangle and ident (WaypointsLayer).
-  await expect.poll(async () => (await inSight()).map(w => w.ident), { timeout: slow(20000) }).toEqual(["VPBNG"]);
+  await expect.poll(async () => (await inSight()).map(w => w.ident), { timeout: slow(20000) }).toContain("VPBNG");
   // Once the map has stopped: a tap as the zoom eases in landed where the
   // mark had been.
   let was = "";

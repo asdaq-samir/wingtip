@@ -24,13 +24,13 @@ import { CardCloseContext } from "../cardClose";
 import { prefetchRing, registerOverlayProtocol } from "../overlayTiles";
 import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../ownShip";
 import { GlMapContext, SLOTS, adoptLayers, parkLayers, slotId, sweepLayers, type DrawnImage, type GlMapApi, type GlTap, type Slot } from "./glLayer";
-import { OVERLAY_SOURCE, applyOverlayFilters, overlayPictures, overlayStyle } from "./glOverlays";
+import { OVERLAY_SOURCE, addOverlays, applyOverlayFilters, overlayPictures, overlayStyle } from "./glOverlays";
 import { glZoom } from "./glStyle";
 import { RulerGl } from "./layers/RulerGl";
 import { tvPlatform, zoomInKey, zoomOutKey } from "../../tv";
 
 const COUNTRY: [number, number] = [39.5, -98.35];
-/** As MapShell's: the least the map is fitted to round a route, ~10 nm. */
+/** The least the map is fitted to round a route, ~10 nm. */
 const MIN_FIT_DEG = 0.08;
 /** RouteMap's: how close in an airport's card brings the map. */
 const PLACE_ZOOM = 9;
@@ -94,7 +94,7 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
   const m = new maplibregl.Map({
     container: holder, style, center: [lon, lat], zoom: glZoom(last ? OPEN_ZOOM : COUNTRY_ZOOM),
     minZoom: glZoom(3), attributionControl: false,
-    // A chart is read north up, as Leaflet's is: no turn, no tilt.
+    // A chart is read north up: no turn, no tilt.
     dragRotate: false, pitchWithRotate: false, touchPitch: false,
     // On a TV (lib/tv) the map takes the remote's arrows while focused.
     keyboard: onTv,
@@ -113,22 +113,22 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
   if (onTv) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
   m.touchZoomRotate.disableRotation();
   m.setPadding(padOf(insets));
-  // A terminal sheet's tile where it has none is a 404, as Leaflet's
-  // overlay leaves blank: not an error to say.
+  // A terminal sheet's tile where it has none is a 404, left blank: not
+  // an error to say.
   m.on("error", () => {});
   // Whether it is moving, on its element, for the browser tests to wait
   // on a still map (e2e helpers' mapStill).
   const el = holder;
   m.on("movestart", () => { el.dataset.moving = ""; });
   // And where it is: its middle, and where the point it opened on is on
-  // the screen now (as Leaflet's pane's offset was), and the layers drawn
+  // the screen now, and the layers drawn
   // bottom to top.
   const anchor = m.getCenter();
   const say = () => {
     const c = m.getCenter(), p = m.project(anchor);
     el.dataset.center = `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`;
     el.dataset.offset = `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-    // In the app's levels (Leaflet's: MapLibre's zoom plus one).
+    // In the app's levels (MapLibre's zoom plus one, glStyle).
     el.dataset.zoom = (m.getZoom() + 1).toFixed(3);
   };
   say();
@@ -224,7 +224,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   const known = !!(course ?? chartOnly);
   // The overlay tiles' name and the overlays' pictures, for the map's
   // first style, each waited for at most FIRST_STYLE_WAIT_MS.
-  const { status: tilesStatus } = useQuery(overlayTilesQuery);
+  const { status: tilesStatus, data: tiles } = useQuery(overlayTilesQuery);
   const [drawnPictures, setDrawnPictures] = useState(() => pictures !== null);
   const [waited, setWaited] = useState(false);
   useEffect(() => {
@@ -258,8 +258,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       m = makeMap(holder, onTv, insetsRef.current);
     }
     // Whether its first style has the overlay tiles: a map made without
-    // them (no archive, or its name too slow to come) keeps the in-view
-    // layers for its life.
+    // them (no archive yet, or its name too slow to come) has them added
+    // once they come (below), and draws no overlays till then.
     const take = () => {
       // The sheet's room as it is now: follow() moves only a map it has,
       // so a sheet that settled while this one loaded left it padded for
@@ -289,6 +289,19 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     };
   }, [ready, onTv]);
 
+  // The overlay tiles added to a map made without them, once their name
+  // comes: the airspace, airports and navaids are the tiles' alone.
+  useEffect(() => {
+    if (!map || overlays || !tiles) return;
+    // Said once the style has taken them (its styledata), for the layers'
+    // taps and probes to find them.
+    const taken = () => setOverlays(true);
+    map.once("styledata", taken);
+    addOverlays(map, tiles);
+    overlaysOf.set(map, tiles);
+    return () => { map.off("styledata", taken); };
+  }, [map, overlays, tiles]);
+
   // The settings' filters on the overlay tiles as they change
   // (applyOverlayFilters).
   useEffect(() => {
@@ -297,8 +310,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     return usePreferences.subscribe(() => applyOverlayFilters(map));
   }, [map, overlays]);
 
-  // A remote has no pinch: its zoom keys zoom the map while it is focused
-  // (TvMapKeys on the Leaflet map).
+  // A remote has no pinch: its zoom keys zoom the map while it is focused.
   useEffect(() => {
     if (!map || !onTv) return;
     const container = map.getCanvasContainer();
@@ -340,7 +352,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
           return;
         }
       }
-      // The chart itself: a card open is put away, as Leaflet's popup.
+      // The chart itself tapped: a card open is put away.
       setCard(null);
       for (const miss of registry.misses) miss(e);
     };
@@ -352,8 +364,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   // its own are in (children's effects run before this one's).
   useEffect(() => { if (api) sweepLayers(api.map); }, [api]);
 
-  // Fit to the route: once per route, clear of the panel and the buttons,
-  // as MapShell's.
+  // Fit to the route: once per route, clear of the panel and the buttons.
   const routeKey = course ? `${course.departure.ident}->${course.destination.ident}` : null;
   const fit = useCallback((animate: boolean) => {
     if (!map || !course) return;
@@ -391,7 +402,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     return () => { useOwnShip.setState({ routeDrawn: false, routeOutOfView: false }); };
   }, [course, map]);
   // Whether the route is out of sight at each rest, for the location
-  // arrow to offer it back (MapShell's).
+  // arrow to offer it back.
   useEffect(() => {
     if (!map || !course) return;
     const line = course.course_line as [number, number][];
@@ -427,7 +438,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       map.flyTo({ ...aim, padding: padOf(to), duration: prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 });
       return;
     }
-    // Half way to all the way up and back the map stays put (MapShell).
+    // Half way to all the way up and back the map stays put.
     if (to.up !== was.up && to.out === was.out) {
       map.setPadding(padOf(to));
       return;

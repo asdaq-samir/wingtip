@@ -169,7 +169,7 @@ void queryClient.prefetchQuery({ ...chartQuery, meta: { silent: true } });
 // chunk's, asked for here on its own.
 void queryClient.fetchQuery(overlayTilesQuery)
   .then(tiles => import("./lib/map/overlayTiles").then(m => m.warmOverlayArchive(tiles)))
-  .catch(() => { /* no archive: the map asks the in-view endpoints */ });
+  .catch(() => { /* no archive yet: the map adds the overlays once there is one */ });
 
 const opening = new URLSearchParams(window.location.search);
 const openingDep = opening.get("dep")?.trim().toUpperCase();

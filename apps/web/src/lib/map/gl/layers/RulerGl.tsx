@@ -31,7 +31,7 @@ export function RulerGl() {
       if (hold) window.clearTimeout(hold.timer);
       hold = null;
     };
-    // MapLibre's zoom is Leaflet's less one: the same fraction of a level.
+    // A difference of zooms: the same in MapLibre's levels as in the app's.
     const begin = () => {
       if (!hold) return;
       if (Math.abs(map.getZoom() - hold.zoom) > PINCHED_LEVELS) return cancelHold();

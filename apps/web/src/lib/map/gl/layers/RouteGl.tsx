@@ -44,7 +44,7 @@ export interface GlEndpoint {
   select: () => void;
 }
 
-/** RouteMap's NAME_ZOOM: every checkpoint in sight named from 10 (Leaflet's). */
+/** Every checkpoint in sight named from 10, in the app's levels. */
 const NAME_ZOOM = 10;
 
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
@@ -70,7 +70,7 @@ const NAMES: SymbolLayerSpecification = {
 };
 
 /**
- * The route: the course line (CourseLine's white casing and magenta
+ * The route: the course line (a white casing under a magenta
  * core), its checkpoints numbered in flight order and named closer in (a
  * tap the checkpoint's card, the map flying in to it), the points they
  * were chosen from, and its departure, stops and destination as every
@@ -85,7 +85,7 @@ export function RouteGl({ course, checkpoints, candidates, endpoints }: {
   useGlLayer("top", MARK_SOURCES, [CANDIDATE_DOTS, NAMES]);
   const line = useMemo(() => (course ? routeFeature(course.course_line as [number, number][]) : null), [course]);
   useGlData(ROUTE_SOURCE, line);
-  // The course drawn, for the browser tests (the Leaflet map's path).
+  // The course drawn, for the browser tests.
   useGlProbe("route-line", ["route-core"], () => ({ course: true }));
   useGlProbe("candidate-marks", ["candidates"], f => ({ key: f.properties.key }));
   const dots = useMemo<GeoJSON.FeatureCollection>(() => ({

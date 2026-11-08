@@ -6,6 +6,7 @@ import { areaColour } from "../../../weatherMap";
 import { AreaCard, PirepCard, WindCard } from "../../WeatherCards";
 import { RADAR_URL, SATELLITE_URL, barbIcon, pirepIcon, weatherBoxOf } from "../../weatherLayer";
 import { useWeatherLayers } from "../../weatherLayers";
+import { WINDS_MODELLED } from "../../../windsAloft";
 import { FADE_IN_MS, useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../glLayer";
 import { glZoom } from "../glStyle";
 import { useGlProbe } from "../useGlProbe";
@@ -78,7 +79,7 @@ export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | nul
     })) : []),
     ...(windsFt !== null ? (data?.winds?.stations ?? []).map(w => ({
       key: `wind-${w.ident}`, lat: w.lat, lon: w.lon, icon: barbIcon(w),
-      title: `${w.ident}: ${Math.round(w.dir_true_deg)}° true at ${Math.round(w.speed_kt)} kt`,
+      title: `${w.ident}: ${Math.round(w.dir_true_deg)}° true at ${Math.round(w.speed_kt)} kt, ${WINDS_MODELLED}`,
       onTap: () => openCard(<WindCard key={w.ident} wind={w} altitudeFt={windsFt} />),
     })) : []),
   ], [data, pireps, windsFt, openCard]);

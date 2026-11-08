@@ -16,7 +16,7 @@ import { useGlMarks, type GlMark } from "../useGlMarks";
 import { useGlLines, type GlRun } from "../useGlLines";
 
 /**
- * The Class B fields' weather, as chips over the chart (ClassBLayer), at
+ * The Class B fields' weather, as chips over the chart, at
  * the settings' Class B Weather: a tap the field's card; a hover shows the
  * terminal sheet over it while the pointer is there.
  */
@@ -50,11 +50,11 @@ export function ClassBGl({ chart, route, onPreview, onSelectPlace }: {
 }
 
 /**
- * What is ahead of own ship in the air (AheadLayer, lib/map/ahead): each
+ * What is ahead of own ship in the air (lib/map/ahead): each
  * alert's point ringed in its level's colour, a dashed line out to it
  * from own ship where it is not already inside.
  */
-/** AheadLayer's inks: a warning red, a caution amber. */
+/** The alerts' inks: a warning red, a caution amber. */
 const AHEAD_INK = { warning: "#dc2626", caution: "#d97706" } as const;
 
 export function AheadGl() {
@@ -72,7 +72,7 @@ export function AheadGl() {
 }
 
 const aheadIcons = new Map<string, IconLike>();
-/** An alert's ring, as AheadLayer's circle: its level's colour over a wash. */
+/** An alert's ring, a circle in its level's colour over a wash. */
 function aheadIcon(level: "warning" | "caution"): IconLike {
   let icon = aheadIcons.get(level);
   if (!icon) {

@@ -108,7 +108,7 @@ def _ensure_overlay_tiles() -> None:
         return
     try:
         vector_tiles.ensure(altitude.DEFAULT_FAA_CACHE_DIR)
-    except Exception:  # noqa: BLE001 -- the map asks the in-view endpoints meanwhile
+    except Exception:  # noqa: BLE001 -- the map draws no overlays meanwhile
         log.exception("overlay tiles not built")
 
 

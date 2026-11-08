@@ -320,7 +320,13 @@ library (`lib/map/overlayTiles.ts`). They are in the map's first style
 (`glOverlays.ts`), so they load per tile with the chart, with nothing
 asked of the planner for the view and no wait on the engine; what
 changes over them (the fields the settings hide, the route's own
-fields, each field's weather) is set on their layers.
+fields, each field's weather, from `/api/airports/in-view`'s reporting
+fields) is set on their layers. They are the only source of those
+marks: a map made before the archive's name came (or before the
+planner built it) draws none, and has them added once it comes
+(`addOverlays`). The browser suite's stack has a small archive of its
+own round its corridor (`apps/web/e2e/fixtures/overlay-tiles`, see
+docs/CI.md).
 
 **Loading.** The map is drawn before the engine has loaded: `GlBootMap`
 holds the chart and the overlays alone, which ask the engine nothing,

@@ -3,7 +3,7 @@ import type { LatLon } from "../onRoute";
 
 /**
  * The legs a hazard in the Brief is on, shown on the map at the pilot's
- * tap (LegHighlightLayer): `key` says which hazard, so a second tap on
+ * tap (LegHighlightGl): `key` says which hazard, so a second tap on
  * the same one puts them away.
  */
 export const useLegHighlight = create<{

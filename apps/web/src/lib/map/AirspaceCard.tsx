@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { AirspaceVolume } from "../api/types";
+import type { AirspaceVolume } from "./overlayTypes";
 import { cn } from "cn";
 import { TEXT } from "../text";
 import { airspaceFacts } from "./airspaceLabel";
@@ -13,8 +13,8 @@ import { airportQuery } from "../queryClient";
 import { usePointActions } from "./pointActions";
 
 /**
- * The card a tap on a Class B, C or D's line opens (the map asks for them
- * in airspaceQuery and draws them in lib/map/gl/layers/AirspaceGl):
+ * The card a tap on a Class B, C or D line opens (the map draws them from
+ * the overlay tiles: lib/map/gl/layers/AirspaceGl):
  * each volume's line from the FAA's own airspace file -- the one the
  * chart is drawn from -- with its altitudes, and its card: its class,
  * name, floor, ceiling and hours, who to call and what it takes to go in
