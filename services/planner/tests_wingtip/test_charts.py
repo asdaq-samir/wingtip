@@ -471,6 +471,22 @@ def test_palette_png_keeps_the_colours_and_the_transparency():
     assert len(png) < len(rgba_png.getvalue()) / 2
 
 
+def test_retina_tile_is_a_palette_png_too():
+    # A 512-pixel @2x tile with resampled edges: kept as a palette PNG,
+    # a quarter the bytes of full colour (encode_png).
+    ramp = np.linspace(0, 255, 512, dtype=np.uint8)
+    rgba = np.zeros((512, 512, 4), np.uint8)
+    rgba[:, :, 0] = ramp[None, :]
+    rgba[:, :, 1] = ramp[:, None]
+    rgba[:, :, 2] = 200
+    rgba[:, :, 3] = 255
+    png = charts.encode_png(rgba)
+    assert Image.open(io.BytesIO(png)).mode == "P"
+    back = charts._decode_rgba(png)
+    assert back.shape == (512, 512, 4)
+    assert np.abs(back[:, :, :3].astype(int) - rgba[:, :, :3]).mean() < 8
+
+
 def test_render_pyramid_writes_every_tile_of_every_sheet_and_composites_seams(tmp_path, monkeypatch):
     monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     left_box, right_box = (-90.0, 41.0, -88.0, 43.0), (-88.0, 41.0, -86.0, 43.0)
