@@ -143,6 +143,11 @@ describe("plannedWords and windsOutOfDate", () => {
     expect(plannedWords(null)).toBe("");
   });
 
+  it("says the winds are the GFS's, with its run and forecast hour", () => {
+    const gfs = { ...totals, winds: { ...totals.winds!, modelled: true, run: "2026-10-20T06:00:00Z", forecast_hour: 6 } } as Totals;
+    expect(plannedWords(gfs)).toBe("Planned 0812Z · modelled winds (GFS 06Z +6 h) for use 0900–1800Z");
+  });
+
   it("has the winds out of date only past their period's end", () => {
     expect(windsOutOfDate(totals, Date.parse("2026-10-20T17:59:00Z"))).toBe(false);
     expect(windsOutOfDate(totals, Date.parse("2026-10-20T18:01:00Z"))).toBe(true);
