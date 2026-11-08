@@ -12568,7 +12568,7 @@
         "type": "object"
       },
       "PyramidPass": {
-        "description": "A pass of `python -m wingtip.charts pyramid` under way: sheets done of\nthe sheets it set out to render, and the one it is on.",
+        "description": "A pass of the charts job's `pyramid` under way: sheets done of\nthe sheets it set out to render, and the one it is on.",
         "properties": {
           "current": {
             "anyOf": [
@@ -18093,7 +18093,7 @@
     },
     "/api/charts/refresh": {
       "post": {
-        "description": "Fetch and render the FAA's current chart cycle now, in a\nsubprocess of the planner's own -- the same job it runs daily by\nitself. `started` is False when one is already running.",
+        "description": "Fetch and render the FAA's current chart cycle now, and the\noverlay tiles where due: the charts job's container (services/jobs/\ncharts), started through the dev-services sidecar -- the same job the\nhourly check starts. `started` is False when it is already running;\nwithout the sidecar the answer says how to run it by hand.",
         "operationId": "refresh_charts_api_charts_refresh_post",
         "responses": {
           "200": {

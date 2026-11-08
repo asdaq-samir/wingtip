@@ -41,8 +41,8 @@ in the section noted next to it:
 ```mermaid
 flowchart LR
     subgraph pipeline["§2 ML pipeline"]
-        collect[pipeline-processing<br/>collect] --> engineer[pipeline-processing<br/>engineer-features]
-        engineer --> retrain[pipeline-training<br/>retrain]
+        collect[retrain job<br/>collect] --> engineer[retrain job<br/>engineer-features]
+        engineer --> retrain[retrain job<br/>retrain]
         retrain --> registry[model_registry<br/>evaluate / promote]
     end
     run["§3 retrain<br/>(the training run: the row above, in order)"] -.-> collect
@@ -129,10 +129,10 @@ Six instructions cover almost everything you'll see here:
 `CMD` vs `ENTRYPOINT`: `ENTRYPOINT` is the fixed command; anything passed
 to `docker run <image> <args>` (or Compose's `command:`) gets appended as
 arguments to it. `CMD` is the *whole* default command, fully overridable.
-This repo uses `ENTRYPOINT` for the pipeline images specifically so
-`docker compose run --rm pipeline-training retrain` can pass `retrain` as
+This repo uses `ENTRYPOINT` for the jobs' images specifically so
+`docker compose run --rm retrain retrain` can pass `retrain` as
 an argument to a fixed `python3 -m wingtip.pipeline` — see
-[`ml/Dockerfile.training`](../ml/Dockerfile.training).
+[`services/jobs/retrain/Dockerfile`](../services/jobs/retrain/Dockerfile).
 
 ### Multi-stage builds
 
@@ -173,9 +173,9 @@ from its cache.
 |---|---|---|
 | [`services/Dockerfile.base`](../services/Dockerfile.base) | `python:3.14-slim` (by digest) | The base the four below are built FROM: wingtip's own requirements (`services/planner/requirements-wingtip.txt`) and its Rust extension (`wingtip_native`, compiled in a stage of its own with Rust copied in, so the base carries the wheel and no toolchain), installed once. Each image names it as the build context `wingtip-base`: compose's `base` service, a bake's `target:base`. Before it, each image built the engine and installed the same requirements itself, the same layers four times over on disk. |
 | [`ml/Dockerfile.ml`](../ml/Dockerfile.ml) | `wingtip-base` | Jupyter and scikit-learn over `wingtip`'s own list, for notebooks 01–03 and 08, and nothing else: the PyTorch, TensorFlow, Spark and sentence-transformers comparison notebooks, and the JDK and CUDA-free torch wheel they needed, went on 2026-11-06, since only scikit-learn reaches a pilot. Carries no source; compose bind-mounts the checkout. |
-| [`ml/Dockerfile.processing`](../ml/Dockerfile.processing) | `wingtip-base` | Deliberately thin: pandas/requests/pyarrow only, no scikit-learn. Mirrors what a SageMaker *Processing Job* container needs. |
-| [`ml/Dockerfile.training`](../ml/Dockerfile.training) | `wingtip-base` | Adds scikit-learn/joblib on top, so it can run every stage: the training run (`python -m wingtip.pipeline run`, compose's `retrain`) runs in it. Kept as a *separate* image from `.processing` rather than one shared image, because Processing and Training are different constructs on AWS with different container contracts — see [Section 2](#2-the-ml-pipeline). |
-| [`services/planner/Dockerfile`](../services/planner/Dockerfile) | `wingtip-base` | FastAPI plus the chart-vision stack (numpy, Pillow, shapely), and the chart model's scikit-learn, pinned to the training image's. Bind-mounts the repo, so a `services/planner/wingtip` edit needs a restart, not a rebuild. |
+| [`services/jobs/retrain/Dockerfile`](../services/jobs/retrain/Dockerfile) | `wingtip-base` | The retrain job: scikit-learn/joblib on top, pinned to the planner's, so it runs every stage, the training run (`python -m wingtip.pipeline run`, compose's `retrain`) among them. A thin processing image beside it, shaped for a SageMaker Processing Job, went with the jobs split (#535): nothing ran it but this run. |
+| [`services/jobs/charts/Dockerfile`](../services/jobs/charts/Dockerfile) | `python:3.14-slim` → `wingtip-base` | The charts job: tippecanoe built from its tagged release in a first stage, its two programs copied on, rasterio and boto3 on top. Renders a chart cycle, packs it into archives, builds the overlay tiles, publishes to S3. |
+| [`services/planner/Dockerfile`](../services/planner/Dockerfile) | `wingtip-base` | FastAPI plus the chart-vision stack (numpy, Pillow, shapely), and the chart model's scikit-learn, pinned to the retrain job's. No tippecanoe and no boto3: what builds and publishes tiles is the charts job's. Bind-mounts the repo, so a `services/planner/wingtip` edit needs a restart, not a rebuild. |
 | [`services/gateway/Dockerfile`](../services/gateway/Dockerfile) | `node:26-slim` → `maven:...` → `eclipse-temurin:25-jre` | Multi-stage, see above. |
 
 ### The images those Dockerfiles produce
@@ -447,7 +447,7 @@ the model serving, without pandas or scikit-learn of its own.
 The five stages run in order, every time, from one command:
 
 ```bash
-docker compose run --rm pipeline-training run    # python -m wingtip.pipeline run
+docker compose run --rm retrain                  # python -m wingtip.pipeline run
 ```
 
 Open `run()` in [`services/planner/wingtip/pipeline.py`](../services/planner/wingtip/pipeline.py).
@@ -487,11 +487,10 @@ and the same one-at-a-time rule, with nothing to run between runs. An
 orchestrator earns its place when there is a schedule, fan-out, retries
 across machines or many pipelines to watch; reach for one then.
 
-`pipeline-processing` and `pipeline-training` stay separate images, and
-each stage still runs alone (`docker compose run --rm pipeline-processing
-collect`): the split mirrors SageMaker's Processing and Training Jobs,
-which is why `retrain()` still reads `SM_CHANNEL_*` and `SM_MODEL_DIR`
-when they are set.
+Each stage still runs alone (`docker compose run --rm retrain
+collect`), and `retrain()` still reads `SM_CHANNEL_*` and `SM_MODEL_DIR`
+when they are set, so the image would serve as a SageMaker Training
+Job's as it is.
 
 ---
 

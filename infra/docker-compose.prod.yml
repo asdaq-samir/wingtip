@@ -6,14 +6,19 @@
 #
 # What is not here, on purpose:
 # - Mailpit: sign-in mail goes through Amazon SES (MAIL_* below).
-# - The pipelines and the training run: retraining runs on the owner's machine.
+# - The retrain job: retraining runs on the owner's machine, where the
+#   ratings are (data/labels), and deploy.sh syncs the promoted model.
 # - web-build and dev-services: development tools.
-# - Chart tile drawing: CHARTS_AUTO_REFRESH=0. A scheduled Fargate Spot
-#   task draws each 56-day cycle once and publishes it to S3, and the
-#   map fetches tiles from CloudFront (CHART_TILES_URL), so this 4 GB
-#   server never draws the whole country. The FAA's NASR and obstacle
-#   files are still fetched as each edition comes out
-#   (FAA_DATA_AUTO_REFRESH, on).
+# - Chart tile drawing: CHARTS_AUTO_REFRESH=0. The charts job draws each
+#   56-day cycle once as a scheduled Fargate Spot task and publishes it
+#   to S3 as one archive per kind and density, which the planner reads a
+#   tile at a time through CloudFront (CHART_TILES_URL) and CloudFront
+#   caches, so this 4 GB server never draws the whole country. The
+#   FAA's NASR and obstacle files are still fetched as each edition comes
+#   out (FAA_DATA_AUTO_REFRESH, on).
+# - The map's overlay tiles: built from the planner's cycle pack by the
+#   charts job's `overlays`, below, which the server's cron runs hourly
+#   (deploy.sh writes the entry); a no-op until a new pack is written.
 #
 # Run on the server, from /srv/wingtip with its .env beside this
 # file (infra/server/env.example lists every key):
@@ -176,6 +181,26 @@ services:
       # "oauth" turns on Sign in with Google and Apple (OAuthClientsConfig).
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
       JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=40 -XX:TieredStopAtLevel=1
+
+  # The charts job's overlay tiles (services/jobs/charts): one-off, behind
+  # the `jobs` profile so `up` never starts it; cron runs
+  #   docker compose -f infra/docker-compose.prod.yml run --rm charts-overlays
+  # every hour, which builds the archive only where the planner's cycle
+  # pack has none. The same data folder as the planner, which serves it.
+  charts-overlays:
+    profiles: ["jobs"]
+    image: ${IMAGE_REGISTRY}/charts:${IMAGE_TAG:-latest}
+    command: ["overlays"]
+    volumes:
+      - /srv/wingtip/data:/workspace/data
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_REGION:-}
+        awslogs-group: ${LOG_GROUP:-}
+        mode: non-blocking
+        max-buffer-size: 4m
+        tag: "{{.Name}}"
 
 volumes:
   caddy-data:

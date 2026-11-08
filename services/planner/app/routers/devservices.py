@@ -2,9 +2,11 @@
 
 The console offers a door into Jupyter. A door into something that is
 not running is a dead link, and telling a developer to go and type
-`docker compose up -d ml` is a worse answer than doing it. The training
-run (compose's `retrain`) is started the same way, by /api/retrain
-(routers/system.py), and its container's state is read here too.
+`docker compose up -d ml` is a worse answer than doing it. The jobs
+(services/jobs) are started the same way: the training run (compose's
+`retrain`) by /api/retrain (routers/system.py), the charts job's
+`charts` and `charts-overlays` by app.chart_refresh; their containers'
+state is read here too.
 
 This service never touches Docker itself. It asks the dev-services
 sidecar (infra/dev-services), the one process holding the socket for
@@ -52,6 +54,20 @@ def _sidecar(method: str, path: str) -> requests.Response | None:
     except requests.RequestException as err:
         log.info("dev-services sidecar unreachable, so services cannot be started from here: %s", err)
         return None
+
+
+def start(name: str) -> bool | None:
+    """Start one of the sidecar's job containers (the charts job's, for
+    app.chart_refresh): whether it was started -- False when it was
+    running already, or has no container yet -- or None where there is
+    no sidecar to ask."""
+    response = _sidecar("POST", f"/services/{name}/start")
+    if response is None:
+        return None
+    if response.status_code != 200:
+        log.warning("%s not started: %s", name, retry.upstream_detail(response, "the dev-services sidecar"))
+        return False
+    return bool(response.json().get("started"))
 
 
 def service_state(name: str) -> str | None:

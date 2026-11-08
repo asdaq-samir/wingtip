@@ -9,7 +9,7 @@
 https://cdn:9443, https://localhost:9443 {
 	tls internal
 
-	# /tiles/* is the S3 bucket: the cycle's pyramid, laid out as
+	# /tiles/* is the S3 bucket: serving.json and the cycle's archives, laid out as
 	# wingtip.charts.publish uploads it.
 	handle_path /tiles/* {
 		root * /srv/tiles

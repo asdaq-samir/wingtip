@@ -18,14 +18,17 @@ The expensive parts of the old design, an ALB, RDS, a NAT gateway, VPC
 endpoints and Fargate services running all month, cost about $200–250
 a month for a planner nobody was using yet. This design costs a fifth of
 that (below), and the map is faster: tiles come from the nearest
-CloudFront edge, not from a planner drawing them on request.
+CloudFront edge, kept there from the planner reading them out of a
+pyramid drawn ahead of time, not drawing them on request.
 
 ### What runs where
 
 ```
 pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                    │
-                   ├─ /tiles/*        ──▶ S3 tiles bucket       cached a month (immutable, cycle in the path)
+                   ├─ /tiles/*        ──▶ S3 tiles bucket       serving.json and the archives, read by the planner
+                   ├─ /api/planner/chart-tile/*
+                   │                  ──▶ the server            a tile out of its archive, cached (cycle, revision in the address)
                    ├─ /app/assets/*   ──▶ the server            cached a year (fingerprinted)
                    ├─ the chart, the airport search, the stock aircraft
                    │                  ──▶ the server            cached by their own header: a minute, an hour
@@ -40,10 +43,13 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                                      └──▶ db (Postgres 18, on the data disk)
                           nightly pg_dump ─▶ S3 server bucket (14 days)
 
-EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: python -m wingtip.charts refresh
+EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: the charts job (services/jobs/charts), refresh
    a no-op until the FAA's new cycle, then fetches every sheet, draws the
-   pyramid (1.5 million tiles) and publishes it to the tiles bucket,
-   serving.json last, so every browser moves to the new cycle at once
+   pyramid (1.5 million tiles), packs each kind into one PMTiles archive
+   per density and publishes them to the tiles bucket, serving.json last,
+   so every planner moves to the new cycle at once
+server cron, hourly ─▶ docker compose run --rm charts-overlays
+   the map's overlay tiles, built where the planner's new cycle pack has none
 ```
 
 - **One domain for everything** (`PublicHost`), so the gateway's Secure
@@ -68,8 +74,11 @@ EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: python -m wingtip.charts 
   SSM Run Command. The server's role can pull its own images, read its
   own secrets and write its own backups, and nothing else.
 - **The planner no longer draws tiles** (`CHARTS_AUTO_REFRESH=0`,
-  `CHART_TILES_URL`). It still reads the chart for checkpoints, from the
-  sheets under each route, fetched the first time a route needs them
+  `CHART_TILES_URL`): it reads each one out of the published archive by
+  a range request through CloudFront (`wingtip.tile_archive`, the
+  archive's header and directory read once and kept), and CloudFront
+  keeps what it answers. It still reads the chart for checkpoints, from
+  the sheets under each route, fetched the first time a route needs them
   and kept on the server's disk.
 - **The planner keeps the FAA's data current** (`FAA_DATA_AUTO_REFRESH`,
   on): four times a day it looks for a new edition of the NASR files
@@ -114,7 +123,7 @@ Prices in us-east-1, October 2026, at today's traffic:
 | EC2 t3a.medium on Spot, all month (on demand: $27.45) | ~$10, as Spot's price moves |
 | Its public IPv4 address | $3.65 |
 | 20 GB system disk and 30 GB data disk, gp3 | $4.00 |
-| S3 tiles: 1.5 million uploads a cycle ($7.50 per 56 days), 0.73 million more for the 512-pixel "@2x" tiles phones draw ($3.70), and up to three cycles stored (about 25 GB more a cycle with the @2x tiles) | ~$7.50 |
+| S3 tiles: a few dozen archives a cycle (cents; they were 2.2 million tile uploads, about $11), and up to three cycles stored (some 36 GB a cycle with the @2x tiles) | ~$2.50 |
 | Secrets Manager, three secrets | $1.20 |
 | Route 53 hosted zone | $0.50 |
 | Daily snapshots of the data disk, seven kept | ~$1 |
@@ -122,13 +131,12 @@ Prices in us-east-1, October 2026, at today's traffic:
 | ECR, CloudWatch logs, backups, the Fargate Spot refresh (under $1 a cycle) | ~$1.50 |
 | CloudFront | $0 within the always-free 1 TB and 10 million requests |
 | SES | $0.10 per 1,000 sign-in emails |
-| **Total** | **about $32** |
+| **Total** | **about $27** |
 
 With `ServerPricing=on-demand`, for a server AWS never takes back, it
-is about $46, or about $36 with a one-year Savings Plan. The next
-saving after Spot is the tiles' upload bill: one
-PMTiles archive per chart kind in place of 1.5 million files would take
-it to cents, at the cost of a PMTiles reader in the map.
+is about $41, or about $31 with a one-year Savings Plan. The next
+saving after Spot was the tiles' upload bill, and the archives (#535)
+took it to cents, the reader in the planner rather than the map.
 
 The template's `BudgetEmail` sets an alarm at 80% of $50 a month.
 
@@ -140,8 +148,9 @@ from this checkout, no source mounted, and Caddy demanding CloudFront's
 secret header. Stand-ins replace what only AWS has:
 
 - **CloudFront** is a Caddy (`cdn`) on https://localhost:9443. It serves
-  `/tiles/*` from a local chart pyramid laid out as the S3 bucket is,
-  and sends everything else to the origin with the secret header.
+  `/tiles/*` from a local tile cache laid out as the S3 bucket is
+  (serving.json and the archives), and sends everything else to the
+  origin with the secret header.
 - **SES** is a Mailpit on http://localhost:9025, where the sign-in links
   arrive.
 - **The data disk** is a folder of its own, empty at first, so the
@@ -288,7 +297,7 @@ and by its own rules when not. It is trained on the Mac, by the
 development console's Retrain or by hand:
 
 ```bash
-docker compose run --rm pipeline-training run
+docker compose run --rm retrain
 ```
 
 which promotes it into `data/models/chart/current` only if it beats the

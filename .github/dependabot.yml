@@ -40,6 +40,8 @@ updates:
     directories:
       - /ml
       - /services/planner
+      - /services/jobs/retrain
+      - /services/jobs/charts
     multi-ecosystem-group: monthly
     patterns: ["*"]
     ignore:
@@ -51,6 +53,8 @@ updates:
       - /services
       - /services/planner
       - /services/gateway
+      - /services/jobs/charts
+      - /services/jobs/retrain
       - /ml
       - /infra/dev-services
     multi-ecosystem-group: monthly

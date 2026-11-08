@@ -78,7 +78,7 @@ explicit path to production on AWS.
   planner and the model (the owner, 2026-11-06: a product, not a
   framework showcase).
 - **A cheap path to production**: one EC2 server behind CloudFront, chart
-  tiles drawn once a cycle into S3, about $32 a month — see
+  tiles drawn once a cycle into S3, about $27 a month — see
   [Target Architecture](#target-architecture-aws).
 - **CI on every push.** GitHub Actions runs the test suite and lint on
   every push/PR, then builds every service image and publishes it to GHCR
@@ -125,14 +125,15 @@ Java, and some in the web and phone apps -- and issue #482 moves them
 in, in phases: copies the engine already has, small rules, weather parsing,
 altitude selection, the nav log, then route options.
 
-The system runs today as six Docker services (`retrain` is the training image run as the whole training run, not an image of its own):
+The system runs today as these Docker services and jobs (the jobs, in [`services/jobs/`](../services/jobs), each an image of its own, behind the `jobs` profile and run when due):
 
 | Service | Role |
 |---|---|
 | `gateway` | Spring Boot — accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React app and proxies the planner |
 | `db` | PostgreSQL — application data |
 | `mailpit` | The local inbox the sign-in mail goes to (Amazon SES on AWS) |
-| `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and model training, run as one-off jobs; `retrain` is the whole training run (`python -m wingtip.pipeline run`) in the training image, the container the developer console's Retrain starts |
+| `retrain` | Job: the training run (`python -m wingtip.pipeline run`, `services/jobs/retrain`): collection, feature engineering, training, evaluation and promotion, or one stage by name; the container the developer console's Retrain starts |
+| `charts` / `charts-overlays` | Job: the charts job (`services/jobs/charts`): a new FAA chart cycle fetched, rendered and packed into one PMTiles archive per kind and density, and the map's overlay tiles built with tippecanoe from the planner's cycle pack; the planner starts it when due (`app/chart_refresh.py`) and only serves what it writes |
 | `ml` | Jupyter environment for model development and experimentation -- on demand, behind the `notebooks` profile: `docker compose up ml` |
 | `planner` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather, and the Claude features (the written briefing, checkpoint notes, words, the assistant) -- with the engine inside it for every rule |
 
@@ -201,15 +202,21 @@ gateway reaches the planner by its Compose name (`http://planner:8000`).
 - `/api/course`, `/api/checkpoints`, `/api/navlog`, `/api/detect/stream`,
   `/api/picks`, `/api/chart-tile/{kind}` — reached by the
   browser as `/api/planner/*` on `gateway`, never directly. The tile
-  endpoint renders the FAA's own chart GeoTIFFs (`wingtip.charts`, one
-  download per sheet per 56-day cycle into `data/raw/charts/`), so the
-  map depends on no hosted chart service. Its own OpenAPI page is at
+  endpoint serves the FAA's own chart GeoTIFFs as tiles (`wingtip.charts`,
+  one download per sheet per 56-day cycle into `data/raw/charts/`): out
+  of the cycle's archive for the kind (`wingtip.tile_archive`, one PMTiles
+  file per kind and density, which the charts job renders and packs, and
+  which on AWS the planner reads from S3 through CloudFront by range
+  requests), or drawn on request where there is none yet, so the map
+  depends on no hosted chart service. Its own OpenAPI page is at
   [`localhost:8084/docs`](http://localhost:8084/docs); the full endpoint
   list is in [`services/planner/README.md`](../services/planner/README.md)
 - `/api/overlay-tiles`, `/api/overlay-tiles/{name}.pmtiles` — the map's
   FAA overlays as vector tiles for MapLibre (`wingtip.vector_tiles`): one
-  PMTiles archive a cycle, built after the cycle pack by tippecanoe (in
-  the planner's image, a pinned tag) and read by the map in byte ranges
+  PMTiles archive a cycle, built from the planner's cycle pack by the
+  charts job with tippecanoe (`services/jobs/charts/overlays.py`, in the
+  job's image, a pinned tag; the planner only serves it) and read by the
+  map in byte ranges
   (the `pmtiles` protocol; `apps/web/src/lib/map/overlayTiles.ts` registers it
   and makes the source; Android's and iOS's MapLibre read `pmtiles://`
   themselves). Zooms 4 to 12, lines within `tolerance_m` (4.1 m) of the
@@ -388,7 +395,7 @@ erDiagram
 One small server behind CloudFront runs what must stay live, and what is
 the same for every pilot is drawn ahead of time and served from the edge
 — see [`README-AWS.md`](README-AWS.md) for the design, the cost (about
-$32 a month) and the runbook.
+$27 a month) and the runbook.
 
 ![AWS design](architecture-aws.svg)
 
@@ -491,12 +498,14 @@ services/planner/      the planner: app/ (FastAPI), wingtip/ (the shared Python 
                        pipeline.py, model_registry.py, navlog.py, altitude.py, etc.),
                        tests/ and tests_wingtip/ (their suites), its Dockerfile and requirements
 services/gateway/      Spring Boot API (gateway) — accounts, records, proxies the planner
+services/jobs/         the one-off jobs, an image each: retrain/ (the training run) and
+                       charts/ (the chart cycle's archives, the overlay tiles); README.md
 services/Dockerfile.base
                        the Python base (wingtip's requirements and its Rust extension)
                        every image that imports wingtip is built FROM
-ml/                    notebooks/ (numbered, run-in-order, 01-08) and the images of ml,
-                       pipeline-processing and pipeline-training with their requirements
-                       (each including wingtip's own list, services/planner/requirements-wingtip.txt)
+ml/                    notebooks/ (numbered, run-in-order, 01-08) and the notebooks' image
+                       with its requirements (including wingtip's own list,
+                       services/planner/requirements-wingtip.txt)
 infra/                 CloudFormation, the production server's files and compose file,
                        CI's compose file, local HTTPS, the rehearsal, dev-services, load-tests
 scripts/               build/, ci/, dev/
@@ -688,20 +697,23 @@ CI job breakdown is in the [Appendix](#appendix).
 | `docker compose up db` | PostgreSQL | `5432` |
 | `docker compose up gateway` | Spring Boot API and the three browser pages; brings up `db` and `planner` too | `8080` |
 | `docker compose up ml` | Jupyter, for notebooks 01-03 and 08 | `8888` (token `wingtip`) |
-| `docker compose run --rm pipeline-processing collect` | Runs `pipeline.collect()`: downloads a corridor's candidates once, and again only with `--refresh` | — |
-| `docker compose run --rm pipeline-processing engineer-features` | Runs `pipeline.engineer_features()` | — |
-| `docker compose run --rm pipeline-training retrain` | Runs `pipeline.retrain()` | — |
-| `docker compose run --rm pipeline-training python -m wingtip.model_registry evaluate` | Runs `evaluate`/`promote` | — |
-| `docker compose run --rm pipeline-training run` | The whole training run, every stage in order (`pipeline.run()`); each model promoted only if it beats the one serving. The console's Retrain starts the same thing as the `retrain` container (`docker compose create retrain` once) | — |
+| `docker compose run --rm retrain collect` | Runs `pipeline.collect()`: downloads a corridor's candidates once, and again only with `--refresh` | — |
+| `docker compose run --rm retrain engineer-features` | Runs `pipeline.engineer_features()` | — |
+| `docker compose run --rm retrain retrain` | Runs `pipeline.retrain()` | — |
+| `docker compose run --rm --entrypoint python retrain -m wingtip.model_registry evaluate` | Runs `evaluate`/`promote` | — |
+| `docker compose run --rm retrain` | The whole training run, every stage in order (`pipeline.run()`); each model promoted only if it beats the one serving. The console's Retrain starts the same thing as the `retrain` container (`docker compose create retrain charts charts-overlays` once) | — |
+| `docker compose run --rm charts` | The charts job: the overlay tiles where due, then the FAA's current chart cycle fetched, rendered and packed where due | — |
+| `docker compose run --rm charts overlays` | The overlay tiles alone, where the cycle pack has none | — |
+| `docker compose run --rm charts pack` | Every finished kind's loose tiles into its archives: the one-off conversion of a cycle drawn before there were archives | — |
 | `docker compose up planner` | Planning + chart-vision API; `gateway` proxies to it and starts it | `8084` |
 
 Notes:
 
-- `pipeline-processing`/`pipeline-training` are separate images on purpose
-  — they mirror the AWS Processing-Job/Training-Job split. They are jobs,
-  not services, behind the `pipeline` profile: a plain `docker compose up`
-  leaves them out (the training image's default command is a full
-  retrain), and naming one in `run` or `build` works as it always did.
+- The jobs are not services: behind the `jobs` profile, a plain `docker
+  compose up` leaves them out (the retrain image's default command is a
+  full retrain), and naming one in `run` or `build` starts it. The
+  processing image that mirrored a SageMaker Processing Job went with the
+  jobs split (#535): the retrain image runs every stage.
 - The training run writes each stage's start and end to
   `data/models/run.json`, which the planner reads, beside the `retrain`
   container's state from the dev-services sidecar, for the console's

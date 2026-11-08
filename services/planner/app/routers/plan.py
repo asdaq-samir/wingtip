@@ -1228,7 +1228,7 @@ def _chart_info() -> dict:
     cycle = charts.serving_cycle()
     return {
         "max_zoom": VFR_SECTIONAL_MAX_ZOOM, "min_zoom": VFR_SECTIONAL_MIN_ZOOM, "chart_cycle": cycle,
-        "chart_revision": charts.tiles_revision(cycle), "chart_tiles_base": charts.tiles_base_url(),
+        "chart_revision": charts.tiles_revision(cycle),
         "chart_layers": chart_layers(),
     }
 

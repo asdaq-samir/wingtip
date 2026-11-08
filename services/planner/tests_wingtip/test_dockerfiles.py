@@ -25,8 +25,8 @@ BASE = "services/Dockerfile.base"
 IMAGES = {
     "services/planner/Dockerfile": "planner",
     "ml/Dockerfile.ml": "ml",
-    "ml/Dockerfile.processing": "pipeline-processing",
-    "ml/Dockerfile.training": "pipeline-training",
+    "services/jobs/retrain/Dockerfile": "retrain",
+    "services/jobs/charts/Dockerfile": "charts",
 }
 
 
@@ -36,7 +36,7 @@ def froms(text: str) -> list[str]:
 
 @pytest.mark.parametrize("path", IMAGES)
 def test_the_image_is_built_from_the_base(path):
-    # The planner also builds tippecanoe in a build-only stage whose
+    # The charts job also builds tippecanoe in a build-only stage whose
     # binaries are copied on; the image itself is the last FROM.
     stages = froms((ROOT / path).read_text())
     assert stages[-1] == "wingtip-base"
@@ -62,7 +62,8 @@ def test_the_base_installs_the_requirements_and_the_wheel():
 def test_every_image_reading_wingtip_is_listed():
     readers = {
         str(p.relative_to(ROOT))
-        for p in [*ROOT.glob("services/*/Dockerfile"), *ROOT.glob("ml/Dockerfile.*"), *ROOT.glob("infra/*/Dockerfile")]
+        for p in [*ROOT.glob("services/*/Dockerfile"), *ROOT.glob("services/jobs/*/Dockerfile"), *ROOT.glob("ml/Dockerfile.*"),
+                  *ROOT.glob("infra/*/Dockerfile")]
         if "services/planner/wingtip" in p.read_text() or "requirements-wingtip" in p.read_text()
     }
     assert readers <= set(IMAGES), readers - set(IMAGES)

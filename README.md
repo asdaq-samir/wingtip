@@ -51,10 +51,11 @@ moves them in, in order.
 | `gateway` | Spring Boot: accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React front end and proxies the planner |
 | `planner` | FastAPI: works out a flight (charts, checkpoints scored by the chart model in-process, the nav log, weather, the written briefing, the assistant), the engine inside it |
 | `db` | PostgreSQL — application data |
-| `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and training, as one-off jobs; `retrain` is the whole training run in the training image, which the developer console starts |
+| `retrain` | The training run (`python -m wingtip.pipeline run`), a one-off job (`services/jobs/retrain`), which the developer console starts |
+| `charts` / `charts-overlays` | The charts job (`services/jobs/charts`): a new FAA chart cycle rendered and packed into one archive per kind, and the map's overlay tiles, which the planner starts when due; the planner only serves them |
 | `ml` | Jupyter environment for model development -- on demand: `docker compose up ml` |
 
-Six services, one `docker compose up`. Full write-up, including the AWS target architecture, is in [`docs/README.md`](docs/README.md).
+`docker compose up` starts the services; the jobs run when they are due ([`services/jobs/README.md`](services/jobs/README.md)). Full write-up, including the AWS target architecture, is in [`docs/README.md`](docs/README.md).
 
 
 ## Under the hood
@@ -65,10 +66,10 @@ Demo route: **Campbell Airport (C81)** → **Duluth International (KDLH)**.
 
 - **Checkpoints a pilot can see on the chart.** Candidates come from OpenStreetMap and the FAA's own data along the corridor, and a model trained on ratings made against the sectional scores which ones a pilot could actually spot. Picks made on the chart itself in the training workspace — where a chart-vision detector reads features straight off the sectional's raster tiles — become training labels for the candidates they land on.
 - **scikit-learn model selection.** Each retrain grid-searches Ridge, Random Forest and Gradient Boosting against a predict-the-mean baseline on the same feature set, by 5-fold cross-validation, and keeps the best; the planner scores checkpoints with the promoted model. Notebook 03 adds nested cross-validation and permutation importance.
-- **A repeatable training run.** One command (`python -m wingtip.pipeline run`, which the developer console's Retrain starts as a container) runs collection, feature engineering, training, evaluation, and promotion in order; a new model goes live only if it beats the currently deployed one on held-out metrics.
+- **A repeatable training run.** One command (`python -m wingtip.pipeline run`, the retrain job, which the developer console's Retrain starts as a container) runs collection, feature engineering, training, evaluation, and promotion in order; a new model goes live only if it beats the currently deployed one on held-out metrics.
 - **FAA-accurate flight planning.** Dead-reckoning legs (wind correction angle, true/magnetic heading, groundspeed, ETE, fuel burn) from live NOAA winds-aloft and magnetic-declination data. Cruising-altitude selection accounts for terrain/obstacle clearance (FAA MEF methodology), live Class B/C/D airspace, and current METAR/TAF/SIGMET data.
 - **Claude in the planner.** The written briefing, the checkpoint descriptions, the plain-words readings and the pilot's assistant are each a direct call through the Anthropic Python SDK from `planner`, over the planner's own figures: the briefing streams as it is written (`POST /api/briefing/narrative`), and the assistant runs the SDK's tool runner over the planner's functions.
-- **A cheap path to production.** One server behind CloudFront runs the gateway, the planner and Postgres, and a Fargate Spot task draws each 56-day chart cycle once into S3 for the edge to serve: about $32 a month with the server on Spot capacity, in one CloudFormation template ([`docs/README-AWS.md`](docs/README-AWS.md) has the design, the cost and the runbook).
+- **A cheap path to production.** One server behind CloudFront runs the gateway, the planner and Postgres, and a Fargate Spot task (the charts job) draws each 56-day chart cycle once into S3, one archive per kind, which the planner reads tiles from and the edge caches: about $27 a month with the server on Spot capacity, in one CloudFormation template ([`docs/README-AWS.md`](docs/README-AWS.md) has the design, the cost and the runbook).
 
 
 ## Project layout
@@ -81,8 +82,9 @@ Demo route: **Campbell Airport (C81)** → **Duluth International (KDLH)**.
 | [`engine/`](engine) | The shared Rust engine: every aviation rule once, in ten crates (`crates/`) behind one facade (`facade/`), its contract (`contract/`), and its Python, C and WebAssembly faces (`bindings/`) |
 | [`services/planner/`](services/planner) | The planner: its HTTP layer (`app/`, FastAPI: route planning, chart vision, the chart model, the assistant), its Python package (`wingtip/`: data, charts, pipeline, model registry, and the nav log until it moves into the engine), and both their test suites (`tests/`, `tests_wingtip/`) |
 | [`services/gateway/`](services/gateway) | Accounts, sign-in, the pilot's records, the public API (Spring Boot) |
+| [`services/jobs/`](services/jobs) | The one-off jobs, an image each: `retrain/` (the training run) and `charts/` (a chart cycle's tiles as archives, the overlay tiles) |
 | [`services/Dockerfile.base`](services/Dockerfile.base) | The Python base every image that imports wingtip is built from |
-| [`ml/`](ml) | The notebooks and the pipeline's and notebooks' images |
+| [`ml/`](ml) | The notebooks and their image |
 | [`infra/`](infra) | AWS CloudFormation, the production server's files and compose file, CI's compose file, the local HTTPS certificates, the rehearsal, the dev-services sidecar and the load tests |
 | [`scripts/`](scripts) | `build/` (the engine's WebAssembly, the phones' generated models), `ci/` (the flaky-test report), `dev/` (the checks, the hooks, one-at-a-time) |
 | [`docs/`](docs) | Full documentation, AWS deployment guide, architecture diagrams |

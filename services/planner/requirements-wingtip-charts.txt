@@ -10,3 +10,4 @@ rasterio==1.5.2     # wingtip.charts reads and reprojects the FAA chart GeoTIFFs
 pypdfium2==5.14.0   # wingtip.publications draws the airport diagram's PDF as a picture (Apache-2.0/BSD; PyMuPDF is AGPL)
 affine==3.0.1       # wingtip.chart_faces applies transforms with `@`, which affine 3 has; it came only as rasterio's own, unpinned, dependency
 gribberish==1.8.3   # wingtip.glmp reads the NWS's Gridded LAMP (GRIB2), complex packing included (MIT; 2 MB, where eccodes is 100)
+pmtiles==3.8.1      # wingtip.tile_archive: a kind's chart tiles as one PMTiles archive (protomaps, BSD-3-Clause; pure Python)

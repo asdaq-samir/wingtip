@@ -33,7 +33,7 @@ x-anthropic-api-key: &anthropic-api-key ${ANTHROPIC_API_KEY:-}
 # unless-stopped): after a reboot, Docker Desktop brings back whatever
 # was running -- the phone's ports included, since it is the same
 # container -- and a service someone stopped stays stopped. The
-# pipeline jobs are one-shot and have none.
+# jobs are one-shot and have none.
 #
 # One file for every way the stack runs on a machine of one's own; the
 # phone, the LAN and front-end work used to be overlays of their own
@@ -110,52 +110,57 @@ services:
     volumes:
       - .:/workspace
 
-  # One-shot jobs, not services: behind the `pipeline` profile so a plain
-  # `docker compose up` never starts them. It used to start both -- and
-  # the training image's default command is a full all-core retrain,
-  # which then overwrote the candidate model the registry compares next.
-  # Naming one still works as before: `docker compose run --rm
-  # pipeline-training retrain`, or the whole training run, every stage in
-  # order: `docker compose run --rm pipeline-training run`.
-  pipeline-processing:
-    build:
-      context: .
-      dockerfile: ml/Dockerfile.processing
-      additional_contexts:
-        wingtip-base: service:base
-    profiles: ["pipeline"]
-    volumes:
-      - .:/workspace
-
-  pipeline-training:
-    build:
-      context: .
-      dockerfile: ml/Dockerfile.training
-      additional_contexts:
-        wingtip-base: service:base
-    profiles: ["pipeline"]
-    volumes:
-      - .:/workspace
-
+  # The jobs (services/jobs): one-off work, not services. Behind the
+  # `jobs` profile and with no restart, so a plain `docker compose up`
+  # never starts one -- it used to start the training image, whose
+  # default is a full all-core retrain that then overwrote the candidate
+  # model the registry compares next. Each runs this checkout's code (the
+  # project mounted at /workspace, as the planner's is). The developer
+  # console starts them through dev-services, which can start a container
+  # but never create one: `docker compose create retrain charts
+  # charts-overlays` makes them once. services/jobs/README.md has the rest.
+  #
   # The training run (`python -m wingtip.pipeline run`: both models'
-  # stages in order, each promoted only if it beats the one serving), as
-  # a container the developer console's Retrain starts through
-  # dev-services -- which can start a container but never create one, so
-  # `docker compose create retrain` makes it once. Behind the `pipeline`
-  # profile and with no restart, so `docker compose up` never starts a
-  # run; started again, it runs again. It replaced Airflow (the owner,
-  # 2026-11-06): a scheduler, a web server and a metadata database for
-  # a DAG that had no schedule and was only ever started from here.
+  # stages in order, each promoted only if it beats the one serving), the
+  # console's Retrain; a stage by name: `docker compose run --rm retrain
+  # collect`. It replaced Airflow (the owner, 2026-11-06): a scheduler, a
+  # web server and a metadata database for a DAG that had no schedule
+  # and was only ever started from here.
   retrain:
     build:
       context: .
-      dockerfile: ml/Dockerfile.training
+      dockerfile: services/jobs/retrain/Dockerfile
       additional_contexts:
         wingtip-base: service:base
-    profiles: ["pipeline"]
+    profiles: ["jobs"]
     command: ["run"]
     volumes:
       - .:/workspace
+
+  # The charts job: a new FAA chart cycle fetched, rendered and packed
+  # into one archive per kind and density, then the map's overlay tiles
+  # where the planner's cycle pack has none (`python -m charts run`).
+  # The planner starts it (app.chart_refresh) when a cycle is due and the
+  # night's window is open, and from the console's "refresh now"; by
+  # hand: `docker compose run --rm charts` (or a command of its own,
+  # `docker compose run --rm charts pack`). The planner only serves what
+  # it writes.
+  charts: &charts-job
+    build:
+      context: .
+      dockerfile: services/jobs/charts/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    profiles: ["jobs"]
+    command: ["run", "--workers", "${CHARTS_REFRESH_WORKERS:-1}"]
+    volumes:
+      - .:/workspace
+
+  # The overlay tiles alone, a minute or two of tippecanoe: what the
+  # planner starts when it writes a new cycle pack, at any hour.
+  charts-overlays:
+    <<: *charts-job
+    command: ["overlays"]
 
   db:
     restart: unless-stopped
@@ -201,7 +206,7 @@ services:
       context: .
       dockerfile: infra/dev-services/Dockerfile
     environment:
-      DEV_SERVICES: ml,retrain
+      DEV_SERVICES: ml,retrain,charts,charts-overlays
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks: [docker-control]
@@ -233,12 +238,15 @@ services:
       PYTHONPATH: /workspace/services/planner
       # Not the host's Docker socket -- the dev-services sidecar above,
       # which routers/devservices.py asks which services are up and to
-      # start one, the training run (retrain) among them.
+      # start one, the jobs (retrain, charts) among them.
       DEV_SERVICES_URL: http://dev-services:8000
-      # The clock the chart refresh's night-time window (see
-      # services/planner/app/main.py) is read against: the desk this
-      # runs on, not UTC.
+      # The clock the charts job's night-time window (see
+      # services/planner/app/chart_refresh.py) is read against: the desk
+      # this runs on, not UTC.
       TZ: ${TZ:-America/Chicago}
+      # How many render processes the charts job is given (its command
+      # above), for the console to show.
+      CHARTS_REFRESH_WORKERS: ${CHARTS_REFRESH_WORKERS:-1}
       # The planner's Claude calls: /api/checkpoint-notes (one per
       # checkpoint with no saved note yet), the briefing's narrative
       # (/api/briefing/narrative), the assistant and the words.

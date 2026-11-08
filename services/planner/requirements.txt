@@ -12,7 +12,6 @@
 # Pillow among them is pinned once, 13.0.0, in services/planner/requirements-wingtip-charts.txt.
 fastapi==0.142.2
 uvicorn[standard]==0.54.0
-boto3==1.43.108      # wingtip.charts' S3 publish, used only on AWS
 anthropic==1.11.0   # /api/checkpoint-notes: one Claude call per checkpoint
 solace-pubsubplus==1.11.0   # app.swim: the FAA's SWIM feeds (Solace's broker), where SWIM_* are set
 # Traces to an OTLP collector, only where OTEL_EXPORTER_OTLP_ENDPOINT is
@@ -26,7 +25,7 @@ opentelemetry-instrumentation-requests==0.66b0
 # model.joblib in this process). A joblib artifact is a pickle of
 # scikit-learn's own objects, so the version that loads it has to match
 # the version that wrote it: pinned exactly as the training image pins
-# them (ml/requirements-training.txt; numpy and pandas come from
+# them (services/jobs/retrain/requirements.txt; numpy and pandas come from
 # services/planner/requirements-wingtip.txt for both), and services/planner/tests_wingtip/test_requirements.py fails if
 # the two differ. Bump both together. Imported on first use, so a
 # planner that never scores pays nothing for them at start. They were

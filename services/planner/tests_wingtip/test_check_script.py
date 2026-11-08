@@ -34,12 +34,16 @@ def test_an_openapi_document_reaches_the_web_types():
 
 
 def test_wingtip_reaches_every_python_that_imports_it():
-    assert areas("services/planner/wingtip/airspace.py") == ["py", "planner"]
+    assert areas("services/planner/wingtip/airspace.py") == ["py", "planner", "jobs"]
+
+
+def test_a_job_is_its_own_area():
+    assert areas("services/jobs/charts/overlays.py") == ["jobs"]
 
 
 def test_an_engine_rule_reaches_every_shell_of_it():
     assert areas("engine/facade/src/call.rs") == [
-        "py", "planner", "engine", "ios", "android"]
+        "py", "planner", "jobs", "engine", "ios", "android"]
 
 
 def test_the_shared_fixtures_reach_the_engine_and_the_phones():
@@ -59,4 +63,4 @@ def test_words_alone_check_nothing():
 
 def test_each_area_once_in_one_order():
     assert areas("services/planner/tests_wingtip/test_geo.py", "services/planner/wingtip/geo.py", "apps/web/src/App.tsx") == [
-        "web", "py", "planner"]
+        "web", "py", "planner", "jobs"]

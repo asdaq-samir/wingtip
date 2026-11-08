@@ -1,0 +1,4 @@
+# The jobs' suite (charts/tests): wingtip's, charts included, which is all
+# the charts job imports, and pytest with the guards' plugins. The retrain
+# job's code is wingtip's (wingtip.pipeline), tested in its suite.
+-r ../planner/requirements-dev-wingtip.txt

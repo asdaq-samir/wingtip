@@ -1,4 +1,4 @@
-"""The map's overlay tiles (wingtip.vector_tiles), built from a small cut
+"""The map's overlay tiles (charts.overlays), built from a small cut
 of the FAA's own data round Chicago: the NASR Class Airspace shapefile's
 Chicago cut (services/planner/tests_wingtip/fixtures/native, as services/planner/tests_wingtip/test_phone_pack.py reads it),
 a restricted area with a hole as the special-use feature service gives
@@ -7,8 +7,8 @@ APT_RWY_END, NAV_BASE, FIX_BASE) copied as the FAA wrote them, the columns
 the tiles read.
 
 - Each layer's features carry the FAA's fields, and start at their zoom.
-- With tippecanoe (the planner's image has it; elsewhere those tests are
-  skipped): the archive is PMTiles v3 of vector tiles from zoom 4 to 12,
+- With tippecanoe (the charts job's image has it, and CI's runner;
+  elsewhere those tests are skipped): the archive is PMTiles v3 of vector tiles from zoom 4 to 12,
   its layers and fields declared, each feature first in the tiles of its
   zoom, and Chicago's Class B drawn within TOLERANCE_M of the FAA's line,
   both ways round, in every zoom-12 tile it crosses."""
@@ -25,13 +25,15 @@ import pytest
 import shapely
 from shapely.geometry import Polygon
 
+from charts import overlays
 from wingtip import cycle_pack, vector_tiles
 from wingtip import fixes as wingtip_fixes
 
-FIXTURES = Path(__file__).parent / "fixtures" / "native"
+#: The shared fixtures, beside wingtip's own tests.
+FIXTURES = Path(__file__).resolve().parents[3] / "planner" / "tests_wingtip" / "fixtures" / "native"
 NEEDS_TIPPECANOE = pytest.mark.skipif(
     shutil.which("tippecanoe") is None or shutil.which("tippecanoe-decode") is None,
-    reason="no tippecanoe here: the planner's image has it")
+    reason="no tippecanoe here: the charts job's image has it")
 #: The cut a test builds: Chicago's Class B and round it.
 BBOX = (-88.6, 41.4, -87.2, 42.5)
 
@@ -143,7 +145,7 @@ def _lines(lines) -> list[dict]:
 
 def test_the_airspace_carries_the_shapefiles_fields_and_its_shape_unchanged(sources):
     pack, _ = sources
-    features = _lines(vector_tiles.airspace_features(pack))
+    features = _lines(overlays.airspace_features(pack))
     assert len(features) == len(pack.attrs("airspace")) == 21
     floors = sorted(f["properties"]["floor_ft"] for f in features if f["properties"]["class"] == "B")
     # The Chicago Class B's six shelves, from the surface to 4,000 ft MSL,
@@ -168,7 +170,7 @@ def test_the_airspace_carries_the_shapefiles_fields_and_its_shape_unchanged(sour
 
 def test_the_special_use_area_keeps_its_hole_and_fields(sources):
     pack, _ = sources
-    [area] = _lines(vector_tiles.special_use_features(pack))
+    [area] = _lines(overlays.special_use_features(pack))
     expected = {"type": "R", "kind": "restricted area", "name": "R-9999 TEST", "floor_ft": 0.0, "floor_ref": "SFC",
                 "ceiling_ft": 5000.0, "ceiling_ref": "MSL", "times_of_use": "0700-2200 MON-FRI",
                 "controlling_agency": "CHICAGO TRACON"}
@@ -180,7 +182,7 @@ def test_the_special_use_area_keeps_its_hole_and_fields(sources):
 
 def test_the_airports_as_nasr_files_them(sources):
     _, nasr = sources
-    found = {f["properties"]["faa_id"]: f for f in _lines(vector_tiles.airport_features(
+    found = {f["properties"]["faa_id"]: f for f in _lines(overlays.airport_features(
         nasr / "APT_BASE.csv", nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv"))}
     # The closed field is not drawn as a field.
     assert set(found) == {"ORD", "06C", "LL22", "7IL4"}
@@ -204,12 +206,12 @@ def test_the_runways_from_their_surveyed_ends(sources):
     its two ends, its centreline, and each end numbered and headed along
     it; 06C's 11/29, with one end unsurveyed, is left out."""
     _, nasr = sources
-    found = _lines(vector_tiles.runway_features(nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv"))
+    found = _lines(overlays.runway_features(nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv"))
     assert {f["properties"]["runway"] for f in found} == {"10L/28R"}
     parts = {f["properties"]["part"]: f for f in found if f["properties"]["part"] != "end"}
     ends = {f["properties"]["end_id"]: f for f in found if f["properties"]["part"] == "end"}
     assert set(parts) == {"surface", "centreline"} and set(ends) == {"10L", "28R"}
-    assert all(f["tippecanoe"]["minzoom"] == vector_tiles.RUNWAY_MIN_ZOOM for f in found)
+    assert all(f["tippecanoe"]["minzoom"] == overlays.RUNWAY_MIN_ZOOM for f in found)
     assert parts["surface"]["properties"] == {
         "site_no": "04508.", "runway": "10L/28R", "width_ft": 150.0, "surface": "ASPH-CONC", "hard": True,
         "part": "surface"}
@@ -232,12 +234,12 @@ def test_the_runways_from_their_surveyed_ends(sources):
     ("ASPH-TURF", False), ("TURF", False), ("GRVL", False), ("TRTD", False), ("WATER", False), ("", False),
 ])
 def test_a_hard_surface_is_one_paved_all_through(surface, hard):
-    assert vector_tiles._hard(surface) is hard
+    assert overlays._hard(surface) is hard
 
 
 def test_the_navaids_and_every_fix(sources):
     _, nasr = sources
-    navaids = {f["properties"]["ident"]: f for f in _lines(vector_tiles.navaid_features(nasr / "NAV_BASE.csv"))}
+    navaids = {f["properties"]["ident"]: f for f in _lines(overlays.navaid_features(nasr / "NAV_BASE.csv"))}
     assert navaids["DPA"]["properties"] == {
         "ident": "DPA", "name": "Dupage", "kind": "VOR/DME", "freq": "114.55", "channel": "92Y", "service_volume": "VL",
         "mag_var": 2.0, "elevation_ft": 801.6, "hours": "24", "restricted": True,
@@ -246,11 +248,11 @@ def test_the_navaids_and_every_fix(sources):
     # With NAV_RMK.csv, each one's own remarks, read as the VOR's card in
     # view reads them (wingtip.fixes.navaid_remarks), one a line.
     remarked = {f["properties"]["ident"]: f["properties"] for f in _lines(
-        vector_tiles.navaid_features(nasr / "NAV_BASE.csv", rmk_path=nasr / "NAV_RMK.csv"))}
+        overlays.navaid_features(nasr / "NAV_BASE.csv", rmk_path=nasr / "NAV_RMK.csv"))}
     assert remarked["DPA"]["remarks"] == "\n".join(wingtip_fixes.navaid_remarks("DPA", "VOR/DME", nasr))
     assert "072-090" in remarked["DPA"]["remarks"]
     assert "remarks" not in remarked["CGT"]
-    fixes = {f["properties"]["ident"]: f for f in _lines(vector_tiles.fix_features(nasr / "FIX_BASE.csv"))}
+    fixes = {f["properties"]["ident"]: f for f in _lines(overlays.fix_features(nasr / "FIX_BASE.csv"))}
     assert fixes["VPAON"]["properties"] == {"ident": "VPAON", "kind": "VFR waypoint", "vfr": True, "enroute_low": False}
     assert fixes["VPDVA"]["properties"]["kind"] == "Helicopter route waypoint"
     assert {k: f["tippecanoe"]["minzoom"] for k, f in fixes.items()} == {"VPAON": 8, "VPDVA": 10, "ACCRA": 8, "EVRSN": 10}
@@ -259,7 +261,7 @@ def test_the_navaids_and_every_fix(sources):
 def test_a_box_keeps_only_what_meets_it(sources):
     _, nasr = sources
     north_of_ohare = (-88.2, 42.0, -87.8, 42.3)
-    assert [json.loads(f)["properties"]["faa_id"] for f in vector_tiles.airport_features(
+    assert [json.loads(f)["properties"]["faa_id"] for f in overlays.airport_features(
         nasr / "APT_BASE.csv", None, None, north_of_ohare)] == ["7IL4"]
 
 
@@ -270,7 +272,7 @@ def test_a_box_keeps_only_what_meets_it(sources):
 def built(sources, tmp_path_factory):
     pack, nasr = sources
     out = tmp_path_factory.mktemp("tiles")
-    index = vector_tiles.build(pack, nasr, out, bbox=BBOX)
+    index = overlays.build(pack, nasr, out, bbox=BBOX)
     return index, out / f"{index['name']}.pmtiles"
 
 
@@ -314,11 +316,11 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     assert {"ident", "kind", "freq"} <= set(layers["navaids"]["fields"])
     assert {"ident", "kind", "vfr", "enroute_low"} <= set(layers["fixes"]["fields"])
     assert "FAA" in meta["attribution"]
-    assert index["bytes"] == len(data) and index["tolerance_m"] == vector_tiles.TOLERANCE_M
+    assert index["bytes"] == len(data) and index["tolerance_m"] == overlays.TOLERANCE_M
     # Every feature that meets the box, and nothing else.
     pack, nasr = sources
     assert {layer["name"]: layer["features"] for layer in index["layers"]} == {
-        "airspace": len(list(vector_tiles.airspace_features(pack, BBOX))), "special_use": 1, "airports": 4,
+        "airspace": len(list(overlays.airspace_features(pack, BBOX))), "special_use": 1, "airports": 4,
         "navaids": 2, "fixes": 4, "runways": 4}
 
 
@@ -337,7 +339,7 @@ def test_each_feature_starts_at_its_zoom(built, sources):
                 for f in _decode(path, z, x, y).get("airspace", [])}
 
     starts = {}
-    for line in vector_tiles.airspace_features(pack, BBOX):
+    for line in overlays.airspace_features(pack, BBOX):
         f = json.loads(line)
         starts[f["properties"]["local_type"]] = f["tippecanoe"]["minzoom"]
     assert set(starts) >= {"CLASS_B", "CLASS_D", "CLASS_E2", "CLASS_E5"}
@@ -403,6 +405,39 @@ def test_the_class_b_is_drawn_within_tolerance_of_the_faas_line(built, sources):
                         assert not other.is_empty
                         d = shapely.distance(shapely.points(points), other)
                         worst, compared = max(worst, float(d.max())), compared + len(points)
-    print(f"Class B worst {worst:.2f} m over {compared} points, tolerance {vector_tiles.TOLERANCE_M} m")
+    print(f"Class B worst {worst:.2f} m over {compared} points, tolerance {overlays.TOLERANCE_M} m")
     assert compared > 1000
-    assert worst <= vector_tiles.TOLERANCE_M
+    assert worst <= overlays.TOLERANCE_M
+
+
+# --- When the job builds -----------------------------------------------------------
+
+
+def test_the_archive_is_due_while_the_pack_has_none_and_not_after(sources, tmp_path, monkeypatch):
+    """The planner writes the pack and asks the job for its tiles while
+    `due` says so (app.chart_refresh); once the index names this pack's
+    archive, the job has nothing to do."""
+    pack, _ = sources
+    monkeypatch.setattr(cycle_pack, "current", lambda pack_dir=None: pack)
+    assert overlays.due(out_dir=tmp_path)
+    name = vector_tiles.archive_name(pack)
+    (tmp_path / f"{name}.pmtiles").write_bytes(b"PMTiles")
+    (tmp_path / vector_tiles.INDEX).write_text(json.dumps({"name": name}))
+    assert not overlays.due(out_dir=tmp_path)
+    assert overlays.ensure(tmp_path, out_dir=tmp_path) is None
+
+
+def test_nothing_is_due_before_the_planner_has_written_a_pack(tmp_path, monkeypatch):
+    monkeypatch.setattr(cycle_pack, "current", lambda pack_dir=None: None)
+    assert not overlays.due(out_dir=tmp_path)
+    assert overlays.ensure(tmp_path, out_dir=tmp_path) is None
+
+
+def test_a_due_archive_with_no_tippecanoe_fails_the_job(sources, tmp_path, monkeypatch):
+    """The planner used to shrug at a missing tippecanoe; here building the
+    archive is the whole job, so it says so."""
+    pack, _ = sources
+    monkeypatch.setattr(cycle_pack, "current", lambda pack_dir=None: pack)
+    monkeypatch.setattr(overlays, "TIPPECANOE", "no-such-tippecanoe")
+    with pytest.raises(RuntimeError, match="no-such-tippecanoe"):
+        overlays.ensure(tmp_path, out_dir=tmp_path)

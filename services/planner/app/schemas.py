@@ -103,10 +103,12 @@ class ChartInfo(BaseModel):
     # the cycle for the same reason, since a re-render leaves {z}/{x}/{y}
     # and the cycle as they were.
     chart_revision: int = 0
-    # Where the map fetches tiles when the pyramid is published to a
-    # CDN (the AWS deployment): a base URL the map appends
-    # /<cycle>/<kind>/{z}/{x}/{y}.png to. None when this planner
-    # serves its own tiles.
+    # Where the map fetches tiles from instead of this planner: a base URL
+    # the map appends /<cycle>/<kind>/{z}/{x}/{y}.png to. Always None
+    # since a pyramid is kept as one archive a kind (wingtip.tile_archive,
+    # #535): the planner serves every tile, on AWS from the published
+    # archive and through CloudFront's cache. Kept for the apps that read
+    # it, which then ask this planner.
     chart_tiles_base: str | None = None
 
 
@@ -2748,7 +2750,7 @@ class CorridorStatus(BaseModel):
 
 
 class PyramidPass(BaseModel):
-    """A pass of `python -m wingtip.charts pyramid` under way: sheets done of
+    """A pass of the charts job's `pyramid` under way: sheets done of
     the sheets it set out to render, and the one it is on."""
 
     started_at: str

@@ -13,13 +13,16 @@ the whole model exists to answer.
 
 Split of responsibility, and why it falls this way:
 
-- The pipeline images train and promote the chart model
-  (wingtip.chartmodel, wingtip.model_registry); this service only loads
+- The retrain job (services/jobs/retrain) trains and promotes the chart
+  model (wingtip.chartmodel, wingtip.model_registry); this service only loads
   the promoted one and scores with it (app.chart_scorer), with the same
   pinned scikit-learn. It was a model-service container of its own
   until 2026-11-06.
 - This service owns everything route-shaped: reading the chart along
   it, scoring what it finds, computing the nav log, and drawing it.
+- The charts job (services/jobs/charts) renders a cycle's tiles and
+  builds the map's overlay tiles; this service serves them, and draws a
+  tile on request only where the job has not drawn it yet.
 
 The endpoints live in app.routers, one module per concern; the work they
 share -- resolving a route, scoring it, the nav-log arithmetic, the
@@ -41,7 +44,6 @@ from wingtip import (
 )
 from wingtip import airspace_at, congested, data_cycles
 from wingtip import cycle_pack
-from wingtip import vector_tiles
 from wingtip import traffic as traffic_data
 from wingtip import airports as airport_table
 
@@ -90,26 +92,11 @@ FAA_DATA_AUTO_REFRESH = get_settings().faa_data_auto_refresh
 #: planner holds, once a cycle: on, but on a test stack, which reads the
 #: files themselves and need not write 400 MB a run.
 CYCLE_PACK = get_settings().cycle_pack
-#: Whether the map's overlay tiles (wingtip.vector_tiles) are built here
-#: from the cycle pack, once a cycle: on wherever the pack is, as a
-#: minute or two of tippecanoe once a cycle; its own switch to leave the
-#: pack without them.
-OVERLAY_TILES = get_settings().overlay_tiles
 # Set once the reference data below is loaded: the health probe reports
 # it, so a test run against a fresh stack can wait for a planner that
 # answers at full speed rather than one still parsing airspace under
 # its first requests.
 WARM = threading.Event()
-def _ensure_overlay_tiles() -> None:
-    """The map's overlay tiles of the cycle pack built where they are not
-    (wingtip.vector_tiles.ensure); a failure leaves the archive there was,
-    and the next start or new edition tries again."""
-    if not OVERLAY_TILES:
-        return
-    try:
-        vector_tiles.ensure(altitude.DEFAULT_FAA_CACHE_DIR)
-    except Exception:  # noqa: BLE001 -- the map asks the in-view endpoints meanwhile
-        log.exception("overlay tiles not built")
 
 
 def _prepare_corridor_charts() -> None:
@@ -158,7 +145,7 @@ def check_faa_editions(last_check: float) -> float:
             if CYCLE_PACK:
                 cycle_pack.ensure(altitude.DEFAULT_FAA_CACHE_DIR)
                 cycle_pack.ensure_phone()
-                _ensure_overlay_tiles()
+                chart_refresh.ask_for_overlays()
     except Exception:  # noqa: BLE001 -- the FAA's index out of reach: the next check tries again
         log.warning("FAA editions not checked", exc_info=True)
     return checked
@@ -280,7 +267,8 @@ def _warm_reference_data() -> None:
             cycle_pack.ensure_phone()
         except Exception:  # noqa: BLE001 -- the files are read as they were; the next start tries again
             log.exception("cycle pack not built")
-        _ensure_overlay_tiles()
+        # Its overlay tiles are the charts job's to build (app.chart_refresh).
+        chart_refresh.ask_for_overlays()
 
     if chart_refresh.AUTO_REFRESH:
         chart_refresh.maybe_refresh()
