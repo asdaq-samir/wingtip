@@ -130,7 +130,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     />
     </>
   ), [routeLine, procedureAirports, routeRows, depart, metarColour, pickedPatterns, pickPattern, preselectPattern, pickedTakeoffs, setTakeoff, preselectTakeoff, autoPicked, runwayFitInputs, pickedProcedures, routeProcedures, pickProcedures, crossings, showFix,
-    ground, setGround, previewProcedure, proceduresAt, setProceduresShown, planned.dest, selectPlace, noApproaches, changeDepart,
+    ground, setGround, previewProcedure, proceduresAt, setProceduresShown, planned.dep, planned.dest, setApproachesOf, selectPlace, noApproaches, changeDepart,
     altitudeAt, setPointAltitude, directParam, directToPoint, removeStop, insertStopAfter, holds, setHold, holdAsk, routePoints, planned.stops.length,
     tankFigures, listEdit, routeEdit]);
 
@@ -187,7 +187,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   ), [s.totals, s.descriptionError, s.nav, s.legs, depart, planned.dep, planned.dest, course, s.logSelected, s.descriptions, s.saveDescription,
     s.generateDescriptions, descriptionsLoading, descriptionsPaywall, descriptionsHidden, selectedPoint, selectPointAt, deselectPoint, drawerOpen, aircraft.label,
     marks, tabContent, s.briefing, s.local, landedStops, s.narrative.text, unflyableBrief, kneeboardLater, metarColour, dryRunning, briefShown,
-    routeList, navLogShown, closeNavLogCard, planned.stops, briefLine, routeEdit, planned.dep, planned.dest]);
+    routeList, navLogShown, closeNavLogCard, planned.stops, briefLine, routeEdit]);
   // The Brief's pages (BriefCard): En route's without the legs, which are
   // FPL's own; and its warnings over them.
   const briefContents = useMemo(() => ({

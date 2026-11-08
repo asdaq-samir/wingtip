@@ -24,6 +24,9 @@
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")/../.." && pwd)
+# Docker Desktop's CLI, where a shell's PATH lacks it (an agent's, a
+# launchd job's). The Rust is all in the container: no cargo here.
+command -v docker >/dev/null || PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin
 image=${RUST_IMAGE:-rust:1.89-slim-bookworm@sha256:d7fc7de78bb8c1469933aeecbf801314d30d7d6e9f0578bba4cfa285bfa37fe6}
 binaryen=version_133
 binaryen_sha256=2dc9c7813f5375db93d96ead4b78222fcc3e2677bbb832297af4797782a37489

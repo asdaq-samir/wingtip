@@ -5,7 +5,9 @@
 # load to 9 to 11 and their tests timed out (2026-10-15), so there was one
 # turn. The Mac mini (12 cores, Docker given 16 GB) runs a few at once: the
 # owner asked to make full use of it (2026-11-06), so there are
-# ONE_AT_A_TIME_SLOTS turns (3 by default). A speed measurement needs a quiet
+# ONE_AT_A_TIME_SLOTS turns: 2 by default, since three at once with Xcode or
+# Gradle on the host swapped the 24 GB Mac (12 GB of it Docker's) and cost
+# more time than they saved (2026-11-08). A speed measurement needs a quiet
 # machine: `--alone` waits until no other turn is held and then holds them
 # all. Waits for its turn, says whose turn it is, runs the command, and gives
 # the turn back however the command ends.
@@ -17,14 +19,36 @@
 # taken back by the next in line. The first turn is the lock's own path, as
 # the one-turn script had it, so a copy of the old script in another
 # checkout still holds a turn the new one sees.
+#
+# And it waits for memory before it takes a turn (macOS): while the system's
+# free memory is under ONE_AT_A_TIME_FREE_MIN percent (memory_pressure; 20
+# by default) or swap in use is over ONE_AT_A_TIME_SWAP_MAX_MB (sysctl
+# vm.swapusage; 4096 by default, set high as macOS keeps swap a while after
+# the pressure has passed). Either set to 0 leaves that check out.
 set -u
 alone=${ONE_AT_A_TIME_ALONE:-}
 if [ "${1:-}" = "--alone" ]; then alone=1; shift; fi
-label=${1:?usage: one-at-a-time.sh [--alone] "<who and what>" <command> [args...]}
+usage='usage: one-at-a-time.sh [--alone] "<label>" <command> [args...]'
+label=${1:?$usage}
 shift
-[ $# -gt 0 ] || { echo "one-at-a-time: no command to run" >&2; exit 64; }
+# The label comes first. A first word that is a program -- a path to one, or
+# a command on the PATH -- was meant as the command: `one-at-a-time.sh
+# ./x.sh` had no command left, and `one-at-a-time.sh bash x.sh` ran x.sh
+# under the label "bash", without bash.
+case "$label" in
+  *[[:space:]]*) ;;
+  *)
+    if { [[ "$label" == */* ]] && [ -f "$label" ] && [ -x "$label" ]; } || type -P "$label" >/dev/null; then
+      echo "one-at-a-time: \"$label\" is a command, not a label" >&2
+      echo "$usage" >&2
+      exit 64
+    fi ;;
+esac
+[ $# -gt 0 ] || { echo "one-at-a-time: no command to run after the label" >&2; echo "$usage" >&2; exit 64; }
 lock=${ONE_AT_A_TIME_LOCK:-/tmp/flight-plan-heavy.lock}
-slots=${ONE_AT_A_TIME_SLOTS:-3}
+slots=${ONE_AT_A_TIME_SLOTS:-2}
+free_min=${ONE_AT_A_TIME_FREE_MIN:-20}
+swap_max=${ONE_AT_A_TIME_SWAP_MAX_MB:-4096}
 # At most this long in line, in seconds: a turn held longer than a suite
 # and its reruns take is something wrong to look at, not to wait out.
 wait_max=${ONE_AT_A_TIME_WAIT:-2700}
@@ -99,6 +123,20 @@ take() {
   return 1
 }
 
+# Why memory is short, or nothing when there is enough (or no way to tell,
+# as on Linux, where each container's own limit holds it).
+memory_short() {
+  local free used
+  if [ "$free_min" -gt 0 ] && command -v memory_pressure >/dev/null; then
+    free=$(memory_pressure -Q 2>/dev/null | sed -nE 's/.*free percentage: ([0-9]+)%.*/\1/p')
+    if [ -n "$free" ] && [ "$free" -lt "$free_min" ]; then echo "${free}% free, under ${free_min}%"; return; fi
+  fi
+  if [ "$swap_max" -gt 0 ] && [ "$(uname -s)" = Darwin ]; then
+    used=$(sysctl -n vm.swapusage 2>/dev/null | sed -nE 's/.*used = ([0-9]+)(\.[0-9]+)?M.*/\1/p')
+    if [ -n "$used" ] && [ "$used" -gt "$swap_max" ]; then echo "${used} MB of swap in use, over ${swap_max} MB"; return; fi
+  fi
+}
+
 holders() {
   local i o
   for i in $(seq 1 "$slots"); do
@@ -106,8 +144,11 @@ holders() {
   done | paste -sd ';' -
 }
 
-while ! { first_in_line && take; }; do
-  if ! first_in_line; then
+while ! { short=""; first_in_line && short=$(memory_short) && [ -z "$short" ] && take; }; do
+  if [ -n "$short" ]; then
+    now="memory"
+    msg="waiting for memory: $short"
+  elif ! first_in_line; then
     now="line"
     msg="in line behind $(( $(ls "$line" | sort | sed -n "/$(basename "$ticket")/=" ) - 1 )) earlier"
   else

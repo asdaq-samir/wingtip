@@ -11,7 +11,8 @@ import OnRouteRow from "./OnRouteRow";
 import { faaWords, gairmetAltitudes, gairmetTitle, sigmetHazard } from "../../../../lib/advisories";
 import WeatherAlongRoute from "./WeatherAlongRoute";
 import FindingIcon from "../../../../components/FindingIcon";
-import { Flag, hazardAltitudeRange, Pending } from "./BriefingBits";
+import { Flag, Pending } from "./BriefingBits";
+import { hazardAltitudeRange } from "./briefingWords";
 
 interface Props {
   vm: FlightBriefing;

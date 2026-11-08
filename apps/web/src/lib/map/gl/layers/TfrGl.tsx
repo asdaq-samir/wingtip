@@ -4,7 +4,8 @@ import type { FillLayerSpecification, LineLayerSpecification } from "maplibre-gl
 import { useMemo } from "react";
 import { usePreferences } from "../../../preferences";
 import { tfrsQuery } from "../../../queryClient";
-import { TFR_RED, TfrCard, inForce } from "../../TfrCard";
+import { TfrCard } from "../../TfrCard";
+import { TFR_RED, inForce } from "../../tfrMarks";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../glLayer";
 import { TAP } from "./common";
 

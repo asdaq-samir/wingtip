@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { distanceTicks } from "./PastFlightChart";
+import { distanceTicks } from "./distanceTicks";
 
 describe("distanceTicks", () => {
   test("a long run gets one round step, five marks at most, none at its end", () => {

@@ -1,20 +1,8 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
+import { ROUTE_LINE } from "./routeListStyle";
 import { colourOf } from "../../../lib/map/flightCategory";
 import { AirportMark } from "./navlog/PointMark";
-
-/** The course's magenta, the route's line. */
-const ROUTE_LINE = { backgroundColor: "var(--course)" } as const;
-
-/** A point's card, where the list is cards (RouteListEdit's `cards`):
- *  dimmed while it is dragged, ringed in the tint while one is held over
- *  it (PointGrip's data-dragging and data-over). */
-export const POINT_CARD = cn(
-  "rounded-2xl bg-card py-3 pr-1.5 pl-3 shadow-sm ring-1 ring-black/5 dark:ring-white/10",
-  "has-[[data-dragging]]:opacity-40 has-[[data-over]]:ring-2 has-[[data-over]]:ring-tint",
-);
-/** The room between a card and the next, the course's line across it. */
-export const CARD_GAP = "mb-[1.375rem]";
 
 /**
  * The course's line through the cards, from each card's mark to the
@@ -39,11 +27,6 @@ export function CardThread({ first, last }: { first: boolean; last: boolean }) {
     />
   );
 }
-
-/** A card's runways and procedures, started 20 in, 5 clear of the line
- *  down the marks' column (CardThread), not under the ident's 38 as the
- *  list's are: the room the capsules and pull-downs gain. */
-export const CARD_BODY = "pl-5";
 
 /** A card's mark on a disc of the card's fill, hiding the line under it. */
 export const CardMark = ({ children }: { children: ReactNode }) => <span className="grid place-items-center rounded-full bg-card">{children}</span>;

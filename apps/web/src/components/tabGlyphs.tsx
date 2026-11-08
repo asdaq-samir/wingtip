@@ -1,5 +1,4 @@
 import { useId, type ComponentType } from "react";
-import type { LucideIcon } from "lucide-react";
 
 /** A tab bar's glyph (TabBar): drawn in outline, and filled for the tab
  *  that is up, as iOS's tab bars draw their symbols. */
@@ -76,13 +75,4 @@ export function GearGlyph({ className, filled = false }: { className?: string; f
         : <><path d={GEAR} {...LINE} /><path d={HOLE} {...LINE} /></>}
     </svg>
   );
-}
-
-/** A tab glyph from one of lucide's icons, for a bar whose tabs are not
- *  drawn here (the developer's Train and Perf): the one weight the tabs
- *  had, no filled face. */
-export function fromLucide(Icon: LucideIcon): TabGlyph {
-  return function LucideGlyph({ className }: { className?: string }) {
-    return <Icon className={className} strokeWidth={2.25} absoluteStrokeWidth aria-hidden="true" />;
-  };
 }
