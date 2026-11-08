@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import MapControls from "../../../components/MapControls";
 import MapBanners from "../../../components/MapBanners";
+import MapLoading from "../../../components/MapLoading";
 import { MapInsetsContext, SHEET_SECONDS, type MapInsets } from "../../../components/mapChrome";
 import { SheetCard } from "../../../components/SheetCard";
 import type { SheetTurn } from "../../../components/MapPanel";
@@ -48,6 +49,8 @@ const FIRST_STYLE_WAIT_MS = 1500;
  *  up (the map drawn before the engine, handed to the planner's), before
  *  it is let go. */
 const PARK_MS = 10_000;
+/** Sent on the map's element as it is first shown (makeMap's reveal). */
+const REVEAL_EVENT = "mapreveal";
 const flight = () =>(prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 * 2);
 
 // The overlay tiles' protocol, once for the page (lib/map/overlayTiles).
@@ -166,6 +169,8 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     canvas.style.transition = prefersReducedMotion() ? "" : `opacity ${REVEAL_FADE_MS}ms ease-out`;
     canvas.style.opacity = "1";
     el.dataset.revealed = "";
+    // For the page's loading mark (MapLoading) to fade as the map comes in.
+    el.dispatchEvent(new Event(REVEAL_EVENT));
   };
   const rested = () => { if (chartIn && overlaysIn) reveal(); };
   const latest = window.setTimeout(reveal, REVEAL_LATEST_MS);
@@ -211,6 +216,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   const box = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [overlays, setOverlays] = useState(false);
+  // Whether the map is shown yet: till then, the loading mark in its middle.
+  const [revealed, setRevealed] = useState(() => !!parked && "revealed" in parked.holder.dataset);
   const insets = useContext(MapInsetsContext);
   const insetsRef = useRef(insets);
   // Where a point picked is being flown to (flyTo below), for the sheet
@@ -259,8 +266,13 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     const take = () => { setOverlays(!!m.getSource(OVERLAY_SOURCE)); setMap(m); };
     if (loaded.has(m)) take();
     else m.once("load", take);
+    // A map taken up from the last tree is shown already.
+    const shown = () => setRevealed(true);
+    if ("revealed" in holder.dataset) shown();
+    else holder.addEventListener(REVEAL_EVENT, shown, { once: true });
     return () => {
       m.off("load", take);
+      holder.removeEventListener(REVEAL_EVENT, shown);
       setMap(null);
       // Kept a moment for the next tree to take up, then let go.
       parkLayers(m);
@@ -458,6 +470,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       {/* The map's own element (data-testid gl-map) is made with the map and
           goes with it from tree to tree (makeMap, parked). */}
       <div ref={box} className="h-full w-full bg-slate-100 dark:bg-slate-900" />
+      <MapLoading shown={!revealed} insets={insets} />
       {api && (
         <GlMapContext.Provider value={api}>
           {children}
