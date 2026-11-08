@@ -16,8 +16,9 @@ ALT_MINS = {"kind": "MIN", "name": "ALTERNATE MINIMUMS", "url": "https://aeronav
 
 
 def _period(start, end, ceiling=None, visibility=6.0, change=""):
-    clouds = [{"cover": "OVC", "base": ceiling}] if ceiling is not None else [{"cover": "SCT", "base": 3000}]
-    return {"timeFrom": start, "timeTo": end, "change": change, "clouds": clouds, "visib": str(visibility), "vert_vis": None}
+    # A period as the weather store keeps it, read by the engine (awc_tafs_read).
+    return {"timeFrom": start, "timeTo": end, "change": change, "ceiling_ft": ceiling, "ceiling_unknown": False,
+            "visibility_sm": visibility}
 
 
 @pytest.fixture
@@ -120,7 +121,7 @@ def test_a_ceiling_of_unknown_height_is_not_taken_as_good(world):
     tafs, charts = world
     charts["KDST"], charts["KALT"] = [ILS], [ILS]
     unknown = {"timeFrom": ETA - 6 * HOUR, "timeTo": ETA + 6 * HOUR, "change": "",
-               "clouds": [{"cover": "OVC", "base": None}], "visib": "6", "vert_vis": None}
+               "ceiling_ft": None, "ceiling_unknown": True, "visibility_sm": 6.0}
     tafs["KDST"], tafs["KALT"] = [unknown], [unknown]
     check = alternates.destination("KDST", ETA)
     assert check["required"] is True and "unknown height" in check["reasons"][0]

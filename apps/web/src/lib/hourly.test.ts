@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Metar } from "./api/types";
 import { zuluTime } from "./clock";
-import { arrivalHour, hoursOf, sentenceOf, tafOf } from "./hourly";
+import { arrivalHour, hoursOf, sentenceOf } from "./hourly";
 
 // 18:20Z on the 29th: the TAFs below were issued at 17:20 for 18Z on.
 const NOW = Date.parse("2026-10-29T18:20:00Z");
@@ -16,7 +16,7 @@ const VFR_METAR: Metar = {
   altimeter_in_hg: 30.01, temp_c: 12, dewpoint_c: 4,
 };
 
-const series = (raw: string | null, metar: Metar | null = VFR_METAR) => hoursOf({ metar, taf: tafOf(raw, NOW), now: NOW });
+const series = (raw: string | null, metar: Metar | null = VFR_METAR) => hoursOf({ metar, taf: raw, now: NOW });
 
 describe("a field's weather hour by hour", () => {
   it("Now is the METAR's, then each whole hour the TAF covers, an FM group prevailing until the next", () => {
@@ -92,7 +92,7 @@ describe("a field's weather hour by hour", () => {
     expect(sentenceOf(hours, zulu)).toBe("VFR now, no forecast for this field.");
     expect(series(null, null)).toEqual([]);
     expect(sentenceOf([], zulu)).toBeNull();
-    expect(tafOf("", NOW)).toBeNull();
+    expect(series("", null)).toEqual([]);
   });
 
   it("with no METAR, Now is the TAF's for this moment", () => {

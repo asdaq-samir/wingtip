@@ -182,11 +182,14 @@ def test_a_sigmets_issue_time_is_its_wmo_headings_day_hour_and_minute():
     """WSUS32 KKCI 261655: issued the 26th at 1655Z (WMO-No. 386's
     abbreviated heading), in the month of its valid time -- the month
     before for the 31st read on the 1st."""
-    valid = datetime(2026, 10, 26, 16, 55, tzinfo=timezone.utc).timestamp()
-    assert aviationweather._wmo_issued("WSUS32 KKCI 261655\nSIGC\nCONVECTIVE SIGMET 45C", valid) == "2026-10-26T16:55:00Z"
-    first = datetime(2026, 11, 1, 0, 55, tzinfo=timezone.utc).timestamp()
-    assert aviationweather._wmo_issued("WSUS31 KKCI 312355 SIGE", first) == "2026-10-31T23:55:00Z"
-    assert aviationweather._wmo_issued("CONVECTIVE SIGMET 1C", valid) is None
+    def issued(raw, valid):
+        xml = (f"<response><data><AIRSIGMET><raw_text>{raw}</raw_text><valid_time_from>{valid}</valid_time_from>"
+               "</AIRSIGMET></data></response>").encode()
+        return aviationweather.SOURCES["airsigmets"][1](xml)[0]["issued"]
+
+    assert issued("WSUS32 KKCI 261655\nSIGC\nCONVECTIVE SIGMET 45C", "2026-10-26T16:55:00Z") == "2026-10-26T16:55:00Z"
+    assert issued("WSUS31 KKCI 312355 SIGE", "2026-11-01T00:55:00Z") == "2026-10-31T23:55:00Z"
+    assert issued("CONVECTIVE SIGMET 1C", "2026-10-26T16:55:00Z") is None
 
 
 # --- failures --------------------------------------------------------------
@@ -476,7 +479,7 @@ GAIRMET_XML = b"""<response><data>
 
 
 def test_the_g_airmets_are_the_area_hazards_a_vfr_flight_is_told_of():
-    advisories = aviationweather._parse_gairmets(GAIRMET_XML)
+    advisories = aviationweather.SOURCES["gairmets"][1](GAIRMET_XML)
     assert len(advisories) == 2                                 # high-level turbulence left out
     assert {k: v for k, v in advisories[0].items() if k not in ("valid", "coords")} == {
         "hazard": "Icing", "severity": "MOD", "due_to": "ICE", "valid_at": "2026-10-04T15:00:00.000Z", "issued": None,
@@ -484,7 +487,7 @@ def test_the_g_airmets_are_the_area_hazards_a_vfr_flight_is_told_of():
     }
     # Stored until its last snapshot is past GAIRMET_SNAPSHOT_S.
     last = datetime(2026, 10, 4, 18, tzinfo=timezone.utc).timestamp()
-    assert aviationweather._gairmets_until(advisories, 0.0) == last + weather.GAIRMET_SNAPSHOT_S
+    assert aviationweather.SOURCES["gairmets"][2](advisories, 0.0) == last + weather.GAIRMET_SNAPSHOT_S
 
 
 # --- each station's last wind, for the calm-wind runway ---

@@ -62,9 +62,47 @@ pub fn iso(t: i64) -> String {
     format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z", s / 3600, s % 3600 / 60, s % 60)
 }
 
+/// ISO 8601 UTC as the weather feeds write it, "2026-11-02T14:00:00Z",
+/// with or without fractional seconds and with "Z" or "+00:00" (Python's
+/// datetime.fromisoformat for these), as Unix seconds. None for anything
+/// else, an offset other than UTC included: a time read wrongly by hours
+/// would put a report in the wrong window.
+pub fn parse_iso(text: &str) -> Option<i64> {
+    let t = text.trim();
+    let body = t.strip_suffix('Z').or_else(|| t.strip_suffix("+00:00")).unwrap_or(t);
+    let (date, clock) = body.split_once('T').or_else(|| body.split_once(' '))?;
+    let mut d = date.split('-');
+    let (y, m, day) = (d.next()?.parse::<i64>().ok()?, d.next()?.parse::<u32>().ok()?, d.next()?.parse::<u32>().ok()?);
+    if d.next().is_some() || !(1..=12).contains(&m) || day == 0 || day > days_in_month(y, m) {
+        return None;
+    }
+    let whole = clock.split('.').next()?;
+    let mut c = whole.split(':');
+    let (h, mi) = (c.next()?.parse::<i64>().ok()?, c.next()?.parse::<i64>().ok()?);
+    let s = match c.next() {
+        Some(s) => s.parse::<i64>().ok()?,
+        None => 0,
+    };
+    if c.next().is_some() || !(0..24).contains(&h) || !(0..60).contains(&mi) || !(0..61).contains(&s) {
+        return None;
+    }
+    Some(days_from_civil(y, m, day) * DAY_S + h * 3600 + mi * 60 + s)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_the_feeds_iso_times() {
+        let t = days_from_civil(2026, 9, 20) * DAY_S + 3600 + 41 * 60;
+        assert_eq!(parse_iso("2026-09-20T01:41:00.000Z"), Some(t));
+        assert_eq!(parse_iso("2026-09-20T01:41:00Z"), Some(t));
+        assert_eq!(parse_iso("2026-09-20T01:41:00+00:00"), Some(t));
+        assert_eq!(parse_iso("2026-09-20T01:41:00-05:00"), None);
+        assert_eq!(parse_iso("2026-02-30T01:41:00Z"), None);
+        assert_eq!(parse_iso(""), None);
+    }
 
     #[test]
     fn round_trips_the_calendar() {

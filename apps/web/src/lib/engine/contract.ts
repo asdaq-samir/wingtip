@@ -596,6 +596,24 @@ export type EmitterCategoryAnswer =
   | null;
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type DescentAltitudeAnswer = number;
+export type FieldHoursAnswer = FieldHour[];
+export type AwcTafsReadAnswer = {}[];
+export type AwcAirsigmetsReadAnswer = {}[];
+export type AwcPirepsReadAnswer = {}[];
+export type AwcGairmetsReadAnswer = {}[];
+export type WeatherHeldUntilAnswer = number | null;
+export type VfrNotRecommendedReasonsAnswer = string[];
+export type SigmetsAlongRouteAnswer = {}[];
+export type PirepsAlongRouteAnswer = {}[];
+export type PirepsInBoxAnswer = {}[];
+export type GairmetsAlongRouteAnswer = {}[];
+export type FreezingLevelAnswer = {
+  ft: number;
+  at_or_below: boolean;
+} | null;
+export type TemperatureAtAnswer = number | null;
+export type WindAtAltitudeAnswer = WindAloft | null | (WindAloft | null)[];
+export type ForecastHourAnswer = "06" | "12" | "24";
 
 /**
  * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. The one source of their shapes: apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
@@ -1435,13 +1453,6 @@ export interface EngineContract {
     answer: FlightCategoryAnswer;
   };
   /**
-   * An hour of a TAF from its groups in force (AC 00-45H).
-   */
-  taf_hour: {
-    input: TafHourInput;
-    answer: TafHourAnswer;
-  };
-  /**
    * An airplane's kind from its ADS-B emitter category (GDL 90 Table 11).
    */
   traffic_kind: {
@@ -2021,6 +2032,139 @@ export interface EngineContract {
   descent_altitude: {
     input: DescentAltitudeInput;
     answer: DescentAltitudeAnswer;
+  };
+  /**
+   * A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as AC 00-45H sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
+   */
+  field_hours: {
+    input: FieldHoursInput;
+    answer: FieldHoursAnswer;
+  };
+  /**
+   * The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1), visibility, wind, altimeter, temperature and dewpoint, and where it is.
+   */
+  awc_metars_read: {
+    input: AwcMetarsReadInput;
+    answer: AwcMetarsReadAnswer;
+  };
+  /**
+   * The Aviation Weather Center's national tafs cache file (XML) read into the shape the weather store keeps: [{icaoId, lat, lon, elevation_ft, raw, fcsts}], each station's latest TAF, its periods in time order.
+   */
+  awc_tafs_read: {
+    input: AwcTafsReadInput;
+    answer: AwcTafsReadAnswer;
+  };
+  /**
+   * The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
+   */
+  awc_airsigmets_read: {
+    input: AwcAirsigmetsReadInput;
+    answer: AwcAirsigmetsReadAnswer;
+  };
+  /**
+   * The Aviation Weather Center's national pireps cache file (XML) read into the shape the weather store keeps: The PIREPs (UA, UUA), not the AIREPs: [{observed_at, observed, lat, lon, altitude_ft, aircraft, urgent, turbulence, icing, raw}].
+   */
+  awc_pireps_read: {
+    input: AwcPirepsReadInput;
+    answer: AwcPirepsReadAnswer;
+  };
+  /**
+   * The Aviation Weather Center's national gairmets cache file (XML) read into the shape the weather store keeps: The G-AIRMET areas a VFR flight is told of: [{hazard (words), severity, due_to, valid_at, valid, issued, altitude_low_ft, from_freezing_level, altitude_high_ft, coords}].
+   */
+  awc_gairmets_read: {
+    input: AwcGairmetsReadInput;
+    answer: AwcGairmetsReadAnswer;
+  };
+  /**
+   * To when a stored copy may be served when later fetches fail, by its product's own validity (AC 00-45H): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
+   */
+  weather_held_until: {
+    input: WeatherHeldUntilInput;
+    answer: WeatherHeldUntilAnswer;
+  };
+  /**
+   * The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (AC 00-45H).
+   */
+  gairmet_hazards: {
+    input: GairmetHazardsInput;
+    answer: GairmetHazardsAnswer;
+  };
+  /**
+   * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).
+   */
+  taf_window: {
+    input: TafWindowInput;
+    answer: TafWindowAnswer;
+  };
+  /**
+   * The lowest forecast ceiling and visibility among the TAF stations near a route over a window, each station's own worst kept (14 CFR 91.155's cloud clearance is held to them).
+   */
+  tafs_along_route: {
+    input: TafsAlongRouteInput;
+    answer: TafsAlongRouteAnswer;
+  };
+  /**
+   * "VFR flight not recommended" (AIM 7-1-5) as its reasons, in briefing order: either end reporting IFR or LIFR or a ceiling of unknown height, then the forecast along the route under 14 CFR 91.155(c), (d)'s basic minimums or of unknown height.
+   */
+  vfr_not_recommended_reasons: {
+    input: VfrNotRecommendedReasonsInput;
+    answer: VfrNotRecommendedReasonsAnswer;
+  };
+  /**
+   * The SIGMETs in force whose area the route crosses (AC 00-45H).
+   */
+  sigmets_along_route: {
+    input: SigmetsAlongRouteInput;
+    answer: SigmetsAlongRouteAnswer;
+  };
+  /**
+   * The PIREPs of the last 90 minutes at or under 18,000 ft within the corridor of the route, urgent first, then in route order, each with along_track_nm.
+   */
+  pireps_along_route: {
+    input: PirepsAlongRouteInput;
+    answer: PirepsAlongRouteAnswer;
+  };
+  /**
+   * The PIREPs still told (the last 90 minutes, at or under 18,000 ft) in a box, the urgent last.
+   */
+  pireps_in_box: {
+    input: PirepsInBoxInput;
+    answer: PirepsInBoxAnswer;
+  };
+  /**
+   * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (AC 00-45H).
+   */
+  gairmets_along_route: {
+    input: GairmetsAlongRouteInput;
+    answer: GairmetsAlongRouteAnswer;
+  };
+  /**
+   * Where a temperature profile crosses 0 C, by linear interpolation; at_or_below where it is already freezing at the lowest level; null where it stays above freezing.
+   */
+  freezing_level: {
+    input: FreezingLevelInput;
+    answer: FreezingLevelAnswer;
+  };
+  /**
+   * The temperature at an altitude from a profile: interpolated between levels, past the ends the nearest level's difference from a standard day kept (ICAO standard lapse rate).
+   */
+  temperature_at: {
+    input: TemperatureAtInput;
+    answer: TemperatureAtAnswer;
+  };
+  /**
+   * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
+   */
+  wind_at_altitude: {
+    input: WindAtAltitudeInput;
+    answer: WindAtAltitudeAnswer;
+  };
+  /**
+   * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, AC 00-45H).
+   */
+  forecast_hour: {
+    input: ForecastHourInput;
+    answer: ForecastHourAnswer;
   };
 }
 export interface HoldingInput {
@@ -4027,43 +4171,6 @@ export interface FlightCategoryInput {
    */
   ceiling_unknown?: boolean | null;
 }
-export interface TafHourInput {
-  prevailing: TafFiguresIn;
-  /**
-   * A BECMG under way.
-   */
-  becoming?: boolean | null;
-  /**
-   * The prevailing weather before the BECMG.
-   */
-  before?: TafFiguresIn | null;
-  supplemental?:
-    | {
-        category?: string | null;
-        gust_kt?: number | null;
-        thunder?: boolean | null;
-        chance?: boolean | null;
-      }[]
-    | null;
-}
-/**
- * A TAF group's figures.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "TafFiguresIn".
- */
-export interface TafFiguresIn {
-  category?: string | null;
-  gust_kt?: number | null;
-  thunder?: boolean | null;
-}
-export interface TafHourAnswer {
-  before_worse: boolean;
-  at_times: string | null;
-  at_times_gust_kt: number | null;
-  at_times_thunder: boolean;
-  at_times_chance: boolean;
-}
 export interface TrafficKindInput {
   category?: string | null;
 }
@@ -5032,4 +5139,242 @@ export interface DescentAltitudeInput {
   cruise_ft: number;
   pattern_ft?: number | null;
   nm_out: number;
+}
+export interface FieldHoursInput {
+  /**
+   * The field's report as the planner gives it.
+   */
+  metar?: {} | null;
+  /**
+   * The TAF as sent.
+   */
+  taf?: string | null;
+  /**
+   * ms
+   */
+  now: number;
+  /**
+   * Hours after Now; 24 where not given.
+   */
+  count?: number | null;
+}
+/**
+ * One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (AC 00-45H's change groups).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "FieldHour".
+ */
+export interface FieldHour {
+  /**
+   * The hour's start, ms; Now's the report's time (or now).
+   */
+  at: number;
+  now: boolean;
+  category: "VFR" | "MVFR" | "IFR" | "LIFR" | null;
+  ceiling_ft: number | null;
+  visibility_sm: number | null;
+  sky: "clear" | "partly" | "cloudy" | null;
+  precip: "thunder" | "snow" | "rain" | null;
+  /**
+   * True; null where variable.
+   */
+  wind_dir_true_deg: number | null;
+  wind_speed_kt: number | null;
+  wind_gust_kt: number | null;
+  /**
+   * A TEMPO's or PROB's category this hour where worse than the prevailing one.
+   */
+  at_times: "VFR" | "MVFR" | "IFR" | "LIFR" | null;
+  at_times_gust_kt: number | null;
+  at_times_thunder: boolean;
+  /**
+   * The worse weather at times comes only from a PROB group (AC 00-45H).
+   */
+  at_times_chance: boolean;
+}
+export interface AwcMetarsReadInput {
+  text: string;
+}
+export interface AwcMetarsReadAnswer {}
+export interface AwcTafsReadInput {
+  text: string;
+}
+export interface AwcAirsigmetsReadInput {
+  text: string;
+}
+export interface AwcPirepsReadInput {
+  text: string;
+}
+export interface AwcGairmetsReadInput {
+  text: string;
+}
+export interface WeatherHeldUntilInput {
+  product: "metars" | "tafs" | "airsigmets" | "pireps" | "gairmets";
+  data?: unknown;
+  fetched: number;
+}
+export interface GairmetHazardsInput {}
+export interface GairmetHazardsAnswer {
+  hazards: {
+    [k: string]: string;
+  };
+  snapshot_s: number;
+}
+export interface TafWindowInput {
+  fcsts: TafPeriod[];
+  start: number;
+  end?: number | null;
+}
+/**
+ * One period of a TAF as the weather store keeps it (awc_tafs_read; taf_read's fcsts): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "TafPeriod".
+ */
+export interface TafPeriod {
+  timeFrom: number;
+  timeTo: number;
+  change?: string | null;
+  probability?: number | null;
+  wind_dir_true_deg?: number | null;
+  wind_speed_kt?: number | null;
+  wind_gust_kt?: number | null;
+  visibility_sm?: number | null;
+  ceiling_ft?: number | null;
+  ceiling_unknown?: boolean | null;
+  wx?: string | null;
+}
+export interface TafWindowAnswer {
+  periods: TafPeriod[];
+  worst: WeatherWorst | null;
+  current: TafPeriod | null;
+  prevailing: TafPeriod | null;
+}
+/**
+ * The worst a TAF forecasts in a window, TEMPO and PROB groups included.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "WeatherWorst".
+ */
+export interface WeatherWorst {
+  ceiling_ft: number | null;
+  ceiling_unknown: boolean;
+  visibility_sm: number | null;
+}
+export interface TafsAlongRouteInput {
+  tafs: {}[];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  from: [number, number];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  to: [number, number];
+  corridor_nm?: number | null;
+  start: number;
+  end?: number | null;
+}
+export interface TafsAlongRouteAnswer {
+  min_ceiling_ft: number | null;
+  min_visibility_sm: number | null;
+  ceiling_unknown_at: string[];
+  stations: {}[];
+}
+export interface VfrNotRecommendedReasonsInput {
+  idents?: string[];
+  metars?: {} | null;
+  forecast?: {} | null;
+}
+export interface SigmetsAlongRouteInput {
+  advisories: {}[];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  from: [number, number];
+  /**
+   * [lat, lon], degrees.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  to: [number, number];
+  corridor_nm?: number | null;
+  now: number;
+}
+export interface PirepsAlongRouteInput {
+  reports: {}[];
+  /**
+   * The route flown, [[lat, lon], ...].
+   */
+  path: [number, number][];
+  corridor_nm?: number | null;
+  now: number;
+}
+export interface PirepsInBoxInput {
+  reports: {}[];
+  /**
+   * [south, west, north, east]
+   *
+   * @minItems 4
+   * @maxItems 4
+   */
+  box: [number, number, number, number];
+  now: number;
+}
+export interface GairmetsAlongRouteInput {
+  advisories: {}[];
+  /**
+   * The route flown, [[lat, lon], ...].
+   */
+  path: [number, number][];
+  start: number;
+  end: number;
+}
+export interface FreezingLevelInput {
+  /**
+   * [[altitude_ft, temp_c], ...]
+   */
+  profile?: [number, number][];
+}
+export interface TemperatureAtInput {
+  /**
+   * [[altitude_ft, temp_c], ...]
+   */
+  profile?: [number, number][];
+  altitude_ft: number;
+}
+export interface WindAtAltitudeInput {
+  /**
+   * A station's levels by altitude in feet, as the weather store keeps them.
+   */
+  levels: {
+    [k: string]: {
+      wind_dir_true_deg?: number | null;
+      wind_speed_kt?: number | null;
+      temp_c?: number | null;
+    };
+  };
+  altitude_ft?: number | null;
+  altitudes?: number[] | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "WindAloft".
+ */
+export interface WindAloft {
+  wind_dir_true_deg: number;
+  wind_speed_kt: number;
+}
+export interface ForecastHourInput {
+  hours_ahead?: number | null;
 }

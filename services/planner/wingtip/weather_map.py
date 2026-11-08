@@ -12,7 +12,6 @@ says when the radar was made, as the weather service last read it
 from __future__ import annotations
 
 import math
-import time
 
 from . import weather, weather_store
 
@@ -75,23 +74,14 @@ def advisories_in(box: tuple, at: float) -> list[dict]:
 
 
 def pireps_in(box: tuple, now: float | None = None) -> list[dict]:
-    """The pilot reports of the last PIREP_MAX_AGE_S made in `box`, at or
-    under PIREP_MAX_ALT_FT -- a light airplane's sky (wingtip.weather) --
-    urgent ones last, so they are drawn on top."""
-    now = time.time() if now is None else now
-    south, west, north, east = box
+    """The pilot reports still told made in `box` -- the last 90 minutes,
+    at or under 18,000 ft, a light airplane's sky, the engine's
+    (wingtip.weather.pireps_in_box) -- urgent ones last, so they are drawn
+    on top."""
     try:
-        reports = weather._dataset("pireps")
+        return weather.pireps_in_box(box, now)
     except weather.WeatherServiceError:
         return []
-    found = [
-        {k: v for k, v in r.items() if k != "observed"}
-        for r in reports
-        if r["observed"] is not None and now - r["observed"] <= weather.PIREP_MAX_AGE_S
-        and (r["altitude_ft"] is None or r["altitude_ft"] <= weather.PIREP_MAX_ALT_FT)
-        and south <= r["lat"] <= north and west <= r["lon"] <= east
-    ]
-    return sorted(found, key=lambda r: r["urgent"])
 
 
 def winds_in(box: tuple, altitude_ft: float, fcst_hr: str) -> dict | None:

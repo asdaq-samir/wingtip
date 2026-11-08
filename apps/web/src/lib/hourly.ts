@@ -1,8 +1,3 @@
-import {
-  CloudQuantity, Descriptive, DistanceUnit, Phenomenon, SpeedUnit, WeatherChangeType,
-  getCompositeForecastForDate, parseMetar, parseTAFAsForecast,
-  type Forecast, type IAbstractWeatherContainer, type IForecastContainer,
-} from "metar-taf-parser";
 import type { Metar } from "./api/types";
 import { callEngine } from "./engine/engine";
 import { categoryOf } from "./map/flightCategory";
@@ -16,20 +11,16 @@ import { altFt } from "./units";
  * what it says -- written here from the figures, the same words for the
  * same forecast, no model in it.
  *
- * The TAF is read by metar-taf-parser, its change groups as AC 00-45H
- * (Aviation Weather Services) sets them out: the forecast's first line
- * and each FM group the prevailing weather until the next; a BECMG a
- * change that happens somewhere in its window and holds after it, so
- * until it is done the hour is the worse of before and after (the stock
- * parser's own composite takes the new weather from the window's start,
- * which is right only when it gets worse); a TEMPO, PROB or INTER group
- * weather that comes and goes, which is not the hour's bar but its
- * "at times" (`atTimes`), drawn lighter under it and said in the
- * sentence -- that reading the shared engine's (engine/crates/weather/src/
- * forecast), the parser only finding the groups. The ceiling is 14 CFR 1.1's -- the lowest layer broken or
- * overcast, or the vertical visibility into an obscuration -- and the
- * flight category AIM 7-1-7's, by the one rule the app has for it
- * (categoryOf, the engine's too).
+ * The hours are the shared engine's (`field_hours`, engine/crates/weather/
+ * src/forecast/hours.rs): it reads the TAF as sent and its change groups
+ * as AC 00-45H (Aviation Weather Services) sets them out -- the first
+ * line and each FM group the prevailing weather until the next; a BECMG
+ * a change somewhere in its window that holds after it, so until it is
+ * done the hour is the worse of before and after; a TEMPO, PROB or INTER
+ * group weather that comes and goes, not the hour's bar but its "at
+ * times" (`atTimes`), drawn lighter under it and said in the sentence.
+ * The ceiling is 14 CFR 1.1's and the flight category AIM 7-1-7's. This
+ * file only writes the sentence and finds the arrival's hour.
  */
 
 const HOUR_MS = 3_600_000;
@@ -37,9 +28,6 @@ const HOUR_MS = 3_600_000;
 export const HOURS = 24;
 /** How far ahead the sentence looks: a flight's day, not the TAF's end. */
 const SENTENCE_HOURS = 12;
-
-const KT_PER_MPS = 1.943844;
-const KT_PER_KMH = 0.539957;
 
 /** What the sky is, for the hour's glyph: clear (or no cloud said),
  *  few or scattered, and broken, overcast or obscured. */
@@ -78,154 +66,16 @@ export interface Hour {
 const RANK: Record<string, number> = { VFR: 0, MVFR: 1, IFR: 2, LIFR: 3 };
 const rank = (category: string | null) => (category ? RANK[category] ?? -1 : -1);
 
-type Conditions = Pick<IAbstractWeatherContainer, "clouds" | "visibility" | "verticalVisibility" | "cavok" | "wind" | "weatherConditions">;
-
-/** The ceiling (14 CFR 1.1) and visibility, statute miles, of the groups
- *  the parser found: the engine's (ceiling_visibility), metres and CAVOK
- *  read as its METAR reader reads them. */
-function ceilingAndVisibility(c: Conditions): { ceilingFt: number | null; visibilitySm: number | null } {
-  const { ceiling_ft, visibility_sm } = callEngine("ceiling_visibility", {
-    layers: c.clouds.map(l => ({ cover: l.quantity, base_ft: l.height ?? null })),
-    vertical_visibility_ft: c.verticalVisibility ?? null,
-    visibility: c.visibility ? { value: c.visibility.value, unit: c.visibility.unit === DistanceUnit.Meters ? "m" : "sm" } : null,
-    cavok: c.cavok ?? false,
-  });
-  return { ceilingFt: ceiling_ft, visibilitySm: visibility_sm };
-}
-
-function skyOf(c: Conditions): Sky {
-  if (c.verticalVisibility != null || c.clouds.some(l => l.quantity === CloudQuantity.BKN || l.quantity === CloudQuantity.OVC)) return "cloudy";
-  if (c.clouds.some(l => l.quantity === CloudQuantity.FEW || l.quantity === CloudQuantity.SCT)) return "partly";
-  return "clear";
-}
-
-const SNOW = new Set<Phenomenon>([Phenomenon.SNOW, Phenomenon.SNOW_GRAINS, Phenomenon.ICE_PELLETS, Phenomenon.ICE_CRYSTALS, Phenomenon.HAIL, Phenomenon.SMALL_HAIL]);
-const RAIN = new Set<Phenomenon>([Phenomenon.RAIN, Phenomenon.DRIZZLE, Phenomenon.UNKNOW_PRECIPITATION]);
-
-function precipOf(c: Conditions): Precip | null {
-  const w = c.weatherConditions;
-  if (w.some(x => x.descriptive === Descriptive.THUNDERSTORM || x.phenomenons.includes(Phenomenon.THUNDERSTORM))) return "thunder";
-  if (w.some(x => x.phenomenons.some(p => SNOW.has(p)))) return "snow";
-  if (w.some(x => x.phenomenons.some(p => RAIN.has(p)))) return "rain";
-  return null;
-}
-
-function knots(speed: number | undefined, unit: SpeedUnit | undefined): number | null {
-  if (speed == null) return null;
-  if (unit === SpeedUnit.MetersPerSecond) return Math.round(speed * KT_PER_MPS);
-  if (unit === SpeedUnit.KilometersPerHour) return Math.round(speed * KT_PER_KMH);
-  return speed;
-}
-
-/** One forecast's figures; `under`, the prevailing forecast whose cloud
- *  and visibility a TEMPO that leaves them out keeps. */
-function figuresOf(c: Conditions, under?: Conditions) {
-  const merged: Conditions = under ? {
-    ...c,
-    clouds: c.clouds.length || c.verticalVisibility != null ? c.clouds : under.clouds,
-    verticalVisibility: c.clouds.length || c.verticalVisibility != null ? c.verticalVisibility : under.verticalVisibility,
-    visibility: c.visibility ?? (c.cavok ? undefined : under.visibility),
-    cavok: c.cavok ?? (c.visibility || c.clouds.length ? undefined : under.cavok),
-  } : c;
-  const { ceilingFt, visibilitySm } = ceilingAndVisibility(merged);
-  return {
-    category: categoryOf(ceilingFt, visibilitySm), ceilingFt, visibilitySm,
-    sky: skyOf(merged), precip: precipOf(c),
-    windDirTrueDeg: c.wind?.degrees ?? null, windSpeedKt: knots(c.wind?.speed, c.wind?.unit), windGustKt: knots(c.wind?.gust, c.wind?.unit),
-  };
-}
-
-/** The first line and the FM and BECMG groups: what prevails until the next. */
-const prevails = (f: Forecast) => f.type === undefined || f.type === WeatherChangeType.FM || f.type === WeatherChangeType.BECMG;
-
-/** The TAF read, its times dated from `now` (a TAF's are day and hour
- *  only); null where there is none or it does not read. FIS-B sends an
- *  amendment as "TAF.AMD". */
-export function tafOf(raw: string | null | undefined, now: number): IForecastContainer | null {
-  if (!raw) return null;
-  try {
-    return parseTAFAsForecast(raw.replace(/\s+/g, " ").trim().replace(/^TAF\.AMD /, "TAF AMD ").replace(/=$/, ""), { issued: new Date(now) });
-  } catch {
-    return null;
-  }
-}
-
-/** What of a group's figures the hour's reading turns on. */
-const held = (f: ReturnType<typeof figuresOf>) => ({ category: f.category, gust_kt: f.windGustKt, thunder: f.precip === "thunder" });
-
-/** The TAF's hour starting `at`; null outside its validity. The parser
- *  finds the groups in force; what they make of the hour -- a BECMG under
- *  way the worse of before and after, a TEMPO's or PROB's worse weather at
- *  times -- is the shared engine's (engine/crates/weather/src/forecast). */
-function hourAt(taf: IForecastContainer, at: number): Omit<Hour, "now"> | null {
-  let composite;
-  try {
-    composite = getCompositeForecastForDate(new Date(at), taf);
-  } catch {
-    return null;
-  }
-  const { prevailing, supplemental } = composite;
-  const figures = figuresOf(prevailing);
-  const becoming = prevailing.type === WeatherChangeType.BECMG && at < prevailing.by.getTime();
-  const before = becoming ? taf.forecast.filter(f => prevails(f) && f.start.getTime() < prevailing.start.getTime()).at(-1) : undefined;
-  const was = before && figuresOf(before);
-  const read = callEngine("taf_hour", {
-    prevailing: held(figures), becoming, before: was ? held(was) : null,
-    // A PROB30 or PROB40 group, alone or before a TEMPO, carries its per
-    // cent; a plain TEMPO none.
-    supplemental: supplemental.map(group => ({ ...held(figuresOf(group, prevailing)), chance: "probability" in group && group.probability != null })),
-  });
-  // The weather before, where worse, with the new group's wind.
-  const hour = read.before_worse && was ? { ...was, windDirTrueDeg: figures.windDirTrueDeg, windSpeedKt: figures.windSpeedKt, windGustKt: figures.windGustKt } : figures;
-  return {
-    at, ...hour,
-    atTimes: read.at_times, atTimesGustKt: read.at_times_gust_kt, atTimesThunder: read.at_times_thunder, atTimesChance: read.at_times_chance,
-  };
-}
-
-/** Now, from the field's METAR: its figures as the planner (or own
- *  ship's receiver) read them, and its sky and weather from its text. */
-function nowOf(metar: Metar, now: number): Hour {
-  let sky: Sky | null = metar.ceiling_ft != null ? "cloudy" : null;
-  let precip: Precip | null = null;
-  if (metar.raw) {
-    try {
-      const read = parseMetar(metar.raw.replace(/\s+/g, " ").trim().replace(/=$/, ""));
-      sky = skyOf(read);
-      precip = precipOf(read);
-    } catch {
-      // Not read: the ceiling's cloud, or no glyph.
-    }
-  }
-  const observed = metar.observed_at ? Date.parse(metar.observed_at) : NaN;
-  return {
-    at: Number.isNaN(observed) ? now : observed, now: true,
-    category: metar.flight_category ?? null, ceilingFt: metar.ceiling_ft ?? null, visibilitySm: metar.visibility_sm ?? null,
-    sky, precip,
-    windDirTrueDeg: metar.wind_dir_true_deg ?? null, windSpeedKt: metar.wind_speed_kt ?? null, windGustKt: metar.wind_gust_kt ?? null,
-    atTimes: null, atTimesGustKt: null, atTimesThunder: false, atTimesChance: false,
-  };
-}
-
-/** Now and the hours after it: Now the METAR's, or with none the TAF's
- *  for this moment; then each whole hour the TAF covers, up to `count`. */
-export function hoursOf({ metar, taf, now, count = HOURS }: { metar: Metar | null; taf: IForecastContainer | null; now: number; count?: number }): Hour[] {
-  const hours: Hour[] = [];
-  if (metar) hours.push(nowOf(metar, now));
-  else if (taf) {
-    const here = hourAt(taf, now);
-    if (here) hours.push({ ...here, at: now, now: true });
-  }
-  if (!taf) return hours;
-  const end = taf.end.getTime();
-  for (let at = Math.floor(now / HOUR_MS) * HOUR_MS + HOUR_MS, n = 0; n < count && at < end; at += HOUR_MS) {
-    const hour = hourAt(taf, at);
-    if (hour) {
-      hours.push({ ...hour, now: false });
-      n++;
-    }
-  }
-  return hours;
+/** Now and the hours after it, the engine's (`field_hours`): Now the
+ *  METAR's, or with none the TAF's for this moment; then each whole hour
+ *  the TAF (as sent) covers, up to `count`. */
+export function hoursOf({ metar, taf, now, count = HOURS }: { metar: Metar | null; taf: string | null; now: number; count?: number }): Hour[] {
+  return callEngine("field_hours", { metar: metar ?? null, taf: taf || null, now, count }).map(h => ({
+    at: h.at, now: h.now, category: h.category, ceilingFt: h.ceiling_ft, visibilitySm: h.visibility_sm,
+    sky: h.sky, precip: h.precip,
+    windDirTrueDeg: h.wind_dir_true_deg, windSpeedKt: h.wind_speed_kt, windGustKt: h.wind_gust_kt,
+    atTimes: h.at_times, atTimesGustKt: h.at_times_gust_kt, atTimesThunder: h.at_times_thunder, atTimesChance: h.at_times_chance,
+  }));
 }
 
 /** "17:00": this device's clock, as the Brief writes a forecast's times. */

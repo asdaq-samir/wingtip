@@ -7657,116 +7657,6 @@
       ],
       "additionalProperties": false
     },
-    "taf_hour": {
-      "description": "An hour of a TAF from its groups in force (AC 00-45H).",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "TafHourInput",
-          "type": "object",
-          "properties": {
-            "prevailing": {
-              "$ref": "#/definitions/TafFiguresIn"
-            },
-            "becoming": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "A BECMG under way."
-            },
-            "before": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/TafFiguresIn"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "The prevailing weather before the BECMG."
-            },
-            "supplemental": {
-              "type": [
-                "array",
-                "null"
-              ],
-              "items": {
-                "type": "object",
-                "properties": {
-                  "category": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "gust_kt": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
-                  },
-                  "thunder": {
-                    "type": [
-                      "boolean",
-                      "null"
-                    ]
-                  },
-                  "chance": {
-                    "type": [
-                      "boolean",
-                      "null"
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "required": [
-            "prevailing"
-          ]
-        },
-        "answer": {
-          "title": "TafHourAnswer",
-          "type": "object",
-          "properties": {
-            "before_worse": {
-              "type": "boolean"
-            },
-            "at_times": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "at_times_gust_kt": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "at_times_thunder": {
-              "type": "boolean"
-            },
-            "at_times_chance": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "before_worse",
-            "at_times",
-            "at_times_gust_kt",
-            "at_times_thunder",
-            "at_times_chance"
-          ]
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "traffic_kind": {
       "description": "An airplane's kind from its ADS-B emitter category (GDL 90 Table 11).",
       "type": "object",
@@ -12139,6 +12029,940 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "field_hours": {
+      "description": "A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as AC 00-45H sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FieldHoursInput",
+          "type": "object",
+          "properties": {
+            "metar": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "The field's report as the planner gives it."
+            },
+            "taf": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The TAF as sent."
+            },
+            "now": {
+              "type": "number",
+              "description": "ms"
+            },
+            "count": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Hours after Now; 24 where not given."
+            }
+          },
+          "required": [
+            "now"
+          ]
+        },
+        "answer": {
+          "title": "FieldHoursAnswer",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldHour"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "awc_metars_read": {
+      "description": "The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1), visibility, wind, altimeter, temperature and dewpoint, and where it is.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AwcMetarsReadInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "AwcMetarsReadAnswer",
+          "type": "object"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "awc_tafs_read": {
+      "description": "The Aviation Weather Center's national tafs cache file (XML) read into the shape the weather store keeps: [{icaoId, lat, lon, elevation_ft, raw, fcsts}], each station's latest TAF, its periods in time order.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AwcTafsReadInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "AwcTafsReadAnswer",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "awc_airsigmets_read": {
+      "description": "The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AwcAirsigmetsReadInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "AwcAirsigmetsReadAnswer",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "awc_pireps_read": {
+      "description": "The Aviation Weather Center's national pireps cache file (XML) read into the shape the weather store keeps: The PIREPs (UA, UUA), not the AIREPs: [{observed_at, observed, lat, lon, altitude_ft, aircraft, urgent, turbulence, icing, raw}].",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AwcPirepsReadInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "AwcPirepsReadAnswer",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "awc_gairmets_read": {
+      "description": "The Aviation Weather Center's national gairmets cache file (XML) read into the shape the weather store keeps: The G-AIRMET areas a VFR flight is told of: [{hazard (words), severity, due_to, valid_at, valid, issued, altitude_low_ft, from_freezing_level, altitude_high_ft, coords}].",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AwcGairmetsReadInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "AwcGairmetsReadAnswer",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "weather_held_until": {
+      "description": "To when a stored copy may be served when later fetches fail, by its product's own validity (AC 00-45H): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "WeatherHeldUntilInput",
+          "type": "object",
+          "properties": {
+            "product": {
+              "type": "string",
+              "enum": [
+                "metars",
+                "tafs",
+                "airsigmets",
+                "pireps",
+                "gairmets"
+              ]
+            },
+            "data": {},
+            "fetched": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "product",
+            "fetched"
+          ]
+        },
+        "answer": {
+          "title": "WeatherHeldUntilAnswer",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "gairmet_hazards": {
+      "description": "The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (AC 00-45H).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GairmetHazardsInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "GairmetHazardsAnswer",
+          "type": "object",
+          "properties": {
+            "hazards": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "snapshot_s": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "hazards",
+            "snapshot_s"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "taf_window": {
+      "description": "What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TafWindowInput",
+          "type": "object",
+          "properties": {
+            "fcsts": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TafPeriod"
+              }
+            },
+            "start": {
+              "type": "number"
+            },
+            "end": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "fcsts",
+            "start"
+          ]
+        },
+        "answer": {
+          "title": "TafWindowAnswer",
+          "type": "object",
+          "properties": {
+            "periods": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TafPeriod"
+              }
+            },
+            "worst": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/WeatherWorst"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "current": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/TafPeriod"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "prevailing": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/TafPeriod"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "periods",
+            "worst",
+            "current",
+            "prevailing"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "tafs_along_route": {
+      "description": "The lowest forecast ceiling and visibility among the TAF stations near a route over a window, each station's own worst kept (14 CFR 91.155's cloud clearance is held to them).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TafsAlongRouteInput",
+          "type": "object",
+          "properties": {
+            "tafs": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "from": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon], degrees."
+            },
+            "to": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon], degrees."
+            },
+            "corridor_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "start": {
+              "type": "number"
+            },
+            "end": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "tafs",
+            "from",
+            "to",
+            "start"
+          ]
+        },
+        "answer": {
+          "title": "TafsAlongRouteAnswer",
+          "type": "object",
+          "properties": {
+            "min_ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "min_visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ceiling_unknown_at": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "stations": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "required": [
+            "min_ceiling_ft",
+            "min_visibility_sm",
+            "ceiling_unknown_at",
+            "stations"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "vfr_not_recommended_reasons": {
+      "description": "\"VFR flight not recommended\" (AIM 7-1-5) as its reasons, in briefing order: either end reporting IFR or LIFR or a ceiling of unknown height, then the forecast along the route under 14 CFR 91.155(c), (d)'s basic minimums or of unknown height.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "VfrNotRecommendedReasonsInput",
+          "type": "object",
+          "properties": {
+            "idents": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "metars": {
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "forecast": {
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          }
+        },
+        "answer": {
+          "title": "VfrNotRecommendedReasonsAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "sigmets_along_route": {
+      "description": "The SIGMETs in force whose area the route crosses (AC 00-45H).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "SigmetsAlongRouteInput",
+          "type": "object",
+          "properties": {
+            "advisories": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "from": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon], degrees."
+            },
+            "to": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon], degrees."
+            },
+            "corridor_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "now": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "advisories",
+            "from",
+            "to",
+            "now"
+          ]
+        },
+        "answer": {
+          "title": "SigmetsAlongRouteAnswer",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "pireps_along_route": {
+      "description": "The PIREPs of the last 90 minutes at or under 18,000 ft within the corridor of the route, urgent first, then in route order, each with along_track_nm.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PirepsAlongRouteInput",
+          "type": "object",
+          "properties": {
+            "reports": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "[lat, lon], degrees."
+              },
+              "description": "The route flown, [[lat, lon], ...]."
+            },
+            "corridor_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "now": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "reports",
+            "path",
+            "now"
+          ]
+        },
+        "answer": {
+          "title": "PirepsAlongRouteAnswer",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "pireps_in_box": {
+      "description": "The PIREPs still told (the last 90 minutes, at or under 18,000 ft) in a box, the urgent last.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PirepsInBoxInput",
+          "type": "object",
+          "properties": {
+            "reports": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "box": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4,
+              "description": "[south, west, north, east]"
+            },
+            "now": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "reports",
+            "box",
+            "now"
+          ]
+        },
+        "answer": {
+          "title": "PirepsInBoxAnswer",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "gairmets_along_route": {
+      "description": "The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (AC 00-45H).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GairmetsAlongRouteInput",
+          "type": "object",
+          "properties": {
+            "advisories": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "[lat, lon], degrees."
+              },
+              "description": "The route flown, [[lat, lon], ...]."
+            },
+            "start": {
+              "type": "number"
+            },
+            "end": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "advisories",
+            "path",
+            "start",
+            "end"
+          ]
+        },
+        "answer": {
+          "title": "GairmetsAlongRouteAnswer",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "freezing_level": {
+      "description": "Where a temperature profile crosses 0 C, by linear interpolation; at_or_below where it is already freezing at the lowest level; null where it stays above freezing.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FreezingLevelInput",
+          "type": "object",
+          "properties": {
+            "profile": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "description": "[[altitude_ft, temp_c], ...]"
+            }
+          }
+        },
+        "answer": {
+          "title": "FreezingLevelAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "ft": {
+                  "type": "number"
+                },
+                "at_or_below": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ft",
+                "at_or_below"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "temperature_at": {
+      "description": "The temperature at an altitude from a profile: interpolated between levels, past the ends the nearest level's difference from a standard day kept (ICAO standard lapse rate).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TemperatureAtInput",
+          "type": "object",
+          "properties": {
+            "profile": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "description": "[[altitude_ft, temp_c], ...]"
+            },
+            "altitude_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "altitude_ft"
+          ]
+        },
+        "answer": {
+          "title": "TemperatureAtAnswer",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "wind_at_altitude": {
+      "description": "The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for \"altitudes\".",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "WindAtAltitudeInput",
+          "type": "object",
+          "properties": {
+            "levels": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "wind_dir_true_deg": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "wind_speed_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "temp_c": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "description": "A station's levels by altitude in feet, as the weather store keeps them."
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "altitudes": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "levels"
+          ]
+        },
+        "answer": {
+          "title": "WindAtAltitudeAnswer",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/WindAloft"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/WindAloft"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "forecast_hour": {
+      "description": "The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, AC 00-45H).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ForecastHourInput",
+          "type": "object",
+          "properties": {
+            "hours_ahead": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "answer": {
+          "title": "ForecastHourAnswer",
+          "type": "string",
+          "enum": [
+            "06",
+            "12",
+            "24"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -12261,7 +13085,6 @@
     "arrival_circuit",
     "departure_circuit",
     "flight_category",
-    "taf_hour",
     "traffic_kind",
     "altitude_band",
     "operator_of",
@@ -12344,7 +13167,26 @@
     "ceiling_visibility",
     "emitter_category",
     "squawk_meaning",
-    "descent_altitude"
+    "descent_altitude",
+    "field_hours",
+    "awc_metars_read",
+    "awc_tafs_read",
+    "awc_airsigmets_read",
+    "awc_pireps_read",
+    "awc_gairmets_read",
+    "weather_held_until",
+    "gairmet_hazards",
+    "taf_window",
+    "tafs_along_route",
+    "vfr_not_recommended_reasons",
+    "sigmets_along_route",
+    "pireps_along_route",
+    "pireps_in_box",
+    "gairmets_along_route",
+    "freezing_level",
+    "temperature_at",
+    "wind_at_altitude",
+    "forecast_hour"
   ],
   "additionalProperties": false,
   "definitions": {
@@ -14871,31 +15713,6 @@
       ],
       "description": "A POH's short-field takeoff or landing table: at least two altitudes and two temperatures, a grid of them for every weight."
     },
-    "TafFiguresIn": {
-      "title": "TafFiguresIn",
-      "type": "object",
-      "properties": {
-        "category": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "gust_kt": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "thunder": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        }
-      },
-      "description": "A TAF group's figures."
-    },
     "TrackPoint": {
       "title": "TrackPoint",
       "type": "object",
@@ -15449,6 +16266,245 @@
       "required": [
         "lat",
         "lon"
+      ]
+    },
+    "TafPeriod": {
+      "title": "TafPeriod",
+      "description": "One period of a TAF as the weather store keeps it (awc_tafs_read; taf_read's fcsts): Unix seconds, the change group (\"\", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).",
+      "type": "object",
+      "properties": {
+        "timeFrom": {
+          "type": "number"
+        },
+        "timeTo": {
+          "type": "number"
+        },
+        "change": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "probability": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "wind_dir_true_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "wind_speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "wind_gust_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_unknown": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "wx": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "timeFrom",
+        "timeTo"
+      ]
+    },
+    "WeatherWorst": {
+      "title": "WeatherWorst",
+      "description": "The worst a TAF forecasts in a window, TEMPO and PROB groups included.",
+      "type": "object",
+      "properties": {
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_unknown": {
+          "type": "boolean"
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ceiling_ft",
+        "ceiling_unknown",
+        "visibility_sm"
+      ]
+    },
+    "WindAloft": {
+      "title": "WindAloft",
+      "type": "object",
+      "properties": {
+        "wind_dir_true_deg": {
+          "type": "number"
+        },
+        "wind_speed_kt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "wind_dir_true_deg",
+        "wind_speed_kt"
+      ]
+    },
+    "FieldHour": {
+      "title": "FieldHour",
+      "description": "One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (AC 00-45H's change groups).",
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "number",
+          "description": "The hour's start, ms; Now's the report's time (or now)."
+        },
+        "now": {
+          "type": "boolean"
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "VFR",
+            "MVFR",
+            "IFR",
+            "LIFR",
+            null
+          ]
+        },
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "sky": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "clear",
+            "partly",
+            "cloudy",
+            null
+          ]
+        },
+        "precip": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "thunder",
+            "snow",
+            "rain",
+            null
+          ]
+        },
+        "wind_dir_true_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "True; null where variable."
+        },
+        "wind_speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "wind_gust_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "at_times": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "VFR",
+            "MVFR",
+            "IFR",
+            "LIFR",
+            null
+          ],
+          "description": "A TEMPO's or PROB's category this hour where worse than the prevailing one."
+        },
+        "at_times_gust_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "at_times_thunder": {
+          "type": "boolean"
+        },
+        "at_times_chance": {
+          "type": "boolean",
+          "description": "The worse weather at times comes only from a PROB group (AC 00-45H)."
+        }
+      },
+      "required": [
+        "at",
+        "now",
+        "category",
+        "ceiling_ft",
+        "visibility_sm",
+        "sky",
+        "precip",
+        "wind_dir_true_deg",
+        "wind_speed_kt",
+        "wind_gust_kt",
+        "at_times",
+        "at_times_gust_kt",
+        "at_times_thunder",
+        "at_times_chance"
       ]
     }
   }

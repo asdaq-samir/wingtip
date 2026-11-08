@@ -1,11 +1,17 @@
 //! A field's weather as the app says it: the flight category a ceiling and
 //! a visibility fall in, where only some of the figures are known (the
 //! web's lib/map/flightCategory, the planner's wingtip.glmp), and an hour of a
-//! TAF read from its change groups (the web's lib/hourly). The TAF's text
-//! is read by each host (the web by metar-taf-parser); what its groups
-//! mean for the hour is decided here, once.
+//! TAF read from its change groups (hours, the web's airport card), and
+//! (#482 phase 2) the weather as the planner reads it: the AWC's national
+//! cache files read into the shapes the weather service stores (awc), and
+//! what they say along a route (route) -- a TAF over a window of time, the
+//! worst forecast near the route, the SIGMETs, PIREPs and G-AIRMETs it
+//! meets. The hosts fetch; what the products mean is decided here, once.
 
+pub mod awc;
 pub mod calls;
+pub mod hours;
+pub mod route;
 
 use crate::metar;
 
