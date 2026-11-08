@@ -74,8 +74,8 @@ export default function ChartMap({
   );
 }
 
-/** A tap on the course line adds a point there (the training map's
- *  CourseLine onClick): within a finger's reach of the line. */
+/** A tap on the course line adds a point there, within a finger's reach
+ *  of the line. */
 function AddOnCourse({ onAddAt }: { onAddAt: (lat: number, lon: number) => void }) {
   useGlTap(["route-core"], 9, 6, (_feature, e) => onAddAt(e.lngLat.lat, e.lngLat.lng));
   return null;

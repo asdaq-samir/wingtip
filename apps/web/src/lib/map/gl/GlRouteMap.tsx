@@ -30,7 +30,7 @@ const NONE: { lat: number; lon: number }[] = [];
 
 export interface GlRouteMapProps {
   course: Course | null;
-  /** The chart alone while there is no route (MapShell's chartOnly). */
+  /** The chart alone while there is no route. */
   chart: ChartInfo | null;
   checkpoints: GlCheckpoint[];
   candidates: GlCandidate[];
@@ -107,7 +107,7 @@ function Layers(p: GlRouteMapProps) {
   const { course } = p;
   const dryRunning = usePastFlight(s => s.hex === DRY_RUN);
   const [previewing, setPreviewing] = useState(false);
-  // The fits MapEffects' FitTo makes on the Leaflet map: a lone departure,
+  // The map fitted to what was just picked: a lone departure,
   // Nearest's fields, the Stops, a procedure or a pattern just picked.
   useGlFit(p.start ? [p.start] : NONE, !p.place ? p.start?.ident ?? null : null, 9);
   useGlFit(p.nearest ?? NONE, !p.place && p.nearest?.length ? p.nearest.map(a => a.ident).join(",") : null);

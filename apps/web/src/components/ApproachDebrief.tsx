@@ -189,7 +189,7 @@ function useFrame(d: Debriefed, width: number, height: number, pad: number) {
 const W = 320, H = 220;
 
 /** The plan view, as a plate's: the procedure in the approaches' colour
- *  (the map's, ProcedureLayer), its missed approach dashed, each fix a
+ *  (the map's, ProceduresGl), its missed approach dashed, each fix a
  *  diamond and its name; the track over it in the flown track's ink, red
  *  where it was past full scale or under a minimum. Drawn, not read: the
  *  figures are in the findings under it. */

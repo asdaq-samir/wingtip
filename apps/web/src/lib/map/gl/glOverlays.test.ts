@@ -32,7 +32,7 @@ describe("the overlay tiles' layers", () => {
     expect(layers.marks!.map(l => l.id)).toEqual([
       "navaids", "navaids-idents", "fixes", "fixes-idents", "vfr-waypoints", "vfr-waypoints-idents", "airports",
     ]);
-    // Each class from AirspaceLayer's zoom, as the in-view rings.
+    // Each class from its own zoom (AIRSPACE_FROM), as the in-view rings.
     const from = Object.fromEntries(layers.lines!.map(l => [l.id, l.minzoom]));
     expect(from).toMatchObject({ "airspace-B": glZoom(6), "airspace-C": glZoom(7), "airspace-D": glZoom(8) });
   });

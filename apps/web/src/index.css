@@ -246,8 +246,8 @@ body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-f
   --airspace-magenta-text: #c0309f;
   /* The course line's magenta where the stylesheet reaches it off the
      map -- the nav log's tags (PointMark), FPL's route line
-     (ProceduresRoute) -- chartColors' COURSE_MAGENTA, which Leaflet and a
-     canvas take as a value; the Chart ink look's own magenta in it. */
+     (ProceduresRoute) -- chartColors' COURSE_MAGENTA, which the map's
+     paint takes as a value; the Chart ink look's own magenta in it. */
   --course: #e600e6;
   /* The display face (the font-display utility): the body's own, but in
      the Chart ink look, whose is Barlow Condensed. */
@@ -279,15 +279,8 @@ body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-f
      sectional's blue and magenta a shade darker, 4.5:1 on their wash. */
   --airspace-blue-ink: #1d559c;
   --airspace-magenta-ink: #962568;
-  /* The map's airspace altitudes along their lines (AirspaceLayer's
-     EdgeLabels): the lines' own ForeFlight hues (airspaceMarks), a shade
-     darker to read 5.1:1 on their halo, the map's white ground, where
-     the lines' #4b9df8 and #c43fc0 are 2.8 and 4.4:1 (WCAG wants 4.5). */
-  --airspace-edge-blue: #086bd8;
-  --airspace-edge-magenta: #b337b0;
-  --airspace-halo: #ffffff;
   /* A procedure's indigo off the map, where a card draws its fixes and
-     its pill: the map's own (rowBadges BADGE.approach, ProcedureLayer),
+     its pill: the map's own (rowBadges BADGE.approach, ProceduresGl),
      a shade lighter in dark to stand off the card. */
   --procedure: #5b5bd6;
   /* Caution, the one amber: words that say it on the panel (FINDING_TONE,
@@ -364,12 +357,6 @@ body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-f
   --sheet: var(--background);
   --airspace-blue-ink: #8cb8f2;
   --airspace-magenta-ink: #f0a0cf;
-  /* The sheet's dark at night, where a white halo was the brightest
-     thing over the dimmed chart: the line's blue itself reads 5.7:1 on
-     it, its magenta a shade lighter 5.1:1 (3.7 as it is). */
-  --airspace-edge-blue: #4b9df8;
-  --airspace-edge-magenta: #d16bce;
-  --airspace-halo: #172234;
   --procedure: #9d9df0;
   /* The palette's caution amber (#F5B85E) for words and marks, and a
      paler one for words on its wash. */
@@ -436,7 +423,7 @@ body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-f
    block); the chart's magenta for the course and an ident at a head, its
    brown for the checkpoints' marks, its green for a field (--ink-*, the
    tokens and the ink-* colour utilities; chartColors'
-   checkpointColour for what Leaflet and a canvas take as a value). What
+   checkpointColour for what the map's paint takes as a value). What
    can be tapped stays the app's own blue by day: the canvas's #0a84ff
    reads 3.7:1 on white, under WCAG's 4.5 (the iOS audit's P15), and so
    do its amber (#ff9f0a, 2.1:1) and its go green (#34c759, 2.2:1) as
@@ -558,13 +545,8 @@ html[data-chart-light="bright"] [data-slot="section-summary"] {
   color: #000000;
 }
 
-/* The Chart ink look on the map and on its cards, after the night's and
-   the sun's rules: it outranks the dimmed chart's course (the same
-   weight, later) and yields to sunlight (the :not). The course, a hold's
-   racetrack and the route options' ways (course-ink, on a path's options)
-   in the look's magenta, the day's deep one and the night's light one
-   (--ink-magenta), cased in white as they are, the dimmed chart's navy
-   casing kept at night. A card -- a grouped list's box (ListGroup), the
+/* The Chart ink look on its cards, after the sun's rules, yielding to
+   sunlight (the :not). A card -- a grouped list's box (ListGroup), the
    stock Card -- white with no edge, 18-point corners and the canvas's
    soft shade, in one rule rather than on each. */
 html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], [data-slot="item-group"][role="group"]) {

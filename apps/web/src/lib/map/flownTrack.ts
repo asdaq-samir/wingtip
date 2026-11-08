@@ -3,7 +3,7 @@ import { create } from "zustand";
 /**
  * A saved flight's flown track, put on the map from its debrief
  * (FlightPage): drawn over its route while that route is the one on the
- * chart (FlownTrackLayer), red where it was outside a tolerance, until
+ * chart (FlownTrackGl), red where it was outside a tolerance, until
  * the pilot hides it (FlownTrackButton). Not kept past the page: the
  * track itself is kept with the flight.
  */

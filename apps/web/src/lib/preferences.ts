@@ -96,13 +96,13 @@ interface Preferences {
   classB: boolean;
   /** Whether the Class B, C and D are drawn over the chart, each line from
    *  the FAA's own airspace file with its altitudes as the sectional
-   *  prints them (AirspaceLayer). On by default, the owner's pick of the
+   *  prints them (AirspaceGl). On by default, the owner's pick of the
    *  map's looks ("C", 2026-10-29). */
   airspace: boolean;
   /** Whether the VORs are drawn over the chart, and closer in the low
-   *  enroute chart's fixes (NavaidsLayer). On by default, as `airspace`. */
+   *  enroute chart's fixes (NavaidsGl). On by default, as `airspace`. */
   navaids: boolean;
-  /** Whether the temporary flight restrictions are drawn (TfrLayer). On
+  /** Whether the temporary flight restrictions are drawn (TfrGl). On
    *  by default: a pilot must know of every one near the route. */
   tfrs: boolean;
   /** Whether what is ahead of own ship in the air is said over the map
@@ -114,22 +114,22 @@ interface Preferences {
    *  unasked is a surprise; turned on, it says so. */
   speakAlerts: boolean;
   /** Whether the airplanes ADS-B receivers hear about the map are drawn
-   *  (TrafficLayer, from adsb.lol). Off by default: it asks a third
+   *  (TrafficGl, from adsb.lol). Off by default: it asks a third
    *  party every five seconds. */
   traffic: boolean;
   /** Whether the fields the armed services own and keep to themselves
-   *  are drawn (AirportsLayer), at the pilot's ask: off by default, as a
+   *  are drawn (AirportsGl), at the pilot's ask: off by default, as a
    *  civil airplane lands there only with the service's permission (the
    *  planner's `military`). Joint-use fields are always drawn. */
   military: boolean;
-  /** Whether the privately owned fields are drawn (AirportsLayer): off
+  /** Whether the privately owned fields are drawn (AirportsGl): off
    *  by default, at the owner's ask ("Make private airports hidden by
    *  default", 2026-10-27), on at the pilot's, as one is landed at only
    *  with the owner's
    *  permission (NASR APT_BASE's facility use, PR, the planner's
    *  `private`). A field on the route or picked is drawn either way. */
   privateFields: boolean;
-  /** Whether a picked approach's plate is laid on the chart (PlateLayer),
+  /** Whether a picked approach's plate is laid on the chart (PlatesGl),
    *  switched from the approach's pull-down, at the owner's ask. On by
    *  default. */
   plates: boolean;
@@ -163,7 +163,7 @@ interface Preferences {
   /** The navigation bar's edge, once one has been picked; until then
    *  the bottom on a phone and the top from md up. */
   navBar: NavEdge | null;
-  /** The chart in the dark theme (ChartTiles), dimmed unless the pilot
+  /** The chart in the dark theme (ChartGl), dimmed unless the pilot
    *  asks for it as printed. */
   chartNight: ChartNight;
   /** The chart in sunlight (lib/sunlight): from the light sensor, on, or off. */

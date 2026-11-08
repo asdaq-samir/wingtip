@@ -25,7 +25,7 @@ export interface OpenFix {
 
 /**
  * A procedure's fix, opened from its branch in FPL's list (FixBranch) or a
- * tap on it on the map (ProcedureLayer), at the owner's pick (the fix
+ * tap on it on the map (ProceduresGl), at the owner's pick (the fix
  * canvas's card): Direct to it, as ATC sends an airplane, or flown as
  * charted again; and the altitude to cross it at -- the chart's, and the
  * pilot's own in its place, typed in feet, or As charted. A card in the

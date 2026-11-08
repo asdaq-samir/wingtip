@@ -1,8 +1,9 @@
 import type { AirspaceClass } from "../preferences";
 import { BLUE, MAGENTA } from "../useAirspace";
 
-// Apart from icons.ts, which holds Leaflet: Nearest's rows draw the
-// mark too, and so would have kept Leaflet in the page's first script.
+// Apart from icons.ts, which holds every map mark: Nearest's rows draw
+// this one too, and so would have kept all of them in the page's first
+// script.
 
 /** Anything interpolated into the markup here or in icons.ts is a chart colour or an
  *  airport ident, but it comes from the planner rather than from here,

@@ -30,7 +30,7 @@ export { OVERLAY_SOURCE };
 
 // ---- The marks' pictures --------------------------------------------------
 
-/** The chart's own ink for a fix (NavaidCanvas' FIX_INK). */
+/** The chart's own ink for a fix. */
 export const FIX_INK = "#1c1a17";
 /** A VFR waypoint's ink on the WebGL map: ForeFlight's green triangle, at
  *  the owner's ask (2026-11-07, from its screenshots), where the
@@ -39,7 +39,7 @@ export const VFR_GREEN = "#148a3b";
 
 type Picture = [id: string, svg: () => string, stretch?: Stretch];
 
-/** The navaids' pictures, NavaidCanvas' own: the VOR's hexagon, a fix's
+/** The navaids' pictures: the VOR's hexagon, a fix's
  *  triangle, a VFR waypoint's green one (FAA Aeronautical Chart User's
  *  Guide, Radio Aids to Navigation; VFR waypoints), and the VOR's blue
  *  ident box, stretched to its ident. */
@@ -95,7 +95,7 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
 
 // ---- The layers -----------------------------------------------------------
 
-/** The airports' zooms, Leaflet's (AirportsLayer's): the farthest out any
+/** The airports' zooms, in the app's levels: the farthest out any
  *  is drawn. Within it each field is in the tiles from its own zoom by
  *  its rank (wingtip.vector_tiles.AIRPORT_MIN_ZOOM): towered, then the
  *  long hard runways, other public fields, private ones, heliports. */
@@ -146,7 +146,7 @@ export function airportMarksLayer(from: { source: string; "source-layer"?: strin
       // frame by frame (a zoom expression, not the page's state).
       "icon-size": ["interpolate", ["linear"], ["zoom"], glZoom(AIRPORTS_FARTHEST_ZOOM), 0.7, glZoom(10), 1, glZoom(13), 1.25],
       "icon-allow-overlap": false,
-      // Out at a few states, a mark's room is AirportsLayer's 80 px apart;
+      // Out at a few states, a mark keeps some 80 px from the next;
       // closer in, its own: every field at a field's own scale.
       "icon-padding": ["step", ["zoom"], 27, glZoom(7), 2],
       "symbol-sort-key": ["get", "rank"],
@@ -196,7 +196,7 @@ export function navaidMarks(
   ];
 }
 
-/** NavaidsLayer's zooms, Leaflet's: the VORs from a region's, the fixes
+/** The navaids' zooms, in the app's levels: the VORs from a region's, the fixes
  *  and the VFR waypoints from 10 (NavaidCards, WaypointCard). */
 export const VOR_ZOOM = 8;
 export const FIX_ZOOM = 10;

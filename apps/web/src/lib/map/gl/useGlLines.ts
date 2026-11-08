@@ -12,8 +12,8 @@ export interface GlRun {
   colour: string;
   width: number;
   opacity?: number;
-  /** What the browser tests know it by (data-<id>), as the Leaflet map's
-   *  class on its path: "pattern-at-KDLH". */
+  /** What the browser tests know it by (data-<id>, useGlProbe):
+   *  "pattern-at-KDLH". */
   name?: string;
 }
 
@@ -21,8 +21,8 @@ export interface GlRun {
  * Lines drawn as one source and two layers -- a casing under, each run in
  * its own colour and width over it -- the shape every track on the map
  * takes (own ship's trail, a flown track, a past flight, a tracked
- * airplane's path, a leg picked in the Brief), where the Leaflet map drew
- * a polyline each.
+ * airplane's path, a leg picked in the Brief), every run of one kind in
+ * one source rather than a line each.
  */
 export function useGlLines(id: string, slot: Slot, runs: GlRun[] | null, casing: { colour: string; width: number; opacity: number } | null, dash?: number[]) {
   const layers = useMemo<LineLayerSpecification[]>(() => [

@@ -707,7 +707,7 @@ function FuelStopChip({ ident, reason = "fuel", onAdd, onHide }: { ident: string
 
 /** A procedure picked at a point, after its pill: its kind's glyph and its
  *  short title in the approaches' indigo, as the map draws it
- *  (ProcedureLayer). */
+ *  (ProceduresGl). */
 function ProcedureChip({ procedure, before = false, onOpen }: {
   procedure: RouteProcedure;
   /** Before its field's pill (an arrival, an approach), not after it. */

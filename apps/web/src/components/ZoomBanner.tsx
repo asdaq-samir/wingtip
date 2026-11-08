@@ -63,7 +63,7 @@ export default function ZoomBanner({ map }: { map: GlMap | null }) {
     const say = () => {
       if (!own()) return;
       clearTimeout(timer);
-      // In the app's levels, Leaflet's: MapLibre's zoom is one less (glStyle).
+      // In the app's levels: MapLibre's zoom is one less (glStyle).
       const shown = String(Math.round((map.getZoom() + 1) * 10) / 10);
       if (text.textContent !== shown) text.textContent = shown;
       const { nm, px } = scaleOf(map);

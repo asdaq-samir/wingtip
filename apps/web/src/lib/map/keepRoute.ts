@@ -10,8 +10,9 @@ import { kindCycle, tileUrl } from "./tiles";
  * The tiles a route needs in the air, fetched now so the service
  * worker holds them: every tile of the base chart within the corridor
  * either side of the course line, at every zoom from a whole-route
- * view down to the chart's own detail. Leaflet asks for exactly these
- * URLs later, and the worker (vite.config.ts, chart-tiles) answers
+ * view down to the chart's own detail. The map asks for exactly these
+ * URLs later (its raster sources take the same 256-pixel {z}/{x}/{y},
+ * glStyle), and the worker (vite.config.ts, chart-tiles) answers
  * from its cache before the network, connection or none.
  *
  * Sized for a phone: a 300 nm route at zooms 8 to 12 is about a
@@ -40,16 +41,16 @@ export interface KeepProgress {
 
 const TILE_PX = 256;
 
-/** Leaflet's Web Mercator clamps latitude here (SphericalMercator.MAX_LATITUDE,
- *  the latitude at which the projected square's top edge falls). */
+/** Web Mercator clamps latitude here: the latitude at which the
+ *  projected square's top edge falls. */
 const MAX_LATITUDE = 85.0511287798;
 
 /** The {x, y} of the tile a point falls in, by the Web Mercator
- *  projection Leaflet's EPSG:3857 uses to decide which tiles to ask for,
+ *  projection (EPSG:3857) the map uses to decide which tiles to ask for,
  *  so these are the URLs it will ask for later. Written out here, not
- *  taken from Leaflet, so that this module -- reached by the page's first
- *  script through the Keep button -- does not pull Leaflet's 149 KB into
- *  it (issue #87); keepRoute.test pins it to the slippy-map scheme's own definition. */
+ *  taken from the map, so that this module -- reached by the page's first
+ *  script through the Keep button -- does not pull MapLibre into it
+ *  (issue #87); keepRoute.test pins it to the slippy-map scheme's own definition. */
 function tileOf(lat: number, lon: number, zoom: number): { x: number; y: number } {
   const phi = (Math.max(Math.min(lat, MAX_LATITUDE), -MAX_LATITUDE) * Math.PI) / 180;
   const scale = TILE_PX * 2 ** zoom;

@@ -6,7 +6,7 @@ import type { LatLon } from "../geo";
 /**
  * What the approach lesson (ApproachLesson) shows on the chart: the
  * approach it teaches, the fix or part of it the step is about, and its
- * airplane's flight from the last fix to this one (LessonLayer). Kept
+ * airplane's flight from the last fix to this one (LessonGl). Kept
  * apart from the dry run's replay (lib/map/pastFlight), so a lesson
  * flown leaves the route's own dry run where it was.
  */

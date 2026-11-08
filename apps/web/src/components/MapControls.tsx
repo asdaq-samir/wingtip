@@ -28,7 +28,7 @@ import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "./mapChrome";
  * fields nearest own ship, and D→, direct to the next landing -- and the
  * microphone's circle grows to the same size where it is; the settings,
  * the arrow and the rest wait for the ground. The map follows the
- * airplane in flight (OwnShipLayer), so the arrow is not missed.
+ * airplane in flight (OwnShipGl), so the arrow is not missed.
  */
 /** The microphone's pill, in RadioLayer's chunk with the rest of the
  *  radio's words: fetched as the mic is first tapped, never on the
@@ -82,7 +82,7 @@ export default function MapControls() {
   );
   return (
     <>
-    {/* z-[1000]: over Leaflet's own panes, the level Leaflet gives its
+    {/* z-[1000]: over the map's canvas, its markers and its own
         controls; still inside the map's own stacking context, under the
         panel and every portal. The map's right edge is the screen's, so
         clear of a landscape phone's notch there.

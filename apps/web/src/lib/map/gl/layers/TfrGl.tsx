@@ -13,7 +13,7 @@ const SOURCES = { [SOURCE]: { type: "geojson" as const, data: { type: "FeatureCo
 
 /** A TFR is drawn bold, a thing that changes by the day over the chart
  *  that does not: in force a solid red line over a red wash, not yet in
- *  force dashed over a fainter one (TfrLayer's inks, a little heavier). */
+ *  force dashed over a fainter one. */
 const FILL: FillLayerSpecification = {
   id: "tfrs-fill", type: "fill", source: SOURCE, filter: ["get", "active"],
   paint: { "fill-color": TFR_RED, "fill-opacity": 0.14 },
@@ -37,10 +37,9 @@ const LINE_LATER: LineLayerSpecification = {
 const ALL = [...LAYERS, LINE, LINE_LATER];
 
 /**
- * The temporary flight restrictions, as TfrLayer: the same answer
- * (tfrsQuery), the settings' TFRs, each area a fill and its edge -- all of
- * them in one source, where the Leaflet map made a polygon each, fifteen a
- * frame. A tap inside one opens its card.
+ * The temporary flight restrictions (tfrsQuery), at the settings' TFRs:
+ * each area a fill and its edge, all of them in one source rather than a
+ * shape each. A tap inside one opens its card.
  */
 export function TfrGl() {
   const show = usePreferences(s => s.tfrs);

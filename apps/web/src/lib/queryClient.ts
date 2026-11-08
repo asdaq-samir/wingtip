@@ -362,7 +362,7 @@ export const routeOptionsQuery = (...args: Parameters<typeof api.routeOptions>) 
 });
 
 /** An approach's plate placed on the map, and whether it publishes
- *  circling minimums (wingtip.plates): the map's (PlateLayer) and the route's
+ *  circling minimums (wingtip.plates): the map's (PlatesGl) and the route's
  *  runway chips' (ProceduresRoute). A plate placed stays good for its
  *  cycle's 28 days; none placed is said by none drawn, not a retry. */
 export const plateQuery = (airport: string, id: string) => queryOptions({

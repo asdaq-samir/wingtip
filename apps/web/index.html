@@ -2,10 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <!-- The viewport a full-screen chart needs, the same one Leaflet's
-         own mobile tutorial specifies and Windy, SkyVector and Google
+    <!-- The viewport a full-screen chart needs, the same one the map
+         libraries' mobile examples use and Windy, SkyVector and Google
          Maps all ship. `user-scalable=no`/`maximum-scale=1`: a pinch or
-         a double tap must zoom the chart, which Leaflet handles, not the
+         a double tap must zoom the chart, which MapLibre handles, not the
          document -- without this a gesture that starts on a map control
          zooms the page instead, and leaves it zoomed. `viewport-fit=cover`:
          the map draws edge to edge behind a notch or Dynamic Island, and
@@ -51,7 +51,7 @@
     <meta name="theme-color" content="#ffffff" />
     <!-- Structural, not decorative: without this the page can grow a
          scrollbar of its own (even by a stray pixel), and a wheel over
-         the map then fights the page for the scroll instead of Leaflet
+         the map then fights the page for the scroll instead of MapLibre
          getting it cleanly -- felt as janky zoom rather than a crash.
          The print override matters for exactly one page, the Flight
          Briefing: it's taller than one screen and needs the browser's

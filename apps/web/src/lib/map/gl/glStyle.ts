@@ -12,23 +12,25 @@ import { COURSE_MAGENTA } from "../chartColors";
  * the map to be clear and crisp and the overlay items need to be seen as
  * part of the map and not buggy overlay"): the FAA chart, the airspace,
  * the route and its checkpoints drawn by MapLibre GL in one WebGL map,
- * where Leaflet draws the chart as images and every overlay on a canvas
- * or an SVG of its own that it scales by CSS under a pinch and draws
- * again at the pinch's end. Plain data here, no map: what GlMap hands
+ * each in the frame the chart is drawn in, so nothing lags it under a
+ * pinch. Plain data here, no map: what GlMap hands
  * MapLibre, and what the tests read.
  */
 
-/** Leaflet's zoom less one: MapLibre's world is 512 px across at zoom 0,
- *  Leaflet's 256, so the same view is a level lower in MapLibre. Every
- *  zoom this app names (AirspaceLayer's FROM_ZOOM, ownShip's OPEN_ZOOM, a
- *  chart layer's min_zoom) is Leaflet's, and goes through this. A raster
- *  source's own minzoom and maxzoom are the tiles' {z}, which need none. */
-export const glZoom = (leafletZoom: number) => leafletZoom - 1;
-export const leafletZoomOf = (glZoomLevel: number) => glZoomLevel + 1;
+/** MapLibre's zoom from the app's. The app counts its levels as the
+ *  chart's tiles do, the world 256 px across at zoom 0 (their {z});
+ *  MapLibre's world is 512 px across at zoom 0, so the same view is a
+ *  level lower there. Every zoom this app names (AIRSPACE_FROM, ownShip's
+ *  OPEN_ZOOM, a chart layer's min_zoom) is in the app's levels, and goes
+ *  through this. A raster source's own minzoom and maxzoom are the tiles'
+ *  {z}, which need none. */
+export const glZoom = (appZoom: number) => appZoom - 1;
+/** The app's level from MapLibre's zoom. */
+export const appZoomOf = (glZoomLevel: number) => glZoomLevel + 1;
 
-/** As ChartTiles: the chart enlarged two levels past its own last zoom. */
+/** The chart enlarged two levels past its own last zoom. */
 export const OVERZOOM = 2;
-/** As ChartTiles: a region's level of the chart under it, where the
+/** A region's level of the chart under it, where the
  *  chart's own tiles are not in yet. */
 export const UNDERLAY_ZOOM = 5;
 
@@ -52,15 +54,15 @@ export interface ChartStyle {
   maxZoom: number;
 }
 
-/** The chart's ink by day and dimmed at night, as index.css dims the
- *  Leaflet tiles (`brightness(0.5) contrast(1.15)`) and brightens them in
- *  sunlight (`contrast(1.25) saturate(1.2)`). By day a touch more
+/** The chart's ink by day, dimmed at night (half the brightness, a
+ *  little more contrast) and brightened in sunlight (a fifth more
+ *  contrast and colour). By day a touch more
  *  contrast and colour than the scan (0.1 each), as ForeFlight's chart
  *  reads beside ours (the owner's screenshots, 2026-11-07). */
 export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecification["paint"] {
   return {
-    // Each tile drawn in the frame it comes, as Leaflet's fadeAnimation
-    // false (MapShell): a fade on every pan nobody asked for.
+    // Each tile drawn in the frame it comes: a fade on every pan is
+    // movement nobody asked for.
     "raster-fade-duration": 0,
     // Smooth, not nearest: past the chart's last zoom the owner chose the
     // smooth enlargement ForeFlight shows over hard blocks (index.css,
@@ -74,7 +76,7 @@ export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecif
 }
 
 /**
- * The FAA chart as ChartTiles draws it: the base chart (the sectional or
+ * The FAA chart: the base chart (the sectional or
  * an IFR enroute chart, per the preferences), the same chart at a
  * region's level under it, and the terminal sheet over it while pinned --
  * the same tile addresses (tiles.ts tileTemplate, with the cycle and the
@@ -105,7 +107,7 @@ export function chartStyle(chart: ChartInfo, base: string, pinned: boolean, orig
 type AirspaceClass = AirspaceVolume["airspace_class"] | "E";
 
 /**
- * The airspace's inks, AirspaceLayer's (airspaceMarks): the FAA's
+ * The airspace's inks: the FAA's
  * sectional symbology (Aeronautical Chart User's Guide, VFR Terms and
  * Symbols, Airspace) -- Class B solid blue, Class C solid magenta, Class
  * D dashed blue, Class E (surface) dashed magenta, drawn here faded -- in
@@ -122,7 +124,7 @@ export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number
   E: { colour: "#e02ad8", dash: [10 / 3, 5 / 3], opacity: 0.45, width: 3, label: "#8a1f87" },
 };
 
-/** From which Leaflet zoom each class is drawn, AirspaceLayer's:
+/** From which zoom each class is drawn, in the app's levels:
  *  B from 6, C from 7, D (and E) and every label from 8. */
 export const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 6, C: 7, D: 8, E: 8 };
 export const AIRSPACE_LABELS_FROM = 8;
@@ -240,7 +242,7 @@ export interface RoutePoint {
 export const ROUTE_SOURCE = "route";
 export const CHECKPOINT_SOURCE = "checkpoints";
 
-/** The course: a white casing under the magenta core, as CourseLine. */
+/** The course's line, drawn as a white casing under a magenta core (RouteGl). */
 export function routeFeature(line: [number, number][]): GeoJSON.Feature<GeoJSON.LineString> {
   return { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: line.map(([lat, lon]) => [lon, lat]) } };
 }

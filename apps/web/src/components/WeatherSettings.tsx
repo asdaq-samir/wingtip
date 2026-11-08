@@ -18,7 +18,7 @@ const WINDS: { value: WindsAt; label: string }[] = [
 ];
 
 /**
- * The weather the map draws (lib/map/WeatherLayer), first in the map's
+ * The weather the map draws (WeatherGl), first in the map's
  * own button's sheet, at the owner's pick (the canvas's map weather, A:
  * "A layers button on the map"): the radar, the satellite picture, the
  * SIGMETs and G-AIRMETs, the pilot reports, each on or off, and the winds

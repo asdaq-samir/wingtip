@@ -15,12 +15,12 @@ import FullScreenViewer from "./FullScreenViewer";
 const GAP = 60;
 /** Degrees a page's pixel is laid on: the pages sit on a sliver of the
  *  equator, a few hundredths of a degree across, where the map's Mercator
- *  is flat to a part in a million -- MapLibre has no plane of plain pixels
- *  as Leaflet's CRS.Simple was. */
+ *  is flat to a part in a million: MapLibre has no plane of plain
+ *  pixels. */
 const K = 1e-5;
 /** No further in than two screen points a picture's pixel: past that the
  *  picture, drawn at 360 dots an inch (wingtip.publications), only grows
- *  coarser (Leaflet's MAX_ZOOM 1). MapLibre's world is 512 points across
+ *  coarser. MapLibre's world is 512 points across
  *  360 degrees at zoom 0. */
 const MAX_ZOOM = Math.log2((2 * 360) / (512 * K));
 

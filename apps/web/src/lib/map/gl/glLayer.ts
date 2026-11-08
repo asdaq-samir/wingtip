@@ -39,8 +39,8 @@ export interface GlMapApi {
   /** A tap on the chart itself, nothing within reach: what puts a card
    *  away (an airport's, which the page holds). */
   addMiss: (miss: (event: MapMouseEvent) => void) => () => void;
-  /** A card in the map's sheet (SheetCard), as a tap on the Leaflet map
-   *  opens one; null puts it away. */
+  /** A card in the map's sheet (SheetCard), for what a tap on the map
+   *  opens; null puts it away. */
   openCard: (card: ReactNode | null) => void;
   /** Whether the cycle's overlay tiles are in the map's first style
    *  (glOverlays): its airspace, airports, navaids, fixes and runways
@@ -282,7 +282,7 @@ export function drawSvg(svg: string, stretch?: Stretch): Promise<DrawnImage | nu
 
 /**
  * The marks' pictures from their own SVG markup -- the same markup the
- * Leaflet map's markers and canvases draw (airportMark, icons) -- drawn
+ * HTML markers and the lists draw (airportMark, icons) -- drawn
  * once each at the screen's density and given to the map by id, for a
  * symbol layer's `icon-image`. Settles once every one is in, so a layer
  * gives its features after their pictures (a feature drawn before its

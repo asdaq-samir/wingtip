@@ -11,13 +11,13 @@ const chart = {
 } as unknown as ChartInfo;
 
 describe("chartStyle", () => {
-  it("asks for the tiles ChartTiles asks for, at the same zooms", () => {
+  it("asks for the chart's tiles at the chart's own zooms", () => {
     const style = chartStyle(chart, "sec", false, "https://wingtip.test")!;
     expect(style.sources.chart!.tiles).toEqual(["https://wingtip.test/api/planner/chart-tile/sec/{z}/{x}/{y}.png?c=10-29-2026&r=6"]);
     expect(style.sources.chart).toMatchObject({ minzoom: 3, maxzoom: 12, tileSize: 256 });
-    // The region's level under it, as ChartTiles' underlay.
+    // The region's level under it, while the chart's own tiles come in.
     expect(style.sources["chart-under"]).toMatchObject({ minzoom: 5, maxzoom: 5 });
-    // Two levels past the chart's last, in MapLibre's zoom (Leaflet's less one).
+    // Two levels past the chart's last, in MapLibre's zoom (the app's less one).
     expect(style.maxZoom).toBe(13);
     expect(style.layers.map(l => l.id)).toEqual(["chart-under", "chart"]);
   });
@@ -54,7 +54,7 @@ describe("airspaceFeatures", () => {
     expect(features[0]!.properties).toEqual({ id: "ORD-B-1", cls: "B", label: "B: 100–30" });
   });
 
-  it("draws each class from AirspaceLayer's zoom, the labels from 8", () => {
+  it("draws each class from its own zoom, the labels from 8", () => {
     const layers = airspaceLayers(["Inter"]);
     const from = Object.fromEntries(layers.map(l => [l.id, l.minzoom]));
     expect(from).toMatchObject({ "airspace-B": glZoom(6), "airspace-C": glZoom(7), "airspace-D": glZoom(8), "airspace-labels": glZoom(8) });
