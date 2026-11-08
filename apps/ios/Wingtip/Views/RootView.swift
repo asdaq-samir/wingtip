@@ -33,6 +33,12 @@ struct RootView: View {
     @State private var following = false
     @State private var routeAway = false
     @State private var fitRequest = 0
+    /// Whether the map has shown (ChartMap's reveal): the loading mark is
+    /// over it until then.
+    @State private var mapShown = false
+    /// The height the sheet covers at the foot of the screen, as it is now.
+    @State private var sheetHeight: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Ask (AskView) up: a sheet over the tabs' sheet on the iPhone, so the
     /// system presents it, since one view presents one sheet at a time;
     /// over the map on the iPad.
@@ -84,6 +90,9 @@ struct RootView: View {
                                 SheetView(tab: $tab, airports: $airports, pill: detent == RootView.pill, asking: $asking)
                             }
                         }
+                        // How much of the map the sheet covers, for the map's
+                        // opening point and the loading mark over it.
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { sheetHeight = $0 }
                         .presentationDetents([RootView.pill, .medium, .large], selection: $detent)
                         .presentationBackgroundInteraction(.enabled(upThrough: .medium))
                         .presentationBackground(.regularMaterial)
@@ -116,6 +125,11 @@ struct RootView: View {
         tab = .airport
         airports = [route]
         if detent != .medium { detent = .medium }
+    }
+
+    /// The height of the map the sheet covers: none beside the sidebar.
+    private var mapInset: CGFloat {
+        layout == .sheet && sheetUp ? sheetHeight : 0
     }
 
     /// The point held on the map, whichever holds its card.
@@ -152,9 +166,18 @@ struct RootView: View {
                 onHold: { at in open(AirportRoute.airspace(lat: at.latitude, lon: at.longitude).text) },
                 onWaypointStop: plan.routed ? { (ident: String) in plan.stops.append(ident); plan.plan() } : nil
             ),
-            hazardLegs: plan.hazardLegs
+            hazardLegs: plan.hazardLegs,
+            bottomInset: mapInset,
+            onReveal: { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { mapShown = true } }
         )
         .ignoresSafeArea()
+        // Over the map, under its buttons, until it shows: Wingtip's mark
+        // turning where the map opens.
+        .overlay {
+            if !mapShown {
+                MapLoading(bottom: mapInset).transition(.opacity)
+            }
+        }
         .overlay(alignment: .topTrailing) {
             // In the strip the field is the way to the assistant, so the
             // sparkle is not drawn.

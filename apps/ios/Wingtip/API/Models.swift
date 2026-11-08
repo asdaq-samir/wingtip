@@ -35,9 +35,16 @@ struct AirportPin: Codable, Equatable, Sendable {
     /// where two would collide (AirportMarks' tiers). Nil for every other
     /// field.
     var primaryOf: String?
+    /// Whether the field has a control tower (NASR APT_BASE's TWR_TYPE_CODE
+    /// ATCT and its kinds, the planner's towered and the engine's from the
+    /// pack): the sectional draws it blue and every other field magenta
+    /// (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols,
+    /// Airports). Nil where the answer does not say (the Class B list): the
+    /// mark is then the web's grey for a field not known yet.
+    var towered: Bool?
 
     enum CodingKeys: String, CodingKey {
-        case ident, name, lat, lon, kind, flightCategory, airspaceClass, military, primaryOf
+        case ident, name, lat, lon, kind, flightCategory, airspaceClass, military, primaryOf, towered
         case isPrivate = "private"
     }
 

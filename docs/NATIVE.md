@@ -232,13 +232,60 @@ these places:
   bring their parents one and two levels up, so a zoom out is answered
   from the phone. Each load is a signpost (`app.wingtipmaps.ios`, `tiles`).
 - **Marks** (`Views/ChartMap`, `Views/AirportMarks`): the airports'
-  annotations cluster and carry display priorities by the field's size
+  annotations carry display priorities by the field's size
   and airspace, so MapKit drops overlaps rather than drawing them; the
   checkpoints' annotations are diffed, not removed and re-added.
-- **The map's data from the packs** (`PackMapData`): the airports,
-  airspace and navaids in view are asked of the engine's pack readers
-  first and of the planner only where no pack answers, so in flight the
-  map draws with no signal.
+- **The map's data from the packs** (`PackMapData`, `Views/ChartOverlays`):
+  the airports, airspace and navaids in view are asked of the engine's
+  pack readers first and of the planner only where no pack answers, so in
+  flight the map draws with no signal. They are asked again during a
+  pinch, not only once the fingers lift, whenever the view changes level
+  or leaves the box already asked for (`ViewFetch`, as the web's
+  useGlView), the packs answering at once.
+
+## The map's look, beside the web's
+
+The web map's look of 2026-11-07/08 (#510, #537, #539, #541-#544) is
+brought over in MapKit's own way, the same result rather than the same
+code:
+
+- **The chart's tiles**: from the 256-pixel pyramid, four to each
+  512-point tile, and by day the web's lift of the chart (`ChartLift`:
+  MapLibre's raster-contrast and -saturation 0.1); at night, dimmed, as
+  printed. Not the @2x pyramid (#510): MapKit lays a tile overlay's
+  picture one pixel to a point whatever its size or its PNG's density,
+  so the 1024-pixel tiles of @2x children (since 2026-11-06) were drawn
+  twice too large from each tile's corner, the chart off the position
+  (Beloit's under O'Hare, measured in the simulator 2026-11-08). The
+  composed tile already has the pixels of one @2x tile; more on a retina
+  screen needs a renderer of the app's own drawing the tiles.
+- **ForeFlight-style overlays** (`Views/ChartOverlays`, `AirportMarks`):
+  the sectional's airport symbols (towered blue, others magenta, R and M
+  for private and military, the flight category a pip; `towered` from
+  `/api/airports/in-view` and, from the packs, the engine's
+  airports_in_view reading APT_BASE's TWR_TYPE_CODE), bold idents in the
+  field's ink, the Class B, C and D rings in ForeFlight's brighter inks
+  with their altitudes in a dark tab ("B: 100–30"), VORs with their
+  frequency tag, and the web's colours from `chartColors.ts`,
+  `airportMark.ts` and `glStyle.ts`.
+- **Close in, Apple's map**: the chart lies over Apple's map and fades
+  out from Leaflet's 13 to 14 (`ChartFade`), and each field's runways are
+  drawn from the FAA's data at their own width with their numbers turned
+  to their true headings (`RunwaySurface`). The runways come from the
+  planner's field (`/api/airport/{ident}`: NASR's surveyed ends and
+  widths), since the phone packs hold no APT_RWY; the web reads them from
+  the overlay archive. Every runway is drawn in the hard-surface grey:
+  which surfaces count as hard is the planner's rule (HARD_SURFACES), and
+  no answer the phone reads carries it yet.
+- **One reveal**: a cover over the map, with Wingtip's mark turning in the
+  middle of what the sheet leaves (`MapLoading`; still under Reduce
+  Motion), until the chart's tiles and the first overlays are in, at most
+  2.5 s; the map opens on the pilot's last position (`MapOpening`) at the
+  web's opening zoom, re-centred under the mark as the sheet settles
+  while it loads (the web's #543).
+- **Before the engine**: nothing to wait for on the phone: the engine is
+  linked into the app, so a GPS fix can never come before it (the web's
+  #544 was its .wasm loading after the map).
 - **Answers cached** (`API/Gateway`): the session keeps a URL cache
   sized for a flight, honouring the planner's and the gateway's
   Cache-Control, so a view come back to is answered from the phone.
