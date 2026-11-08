@@ -572,14 +572,14 @@ for and fail to see.
 Standard Spring Boot layering, and worth knowing even outside this
 project since it's close to an industry-default shape:
 
-- **Controller** ([`AircraftController.java`](../services/gateway/src/main/java/com/northflyers/wingtip/controller/AircraftController.java)) —
+- **Controller** ([`AircraftController.java`](../services/gateway/src/main/java/app/wingtipmaps/gateway/controller/AircraftController.java)) —
   the HTTP boundary. `@RestController` + `@RequestMapping("/api/aircraft")`;
   each method maps to one route+verb (`@GetMapping`, `@PostMapping`,
   `@PutMapping("/{id}")`, `@DeleteMapping("/{id}")`). Controllers should
   stay thin — this one resolves the signed-in pilot, calls into
   `AircraftService` and wraps the result in a `ResponseEntity`, no
   business logic.
-- **Service** ([`AircraftService.java`](../services/gateway/src/main/java/com/northflyers/wingtip/service/AircraftService.java)) —
+- **Service** ([`AircraftService.java`](../services/gateway/src/main/java/app/wingtipmaps/gateway/service/AircraftService.java)) —
   the actual logic, and where pilot-scoping lives: every lookup goes
   through `findByIdAndPilotId`, so one pilot can never read or edit
   another's aeroplane by guessing an id.
@@ -875,7 +875,7 @@ method produce a 405 rather than a leaky 500. Booting a database to
 answer those questions would only slow them down.
 
 **Integration points get real infrastructure.**
-[`FlightPersistenceTest`](../services/gateway/src/test/java/com/northflyers/wingtip/FlightPersistenceTest.java)
+[`FlightPersistenceTest`](../services/gateway/src/test/java/app/wingtipmaps/gateway/FlightPersistenceTest.java)
 starts an actual Postgres via Testcontainers, because the things it
 verifies can only be verified against a real database: that Flyway's
 migrations apply in order, that `ddl-auto: validate` agrees the JPA
