@@ -8,20 +8,15 @@ import SwiftUI
 /// CFR 91.151, 91.167).
 struct FiguresStrip: View {
     @Environment(Plan.self) private var plan
-    @Environment(OwnShip.self) private var ownShip
-    @Environment(DryRun.self) private var dryRun
 
-    /// In the air on the route -- moving, within 3 nm of the line -- the
-    /// figures count down from where the airplane is, as the web app's do
-    /// in a dry run (Flight): what is left to the destination at the
-    /// groundspeed now, and the fuel still required.
+    /// In the air on the route -- moving, within 3 nm of the line (the
+    /// engine's `in_flight`, InFlight) -- the figures count down from where
+    /// the airplane is, as the web app's do in a dry run: what is left to
+    /// the destination at the groundspeed now, and the fuel still required.
     private var flying: (leftNm: Double, minutes: Double?, fuelGal: Double?)? {
-        // A dry run's airplane counts as flying; else own ship, moving.
-        guard let fix = dryRun.fix ?? ownShip.fix, let gs = fix.groundspeedKt, Flight.underway(gs), let course = plan.course,
-              let along = Flight.along(fix.coordinate, line: course.coordinates),
-              Flight.off(fix.coordinate, line: course.coordinates) <= 3 else { return nil }
-        let required = Self.fuel(plan.totals, burntGal: Flight.burnt(legs: plan.legs, alongNm: along.alongNm)).requiredGal
-        return (along.leftNm, along.leftNm / gs * 60, required)
+        guard let progress = InFlight.shared.progress, progress.onRoute else { return nil }
+        let required = Self.fuel(plan.totals, burntGal: progress.burntGal).requiredGal
+        return (progress.destination?.distanceNm ?? progress.leftNm, progress.destination?.eteMin, required)
     }
 
     /// The engine's answer to strip_fuel.

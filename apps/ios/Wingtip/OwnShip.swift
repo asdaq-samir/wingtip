@@ -26,6 +26,9 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     private(set) var denied = false
     /// What the track runs into in the next minutes, from the planner.
     private(set) var ahead: [AheadAlert] = []
+    /// The ground under the airplane from the packs kept on the phone,
+    /// asked with what is ahead: the glide ring's ground (InFlight).
+    private(set) var groundFt: Double?
 
     private let manager = CLLocationManager()
     private var asking: Task<Void, Never>?
@@ -108,9 +111,13 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         asking = Task { [weak self] in
             let (lat, lon) = (fix.coordinate.latitude, fix.coordinate.longitude)
             let alerts: [AheadAlert]
+            // The packs' answer is asked either way, for the ground under
+            // the airplane the glide ring stands on, network or none.
+            let offline = CyclePacks.shared.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt)
+            self?.groundFt = offline?.groundFt
             if let online = try? await Planner.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt) {
                 alerts = online
-            } else if let offline = CyclePacks.shared.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt) {
+            } else if let offline {
                 // No planner in the air: the same alerts from the packs kept
                 // for the route (CyclePacks.ahead).
                 alerts = offline.alerts

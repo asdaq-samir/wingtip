@@ -459,6 +459,8 @@ struct AirportRunwaysTab: View {
 struct AirportChartsTab: View {
     let place: AirportPlace
     @Binding var shown: ShownPicture?
+    /// The diagram with the airplane on it (DiagramOwnShipView), open.
+    @State private var ownShipDiagram = false
 
     /// The groups by the FAA's chart codes (wingtip.publications); the
     /// airport's own -- hot spots, land and hold short -- go with its
@@ -509,6 +511,12 @@ struct AirportChartsTab: View {
                 row("Airport diagram", "map", detail: "A sketch of the runways: the FAA publishes none") { shown = Self.sketch(place) }
             } else {
                 Text("The FAA publishes no airport diagram for this field").foregroundStyle(.secondary)
+            }
+            // The FAA's diagram with the airplane on it, by the diagram's
+            // own latitude and longitude marks (#218), under the diagram.
+            if let url = place.airportDiagramUrl {
+                row("Diagram with your position", "location.north.circle") { ownShipDiagram = true }
+                    .fullScreenCover(isPresented: $ownShipDiagram) { DiagramOwnShipView(ident: place.ident, url: url) }
             }
             if let supplement = place.chartSupplementUrl {
                 row("Chart Supplement", "book") { shown = .faaChart("\(place.ident) Chart Supplement", url: supplement, airport: place.ident) }

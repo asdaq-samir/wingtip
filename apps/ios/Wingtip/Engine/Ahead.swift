@@ -12,6 +12,9 @@ extension CyclePacks {
     struct Ahead: Decodable {
         let alerts: [AheadAlert]
         let unavailable: [String]
+        /// The packs' ground under the airplane (their terrain grid's
+        /// highest in its cell, with its margin), the glide ring's ground.
+        var groundFt: Double?
     }
 
     /// Nil where no pack round the point was ever kept.
