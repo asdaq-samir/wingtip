@@ -152,20 +152,20 @@ struct CheckpointNotesView: View {
     }
 }
 
-/// A flight plan's items as FAA Form 7233-4 writes them (AIM Appendix 4),
-/// from the planner's figures, as the web app's flightPlanForm does.
+/// FAA Form 7233-4's items as AIM Appendix 4 writes them: the engine's
+/// (`filed_speed`, `filed_level`, `filed_route`, `filed_duration`), the
+/// very ones the web app's lib/flightPlanForm asks.
 enum FilingForm {
-    /// Item 15's cruising speed: the true airspeed in knots, N and four
-    /// figures (AIM Appendix 4: "N0450").
-    static func cruisingSpeed(_ tasKt: Double) -> String { String(format: "N%04d", Int(tasKt.rounded())) }
-
-    /// Item 15's level: at and above 18,000 ft a flight level, F and three
-    /// figures, the altimeter set to 29.92 (14 CFR 91.121(a)(2)); below it
-    /// the altitude in hundreds of feet, A and three figures (AIM Appendix
-    /// 4: "F350", "A080").
-    static func cruisingLevel(_ altitudeFt: Double) -> String {
-        String(format: "%@%03d", altitudeFt >= 18_000 ? "F" : "A", Int((altitudeFt / 100).rounded()))
+    private static func asked(_ name: String, _ input: [String: Any?]) -> String {
+        (try? Engine.call(name, json: input)) ?? ""
     }
+
+    /// Item 15's cruising speed, "N0450".
+    static func cruisingSpeed(_ tasKt: Double) -> String { asked("filed_speed", ["tas_kt": tasKt]) }
+
+    /// Item 15's level: "F350" at and above 18,000 ft, "A080" below it
+    /// (14 CFR 91.121(a)(2)).
+    static func cruisingLevel(_ altitudeFt: Double) -> String { asked("filed_level", ["ft": altitudeFt]) }
 
     /// An airway as a route names one: Victor, T, Jet or Q and its number
     /// (the web app's identSchema isAirwayToken).
@@ -173,22 +173,14 @@ enum FilingForm {
         stop.range(of: "^[VTJQ][0-9]{1,4}$", options: .regularExpression) != nil
     }
 
-    /// Item 15's route between the ends: an airway between the fixes it is
-    /// joined and left at, DCT between two points flown direct, and DCT
-    /// alone for a flight direct from one to the other (AIM Appendix 4:
-    /// "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"), as the web app's
-    /// routeItem writes it; its procedures are not filed from here yet.
+    /// Item 15's route between the ends ("FLACK DCT IRW", "EIC V18 MEI");
+    /// its procedures are not filed from here yet.
     static func route(_ stops: [String], isAirway: (String) -> Bool = FilingForm.airwayToken) -> String {
-        var words: [String] = []
-        for (i, point) in stops.enumerated() {
-            if i > 0, !isAirway(point), !isAirway(stops[i - 1]) { words.append("DCT") }
-            words.append(point)
-        }
-        return words.isEmpty ? "DCT" : words.joined(separator: " ")
+        asked("filed_route", ["stops": stops, "airways": stops.filter(isAirway)])
     }
 
     /// Hours and minutes in four figures, HHMM (items 16 and 19).
-    static func hhmm(_ minutes: Int) -> String { String(format: "%02d%02d", minutes / 60, minutes % 60) }
+    static func hhmm(_ minutes: Int) -> String { asked("filed_duration", ["minutes": minutes]) }
 }
 
 /// Filing with Flight Service, where the gateway has it connected, as the

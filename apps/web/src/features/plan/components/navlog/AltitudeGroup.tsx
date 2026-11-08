@@ -20,8 +20,6 @@ import AltitudeReasoning from "../AltitudeReasoning";
 import type { RouteEnds } from "./rows";
 
 const RULES = [{ value: "vfr", label: "VFR" }, { value: "ifr", label: "IFR" }];
-/** An altitude as said: feet under 18,000 ft, a flight level from there
- *  up, where altimeters are set to 29.92 (14 CFR 91.121, AIM 7-2-2). */
 /** The room over the highest ground, or how far under it. */
 const clearanceWords = (ft: number) => (ft >= 0 ? `${altFt(ft)} ft` : `${altFt(-ft)} ft under`);
 /** Where the route first meets ground at or over the altitude. */
@@ -35,7 +33,10 @@ const strikeWords = (nm: number | null) => (nm === null ? "None" : `${Math.round
 /** With no altitude, "FL-" kept in the field as the airplane's "N-" is,
  *  and its three blanks after it in grey (flightLevel(null), "FL-___"). */
 const HINT = { start: "FL-", words: flightLevel(null).slice(3) };
-const said = (ft: number) => (ft >= 18_000 ? `FL${Math.round(ft / 100)}` : `${altFt(ft)} feet`);
+/** An altitude as said: feet under 18,000 ft, a flight level from there
+ *  up, where altimeters are set to 29.92 (the engine's `altitude_said`;
+ *  14 CFR 91.121(a)(2), AIM 4-2-9). */
+const said = (ft: number) => callEngine("altitude_said", { ft });
 
 /** The cruising altitude the log flies: the highest of its legs once they
  *  are in, a point's own altitude among them (RouteBox), else of the
@@ -119,7 +120,6 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
   // is entered it should only hold 3 digits").
   const flying = commanded ?? cruise;
   const shown = typed ?? (problem || flying === null ? "" : flightLevel(flying).slice(3));
-  const top = rules === "ifr" ? 41_000 : 17_999;
   const fly = () => {
     if (typed === null) return;
     // Any of the ways a pilot writes it, at the owner's ask (2026-10-27):
@@ -129,7 +129,8 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
     const ft = digits.length >= 4 ? Math.round(Number(digits) / 100) * 100 : Number(digits) * 100;
     setTyped(null);
     // A VFR altitude is under Class A (14 CFR 71.33, 91.135); IFR's up to
-    // FL410, the highest 91.179(b)(4) names.
+    // FL410, the highest 91.179(b)(4) names; 500 ft the least (91.119(c)):
+    // the engine's `altitude_allowed`.
     // Nothing to plan only where it is what was asked and every leg flies
     // it. A pick on the wheel asks for one altitude and flies each leg at
     // its nearest legal one, so a figure typed equal to the highest of those
@@ -138,7 +139,7 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
     const flownAlready = commanded !== null ? ft === commanded
       : asked ? ft === asked.ft && !asked.nearest
         : legs.length ? legs.every(leg => leg.altitude_ft === ft) : ft === flying;
-    if (ft >= 500 && ft <= top && !flownAlready) onFlyAltitude(ft);
+    if (callEngine("altitude_allowed", { ft, ifr: rules === "ifr" }) && !flownAlready) onFlyAltitude(ft);
   };
   const profiled = !disabled && (problem || (!!nav && (flying !== null || nav.flown === null)));
   // The button there as soon as a figure is, greyed till the plan it shows

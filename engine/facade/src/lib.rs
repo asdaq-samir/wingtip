@@ -67,12 +67,12 @@
 
 pub mod call;
 
-pub use wingtip_airspace::{ahead, airspace, pack, pack_query, rules, spoken, view};
+pub use wingtip_airspace::{ahead, airspace, drills, pack, pack_query, rules, spoken, view};
 pub use wingtip_altitude::altitude;
 pub use wingtip_brief::{gonogo, runway};
 pub use wingtip_procedures::figures;
 pub use wingtip_core::{geo, grid, sums, time, wmm, xml};
-pub use wingtip_flight::{flight, performance};
+pub use wingtip_flight::{filing, flight, limits, performance};
 pub use wingtip_pilot::{aircraft, pilot};
 pub use wingtip_radio::{atis, clearance, readback};
 pub use wingtip_route::{approach, motion, navlog, route};

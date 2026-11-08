@@ -64,6 +64,19 @@ pub fn lowest_vfr_cruising_altitude(floor_ft: f64, magnetic_course_deg: f64) -> 
     candidate
 }
 
+/// The time on the ground at a stop the pilot gave none for, minutes: a
+/// turnaround -- taxi in, fuel, a break, taxi out -- at the owner's pick
+/// (2026-10-20). The planner's route options and nav log count it, and the
+/// web draws it before the nav log's legs say each stop's.
+pub const TURNAROUND_MIN: f64 = 30.0;
+
+/// The altitude an airplane's cruise TAS and fuel burn are taken as its
+/// own at, at its cruise power on a standard day: the middle of where a
+/// light single cruises across country, and a row of every handbook's
+/// cruise table (FAA-H-8083-25C ch. 11's cruise performance charts). The
+/// planner works each leg's out from there for the forecast air.
+pub const CRUISE_REFERENCE_FT: f64 = 6000.0;
+
 /// 14 CFR 91.151(a): fuel to the first point of landing and then 30
 /// minutes at normal cruise by day, 45 at night.
 pub const DAY_RESERVE_MIN: f64 = 30.0;

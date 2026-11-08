@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { Airport, Candidate, Leg } from "../../../../lib/api/types";
-import { groundMinAt, legOf, navLogRows, rowPoint, savedCheckpoints, TURNAROUND_MIN } from "./rows";
+import { groundMinAt, legOf, navLogRows, rowPoint, savedCheckpoints, turnaroundMin } from "./rows";
 
 const airport = (ident: string, lat: number, lon: number): Airport =>
   ({ ident, name: `${ident} field`, lat, lon, elevation_ft: 900 }) as Airport;
@@ -69,7 +69,7 @@ describe("a route with stops", () => {
     // The pilot's own, newer than a plan still coming, wins.
     expect(navLogRows({ ...withStop, ground: { KMSN: 45 } }, selected, legs).at(-1)?.minutesFlown).toBe(145);
     // Before the leg is in, the mirror of the planner's 30.
-    expect(navLogRows(withStop, selected, [])[2]).toMatchObject({ kind: "stop", groundMin: TURNAROUND_MIN });
+    expect(navLogRows(withStop, selected, [])[2]).toMatchObject({ kind: "stop", groundMin: turnaroundMin() });
     expect(groundMinAt(undefined, "KMSN")).toBe(30);
   });
 

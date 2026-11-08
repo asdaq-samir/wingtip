@@ -8,6 +8,13 @@ import { modelledWinds } from "../../lib/windsAloft";
 
 export { altFt, bearing, one };
 
+/** How far below the clouds VFR keeps at a ceiling, feet: 14 CFR 91.155(a),
+ *  500 ft, 1,000 ft at or above 10,000 ft MSL -- the engine's
+ *  `cloud_clearance_at_ft`, the one the altitude selection keeps. */
+export function feetBelowClouds(ceilingFt: number | null | undefined): number {
+  return callEngine("cloud_clearance_at_ft", { altitude_ft: ceilingFt ?? 0 });
+}
+
 /**
  * The planner's pure half: colours and number formatting.
  *

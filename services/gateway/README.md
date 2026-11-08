@@ -20,10 +20,14 @@ already clean and a merge would give a pilot nothing. A pilot's
 currency (14 CFR 61.56, 61.57) and a student's 61.109 experience are the
 engine's: this app sends the logbook to the planner (`PlannerClient`,
 POST /api/pilot/currency and /api/pilot/experience) and keeps what it
-answers, a reminder email included. Some rules are still here -- the
-endorsements' validity and the 61.93 checks of a solo cross-country,
-the inspections' calendar months -- and issue #482 moves them into the
-engine; add no new ones here.
+answers, a reminder email included. So are what a student's
+endorsements say (how long each is good for, the day the solo
+endorsement runs out, 61.93(d)'s checks of a solo cross-country: POST
+/api/pilot/endorsements) and when an airplane's inspections and VOR check
+fall due (91.409, 91.207, 91.411, 91.413, 91.171: POST
+/api/aircraft/inspections). AC 61-65K's endorsement texts
+(`EndorsementKind`) are still here, and issue #482 moves them; add no new
+rule here.
 
 ## Contents
 

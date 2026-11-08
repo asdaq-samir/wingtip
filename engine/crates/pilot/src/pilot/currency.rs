@@ -37,7 +37,7 @@ pub const INSTRUMENT_MONTHS: i64 = 6;
 pub const APPROACHES: f64 = 6.0;
 
 /// A day as (year, month, day); Err where `iso` is no such day.
-fn day(name: &str, iso: &str) -> Result<(i64, u32, u32), String> {
+pub(crate) fn day(name: &str, iso: &str) -> Result<(i64, u32, u32), String> {
     let bad = || format!("{name}: {iso:?} is not a day (YYYY-MM-DD)");
     let b = iso.as_bytes();
     if b.len() != 10 || b[4] != b'-' || b[7] != b'-' || ![0, 1, 2, 3, 5, 6, 8, 9].iter().all(|&i| b[i].is_ascii_digit()) {
@@ -61,7 +61,7 @@ fn end_of_month(index: i64) -> String {
     format!("{y:04}-{m:02}-{:02}", days_in_month(y, m))
 }
 
-fn iso_of_days(days: i64) -> String {
+pub(crate) fn iso_of_days(days: i64) -> String {
     let (y, m, d) = civil_from_days(days);
     format!("{y:04}-{m:02}-{d:02}")
 }

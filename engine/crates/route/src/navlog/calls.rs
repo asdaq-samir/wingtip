@@ -9,11 +9,10 @@ use super::legs::{alternate_leg, assemble_leg, fuel_plan, legs, totals};
 use super::plans::{candidates, join_figures, join_options, Flights, Plan};
 use super::{read_air, read_leg_air, Obj, Profile, R};
 use crate::json::{self, Value};
-use wingtip_flight::performance::{Climber, REFERENCE_ALTITUDE_FT};
+use wingtip_flight::performance::Climber;
 
 /// The names this module answers.
-pub const NAMES: [&str; 18] = [
-    "performance_reference_ft",
+pub const NAMES: [&str; 17] = [
     "performance_cruise",
     "performance_climb",
     "navlog_leg",
@@ -93,7 +92,6 @@ pub fn call(name: &str, v: &Value) -> R<String> {
 
 fn answer(name: &str, v: &Value) -> R<String> {
     Ok(match name {
-        "performance_reference_ft" => write(&Value::Number(REFERENCE_ALTITUDE_FT)),
         "performance_cruise" => {
             let p = profile(name, v)?;
             p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;

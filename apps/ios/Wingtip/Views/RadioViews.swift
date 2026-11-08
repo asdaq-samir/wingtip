@@ -98,7 +98,7 @@ struct RadioCallBanner: View {
                         }
                     }
                     if let ft = clearance.maintainFt, !clearance.vfr {
-                        Button("Fly \(ft >= 18_000 ? "FL\(ft / 100)" : "\(ft.formatted()) ft")") {
+                        Button("Fly \(Altitudes.said(Double(ft)))") {
                             plan.ownAltitudeFt = Double(ft)
                             plan.ownAltitudeLegal = false
                             plan.plan()

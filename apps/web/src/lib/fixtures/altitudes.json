@@ -1,0 +1,41 @@
+{
+  "about": "The altitudes a flight may be planned at and the cloud minimums at one, from the regulations' own words: 14 CFR 71.33(a) (Class A from 18,000 ft MSL), 91.135 (IFR only there), 91.119(c) (500 ft), 91.121(a)(2) (flight levels from 18,000 ft), 91.159(a) (thousands plus 500, so 17,500 ft the highest VFR), 91.179(b)(4) (FL410 the highest it names), 91.155(a) (the minimums' table), AIM 4-2-9 (an altitude as ATC says it), AIM Appendix 4 (item 15's level). The engine's altitude_limits, altitude_allowed, vfr_altitudes, altitude_said, filed_level and vfr_minimums answer them (engine/facade/tests/limits.rs); the web, iOS and Android ask those names.",
+  "limits": [
+    { "ifr": false, "answer": { "lowest_ft": 500, "highest_ft": 17500, "class_a_floor_ft": 18000, "flight_levels_from_ft": 18000, "step_ft": 500 } },
+    { "ifr": true, "answer": { "lowest_ft": 500, "highest_ft": 41000, "class_a_floor_ft": 18000, "flight_levels_from_ft": 18000, "step_ft": 500 } }
+  ],
+  "allowed": [
+    { "ft": 499, "ifr": false, "allowed": false },
+    { "ft": 500, "ifr": false, "allowed": true },
+    { "ft": 17500, "ifr": false, "allowed": true },
+    { "ft": 17999, "ifr": false, "allowed": true },
+    { "ft": 18000, "ifr": false, "allowed": false },
+    { "ft": 18000, "ifr": true, "allowed": true },
+    { "ft": 41000, "ifr": true, "allowed": true },
+    { "ft": 41500, "ifr": true, "allowed": false }
+  ],
+  "said": [
+    { "ft": 5500, "said": "5,500 ft" },
+    { "ft": 17500, "said": "17,500 ft" },
+    { "ft": 18000, "said": "FL180" },
+    { "ft": 35000, "said": "FL350" }
+  ],
+  "filed": [
+    { "ft": 4500, "filed": "A045" },
+    { "ft": 8000, "filed": "A080" },
+    { "ft": 17500, "filed": "A175" },
+    { "ft": 18000, "filed": "F180" },
+    { "ft": 35000, "filed": "F350" }
+  ],
+  "wheel": { "from_ft": 1000, "first": 1000, "last": 17500, "count": 34 },
+  "minimums": [
+    { "class": "B", "altitude_ft": 5000, "day": { "visibility_sm": 3, "below_ft": null, "above_ft": null, "horizontal_ft": null } },
+    { "class": "D", "altitude_ft": 2500, "day": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 } },
+    { "class": "E", "altitude_ft": 9500, "day": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 } },
+    { "class": "E", "altitude_ft": 10000, "day": { "visibility_sm": 5, "below_ft": 1000, "above_ft": 1000, "horizontal_ft": 5280 } },
+    { "class": "G", "altitude_ft": 1000, "agl_ft": 900, "day": { "visibility_sm": 1, "below_ft": null, "above_ft": null, "horizontal_ft": null }, "night": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 } },
+    { "class": "G", "altitude_ft": 5000, "agl_ft": 3000, "day": { "visibility_sm": 1, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 }, "night": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 } },
+    { "class": "E", "altitude_ft": 18000, "none": true },
+    { "class": "A", "altitude_ft": 20000, "none": true }
+  ]
+}

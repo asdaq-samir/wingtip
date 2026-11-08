@@ -77,11 +77,14 @@ public class TrainingService {
         List<CrossCountryReviewDto> asked = (instructor == null
                 ? reviews.findByStudentIdOrderByAskedAtDesc(pilot.getId())
                 : reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(pilot.getId(), instructor.getId())).stream()
-                .map(r -> EndorsementRecords.dto(r, EndorsementRecords.checks(r.getFlightOn(), paper, theirs))).toList();
+                .map(r -> EndorsementRecords.dto(planner, r, EndorsementRecords.checks(planner, r.getFlightOn(), paper, theirs))).toList();
+        // Each paper endorsement's last good day, the engine's, in order.
+        List<LocalDate> paperUntil = paper.isEmpty() ? List.of() : planner.endorsements(paper.stream()
+                .map(e -> new PlannerClient.Held(e.getKey().code(), e.getEndorsedOn(), null)).toList(), null).until();
         return new TrainingDto(planner.experience(entries, today), codesOf(pilot),
-                paper.stream().map(e -> new EndorsementDto(e.getKey().code(), e.getEndorsedOn(),
-                        EndorsementRecords.until(e.getKey().code(), e.getEndorsedOn()))).toList(),
-                theirs.stream().map(EndorsementRecords::dto).toList(),
+                java.util.stream.IntStream.range(0, paper.size()).mapToObj(i -> new EndorsementDto(paper.get(i).getKey().code(),
+                        paper.get(i).getEndorsedOn(), paperUntil.get(i))).toList(),
+                EndorsementRecords.dtos(planner, theirs),
                 InstructorService.kinds(), pilot.getFullName(), instructors, asked, lessons.lessonsOf(pilot, instructor));
     }
 

@@ -12,6 +12,7 @@ import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.ExperienceItemDto;
+import app.wingtipmaps.gateway.dto.ReviewCheckDto;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -214,6 +215,73 @@ public class PlannerClient {
             n.put("tracking", e.isTracking());
         }
         return out;
+    }
+
+    /** An endorsement held, as the engine reads one: its code, the day it
+     *  was given, and the make and model it names where it says. */
+    public record Held(String code, LocalDate on, String makeModel) {
+    }
+
+    /** What the endorsements say (POST /api/pilot/endorsements, the
+     *  engine's endorsement_records): each one's last good day in order
+     *  (null where it does not run out), the day the solo endorsement runs
+     *  out (14 CFR 61.87(n), (p)), and 61.93(d)'s checks for a solo
+     *  cross-country on the day asked. */
+    public record Endorsements(List<LocalDate> until, LocalDate soloUntil, List<ReviewCheckDto> checks) {
+    }
+
+    /**
+     * What a student's endorsements say, for a solo cross-country on
+     * {@code flightOn} where it is given.
+     *
+     * @throws Unavailable when the planner cannot be reached or refuses
+     */
+    public Endorsements endorsements(List<Held> held, LocalDate flightOn) {
+        ObjectNode body = DATES.createObjectNode();
+        ArrayNode list = body.putArray("held");
+        for (Held h : held) {
+            ObjectNode n = list.addObject();
+            n.put("code", h.code());
+            n.put("on", h.on().toString());
+            n.put("makeModel", h.makeModel());
+        }
+        body.put("flightOn", flightOn == null ? null : flightOn.toString());
+        return read(post("/api/pilot/endorsements", body, "the endorsements"), Endorsements.class, "the endorsements");
+    }
+
+    /** A VOR check's figures as the engine judges them: the largest error
+     *  91.171 allows for its kind, whether it was within, and its last
+     *  good day (30 days on). */
+    public record VorCheckDue(double limitDeg, boolean within, LocalDate until) {
+    }
+
+    /** When the airplane's inspections fall due (POST /api/aircraft/inspections,
+     *  the engine's inspections_due), each null where none was recorded. */
+    public record Inspections(LocalDate annualUntil, LocalDate eltUntil, LocalDate staticCheckUntil,
+                              LocalDate transponderCheckUntil, Double hundredHourDueAtHours, VorCheckDue vorCheck) {
+    }
+
+    /**
+     * When an airplane's inspections and checks fall due: 14 CFR 91.409(a)
+     * and (b), 91.207(d), 91.411(a), 91.413(a) and 91.171.
+     *
+     * @throws Unavailable when the planner cannot be reached or refuses
+     */
+    public Inspections inspections(LocalDate annualOn, LocalDate eltOn, LocalDate staticCheckOn, LocalDate transponderCheckOn,
+                                   Double hundredHourAtHours, LocalDate vorCheckOn, String vorCheckKind, Double vorCheckErrorDeg) {
+        ObjectNode body = DATES.createObjectNode();
+        body.put("annualOn", annualOn == null ? null : annualOn.toString());
+        body.put("eltOn", eltOn == null ? null : eltOn.toString());
+        body.put("staticCheckOn", staticCheckOn == null ? null : staticCheckOn.toString());
+        body.put("transponderCheckOn", transponderCheckOn == null ? null : transponderCheckOn.toString());
+        body.put("hundredHourAtHours", hundredHourAtHours);
+        if (vorCheckOn != null && vorCheckKind != null && vorCheckErrorDeg != null) {
+            ObjectNode vor = body.putObject("vorCheck");
+            vor.put("on", vorCheckOn.toString());
+            vor.put("kind", vorCheckKind);
+            vor.put("errorDeg", vorCheckErrorDeg);
+        }
+        return read(post("/api/aircraft/inspections", body, "the inspections"), Inspections.class, "the inspections");
     }
 
     private String post(String path, ObjectNode body, String what) {

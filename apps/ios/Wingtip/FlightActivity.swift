@@ -128,33 +128,13 @@ final class FlightActivity {
     static func state(plan: Plan, fix: OwnShip.Fix?, startedAt: Date, now: Date) -> FlightActivityAttributes.ContentState {
         let totalNm = plan.course?.distanceNm ?? plan.legs.reduce(0) { $0 + $1.distanceNm }
         let plannedMin = plan.totals?.eteMin ?? 0
-        // Where the airplane is along the course: the nearest point of
-        // the course line, taken as the miles flown. A simple projection
-        // -- the planner has no along-track helper here -- which is right
-        // on the line and a little short of it off to one side.
-        let alongNm: Double = {
-            guard let fix, let line = plan.course?.coordinates, line.count >= 2 else { return 0 }
-            var best = (along: 0.0, distance: Double.greatestFiniteMagnitude)
-            var walked = 0.0
-            for (a, b) in zip(line, line.dropFirst()) {
-                let length = Flight.nm(from: a, to: b)
-                let t = projection(of: fix.coordinate, onto: a, b)
-                let foot = CLLocationCoordinate2D(latitude: a.latitude + (b.latitude - a.latitude) * t, longitude: a.longitude + (b.longitude - a.longitude) * t)
-                let off = Flight.nm(from: fix.coordinate, to: foot)
-                if off < best.distance { best = (walked + length * t, off) }
-                walked += length
-            }
-            return min(totalNm, best.along)
-        }()
+        // Where the airplane is along the course, and the leg it is on: the
+        // engine's route_position, as the strip asks it.
+        let at = fix.flatMap { fix in plan.course.flatMap { Flight.position(fix.coordinate, line: $0.coordinates, legs: plan.legs) } }
+        let alongNm = min(totalNm, at?.alongNm ?? 0)
         let toGoNm = max(0, totalNm - alongNm)
         let next = plan.checkpoints.first { $0.alongTrackNm > alongNm + 0.25 }
-        // The leg being flown: the first whose end lies ahead.
-        var walked = 0.0
-        var leg: Leg?
-        for each in plan.legs {
-            walked += each.distanceNm
-            if walked > alongNm { leg = each; break }
-        }
+        let leg: Leg? = at.flatMap { plan.legs.indices.contains($0.leg) ? plan.legs[$0.leg] : nil } ?? plan.legs.first
         let gs = fix?.groundspeedKt
         // Minutes to the destination at the speed being made good; on the
         // ground, or with no fix yet, the plan's time for what is left.
@@ -179,17 +159,6 @@ final class FlightActivity {
             groundSpeedKt: gs, altitudeFt: fix?.altitudeFt,
             legFrom: leg?.from, legTo: leg?.to, updatedAt: now
         )
-    }
-
-    /// Where `p` falls along the segment a-b, 0 at a and 1 at b, clamped:
-    /// a flat projection, good enough over one leg's few miles.
-    private static func projection(of p: CLLocationCoordinate2D, onto a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> Double {
-        let scale = cos(a.latitude * .pi / 180)
-        let abx = (b.longitude - a.longitude) * scale, aby = b.latitude - a.latitude
-        let apx = (p.longitude - a.longitude) * scale, apy = p.latitude - a.latitude
-        let length2 = abx * abx + aby * aby
-        guard length2 > 0 else { return 0 }
-        return max(0, min(1, (apx * abx + apy * aby) / length2))
     }
 }
 #endif

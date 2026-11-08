@@ -97,6 +97,26 @@ class EngineFixturesTest {
     private fun done() = assertTrue(misses.joinToString("\n"), misses.isEmpty())
 
     @Test
+    fun whereTheAirplaneIsAlongTheRouteThroughTheBridge() {
+        val all = fixture("routePosition.json").cases("cases")
+        assertTrue(all.isNotEmpty())
+        for (c in all) {
+            val input = c.getValue("input").jsonObject
+            val got = ask("route_position", *input.entries.map { it.key to it.value }.toTypedArray())
+            val want = c.getValue("answer")
+            // The fixture's figures are to a hundredth (its "about").
+            if (want is JsonNull || got is JsonNull) { check(got, want, "${c["name"]}"); continue }
+            for ((key, w) in want.jsonObject) {
+                val g = got.jsonObject[key]
+                val a = (g as? JsonPrimitive)?.doubleOrNull
+                val b = (w as? JsonPrimitive)?.doubleOrNull
+                if (a != null && b != null) { if (abs(a - b) > 0.01) misses += "${c["name"]}: $key $g is not $w" } else check(g, w, "${c["name"]}: $key")
+            }
+        }
+        done()
+    }
+
+    @Test
     fun anAtisReadsThroughTheBridgeAsInTheFixture() {
         val all = fixture("atis.json").cases("cases")
         assertTrue(all.size >= 12)

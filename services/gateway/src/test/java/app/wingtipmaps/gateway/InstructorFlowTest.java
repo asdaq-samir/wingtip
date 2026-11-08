@@ -83,6 +83,25 @@ class InstructorFlowTest {
     @MockitoBean
     private PlannerClient planner;
 
+    /** What the engine says of the endorsements is its own (records.json,
+     *  through the planner); here, a day for a solo endorsement held and
+     *  two checks for a review, so these tests see the gateway send what
+     *  is held -- voided ones left out -- and pass the answer on. */
+    static final LocalDate SOLO_UNTIL = LocalDate.of(2099, 1, 1);
+    static final List<ReviewCheckDto> CHECKS = List.of(new ReviewCheckDto("61.93(d)(4)", "A", false, "None on record"),
+            new ReviewCheckDto("61.93(d)(5)", "B", false, "None on record"));
+
+    @org.junit.jupiter.api.BeforeEach
+    void theEnginesAnswer() {
+        org.mockito.BDDMockito.given(planner.endorsements(any(), any())).willAnswer(ask -> {
+            List<PlannerClient.Held> held = ask.getArgument(0);
+            LocalDate flightOn = ask.getArgument(1);
+            return new PlannerClient.Endorsements(java.util.Collections.nCopies(held.size(), (LocalDate) null),
+                    held.stream().anyMatch(h -> List.of("solo-first", "solo-90").contains(h.code())) ? SOLO_UNTIL : null,
+                    flightOn == null ? List.of() : CHECKS);
+        });
+    }
+
     private static final Instant NOW = Instant.parse("2026-10-13T18:00:00Z");
     private static final LocalDate TODAY = LocalDate.ofInstant(NOW, ZoneOffset.UTC);
 
@@ -183,9 +202,7 @@ class InstructorFlowTest {
 
         CrossCountryReviewDto waiting = instructors.instructor(p[1], NOW).reviews().get(0);
         assertThat(waiting.flight().stops()).containsExactly("KRFD");
-        assertThat(waiting.checks()).extracting(ReviewCheckDto::rule, ReviewCheckDto::met)
-                .containsExactly(org.assertj.core.groups.Tuple.tuple("61.93(d)(4)", false),
-                        org.assertj.core.groups.Tuple.tuple("61.93(d)(5)", false));
+        assertThat(waiting.checks()).isEqualTo(CHECKS);
 
         instructors.sign(p[1], p[0], soloXc(p[0], waiting.id()), NOW);
         assertThat(instructors.instructor(p[1], NOW).reviews()).isEmpty();
@@ -217,7 +234,7 @@ class InstructorFlowTest {
     void aVoidedEndorsementStaysOnRecordButHoldsNothing() {
         Pilot[] p = pair();
         SignedEndorsement solo = instructors.sign(p[1], p[0], soloEndorsement(p[0], "solo-first"), NOW);
-        assertThat(instructors.instructor(p[1], NOW).students().get(0).soloUntil()).isEqualTo(TODAY.plusDays(90));
+        assertThat(instructors.instructor(p[1], NOW).students().get(0).soloUntil()).isEqualTo(SOLO_UNTIL);
         assertThat(instructors.voidEndorsement(p[1], solo.getId(), NOW)).isTrue();
         assertThat(instructors.voidEndorsement(p[1], solo.getId(), NOW)).isFalse();
         assertThat(instructors.instructor(p[1], NOW).students().get(0).soloUntil()).isNull();

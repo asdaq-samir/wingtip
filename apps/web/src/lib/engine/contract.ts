@@ -640,7 +640,6 @@ export type AirwayFloorFtAnswer = number | null;
 export type AltitudeBlockedAnswer = boolean;
 export type MountainousAtAnswer = boolean;
 export type AltitudeAnywayAnswer = number | null;
-export type PerformanceReferenceFtAnswer = number;
 export type NavLogLegsAnswer = NavLogLeg[];
 export type NavLogWithClimbsAnswer = NavLogLeg[];
 export type NavLogWithDescentsAnswer = NavLogLeg[];
@@ -661,6 +660,32 @@ export type FrdNearAnswer = {
   radial: boolean;
   ident: string;
 } | null;
+export type VfrMinimumsAnswer = {
+  day: VfrMinimumsRule;
+  night: VfrMinimumsRule;
+} | null;
+export type DrillDecksAnswer = DrillDeck[];
+export type AltitudeAllowedAnswer = boolean;
+export type VfrAltitudesAnswer = number[];
+export type AltitudeSaidAnswer = string;
+export type FiledLevelAnswer = string;
+export type FiledSpeedAnswer = string;
+export type FiledDurationAnswer = string;
+export type FiledWakeAnswer = string | null;
+export type FiledZzzzAnswer = boolean;
+export type FiledRouteAnswer = string;
+export type RoutePositionAnswer = {
+  along_nm: number;
+  total_nm: number;
+  left_nm: number;
+  off_nm: number;
+  leg: number;
+  leg_fraction: number;
+  burnt_gal: number;
+  on_route: boolean;
+} | null;
+export type WorkingsRightAnswer = boolean;
+export type VorCheckLimitDegAnswer = number;
 
 /**
  * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. The one source of their shapes: apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
@@ -2319,13 +2344,6 @@ export interface EngineContract {
     answer: NoAltitudeAnswer;
   };
   /**
-   * The altitude a profile's cruise TAS and fuel burn are taken at on a standard day where it names none: 6,000 ft, a row of every light single's cruise table.
-   */
-  performance_reference_ft: {
-    input: PerformanceReferenceFtInput;
-    answer: PerformanceReferenceFtAnswer;
-  };
-  /**
    * An airplane's cruise at an altitude in air at oat_c (a standard day's where null): its power at the cruise setting or full throttle (Gagg and Ferrar), TAS as the cube root of power over density, burn with power, and the density altitude.
    */
   performance_cruise: {
@@ -2506,6 +2524,132 @@ export interface EngineContract {
   class_b_detours: {
     input: ClassBDetoursInput;
     answer: ClassBDetour[];
+  };
+  /**
+   * 14 CFR 91.155(a)'s basic VFR weather minimums for a class at an altitude MSL (the height above the ground counts in Class G alone, 1,200 ft its line, and is taken as above it where not given): the day's and the night's, or null in Class A, which is flown under IFR (91.135) and begins at 18,000 ft MSL whatever class is asked (71.33).
+   */
+  vfr_minimums: {
+    input: VfrMinimumsInput;
+    answer: VfrMinimumsAnswer;
+  };
+  /**
+   * The oral's flash cards in the regulation's words: the tower's light signals (14 CFR 91.125) on the ground and in flight, and the basic VFR weather minimums (91.155(a), worded from the airspace column's own table; Class A from 91.135, the night pattern exception 91.155(b)(2)).
+   */
+  drill_decks: {
+    input: DrillDecksInput;
+    answer: DrillDecksAnswer;
+  };
+  /**
+   * The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.
+   */
+  altitude_limits: {
+    input: AltitudeLimitsInput;
+    answer: AltitudeLimitsAnswer;
+  };
+  /**
+   * Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).
+   */
+  altitude_allowed: {
+    input: AltitudeAllowedInput;
+    answer: AltitudeAllowedAnswer;
+  };
+  /**
+   * Every 500 ft from from_ft (1,000 ft where not given), rounded up to a step, to 17,500 ft, the highest VFR cruising altitude under Class A (91.159(a), 71.33(a)): the altitudes a wheel offers.
+   */
+  vfr_altitudes: {
+    input: VfrAltitudesInput;
+    answer: VfrAltitudesAnswer;
+  };
+  /**
+   * An altitude as ATC says it and the app writes it (AIM 4-2-9): feet below 18,000 ft ("5,500 ft"), a flight level from there up ("FL180"; 14 CFR 91.121(a)(2)).
+   */
+  altitude_said: {
+    input: AltitudeSaidInput;
+    answer: AltitudeSaidAnswer;
+  };
+  /**
+   * The level in item 15 of the flight plan (FAA Form 7233-4, AIM Appendix 4): "F" and three figures, a flight level, at and above 18,000 ft (14 CFR 91.121(a)(2)); "A" and the hundreds of feet in three figures below it ("F350", "A080").
+   */
+  filed_level: {
+    input: FiledLevelInput;
+    answer: FiledLevelAnswer;
+  };
+  /**
+   * Item 15's cruising speed on FAA Form 7233-4: the true airspeed in knots, "N" and four figures (AIM Appendix 4: "N0450").
+   */
+  filed_speed: {
+    input: FiledSpeedInput;
+    answer: FiledSpeedAnswer;
+  };
+  /**
+   * Hours and minutes in four figures, HHMM, as items 16 (total EET) and 19 (endurance) of FAA Form 7233-4 take them (AIM Appendix 4), the minutes rounded first; the caller rounds the time en route up and the endurance down.
+   */
+  filed_duration: {
+    input: FiledDurationInput;
+    answer: FiledDurationAnswer;
+  };
+  /**
+   * Item 9's wake turbulence category: "L" for a maximum certificated takeoff weight of 15,500 lb or less (AIM Appendix 4, from FAA Order JO 7360.1), null where the weight is not known or is more.
+   */
+  filed_wake: {
+    input: FiledWakeInput;
+    answer: FiledWakeAnswer;
+  };
+  /**
+   * Whether a field's identifier has a figure in it (C81, 06A) and so no ICAO four-letter location indicator: filed as ZZZZ with its name in item 18 (DEP/, DEST/, ALTN/; AIM Appendix 4) where a service takes only indicators.
+   */
+  filed_zzzz: {
+    input: FiledZzzzInput;
+    answer: FiledZzzzAnswer;
+  };
+  /**
+   * Item 15's route between the departure and the destination (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.
+   */
+  filed_route: {
+    input: FiledRouteInput;
+    answer: FiledRouteAnswer;
+  };
+  /**
+   * Where an airplane is along the planned route: the nearest point of `line` (or of the route's own `points`, those not placed left out), the miles along it, to go and off it, whether it is on the route (within 3 nm, the debrief's tolerance for the distance from the planned route, ACS PA.VI.A.S5), the leg it is on and how far along it (by the legs' miles where `legs` is given, else by the points, an index into `points` as given), and the fuel the plan's legs have burnt by there (planning figures, not a gauge); null with no line to be on.
+   */
+  route_position: {
+    input: RoutePositionInput;
+    answer: RoutePositionAnswer;
+  };
+  /**
+   * The planner's own planning figures, one copy for the apps: the time on the ground at a stop the pilot gave none for, a 30-minute turnaround (the owner's pick, 2026-10-20), and the altitude an airplane's cruise TAS and fuel burn are taken as its own at on a standard day, 6,000 ft (a row of every handbook's cruise table, FAA-H-8083-25C ch. 11).
+   */
+  planning_figures: {
+    input: PlanningFiguresInput;
+    answer: PlanningFiguresAnswer;
+  };
+  /**
+   * Whether a student's figure worked on the ground for a leg (ACS PA.I.D, cross-country flight planning) is right within an E6B's accuracy, the drill's own tolerances (the ACS gives none): 2 degrees for the wind correction and the true and magnetic headings (round the compass), 3 kt, 1 min and 0.3 gal.
+   */
+  workings_right: {
+    input: WorkingsRightInput;
+    answer: WorkingsRightAnswer;
+  };
+  /**
+   * What a student's endorsements say: each one's last good day (90 days for a solo endorsement, 14 CFR 61.87(n), (p), the night solo's, 61.87(o), and Class B's, 61.95(a)(2), (b)(2); AC 61-65K A.5-A.7, A.12, A.13; null for one that does not run out), the day their solo endorsement runs out, and, for a solo cross-country on flight_on, what their record answers of 61.93(d): (4) a solo cross-country endorsement (61.93(c)(1), (2)) and (5) a solo endorsement within the 90 days before the flight.
+   */
+  endorsement_records: {
+    input: EndorsementRecordsInput;
+    answer: EndorsementRecordsAnswer;
+  };
+  /**
+   * The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given.
+   */
+  inspections_due: {
+    input: InspectionsDueInput;
+    answer: InspectionsDueAnswer;
+  };
+  /**
+   * The largest bearing error 14 CFR 91.171 allows for a kind of VOR check: 4 degrees for a test signal (VOT or a repair station's, (b)(1)), a surface checkpoint ((b)(2)) and one receiver against the other ((c)); 6 for an airborne checkpoint ((b)(3)) and a radial along an airway ((b)(4)).
+   */
+  vor_check_limit_deg: {
+    input: VorCheckLimitDegInput;
+    answer: VorCheckLimitDegAnswer;
   };
 }
 export interface HoldingInput {
@@ -5946,7 +6090,6 @@ export interface NoAltitudeAnswer {
   class_b: boolean;
   detail: string;
 }
-export interface PerformanceReferenceFtInput {}
 export interface PerformanceCruiseInput {
   profile: NavLogProfile;
   altitude_ft: number;
@@ -6814,4 +6957,192 @@ export interface ClassBDetour {
   ident: string;
   kind: string;
   added_nm: number;
+}
+export interface VfrMinimumsInput {
+  class: "A" | "B" | "C" | "D" | "E" | "G";
+  altitude_ft: number;
+  agl_ft?: number | null;
+}
+/**
+ * A row of 14 CFR 91.155(a)'s table: the flight visibility in statute miles and the distance from clouds in feet (all three null: clear of clouds), and the row as the drill words it.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "VfrMinimumsRule".
+ */
+export interface VfrMinimumsRule {
+  visibility_sm: number;
+  below_ft: number | null;
+  above_ft: number | null;
+  horizontal_ft: number | null;
+  words: string;
+}
+export interface DrillDecksInput {}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "DrillDeck".
+ */
+export interface DrillDeck {
+  key: "light-gun" | "vfr-minimums";
+  title: string;
+  source: string;
+  url: string;
+  cards: DrillCard[];
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "DrillCard".
+ */
+export interface DrillCard {
+  id: string;
+  prompt: string;
+  answer: string;
+  detail: string | null;
+  colours: ("green" | "red" | "white")[];
+  flashing: boolean;
+}
+export interface AltitudeLimitsInput {
+  ifr?: boolean | null;
+}
+export interface AltitudeLimitsAnswer {
+  lowest_ft: number;
+  highest_ft: number;
+  class_a_floor_ft: number;
+  flight_levels_from_ft: number;
+  step_ft: number;
+}
+export interface AltitudeAllowedInput {
+  ft: number;
+  ifr?: boolean | null;
+}
+export interface VfrAltitudesInput {
+  from_ft?: number | null;
+}
+export interface AltitudeSaidInput {
+  ft: number;
+}
+export interface FiledLevelInput {
+  ft: number;
+}
+export interface FiledSpeedInput {
+  tas_kt: number;
+}
+export interface FiledDurationInput {
+  minutes: number;
+}
+export interface FiledWakeInput {
+  max_takeoff_lb?: number | null;
+}
+export interface FiledZzzzInput {
+  ident: string;
+}
+export interface FiledRouteInput {
+  stops: string[];
+  airways?: string[];
+  departure?: {
+    id: string;
+    transition?: string | null;
+  } | null;
+  arrival?: {
+    id: string;
+    transition?: string | null;
+  } | null;
+}
+export interface RoutePositionInput {
+  at: {
+    lat: number;
+    lon: number;
+  };
+  line?: [number, number, ...number[]][] | null;
+  points?: ([number, number, ...number[]] | null)[] | null;
+  legs?:
+    | {
+        distance_nm: number;
+        fuel_gal?: number | null;
+      }[]
+    | null;
+}
+export interface PlanningFiguresInput {}
+export interface PlanningFiguresAnswer {
+  turnaround_min: number;
+  cruise_reference_ft: number;
+}
+export interface WorkingsRightInput {
+  key: "wca" | "th" | "mh" | "gs" | "ete" | "fuel";
+  typed: number;
+  answer: number;
+}
+export interface EndorsementRecordsInput {
+  held?: {
+    code: string;
+    on: string;
+    make_model?: string | null;
+  }[];
+  /**
+   * YYYY-MM-DD
+   */
+  flight_on?: string | null;
+}
+export interface EndorsementRecordsAnswer {
+  until: (string | null)[];
+  /**
+   * YYYY-MM-DD
+   */
+  solo_until: string | null;
+  checks: {
+    rule: string;
+    label: string;
+    met: boolean;
+    detail: string;
+  }[];
+}
+export interface InspectionsDueInput {
+  /**
+   * YYYY-MM-DD
+   */
+  annual_on?: string | null;
+  /**
+   * YYYY-MM-DD
+   */
+  elt_on?: string | null;
+  /**
+   * YYYY-MM-DD
+   */
+  static_check_on?: string | null;
+  /**
+   * YYYY-MM-DD
+   */
+  transponder_check_on?: string | null;
+  hundred_hour_at_hours?: number | null;
+  vor_check?: {
+    on: string;
+    kind: "VOT" | "REPAIR_STATION" | "GROUND" | "AIRBORNE" | "RADIAL" | "DUAL";
+    error_deg: number;
+  } | null;
+}
+export interface InspectionsDueAnswer {
+  /**
+   * YYYY-MM-DD
+   */
+  annual_until: string | null;
+  /**
+   * YYYY-MM-DD
+   */
+  elt_until: string | null;
+  /**
+   * YYYY-MM-DD
+   */
+  static_check_until: string | null;
+  /**
+   * YYYY-MM-DD
+   */
+  transponder_check_until: string | null;
+  hundred_hour_due_at_hours: number | null;
+  vor_check: {
+    limit_deg: number;
+    within: boolean;
+    until: string;
+  } | null;
+}
+export interface VorCheckLimitDegInput {
+  kind: "VOT" | "REPAIR_STATION" | "GROUND" | "AIRBORNE" | "RADIAL" | "DUAL";
 }

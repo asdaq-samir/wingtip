@@ -59,15 +59,6 @@ class EndorsementKindTest {
         assertThat(EndorsementKind.CLASS_B.missing(EndorsementKind.CLASS_B.fieldsFrom(Map.of("classB", "Chicago")))).isEmpty();
     }
 
-    /** 61.87(n), (o)(3), (p) and 61.95(a)(2), (b)(2): 90 days. The others
-     *  do not run out. */
-    @Test
-    void theNinetyDayOnesAreTheSoloNightAndClassBOnes() {
-        List<String> ninety = Arrays.stream(EndorsementKind.values()).filter(k -> k.validDays != null)
-                .peek(k -> assertThat(k.validDays).isEqualTo(90)).map(k -> k.code).toList();
-        assertThat(ninety).containsExactlyInAnyOrder("solo-first", "solo-90", "solo-night", "class-b", "class-b-airport");
-    }
-
     @Test
     void theCodesAStudentsOwnRecordKeptSinceV13AreStillHere() {
         for (String code : List.of("pre-solo-knowledge", "pre-solo-flight", "solo-90", "solo-night", "solo-xc-training",

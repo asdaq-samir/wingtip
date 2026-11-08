@@ -693,13 +693,9 @@
           },
           "template" : {
             "type" : "string"
-          },
-          "validDays" : {
-            "format" : "int32",
-            "type" : [ "integer", "null" ]
           }
         },
-        "required" : [ "code", "fields", "label", "paragraph", "rule", "template", "validDays" ],
+        "required" : [ "code", "fields", "label", "paragraph", "rule", "template" ],
         "type" : "object"
       },
       "EndorsementRequest" : {

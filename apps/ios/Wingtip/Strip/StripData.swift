@@ -96,34 +96,14 @@ enum StripData {
     }
 
     /// Where the airplane is along the strip, for the ribbon: the leg it is
-    /// on (0 the first) and how far along it, 0 to 1. The nearest point of
-    /// the route is found, and the airplane put on the leg before or after
-    /// it by which of the two it is closer to going on to -- a glance, not
-    /// navigation: the next checkpoint's own figures are the nav log's.
-    /// Points with no position (a checkpoint the chart read has not
-    /// placed) are left out of the measuring.
+    /// on (0 the first) and how far along it, 0 to 1, the engine's
+    /// `route_position` over the strip's points -- a glance, not navigation:
+    /// the next checkpoint's own figures are the nav log's. Points with no
+    /// position (a checkpoint the chart read has not placed) are left out
+    /// of the measuring.
     static func positionAlong(_ points: [StripPoint], fix: CLLocationCoordinate2D?) -> (leg: Int, along: Double)? {
-        let placed = points.enumerated().compactMap { i, p in p.coordinate.map { (index: i, at: $0) } }
-        guard let fix, placed.count >= 2 else { return nil }
-        var nearest = 0
-        var least = Double.infinity
-        for (k, p) in placed.enumerated() {
-            let d = Flight.nm(from: fix, to: p.at)
-            if d < least { least = d; nearest = k }
-        }
-        let next = nearest + 1 < placed.count ? placed[nearest + 1] : nil
-        let before = nearest > 0 ? placed[nearest - 1] : nil
-        // Past the nearest point, on the way to the next: along that leg;
-        // else still on the way to it from the one before.
-        if let next, before == nil || Flight.nm(from: fix, to: next.at) < Flight.nm(from: placed[nearest].at, to: next.at) {
-            let legNm = Flight.nm(from: placed[nearest].at, to: next.at)
-            return (placed[nearest].index, legNm > 0 ? min(1, least / legNm) : 0)
-        }
-        if let before {
-            let legNm = Flight.nm(from: before.at, to: placed[nearest].at)
-            return (before.index, legNm > 0 ? max(0, 1 - least / legNm) : 1)
-        }
-        return (0, 0)
+        guard let fix, let at = Flight.position(fix, points: points.map(\.coordinate)) else { return nil }
+        return (at.leg, at.legFraction)
     }
 
     /// The next point ahead of the airplane: the end of the leg it is on.

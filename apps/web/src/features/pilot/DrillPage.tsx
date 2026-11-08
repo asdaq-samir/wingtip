@@ -3,7 +3,7 @@ import { formatDistanceStrict } from "date-fns";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
-import { answered, DECKS, dueCards, keepProgress, keptProgress, nextDue, type Card, type DeckKey, type Light } from "../../lib/drills";
+import { answered, deckOf, dueCards, keepProgress, keptProgress, nextDue, type Card, type DeckKey, type Light } from "../../lib/drills";
 import { TEXT } from "../../lib/text";
 
 const LIGHT: Record<Light, string> = { green: "#16a34a", red: "#dc2626", white: "#f8fafc" };
@@ -40,7 +40,7 @@ function Lamp({ light }: { light: NonNullable<Card["light"]> }) {
  * them all, which keeps no score.
  */
 export default function DrillPage({ deck: key }: { deck: DeckKey }) {
-  const deck = DECKS[key];
+  const deck = deckOf(key);
   const [progress, setProgress] = useState(() => keptProgress(key));
   const [queue, setQueue] = useState<string[]>(() => dueCards(deck, keptProgress(key), Date.now()).map(c => c.id));
   const [practice, setPractice] = useState(false);

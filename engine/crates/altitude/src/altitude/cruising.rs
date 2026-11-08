@@ -4,20 +4,22 @@ use crate::flight::lowest_vfr_cruising_altitude;
 use crate::geo::py_mod;
 
 /// 14 CFR 71.33: Class A airspace begins at 18,000 ft MSL, and 91.135
-/// takes no VFR flight into it: no VFR cruising above 17,500.
-pub const CLASS_A_FLOOR_FT: f64 = 18000.0;
+/// takes no VFR flight into it: no VFR cruising above 17,500. The figures
+/// are wingtip_flight::limits', the one copy every app asks.
+pub use wingtip_flight::limits::CLASS_A_FLOOR_FT;
 
 /// The highest VFR cruising altitude: 91.159(a)'s last thousand plus 500
-/// under Class A.
-pub const VFR_TOP_FT: f64 = CLASS_A_FLOOR_FT - 500.0;
+/// under Class A (limits::VFR_HIGHEST_FT).
+pub const VFR_TOP_FT: f64 = wingtip_flight::limits::VFR_HIGHEST_FT;
 
 /// 14 CFR 91.159: the odd/even thousands plus 500 are for cruising "more
 /// than 3,000 feet above the surface". Below that any altitude is legal,
 /// and the planner offers every 500 ft there as well as the rule's.
 pub const HEMISPHERIC_RULE_AGL_FT: f64 = 3000.0;
 
-/// The step the altitudes under 91.159's reach are offered on.
-pub const LOW_STEP_FT: f64 = 500.0;
+/// The step the altitudes under 91.159's reach are offered on
+/// (limits::STEP_FT).
+pub const LOW_STEP_FT: f64 = wingtip_flight::limits::STEP_FT;
 
 /// Where no 500 ft step fits under a ceiling, the step a tight altitude
 /// is found on.
@@ -25,8 +27,8 @@ pub const TIGHT_STEP_FT: f64 = 100.0;
 
 /// 14 CFR 91.179(b)(4) and FAA Order JO 7110.65 TBL 4-5-1: every 2,000 ft
 /// by the direction of flight up to FL410 in RVSM airspace (all of the
-/// US's domestic airspace from FL290 to FL410).
-pub const IFR_TOP_FT: f64 = 41000.0;
+/// US's domestic airspace from FL290 to FL410; limits::IFR_HIGHEST_FT).
+pub const IFR_TOP_FT: f64 = wingtip_flight::limits::IFR_HIGHEST_FT;
 
 /// The altitude wheel's lowest row: the owner's wheel of 2026-10-20 runs
 /// every 500 ft from 1,000 ft up to VFR_TOP_FT besides the legal ones.
@@ -100,11 +102,8 @@ pub fn legal_ifr(floor_ft: f64, ceiling_ft: Option<f64>, magnetic_course_deg: f6
 pub fn wheel(legal_ft: &[f64], flown_ft: Option<f64>) -> Vec<f64> {
     let mut rows: Vec<f64> = legal_ft.to_vec();
     rows.extend(flown_ft);
-    let mut ft = WHEEL_LOWEST_FT;
-    while ft <= VFR_TOP_FT {
-        rows.push(ft);
-        ft += LOW_STEP_FT;
-    }
+    // The ladder is limits' vfr_altitudes, the one the apps ask by name.
+    rows.extend(wingtip_flight::limits::vfr_altitudes(WHEEL_LOWEST_FT));
     rows.sort_by(|a, b| b.total_cmp(a));
     rows.dedup();
     rows

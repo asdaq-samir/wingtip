@@ -5544,6 +5544,84 @@
         "title": "DiversionSolved",
         "type": "object"
       },
+      "Endorsements": {
+        "description": "What the endorsements say (the engine's endorsement_records).",
+        "properties": {
+          "checks": {
+            "description": "61.93(d)(4) and (5) for the solo cross-country on flightOn; none without.",
+            "items": {
+              "$ref": "#/components/schemas/ReviewCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "soloUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The last day of the latest solo endorsement (61.87(n), (p)).",
+            "title": "Solountil"
+          },
+          "until": {
+            "description": "Each held endorsement's last good day, in order: 90 days on for a solo (14 CFR 61.87(n), (o), (p)) or Class B one (61.95); null for one that does not run out.",
+            "items": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Until",
+            "type": "array"
+          }
+        },
+        "required": [
+          "until",
+          "soloUntil",
+          "checks"
+        ],
+        "title": "Endorsements",
+        "type": "object"
+      },
+      "EndorsementsAsk": {
+        "description": "The endorsements held, voided ones left out by the gateway where it\nasks the solo endorsement's day and the review's checks, and the day of\na solo cross-country to check them for.",
+        "properties": {
+          "flightOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flighton"
+          },
+          "held": {
+            "items": {
+              "$ref": "#/components/schemas/HeldEndorsement"
+            },
+            "title": "Held",
+            "type": "array"
+          }
+        },
+        "required": [
+          "held"
+        ],
+        "title": "EndorsementsAsk",
+        "type": "object"
+      },
       "EstimateCheck": {
         "description": "A student's estimate against the exact figure: reasonable within its\nallowance, and the figure written as the drill writes it.",
         "properties": {
@@ -7068,6 +7146,37 @@
         "title": "Hazard",
         "type": "object"
       },
+      "HeldEndorsement": {
+        "description": "An endorsement the student holds: its code (AC 61-65K's, as the\ngateway's EndorsementKind names it), the day it was given, and the make\nand model it names where it says.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "makeModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Makemodel"
+          },
+          "on": {
+            "format": "date",
+            "title": "On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "on"
+        ],
+        "title": "HeldEndorsement",
+        "type": "object"
+      },
       "HoldLeg": {
         "properties": {
           "gs": {
@@ -7292,6 +7401,171 @@
           "ui"
         ],
         "title": "Index",
+        "type": "object"
+      },
+      "Inspections": {
+        "description": "When each falls due (the engine's inspections_due), null where it was not recorded.",
+        "properties": {
+          "annualUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The end of the 12th calendar month after (14 CFR 91.409(a)).",
+            "title": "Annualuntil"
+          },
+          "eltUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The end of the 12th calendar month after (91.207(d)).",
+            "title": "Eltuntil"
+          },
+          "hundredHourDueAtHours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "100 hours of time in service after the last (91.409(b)).",
+            "title": "Hundredhourdueathours"
+          },
+          "staticCheckUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The end of the 24th calendar month after (91.411(a)).",
+            "title": "Staticcheckuntil"
+          },
+          "transponderCheckUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The end of the 24th calendar month after (91.413(a)).",
+            "title": "Transpondercheckuntil"
+          },
+          "vorCheck": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VorCheck-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "annualUntil",
+          "eltUntil",
+          "staticCheckUntil",
+          "transponderCheckUntil",
+          "hundredHourDueAtHours",
+          "vorCheck"
+        ],
+        "title": "Inspections",
+        "type": "object"
+      },
+      "InspectionsAsk": {
+        "description": "The days the airplane's inspections and checks were done, and the\nhours of its last 100-hour; each left out where not recorded.",
+        "properties": {
+          "annualOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annualon"
+          },
+          "eltOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elton"
+          },
+          "hundredHourAtHours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hundredhourathours"
+          },
+          "staticCheckOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staticcheckon"
+          },
+          "transponderCheckOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transpondercheckon"
+          },
+          "vorCheck": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VorCheckAsk"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "InspectionsAsk",
         "type": "object"
       },
       "Leg": {
@@ -9922,7 +10196,7 @@
           "vor_check": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/VorCheck"
+                "$ref": "#/components/schemas/VorCheck-Input"
               },
               {
                 "type": "null"
@@ -12059,6 +12333,35 @@
           "state"
         ],
         "title": "RetrainStarted",
+        "type": "object"
+      },
+      "ReviewCheck": {
+        "description": "One of 14 CFR 61.93(d)'s determinations, as far as the record\nanswers it (the gateway's ReviewCheckDto).",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "met": {
+            "title": "Met",
+            "type": "boolean"
+          },
+          "rule": {
+            "title": "Rule",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule",
+          "label",
+          "met",
+          "detail"
+        ],
+        "title": "ReviewCheck",
         "type": "object"
       },
       "RiskAsk": {
@@ -15259,7 +15562,7 @@
         "title": "VfrMinimums",
         "type": "object"
       },
-      "VorCheck": {
+      "VorCheck-Input": {
         "description": "The airplane's last VOR check (14 CFR 91.171): its last good day and\nwhether its error was within limits.",
         "properties": {
           "good_through": {
@@ -15276,6 +15579,65 @@
           "within_limit"
         ],
         "title": "VorCheck",
+        "type": "object"
+      },
+      "VorCheck-Output": {
+        "properties": {
+          "limitDeg": {
+            "description": "The largest bearing error 91.171(b) or (c) allows for this kind of check.",
+            "title": "Limitdeg",
+            "type": "number"
+          },
+          "until": {
+            "description": "30 days on (91.171(a)(2)).",
+            "format": "date",
+            "title": "Until",
+            "type": "string"
+          },
+          "within": {
+            "title": "Within",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "limitDeg",
+          "within",
+          "until"
+        ],
+        "title": "VorCheck",
+        "type": "object"
+      },
+      "VorCheckAsk": {
+        "description": "A VOR check recorded (14 CFR 91.171(d)): the day, its kind by the\ngateway's VorCheck names, and the bearing error found.",
+        "properties": {
+          "errorDeg": {
+            "title": "Errordeg",
+            "type": "number"
+          },
+          "kind": {
+            "enum": [
+              "VOT",
+              "REPAIR_STATION",
+              "GROUND",
+              "AIRBORNE",
+              "RADIAL",
+              "DUAL"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "on": {
+            "format": "date",
+            "title": "On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "on",
+          "kind",
+          "errorDeg"
+        ],
+        "title": "VorCheckAsk",
         "type": "object"
       },
       "WaypointPin": {
@@ -15759,6 +16121,45 @@
           }
         },
         "summary": "Aircraft Profiles"
+      }
+    },
+    "/api/aircraft/inspections": {
+      "post": {
+        "description": "When an airplane's inspections and checks fall due.",
+        "operationId": "inspections_api_aircraft_inspections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InspectionsAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Inspections"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Inspections"
       }
     },
     "/api/airport-aerial/{ident}.jpg": {
@@ -19492,6 +19893,45 @@
           }
         },
         "summary": "Currency"
+      }
+    },
+    "/api/pilot/endorsements": {
+      "post": {
+        "description": "What a student's endorsements say: how long each is good for, the\nday their solo endorsement runs out, and 61.93(d)'s checks for a solo\ncross-country.",
+        "operationId": "endorsements_api_pilot_endorsements_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndorsementsAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Endorsements"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Endorsements"
       }
     },
     "/api/pilot/experience": {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { navLogRows, TURNAROUND_MIN } from "../components/navlog/rows";
+import { navLogRows, turnaroundMin } from "../components/navlog/rows";
 import { api } from "../../../lib/api/client";
 import { showError } from "../../../lib/problems";
 import { aircraftListQuery, aircraftProfilesQuery, airportQuery, checkpointsQuery, courseQuery, flightsQuery, stopsNearQuery, stopsAlongQuery, nearestQuery, pilotQuery, procedureQuery, queryClient, routeOptionsQuery } from "../../../lib/queryClient";
@@ -761,7 +761,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const setGround = useCallback((ident: string, minutes: number) => {
     setSearchParams(prev => {
       const own = groundOf(prev.get("ground"));
-      if (minutes === TURNAROUND_MIN) delete own[ident];
+      if (minutes === turnaroundMin()) delete own[ident];
       else own[ident] = minutes;
       return patched(prev, { ground: altitudesParam(own) || null });
     }, { replace: true });

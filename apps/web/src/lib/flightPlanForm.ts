@@ -1,5 +1,6 @@
 import type { FlightPlanFilingRequest, Leg, Totals } from "./api/types";
-import { hoursMinutes, utcFigures } from "./clock";
+import { utcFigures } from "./clock";
+import { callEngine } from "./engine/engine";
 import { feet } from "./units";
 
 /**
@@ -83,29 +84,19 @@ export interface FormInput {
 
 const pad = (n: number, width: number) => String(n).padStart(width, "0");
 
-/** Item 15's cruising speed: the true airspeed in knots, N and four
- *  figures (AIM Appendix 4: "N0450"). */
-export function cruisingSpeed(tasKt: number): string {
-  return `N${pad(Math.round(tasKt), 4)}`;
-}
+/** Item 15's cruising speed, "N0450" (AIM Appendix 4): the engine's
+ *  `filed_speed`, as the iPhone's form writes it. */
+export const cruisingSpeed = (tasKt: number): string => callEngine("filed_speed", { tas_kt: tasKt });
 
-/** Item 15's level: a flight level, F and three figures, at and above
- *  18,000 ft, where the altimeter is set to 29.92 (14 CFR 91.121(a)(2));
- *  below it the altitude in hundreds of feet, A and three figures (AIM
- *  Appendix 4: "F350", "A080"). */
-export function cruisingLevel(altitudeFt: number): string {
-  return `${altitudeFt >= 18_000 ? "F" : "A"}${pad(Math.round(altitudeFt / 100), 3)}`;
-}
+/** Item 15's level, "F350" at and above 18,000 ft and "A080" below it
+ *  (14 CFR 91.121(a)(2), AIM Appendix 4): the engine's `filed_level`. */
+export const cruisingLevel = (altitudeFt: number): string => callEngine("filed_level", { ft: altitudeFt });
 
-/** Hours and minutes in four figures, HHMM (items 16 and 19), counted as
- *  every duration in the app is (clock's hoursMinutes, which rounds the
- *  minutes first, so 119.6 is "0200", not "0160"). Its callers round up
- *  the time en route and down the endurance before, to err on the safe
- *  side of each. */
-export function hhmmForm(minutes: number): string {
-  const t = hoursMinutes(minutes);
-  return `${pad(t.hours, 2)}${pad(t.minutes, 2)}`;
-}
+/** Hours and minutes in four figures, HHMM (items 16 and 19), the minutes
+ *  rounded first: the engine's `filed_duration`. Its callers round up the
+ *  time en route and down the endurance before, to err on the safe side
+ *  of each. */
+export const hhmmForm = (minutes: number): string => callEngine("filed_duration", { minutes });
 
 /** Item 15's route between the departure and the destination: airways
  *  between the fixes they are joined and left at, and DCT between two
@@ -113,30 +104,16 @@ export function hhmmForm(minutes: number): string {
  *  transition leaves it at, and an arrival last, after the fix its
  *  transition joins it at (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4",
  *  "FLACK DCT IRW"); DCT alone for a flight direct from one to the
- *  other. */
+ *  other. The engine's `filed_route`. */
 export function routeItem(stops: string[], isAirway: (stop: string) => boolean,
   departure: FiledProcedure | null = null, arrival: FiledProcedure | null = null): string {
-  const points = [
-    ...(departure ? [departure.id, ...(departure.transition && departure.transition !== stops[0] ? [departure.transition] : [])] : []),
-    ...stops,
-    ...(arrival ? [...(arrival.transition && arrival.transition !== stops.at(-1) ? [arrival.transition] : []), arrival.id] : []),
-  ];
-  // A procedure, as an airway, is joined and left at its fixes.
-  const joined = (word: string) => isAirway(word) || word === departure?.id || word === arrival?.id;
-  const words: string[] = [];
-  points.forEach((point, i) => {
-    if (i > 0 && !joined(point) && !joined(points[i - 1]!)) words.push("DCT");
-    words.push(point);
-  });
-  return words.length ? words.join(" ") : "DCT";
+  return callEngine("filed_route", { stops, airways: stops.filter(isAirway), departure, arrival });
 }
 
-/** An identifier with a figure in it (C81, 06A) is the FAA's own, with no
- *  ICAO four-letter location indicator. */
-const noIndicator = (ident: string) => /\d/.test(ident);
-
+/** ZZZZ's note, where an identifier has no ICAO four-letter location
+ *  indicator (the engine's `filed_zzzz`: one with a figure in it, C81). */
 function zzzz(ident: string, slot: "DEP" | "DEST" | "ALTN"): string | undefined {
-  return noIndicator(ident)
+  return callEngine("filed_zzzz", { ident })
     ? `Where a filing service takes only four-letter indicators: ZZZZ, and ${slot}/${ident} in item 18 (AIM Appendix 4).`
     : undefined;
 }
@@ -177,10 +154,10 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
 
     add("8", "rules", "Flight rules", ifr ? "IFR" : "VFR");
     add("7", "ident", "Aircraft identification", input.aircraft.ident);
-    // Item 9's wake turbulence category: L up to a maximum certificated
-    // takeoff weight of 15,500 lb (AIM Appendix 4, from FAA Order JO
-    // 7360.1); said only where the airplane's is known.
-    const wake = input.aircraft.maxTakeoffLb != null && input.aircraft.maxTakeoffLb <= 15_500 ? "/L" : "";
+    // Item 9's wake turbulence category, the engine's (`filed_wake`: L up
+    // to 15,500 lb, AIM Appendix 4); said only where the airplane's is known.
+    const category = callEngine("filed_wake", { max_takeoff_lb: input.aircraft.maxTakeoffLb });
+    const wake = category ? `/${category}` : "";
     add("9", "type", "Type of aircraft", input.aircraft.type ? `${input.aircraft.type}${wake}` : null);
     // Item 10a: S for VHF radio, VOR and ILS, N for none, and TBL 4-2's
     // letters for the rest (G for GNSS); 10b: TBL 4-3's, C for a

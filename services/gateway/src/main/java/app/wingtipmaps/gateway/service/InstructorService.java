@@ -342,8 +342,7 @@ public class InstructorService {
         Instant since = LocalDate.ofInstant(now, ZoneOffset.UTC).minusYears(RECORD_YEARS).atStartOfDay(ZoneOffset.UTC).toInstant();
         return new InstructorDto(pilot.getFullName(), pilot.getInstructorCertificate(), pilot.getInstructorUntil(),
                 pilot.getInstructorUntilKind(), students, asking, waiting,
-                signed.findByInstructorIdAndSignedAtAfterOrderBySignedAtDesc(pilot.getId(), since).stream()
-                        .map(EndorsementRecords::dto).toList(),
+                EndorsementRecords.dtos(planner, signed.findByInstructorIdAndSignedAtAfterOrderBySignedAtDesc(pilot.getId(), since)),
                 kinds());
     }
 
@@ -355,7 +354,7 @@ public class InstructorService {
      *  student's record answers of 61.93(d). */
     CrossCountryReviewDto reviewOf(CrossCountryReview r) {
         Long studentId = r.getStudent().getId();
-        return EndorsementRecords.dto(r, EndorsementRecords.checks(r.getFlightOn(),
+        return EndorsementRecords.dto(planner, r, EndorsementRecords.checks(planner, r.getFlightOn(),
                 recorded.findByKeyPilotIdOrderByKeyCode(studentId), signed.findByStudentIdOrderBySignedAtDesc(studentId)));
     }
 
@@ -369,7 +368,7 @@ public class InstructorService {
                 l.getInstructor().getId()).stream().filter(r -> !r.isAnswered()).count() : 0;
         return new StudentDto(l.getId(), student.getId(), EndorsementRecords.nameOf(student), student.getEmail(), l.getAskedAt(),
                 l.isAccepted(), (int) experience.stream().filter(i -> i.met()).count(), experience.size(),
-                EndorsementRecords.soloUntil(paper, theirs), waiting);
+                planner.endorsements(EndorsementRecords.held(paper, theirs), null).soloUntil(), waiting);
     }
 
     /** A link ended, by either: the reviews still waiting between the two

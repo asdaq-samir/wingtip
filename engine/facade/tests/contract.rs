@@ -73,6 +73,8 @@ fn code_names() -> BTreeSet<String> {
     names.extend(arms(include_str!("../../crates/brief/src/gonogo/calls.rs"), "pub fn call("));
     for src in [
         include_str!("../../crates/wording/src/wording/mod.rs"),
+        include_str!("../../crates/airspace/src/drills.rs"),
+        include_str!("../../crates/pilot/src/pilot/records.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
@@ -194,6 +196,50 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in currency["experience"].as_array().unwrap() {
         c.ask("pilot_experience", json!({ "entries": case["entries"], "today": case["today"] }));
     }
+
+    c.ask("drill_decks", json!({}));
+    let altitudes = fixture("altitudes.json");
+    for case in altitudes["minimums"].as_array().unwrap() {
+        c.ask("vfr_minimums", json!({ "class": case["class"], "altitude_ft": case["altitude_ft"], "agl_ft": case.get("agl_ft") }));
+    }
+    for case in altitudes["limits"].as_array().unwrap() {
+        c.ask("altitude_limits", json!({ "ifr": case["ifr"] }));
+    }
+    for case in altitudes["allowed"].as_array().unwrap() {
+        c.ask("altitude_allowed", json!({ "ft": case["ft"], "ifr": case["ifr"] }));
+        c.ask("altitude_said", json!({ "ft": case["ft"] }));
+        c.ask("filed_level", json!({ "ft": case["ft"] }));
+    }
+    c.ask("vfr_altitudes", json!({ "from_ft": altitudes["wheel"]["from_ft"] }));
+    let filing = fixture("filingForm.json");
+    for case in filing["cruisingSpeed"].as_array().unwrap() {
+        c.ask("filed_speed", json!({ "tas_kt": case["tasKt"] }));
+    }
+    for case in filing["hhmm"].as_array().unwrap() {
+        c.ask("filed_duration", json!({ "minutes": case["minutes"] }));
+    }
+    for case in filing["route"].as_array().unwrap() {
+        c.ask("filed_route", json!({ "stops": case["stops"], "airways": case["airways"] }));
+    }
+    c.ask("filed_zzzz", json!({ "ident": "C81" }));
+    let records = fixture("records.json");
+    for case in records["endorsements"].as_array().unwrap() {
+        c.ask("endorsement_records", case["input"].clone());
+    }
+    for case in records["inspections"].as_array().unwrap() {
+        c.ask("inspections_due", case["input"].clone());
+    }
+    c.ask("planning_figures", json!({}));
+    for case in records["vorLimits"].as_array().unwrap() {
+        c.ask("vor_check_limit_deg", json!({ "kind": case["kind"] }));
+    }
+    for case in records["workings"].as_array().unwrap() {
+        c.ask("workings_right", json!({ "key": case["key"], "typed": case["typed"], "answer": case["answer"] }));
+    }
+    for case in fixture("routePosition.json")["cases"].as_array().unwrap() {
+        c.ask("route_position", case["input"].clone());
+    }
+    c.ask("filed_wake", json!({ "max_takeoff_lb": 2550 }));
 
     let holds = fixture("holds.json");
     for case in holds["parse"].as_array().unwrap() {
@@ -414,7 +460,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     let approach = json!([{ "ident": "ANDOE", "lat": 42.25, "lon": -89.1, "min_ft": 3000, "max_ft": null, "missed": false }]);
     c.ask("navlog_approach_end", json!({ "fixes": approach, "cruise_ft": 5500, "field": { "lat": 42.195, "lon": -89.097 } }));
     c.ask("navlog_approach_end", json!({ "fixes": approach, "cruise_ft": 2500, "field": { "lat": 42.195, "lon": -89.097 } }));
-    c.ask("performance_reference_ft", json!({}));
     c.ask("performance_cruise", json!({ "profile": profile, "altitude_ft": 8500, "oat_c": 2 }));
     c.ask("performance_climb", json!({ "profile": profile, "from_ft": 800, "to_ft": 5500, "isa_dev_c": 5 }));
     // Route options, its frame, the way round high ground and a point

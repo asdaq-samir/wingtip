@@ -1,9 +1,11 @@
 """A pilot's currency and a student's 61.109 experience from their
-logbook, for the gateway: it keeps the logbook and the dates the pilot
-gives, and asks here for what they mean (CLAUDE.md: Spring Boot holds no
-aviation logic). The rules are the shared engine's (pilot_currency,
-pilot_experience: engine/crates/pilot/src/pilot/currency.rs), asked by
-name through wingtip_native.call; this only carries the logbook across.
+logbook, what a student's endorsements say and when an airplane's
+inspections fall due, for the gateway: it keeps the records and asks here
+for what they mean (CLAUDE.md: Spring Boot holds no aviation logic). The
+rules are the shared engine's (pilot_currency, pilot_experience:
+engine/crates/pilot/src/pilot/currency.rs; endorsement_records,
+inspections_due: records.rs), asked by name through wingtip_native.call;
+this only carries the records across.
 
 The entries are the gateway's LogbookEntry, camelCase, as the engine
 reads them, and the answers its CurrencyDto and ExperienceItemDto, so the
@@ -114,3 +116,97 @@ def experience(ask: ExperienceAsk) -> list[ExperienceItem]:
     """A student's private pilot experience from their logbook, item by
     item (14 CFR 61.109(a))."""
     return [ExperienceItem(**i) for i in _ask("pilot_experience", entries=_entries(ask.entries), today=ask.today.isoformat())]
+
+
+class HeldEndorsement(BaseModel):
+    """An endorsement the student holds: its code (AC 61-65K's, as the
+    gateway's EndorsementKind names it), the day it was given, and the make
+    and model it names where it says."""
+    code: str
+    on: date
+    makeModel: str | None = None
+
+
+class EndorsementsAsk(BaseModel):
+    """The endorsements held, voided ones left out by the gateway where it
+    asks the solo endorsement's day and the review's checks, and the day of
+    a solo cross-country to check them for."""
+    held: list[HeldEndorsement]
+    flightOn: date | None = None
+
+
+class ReviewCheck(BaseModel):
+    """One of 14 CFR 61.93(d)'s determinations, as far as the record
+    answers it (the gateway's ReviewCheckDto)."""
+    rule: str
+    label: str
+    met: bool
+    detail: str
+
+
+class Endorsements(BaseModel):
+    """What the endorsements say (the engine's endorsement_records)."""
+    until: list[date | None] = Field(description=(
+        "Each held endorsement's last good day, in order: 90 days on for a solo (14 CFR 61.87(n), (o), (p)) "
+        "or Class B one (61.95); null for one that does not run out."))
+    soloUntil: date | None = Field(description="The last day of the latest solo endorsement (61.87(n), (p)).")
+    checks: list[ReviewCheck] = Field(description="61.93(d)(4) and (5) for the solo cross-country on flightOn; none without.")
+
+
+@router.post("/api/pilot/endorsements")
+def endorsements(ask: EndorsementsAsk) -> Endorsements:
+    """What a student's endorsements say: how long each is good for, the
+    day their solo endorsement runs out, and 61.93(d)'s checks for a solo
+    cross-country."""
+    got = _ask("endorsement_records", flight_on=ask.flightOn.isoformat() if ask.flightOn else None,
+               held=[{"code": h.code, "on": h.on.isoformat(), "make_model": h.makeModel} for h in ask.held])
+    return Endorsements(until=got["until"], soloUntil=got["solo_until"], checks=[ReviewCheck(**c) for c in got["checks"]])
+
+
+class VorCheckAsk(BaseModel):
+    """A VOR check recorded (14 CFR 91.171(d)): the day, its kind by the
+    gateway's VorCheck names, and the bearing error found."""
+    on: date
+    kind: Literal["VOT", "REPAIR_STATION", "GROUND", "AIRBORNE", "RADIAL", "DUAL"]
+    errorDeg: float
+
+
+class InspectionsAsk(BaseModel):
+    """The days the airplane's inspections and checks were done, and the
+    hours of its last 100-hour; each left out where not recorded."""
+    annualOn: date | None = None
+    eltOn: date | None = None
+    staticCheckOn: date | None = None
+    transponderCheckOn: date | None = None
+    hundredHourAtHours: float | None = None
+    vorCheck: VorCheckAsk | None = None
+
+
+class VorCheck(BaseModel):
+    limitDeg: float = Field(description="The largest bearing error 91.171(b) or (c) allows for this kind of check.")
+    within: bool
+    until: date = Field(description="30 days on (91.171(a)(2)).")
+
+
+class Inspections(BaseModel):
+    """When each falls due (the engine's inspections_due), null where it was not recorded."""
+    annualUntil: date | None = Field(description="The end of the 12th calendar month after (14 CFR 91.409(a)).")
+    eltUntil: date | None = Field(description="The end of the 12th calendar month after (91.207(d)).")
+    staticCheckUntil: date | None = Field(description="The end of the 24th calendar month after (91.411(a)).")
+    transponderCheckUntil: date | None = Field(description="The end of the 24th calendar month after (91.413(a)).")
+    hundredHourDueAtHours: float | None = Field(description="100 hours of time in service after the last (91.409(b)).")
+    vorCheck: VorCheck | None
+
+
+@router.post("/api/aircraft/inspections")
+def inspections(ask: InspectionsAsk) -> Inspections:
+    """When an airplane's inspections and checks fall due."""
+    day = lambda d: d.isoformat() if d else None  # noqa: E731
+    vor = ask.vorCheck
+    got = _ask("inspections_due", annual_on=day(ask.annualOn), elt_on=day(ask.eltOn), static_check_on=day(ask.staticCheckOn),
+               transponder_check_on=day(ask.transponderCheckOn), hundred_hour_at_hours=ask.hundredHourAtHours,
+               vor_check=None if vor is None else {"on": vor.on.isoformat(), "kind": vor.kind, "error_deg": vor.errorDeg})
+    v = got["vor_check"]
+    return Inspections(annualUntil=got["annual_until"], eltUntil=got["elt_until"], staticCheckUntil=got["static_check_until"],
+                       transponderCheckUntil=got["transponder_check_until"], hundredHourDueAtHours=got["hundred_hour_due_at_hours"],
+                       vorCheck=None if v is None else VorCheck(limitDeg=v["limit_deg"], within=v["within"], until=v["until"]))

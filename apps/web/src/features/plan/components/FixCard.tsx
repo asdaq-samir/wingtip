@@ -9,6 +9,7 @@ import { Input } from "../../../components/ui/input";
 import { altitudeLines, fixRoles, type BranchFix } from "../../../lib/procedures";
 import { TEXT } from "../../../lib/text";
 import { altFt } from "../../../lib/units";
+import { callEngine } from "../../../lib/engine/engine";
 import { capitalised } from "../../../lib/advisories";
 
 /** The fix whose card is open: its field, its procedure's name as the
@@ -61,8 +62,8 @@ function FixCardBody({ open, onDirect, onCross }: {
   const [typed, setTyped] = useState(own != null ? String(own) : "");
   const feet = typed ? Number(typed) : NaN;
   // A VFR altitude, under Class A's floor (14 CFR 71.33, 91.135), as the
-  // planner takes one.
-  const valid = Number.isInteger(feet) && feet > 0 && feet < 18_000;
+  // planner takes one: the engine's altitude_allowed.
+  const valid = Number.isInteger(feet) && callEngine("altitude_allowed", { ft: feet });
   const charted = altitudeLines(fix).words;
   const roles = fixRoles(fix);
   return (

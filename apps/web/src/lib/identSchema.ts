@@ -157,13 +157,15 @@ export const routeName = (dep: string, dest: string, stops: string[] = []) =>
 
 /** Points' own altitudes from the address, feet by ident -- "VPBNG:4500,
  *  KMSN:1900": a waypoint's flown to it, an airport's its pattern (the
- *  planner's `altitudes`). What is not one is left out. */
+ *  planner's `altitudes`). What is not one is left out, and so is a VFR
+ *  altitude the engine does not allow (`altitude_allowed`: under Class A,
+ *  14 CFR 71.33, 91.135; no lower than 500 ft, 91.119(c)). */
 export function altitudesOf(value: string | null | undefined): Record<string, number> {
   const out: Record<string, number> = {};
   for (const part of (value ?? "").split(",")) {
     const [ident, feet] = part.split(":");
     const point = stopOf(ident), ft = Number(feet);
-    if (point && Number.isInteger(ft) && ft > 0 && ft < 18_000) out[point] = ft;
+    if (point && Number.isInteger(ft) && callEngine("altitude_allowed", { ft })) out[point] = ft;
   }
   return out;
 }
