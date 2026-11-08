@@ -12,13 +12,14 @@ import bisect
 import csv
 import json
 import math
-import re
 import threading
+import time
 from pathlib import Path
 
 import wingtip_native
 
 from . import faa_data, geo, magnetic
+from .engine import ask as engine
 from .config import DATA_DIR
 
 FAA_CACHE_DIR = DATA_DIR / "raw" / "faa_nasr"
@@ -397,22 +398,13 @@ def frd_near(lat: float, lon: float, max_nm: float = NEAR_NM) -> dict | None:
     frd_point turns it back (a VOR's own variation, the model's for any
     other), to the degree, and its distance to a tenth of a mile; so it
     comes back to within a few hundredths of a mile of where it was
-    dropped. None with no fix within `max_nm`."""
+    dropped. None with no fix within `max_nm`. The choice and the
+    figures are the engine's (frd_near, the one route options names its
+    turns by); the fixes round the point are read here."""
     dlat = max_nm / 60
     dlon = max_nm / (60 * max(0.1, math.cos(math.radians(lat))))
-    around = [
-        (geo.distance_nm(fix["lat"], fix["lon"], lat, lon), fix)
-        for fix in within(lat - dlat, lon - dlon, lat + dlat, lon + dlon)
-        if re.fullmatch(r"[A-Z0-9]{2,5}", fix["ident"])
-    ]
-    around = [(nm, fix) for nm, fix in around if 0.05 <= nm <= max_nm]
-    if not around:
-        return None
-    known = [(nm, fix) for nm, fix in around if fix.get("navaid") or fix.get("vfr")]
-    nm, fix = min(known or around, key=lambda pair: pair[0])
-    radial = bool(fix.get("navaid")) and fix["kind"] in RADIAL_KINDS and fix.get("mag_var") is not None
-    variation = fix["mag_var"] if radial else magnetic.magnetic_variation_deg(fix["lat"], fix["lon"])
-    course = round((geo.bearing_deg(fix["lat"], fix["lon"], lat, lon) - variation) % 360) % 360
-    distance = round(float(nm), 1)
-    point = {"base": fix["ident"], "course_deg": course, "distance_nm": distance, "radial": radial}
-    return {**point, "ident": frd_ident(fix["ident"], course, distance), "name": frd_title(point)}
+    around = [{"ident": f["ident"], "lat": f["lat"], "lon": f["lon"], "navaid": bool(f.get("navaid")), "vfr": bool(f.get("vfr")),
+               "kind": f.get("kind") or "", "mag_var": f.get("mag_var")}
+              for f in within(lat - dlat, lon - dlon, lat + dlat, lon + dlon)]
+    point = engine("frd_near", lat=lat, lon=lon, max_nm=max_nm, now_s=time.time(), fixes=around)
+    return None if point is None else {**point, "name": frd_title(point)}

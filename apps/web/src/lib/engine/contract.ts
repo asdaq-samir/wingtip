@@ -654,6 +654,13 @@ export type NavLogApproachEndAnswer = {
   end_before_nm: number;
   end_fix: string | null;
 } | null;
+export type FrdNearAnswer = {
+  base: string;
+  course_deg: number;
+  distance_nm: number;
+  radial: boolean;
+  ident: string;
+} | null;
 
 /**
  * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. The one source of their shapes: apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
@@ -2436,6 +2443,69 @@ export interface EngineContract {
   navlog_approach_end: {
     input: NavLogApproachEndInput;
     answer: NavLogApproachEndAnswer;
+  };
+  /**
+   * Route options' frame, before the planner reads for it: the grid's corner, cells (0.25 degrees) and samples a cell's side, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159 under its ceiling and Class A's 18,000 ft, 71.33), the flight's time, the cruising altitudes the winds are wanted at, the lowest cruise the water's glide is judged from, whether METARs are read (a flight leaving within two hours), the grid's box and the box the fixes and fields are wanted in.
+   */
+  route_options_frame: {
+    input: RouteOptionsInput;
+    answer: RouteOptionsFrameAnswer;
+  };
+  /**
+   * The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route and the most filed one with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
+   */
+  route_options: {
+    input: RouteOptionsInput;
+    answer: RouteOptionsAnswer;
+  };
+  /**
+   * The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in.
+   */
+  terrain_way_frame: {
+    input: TerrainWayFrameInput;
+    answer: TerrainWayFrameAnswer;
+  };
+  /**
+   * A way round high ground (route/options/terrain.rs): the fields with fuel and the way's own turns (ident null, for the planner to name off a fix) to fly by, in order, every leg clear of cells whose highest ground with 1,000 ft (14 CFR 91.119) and the coarse read's 1,000 is over the highest cruising altitude the airplane reaches; [] where the straight line is clear, null where there is no way in reach.
+   */
+  terrain_way_round: {
+    input: TerrainWayRoundInput;
+    answer: TerrainWayStone[] | null;
+  };
+  /**
+   * A point named as the pilot's own point off the nearest fix a pilot knows (a navaid or a VFR waypoint) within max_nm (40 by default), else the nearest of any kind: its course magnetic, a VOR's radial by the station's own variation (AIM 1-1-3), any other by the World Magnetic Model's at now_s, to the degree, and its distance to a tenth of a mile; null with no fix near.
+   */
+  frd_near: {
+    input: FrdNearInput;
+    answer: FrdNearAnswer;
+  };
+  /**
+   * The fuel stops a flight too long for its tanks needs (route/options/fuel.rs): the fields with fuel no more than 30 nm off its line on a paved runway of 2,500 ft, chained so every landing keeps the reserve (14 CFR 91.151(a), 91.167(a)(3)) at the flight's own burn and minutes a mile, the tanks filled at each, the quickest trip with ground_min (30) a stop, among first stops within 5 minutes of it the one nearest the line then the one whose landings keep the most fuel, at most 8 stops; and up to 4 other first stops. Both empty where none is needed or no field reaches.
+   */
+  fuel_stops: {
+    input: FuelStopsInput;
+    answer: FuelStopsAnswer;
+  };
+  /**
+   * The public fields along a route for the map's Stops (route/options/fuel.rs): those on a paved runway of 2,500 ft no more than 30 nm off each flight's line, not the route's own, each on the first flight it is near with its miles from that flight's departure and the miles it adds; the 40 nearest the line, in route order.
+   */
+  fields_along: {
+    input: FieldsAlongInput;
+    answer: FieldAlong[];
+  };
+  /**
+   * Whether a straight leg flown at altitude_ft enters Class B (route/options/classb.rs): a shelf whose floor is at or under it and whose ceiling at or over it, which the leg goes into (14 CFR 91.131(a): an ATC clearance before entering). Under a shelf or over the top, it does not.
+   */
+  class_b_entered: {
+    input: ClassBEnteredInput;
+    answer: boolean;
+  };
+  /**
+   * Named fixes to fly through so neither leg comes within a mile of the Class B whose floor is under below_ft (route/options/classb.rs): those adding the least distance first, a VFR waypoint before a GPS fix that saves under 10 nm, at most 5, none adding over 40 nm.
+   */
+  class_b_detours: {
+    input: ClassBDetoursInput;
+    answer: ClassBDetour[];
   };
 }
 export interface HoldingInput {
@@ -6302,4 +6372,446 @@ export interface NavLogApproachEndInput {
     lat: number;
     lon: number;
   };
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsInput".
+ */
+export interface RouteOptionsInput {
+  dep: RouteOptionsEnd;
+  dest: RouteOptionsEnd;
+  profile: RouteOptionsProfile;
+  depart_s: number;
+  now_s?: number | null;
+  min_ceiling_ft?: number | null;
+  min_visibility_sm?: number | null;
+  current?: [number, number][] | null;
+  current_idents?: string[] | null;
+  current_landed?: boolean[] | null;
+  filed?: {
+    points: [number, number][];
+    idents: string[];
+  } | null;
+  night?: boolean | null;
+  terrain_ft?: number[] | null;
+  water_far?: string | null;
+  tafs?: RouteOptionsReport[] | null;
+  metars?: RouteOptionsReport[] | null;
+  sigmets?: RouteOptionsAdvisory[] | null;
+  gairmets?: RouteOptionsAdvisory[] | null;
+  sua?: RouteOptionsArea[] | null;
+  tfrs?: RouteOptionsArea[] | null;
+  winds?: RouteOptionsStation[] | null;
+  fields?: RouteOptionsField[] | null;
+  food?: boolean | null;
+  fixes?: RouteOptionsFix[] | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsEnd".
+ */
+export interface RouteOptionsEnd {
+  ident?: string;
+  lat: number;
+  lon: number;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsProfile".
+ */
+export interface RouteOptionsProfile {
+  cruise_tas_kt: number;
+  fuel_burn_gph: number;
+  usable_fuel_gal?: number | null;
+  taxi_fuel_gal?: number | null;
+  service_ceiling_ft?: number | null;
+}
+/**
+ * A field's weather: a TAF (its worst over the flight, with the weather of every group then) or a METAR.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsReport".
+ */
+export interface RouteOptionsReport {
+  ident: string;
+  lat: number;
+  lon: number;
+  wx?: string[] | string | null;
+  ceiling_ft?: number | null;
+  visibility_sm?: number | null;
+  ceiling_unknown?: boolean | null;
+}
+/**
+ * A SIGMET (valid_from, valid_to) or a G-AIRMET (valid, its snapshot), its area as [lat, lon] points, as the AWC sends it.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsAdvisory".
+ */
+export interface RouteOptionsAdvisory {
+  hazard?: string | null;
+  coords: [number, number][];
+  altitude_low_ft?: number | null;
+  valid_from?: number | null;
+  valid_to?: number | null;
+  valid?: number | null;
+  raw?: string | null;
+}
+/**
+ * A special-use area (type P, R, MOA, W, A ...) or a TFR in force (notam_id, title): its rings of [lat, lon], an odd number of them holding a point inside.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsArea".
+ */
+export interface RouteOptionsArea {
+  type?: string | null;
+  name?: string | null;
+  notam_id?: string | null;
+  title?: string | null;
+  rings: [number, number][][];
+}
+/**
+ * An FD station and its wind [from true, kt] at each of the frame's altitudes_ft, null where it gives none.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsStation".
+ */
+export interface RouteOptionsStation {
+  lat: number;
+  lon: number;
+  winds: (number[] | null)[];
+}
+/**
+ * A public field selling 100LL (NASR APT_BASE), its longest open paved runway and whether there is somewhere to eat (null: not read yet).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsField".
+ */
+export interface RouteOptionsField {
+  ident: string;
+  name?: string;
+  lat: number;
+  lon: number;
+  runway_ft?: number | null;
+  food?: boolean | null;
+}
+/**
+ * A fix as the planner reads it (wingtip.fixes): a navaid with its own magnetic variation (east positive), a VFR waypoint or any other.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsFix".
+ */
+export interface RouteOptionsFix {
+  ident: string;
+  lat: number;
+  lon: number;
+  navaid?: boolean | null;
+  vfr?: boolean | null;
+  kind?: string | null;
+  mag_var?: number | null;
+}
+export interface RouteOptionsFrameAnswer {
+  lat0: number;
+  lon0: number;
+  rows: number;
+  cols: number;
+  cell_deg: number;
+  per_cell: number;
+  top_ft: number;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  window: [number, number];
+  altitudes_ft: number[];
+  lowest_cruise_ft: number;
+  metars: boolean;
+  /**
+   * @minItems 4
+   * @maxItems 4
+   */
+  bbox: [number, number, number, number];
+  /**
+   * @minItems 4
+   * @maxItems 4
+   */
+  data_box: [number, number, number, number];
+}
+export interface RouteOptionsAnswer {
+  options: RouteOption[];
+  own: RouteOption;
+  filed: RouteOption | null;
+  current_path: [number, number][];
+  direct: number[];
+  ends: number[];
+  current: number[];
+  current_along: RouteOptionsAlong;
+  current_marginal: number[];
+  hazards: RouteOptionsHazard[];
+  unchecked: string[];
+  food_unread: RouteOptionsFoodUnread[];
+}
+/**
+ * One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOption".
+ */
+export interface RouteOption {
+  kind: string;
+  kinds: string[];
+  title: string;
+  stops: string[];
+  fuel: string[];
+  food: string[];
+  path: [number, number][];
+  distance_nm: number;
+  air_min: number;
+  ground_min: number;
+  fuel_gal: number;
+  landings: number;
+  crosses: number[];
+  marginal: number[];
+  bands: RouteOptionsBand[];
+  tail_kt: number;
+  floor_ft: number;
+  water_nm: number;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsBand".
+ */
+export interface RouteOptionsBand {
+  kind: "vfr" | "mvfr" | "ifr" | "storm";
+  min: number;
+}
+/**
+ * What a way meets: its weather as runs by the minutes they last, the mean wind along it (positive a tailwind), its floor (the highest ground with 14 CFR 91.119's 1,000 ft) and its miles out of glide of dry land.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsAlong".
+ */
+export interface RouteOptionsAlong {
+  bands: RouteOptionsBand[];
+  tail_kt: number;
+  floor_ft: number;
+  water_nm: number;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteOptionsHazard".
+ */
+export interface RouteOptionsHazard {
+  kind: string;
+  name: string;
+}
+export interface RouteOptionsFoodUnread {
+  ident: string;
+  lat: number;
+  lon: number;
+}
+export interface TerrainWayFrameInput {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  ceiling_ft: number;
+}
+export interface TerrainWayFrameAnswer {
+  lat0: number;
+  lon0: number;
+  rows: number;
+  cols: number;
+  cell_deg: number;
+  per_cell: number;
+  top_ft: number;
+  /**
+   * @minItems 4
+   * @maxItems 4
+   */
+  data_box: [number, number, number, number];
+}
+export interface TerrainWayRoundInput {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  ceiling_ft: number;
+  terrain_ft: number[];
+  fields?: TerrainWayField[] | null;
+}
+export interface TerrainWayField {
+  ident: string;
+  name: string;
+  lat: number;
+  lon: number;
+}
+export interface TerrainWayStone {
+  ident: string | null;
+  name: string | null;
+  lat: number;
+  lon: number;
+}
+export interface FrdNearInput {
+  lat: number;
+  lon: number;
+  max_nm?: number | null;
+  now_s: number;
+  fixes: RouteOptionsFix[];
+}
+export interface FuelStopsInput {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  fuel_per_nm: number;
+  min_per_nm: number;
+  usable_gal: number;
+  taxi_gal: number;
+  reserve_gal: number;
+  ground_min?: number | null;
+  skip?: string[] | null;
+  fields?: FuelField[] | null;
+}
+/**
+ * A public field as NASR's APT_BASE has it (its ICAO ident where it has one, and the FAA's), with what fuel it sells and its longest open paved runway (OurAirports' runways).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "FuelField".
+ */
+export interface FuelField {
+  ident: string;
+  faa_ident?: string | null;
+  name?: string | null;
+  city?: string | null;
+  lat: number;
+  lon: number;
+  elevation_ft?: number | null;
+  fuel_types?: string | null;
+  runway_ft?: number | null;
+}
+export interface FuelStopsAnswer {
+  stops: FuelStop[];
+  choices: FuelStop[];
+}
+/**
+ * A field to land at for fuel: its miles from the flight's departure and those it adds to the straight line, the fuel left on landing and the minutes flown to it.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "FuelStop".
+ */
+export interface FuelStop {
+  ident: string;
+  name: string;
+  city: string;
+  lat: number;
+  lon: number;
+  runway_ft: number;
+  elevation_ft: number | null;
+  fuel_types: string;
+  from_nm: number;
+  added_nm: number;
+  lands_with_gal: number;
+  minutes: number;
+}
+export interface FieldsAlongInput {
+  flights: FieldsAlongFlight[];
+  skip?: string[] | null;
+  fields?: FuelField[] | null;
+}
+export interface FieldsAlongFlight {
+  departure: string;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+}
+export interface FieldAlong {
+  ident: string;
+  name: string;
+  city: string;
+  lat: number;
+  lon: number;
+  runway_ft: number;
+  elevation_ft: number | null;
+  from_nm: number;
+  added_nm: number;
+  flight: number;
+  departure: string;
+  fuel_types: string[];
+}
+export interface ClassBEnteredInput {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  altitude_ft: number;
+  shelves?: ClassBShelf[] | null;
+}
+/**
+ * A Class B shelf other than the flight's own (whose surface area holds one of its ends), as the FAA's Class Airspace shapefile has it: its floor and ceiling, ft MSL, and its rings of [lat, lon].
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ClassBShelf".
+ */
+export interface ClassBShelf {
+  floor_ft_msl?: number | null;
+  ceiling_ft_msl?: number | null;
+  rings: [number, number][][];
+}
+export interface ClassBDetoursInput {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  below_ft: number;
+  shelves?: ClassBShelf[] | null;
+  fixes?: ClassBDetourFix[] | null;
+}
+export interface ClassBDetourFix {
+  ident: string;
+  lat: number;
+  lon: number;
+  vfr?: boolean | null;
+  kind?: string | null;
+}
+export interface ClassBDetour {
+  ident: string;
+  kind: string;
+  added_nm: number;
 }

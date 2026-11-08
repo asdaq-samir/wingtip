@@ -1,0 +1,849 @@
+{
+  "_comment": "Route options (engine/crates/route/src/route/options.rs) on an equator where a degree is about 60 nm either way: what the planner's wingtip.route_options tests asked of the Python, each case's input as the planner sends it and what its answer must say (engine/facade/tests/route_options.rs).",
+  "clearDay": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "BBB",
+        "lat": 0.0,
+        "lon": 4.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": []
+    },
+    "expect": {
+      "options": 1,
+      "kinds": [
+        "fastest",
+        "weather",
+        "stops",
+        "land"
+      ],
+      "stops": [],
+      "direct": [],
+      "distance_nm": 240
+    }
+  },
+  "storm": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "BBB",
+        "lat": 0.0,
+        "lon": 4.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [
+        {
+          "ident": "STRM",
+          "lat": 0.0,
+          "lon": 2.0,
+          "wx": [
+            "TSRA"
+          ],
+          "ceiling_ft": null,
+          "visibility_sm": 10.0,
+          "ceiling_unknown": false
+        }
+      ],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": []
+    },
+    "expect": {
+      "direct": [
+        "Thunderstorms forecast at STRM"
+      ],
+      "crosses": [],
+      "turns": true,
+      "clear_of": [
+        0.0,
+        2.0,
+        12.0
+      ]
+    }
+  },
+  "marginal": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "BBB",
+        "lat": 0.0,
+        "lon": 4.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [
+        {
+          "ident": "LOWW",
+          "lat": 0.0,
+          "lon": 2.0,
+          "wx": [
+            ""
+          ],
+          "ceiling_ft": 2500,
+          "visibility_sm": 10.0,
+          "ceiling_unknown": false
+        }
+      ],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": []
+    },
+    "expect": {
+      "direct": [],
+      "fastest_marginal": true,
+      "weather_marginal": false,
+      "bands": [
+        "vfr",
+        "mvfr",
+        "vfr"
+      ],
+      "floor_ft": 1000
+    }
+  },
+  "personalMinimums": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "BBB",
+        "lat": 0.0,
+        "lon": 4.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [
+        {
+          "ident": "LOWW",
+          "lat": 0.0,
+          "lon": 2.0,
+          "wx": [
+            ""
+          ],
+          "ceiling_ft": 2500,
+          "visibility_sm": 10.0,
+          "ceiling_unknown": false
+        }
+      ],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": [],
+      "min_ceiling_ft": 3000
+    },
+    "expect": {
+      "direct_kinds": [
+        "weather"
+      ],
+      "crosses": []
+    }
+  },
+  "minimumsNeverUnderTheRules": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "BBB",
+        "lat": 0.0,
+        "lon": 4.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [
+        {
+          "ident": "FOGG",
+          "lat": 0.0,
+          "lon": 2.0,
+          "wx": [
+            ""
+          ],
+          "ceiling_ft": 800,
+          "visibility_sm": 10.0,
+          "ceiling_unknown": false
+        }
+      ],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": [],
+      "min_ceiling_ft": 500
+    },
+    "expect": {
+      "direct_kinds": [
+        "weather"
+      ]
+    }
+  },
+  "prohibited": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "BBB",
+        "lat": 0.0,
+        "lon": 4.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [
+        {
+          "type": "P",
+          "name": "P-99",
+          "rings": [
+            [
+              [
+                -0.2,
+                1.8
+              ],
+              [
+                -0.2,
+                2.2
+              ],
+              [
+                0.2,
+                2.2
+              ],
+              [
+                0.2,
+                1.8
+              ]
+            ]
+          ]
+        }
+      ],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": []
+    },
+    "expect": {
+      "direct": [
+        "Prohibited area P-99"
+      ],
+      "crosses": []
+    }
+  },
+  "destinationWeather": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "BBB",
+        "lat": 0.0,
+        "lon": 4.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [
+        {
+          "ident": "BBB",
+          "lat": 0.0,
+          "lon": 4.0,
+          "wx": [
+            ""
+          ],
+          "ceiling_ft": 300,
+          "visibility_sm": 1.0,
+          "ceiling_unknown": false
+        }
+      ],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": []
+    },
+    "expect": {
+      "ends": [
+        "BBB forecast under minimums (ceiling 300 ft, visibility 1 sm)"
+      ],
+      "crosses": []
+    }
+  },
+  "gairmet": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "BBB",
+        "lat": 0.0,
+        "lon": 4.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [
+        {
+          "hazard": "IFR conditions",
+          "valid": 1793000000,
+          "altitude_low_ft": null,
+          "coords": [
+            [
+              -0.3,
+              1.7
+            ],
+            [
+              0.3,
+              1.7
+            ],
+            [
+              0.3,
+              2.3
+            ],
+            [
+              -0.3,
+              2.3
+            ]
+          ]
+        }
+      ],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": []
+    },
+    "expect": {
+      "direct": [
+        "G-AIRMET for IFR conditions"
+      ],
+      "crosses": []
+    }
+  },
+  "fuelStops": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "CCC",
+        "lat": 0.0,
+        "lon": 10.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [
+        {
+          "ident": "F1",
+          "name": "F1 FIELD",
+          "lat": 0.0,
+          "lon": 1.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F2",
+          "name": "F2 FIELD",
+          "lat": 0.0,
+          "lon": 2.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F3",
+          "name": "F3 FIELD",
+          "lat": 0.0,
+          "lon": 3.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F4",
+          "name": "F4 FIELD",
+          "lat": 0.0,
+          "lon": 4.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F5",
+          "name": "F5 FIELD",
+          "lat": 0.0,
+          "lon": 5.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F6",
+          "name": "F6 FIELD",
+          "lat": 0.0,
+          "lon": 6.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F7",
+          "name": "F7 FIELD",
+          "lat": 0.0,
+          "lon": 7.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F8",
+          "name": "F8 FIELD",
+          "lat": 0.0,
+          "lon": 8.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F9",
+          "name": "F9 FIELD",
+          "lat": 0.0,
+          "lon": 9.0,
+          "runway_ft": 5000,
+          "food": null
+        }
+      ],
+      "fixes": []
+    },
+    "expect": {
+      "fastest_landings_min": 1,
+      "reach_nm": 528
+    }
+  },
+  "noFuelField": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "CCC",
+        "lat": 0.0,
+        "lon": 10.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": []
+    },
+    "expect": {
+      "crosses_kinds": [
+        "fuel"
+      ]
+    }
+  },
+  "food": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "CCC",
+        "lat": 0.0,
+        "lon": 10.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [
+        {
+          "ident": "F1",
+          "name": "F1 FIELD",
+          "lat": 0.0,
+          "lon": 1.0,
+          "runway_ft": 5000,
+          "food": false
+        },
+        {
+          "ident": "F2",
+          "name": "F2 FIELD",
+          "lat": 0.0,
+          "lon": 2.0,
+          "runway_ft": 5000,
+          "food": false
+        },
+        {
+          "ident": "F3",
+          "name": "F3 FIELD",
+          "lat": 0.0,
+          "lon": 3.0,
+          "runway_ft": 5000,
+          "food": false
+        },
+        {
+          "ident": "F4",
+          "name": "F4 FIELD",
+          "lat": 0.0,
+          "lon": 4.0,
+          "runway_ft": 5000,
+          "food": false
+        },
+        {
+          "ident": "F5",
+          "name": "F5 FIELD",
+          "lat": 0.0,
+          "lon": 5.0,
+          "runway_ft": 5000,
+          "food": false
+        },
+        {
+          "ident": "F6",
+          "name": "F6 FIELD",
+          "lat": 0.0,
+          "lon": 6.0,
+          "runway_ft": 5000,
+          "food": true
+        },
+        {
+          "ident": "F7",
+          "name": "F7 FIELD",
+          "lat": 0.0,
+          "lon": 7.0,
+          "runway_ft": 5000,
+          "food": false
+        },
+        {
+          "ident": "F8",
+          "name": "F8 FIELD",
+          "lat": 0.0,
+          "lon": 8.0,
+          "runway_ft": 5000,
+          "food": false
+        },
+        {
+          "ident": "F9",
+          "name": "F9 FIELD",
+          "lat": 0.0,
+          "lon": 9.0,
+          "runway_ft": 5000,
+          "food": false
+        }
+      ],
+      "fixes": [],
+      "food": true
+    },
+    "expect": {
+      "own_fuel": [
+        "F6"
+      ],
+      "own_food": [
+        "F6"
+      ]
+    }
+  },
+  "landed": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "CCC",
+        "lat": 0.0,
+        "lon": 10.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [
+        {
+          "ident": "MID",
+          "name": "MID FIELD",
+          "lat": 0.0,
+          "lon": 5.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F2",
+          "name": "F2 FIELD",
+          "lat": 0.0,
+          "lon": 2.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F3",
+          "name": "F3 FIELD",
+          "lat": 0.0,
+          "lon": 3.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F7",
+          "name": "F7 FIELD",
+          "lat": 0.0,
+          "lon": 7.0,
+          "runway_ft": 5000,
+          "food": null
+        },
+        {
+          "ident": "F8",
+          "name": "F8 FIELD",
+          "lat": 0.0,
+          "lon": 8.0,
+          "runway_ft": 5000,
+          "food": null
+        }
+      ],
+      "fixes": [],
+      "current": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          5.0
+        ],
+        [
+          0.0,
+          10.0
+        ]
+      ],
+      "current_idents": [
+        "MID"
+      ],
+      "current_landed": [
+        true
+      ]
+    },
+    "expect": {
+      "own_stops": [
+        "MID"
+      ],
+      "own_fuel": [],
+      "own_landings": 1,
+      "own_ground_min": 30.0
+    }
+  },
+  "unread": {
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "BBB",
+        "lat": 0.0,
+        "lon": 4.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": null,
+      "metars": [],
+      "sigmets": null,
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": [],
+      "terrain_ft": null
+    },
+    "expect": {
+      "unchecked": [
+        "terrain",
+        "water",
+        "forecasts and reports",
+        "SIGMETs"
+      ]
+    }
+  }
+}

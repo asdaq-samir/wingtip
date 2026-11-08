@@ -79,6 +79,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/route/src/approach/calls.rs"),
         include_str!("../../crates/route/src/route/answers.rs"),
         include_str!("../../crates/route/src/navlog/calls.rs"),
+        include_str!("../../crates/route/src/route/options.rs"),
     ] {
         names.extend(names_const(src));
     }
@@ -416,6 +417,44 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     c.ask("performance_reference_ft", json!({}));
     c.ask("performance_cruise", json!({ "profile": profile, "altitude_ft": 8500, "oat_c": 2 }));
     c.ask("performance_climb", json!({ "profile": profile, "from_ft": 800, "to_ft": 5500, "isa_dev_c": 5 }));
+    // Route options, its frame, the way round high ground and a point
+    // named off a fix.
+    let routes = fixture("routeOptions.json");
+    for (name, case) in routes.as_object().unwrap() {
+        if name.starts_with('_') {
+            continue;
+        }
+        c.ask("route_options_frame", case["input"].clone());
+        c.ask("route_options", case["input"].clone());
+    }
+    let terrain = json!({ "start": [0.0, 0.0], "end": [0.0, 3.0], "ceiling_ft": 10950 });
+    let frame = c.ask("terrain_way_frame", terrain.clone());
+    let samples = frame["rows"].as_u64().unwrap() * frame["cols"].as_u64().unwrap() * 25;
+    let mut round = terrain.clone();
+    round["terrain_ft"] = json!(vec![500; samples as usize]);
+    round["fields"] = json!([{ "ident": "A", "name": "A FIELD", "lat": 0.0, "lon": 1.5 }]);
+    c.ask("terrain_way_round", round);
+    let fixes = json!([{ "ident": "ABC", "lat": 0.0, "lon": 0.0, "navaid": true, "kind": "VOR", "mag_var": 0.0 }]);
+    c.ask("frd_near", json!({ "lat": 0.0, "lon": 0.5, "now_s": 1793000000, "fixes": fixes }));
+    c.ask("frd_near", json!({ "lat": 10.0, "lon": 10.0, "now_s": 1793000000, "fixes": fixes }));
+    let fields = json!([
+        { "ident": "ONLINE", "faa_ident": "ONLINE", "name": "ONLINE FIELD", "city": "SOMEWHERE", "lat": 0.0, "lon": 5.0,
+          "elevation_ft": 500.0, "fuel_types": "100LL,A", "runway_ft": 5000 },
+        { "ident": "OFFLINE", "name": "OFFLINE FIELD", "lat": 0.3, "lon": 5.0, "elevation_ft": null, "fuel_types": "100LL",
+          "runway_ft": 5000 },
+    ]);
+    let stops = c.ask("fuel_stops", json!({ "start": [0.0, 0.0], "end": [0.0, 10.0], "fuel_per_nm": 0.1, "min_per_nm": 0.6,
+        "usable_gal": 40.0, "taxi_gal": 1.0, "reserve_gal": 5.0, "fields": fields }));
+    assert_eq!(stops["stops"][0]["ident"], "ONLINE");
+    let along = c.ask("fields_along", json!({ "flights": [{ "departure": "A", "start": [0.0, 0.0], "end": [0.0, 10.0] }],
+        "skip": ["A"], "fields": fields }));
+    assert_eq!(along[0]["fuel_types"], json!(["100LL", "A"]));
+    let shelves = json!([{ "floor_ft_msl": 0, "ceiling_ft_msl": 10000,
+        "rings": [[[0.4, -0.1], [0.4, 0.1], [0.6, 0.1], [0.6, -0.1]]] }]);
+    assert_eq!(c.ask("class_b_entered", json!({ "start": [0.0, 0.0], "end": [1.0, 0.0], "altitude_ft": 4500, "shelves": shelves })), json!(true));
+    let ways = c.ask("class_b_detours", json!({ "start": [0.0, 0.0], "end": [1.0, 0.0], "below_ft": 4500, "shelves": shelves,
+        "fixes": [{ "ident": "VPNEAR", "lat": 0.5, "lon": -0.2, "vfr": true, "kind": "VFR waypoint" }] }));
+    assert_eq!(ways[0]["ident"], "VPNEAR");
 
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.
