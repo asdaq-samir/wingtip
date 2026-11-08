@@ -142,12 +142,12 @@ def parse_detail(xml_bytes: bytes) -> dict:
     MSL. Read by the engine (wingtip_engine::tfr), the phones' same code;
     a file that is not XML raises ElementTree's ParseError, as it did."""
     try:
-        got = wingtip_native.tfr_detail_json(xml_bytes.decode("utf-8-sig"))
+        got = json.loads(wingtip_native.call("tfr_detail_read", json.dumps({"text": xml_bytes.decode("utf-8-sig")})))
     except (UnicodeDecodeError, ValueError) as e:
         raise ET.ParseError(str(e)) from e
     if got is None:
         return {}
-    detail = json.loads(got)
+    detail = got
     for key in ("floor_ft", "ceiling_ft"):
         if detail[key] is not None:
             detail[key] = float(detail[key])

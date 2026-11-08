@@ -5,7 +5,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.util.RawValue;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.northflyers.wingtip.domain.LogbookEntry;
+import com.northflyers.wingtip.dto.CurrencyDto;
+import com.northflyers.wingtip.dto.ExperienceItemDto;
 import com.northflyers.wingtip.planner.model.PlannerChangesWords;
 import java.io.IOException;
 import java.net.URI;
@@ -16,6 +21,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +33,10 @@ import org.springframework.stereotype.Component;
  * The planner, asked by this app on its own behalf rather than for a
  * browser's request (that is {@link com.northflyers.wingtip.controller.PlannerProxyController}):
  * a flight's briefing, and what changed between two briefings in words,
- * for the flight watch (FlightWatchService). Reached at the same base
+ * for the flight watch (FlightWatchService); and what a pilot's logbook
+ * says of them -- their currency (14 CFR 61.56, 61.57) and a student's
+ * 61.109 experience -- which the engine works out, as this app holds no
+ * aviation rule of its own (CLAUDE.md). Reached at the same base
  * address the proxy and AccountService use.
  *
  * <p>The briefing is the planner's JSON document, carried as a string
@@ -49,6 +58,16 @@ public class PlannerClient {
      *  planner deployed after it may say more. */
     static final ObjectMapper JSON = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    /** The same, reading the planner's days ("2026-10-11") as LocalDate. */
+    static final ObjectMapper DATES = JsonMapper.builder()
+            .addModule(new JavaTimeModule())
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .build();
+
+    /** A rule from the logbook is the engine's work on a few hundred
+     *  entries, milliseconds; a planner that takes longer is not well. */
+    private static final Duration RULE_TIMEOUT = Duration.ofSeconds(20);
 
     /** The planner did not answer, or not with what was asked for. */
     public static class Unavailable extends RuntimeException {
@@ -131,6 +150,81 @@ public class PlannerClient {
             return JSON.readValue(answer, PlannerChangesWords.class);
         } catch (JsonProcessingException notItsAnswer) {
             throw new Unavailable("the planner's answer to the changes was not its answer", notItsAnswer);
+        }
+    }
+
+    /**
+     * Where the pilot stands on {@code today} from their logbook and the
+     * dates they give (POST /api/pilot/currency): 14 CFR 61.56 and 61.57,
+     * worked out by the shared engine's pilot_currency. The planner's
+     * answer has CurrencyDto's members, so it is read straight into it.
+     *
+     * @throws Unavailable when the planner cannot be reached or refuses
+     */
+    public CurrencyDto currency(List<LogbookEntry> entries, LocalDate flightReviewOn, LocalDate medicalExpiresOn,
+                                LocalDate ipcOn, LocalDate today) {
+        ObjectNode body = DATES.createObjectNode();
+        body.set("entries", entriesOf(entries));
+        body.put("flightReviewOn", flightReviewOn == null ? null : flightReviewOn.toString());
+        body.put("medicalExpiresOn", medicalExpiresOn == null ? null : medicalExpiresOn.toString());
+        body.put("ipcOn", ipcOn == null ? null : ipcOn.toString());
+        body.put("today", today.toString());
+        return read(post("/api/pilot/currency", body, "the currency"), CurrencyDto.class, "the currency");
+    }
+
+    /**
+     * A student's private pilot experience on {@code today}, item by item
+     * (POST /api/pilot/experience): 14 CFR 61.109(a), worked out by the
+     * shared engine's pilot_experience.
+     *
+     * @throws Unavailable when the planner cannot be reached or refuses
+     */
+    public List<ExperienceItemDto> experience(List<LogbookEntry> entries, LocalDate today) {
+        ObjectNode body = DATES.createObjectNode();
+        body.set("entries", entriesOf(entries));
+        body.put("today", today.toString());
+        return List.of(read(post("/api/pilot/experience", body, "the experience"), ExperienceItemDto[].class, "the experience"));
+    }
+
+    /** The columns the planner's rules read, as the planner's LogbookEntry
+     *  names them. */
+    private static ArrayNode entriesOf(List<LogbookEntry> entries) {
+        ArrayNode out = DATES.createArrayNode();
+        for (LogbookEntry e : entries) {
+            ObjectNode n = out.addObject();
+            n.put("flownOn", e.getFlownOn().toString());
+            n.put("totalHours", e.getTotalHours());
+            n.put("nightHours", e.getNightHours());
+            n.put("crossCountryHours", e.getCrossCountryHours());
+            n.put("dayLandings", e.getDayLandings());
+            n.put("nightLandings", e.getNightLandings());
+            n.put("dualHours", e.getDualHours());
+            n.put("soloHours", e.getSoloHours());
+            n.put("instrumentHours", e.getInstrumentHours());
+            n.put("toweredLandings", e.getToweredLandings());
+            n.put("distanceNm", e.getDistanceNm());
+            n.put("longestLegNm", e.getLongestLegNm());
+            n.put("approaches", e.getApproaches());
+            n.put("holding", e.isHolding());
+            n.put("tracking", e.isTracking());
+        }
+        return out;
+    }
+
+    private String post(String path, ObjectNode body, String what) {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + path))
+                .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .timeout(RULE_TIMEOUT)
+                .build();
+        return send(request, what);
+    }
+
+    private static <T> T read(String answer, Class<T> type, String what) {
+        try {
+            return DATES.readValue(answer, type);
+        } catch (JsonProcessingException notItsAnswer) {
+            throw new Unavailable("the planner's answer to " + what + " was not its answer", notItsAnswer);
         }
     }
 

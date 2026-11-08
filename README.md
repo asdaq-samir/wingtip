@@ -35,9 +35,9 @@ gets the same answer:
 
 | Layer | Where | Its job |
 |---|---|---|
-| The engine | [`engine/`](engine) (Rust) | Every aviation rule and figure, once: altitudes, winds, runways, fuel, weather limits, Go / No-Go, holds, procedures (currency is to join them, #482). No network, no screen, no clock. A facade (`wingtip-engine`) over ten domain crates; each rule is a name in `engine/facade/src/call.rs`, JSON in and out, typed by a contract (`engine/contract/engine.schema.json`) the apps' types are generated from. |
+| The engine | [`engine/`](engine) (Rust) | Every aviation rule and figure, once: altitudes, winds, runways, fuel, weather limits, Go / No-Go, holds, procedures, a pilot's currency (14 CFR 61.56, 61.57) and 61.109 experience. No network, no screen, no clock. A facade (`wingtip-engine`) over ten domain crates; each rule is a name in `engine/facade/src/call.rs`, JSON in and out, typed by a contract (`engine/contract/engine.schema.json`) the apps' types are generated from. |
 | The planner | [`services/planner/`](services/planner) over [`services/planner/wingtip`](services/planner/wingtip) (FastAPI) | Works out a flight: fetches the FAA and weather data, reads the chart and scores its checkpoints with the chart model, runs the AI assistant, and asks the engine every rule. |
-| Spring Boot | [`services/gateway/`](services/gateway) | Who the pilot is and what they saved: accounts, sign-in, records, the public API, scheduled mail. Should hold no aviation logic, asking the planner (which asks the engine) for a figure; the currency rules are still Java until #482 moves them. |
+| Spring Boot | [`services/gateway/`](services/gateway) | Who the pilot is and what they saved: accounts, sign-in, records, the public API, scheduled mail. Holds no aviation logic, asking the planner (which asks the engine) for a figure such as currency; the endorsements' and inspections' dates are still Java until #482 moves them. |
 | The apps | [`apps/web/`](apps/web), [`apps/ios/`](apps/ios), [`apps/android/`](apps/android) | Get data, keep state, draw (a view model per screen), and ask the engine the rest: the web as WebAssembly, the phones through its C interface. |
 
 Two server languages stay, on that line (the owner, 2026-11-06): the

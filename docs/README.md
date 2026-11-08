@@ -120,7 +120,7 @@ give a pilot nothing, and Spring is good at identity and persistence;
 the aviation belongs in the engine, not in either server.
 
 That is the target. Some rules still live outside the engine -- about
-7,000 lines in `services/planner/wingtip`, the currency and endorsement rules in the
+7,000 lines in `services/planner/wingtip`, the endorsement and inspection rules in the
 Java, and some in the web and phone apps -- and issue #482 moves them
 in, in phases: copies the engine already has, small rules, weather parsing,
 altitude selection, the nav log, then route options.

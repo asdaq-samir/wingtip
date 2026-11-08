@@ -298,8 +298,13 @@ def test_one_way_in_answers_a_rule_by_name_as_its_own_function_does():
         "true_course_deg": 360, "distance_nm": 18, "tas_kt": 110, "fuel_burn_gph": 8.5, "magnetic_variation_deg": -3,
         "wind": {"wind_dir_true_deg": 270, "wind_speed_kt": 20}, "to": "KDPA", "mh": 350,
     })))
-    assert asked == json.loads(wingtip_native.diversion_json(360, 18, 110, 8.5, -3, 270, 20, "KDPA", 350, None, None, None))
-    assert json.loads(wingtip_native.call("holding_leg_minutes", '{"altitude_ft": 16000}')) == wingtip_native.holding_leg_minutes(16000)
+    # Due north 18 nm in a 20 kt west wind at 110 kt: a correction left
+    # of about 10 degrees, 3 W of variation to add (east is least, west
+    # is best), so a magnetic heading of about 353; the 350 typed within
+    # the drill's allowance.
+    assert asked["problem"] is None
+    assert asked["solved"]["mh"] == pytest.approx(352.5, abs=0.5)
+    assert json.loads(wingtip_native.call("holding_leg_minutes", '{"altitude_ft": 16000}')) == 1.5
     with pytest.raises(ValueError, match="no rule called"):
         wingtip_native.call("nope", "{}")
     with pytest.raises(ValueError, match='"heading" is missing'):

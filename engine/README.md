@@ -5,7 +5,8 @@ contract (`contract/`) and its three faces (`bindings/`).
 
 The engine is the lowest of the project's four layers: under the planner
 (FastAPI, which works out a flight and asks the engine every rule), Spring
-Boot (accounts and saved records; it should hold no aviation logic, but the currency rules are still Java) and the apps (web,
+Boot (accounts and saved records; it holds no aviation logic, and asks the planner for a
+figure such as a pilot's currency) and the apps (web,
 iOS, Android, which draw and ask the engine the rest). Every aviation
 rule and figure belongs here once; the ones still written in Python,
 Java, TypeScript, Swift or Kotlin are listed, in the order they move, in
@@ -51,7 +52,7 @@ workspace.
 | `weather` | metar, taf, winds, forecast, validity, notam, tfr | core |
 | `procedures` | figures (debrief, diversion, holding, lost comms, words) | core, flight |
 | `radio` | clearance, readback, atis | core |
-| `pilot` | pilot, aircraft | core |
+| `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109), aircraft | core |
 | `brief` | gonogo, runway | core, flight, procedures |
 | `route` | route, motion, approach | core, procedures |
 | `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead | core, procedures, radio |
