@@ -556,6 +556,23 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("solo_standing", json!({ "until": case["until"], "today": case["today"] }));
     }
 
+    // Night, the checkpoints and 91.155's basic minimums (planning.json).
+    let planning = fixture("planning.json");
+    for case in planning["twilight"].as_array().unwrap() {
+        c.ask("civil_twilight", json!({ "lat": case["lat"], "lon": case["lon"], "day_s": case["day_s"] }));
+    }
+    for case in planning["night"].as_array().unwrap() {
+        c.ask("is_night", json!({ "lat": case["lat"], "lon": case["lon"], "at_s": case["at_s"] }));
+    }
+    for case in planning["on_the_way"].as_array().unwrap() {
+        c.ask("night_on_the_way", json!({ "start": case["start"], "end": case["end"], "depart_s": case["depart_s"], "minutes": case["minutes"] }));
+    }
+    c.ask("night_at_either_end", json!({ "start": [41.88, -87.63], "depart_s": 1790096400, "end": [41.88, -87.63], "arrive_s": 1790100000 }));
+    c.ask("checkpoints_select", json!({ "candidates": [{ "along_track_nm": 0, "predicted_score": 3.0 }, { "along_track_nm": 30, "predicted_score": null }],
+        "min_spacing_nm": 10, "min_score": null, "length_nm": 40 }));
+    c.ask("below_vfr_minimums", json!({ "ceiling_ft": 900, "visibility_sm": null }));
+    c.ask("service_ceiling_on_the_day", json!({ "service_ceiling_ft": 13500, "profile": [[3000, 10], [6000, 4]] }));
+
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.
     assert!(c.checked.len() >= 30, "only {} names were checked: {:?}", c.checked.len(), c.checked);

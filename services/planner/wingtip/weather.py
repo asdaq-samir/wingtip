@@ -536,24 +536,14 @@ def tafs_over(windows: dict) -> dict:
 
 # --- Go/no-go: the basic VFR weather minimums ---
 
-# 14 CFR 91.155(c) and (d): below a 1,000 ft ceiling or 3 statute miles'
-# visibility in a surface area of controlled airspace,
-# VFR flight is not the default answer. The figures are the engine's
-# (rules.rs, `vfr_basic_minimums`); wingtip.altitude's go/no-go flag, the
-# briefing's "VFR flight not recommended" and the route options all read
-# them from here, and the page shows what they decided.
-_VFR_MINIMUMS = _ask("vfr_basic_minimums")
-VFR_MIN_CEILING_FT = int(_VFR_MINIMUMS["ceiling_ft"])
-VFR_MIN_VISIBILITY_SM = int(_VFR_MINIMUMS["visibility_sm"])
-
-
 def below_vfr_minimums(ceiling_ft: float | None, visibility_sm: float | None) -> bool:
-    """Whether either figure is under 14 CFR 91.155's basic minimums. A
-    missing figure is not below anything: unknown is reported as
-    unknown by the caller, not decided here."""
-    return (ceiling_ft is not None and ceiling_ft < VFR_MIN_CEILING_FT) or (
-        visibility_sm is not None and visibility_sm < VFR_MIN_VISIBILITY_SM
-    )
+    """Whether either figure is under 14 CFR 91.155(c), (d)'s basic VFR
+    minimums, 1,000 ft and 3 sm in a surface area of controlled airspace:
+    the engine's `below_vfr_minimums` (rules.rs's figures). A missing figure
+    is not below anything: unknown is reported as unknown by the caller,
+    not decided here. wingtip.altitude's go/no-go flag and the briefing's
+    fields below VFR ask it."""
+    return _ask("below_vfr_minimums", ceiling_ft=ceiling_ft, visibility_sm=visibility_sm)
 
 
 def vfr_not_recommended_reasons(idents: list, metars: dict, forecast: dict) -> list[str]:

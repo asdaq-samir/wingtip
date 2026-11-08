@@ -366,6 +366,20 @@
 //!   with an unknown ceiling only what the visibility settles;
 //!   `vfr_basic_minimums` (91.155(c), (d)) `{"ceiling_ft", "visibility_sm"}`
 //!   from `{}`;
+//! - `is_night` (14 CFR 1.1: outside civil twilight, the sun six degrees
+//!   down; NOAA's solar calculation) from `{"lat", "lon", "at_s"}`;
+//!   `civil_twilight` `{"dawn_s", "dusk_s", "night_all_day"}` (null each
+//!   where the day is polar) from `{"lat", "lon", "day_s"}`, the civil day
+//!   whose solar noon falls on the UTC day `day_s` is in;
+//!   `night_on_the_way` (91.151(a)(2) on a trip with stops) from
+//!   `{"start": [lat, lon], "end", "depart_s", "minutes"}`;
+//!   `night_at_either_end` from `{"start", "depart_s", "end", "arrive_s"}`;
+//! - `checkpoints_select` (the chart model's candidates to the nav log's
+//!   checkpoints): their indices in route order from `{"candidates":
+//!   [{"along_track_nm", "predicted_score"}], "min_spacing_nm"?,
+//!   "max_count"?, "min_score"? (null for none), "length_nm"?}`;
+//! - `below_vfr_minimums` (91.155(c), (d)) from `{"ceiling_ft"?,
+//!   "visibility_sm"?}`, a missing figure below nothing;
 //! - `reserve_min` (91.151(a), 91.167(a)(3)) from `{"ifr"?, "night"?}`;
 //!   `isa_temp_c` from `{"altitude_ft"}`, `density_ratio` from
 //!   `{"altitude_ft", "oat_c"}`, `density_altitude_ft` from `{"sigma"}`,
@@ -934,7 +948,11 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         "airspace_column" => crate::rules::column_json(ask.v),
         "mode_c_veil" => crate::rules::veil_json(ask.v),
         "notams_fns" | "notam_text" | "metar_read" | "taf_read" | "winds_read" | "tfr_detail_read" | "ceiling_ft"
-        | "sky_ceiling" | "report_flight_category" | "vfr_basic_minimums" | "vfr_not_recommended_reasons" => weather_rule(&ask),
+        | "sky_ceiling" | "report_flight_category" | "vfr_basic_minimums" | "vfr_not_recommended_reasons" | "below_vfr_minimums" => {
+            weather_rule(&ask)
+        }
+        "is_night" | "civil_twilight" | "night_on_the_way" | "night_at_either_end" => sun_rule(&ask),
+        "checkpoints_select" => checkpoints_rule(&ask),
         "reserve_min" | "isa_temp_c" | "density_ratio" | "density_altitude_ft" | "pressure_altitude_ft" | "is_eastbound"
         | "lowest_vfr_cruising_altitude" | "distance_nm" | "region_of" | "descent_ft_per_nm" | "wind_correction_deg"
         | "groundspeed_kt" => flight_rule(&ask),
@@ -1130,6 +1148,14 @@ fn weather_rule(ask: &Ask) -> Result<String, String> {
             json::opt_string(&mut out, category);
             Ok(out)
         }
+        // Whether a ceiling or a visibility is under 91.155(c), (d)'s basic
+        // VFR minimums (1,000 ft, 3 sm, rules.rs): a missing figure is not
+        // below anything, the caller saying it is unknown.
+        "below_vfr_minimums" => {
+            let below = ask.opt_num("ceiling_ft")?.is_some_and(|c| c < crate::rules::SURFACE_AREA_CEILING_FT)
+                || ask.opt_num("visibility_sm")?.is_some_and(|v| v < crate::rules::SURFACE_AREA_VISIBILITY_SM);
+            Ok(below.to_string())
+        }
         // The forecast's along-route reasons, held to the basic VFR
         // minimums the airspace rules keep (91.155(c), (d)), which the
         // weather crate is under.
@@ -1256,6 +1282,81 @@ fn flight_rule(ask: &Ask) -> Result<String, String> {
         }
     };
     json::number(&mut out, figure);
+    Ok(out)
+}
+
+/// Night and civil twilight (crate::sun, 14 CFR 1.1).
+fn sun_rule(ask: &Ask) -> Result<String, String> {
+    use crate::sun;
+    let pair = |key: &str| -> Result<(f64, f64), String> {
+        match ask.v.get(key).and_then(Value::as_array) {
+            Some([a, b]) => a.as_f64().zip(b.as_f64()).ok_or_else(|| format!("{}: \"{key}\" is not [lat, lon]", ask.name)),
+            _ => Err(format!("{}: \"{key}\" is not [lat, lon]", ask.name)),
+        }
+    };
+    let mut out = String::new();
+    match ask.name {
+        "is_night" => out.push_str(if sun::is_night(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?) { "true" } else { "false" }),
+        "civil_twilight" => {
+            let t = sun::civil_twilight(ask.num("lat")?, ask.num("lon")?, ask.num("day_s")?);
+            out.push_str("{\"dawn_s\":");
+            json::opt_number(&mut out, t.dawn_s);
+            out.push_str(",\"dusk_s\":");
+            json::opt_number(&mut out, t.dusk_s);
+            out.push_str(",\"night_all_day\":");
+            out.push_str(match t.night_all_day {
+                Some(true) => "true",
+                Some(false) => "false",
+                None => "null",
+            });
+            out.push('}');
+        }
+        "night_on_the_way" => {
+            let night = sun::night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?);
+            out.push_str(if night { "true" } else { "false" });
+        }
+        _ => {
+            let night = sun::night_at_either_end(pair("start")?, ask.num("depart_s")?, pair("end")?, ask.num("arrive_s")?);
+            out.push_str(if night { "true" } else { "false" });
+        }
+    }
+    Ok(out)
+}
+
+/// The nav log's checkpoints from the chart model's candidates
+/// (route::checkpoints).
+fn checkpoints_rule(ask: &Ask) -> Result<String, String> {
+    use crate::route::checkpoints::{self, Candidate};
+    let candidates: Vec<Candidate> = ask
+        .list("candidates")?
+        .iter()
+        .map(|c| Candidate {
+            along_track_nm: c.get("along_track_nm").and_then(Value::as_f64),
+            score: c.get("predicted_score").and_then(Value::as_f64),
+        })
+        .collect();
+    // A missing min_score is the planner's MIN_SCORE; null takes every score.
+    let min_score = match ask.v.get("min_score") {
+        None => Some(checkpoints::MIN_SCORE),
+        Some(Value::Null) => None,
+        Some(Value::Number(n)) => Some(*n),
+        Some(_) => return Err(format!("{}: \"min_score\" is not a number or null", ask.name)),
+    };
+    let picked = checkpoints::select(
+        &candidates,
+        ask.opt_num("min_spacing_nm")?.unwrap_or(checkpoints::MIN_SPACING_NM),
+        ask.opt_num("max_count")?.map(|n| n.max(0.0) as usize),
+        min_score,
+        ask.opt_num("length_nm")?,
+    );
+    let mut out = String::from("[");
+    for (i, p) in picked.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&p.to_string());
+    }
+    out.push(']');
     Ok(out)
 }
 

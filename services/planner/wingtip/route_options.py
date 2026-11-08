@@ -34,7 +34,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 
-from . import fixes, fuelstops, sun, terrain_detour, water, weather
+from . import fixes, fuelstops, terrain_detour, water, weather
 from .engine import ask as engine
 
 logger = logging.getLogger(__name__)
@@ -153,7 +153,7 @@ def options(dep: dict, dest: dict, profile: dict, *, depart: datetime | None = N
             min_ceiling_ft: float | None = None, min_visibility_sm: float | None = None,
             current: list[tuple] | None = None, current_idents: list[str] | None = None,
             current_landed: list[bool] | None = None, fields=None,
-            filed: tuple[list[tuple], list[str]] | None = None, food=None) -> dict:
+            filed: tuple[list[tuple], list[str]] | None = None, food=None, night: bool | None = None) -> dict:
     """The ways to fly from `dep` to `dest` ({"ident", "lat", "lon"}) in an
     airplane of `profile` (wingtip.aircraft's), the engine's route_options
     answer (its contract: engine/contract/engine.schema.json). `current`
@@ -162,7 +162,9 @@ def options(dep: dict, dest: dict, profile: dict, *, depart: datetime | None = N
     and idents between the ends; `fields` the table of fields with fuel
     (wingtip.fuelstops' by default); `food(ident)` whether there is
     somewhere to eat there, None where not read yet -- those the ways
-    weighed are in the answer's `food_unread`."""
+    weighed are in the answer's `food_unread`. `night`, 91.151's night
+    reserve, is the engine's own reading at both ends of the flight's
+    window (wingtip_flight::sun) unless given (a test's fixed day)."""
     # A naive time is UTC, as the plan's API takes it.
     now = time.time()
     leave = depart.replace(tzinfo=depart.tzinfo or timezone.utc).timestamp() if depart else now
@@ -206,11 +208,8 @@ def options(dep: dict, dest: dict, profile: dict, *, depart: datetime | None = N
     except Exception:  # noqa: BLE001
         pass
     asked["winds"] = _winds(frame, fcst_hr)
-    # 91.151's night reserve, judged at both ends (wingtip.sun; the engine
-    # takes the night as given until #482 phase 1 moves sun.py into it).
-    start, end = frame["window"]
-    asked["night"] = bool(sun.is_night(dep["lat"], dep["lon"], datetime.fromtimestamp(start, timezone.utc)) or
-                          sun.is_night(dest["lat"], dest["lon"], datetime.fromtimestamp(end, timezone.utc)))
+    if night is not None:
+        asked["night"] = night
     try:
         table = fields if fields is not None else fuelstops.fields_with_fuel()
         asked["fields"] = _fields(frame, table, food)

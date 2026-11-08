@@ -27,7 +27,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response, StreamingResponse
 from wingtip import (
     airports, airspace, altitude, chartlabels, charts, elevation, faa_data, fixes, fuelstops, geo, magnetic, navlog, pattern,
-    places, procedure_paths, procedures, runway_wind, sun, terrain_detour, weather,
+    places, procedure_paths, procedures, runway_wind, terrain_detour, weather,
 )
 # As vfr_holds: PlanQuery's own `holds` is the address's.
 from wingtip import holds as vfr_holds
@@ -1057,18 +1057,12 @@ def worst_burn_per_nm(legs: list[dict], over_nm: float) -> float | None:
 
 def night_on_the_way(start: tuple, end: tuple, depart: datetime | None, minutes: float) -> bool:
     """Whether any of a trip from `start` to `end` of `minutes`, its stops'
-    time on the ground counted, falls in the night, judged every half hour
-    at where it is by then along the straight line: a stop's flight
-    landing after dark is held to 14 CFR 91.151(a)(2)'s 45 minutes, which
-    the one long flight, day at both its ends, was not."""
+    time on the ground counted, falls in the night: the engine's
+    night_on_the_way (sun.rs), leaving now where no time is given. A stop's
+    flight landing after dark is held to 14 CFR 91.151(a)(2)'s 45 minutes,
+    which the one long flight, day at both its ends, was not."""
     depart = planning_module.now() if depart is None else depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)
-    steps = max(1, int(minutes // 30) + 1)
-    for k in range(steps + 1):
-        at = min(k * 30.0, minutes) / minutes if minutes else 0.0
-        lat, lon = start[0] + (end[0] - start[0]) * at, start[1] + (end[1] - start[1]) * at
-        if sun.is_night(lat, lon, depart + timedelta(minutes=at * minutes)):
-            return True
-    return False
+    return engine("night_on_the_way", start=list(start), end=list(end), depart_s=depart.timestamp(), minutes=minutes)
 
 
 def fuel_stops_of(r: Route, per_flight: list[dict], flown: list[tuple[list[dict], datetime | None]]) -> list[dict]:
@@ -1423,7 +1417,8 @@ def local_flight(q: Annotated[PlanQuery, Depends()], duration_min: LocalMinutes 
     profile = q.profile()
     fuel = round(profile["fuel_burn_gph"] * duration_min / 60, 1)
     depart = planning_module.now() if q.depart is None else q.depart if q.depart.tzinfo else q.depart.replace(tzinfo=timezone.utc)
-    night = sun.is_night(*r.start, depart) or sun.is_night(*r.start, depart + timedelta(minutes=duration_min))
+    night = engine("night_at_either_end", start=list(r.start), depart_s=depart.timestamp(), end=list(r.start),
+                   arrive_s=(depart + timedelta(minutes=duration_min)).timestamp())
     return Totals(
         distance_nm=0.0, ete_min=duration_min, fuel_gal=fuel, unflyable_legs=0, legs_without_wind=0,
         **engine("navlog_fuel_plan", total_fuel_gal=fuel, profile=profile, night=bool(night), rules=q.rules),

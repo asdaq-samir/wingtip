@@ -96,7 +96,9 @@ pub struct Ask {
     pub current_idents: Vec<String>,
     pub current_landed: Vec<bool>,
     pub filed: Option<(Vec<Point>, Vec<String>)>,
-    pub night: bool,
+    /// Night at either end, where the host has already judged it; None,
+    /// the engine judges it (wingtip_flight::sun) over the window.
+    pub night: Option<bool>,
     pub terrain_ft: Option<Vec<f64>>,
     pub water_far: Option<Vec<bool>>,
     pub tafs: Option<Vec<Report>>,
@@ -361,7 +363,11 @@ impl Reader<'_> {
                 .map(|b| matches!(b, Value::Bool(true)))
                 .collect(),
             filed,
-            night: self.flag(v, "night")?,
+            night: match v.get("night") {
+                None | Some(Value::Null) => None,
+                Some(Value::Bool(b)) => Some(*b),
+                Some(_) => return Err(self.bad("\"night\" is not true or false")),
+            },
             terrain_ft: numbers("terrain_ft")?,
             water_far,
             tafs: self.reports(v, "tafs")?,

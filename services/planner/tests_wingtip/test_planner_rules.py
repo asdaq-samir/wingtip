@@ -61,4 +61,5 @@ def test_the_reserve_and_the_descent_are_the_engines():
 
 def test_the_basic_vfr_minimums_are_the_engines():
     # 14 CFR 91.155(c), (d).
-    assert (weather.VFR_MIN_CEILING_FT, weather.VFR_MIN_VISIBILITY_SM) == (1000, 3)
+    assert engine("vfr_basic_minimums") == {"ceiling_ft": 1000, "visibility_sm": 3}
+    assert weather.below_vfr_minimums(999, 3) and not weather.below_vfr_minimums(1000, 3)

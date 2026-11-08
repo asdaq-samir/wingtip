@@ -12,6 +12,7 @@
 //! one and what it says.
 
 pub mod answers;
+pub mod checkpoints;
 pub mod holds;
 pub mod options;
 pub mod picks;

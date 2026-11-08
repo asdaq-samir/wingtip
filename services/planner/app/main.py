@@ -5,7 +5,7 @@ them.
 This is the human-facing surface of everything else in the project. The
 chart reader finds what the sectional draws along the course, the chart
 model scores it (wingtip.chartmodel, loaded by app.chart_scorer),
-wingtip.checkpoints narrows them to the handful worth flying, and wingtip.navlog turns those into legs
+the engine's checkpoints_select narrows them to the handful worth flying, and wingtip.navlog turns those into legs
 with real wind and magnetic variation -- but none of that is inspectable
 from a JSON response. Seeing the checkpoints on the sectional is the only
 way to judge whether they are findable in the air, which is the question

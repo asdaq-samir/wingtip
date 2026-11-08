@@ -11,7 +11,7 @@ from fastapi import HTTPException
 
 from wingtip import aircraft as aircraft_module
 from wingtip import altitude as altitude_module
-from wingtip import airspace, geo, navlog, sun, weather
+from wingtip import airspace, geo, navlog, weather
 from wingtip.config import PLAN_LIMIT_S
 from wingtip.engine import ask as engine
 
@@ -249,10 +249,12 @@ def flight_totals(leg_list: list, profile: dict, r, depart: datetime | None, rul
     t["planned_at"] = now().isoformat().replace("+00:00", "Z")
     t["winds"] = weather.winds_period(forecast_hour_for(depart))
     depart = now() if depart is None else depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)
-    night = sun.is_night(r.start[0], r.start[1], depart)
-    if t["ete_min"] is not None:
-        arrival = depart + timedelta(minutes=t["ete_min"])
-        night = night or sun.is_night(r.end[0], r.end[1], arrival)
+    # 14 CFR 1.1's night at the departure, and at the destination on
+    # arrival where the time aloft is known: the engine's (sun.rs).
+    arrival = depart + timedelta(minutes=t["ete_min"]) if t["ete_min"] is not None else depart
+    end = r.end if t["ete_min"] is not None else r.start
+    night = engine("night_at_either_end", start=list(r.start), depart_s=depart.timestamp(), end=list(end),
+                   arrive_s=arrival.timestamp())
     t.update(engine("navlog_fuel_plan", total_fuel_gal=t["fuel_gal"], profile=profile, night=bool(night), rules=rules,
                     alternate_gal=(alternate or {}).get("fuel_gal") or 0.0))
     t["alternate"] = alternate

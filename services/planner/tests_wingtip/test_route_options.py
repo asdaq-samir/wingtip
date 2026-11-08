@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 from shapely.geometry import Polygon
 
-from wingtip import fixes, fuelstops, geo, route_options, sua, sun, terrain_detour, tfr, water, weather
+from wingtip import fixes, fuelstops, geo, route_options, sua, terrain_detour, tfr, water, weather
 
 # On the equator a degree is about 60 nm either way.
 DEP = {"ident": "AAA", "lat": 0.0, "lon": 0.0}
@@ -51,7 +51,9 @@ def sky(monkeypatch):
     monkeypatch.setattr(terrain_detour, "heights_ft", lambda lats, lons: np.zeros(lats.shape))
     monkeypatch.setattr(sua, "areas_in", lambda bbox: [])
     monkeypatch.setattr(tfr, "all_tfrs", lambda: [])
-    monkeypatch.setattr(sun, "is_night", lambda lat, lon, at: False)
+    # By day, whenever the test runs: the night is the engine's otherwise.
+    real = route_options.options
+    monkeypatch.setattr(route_options, "options", lambda *a, **k: real(*a, **{"night": False, **k}))
     monkeypatch.setattr(fuelstops, "paved_runways", lambda: defaultdict(lambda: 5000))
     # No fix to turn at unless a test puts one there.
     monkeypatch.setattr(fixes, "within", lambda south, west, north, east: [])

@@ -1,0 +1,39 @@
+{
+  "_note": "The planner's rules of #482's phase 1 that the engine took over in claude/engine-phase1c: night and civil twilight (14 CFR 1.1, NOAA's solar calculation, against astral 3's figures, which wingtip.sun gave, within two minutes), the nav log's checkpoint pick (wingtip.checkpoints' tests) and 91.155(c), (d)'s basic minimums. engine/facade/tests/planning.rs holds the engine to it. Times are UNIX seconds, UTC.",
+  "twilight": [
+    { "place": "Chicago", "lat": 41.88, "lon": -87.63, "day_s": 1774008000, "dawn_s": 1774005934, "dusk_s": 1774052989 },
+    { "place": "Denver", "lat": 39.74, "lon": -104.99, "day_s": 1797854400, "dawn_s": 1797860806, "dusk_s": 1797898145 },
+    { "place": "Anchorage", "lat": 61.22, "lon": -149.9, "day_s": 1797854400, "dawn_s": 1797876683, "dusk_s": 1797903834 },
+    { "place": "Honolulu", "lat": 21.32, "lon": -157.92, "day_s": 1783166400, "dawn_s": 1783178964, "dusk_s": 1783230175 },
+    { "place": "Svalbard in January", "lat": 78.2, "lon": 15.6, "day_s": 1768478400, "night_all_day": true },
+    { "place": "Svalbard in July", "lat": 78.2, "lon": 15.6, "day_s": 1784073600, "night_all_day": false }
+  ],
+  "night": [
+    { "why": "noon CDT", "lat": 41.88, "lon": -87.63, "at_s": 1790096400, "night": false },
+    { "why": "03:00 CDT", "lat": 41.88, "lon": -87.63, "at_s": 1790064000, "night": true },
+    { "why": "after dusk, on the next UTC date", "lat": 41.88, "lon": -87.63, "at_s": 1790125200, "night": true },
+    { "why": "before dusk", "lat": 41.88, "lon": -87.63, "at_s": 1790119800, "night": false },
+    { "why": "polar night", "lat": 78.2, "lon": 15.6, "at_s": 1768478400, "night": true },
+    { "why": "polar day", "lat": 78.2, "lon": 15.6, "at_s": 1784073600, "night": false }
+  ],
+  "on_the_way": [
+    { "why": "Chicago to Denver leaving 20:00 UTC, ten hours with stops", "start": [41.88, -87.63], "end": [39.74, -104.99], "depart_s": 1774036800, "minutes": 600, "night": true },
+    { "why": "the same in two hours", "start": [41.88, -87.63], "end": [39.74, -104.99], "depart_s": 1774036800, "minutes": 120, "night": false }
+  ],
+  "checkpoints": [
+    { "why": "route order, not score order", "candidates": [[0, 3.0], [30, 5.0], [60, 4.0]], "min_spacing_nm": 10, "picked": [0, 1, 2] },
+    { "why": "spacing drops the lower of two close ones", "candidates": [[20, 4.9], [22, 5.0]], "min_spacing_nm": 10, "picked": [1] },
+    { "why": "a gap rather than something unusable", "candidates": [[0, 4.0], [40, 1.2], [80, 4.0]], "min_spacing_nm": 10, "min_score": 2.5, "picked": [0, 2] },
+    { "why": "the cap", "candidates": [[0, 3.0], [20, 4.0], [40, 5.0], [60, 3.0], [80, 4.0], [100, 5.0]], "min_spacing_nm": 10, "max_count": 2, "picked": [2, 5] },
+    { "why": "a tie goes to the nearer", "candidates": [[60, 4.0], [10, 4.0]], "min_spacing_nm": 100, "picked": [1] },
+    { "why": "no score, no pick", "candidates": [[5, null], [50, 4.0]], "min_spacing_nm": 10, "picked": [1] },
+    { "why": "every score where min_score is null", "candidates": [[0, 1.0]], "min_score": null, "picked": [0] },
+    { "why": "none within 3 nm of a hop's ends (KLSE-KCMY)", "candidates": [[2.6, 5.0], [12, 4.0], [20, 5.0]], "length_nm": 22.9, "picked": [1] }
+  ],
+  "below_vfr_minimums": [
+    { "ceiling_ft": 900, "visibility_sm": 10, "below": true },
+    { "ceiling_ft": 5000, "visibility_sm": 2.5, "below": true },
+    { "ceiling_ft": 1000, "visibility_sm": 3, "below": false },
+    { "ceiling_ft": null, "visibility_sm": null, "below": false }
+  ]
+}

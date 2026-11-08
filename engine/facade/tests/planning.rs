@@ -1,0 +1,80 @@
+//! Night and civil twilight, the nav log's checkpoint pick and 91.155's
+//! basic minimums against the shared fixture apps/web/src/lib/fixtures/
+//! planning.json (#482 phase 1, the planner's wingtip.sun and
+//! wingtip.checkpoints).
+
+use serde_json::{json, Value};
+use std::path::PathBuf;
+use wingtip_engine::call::call;
+
+fn fixture() -> Value {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/planning.json");
+    serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+fn ask(name: &str, input: Value) -> Value {
+    serde_json::from_str(&call(name, &input.to_string()).unwrap_or_else(|e| panic!("{name}: {e}"))).unwrap()
+}
+
+/// Two minutes: NOAA's calculation against astral's, at these places.
+const WITHIN_S: f64 = 120.0;
+
+#[test]
+fn civil_twilight_is_astrals_within_two_minutes() {
+    for case in fixture()["twilight"].as_array().unwrap() {
+        let got = ask("civil_twilight", json!({ "lat": case["lat"], "lon": case["lon"], "day_s": case["day_s"] }));
+        if let Some(all_day) = case.get("night_all_day") {
+            assert_eq!(&got["night_all_day"], all_day, "{case}");
+            assert!(got["dawn_s"].is_null() && got["dusk_s"].is_null(), "{case}");
+            continue;
+        }
+        for key in ["dawn_s", "dusk_s"] {
+            let off = got[key].as_f64().unwrap() - case[key].as_f64().unwrap();
+            assert!(off.abs() <= WITHIN_S, "{} {key}: {} s off", case["place"], off);
+        }
+    }
+}
+
+#[test]
+fn night_and_night_on_the_way() {
+    let f = fixture();
+    for case in f["night"].as_array().unwrap() {
+        let got = ask("is_night", json!({ "lat": case["lat"], "lon": case["lon"], "at_s": case["at_s"] }));
+        assert_eq!(got, case["night"], "{}", case["why"]);
+    }
+    for case in f["on_the_way"].as_array().unwrap() {
+        let input = json!({ "start": case["start"], "end": case["end"], "depart_s": case["depart_s"], "minutes": case["minutes"] });
+        assert_eq!(ask("night_on_the_way", input), case["night"], "{}", case["why"]);
+    }
+    // Either end: by day at Chicago, at night when it lands at 03:00 CDT.
+    let either = |arrive: i64| ask("night_at_either_end", json!({ "start": [41.88, -87.63], "depart_s": 1790096400, "end": [41.88, -87.63], "arrive_s": arrive }));
+    assert_eq!(either(1790096400 + 3600), json!(false));
+    assert_eq!(either(1790064000 + 86400), json!(true));
+}
+
+#[test]
+fn the_checkpoints_picked() {
+    for case in fixture()["checkpoints"].as_array().unwrap() {
+        let candidates: Vec<Value> = case["candidates"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|c| json!({ "along_track_nm": c[0], "predicted_score": c[1] }))
+            .collect();
+        let mut input = json!({ "candidates": candidates });
+        for key in ["min_spacing_nm", "max_count", "min_score", "length_nm"] {
+            if let Some(v) = case.get(key) {
+                input[key] = v.clone();
+            }
+        }
+        assert_eq!(ask("checkpoints_select", input), case["picked"], "{}", case["why"]);
+    }
+}
+
+#[test]
+fn below_the_basic_vfr_minimums() {
+    for case in fixture()["below_vfr_minimums"].as_array().unwrap() {
+        let got = ask("below_vfr_minimums", json!({ "ceiling_ft": case["ceiling_ft"], "visibility_sm": case["visibility_sm"] }));
+        assert_eq!(got, case["below"], "{case}");
+    }
+}

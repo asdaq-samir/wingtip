@@ -18413,6 +18413,311 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "is_night": {
+      "description": "Whether an instant is night at a point (14 CFR 1.1: outside civil twilight, the sun's centre six degrees below the horizon), by NOAA's solar calculation; a polar day is night or day all day.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IsNightInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number",
+              "description": "East positive."
+            },
+            "at_s": {
+              "type": "number",
+              "description": "UNIX seconds, UTC."
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "at_s"
+          ]
+        },
+        "answer": {
+          "title": "IsNightAnswer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "civil_twilight": {
+      "description": "Dawn and dusk (the beginning of morning and the end of evening civil twilight, 14 CFR 1.1) of the civil day whose solar noon falls on the UTC day `day_s` lies in; null each in a polar day, `night_all_day` then saying which kind.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CivilTwilightInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "day_s": {
+              "type": "number",
+              "description": "Any instant of the UTC day, UNIX seconds."
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "day_s"
+          ]
+        },
+        "answer": {
+          "title": "CivilTwilightAnswer",
+          "type": "object",
+          "properties": {
+            "dawn_s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "dusk_s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "night_all_day": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "dawn_s",
+            "dusk_s",
+            "night_all_day"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "night_on_the_way": {
+      "description": "Whether any of a trip from `start` to `end` of `minutes` (its stops' time on the ground counted), leaving at `depart_s`, falls in the night, judged every half hour along the straight line: 14 CFR 91.151(a)(2)'s 45 minutes then.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NightOnTheWayInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "depart_s": {
+              "type": "number"
+            },
+            "minutes": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "start",
+            "end",
+            "depart_s",
+            "minutes"
+          ]
+        },
+        "answer": {
+          "title": "NightOnTheWayAnswer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "night_at_either_end": {
+      "description": "Whether a flight is at night leaving `start` at `depart_s` or arriving at `end` at `arrive_s` (14 CFR 1.1; 91.151(a)'s reserve).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NightAtEitherEndInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "depart_s": {
+              "type": "number"
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "arrive_s": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "start",
+            "depart_s",
+            "end",
+            "arrive_s"
+          ]
+        },
+        "answer": {
+          "title": "NightAtEitherEndAnswer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "checkpoints_select": {
+      "description": "The nav log's checkpoints from the chart model's scored candidates, as their indices in route order: greedy by score, at least `min_spacing_nm` apart (10), none under `min_score` (2.5; null for every score), at most `max_count`, and with `length_nm` none within 3 nm of a hop's ends.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CheckpointsSelectInput",
+          "type": "object",
+          "properties": {
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "along_track_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "predicted_score": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "min_spacing_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "max_count": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "min_score": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Missing: 2.5; null: every score."
+            },
+            "length_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "candidates"
+          ]
+        },
+        "answer": {
+          "title": "CheckpointsSelectAnswer",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "below_vfr_minimums": {
+      "description": "Whether a ceiling or a visibility is under 14 CFR 91.155(c), (d)'s basic VFR minimums (1,000 ft, 3 sm); a missing figure is below nothing.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "BelowVfrMinimumsInput",
+          "type": "object",
+          "properties": {
+            "ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "answer": {
+          "title": "BelowVfrMinimumsAnswer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -18710,7 +19015,13 @@
     "radio_script",
     "radio_call_sign",
     "radio_place_name",
-    "solo_standing"
+    "solo_standing",
+    "is_night",
+    "civil_twilight",
+    "night_on_the_way",
+    "night_at_either_end",
+    "checkpoints_select",
+    "below_vfr_minimums"
   ],
   "additionalProperties": false,
   "definitions": {
@@ -23428,7 +23739,8 @@
           "type": [
             "boolean",
             "null"
-          ]
+          ],
+          "description": "Night at either end (14 CFR 91.151's 45 minutes) as the host judged it; missing or null, the engine judges it over the flight's window (sun.rs)."
         },
         "terrain_ft": {
           "type": [
