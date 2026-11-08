@@ -218,6 +218,9 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("filed_route", json!({ "stops": case["stops"], "airways": case["airways"] }));
     }
     c.ask("filed_zzzz", json!({ "ident": "C81" }));
+    for case in fixture("routePosition.json")["cases"].as_array().unwrap() {
+        c.ask("route_position", case["input"].clone());
+    }
     c.ask("filed_wake", json!({ "max_takeoff_lb": 2550 }));
 
     let holds = fixture("holds.json");

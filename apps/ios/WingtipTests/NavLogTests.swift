@@ -78,18 +78,21 @@ struct KeptTests {
 struct FlightTests {
     @Test func aPositionHalfWayAlongALegIsHalfWayAlong() {
         let line = [CLLocationCoordinate2D(latitude: 42.0, longitude: -88.0), CLLocationCoordinate2D(latitude: 43.0, longitude: -88.0)]
-        let left = Flight.along(CLLocationCoordinate2D(latitude: 42.5, longitude: -88.05), line: line)!
-        #expect(abs(left.alongNm - 30) < 0.5 && abs(left.totalNm - 60) < 0.5 && abs(left.leftNm - 30) < 0.5)
-        #expect(Flight.off(CLLocationCoordinate2D(latitude: 42.5, longitude: -88.05), line: line) < 2.5)
-        #expect(Flight.along(CLLocationCoordinate2D(latitude: 42.5, longitude: -88.0), line: [line[0]]) == nil)
+        let at = Flight.position(CLLocationCoordinate2D(latitude: 42.5, longitude: -88.05), line: line)!
+        #expect(abs(at.alongNm - 30) < 0.5 && abs(at.totalNm - 60) < 0.5 && abs(at.leftNm - 30) < 0.5)
+        #expect(at.offNm < 2.5 && at.onRoute)
+        #expect(Flight.position(CLLocationCoordinate2D(latitude: 42.5, longitude: -88.0), line: [line[0]]) == nil)
     }
 
     @Test func fuelBurntIsEachLegsShareOfItsMiles() {
         let leg = { (to: String, nm: Double, gal: Double) in Leg(from: "A", to: to, distanceNm: nm, altitudeFt: 4500, trueCourseDeg: 0, magneticHeadingDeg: 0, groundspeedKt: 100, eteMin: nm / 100 * 60, fuelGal: gal, tasKt: 100) }
         let legs = [leg("B", 10, 2.0), leg("C", 20, 4.0)]
-        #expect(abs(Flight.burnt(legs: legs, alongNm: 5) - 1.0) < 0.001)
-        #expect(abs(Flight.burnt(legs: legs, alongNm: 20) - 4.0) < 0.001)
-        #expect(abs(Flight.burnt(legs: legs, alongNm: 60) - 6.0) < 0.001)
+        // Due north, a degree of latitude 60.04 nm on the engine's sphere.
+        let line = [CLLocationCoordinate2D(latitude: 42.0, longitude: -88.0), CLLocationCoordinate2D(latitude: 43.0, longitude: -88.0)]
+        let fifth = Flight.position(CLLocationCoordinate2D(latitude: 42.0 + 5 / 60.04, longitude: -88.0), line: line, legs: legs)!
+        #expect(abs(fifth.burntGal - 1.0) < 0.01)
+        let twentieth = Flight.position(CLLocationCoordinate2D(latitude: 42.0 + 20 / 60.04, longitude: -88.0), line: line, legs: legs)!
+        #expect(abs(twentieth.burntGal - 4.0) < 0.01 && twentieth.leg == 1)
     }
 }
 

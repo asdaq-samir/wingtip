@@ -18,9 +18,8 @@ struct FiguresStrip: View {
     private var flying: (leftNm: Double, minutes: Double?, fuelGal: Double?)? {
         // A dry run's airplane counts as flying; else own ship, moving.
         guard let fix = dryRun.fix ?? ownShip.fix, let gs = fix.groundspeedKt, Flight.underway(gs), let course = plan.course,
-              let along = Flight.along(fix.coordinate, line: course.coordinates),
-              Flight.off(fix.coordinate, line: course.coordinates) <= 3 else { return nil }
-        let required = Self.fuel(plan.totals, burntGal: Flight.burnt(legs: plan.legs, alongNm: along.alongNm)).requiredGal
+              let along = Flight.position(fix.coordinate, line: course.coordinates, legs: plan.legs), along.onRoute else { return nil }
+        let required = Self.fuel(plan.totals, burntGal: along.burntGal).requiredGal
         return (along.leftNm, along.leftNm / gs * 60, required)
     }
 

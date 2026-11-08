@@ -52,19 +52,6 @@ class StripDataTest {
     }
 
     @Test
-    fun theAirplaneIsPlacedAlongTheLegsByTheMilesFlown() {
-        // A straight line north of 284 nm in four vertices; the airplane
-        // beside the second vertex, 71 nm along: on the third leg (60 nm
-        // from 44 nm), about 27 nm into it.
-        val line = listOf(listOf(42.0, -88.0), listOf(43.18, -88.0), listOf(44.37, -88.0), listOf(46.73, -88.0))
-        val at = StripData.positionAlong(line, state.legs, 43.2, -88.1)!!
-        assertEquals(2, at.leg)
-        assertEquals(0.45, at.along, 0.05)
-        assertNull(StripData.positionAlong(line, state.legs, null, null))
-        assertNull(StripData.positionAlong(emptyList(), state.legs, 43.0, -88.0))
-    }
-
-    @Test
     fun theWordsAreTheWebAppsFormats() {
         assertEquals("1h 5m", StripData.duration(65.0))
         assertEquals("45m", StripData.duration(45.0))

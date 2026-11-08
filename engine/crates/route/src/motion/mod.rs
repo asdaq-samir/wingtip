@@ -15,7 +15,9 @@
 //!   by its procedures and holds, going missed when asked
 //!   (navlog/dryRun);
 //! - track: a flown track read from a GPX or KML file, and thinned for
-//!   keeping (lib/track).
+//!   keeping (lib/track);
+//! - along: where a real airplane is along the route, whether it is on
+//!   it, and the fuel the plan has burnt by there (the phones' strips).
 //!
 //! What runs every frame stays in each app -- where a replay's airplane is
 //! between two reports, a report carried on along its track, the dry run's
@@ -27,6 +29,7 @@
 //! answer (14 ms for 554 against the web's 0.2).
 
 pub mod alerts;
+pub mod along;
 pub mod dry_run;
 pub mod glide;
 pub mod profile;
@@ -88,6 +91,7 @@ pub fn call(name: &str, v: &Value) -> Option<Result<String, String>> {
         "dry_run" => dry_run::dry_run_rule(v),
         "read_track" => track::read_rule(v),
         "thin_track" => track::thin_rule(v),
+        "route_position" => along::position_rule(v),
         _ => return None,
     })
 }

@@ -97,7 +97,7 @@ struct FieldTabsSheetView: View {
     /// FiguresStrip counts it: a dry run's airplane counts as flying.
     private var flyingFix: OwnShip.Fix? {
         guard let fix = dryRun.fix ?? ownShip.fix, let gs = fix.groundspeedKt, Flight.underway(gs), let course = plan.course,
-              Flight.off(fix.coordinate, line: course.coordinates) <= 3 else { return nil }
+              Flight.position(fix.coordinate, line: course.coordinates)?.onRoute == true else { return nil }
         return fix
     }
 

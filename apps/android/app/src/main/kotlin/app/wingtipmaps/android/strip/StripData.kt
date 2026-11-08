@@ -3,13 +3,13 @@ package app.wingtipmaps.android.strip
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.Pilot
-import app.wingtipmaps.android.flight.Geo
+import app.wingtipmaps.android.engine.Engine
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.math.max
-import kotlin.math.min
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlin.math.roundToInt
 
 /**
@@ -112,40 +112,41 @@ object StripData {
     }
 
     /**
-     * Where the airplane is along the route, for the ribbon: the nearest
-     * vertex of the planner's course line is found, the distance along
-     * the line to it taken as the distance flown, and that laid against
-     * the legs' own miles to give the leg and how far along it -- a
-     * glance, not navigation (the web's positionAlong is the same kind of
-     * glance over the nav log's points, which this app's legs do not carry
-     * coordinates for). Null with no fix or no line.
+     * Where the airplane is along the route, for the ribbon: the leg it is
+     * on and how far along it, the engine's `route_position` (the nearest
+     * point of the planner's course line, laid against the legs' own
+     * miles), the very answer the iPhone's strip asks -- a glance, not
+     * navigation. Null with no fix or no line.
      */
     fun positionAlong(line: List<List<Double>>, legs: List<Leg>, lat: Double?, lon: Double?): Position? {
-        if (lat == null || lon == null || line.size < 2 || legs.isEmpty()) return null
-        var nearest = 0
-        var least = Double.MAX_VALUE
-        line.forEachIndexed { i, p ->
-            if (p.size < 2) return@forEachIndexed
-            val d = Geo.nm(lat, lon, p[0], p[1])
-            if (d < least) { least = d; nearest = i }
-        }
-        var flown = 0.0
-        for (i in 1..nearest) {
-            val a = line[i - 1]
-            val b = line[i]
-            if (a.size >= 2 && b.size >= 2) flown += Geo.nm(a[0], a[1], b[0], b[1])
-        }
-        var start = 0.0
-        legs.forEachIndexed { i, leg ->
-            val end = start + leg.distanceNm
-            if (flown <= end || i == legs.lastIndex) {
-                val along = if (leg.distanceNm > 0) (flown - start) / leg.distanceNm else 0.0
-                return Position(i, min(1.0, max(0.0, along)))
-            }
-            start = end
-        }
-        return null
+        if (lat == null || lon == null) return null
+        val at: RoutePosition? = Engine.call(
+            "route_position",
+            RoutePositionAsk(LatLon(lat, lon), line.filter { it.size >= 2 }, legs.map { LegMiles(it.distanceNm, it.fuelGal) }),
+        )
+        return at?.let { Position(it.leg, it.legFraction) }
     }
+
+    @Serializable
+    data class LatLon(val lat: Double, val lon: Double)
+
+    @Serializable
+    data class LegMiles(@SerialName("distance_nm") val distanceNm: Double, @SerialName("fuel_gal") val fuelGal: Double?)
+
+    @Serializable
+    data class RoutePositionAsk(val at: LatLon, val line: List<List<Double>>, val legs: List<LegMiles>)
+
+    /** The engine's answer (motion/along.rs). */
+    @Serializable
+    data class RoutePosition(
+        @SerialName("along_nm") val alongNm: Double,
+        @SerialName("left_nm") val leftNm: Double,
+        @SerialName("off_nm") val offNm: Double,
+        @SerialName("on_route") val onRoute: Boolean,
+        val leg: Int,
+        @SerialName("leg_fraction") val legFraction: Double,
+        @SerialName("burnt_gal") val burntGal: Double,
+    )
 
     /** The pilot's initials from their name ("Asdaq Samir" is AS), or the
      *  first letter of their address; none signed out. */

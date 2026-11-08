@@ -62,6 +62,24 @@ fn the_drills_decks_are_the_fixtures() {
 }
 
 #[test]
+fn where_the_airplane_is_along_the_route() {
+    for case in fixture("routePosition.json")["cases"].as_array().unwrap() {
+        let got = ask("route_position", case["input"].clone());
+        let want = &case["answer"];
+        if want.is_null() {
+            assert!(got.is_null(), "{}", case["name"]);
+            continue;
+        }
+        for (key, w) in want.as_object().unwrap() {
+            match w {
+                Value::Number(n) => assert!((got[key].as_f64().unwrap() - n.as_f64().unwrap()).abs() < 0.01, "{}: {key} {}", case["name"], got[key]),
+                _ => assert_eq!(&got[key], w, "{}: {key}", case["name"]),
+            }
+        }
+    }
+}
+
+#[test]
 fn the_filing_forms_items() {
     let f = fixture("filingForm.json");
     for c in f["cruisingSpeed"].as_array().unwrap() {
