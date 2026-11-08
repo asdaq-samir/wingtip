@@ -20,6 +20,7 @@ import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AircraftDto;
 import app.wingtipmaps.gateway.service.AircraftService;
 import app.wingtipmaps.gateway.service.ChecklistService;
+import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.SquawkService;
 import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.PlannerClient;
@@ -57,6 +58,9 @@ class AircraftControllerTest {
 
     @MockitoBean
     private SquawkService squawkService;
+
+    @MockitoBean
+    private DueItemService dueItemService;
 
     /** The planner, whose engine says when the inspections fall due
      *  (inspections_due, tested against the shared records.json): nothing
@@ -362,5 +366,34 @@ class AircraftControllerTest {
         mockMvc.perform(post("/api/aircraft/7/squawks").with(oidcLogin()).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(body.replace("2026-10-10", "2999-01-01")))
                 .andExpect(status().isBadRequest());
+    }
+
+    /** An AD kept on the airplane (14 CFR 91.417(a)(2)(v)): another
+     *  pilot's airplane is 404, a title is needed, hours are not negative. */
+    @Test
+    void aDueItemIsTheOwnersAndNamesWhatIsDue() throws Exception {
+        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
+        String body = "{\"kind\":\"AD\",\"title\":\"Oil filter adapter\",\"reference\":\"AD 2011-10-09\","
+                + "\"method\":\"Inspect, 100 hours\",\"dueAtHours\":2310.4}";
+        given(dueItemService.add(any(), eq(9L), any())).willReturn(Optional.empty());
+        mockMvc.perform(post("/api/aircraft/9/due-items").with(oidcLogin()).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isNotFound());
+
+        given(dueItemService.add(any(), eq(7L), any())).willReturn(Optional.of(new app.wingtipmaps.gateway.dto.DueItemDto(4L,
+                app.wingtipmaps.gateway.domain.DueItemKind.AD, "Oil filter adapter", "AD 2011-10-09", "Inspect, 100 hours",
+                null, 2310.4)));
+        mockMvc.perform(post("/api/aircraft/7/due-items").with(oidcLogin()).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reference").value("AD 2011-10-09"))
+                .andExpect(jsonPath("$.dueAtHours").value(2310.4));
+        mockMvc.perform(post("/api/aircraft/7/due-items").with(oidcLogin()).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body.replace("Oil filter adapter", " ")))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/aircraft/7/due-items").with(oidcLogin()).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body.replace("2310.4", "-1")))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/api/aircraft/7/due-items/4").with(csrf())).andExpect(status().isUnauthorized());
     }
 }

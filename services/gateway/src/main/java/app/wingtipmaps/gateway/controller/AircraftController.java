@@ -4,6 +4,9 @@ import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.dto.AircraftDto;
 import app.wingtipmaps.gateway.dto.AircraftRequest;
 import app.wingtipmaps.gateway.dto.ChecklistDto;
+import app.wingtipmaps.gateway.dto.DueItemDto;
+import app.wingtipmaps.gateway.dto.DueItemRequest;
+import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.dto.InspectionsRequest;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.dto.SquawkDto;
@@ -46,14 +49,16 @@ public class AircraftController {
     private final SquawkService squawks;
     private final PilotService pilots;
     private final PlannerClient planner;
+    private final DueItemService dueItems;
 
     public AircraftController(AircraftService aircraftService, ChecklistService checklists, SquawkService squawks,
-                              PilotService pilots, PlannerClient planner) {
+                              PilotService pilots, PlannerClient planner, DueItemService dueItems) {
         this.aircraftService = aircraftService;
         this.checklists = checklists;
         this.squawks = squawks;
         this.pilots = pilots;
         this.planner = planner;
+        this.dueItems = dueItems;
     }
 
     @GetMapping
@@ -135,6 +140,25 @@ public class AircraftController {
         return PilotResponses.done(pilots, authentication, pilot -> squawks.delete(pilot, id, squawkId));
     }
 
+    /** An item due on the airplane, as its owner keeps it: an AD's status
+     *  (14 CFR 91.417(a)(2)(v)) or another. */
+    @PostMapping("/{id}/due-items")
+    public ResponseEntity<DueItemDto> addDueItem(
+            Authentication authentication, @PathVariable Long id, @Valid @RequestBody DueItemRequest request) {
+        return PilotResponses.found(pilots, authentication, pilot -> dueItems.add(pilot, id, request));
+    }
+
+    @PutMapping("/{id}/due-items/{itemId}")
+    public ResponseEntity<DueItemDto> updateDueItem(Authentication authentication, @PathVariable Long id,
+                                                    @PathVariable Long itemId, @Valid @RequestBody DueItemRequest request) {
+        return PilotResponses.found(pilots, authentication, pilot -> dueItems.update(pilot, id, itemId, request));
+    }
+
+    @DeleteMapping("/{id}/due-items/{itemId}")
+    public ResponseEntity<Void> deleteDueItem(Authentication authentication, @PathVariable Long id, @PathVariable Long itemId) {
+        return PilotResponses.done(pilots, authentication, pilot -> dueItems.delete(pilot, id, itemId));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(Authentication authentication, @PathVariable Long id) {
         return PilotResponses.done(pilots, authentication, pilot -> aircraftService.delete(pilot, id));
@@ -145,7 +169,8 @@ public class AircraftController {
         return new AircraftDto(a.getId(), a.getTailNumber(), a.getTypeDesignator(), a.getCruiseTasKt(),
                 a.getFuelBurnGph(), a.getCruisePowerPct(), a.getClimbTasKt(), a.getClimbFuelBurnGph(), a.getUsableFuelGal(),
                 a.getCreatedAt(), vorCheckOf(a, due), inspectionsOf(a, due), a.getId() == null ? List.of() : squawks.open(a.getId()),
-                a.getEquipment(), a.getSurveillance(), a.getColour());
+                a.getEquipment(), a.getSurveillance(), a.getColour(),
+                a.getId() == null ? List.of() : dueItems.of(a.getId()).stream().map(DueItemService::toDto).toList());
     }
 
     /** When the airplane's inspections and checks fall due, and its VOR
@@ -165,7 +190,7 @@ public class AircraftController {
                 a.getStaticCheckOn(), due.staticCheckUntil(),
                 a.getTransponderCheckOn(), due.transponderCheckUntil(),
                 a.getEltInspectedOn(), due.eltUntil(),
-                a.getEltBatteryDueOn());
+                a.getEltBatteryDueOn(), a.isForHire());
     }
 
     static AircraftDto.VorCheckDto vorCheckOf(Aircraft a, PlannerClient.Inspections due) {

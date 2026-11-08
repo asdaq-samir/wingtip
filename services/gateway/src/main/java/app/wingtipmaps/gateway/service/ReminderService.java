@@ -2,7 +2,6 @@ package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
-import app.wingtipmaps.gateway.repository.LogbookRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -20,12 +19,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Reminders by email before a pilot's currency runs out, for those who
- * asked: 30 days before and again 7 days before the flight review's last
- * day (14 CFR 61.56(c)), the medical's (61.23), passengers by day and at
- * night (61.57(a), (b)) and instrument currency (61.57(c)) -- each as the
- * engine works it out, asked through the planner (PlannerClient#currency),
- * a planner out of reach leaving the pilot's email for the next day.
+ * Reminders by email before a pilot's currency or an airplane's paperwork
+ * runs out, for those who asked: 30 days before and again 7 days before
+ * the flight review's last day (14 CFR 61.56(c)), the medical's (61.23),
+ * passengers by day and at night (61.57(a), (b)), instrument currency
+ * (61.57(c)), and each of their airplanes' annual (91.409(a)), ELT
+ * inspection and battery (91.207(d), (c)), static system (91.411(a)) and
+ * transponder (91.413(a)), and the owner's dated items (an AD's next
+ * action, 91.417(a)(2)(v)) -- the list PaperworkService makes, its days
+ * the engine's, asked through the planner, a planner out of reach leaving
+ * the pilot's email for the next day.
  * Every morning (14:00 UTC, the contiguous U.S.'s morning) one email
  * lists what is coming up; each
  * reminder is sent once, recorded with what it was of and its day, so a
@@ -45,44 +48,45 @@ public class ReminderService {
     }
 
     private final PilotRepository pilots;
-    private final LogbookRepository logbook;
-    private final PlannerClient planner;
+    private final PaperworkService paperwork;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transaction;
     private final Mailer mail;
 
-    public ReminderService(PilotRepository pilots, LogbookRepository logbook, PlannerClient planner, JdbcTemplate jdbc,
+    public ReminderService(PilotRepository pilots, PaperworkService paperwork, JdbcTemplate jdbc,
                            TransactionTemplate transaction, Mailer mail) {
         this.pilots = pilots;
-        this.logbook = logbook;
-        this.planner = planner;
+        this.paperwork = paperwork;
         this.jdbc = jdbc;
         this.transaction = transaction;
         this.mail = mail;
     }
 
-    /** What is coming up within 30 days of `today`, each by the nearer of
-     *  its two reminders: 7 days before from the seventh day on, else 30. */
+    /** What is coming up within 30 days of `today` of the pilot's own
+     *  currency, each by the nearer of its two reminders: 7 days before
+     *  from the seventh day on, else 30. */
     public static List<Reminder> due(CurrencyDto c, LocalDate today) {
-        List<Reminder> out = new ArrayList<>();
-        add(out, "flight-review", c.flightReviewUntil(), "Your flight review runs out", "14 CFR 61.56(c)", today);
-        add(out, "medical", c.medicalExpiresOn(), "Your medical certificate runs out", "14 CFR 61.23", today);
-        add(out, "day-passengers", c.dayPassengersUntil(), "You may carry passengers by day until", "14 CFR 61.57(a)", today);
-        add(out, "night-passengers", c.nightPassengersUntil(), "You may carry passengers at night until", "14 CFR 61.57(b)", today);
-        add(out, "instrument", c.instrumentCurrentUntil(), "Your instrument currency runs out", "14 CFR 61.57(c)", today);
-        return out;
+        return due(PaperworkService.ofPilot(c), today);
     }
 
-    private static void add(List<Reminder> out, String what, LocalDate until, String words, String rule, LocalDate today) {
-        if (until == null) {
-            return;
+    /** The same of any list PaperworkService makes: those by day that are
+     *  emailed, in its order. */
+    public static List<Reminder> due(List<PaperworkService.Due> items, LocalDate today) {
+        List<Reminder> out = new ArrayList<>();
+        for (PaperworkService.Due d : items) {
+            if (!d.emailed() || d.dueOn() == null) {
+                continue;
+            }
+            long days = ChronoUnit.DAYS.between(today, d.dueOn());
+            if (days < 0 || days > 30) {
+                continue;
+            }
+            String when = days == 0 ? "today" : days == 1 ? "tomorrow" : "in " + days + " days";
+            String rule = d.rule() == null ? "" : " (" + d.rule() + ")";
+            out.add(new Reminder(d.key(), d.lead() + " " + DAY.format(d.dueOn()) + ", " + when + rule + ".", d.dueOn(),
+                    days <= 7 ? 7 : 30));
         }
-        long days = ChronoUnit.DAYS.between(today, until);
-        if (days < 0 || days > 30) {
-            return;
-        }
-        String when = days == 0 ? "today" : days == 1 ? "tomorrow" : "in " + days + " days";
-        out.add(new Reminder(what, words + " " + DAY.format(until) + ", " + when + " (" + rule + ").", until, days <= 7 ? 7 : 30));
+        return out;
     }
 
     @Scheduled(cron = "${app.reminders.cron:0 0 14 * * *}", zone = "UTC")
@@ -100,9 +104,7 @@ public class ReminderService {
     /** The pilot's reminders due today and not yet sent, in one email.
      *  @return how many it held */
     public int sendTo(Pilot pilot, LocalDate today) {
-        CurrencyDto c = planner.currency(logbook.findByPilotIdOrderByFlownOnDescIdDesc(pilot.getId()),
-                pilot.getFlightReviewOn(), pilot.getMedicalExpiresOn(), pilot.getIpcOn(), today);
-        List<Reminder> due = due(c, today);
+        List<Reminder> due = due(paperwork.of(pilot, today), today);
         if (due.isEmpty()) {
             return 0;
         }
@@ -124,9 +126,9 @@ public class ReminderService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(pilot.getEmail());
         message.setSubject(reminders.size() == 1
-                ? "Wingtip Maps: " + reminders.get(0).words().replaceAll(", (today|tomorrow|in \\d+ days) \\(.*$", "")
+                ? "Wingtip Maps: " + reminders.get(0).words().replaceAll(", (today|tomorrow|in \\d+ days)( \\(.*\\))?\\.$", "")
                 : "Wingtip Maps: " + reminders.size() + " dates coming up");
-        StringBuilder body = new StringBuilder("Coming up, from your logbook in Wingtip Maps:\n\n");
+        StringBuilder body = new StringBuilder("Coming up, from your logbook and airplanes in Wingtip Maps:\n\n");
         reminders.forEach(r -> body.append("- ").append(r.words()).append('\n'));
         body.append("\nYou asked for these reminders. Turn them off in the Logbook, under Currency.");
         message.setText(body.toString());

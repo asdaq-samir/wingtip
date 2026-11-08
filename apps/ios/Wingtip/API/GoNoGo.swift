@@ -144,7 +144,10 @@ struct OwnAirplaneAsk: Encodable, Equatable, Sendable {
         inspections = record.inspections.map {
             Due(annualGoodThrough: $0.annualGoodThrough, staticCheckGoodThrough: $0.staticCheckGoodThrough,
                 transponderCheckGoodThrough: $0.transponderCheckGoodThrough, eltInspectionGoodThrough: $0.eltInspectionGoodThrough,
-                eltBatteryDueOn: $0.eltBatteryDueOn, hoursNow: $0.hoursNow, hundredHourDueAtHours: $0.hundredHourDueAtHours)
+                eltBatteryDueOn: $0.eltBatteryDueOn, hoursNow: $0.hoursNow,
+                // The 100-hour is owed only flown for hire (14 CFR 91.409(b)),
+                // as the owner says: not one, not weighed (the web's lib/airworthiness).
+                hundredHourDueAtHours: $0.forHire == true ? $0.hundredHourDueAtHours : nil)
         }
         // Only the squawks still open: a fixed one grounds nothing.
         squawks = (record.openSquawks ?? []).filter { $0.fixedOn == nil }.map { Open(text: $0.text, inoperative: $0.inoperative, deferredFor: $0.deferredFor) }

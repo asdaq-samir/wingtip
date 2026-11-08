@@ -395,3 +395,9 @@ export const aircraftProfilesQuery = queryOptions({
 export const currencyQuery = queryOptions({
   queryKey: ["currency"], queryFn: () => api.logbook.currency(), staleTime: 60_000,
 });
+
+/** What falls due for the pilot and their airplanes (the Logbook's Coming
+ *  up): fresh for a minute. */
+export const paperworkQuery = queryOptions({
+  queryKey: ["paperwork"], queryFn: () => api.paperwork(), staleTime: 60_000,
+});

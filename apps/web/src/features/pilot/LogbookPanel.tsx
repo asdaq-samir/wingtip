@@ -1,6 +1,6 @@
-import { useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileDown, FileUp, GraduationCap, Mail, MailX, Plus, Users } from "lucide-react";
+import { GraduationCap, Mail, MailX, Plus, Users } from "lucide-react";
 import { toast } from "../../lib/toast";
 import FieldHit from "../../components/FieldHit";
 import { cn } from "cn";
@@ -12,15 +12,14 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { useConfirm } from "../../components/useConfirm";
 import TogglePill from "../../components/TogglePill";
-import { api, describeError } from "../../lib/api/client";
-import { shareFile } from "../../lib/flightPlanFiles";
-import { importLogbook, logbookCsv } from "../../lib/logbookCsv";
-import { showError } from "../../lib/problems";
+import { api } from "../../lib/api/client";
 import type { Currency, LogbookEntry, LogbookEntryRequest } from "../../lib/api/types";
 import { TEXT } from "../../lib/text";
 import CheckridePage from "./CheckridePage";
 import QueryState from "../../components/QueryState";
 import InstructorPage from "./InstructorPage";
+import ComingUp from "./ComingUp";
+import LogbookFile from "./LogbookFile";
 import { localDay } from "../../lib/clock";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
@@ -138,6 +137,7 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
     void queryClient.invalidateQueries({ queryKey: ["logbook"] });
     void queryClient.invalidateQueries({ queryKey: ["currency"] });
     void queryClient.invalidateQueries({ queryKey: ["training"] });
+    void queryClient.invalidateQueries({ queryKey: ["paperwork"] });
   };
   const save = useMutation({
     mutationFn: ({ id, entry }: { id?: number; entry: LogbookEntryRequest }) => (id ? api.logbook.update(id, entry) : api.logbook.add(entry)),
@@ -146,7 +146,10 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
   const remove = useMutation({ mutationFn: (id: number) => api.logbook.remove(id), onSuccess: () => { setToDelete(null); refresh(); } });
   const dates = useMutation({
     mutationFn: (next: { flightReviewOn: string | null; medicalExpiresOn: string | null; ipcOn: string | null }) => api.logbook.setCurrencyDates(next),
-    onSuccess: (c: Currency) => queryClient.setQueryData(["currency"], c),
+    onSuccess: (c: Currency) => {
+      queryClient.setQueryData(["currency"], c);
+      void queryClient.invalidateQueries({ queryKey: ["paperwork"] });
+    },
   });
   const [askDelete, deleteDialog] = useConfirm({
     title: "Take this flight out of the logbook?", description: "It goes from your logbook and your currency. This can't be undone.",
@@ -169,35 +172,6 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
   // Lapsed more than six calendar months: only a check restores it (61.57(d)).
   const ipcNeeded = !!currency?.ipcNeededAfter && currency.ipcNeededAfter < today();
   const met = training?.experience.filter(i => i.met).length ?? 0;
-  // The logbook to and from a file (lib/logbookCsv): ForeFlight's export,
-  // or this one's own, read on the device and sent as entries; what was
-  // left out, and why, said under the rows.
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [imported, setImported] = useState<string | null>(null);
-  const bringIn = useMutation({
-    mutationFn: async (file: File) => {
-      const read = importLogbook(await file.text());
-      if (!read.entries.length) return { read, result: { added: 0, duplicates: 0 } };
-      return { read, result: await api.logbook.importAll(read.entries) };
-    },
-    onSuccess: ({ read, result }) => {
-      const left = read.skipped.slice(0, 3).map(s => `line ${s.line}: ${s.reason}`).join("; ");
-      setImported([
-        `${result.added} flight${result.added === 1 ? "" : "s"} added`,
-        result.duplicates ? `${result.duplicates} already in your logbook` : "",
-        read.skipped.length ? `${read.skipped.length} row${read.skipped.length === 1 ? "" : "s"} left out (${left}${read.skipped.length > 3 ? "; …" : ""})` : "",
-      ].filter(Boolean).join(", ") + ".");
-      refresh();
-    },
-    onError: err => showError("Could not import the logbook", describeError(err)),
-  });
-  const exportFile = async () => {
-    try {
-      await shareFile(`logbook-${today()}.csv`, "text/csv", logbookCsv(entries ?? []));
-    } catch (err) {
-      if ((err as Error).name !== "AbortError") showError("Could not export the logbook", (err as Error).message);
-    }
-  };
   return (
     <ConsolePages
       back="Logbook"
@@ -221,6 +195,10 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
           description="Your students, their solo cross-countries and the endorsements you sign"
         />
       </ListGroup>
+      {/* What falls due, the pilot's and their airplanes', soonest first
+          (ComingUp): what the reminders below email about. */}
+      <ComingUp />
+
       {/* From the logbook and the two dates above it, no one's sign-off: 61.57
           counts takeoffs and landings in the same category and class; at
           night, to a full stop. */}
@@ -233,7 +211,7 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
         <ListRow title="Medical" description={medicalOn ? <Until date={medicalOn} what="medical" /> : "The day it expires"}>
           <DateField value={medicalOn} label="Medical expires" testId="medical-date" onChange={v => setDates({ medicalExpiresOn: v })} />
         </ListRow>
-        <ListRow title="Reminders" description="An email 30 and 7 days before each runs out">
+        <ListRow title="Reminders" description="An email 30 and 7 days before each runs out, your airplanes' too">
           <TogglePill
             pressed={!!reminders?.on} onPressedChange={on => remind.mutate(on)} disabled={!reminders || remind.isPending}
             icon={reminders?.on ? <Mail /> : <MailX />} label="Email" testId="reminders-toggle"
@@ -268,28 +246,9 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
         </ListGroup>
       )}
 
-      <input
-        ref={fileInput} type="file" accept=".csv,text/csv" className="hidden" data-testid="logbook-import-file"
-        onChange={e => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (file) bringIn.mutate(file);
-        }}
-      />
-      {/* A CSV file: ForeFlight's logbook export, or this logbook's own; a
-          flight already here (the same day, airplane, route and time) is
-          not added twice. What an import brought in, said in a row. */}
-      <ListGroup title="File">
-        {imported && <ListRow muted title={<>{imported}</>} data-testid="logbook-imported" />}
-        <ListRow
-          title="Import a logbook" media={<FileUp className="size-5" />}
-          onClick={() => fileInput.current?.click()} disabled={bringIn.isPending} data-testid="logbook-import"
-        />
-        <ListRow
-          title="Export as CSV" media={<FileDown className="size-5" />}
-          onClick={() => void exportFile()} disabled={!entries?.length} data-testid="logbook-export"
-        />
-      </ListGroup>
+      {/* To and from a CSV file, its flights shown before they go in
+          (LogbookFile). */}
+      <LogbookFile entries={entries} onImported={refresh} />
 
       {/* A row opens its flight's form, placed by the list. */}
       <ResponsivePopover open={!!changing} onOpenChange={open => { if (!open) setChanging(null); }}>

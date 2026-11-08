@@ -318,6 +318,12 @@ struct InspectionsSection: View {
                 }
                 .font(.footnote).foregroundStyle(.secondary)
             }
+            // Whether the 100-hour is owed at all (91.409(b)): only then is
+            // it listed and reminded of.
+            Toggle(isOn: Binding(get: { form.forHire ?? false }, set: { form.forHire = $0 })) {
+                Text("Flown for hire")
+                Text("Hire or instruction for hire: the 100-hour, 91.409(b)")
+            }
             VStack(alignment: .leading, spacing: 2) {
                 LabeledContent("Hours at last 100-hour") {
                     TextField("0", text: $hoursAt).multilineTextAlignment(.trailing).keyboardType(.decimalPad)
@@ -341,7 +347,7 @@ struct InspectionsSection: View {
 
     /// The gateway's due hours, and how many are left by the hours recorded.
     private var hundredHourLine: String {
-        guard let due = record.inspections?.hundredHourDueAtHours else { return "Time in service, at the last annual or 100-hour" }
+        guard form.forHire == true, let due = record.inspections?.hundredHourDueAtHours else { return "Time in service, at the last annual or 100-hour" }
         var line = "Due at \(Formats.hours(due))"
         if let now = record.inspections?.hoursNow { line += now < due ? ", \(Formats.hours(due - now)) to go" : ", due now" }
         return line

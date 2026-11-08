@@ -23,6 +23,7 @@ struct GWCurrencyDatesRequest: Codable, Equatable, Sendable {
 // MARK: - GWInspectionsRequest
 struct GWInspectionsRequest: Codable, Equatable, Sendable {
     var annualOn, eltBatteryDueOn, eltInspectedOn: String?
+    var forHire: Bool?
     var hoursNow, hundredHourAtHours: Double?
     var staticCheckOn, transponderCheckOn: String?
 }
@@ -60,4 +61,36 @@ struct GWLogbookImportResult: Codable, Equatable, Sendable {
 struct GWFlightServiceStatus: Codable, Equatable, Sendable {
     var connected: Bool
     var provider: String
+}
+
+// MARK: - GWPaperworkDto
+struct GWPaperworkDto: Codable, Equatable, Sendable {
+    var items: [GWDueDto]
+    /// The day the days left are counted from
+    var today: String
+}
+
+/// One thing that falls due: the pilot's currency, an airplane's inspection, or an item its
+/// owner keeps
+// MARK: - GWDueDto
+struct GWDueDto: Codable, Equatable, Sendable {
+    /// The airplane's, for an airplane's
+    var aircraftId: Int?
+    /// Days from today to dueOn: 0 today, below 0 past
+    var daysLeft: Int?
+    /// The time in service it is due at
+    var dueAtHours: Double?
+    /// The last day it is good for, or the day it is due
+    var dueOn: String?
+    /// Hours from the time in service now, where the owner gave it
+    var hoursLeft: Double?
+    /// The due item's, for an owner's item
+    var itemId: Int?
+    /// The rule that asks for it, or an AD's number
+    var rule: String?
+    var tailNumber: String?
+    var title: String
+    /// What it is, as a key: flight-review, medical, day-passengers, night-passengers,
+    /// instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item
+    var what: String
 }

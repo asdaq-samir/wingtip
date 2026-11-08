@@ -105,6 +105,12 @@ public class Aircraft {
     private LocalDate eltInspectedOn;
     private LocalDate eltBatteryDueOn;
 
+    /** Whether it carries people for hire or is given for flight
+     *  instruction for hire, as its owner says (V32): only then does 14 CFR
+     *  91.409(b) ask for the 100-hour inspection. */
+    @Column(nullable = false)
+    private boolean forHire;
+
     /** What its flight plan says of it (V29, FAA Form 7233-4 as AIM
      *  Appendix 4 writes each item): item 10a, its navigation,
      *  communication and approach equipment ("S", or TBL 4-2's letters and
@@ -171,6 +177,12 @@ public class Aircraft {
         this.transponderCheckOn = transponderCheckOn;
         this.eltInspectedOn = eltInspectedOn;
         this.eltBatteryDueOn = eltBatteryDueOn;
+        return this;
+    }
+
+    /** Whether it is flown for hire (91.409(b)). */
+    public Aircraft forHire(boolean forHire) {
+        this.forHire = forHire;
         return this;
     }
 

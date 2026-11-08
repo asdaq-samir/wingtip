@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // The pilot's own records on the gateway, past what Pilot.swift reads:
 // their airplanes with squawks, inspections and VOR checks,
@@ -47,6 +48,9 @@ struct Inspections: Codable, Equatable, Sendable {
     var hoursNow: Double?
     var hundredHourAtHours: Double?
     var hundredHourDueAtHours: Double?
+    /// Flown for hire or for instruction for hire: only then is the
+    /// 100-hour owed (91.409(b)).
+    var forHire: Bool?
 }
 
 /// What the inspections' form saves (InspectionsRequest, generated from
@@ -59,6 +63,7 @@ extension InspectionsRequest {
         annualOn = i?.annualOn; staticCheckOn = i?.staticCheckOn; transponderCheckOn = i?.transponderCheckOn
         eltInspectedOn = i?.eltInspectedOn; eltBatteryDueOn = i?.eltBatteryDueOn
         hoursNow = i?.hoursNow; hundredHourAtHours = i?.hundredHourAtHours
+        forHire = i?.forHire ?? false
     }
 }
 
@@ -226,6 +231,44 @@ struct Reminders: Codable, Equatable, Sendable { var on: Bool }
 
 typealias LogbookImportResult = GWLogbookImportResult
 
+/// What falls due for the pilot and their airplanes, soonest first, each
+/// with its rule and the days or hours left (GET /api/paperwork, the
+/// gateway's PaperworkService): the Logbook's Coming Up, and the list the
+/// reminder emails are made from.
+typealias Paperwork = GWPaperworkDto
+typealias Due = GWDueDto
+
+extension Due {
+    /// One row, unique in the list.
+    var key: String { "\(what)-\(aircraftId ?? 0)-\(itemId ?? 0)" }
+
+    /// The airplane's tail before its own items.
+    var named: String { tailNumber.map { "\($0) · \(title)" } ?? title }
+
+    /// "In 22 days", "Today", "3 days past"; by hours where it has no day:
+    /// "19.5 h to go", "Due now".
+    var when: String {
+        if let d = daysLeft {
+            switch d {
+            case 0: return "Today"
+            case 1: return "Tomorrow"
+            case -1: return "Yesterday"
+            default: return d > 1 ? "In \(d) days" : "\(-d) days past"
+            }
+        }
+        if let h = hoursLeft { return h > 0 ? "\(Formats.hours(h)) to go" : "Due now" }
+        return dueAtHours.map { "At \(Formats.hours($0))" } ?? ""
+    }
+
+    /// Past is red, within the reminders' 30 days (or 10 hours) orange,
+    /// further off green, as the web's lib/paperwork says it.
+    var tone: Color {
+        if let d = daysLeft { return d < 0 ? .red : d <= 30 ? .orange : .green }
+        if let h = hoursLeft { return h <= 0 ? .red : h <= 10 ? .orange : .green }
+        return .secondary
+    }
+}
+
 /// An AC 61-65K endorsement as the gateway offers it to sign
 /// (EndorsementKindDto): its words with blanks, the paragraph and the
 /// 14 CFR section it comes from.
@@ -331,6 +374,7 @@ extension Gateway {
     static func setCurrencyDates(_ r: CurrencyDatesRequest) async throws -> Currency { try await send(Currency.self, "PUT", "/api/logbook/currency", json: r) }
     static func reminders() async throws -> Reminders? { try await read(Reminders.self, "/api/logbook/reminders") }
     static func setReminders(_ on: Bool) async throws -> Reminders { try await send(Reminders.self, "PUT", "/api/logbook/reminders", json: Reminders(on: on)) }
+    static func paperwork() async throws -> Paperwork? { try await read(Paperwork.self, "/api/paperwork") }
     static func importLogbook(_ entries: [LogbookEntryRequest]) async throws -> LogbookImportResult {
         struct Body: Encodable { let entries: [LogbookEntryRequest] }
         return try await send(LogbookImportResult.self, "POST", "/api/logbook/import", json: Body(entries: entries))

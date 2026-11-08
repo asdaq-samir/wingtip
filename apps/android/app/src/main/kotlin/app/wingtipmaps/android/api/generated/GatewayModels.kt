@@ -34,6 +34,7 @@ data class InspectionsRequest (
     val annualOn: String? = null,
     val eltBatteryDueOn: String? = null,
     val eltInspectedOn: String? = null,
+    val forHire: Boolean? = null,
     val hoursNow: Double? = null,
     val hundredHourAtHours: Double? = null,
     val staticCheckOn: String? = null,
@@ -76,4 +77,65 @@ data class LogbookImportResult (
 data class FlightServiceStatus (
     val connected: Boolean,
     val provider: String
+)
+
+@Serializable
+data class PaperworkDto (
+    val items: List<DueDto>,
+
+    /**
+     * The day the days left are counted from
+     */
+    val today: String
+)
+
+/**
+ * One thing that falls due: the pilot's currency, an airplane's inspection, or an item its
+ * owner keeps
+ */
+@Serializable
+data class DueDto (
+    /**
+     * The airplane's, for an airplane's
+     */
+    val aircraftId: Long? = null,
+
+    /**
+     * Days from today to dueOn: 0 today, below 0 past
+     */
+    val daysLeft: Long? = null,
+
+    /**
+     * The time in service it is due at
+     */
+    val dueAtHours: Double? = null,
+
+    /**
+     * The last day it is good for, or the day it is due
+     */
+    val dueOn: String? = null,
+
+    /**
+     * Hours from the time in service now, where the owner gave it
+     */
+    val hoursLeft: Double? = null,
+
+    /**
+     * The due item's, for an owner's item
+     */
+    val itemId: Long? = null,
+
+    /**
+     * The rule that asks for it, or an AD's number
+     */
+    val rule: String? = null,
+
+    val tailNumber: String? = null,
+    val title: String,
+
+    /**
+     * What it is, as a key: flight-review, medical, day-passengers, night-passengers,
+     * instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item
+     */
+    val what: String
 )

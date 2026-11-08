@@ -3,7 +3,7 @@ import type { paths } from "./schema";
 import type { paths as AssistantPaths } from "./assistant-schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
-import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, ChecklistDto, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces } from "./types";
+import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, ChecklistDto, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces, DueItem, DueItemRequest, Paperwork } from "./types";
 
 /**
  * Every call the pages make. Both servers' calls go through
@@ -772,6 +772,15 @@ export const api = {
       gateway.POST("/api/aircraft/{id}/squawks", { params: { path: { id } }, body: squawk }).then(data<Squawk>),
     updateSquawk: (id: number, squawkId: number, squawk: SquawkRequest) =>
       gateway.PUT("/api/aircraft/{id}/squawks/{squawkId}", { params: { path: { id, squawkId } }, body: squawk }).then(data<Squawk>),
+    /** Its due items -- ADs and the owner's others -- added, changed or
+     *  taken out; they come back with the airplane (dueItems). */
+    addDueItem: (id: number, item: DueItemRequest) =>
+      gateway.POST("/api/aircraft/{id}/due-items", { params: { path: { id } }, body: item }).then(data<DueItem>),
+    updateDueItem: (id: number, itemId: number, item: DueItemRequest) =>
+      gateway.PUT("/api/aircraft/{id}/due-items/{itemId}", { params: { path: { id, itemId } }, body: item }).then(data<DueItem>),
+    removeDueItem: async (id: number, itemId: number): Promise<void> => {
+      await gateway.DELETE("/api/aircraft/{id}/due-items/{itemId}", { params: { path: { id, itemId } } });
+    },
     removeSquawk: async (id: number, squawkId: number): Promise<void> => {
       await gateway.DELETE("/api/aircraft/{id}/squawks/{squawkId}", { params: { path: { id, squawkId } } });
     },
@@ -814,6 +823,10 @@ export const api = {
     importAll: (entries: LogbookEntryRequest[]) =>
       gateway.POST("/api/logbook/import", { body: { entries } }).then(data<LogbookImportResult>),
   },
+
+  /** What falls due for the pilot and their airplanes, soonest first, each
+   *  with its rule (PaperworkController): the Logbook's Coming up. */
+  paperwork: () => gateway.GET("/api/paperwork").then(data<Paperwork>),
 
   /** A student's way to the checkride, beside the logbook. */
   training: {

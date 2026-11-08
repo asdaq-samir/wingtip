@@ -76,6 +76,27 @@ struct PilotRecordsTests {
     }
 }
 
+/// The Logbook's Coming Up as services/gateway/openapi.json spells it
+/// (PaperworkDto): each item's name, its rule, and when, by day or hours.
+@MainActor
+struct PaperworkTests {
+    @Test func whatFallsDueIsReadAndSaidByDayOrHours() throws {
+        let json = #"{"today":"2026-11-08","items":[{"what":"elt-battery","title":"ELT battery","rule":"14 CFR 91.207(c)","aircraftId":7,"tailNumber":"N3429J","itemId":null,"dueOn":"2026-11-15","daysLeft":7,"dueAtHours":null,"hoursLeft":null},{"what":"flight-review","title":"Flight review","rule":"14 CFR 61.56(c)","aircraftId":null,"tailNumber":null,"itemId":null,"dueOn":"2027-03-31","daysLeft":143,"dueAtHours":null,"hoursLeft":null},{"what":"hundred-hour","title":"100-hour inspection","rule":"14 CFR 91.409(b)","aircraftId":7,"tailNumber":"N3429J","itemId":null,"dueOn":null,"daysLeft":null,"dueAtHours":2450.0,"hoursLeft":-0.5}]}"#
+        let p = try JSONDecoder().decode(Paperwork.self, from: Data(json.utf8))
+        #expect(p.items.map(\.named) == ["N3429J · ELT battery", "Flight review", "N3429J · 100-hour inspection"])
+        #expect(p.items.map(\.when) == ["In 7 days", "In 143 days", "Due now"])
+        #expect(p.items.map(\.tone) == [.orange, .green, .red])
+        #expect(Set(p.items.map(\.key)).count == 3)
+    }
+
+    @Test func theInspectionsFormKeepsFlownForHire() throws {
+        let json = #"{"annualOn":null,"annualGoodThrough":null,"forHire":true}"#
+        let i = try JSONDecoder().decode(Inspections.self, from: Data(json.utf8))
+        #expect(InspectionsRequest(i).forHire == true)
+        #expect(InspectionsRequest(nil).forHire == false)
+    }
+}
+
 @MainActor
 struct PilotWordsTests {
     @Test func aChecklistWrittenAndReadBack() {
