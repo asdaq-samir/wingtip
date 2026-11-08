@@ -404,7 +404,7 @@ services:
       MAIL_PORT: ${MAIL_PORT:-1025}
       MAIL_USERNAME: ${MAIL_USERNAME:-local}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-local}
-      MAIL_FROM: ${MAIL_FROM:-no-reply@northflyers.com}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@wingtipmaps.app}
       # Where the emailed sign-in link points. Required once a mail host
       # is set -- the gateway will not start without it -- because a link
       # built from the request's own Host header points wherever the

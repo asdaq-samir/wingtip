@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.northflyers</groupId>
+    <groupId>app.wingtipmaps</groupId>
     <artifactId>wingtip</artifactId>
     <version>0.1.0</version>
     <name>wingtip</name>
@@ -206,7 +206,7 @@
                         <configuration>
                             <inputSpec>${project.basedir}/../planner/openapi.json</inputSpec>
                             <generatorName>spring</generatorName>
-                            <modelPackage>com.northflyers.wingtip.planner.model</modelPackage>
+                            <modelPackage>app.wingtipmaps.gateway.planner.model</modelPackage>
                             <modelNamePrefix>Planner</modelNamePrefix>
                             <modelsToGenerate>ChangesWords,Sentence,Source</modelsToGenerate>
                             <generateApis>false</generateApis>
@@ -235,7 +235,7 @@
                 <configuration>
                     <!-- Generated, and documented by the planner's own
                          document instead. -->
-                    <excludePackageNames>com.northflyers.wingtip.planner.model</excludePackageNames>
+                    <excludePackageNames>app.wingtipmaps.gateway.planner.model</excludePackageNames>
                     <!-- Still catches malformed {@link}s, bad HTML, and
                          unknown tags; just doesn't demand a comment on
                          every trivial getter/DI constructor, where one
