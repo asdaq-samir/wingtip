@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import type { Course } from "../../../api/types";
 import { chartQuery } from "../../../queryClient";
 import { usePreferences } from "../../../preferences";
 import { useSunlight } from "../../../sunlight";
 import { useGlLayer, useGlMap, useGlPaint } from "../glLayer";
+import { useDarkTheme } from "../useDarkTheme";
 import { chartPaint, chartStyle, type ChartStyle } from "../glStyle";
 
 const CHART_LAYERS = ["chart-under", "chart", "chart-terminal"];
@@ -77,16 +78,4 @@ function ChartSources({ spec, night, sunlight }: { spec: ChartStyle; night: bool
     return () => { map.off("sourcedata", drawn); map.off("moveend", level); };
   }, [map, spec]);
   return null;
-}
-
-/** Whether the page is in the dark theme (next-themes' class on <html>). */
-export function useDarkTheme(): boolean {
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
-  useEffect(() => {
-    const html = document.documentElement;
-    const observer = new MutationObserver(() => setDark(html.classList.contains("dark")));
-    observer.observe(html, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-  return dark;
 }
