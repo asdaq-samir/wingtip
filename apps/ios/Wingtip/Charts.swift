@@ -41,18 +41,15 @@ final class Charts {
         return layers.first { $0.kind == "sec" } ?? layers.first { $0.base }
     }
 
-    /// The base chart's tiles, from the 256-pixel pyramid whatever density
-    /// the layer offers (/api/chart's chart_layers[].scales, [1, 2] for
-    /// every kind since #510). MapKit lays a tile overlay's picture one
-    /// pixel to a point whatever its size or its PNG's density: a 512-point
-    /// tile composed of the 512-pixel @2x tiles (1024 pixels) was drawn
-    /// twice as large from its corner, Beloit's chart under O'Hare's
-    /// position (the simulator, 2026-11-08), and the same with 144 dpi in
-    /// its header. The 512-point tile of four 256-pixel tiles one level
-    /// finer already has the pixels of one @2x tile; more on the screen
-    /// needs a renderer of the app's own drawing the tiles, not done yet.
+    /// The base chart's tiles, from the 512-pixel @2x pyramid where the
+    /// layer was drawn at it (/api/chart's chart_layers[].scales, [1, 2]
+    /// for every kind since #510), else the 256-pixel one. The app's own
+    /// renderer (ChartTileRenderer) draws a tile's every pixel into its
+    /// map rect, whatever its size; MapKit's tile overlay, before it, laid
+    /// a picture one pixel to a point, and could not use them (#549).
     var template: TileTemplate? {
         guard let info, let base else { return nil }
-        return TileTemplate(cycle: info.chartCycle, revision: info.chartRevision ?? 0, tilesBase: info.chartTilesBase, kind: base.kind, scale: 1)
+        let scale = (base.scales ?? [1]).contains(2) ? 2 : 1
+        return TileTemplate(cycle: info.chartCycle, revision: info.chartRevision ?? 0, tilesBase: info.chartTilesBase, kind: base.kind, scale: scale)
     }
 }

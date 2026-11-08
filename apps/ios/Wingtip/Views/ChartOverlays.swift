@@ -51,6 +51,9 @@ enum SectionalInk {
     /// A runway's surface and the halo of its numbers (glOverlays'
     /// runwayLayers: ForeFlight's dark grey over its street map).
     static let runway = UIColor(hex: 0x4A4F57)
+    /// A soft runway's (turf, grass, dirt, gravel): the web's olive for
+    /// a runway that is not hard (glOverlays' runway-surface fill).
+    static let softRunway = UIColor(hex: 0x7D8A6A)
     static let runwayHalo = UIColor(hex: 0x1C1A17)
 }
 
@@ -352,16 +355,21 @@ final class VorMarkView: MKAnnotationView {
 /// planner's field answers them), drawn by MapKit's own polygon renderer
 /// (a renderer of the app's own drawing was never asked to draw).
 final class RunwaySurface: MKPolygon {
+    /// Turf, grass, dirt or gravel, drawn in the soft runway's olive.
+    private(set) var soft = false
+
     /// The rectangle's corners, each end moved half the width either side
     /// of the centreline in map points (a foot is 0.3048 m exactly).
-    static func between(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D, widthFt: Double) -> RunwaySurface {
+    static func between(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D, widthFt: Double, soft: Bool = false) -> RunwaySurface {
         let pa = MKMapPoint(a), pb = MKMapPoint(b)
         let length = max(1e-9, hypot(pb.x - pa.x, pb.y - pa.y))
         let half = widthFt * 0.3048 / 2 * MKMapPointsPerMeterAtLatitude((a.latitude + b.latitude) / 2)
         let nx = -(pb.y - pa.y) / length * half, ny = (pb.x - pa.x) / length * half
         let corners = [MKMapPoint(x: pa.x + nx, y: pa.y + ny), MKMapPoint(x: pb.x + nx, y: pb.y + ny),
                        MKMapPoint(x: pb.x - nx, y: pb.y - ny), MKMapPoint(x: pa.x - nx, y: pa.y - ny)]
-        return RunwaySurface(points: corners, count: corners.count)
+        let surface = RunwaySurface(points: corners, count: corners.count)
+        surface.soft = soft
+        return surface
     }
 }
 
@@ -443,6 +451,10 @@ struct RunwayShape: Equatable, Sendable {
     let a: End
     let b: End
     let widthFt: Double?
+    /// Turf, grass, dirt or gravel by its surface (the planner's field,
+    /// OurAirports' or NASR's code), as the engine reads it for the
+    /// short-field figures (gonogo_soft_surface).
+    var soft = false
 
     /// The runways with both ends placed; a helipad (no heading) or a
     /// runway with an end the data does not place is not drawn.
@@ -453,7 +465,8 @@ struct RunwayShape: Equatable, Sendable {
                 return End(ident: end.ident, lat: lat, lon: lon, headingTrueDeg: end.headingTrueDeg)
             }
             guard ends.count == 2 else { return nil }
-            return RunwayShape(a: ends[0], b: ends[1], widthFt: runway.widthFt.map(Double.init))
+            let soft: Bool = (try? Engine.call("gonogo_soft_surface", json: ["surface": runway.surface])) ?? false
+            return RunwayShape(a: ends[0], b: ends[1], widthFt: runway.widthFt.map(Double.init), soft: soft)
         }
     }
 }
@@ -507,10 +520,10 @@ final class ChartOverlays {
             return renderer
         }
         if let surface = overlay as? RunwaySurface {
-            // ForeFlight's dark grey with a white edge (glOverlays'
-            // runwayLayers).
+            // ForeFlight's dark grey with a white edge, olive for a soft
+            // one (glOverlays' runwayLayers).
             let renderer = MKPolygonRenderer(polygon: surface)
-            renderer.fillColor = SectionalInk.runway.withAlphaComponent(0.95)
+            renderer.fillColor = (surface.soft ? SectionalInk.softRunway : SectionalInk.runway).withAlphaComponent(0.95)
             renderer.strokeColor = .white
             renderer.lineWidth = 1
             return renderer
@@ -737,7 +750,7 @@ final class ChartOverlays {
                 guard let width = shape.widthFt else { return [] }
                 let ends = [CLLocationCoordinate2D(latitude: shape.a.lat, longitude: shape.a.lon),
                             CLLocationCoordinate2D(latitude: shape.b.lat, longitude: shape.b.lon)]
-                return [RunwaySurface.between(ends[0], ends[1], widthFt: width), RunwayCentreline(coordinates: ends, count: 2)]
+                return [RunwaySurface.between(ends[0], ends[1], widthFt: width, soft: shape.soft), RunwayCentreline(coordinates: ends, count: 2)]
             }
             // Over Apple's roads and under its labels, where the chart has
             // given way (ChartFade).

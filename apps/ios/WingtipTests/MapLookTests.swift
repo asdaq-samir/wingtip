@@ -26,20 +26,20 @@ struct MapLookTests {
     @Test func aLiftedTileHasMoreContrastThanThePrintedOne() throws {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
-        let child = UIGraphicsImageRenderer(size: CGSize(width: 256, height: 256), format: format).image { context in
+        let tile = UIGraphicsImageRenderer(size: CGSize(width: 256, height: 256), format: format).image { context in
             UIColor(red: 0.8, green: 0.75, blue: 0.7, alpha: 1).setFill()
             context.fill(CGRect(x: 0, y: 0, width: 256, height: 256))
         }
-        let plain = try #require(ChartTileOverlay.compose([child, child, child, child]).flatMap(UIImage.init(data:)))
-        let lifted = try #require(ChartTileOverlay.compose([child, child, child, child], lift: true).flatMap(UIImage.init(data:)))
+        let png = try #require(tile.pngData())
+        let plain = try #require(ChartTileImage.decode(png, lift: false))
+        let lifted = try #require(ChartTileImage.decode(png, lift: true))
         let a = try #require(Self.firstPixel(plain)), b = try #require(Self.firstPixel(lifted))
         // A light paper colour goes lighter, its red further from its blue.
         #expect(b.r > a.r)
         #expect(b.r - b.b > a.r - a.b)
     }
 
-    private static func firstPixel(_ image: UIImage) -> (r: Int, g: Int, b: Int)? {
-        guard let cg = image.cgImage else { return nil }
+    private static func firstPixel(_ cg: CGImage) -> (r: Int, g: Int, b: Int)? {
         var pixel = [UInt8](repeating: 0, count: 4)
         guard let context = CGContext(data: &pixel, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
                                       space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
@@ -176,6 +176,21 @@ struct MapLookTests {
         let shapes = RunwayShape.of(runways)
         #expect(shapes.count == 1)
         #expect(shapes.first?.a.ident == "10L" && shapes.first?.b.ident == "28R" && shapes.first?.widthFt == 150)
+    }
+
+    @Test func aTurfRunwayIsDrawnSoftAndAConcreteOneHard() {
+        // The engine's reading of the surface (gonogo_soft_surface), not
+        // the app's: turf olive, concrete and asphalt the dark grey.
+        let ends = [RunwayEnd(headingTrueDeg: 90, ident: "9", lat: 42.32, lon: -88.08, traffic: "left"),
+                    RunwayEnd(headingTrueDeg: 270, ident: "27", lat: 42.32, lon: -88.07, traffic: "left")]
+        let runway = { (surface: String?) in
+            Runway(closed: false, ends: "9/27", lengthFt: 2400, lighted: false, runwayEnds: ends, surface: surface, turf: nil, widthFt: 100, wind: nil)
+        }
+        let shapes = RunwayShape.of([runway("TURF"), runway("ASPH"), runway("CONC"), runway(nil)])
+        #expect(shapes.map(\.soft) == [true, false, false, false])
+        let a = CLLocationCoordinate2D(latitude: 42.32, longitude: -88.08), b = CLLocationCoordinate2D(latitude: 42.32, longitude: -88.07)
+        #expect(RunwaySurface.between(a, b, widthFt: 100, soft: true).soft)
+        #expect(!RunwaySurface.between(a, b, widthFt: 100).soft)
     }
 
     // MARK: Where the map opens

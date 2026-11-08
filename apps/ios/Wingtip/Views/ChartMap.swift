@@ -166,7 +166,10 @@ struct ChartMap: UIViewRepresentable {
         // night: a change of either draws the chart again from the store.
         let lift = shade == 0
         if let template, context.coordinator.overlay?.template != template || context.coordinator.overlay?.lift != lift {
-            if let current = context.coordinator.overlay { map.removeOverlay(current) }
+            if let current = context.coordinator.overlay {
+                context.coordinator.tilesStopped()
+                map.removeOverlay(current)
+            }
             let overlay = ChartTileOverlay(template: template, minZoom: minZoom, maxZoom: maxZoom, lift: lift)
             let coordinator = context.coordinator
             overlay.onTile = { coordinator.chartTile() }
@@ -327,9 +330,16 @@ struct ChartMap: UIViewRepresentable {
         /// The chart's renderer and the course's, kept to restyle when
         /// the appearance or the setting changes; MapKit asks for a
         /// renderer once per overlay.
-        private var tiles: NightTileRenderer?
+        private var tiles: ChartTileRenderer?
         private var courseRenderer: MKPolylineRenderer?
         private var shade: CGFloat = 0
+
+        /// The chart's renderer let go, its loads stopped, as its overlay
+        /// is taken off for another.
+        func tilesStopped() {
+            tiles?.stop()
+            tiles = nil
+        }
 
         func dim(_ shade: CGFloat) {
             guard shade != self.shade else { return }
@@ -347,7 +357,7 @@ struct ChartMap: UIViewRepresentable {
             if let renderer = flight?.renderer(for: overlay) { return renderer }
             if let renderer = MainActor.assumeIsolated({ overlays.renderer(for: overlay) }) { return renderer }
             if let chart = overlay as? ChartTileOverlay {
-                let renderer = NightTileRenderer(tileOverlay: chart)
+                let renderer = ChartTileRenderer(chart: chart)
                 renderer.shade = shade
                 renderer.alpha = ChartFade.alpha(zoom: Self.zoom(of: mapView))
                 tiles = renderer
@@ -542,6 +552,10 @@ struct ChartMap: UIViewRepresentable {
             MainActor.assumeIsolated {
                 let zoom = Self.zoom(of: mapView)
                 tiles?.alpha = ChartFade.alpha(zoom: zoom)
+                // The chart's loads of tiles gone out of view stopped.
+                if mapView.visibleMapRect.width > 0 {
+                    tiles?.keep(visible: mapView.visibleMapRect, zoomScale: MKZoomScale(Double(mapView.bounds.width) / mapView.visibleMapRect.width))
+                }
                 let scale = SectionalSymbol.scale(zoom: zoom)
                 if abs(scale - symbolScale) > 0.02 {
                     symbolScale = scale
