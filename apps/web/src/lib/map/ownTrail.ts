@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { distanceNm } from "../geo";
 import { keptStore } from "../storage";
 import { underway } from "./glide";
+import { engineLoaded } from "../engine/engine";
 import { useOwnShip } from "./ownShip";
 import type { PathPoint } from "./tracking";
 
@@ -35,8 +36,11 @@ export const useOwnTrail = create<{ path: PathPoint[] }>(() => ({ path: kept() }
 let saved = 0;
 useOwnShip.subscribe(s => {
   const fix = s.fix;
-  // A dry run's flying is not where the pilot has been.
-  if (!s.enabled || s.simulated || !fix || !underway(fix)) return;
+  // A dry run's flying is not where the pilot has been. A fix before the
+  // engine is there (the map now draws first, and this module comes with
+  // it) is let go: underway asks the engine, and the trail is only kept
+  // in flight, long after the engine's first second.
+  if (!s.enabled || s.simulated || !fix || !engineLoaded() || !underway(fix)) return;
   const path = useOwnTrail.getState().path;
   const last = path.at(-1);
   if (last && fix.at - last.t < STEP_MS && distanceNm(last, fix) < STEP_NM) return;
