@@ -80,6 +80,24 @@ fn where_the_airplane_is_along_the_route() {
 }
 
 #[test]
+fn what_the_records_say() {
+    let f = fixture("records.json");
+    for case in f["endorsements"].as_array().unwrap() {
+        assert_eq!(ask("endorsement_records", case["input"].clone()), case["answer"], "{}", case["name"]);
+    }
+    for case in f["inspections"].as_array().unwrap() {
+        assert_eq!(ask("inspections_due", case["input"].clone()), case["answer"]);
+    }
+    assert_eq!(ask("planning_figures", json!({})), f["planning"]);
+    for case in f["vorLimits"].as_array().unwrap() {
+        assert_eq!(ask("vor_check_limit_deg", json!({ "kind": case["kind"] })).as_f64(), case["limit_deg"].as_f64(), "{case}");
+    }
+    for case in f["workings"].as_array().unwrap() {
+        assert_eq!(ask("workings_right", json!({ "key": case["key"], "typed": case["typed"], "answer": case["answer"] })), case["right"], "{case}");
+    }
+}
+
+#[test]
 fn the_filing_forms_items() {
     let f = fixture("filingForm.json");
     for c in f["cruisingSpeed"].as_array().unwrap() {

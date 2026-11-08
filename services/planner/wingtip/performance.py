@@ -38,9 +38,9 @@ from typing import NamedTuple
 from .engine import ask as engine
 
 #: The altitude a profile's cruise TAS and fuel burn are the aeroplane's
-#: at, on a standard day: the middle of where a light single cruises
-#: across country, and a row of every handbook's cruise table.
-REFERENCE_ALTITUDE_FT = 6000.0
+#: at, on a standard day: the engine's (planning_figures), which the apps
+#: say beside the figures.
+REFERENCE_ALTITUDE_FT = float(engine("planning_figures")["cruise_reference_ft"])
 #: The cruise power of a profile that names none.
 DEFAULT_CRUISE_POWER_PCT = 65.0
 #: The sea-level climb rate of a profile that gives none.

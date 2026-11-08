@@ -31,7 +31,7 @@ import { cancelled, shareOrCopy } from "../../lib/share";
 import { showError } from "../../lib/problems";
 import RowMenu from "../../components/RowMenu";
 import type { Aircraft, AircraftRequest, FlightSummary, InspectionsRequest, VorCheckRequest } from "../../lib/api/types";
-import { CRUISE_REFERENCE_FT } from "../../lib/performance";
+import { cruiseReferenceFt } from "../../lib/performance";
 import { usePreferences } from "../../lib/preferences";
 import { TEXT } from "../../lib/text";
 import { altFt, feet, nm } from "../../lib/units";
@@ -42,6 +42,7 @@ import { EditToggle, ListPageHead, RemoveMinus } from "../../components/Favorite
 import { aircraftListQuery, aircraftProfilesQuery, flightsQuery } from "../../lib/queryClient";
 import QueryState from "../../components/QueryState";
 import { SwipeToDelete } from "../../components/SwipeToDelete";
+import { callEngine } from "../../lib/engine/engine";
 
 // Mirrors services/gateway's own AircraftRequest validation
 // (@NotBlank/@Positive in dto/AircraftRequest.java) so a bad value is
@@ -103,13 +104,15 @@ const EMPTY_AIRCRAFT_FORM: AircraftFormValues = {
  *  form as a new one's), and delete. The picker under the route offers
  *  the same choice. The Library's (PilotPanel), shown only to someone
  *  signed in: it says once, for all three, what signing in keeps. */
-const VOR_CHECKS: { value: VorCheckRequest["kind"]; label: string; limit: number }[] = [
-  { value: "VOT", label: "VOT", limit: 4 },
-  { value: "REPAIR_STATION", label: "Repair station signal", limit: 4 },
-  { value: "GROUND", label: "Ground checkpoint", limit: 4 },
-  { value: "AIRBORNE", label: "Airborne checkpoint", limit: 6 },
-  { value: "RADIAL", label: "Airway radial in flight", limit: 6 },
-  { value: "DUAL", label: "Dual receivers", limit: 4 },
+/** The ways a VOR is checked for IFR (14 CFR 91.171(b), (c)); the error
+ *  each allows is the engine's (`vor_check_limit_deg`). */
+const VOR_CHECKS: { value: VorCheckRequest["kind"]; label: string }[] = [
+  { value: "VOT", label: "VOT" },
+  { value: "REPAIR_STATION", label: "Repair station signal" },
+  { value: "GROUND", label: "Ground checkpoint" },
+  { value: "AIRBORNE", label: "Airborne checkpoint" },
+  { value: "RADIAL", label: "Airway radial in flight" },
+  { value: "DUAL", label: "Dual receivers" },
 ];
 
 // The server's own limits on a VOR check (VorCheckRequest.java): the day
@@ -177,7 +180,7 @@ function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
         <Controller control={control} name="kind" render={({ field }) => (
           <PullDown
             label="How the VOR was checked" value={field.value} testId="vor-check-kind"
-            options={VOR_CHECKS.map(k => ({ value: k.value, label: `${k.label} (±${k.limit}°)` }))}
+            options={VOR_CHECKS.map(k => ({ value: k.value, label: `${k.label} (±${callEngine("vor_check_limit_deg", { kind: k.value })}°)` }))}
             onChange={field.onChange}
           />
         )} />
@@ -569,7 +572,7 @@ export function AircraftPanel() {
                   air (wingtip.performance): the handbook cruise table's at this
                   power at the reference altitude on a standard day, which
                   the group's title says. */}
-              <ListGroup title={`Cruise figures at ${altFt(CRUISE_REFERENCE_FT)} ft, standard day`}>
+              <ListGroup title={`Cruise figures at ${altFt(cruiseReferenceFt())} ft, standard day`}>
                 <NumberRow
                   id={`${formId}-power`} title="Cruise power" unit="%" placeholder="65" name="Cruise power in percent"
                   field={register("cruisePowerPct")} error={errors.cruisePowerPct?.message}

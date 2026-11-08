@@ -9,7 +9,7 @@ import DrillPage from "./DrillPage";
 import HoldingPage from "./HoldingPage";
 import LostCommsPage from "./LostCommsPage";
 import { ListGroup, ListRow } from "../../components/GroupedList";
-import { CRUISE_REFERENCE_FT } from "../../lib/performance";
+import { cruiseReferenceFt } from "../../lib/performance";
 import { TEXT } from "../../lib/text";
 import { altFt } from "../../lib/units";
 import { scoreColor } from "../plan/format";
@@ -97,7 +97,7 @@ export default function PilotGuide() {
 
         <ListGroup title="Good to know">
           <Tip title="Your airplane's figures">
-            Cruise speed and fuel burn start from your airplane's cruise power at {altFt(CRUISE_REFERENCE_FT)} ft on a standard
+            Cruise speed and fuel burn start from your airplane's cruise power at {altFt(cruiseReferenceFt())} ft on a standard
             day, then each leg flies them in the day's air at its altitude. A model within a few percent of most handbooks: yours governs.
           </Tip>
           <Tip title="A planning aid">Check everything against the current charts, NOTAMs and an official briefing before you fly.</Tip>

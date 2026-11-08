@@ -7,17 +7,18 @@
  * student's own figures against them within an E6B's accuracy.
  */
 import type { Leg } from "./api/types";
-import { angleBetween } from "./geo";
+import { callEngine } from "./engine/engine";
 import { bearing, grouped, magneticVariation, windCorrection } from "./units";
 
-/** What the student works out, and how far off an E6B allows. */
+/** What the student works out; how far off an E6B allows is the
+ *  engine's (`workings_right`). */
 export const ANSWERS = [
-  { key: "wca", label: "Wind correction", unit: "°", tolerance: 2 },
-  { key: "th", label: "True heading", unit: "°", tolerance: 2 },
-  { key: "mh", label: "Magnetic heading", unit: "°", tolerance: 2 },
-  { key: "gs", label: "Ground speed", unit: "kt", tolerance: 3 },
-  { key: "ete", label: "Time", unit: "min", tolerance: 1 },
-  { key: "fuel", label: "Fuel", unit: "gal", tolerance: 0.3 },
+  { key: "wca", label: "Wind correction", unit: "°" },
+  { key: "th", label: "True heading", unit: "°" },
+  { key: "mh", label: "Magnetic heading", unit: "°" },
+  { key: "gs", label: "Ground speed", unit: "kt" },
+  { key: "ete", label: "Time", unit: "min" },
+  { key: "fuel", label: "Fuel", unit: "gal" },
 ] as const;
 
 export type AnswerKey = (typeof ANSWERS)[number]["key"];
@@ -103,10 +104,9 @@ export function workingsOf(leg: Leg): Workings | null {
   };
 }
 
-/** Whether a student's figure is right within the answer's tolerance:
- *  headings compared round the compass (359° is 1° from 000°). */
+/** Whether a student's figure is right within the answer's tolerance,
+ *  the engine's (`workings_right`): headings compared round the compass
+ *  (359° is 1° from 000°). */
 export function checks(key: AnswerKey, typed: number, answer: number): boolean {
-  const { tolerance } = ANSWERS.find(a => a.key === key)!;
-  const off = key === "th" || key === "mh" ? angleBetween(typed, answer) : Math.abs(typed - answer);
-  return off <= tolerance + 1e-9;
+  return callEngine("workings_right", { key, typed, answer });
 }

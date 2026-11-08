@@ -484,11 +484,10 @@ class HopRun:
 
 #: The time on the ground at a stop where the pilot gave none, min: a
 #: turnaround -- taxi in, fuel, a break, taxi out -- at the owner's pick of
-#: the audit's choices (2026-10-20), where none was counted. The web app
-#: mirrors it (navlog/rows.ts TURNAROUND_MIN) only for the rows it draws
-#: before the nav log's legs arrive; once they do, it reads each stop's
-#: minutes off them (Leg.ground_min).
-TURNAROUND_MIN = 30.0
+#: the audit's choices (2026-10-20), the engine's (planning_figures), which
+#: the web asks too for the rows it draws before the nav log's legs say
+#: each stop's (Leg.ground_min).
+TURNAROUND_MIN = float(engine("planning_figures")["turnaround_min"])
 
 
 def ground_min_at(ground: dict[str, float] | None, ident: str) -> float:

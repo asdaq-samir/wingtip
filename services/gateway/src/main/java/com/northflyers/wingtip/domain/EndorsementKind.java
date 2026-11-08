@@ -23,11 +23,11 @@ import java.util.regex.Pattern;
  */
 public enum EndorsementKind {
 
-    PRE_SOLO_KNOWLEDGE("pre-solo-knowledge", "A.3", "61.87(b)", "Pre-solo aeronautical knowledge", null,
+    PRE_SOLO_KNOWLEDGE("pre-solo-knowledge", "A.3", "61.87(b)", "Pre-solo aeronautical knowledge",
             "I certify that {student} has satisfactorily completed the pre-solo knowledge test of 14 CFR § 61.87(b) for the"
                     + " {mm} aircraft.",
             Field.MM),
-    PRE_SOLO_FLIGHT("pre-solo-flight", "A.4", "61.87(c)(1) and (2)", "Pre-solo flight training", null,
+    PRE_SOLO_FLIGHT("pre-solo-flight", "A.4", "61.87(c)(1) and (2)", "Pre-solo flight training",
             "I certify that {student} has received and logged pre-solo flight training for the maneuvers and procedures that"
                     + " are appropriate to the {mm} aircraft. I have determined they have demonstrated satisfactory proficiency and"
                     + " safety on the maneuvers and procedures required by 14 CFR § 61.87 in this or similar make and model of"
@@ -35,32 +35,32 @@ public enum EndorsementKind {
             Field.MM),
     // 61.87(n): "an endorsement ... by an authorized instructor who gave
     // the training within the 90 days preceding the date of the flight".
-    SOLO_FIRST("solo-first", "A.6", "61.87(n)", "Solo flight (first 90 days)", 90,
+    SOLO_FIRST("solo-first", "A.6", "61.87(n)", "Solo flight (first 90 days)",
             "I certify that {student} has received the required training to qualify for solo flying. I have determined they"
                     + " meet the applicable requirements of 14 CFR § 61.87(n) and are proficient to make solo flights in {mm}.",
             Field.MM),
     // 61.87(p)(4): current "provided an authorized instructor updates the
     // student's logbook every 90 days thereafter". The code a student's
     // own record of either has kept since V13.
-    SOLO_90("solo-90", "A.7", "61.87(p)", "Solo flight (each further 90 days)", 90,
+    SOLO_90("solo-90", "A.7", "61.87(p)", "Solo flight (each further 90 days)",
             "I certify that {student} has received the required training to qualify for solo flying. I have determined that"
                     + " they meet the applicable requirements of 14 CFR § 61.87(p) and are proficient to make solo flights in {mm}.",
             Field.MM),
     // 61.87(o)(3): from an instructor who gave the night training "within
     // the 90-day period preceding the date of the flight".
-    SOLO_NIGHT("solo-night", "A.5", "61.87(o)", "Solo flight at night", 90,
+    SOLO_NIGHT("solo-night", "A.5", "61.87(o)", "Solo flight at night",
             "I certify that {student} has received flight training at night on night flying procedures that include takeoffs,"
                     + " approaches, landings, and go-arounds at night at the {airport} airport where the solo flight will be"
                     + " conducted; navigation training at night in the vicinity of the {airport} airport where the solo flight will"
                     + " be conducted. This endorsement expires 90 calendar days from the date the flight training at night was"
                     + " received.",
             Field.AIRPORT),
-    SOLO_25NM("solo-25nm", "A.8", "61.93(b)(1)", "Solo takeoffs and landings at another airport within 25 nm", null,
+    SOLO_25NM("solo-25nm", "A.8", "61.93(b)(1)", "Solo takeoffs and landings at another airport within 25 nm",
             "I certify that {student} has received the required training of 14 CFR § 61.93(b)(1). I have determined that they"
                     + " are proficient to practice solo takeoffs and landings at {airport}. The takeoffs and landings at {airport}"
                     + " are subject to the following conditions: {conditions}",
             Field.AIRPORT, Field.CONDITIONS_LISTED),
-    SOLO_XC_TRAINING("solo-xc-training", "A.9", "61.93(c)(1) and (2)", "Solo cross-country training", null,
+    SOLO_XC_TRAINING("solo-xc-training", "A.9", "61.93(c)(1) and (2)", "Solo cross-country training",
             "I certify that {student} has received the required solo cross-country training. I find they have met the"
                     + " applicable requirements of 14 CFR § 61.93 and are proficient to make solo cross-country flights in a {mm}"
                     + " aircraft, {category}.",
@@ -69,44 +69,42 @@ public enum EndorsementKind {
     // reviewed its planning (61.93(d)). The AC's sample reads "from
     // [origination airport] to [origination airport]", a flight that comes
     // back; {to} is the last airport, the same one for such a flight.
-    SOLO_XC_FLIGHT("solo-xc-flight", "A.10", "61.93(c)(3)", "A solo cross-country's planning", null,
+    SOLO_XC_FLIGHT("solo-xc-flight", "A.10", "61.93(c)(3)", "A solo cross-country's planning",
             "I have reviewed the cross-country planning of {student}. I find the planning and preparation to be correct to make"
                     + " the solo flight from {from} to {to} via {via} with landings at {landings} in a {mm} aircraft on {date}."
                     + " {conditions}",
             Field.FROM, Field.TO, Field.VIA, Field.LANDINGS, Field.MM, Field.DATE, Field.CONDITIONS),
-    SOLO_XC_50NM("solo-xc-50nm", "A.11", "61.93(b)(2)", "Repeated solo cross-country within 50 nm", null,
+    SOLO_XC_50NM("solo-xc-50nm", "A.11", "61.93(b)(2)", "Repeated solo cross-country within 50 nm",
             "I certify that {student} has received the required training in both directions between and at both {airports}."
                     + " I have determined that they are proficient of 14 CFR § 61.93(b)(2) to conduct repeated solo cross-country"
                     + " flights over that route, subject to the following conditions: {conditions}",
             Field.AIRPORTS, Field.CONDITIONS_LISTED),
     // 61.95(a)(2) and (b)(2): "dated within the 90-day period preceding the
     // date of the flight".
-    CLASS_B("class-b", "A.12", "61.95(a)", "Solo flight in Class B airspace", 90,
+    CLASS_B("class-b", "A.12", "61.95(a)", "Solo flight in Class B airspace",
             "I certify that {student} has received the required training of 14 CFR § 61.95(a). I have determined they are"
                     + " proficient to conduct solo flights in {classB} airspace. {conditions}",
             Field.CLASS_B, Field.CONDITIONS),
-    CLASS_B_AIRPORT("class-b-airport", "A.13", "61.95(b) and 91.131(b)(1)", "Solo at an airport in Class B airspace", 90,
+    CLASS_B_AIRPORT("class-b-airport", "A.13", "61.95(b) and 91.131(b)(1)", "Solo at an airport in Class B airspace",
             "I certify that {student} has received the required training of 14 CFR § 61.95(b)(1). I have determined that they"
                     + " are proficient to conduct solo flight operations at {airport}. {conditions}",
             Field.AIRPORT, Field.CONDITIONS),
-    KNOWLEDGE_TEST("knowledge-test", "A.36", "61.35(a)(1), 61.103(d) and 61.105", "Aeronautical knowledge test", null,
+    KNOWLEDGE_TEST("knowledge-test", "A.36", "61.35(a)(1), 61.103(d) and 61.105", "Aeronautical knowledge test",
             "I certify that {student} has received the required training in accordance with 14 CFR § 61.105. I have"
                     + " determined they are prepared for the {test} knowledge test.",
             Field.TEST),
     KNOWLEDGE_TEST_REVIEW("knowledge-test-review", "A.2", "61.39(a)(6)(iii)", "Review of the knowledge test's deficient areas",
-            null,
             "I certify that {student} has demonstrated satisfactory knowledge of the subject areas in which they were deficient"
                     + " on the {test} airman knowledge test.",
             Field.TEST),
     PRACTICAL_TEST_PREREQUISITES("practical-test-prereq", "A.1", "61.39(a)(6)(i) and (ii)", "Prerequisites for the practical test",
-            null,
             "I certify that {student} has received and logged training time within 2 calendar months preceding the month of"
                     + " application in preparation for the practical test and they are prepared for the required practical test"
                     + " for the issuance of {certificate} certificate.",
             Field.CERTIFICATE),
     // A.37 is "required in addition to the 14 CFR § 61.39 endorsements"
     // (A.1, A.2). The code a student's own record of it has kept since V13.
-    PRACTICAL_TEST("practical-test", "A.37", "61.103(f), 61.107(b) and 61.109", "Flight proficiency and practical test", null,
+    PRACTICAL_TEST("practical-test", "A.37", "61.103(f), 61.107(b) and 61.109", "Flight proficiency and practical test",
             "I certify that {student} has received the required training in accordance with 14 CFR §§ 61.107 and 61.109. I"
                     + " have determined they are prepared for the {practical} practical test.",
             Field.PRACTICAL);
@@ -153,18 +151,14 @@ public enum EndorsementKind {
     /** The 14 CFR section it answers, "61.93(c)(3)". */
     public final String rule;
     public final String label;
-    /** Days it is good for from the day it was signed, or null where it
-     *  does not run out. */
-    public final Integer validDays;
     public final String template;
     public final List<Field> fields;
 
-    EndorsementKind(String code, String paragraph, String rule, String label, Integer validDays, String template, Field... fields) {
+    EndorsementKind(String code, String paragraph, String rule, String label, String template, Field... fields) {
         this.code = code;
         this.paragraph = paragraph;
         this.rule = rule;
         this.label = label;
-        this.validDays = validDays;
         this.template = template;
         this.fields = List.of(fields);
     }

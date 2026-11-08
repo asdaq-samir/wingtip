@@ -1,12 +1,11 @@
 package com.northflyers.wingtip.controller;
 
-import static com.northflyers.wingtip.service.CalendarMonths.endOfMonthAfter;
-
 import com.northflyers.wingtip.domain.Aircraft;
 import com.northflyers.wingtip.dto.AircraftDto;
 import com.northflyers.wingtip.dto.AircraftRequest;
 import com.northflyers.wingtip.dto.ChecklistDto;
 import com.northflyers.wingtip.dto.InspectionsRequest;
+import com.northflyers.wingtip.service.PlannerClient;
 import com.northflyers.wingtip.dto.SquawkDto;
 import com.northflyers.wingtip.dto.SquawkRequest;
 import com.northflyers.wingtip.dto.VorCheckRequest;
@@ -46,13 +45,15 @@ public class AircraftController {
     private final ChecklistService checklists;
     private final SquawkService squawks;
     private final PilotService pilots;
+    private final PlannerClient planner;
 
     public AircraftController(AircraftService aircraftService, ChecklistService checklists, SquawkService squawks,
-                              PilotService pilots) {
+                              PilotService pilots, PlannerClient planner) {
         this.aircraftService = aircraftService;
         this.checklists = checklists;
         this.squawks = squawks;
         this.pilots = pilots;
+        this.planner = planner;
     }
 
     @GetMapping
@@ -140,34 +141,39 @@ public class AircraftController {
     }
 
     private AircraftDto toDto(Aircraft a) {
+        PlannerClient.Inspections due = dueOf(a);
         return new AircraftDto(a.getId(), a.getTailNumber(), a.getTypeDesignator(), a.getCruiseTasKt(),
                 a.getFuelBurnGph(), a.getCruisePowerPct(), a.getClimbTasKt(), a.getClimbFuelBurnGph(), a.getUsableFuelGal(),
-                a.getCreatedAt(), vorCheckOf(a), inspectionsOf(a), a.getId() == null ? List.of() : squawks.open(a.getId()),
+                a.getCreatedAt(), vorCheckOf(a, due), inspectionsOf(a, due), a.getId() == null ? List.of() : squawks.open(a.getId()),
                 a.getEquipment(), a.getSurveillance(), a.getColour());
     }
 
-    /** 91.409(a): the annual, 12 calendar months; 91.409(b): the 100-hour,
-     *  100 hours of time in service; 91.411(a)(1) and 91.413(a): the static
-     *  and transponder tests, 24 calendar months; 91.207(d): the ELT's
-     *  inspection, 12 calendar months after the last. */
-    static AircraftDto.InspectionsDto inspectionsOf(Aircraft a) {
+    /** When the airplane's inspections and checks fall due, and its VOR
+     *  check's standing: the engine's (inspections_due, through the
+     *  planner: 14 CFR 91.409(a), (b), 91.207(d), 91.411(a), 91.413(a),
+     *  91.171). */
+    private PlannerClient.Inspections dueOf(Aircraft a) {
+        return planner.inspections(a.getAnnualOn(), a.getEltInspectedOn(), a.getStaticCheckOn(), a.getTransponderCheckOn(),
+                a.getHundredHourAtHours(), a.getVorCheckOn(), a.getVorCheckKind() == null ? null : a.getVorCheckKind().name(),
+                a.getVorCheckErrorDeg());
+    }
+
+    static AircraftDto.InspectionsDto inspectionsOf(Aircraft a, PlannerClient.Inspections due) {
         return new AircraftDto.InspectionsDto(
-                a.getAnnualOn(), endOfMonthAfter(a.getAnnualOn(), 12),
-                a.getHundredHourAtHours(), a.getHoursNow(),
-                a.getHundredHourAtHours() == null ? null : a.getHundredHourAtHours() + 100,
-                a.getStaticCheckOn(), endOfMonthAfter(a.getStaticCheckOn(), 24),
-                a.getTransponderCheckOn(), endOfMonthAfter(a.getTransponderCheckOn(), 24),
-                a.getEltInspectedOn(), endOfMonthAfter(a.getEltInspectedOn(), 12),
+                a.getAnnualOn(), due.annualUntil(),
+                a.getHundredHourAtHours(), a.getHoursNow(), due.hundredHourDueAtHours(),
+                a.getStaticCheckOn(), due.staticCheckUntil(),
+                a.getTransponderCheckOn(), due.transponderCheckUntil(),
+                a.getEltInspectedOn(), due.eltUntil(),
                 a.getEltBatteryDueOn());
     }
 
-    /** 91.171(a)(2): good for 30 days, the error within its check's limit. */
-    static AircraftDto.VorCheckDto vorCheckOf(Aircraft a) {
-        if (a.getVorCheckOn() == null || a.getVorCheckKind() == null || a.getVorCheckErrorDeg() == null) {
+    static AircraftDto.VorCheckDto vorCheckOf(Aircraft a, PlannerClient.Inspections due) {
+        PlannerClient.VorCheckDue vor = due.vorCheck();
+        if (vor == null || a.getVorCheckOn() == null || a.getVorCheckKind() == null || a.getVorCheckErrorDeg() == null) {
             return null;
         }
-        double limit = a.getVorCheckKind().limitDeg();
         return new AircraftDto.VorCheckDto(a.getVorCheckOn(), a.getVorCheckKind(), a.getVorCheckPlace(),
-                a.getVorCheckErrorDeg(), limit, Math.abs(a.getVorCheckErrorDeg()) <= limit, a.getVorCheckOn().plusDays(30));
+                a.getVorCheckErrorDeg(), vor.limitDeg(), vor.within(), vor.until());
     }
 }

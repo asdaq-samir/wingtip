@@ -1,4 +1,5 @@
 import type { Airport, Candidate, Course, Leg, SaveFlightRequest, TopOfClimb, TopOfDescent } from "../../../../lib/api/types";
+import { callEngine } from "../../../../lib/engine/engine";
 import { pointName } from "../../../../lib/identSchema";
 import { descriptionKey } from "../../hooks/useCheckpointNotes";
 
@@ -65,17 +66,18 @@ export type RouteEnds = Pick<Course, "departure" | "destination"> & Partial<Pick
 };
 
 /** The time on the ground at a stop the pilot gave none for, min: a
- *  turnaround, at the owner's pick (2026-10-20). The planner owns it (its
- *  TURNAROUND_MIN, plan.py) and says each stop's on the leg landing there
- *  (Leg.ground_min); this mirrors it only for the rows drawn before that
- *  leg is in -- the route list before the nav log, a plan streaming. */
-export const TURNAROUND_MIN = 30;
+ *  turnaround, at the owner's pick (2026-10-20), the engine's
+ *  (`planning_figures`), as the planner counts it. The planner says each
+ *  stop's on the leg landing there (Leg.ground_min); this is for the rows
+ *  drawn before that leg is in -- the route list before the nav log, a
+ *  plan streaming. */
+export const turnaroundMin = (): number => callEngine("planning_figures", {}).turnaround_min;
 
 /** A stop's minutes on the ground: the pilot's own (the address's
  *  `ground`, newer than a plan still on its way), else the planner's on
- *  the leg landing there, else TURNAROUND_MIN until that leg is in. */
+ *  the leg landing there, else turnaroundMin() until that leg is in. */
 export function groundMinAt(ground: Record<string, number> | undefined, ident: string, landing?: Leg): number {
-  return ground?.[ident] ?? landing?.ground_min ?? TURNAROUND_MIN;
+  return ground?.[ident] ?? landing?.ground_min ?? turnaroundMin();
 }
 
 export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: Leg[]): NavLogRow[] {

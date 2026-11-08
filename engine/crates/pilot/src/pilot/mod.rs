@@ -6,7 +6,10 @@
 //! ACS codes of a knowledge test report (endorsements) -- and what the
 //! logbook says of the pilot: currency under 14 CFR 61.56 and 61.57 and a
 //! student's 61.109(a) experience (currency, from the gateway's
-//! CurrencyService and TrainingService). The rest moved from the web
+//! CurrencyService and TrainingService), and what the records say of
+//! endorsements running out, a solo cross-country's 61.93(d) and the
+//! airplane's inspections (records, from the gateway's EndorsementRecords
+//! and CalendarMonths). The rest moved from the web
 //! app's lib/checklist, lib/logbookCsv, lib/handbookText,
 //! lib/endorsements and lib/checkride, which the iPhone app copied, so
 //! both read a pilot's text alike; `js` holds JavaScript's own reading of
@@ -19,3 +22,4 @@ pub mod endorsements;
 pub mod handbook;
 pub mod js;
 pub mod logbook;
+pub mod records;

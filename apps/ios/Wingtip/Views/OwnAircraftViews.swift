@@ -61,6 +61,13 @@ struct OwnAircraftListView: View {
 /// a new airplane in a sheet with Cancel and Add, one of the pilot's
 /// with Save.
 struct AircraftFormView: View {
+    /// The altitude the cruise figures are the airplane's at, the engine's.
+    private static let cruiseReferenceFt: Double = {
+        struct Figures: Decodable { let cruise_reference_ft: Double }
+        let figures: Figures? = try? Engine.call("planning_figures", json: [:])
+        return figures?.cruise_reference_ft ?? 0
+    }()
+
     let record: OwnAircraftRecord?
     var onSaved: (OwnAircraftRecord) -> Void
     @Environment(\.dismiss) private var dismiss
@@ -86,9 +93,9 @@ struct AircraftFormView: View {
                 number("Cruise", unit: "gph", text: $form.fuelBurnGph, placeholder: "8.5", key: "fuelBurnGph", problems: problems)
             }
             // The cruise figures are the airplane's at this power at the
-            // planner's reference altitude on a standard day, a row of its
-            // handbook's cruise table (wingtip.performance, CRUISE_REFERENCE_FT).
-            Section("Cruise figures at 6,000 ft, standard day") {
+            // engine's reference altitude on a standard day, a row of its
+            // handbook's cruise table (planning_figures' cruise_reference_ft).
+            Section("Cruise figures at \(AirportWords.feet(Self.cruiseReferenceFt)), standard day") {
                 number("Cruise power", unit: "%", text: $form.cruisePowerPct, placeholder: "65", key: "cruisePowerPct", problems: problems)
             }
             // Without usable fuel the nav log makes no fuel check.
@@ -380,7 +387,7 @@ struct VorCheckSection: View {
             }
             DatePicker("Checked on", selection: $checkedOn, in: ...Date(), displayedComponents: .date)
             Picker("How", selection: $kind) {
-                ForEach(VorCheckKind.all, id: \.value) { k in Text("\(k.label) (±\(k.limitDeg)°)").tag(k.value) }
+                ForEach(VorCheckKind.all, id: \.value) { k in Text("\(k.label) (±\(VorCheckKind.limitDeg(k.value).formatted())°)").tag(k.value) }
             }
             LabeledContent("Where") { TextField("KDLH VOT", text: $place).multilineTextAlignment(.trailing) }
             LabeledContent("Bearing error") {

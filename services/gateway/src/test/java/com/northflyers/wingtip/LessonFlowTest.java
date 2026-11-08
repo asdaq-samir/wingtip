@@ -2,6 +2,7 @@ package com.northflyers.wingtip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 
@@ -22,6 +23,7 @@ import com.northflyers.wingtip.service.InstructorService;
 import com.northflyers.wingtip.service.LessonService;
 import com.northflyers.wingtip.service.Mailer;
 import com.northflyers.wingtip.service.PlannerClient;
+import com.northflyers.wingtip.dto.ReviewCheckDto;
 import com.northflyers.wingtip.service.TrainingService;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -84,6 +86,25 @@ class LessonFlowTest {
      *  experience logged here. */
     @MockitoBean
     private PlannerClient planner;
+
+    /** What the engine says of the endorsements is its own (records.json,
+     *  through the planner); here, a day for a solo endorsement held and
+     *  two checks for a review, so these tests see the gateway send what
+     *  is held -- voided ones left out -- and pass the answer on. */
+    static final LocalDate SOLO_UNTIL = LocalDate.of(2099, 1, 1);
+    static final List<ReviewCheckDto> CHECKS = List.of(new ReviewCheckDto("61.93(d)(4)", "A", false, "None on record"),
+            new ReviewCheckDto("61.93(d)(5)", "B", false, "None on record"));
+
+    @org.junit.jupiter.api.BeforeEach
+    void theEnginesAnswer() {
+        org.mockito.BDDMockito.given(planner.endorsements(any(), any())).willAnswer(ask -> {
+            List<PlannerClient.Held> held = ask.getArgument(0);
+            LocalDate flightOn = ask.getArgument(1);
+            return new PlannerClient.Endorsements(java.util.Collections.nCopies(held.size(), (LocalDate) null),
+                    held.stream().anyMatch(h -> List.of("solo-first", "solo-90").contains(h.code())) ? SOLO_UNTIL : null,
+                    flightOn == null ? List.of() : CHECKS);
+        });
+    }
 
     private static final Instant NOW = Instant.parse("2026-10-31T18:00:00Z");
     private static final LocalDate TODAY = LocalDate.ofInstant(NOW, ZoneOffset.UTC);

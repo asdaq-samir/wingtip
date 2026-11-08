@@ -121,15 +121,22 @@ typealias VorCheckRequest = GWVorCheckRequest
 /// (91.171(b)(2)), 6 at an airborne checkpoint (91.171(b)(3)) or on an
 /// airway's radial in flight (91.171(b)(4)), and 4 between two receivers
 /// (91.171(c)). The gateway judges the check by its own limitDeg.
+/// The ways a VOR is checked for IFR (14 CFR 91.171(b), (c)); the error
+/// each allows is the engine's (`vor_check_limit_deg`).
 enum VorCheckKind {
-    static let all: [(value: String, label: String, limitDeg: Int)] = [
-        ("VOT", "VOT", 4),
-        ("REPAIR_STATION", "Repair station signal", 4),
-        ("GROUND", "Ground checkpoint", 4),
-        ("AIRBORNE", "Airborne checkpoint", 6),
-        ("RADIAL", "Airway radial in flight", 6),
-        ("DUAL", "Dual receivers", 4),
+    static let all: [(value: String, label: String)] = [
+        ("VOT", "VOT"),
+        ("REPAIR_STATION", "Repair station signal"),
+        ("GROUND", "Ground checkpoint"),
+        ("AIRBORNE", "Airborne checkpoint"),
+        ("RADIAL", "Airway radial in flight"),
+        ("DUAL", "Dual receivers"),
     ]
+
+    /// The largest bearing error 91.171 allows for a kind of check.
+    static func limitDeg(_ kind: String) -> Double {
+        (try? Engine.call("vor_check_limit_deg", json: ["kind": kind])) ?? 0
+    }
 
     static func label(_ kind: String) -> String { all.first { $0.value == kind }?.label ?? kind }
 }
@@ -219,14 +226,13 @@ typealias LogbookImportResult = GWLogbookImportResult
 
 /// An AC 61-65K endorsement as the gateway offers it to sign
 /// (EndorsementKindDto): its words with blanks, the paragraph and the
-/// 14 CFR section it comes from, and how many days it runs.
+/// 14 CFR section it comes from.
 struct EndorsementKind: Codable, Equatable, Sendable, Identifiable {
     let code: String
     let label: String
     let paragraph: String
     let rule: String
     let template: String
-    var validDays: Int?
     var fields: [EndorsementField]
     var id: String { code }
 }

@@ -74,6 +74,7 @@ fn code_names() -> BTreeSet<String> {
     for src in [
         include_str!("../../crates/wording/src/wording/mod.rs"),
         include_str!("../../crates/airspace/src/drills.rs"),
+        include_str!("../../crates/pilot/src/pilot/records.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
         include_str!("../../crates/route/src/approach/calls.rs"),
@@ -218,6 +219,20 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("filed_route", json!({ "stops": case["stops"], "airways": case["airways"] }));
     }
     c.ask("filed_zzzz", json!({ "ident": "C81" }));
+    let records = fixture("records.json");
+    for case in records["endorsements"].as_array().unwrap() {
+        c.ask("endorsement_records", case["input"].clone());
+    }
+    for case in records["inspections"].as_array().unwrap() {
+        c.ask("inspections_due", case["input"].clone());
+    }
+    c.ask("planning_figures", json!({}));
+    for case in records["vorLimits"].as_array().unwrap() {
+        c.ask("vor_check_limit_deg", json!({ "kind": case["kind"] }));
+    }
+    for case in records["workings"].as_array().unwrap() {
+        c.ask("workings_right", json!({ "key": case["key"], "typed": case["typed"], "answer": case["answer"] }));
+    }
     for case in fixture("routePosition.json")["cases"].as_array().unwrap() {
         c.ask("route_position", case["input"].clone());
     }

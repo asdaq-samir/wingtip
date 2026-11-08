@@ -556,6 +556,13 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             Ok(out)
         }
         "diversion" => diversion_rule(&ask),
+        "workings_right" => {
+            let key = ask.str("key")?;
+            match diversion::workings_right(key, ask.num("typed")?, ask.num("answer")?) {
+                Some(right) => Ok(right.to_string()),
+                None => Err(format!("workings_right: \"key\" is wca, th, mh, gs, ete or fuel, not {key:?}")),
+            }
+        }
         "wind_triangle" => {
             let solved = diversion::wind_triangle(ask.num("tc")?, ask.num("tas")?, ask.num("wind_from_deg")?, ask.num("wind_kt")?);
             Ok(match solved {
@@ -777,6 +784,14 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         "words_num" | "words_one" | "words_to_fixed" | "words_grouped" | "words_alt_ft" | "words_flight_level"
         | "words_ceiling_and_visibility" => words_rule(&ask),
         "altitude_limits" | "altitude_allowed" | "vfr_altitudes" | "altitude_said" => limits_rule(&ask),
+        "planning_figures" => {
+            let mut out = String::from("{\"turnaround_min\":");
+            json::number(&mut out, crate::flight::TURNAROUND_MIN);
+            out.push_str(",\"cruise_reference_ft\":");
+            json::number(&mut out, crate::flight::CRUISE_REFERENCE_FT);
+            out.push('}');
+            Ok(out)
+        }
         "filed_level" | "filed_speed" | "filed_duration" | "filed_wake" | "filed_route" | "filed_zzzz" => filing_rule(&ask),
         "magnetic_variation" => {
             // The model's time, a decimal year: as given (the planner's
@@ -813,6 +828,7 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             Ok(crate::cycles::to_json(&crate::cycles::cycle(kind, effective, on)))
         }
         _ if crate::drills::NAMES.contains(&name) => crate::drills::call(name, ask.v),
+        _ if crate::pilot::records::NAMES.contains(&name) => crate::pilot::records::call(name, ask.v),
         _ if crate::wording::NAMES.contains(&name) => crate::wording::answer(name, ask.v),
         // A field's weather (forecast::calls), the traffic list's filters and
         // the registry's airplanes (aircraft::calls).

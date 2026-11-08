@@ -22,8 +22,10 @@ import com.northflyers.wingtip.service.AircraftService;
 import com.northflyers.wingtip.service.ChecklistService;
 import com.northflyers.wingtip.service.SquawkService;
 import com.northflyers.wingtip.service.PilotService;
+import com.northflyers.wingtip.service.PlannerClient;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -55,6 +57,19 @@ class AircraftControllerTest {
 
     @MockitoBean
     private SquawkService squawkService;
+
+    /** The planner, whose engine says when the inspections fall due
+     *  (inspections_due, tested against the shared records.json): nothing
+     *  due here unless a test says. */
+    @MockitoBean
+    private PlannerClient planner;
+
+    private static final PlannerClient.Inspections NOTHING_DUE = new PlannerClient.Inspections(null, null, null, null, null, null);
+
+    @BeforeEach
+    void nothingDue() {
+        given(planner.inspections(any(), any(), any(), any(), any(), any(), any(), any())).willReturn(NOTHING_DUE);
+    }
 
     private static Pilot samplePilot() {
         return new Pilot("pilot@example.com", "A. Pilot", "sub-1");
@@ -235,10 +250,14 @@ class AircraftControllerTest {
     }
 
     /** 14 CFR 91.171: a VOR check recorded with its date, kind, place and
-     *  error; good for 30 days, and within 4 degrees at a VOT. */
+     *  error, and the engine's word on it (good for 30 days, within 4
+     *  degrees at a VOT) passed on. */
     @Test
     void aVorCheckIsRecordedAndSaysHowLongItIsGoodFor() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
+        given(planner.inspections(any(), any(), any(), any(), any(), eq(java.time.LocalDate.of(2026, 10, 1)), eq("VOT"), eq(-5.0)))
+                .willReturn(new PlannerClient.Inspections(null, null, null, null, null,
+                        new PlannerClient.VorCheckDue(4.0, false, java.time.LocalDate.of(2026, 10, 31))));
         given(aircraftService.recordVorCheck(any(), eq(7L), any(), any(), any(), anyDouble())).willReturn(Optional.of(
                 sampleAircraft().recordVorCheck(java.time.LocalDate.of(2026, 10, 1), com.northflyers.wingtip.domain.VorCheck.VOT,
                         "KDLH VOT", -5.0)));
@@ -296,7 +315,7 @@ class AircraftControllerTest {
     /** An airplane whose owner has said nothing is neither current nor overdue. */
     @Test
     void noInspectionsRecordedIsNoDates() {
-        AircraftDto.InspectionsDto none = AircraftController.inspectionsOf(sampleAircraft());
+        AircraftDto.InspectionsDto none = AircraftController.inspectionsOf(sampleAircraft(), NOTHING_DUE);
         org.assertj.core.api.Assertions.assertThat(none.annualGoodThrough()).isNull();
         org.assertj.core.api.Assertions.assertThat(none.hundredHourDueAtHours()).isNull();
         org.assertj.core.api.Assertions.assertThat(none.eltBatteryDueOn()).isNull();

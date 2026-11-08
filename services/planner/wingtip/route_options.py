@@ -62,6 +62,7 @@ from scipy.sparse.csgraph import dijkstra
 import wingtip_native
 
 from . import fixes, fuelstops, geo, magnetic, navlog, sun, terrain_detour, water, weather
+from .engine import ask as engine
 
 
 logger = logging.getLogger(__name__)
@@ -115,8 +116,8 @@ CLOSED_COST = 20.0
 #: The fields with fuel looked at for a stop, nm off the way.
 STOP_FIELD_NM = 15.0
 #: Minutes on the ground at each stop: the owner's 30-minute turnaround
-#: (2026-10-20), the planner's own (app.routers.plan.TURNAROUND_MIN).
-TURNAROUND_MIN = 30.0
+#: (2026-10-20), the engine's (planning_figures), as the nav log counts it.
+TURNAROUND_MIN = float(engine("planning_figures")["turnaround_min"])
 #: The airplane is taken to climb to cruise from no lower than this, ft:
 #: the planner's own figure, the lowest a cross-country is flown over
 #: level ground (91.119(c)'s 500 ft and the altitudes the plan picks).
