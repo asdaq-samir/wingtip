@@ -224,13 +224,15 @@ The owner's ask (2026-11-03) for a fast app with no workarounds, done in
 these places:
 
 - **Tiles** (`Tiles/ChartTileOverlay`, `TileStore`, `KeepRoute`): the
-  overlay draws 512-point tiles composed from four of the pyramid's
-  256-pixel tiles, so a 3x screen scales a tile 1.5 times instead of 3
-  and needs about 18 of them instead of 55; a composed tile is kept in
-  memory (`TileCache`, 64 MB) in front of the disk store and the network,
-  concurrent loads of one tile are coalesced, and a kept route's tiles
-  bring their parents one and two levels up, so a zoom out is answered
-  from the phone. Each load is a signpost (`app.wingtipmaps.ios`, `tiles`).
+  chart's renderer draws the pyramid's own tiles (below); a decoded tile
+  is kept in memory (`TileCache`, 96 MB, about three screens) in front
+  of the disk store and the network, concurrent loads of one tile are
+  coalesced, the loads of tiles that leave the view are cancelled, and a
+  kept route's tiles bring their parents one and two levels up, so a
+  zoom out is answered from the phone. Decoding (with the day's lift)
+  runs off the main thread, about 7 ms a tile, and drawing a decoded
+  tile on MapKit's drawing threads about 1 ms (measured on the Mac mini,
+  2026-11-08). Each load is a signpost (`app.wingtipmaps.ios`, `tiles`).
 - **Marks** (`Views/ChartMap`, `Views/AirportMarks`): the airports'
   annotations carry display priorities by the field's size
   and airspace, so MapKit drops overlaps rather than drawing them; the
@@ -251,16 +253,20 @@ The web map's look of 2026-11-07/08 (#510, #537, #539, #541-#544) is
 brought over in MapKit's own way, the same result rather than the same
 code:
 
-- **The chart's tiles**: from the 256-pixel pyramid, four to each
-  512-point tile, and by day the web's lift of the chart (`ChartLift`:
-  MapLibre's raster-contrast and -saturation 0.1); at night, dimmed, as
-  printed. Not the @2x pyramid (#510): MapKit lays a tile overlay's
-  picture one pixel to a point whatever its size or its PNG's density,
-  so the 1024-pixel tiles of @2x children (since 2026-11-06) were drawn
-  twice too large from each tile's corner, the chart off the position
-  (Beloit's under O'Hare, measured in the simulator 2026-11-08). The
-  composed tile already has the pixels of one @2x tile; more on a retina
-  screen needs a renderer of the app's own drawing the tiles.
+- **The chart's tiles**: the 512-pixel @2x pyramid (#510) where the
+  layer has it (`scales`), drawn by a renderer of the app's own
+  (`ChartTileRenderer`): each tile's image goes into its own map rect
+  with Core Graphics at full resolution. MapKit's tile overlay could
+  not do it: it lays a tile's picture one pixel to a point whatever its
+  size or density, so @2x tiles were drawn twice too large from each
+  tile's corner (Beloit's under O'Hare, #549) and the 1x chart was a
+  third of a 3x screen's pixels. The renderer picks the level whose
+  tiles are stretched at most 1.5 times over the screen's pixels
+  (`ChartTileMath`: from a whole level on a 3x screen), draws the last
+  level enlarged past the pyramid's end, and covers a tile still loading
+  with the part of the nearest level above it that is in memory. By day
+  the web's lift of the chart (`ChartLift`: MapLibre's raster-contrast
+  and -saturation 0.1); at night, dimmed, as printed.
 - **ForeFlight-style overlays** (`Views/ChartOverlays`, `AirportMarks`):
   the sectional's airport symbols (towered blue, others magenta, R and M
   for private and military, the flight category a pip; `towered` from
@@ -276,9 +282,12 @@ code:
   to their true headings (`RunwaySurface`). The runways come from the
   planner's field (`/api/airport/{ident}`: NASR's surveyed ends and
   widths), since the phone packs hold no APT_RWY; the web reads them from
-  the overlay archive. Every runway is drawn in the hard-surface grey:
-  which surfaces count as hard is the planner's rule (HARD_SURFACES), and
-  no answer the phone reads carries it yet.
+  the overlay archive. A soft runway (turf, grass, dirt, gravel) is
+  drawn in the web's olive and the rest in its dark grey, the surface
+  read by the engine's `gonogo_soft_surface`, the rule the short-field
+  figures use. The web's colour follows the planner's HARD_SURFACES
+  instead, so a runway of unknown or water surface is olive there and
+  grey here.
 - **One reveal**: a cover over the map, with Wingtip's mark turning in the
   middle of what the sheet leaves (`MapLoading`; still under Reduce
   Motion), until the chart's tiles and the first overlays are in, at most

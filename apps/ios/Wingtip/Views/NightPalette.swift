@@ -122,21 +122,3 @@ extension UIColor {
         self.init { $0.userInterfaceStyle == .dark ? dark : light }
     }
 }
-
-/// The chart's tiles, with the night's ground laid over each at the
-/// setting's shade: a dimming drawn by the renderer, so the marks, the
-/// course and the sheets over the chart are untouched. Where a tile is
-/// not in yet, Apple's map under it. Its alpha is the chart's fade close
-/// in (ChartFade), set as the view moves.
-final class NightTileRenderer: MKTileOverlayRenderer {
-    var shade: CGFloat = 0 {
-        didSet { if shade != oldValue { setNeedsDisplay() } }
-    }
-
-    override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
-        super.draw(mapRect, zoomScale: zoomScale, in: context)
-        guard shade > 0 else { return }
-        context.setFillColor(NightPalette.ground.withAlphaComponent(shade).cgColor)
-        context.fill(rect(for: mapRect))
-    }
-}
