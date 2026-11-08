@@ -50,14 +50,54 @@ one job (the owner kept both server languages on this split, 2026-11-06):
 
 ## Branches
 
-- One flow, for the owner and every session alike: a `claude/<topic>`
-  branch from `main`, a pull request to `main`, and it merges by itself
-  once the "CI passed" check is green (auto-merge-agents.yml); nothing
-  merges red. The branch is deleted on merge (the repository's setting).
+- **Code first, validation at the end** (the owner, 2026-11-08, a
+  standing rule: "all code changes should be fast and all should be
+  tested at the end with the integration branch"). Waiting on CI is the
+  thing to avoid:
+  - Each piece of work is a `claude/<topic>` branch from `main`, pushed
+    once when the code is done. Pushing a `claude/` branch starts no CI
+    (ci.yml runs on pull requests and on `main`; native-*.yml also on
+    `claude/native-*`, so don't use that name). No pull request yet.
+  - Before that push, only a compile or type check of what changed
+    (`tsc --noEmit`, `cargo check`, ruff, a Kotlin or Swift compile) and
+    the generated files it needs. Tests are written with the code, not
+    run.
+  - Work that builds on an unmerged branch merges that branch in
+    (`git merge origin/<branch>`); nothing waits for a merge.
+  - The branches are merged into `claude/integration` as they finish,
+    conflicts resolved once there.
+  - At the end of a wave, one validation pass on the integration branch
+    on the Mac: every suite, the image builds, the browser tests, the
+    phones (iPad included), screenshots. Its fixes are one commit set.
+    Only then a few grouped pull requests to `main`, which merge by
+    themselves once "CI passed" is green (auto-merge-agents.yml); nothing
+    merges red, and CI runs once on code that has already passed.
+- **Parallel work that merges cleanly** (the owner, 2026-11-08: "avoid
+  time wasted"):
+  - Split work by area, so two agents never own the same files. Each
+    brief names what the agent owns and what it must leave alone; a
+    change another agent's area needs goes in the report, not the code.
+  - Generated files are never merged by hand. On a conflict in
+    `apps/web/src/lib/engine/contract.ts`, the `.wasm`, the API
+    documents and types, or the phones' generated models, take either
+    side and regenerate with the scripts (`npm run types`,
+    `scripts/build/build-engine-wasm.sh`, `engine-contract-apps.sh`,
+    `api-models-apps.sh`). The integration branch regenerates once after
+    each merge.
+  - Shared lists (`call.rs`, `engine.schema.json`, `docker-compose.yml`,
+    `ci.yml`, `scripts/dev/check.sh`, the CloudFormation template, the
+    docs' service tables): add an entry in its own block, in the list's
+    order, and change no neighbouring line, so merges are additive.
+  - Branches don't merge `main` in during a wave; the integration branch
+    does, once.
+  - Moves and renames across the tree (a folder regroup, a package
+    rename) run alone, at the start or the end of a wave, never beside
+    other agents.
+  - The integration branch keeps a log of each conflict and how it was
+    resolved, for the end-of-wave pass and the pull requests.
 - Claude's review is on demand, not a gate (the owner, 2026-11-06): the
-  "review" label on a pull request asks for one. So run the checks that
-  cover a change, and the aviation-check skill for any figure or rule,
-  before pushing.
+  "review" label on a pull request asks for one. The aviation-check skill
+  is still applied to every figure or rule while writing it.
 - A session works only in a worktree of its own (`git worktree add
   ../wingtip-<topic> -b claude/<topic> origin/main`, or the harness's);
   the main checkout stays on `main`, and no session switches it or
@@ -65,8 +105,8 @@ one job (the owner kept both server languages on this split, 2026-11-06):
 - Never push to `main`. Never force-push. Merge `main` into a branch to
   bring it up to date; never rebase a pushed one.
 - On a pull request, an asked-for review is put right on the branch
-  ("Address review:" commits) and a CI failure is fixed ("Fix CI:"), each
-  at most twice.
+  ("Address review:" commits). CI failures are not chased push by push:
+  they are fixed in the end-of-wave pass, at most once more after it.
 - Write to GitHub gently, as the `ship` skill says: one write at a time,
   ten seconds apart, a long list as one issue's checklist. A burst of API
   writes got the owner's account suspended in October 2026.
@@ -85,13 +125,12 @@ one job (the owner kept both server languages on this split, 2026-11-06):
 - Move a panel or a control to another part of the screen without the
   owner saying so in the issue.
 
-## Checks — run what covers your change
+## Checks — at the end, on the integration branch
 
-Before pushing, run the quick checks that cover a change (type check,
-lint, the unit tests it touches) on the Mac mini. Lengthy runs -- whole
-suites, browser tests, iOS and Android builds, image builds -- are left to
-CI, which runs on the Mac mini's runners, unless one is needed to debug a
-failure; no test holds up a code change (the owner, 2026-11-06).
+While writing code, run only a compile or type check of what changed
+(see Branches). The checks below are the end-of-wave validation, run
+once on `claude/integration` before the grouped pull requests; no test
+holds up a code change (the owner, 2026-11-06 and 2026-11-08).
 
 On the Mac, run them with `scripts/dev/check.sh all-changed` (the areas the
 branch and its uncommitted files touch, in parallel) or `scripts/dev/check.sh
@@ -128,7 +167,8 @@ from: `python -m app.openapi` in services/planner, or `WRITE_OPENAPI=1 mvn
 `scripts/build/api-models-apps.sh` for the phones' models; commit them all.
 
 The browser tests (Playwright, `apps/web/e2e`) need the whole stack and run in
-CI; write or update the spec for a change a pilot sees, and let CI run it.
+the end-of-wave pass and CI; write or update the spec for a change a pilot
+sees, with the code.
 A pull request runs only the tests tagged `@smoke`, one per journey; the
 rest run every night (docs/CI.md). Tag a test `@smoke` only when it is the
 one that proves a journey end to end.

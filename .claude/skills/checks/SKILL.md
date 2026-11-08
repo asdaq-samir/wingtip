@@ -1,11 +1,13 @@
 ---
 name: checks
-description: Run the checks that cover a change in this repo, on the owner's Mac (in containers, since it has no npm or pytest) or in CI, and read failures correctly. Use after editing code and before saying anything works, before committing, and whenever a test, a build or the running stack fails. Covers web (tsc, eslint, vitest), services/planner/wingtip and the Python services, the Spring Boot app, OpenAPI types, the running stack, Playwright, the iPhone audit and WebKit.
+description: Run the checks that cover a change in this repo, on the owner's Mac (in containers, since it has no npm or pytest) or in CI, and read failures correctly. Use for the end-of-wave validation on the integration branch, before opening pull requests, before saying a feature works, and whenever a test, a build or the running stack fails. During a wave of code changes, only a compile or type check runs (CLAUDE.md, Branches). Covers web (tsc, eslint, vitest), services/planner/wingtip and the Python services, the Spring Boot app, OpenAPI types, the running stack, Playwright, the iPhone audit and WebKit.
 ---
 
 # Checks
 
 CLAUDE.md says what to run for each part of the repo; this says how to run it here.
+
+**When (the owner, 2026-11-08, a standing rule):** code first, validation at the end. While a wave of code changes is being written, run only a compile or type check of what changed. Run the full checks below once, at the end of the wave, on `claude/integration`, where every finished branch has been merged. Fix what they find there, then open the grouped pull requests. Sections below that say "before pushing" mean before those pull requests.
 
 **Where you are running matters:**
 - **In CI (GitHub's runners):** the workflow sets up node, Python 3.14 and Java 25. Run CLAUDE.md's commands directly, after `pip install -r requirements-dev.txt` (or `requirements-dev-wingtip.txt` for wingtip's suite) in that directory, and skip sections 3 and 4.
