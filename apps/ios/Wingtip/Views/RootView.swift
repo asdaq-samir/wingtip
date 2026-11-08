@@ -63,6 +63,7 @@ struct RootView: View {
         return FlightLayer(
             trackedHex: tracking.hex, tracked: tracking.latest, follow: tracking.follow,
             path: tracking.path, past: tracking.past, flown: tracking.flown,
+            glide: InFlight.shared.glide?.coordinates ?? [],
             onTraffic: { plane in
                 Tracking.shared.track(plane.hex, plane: plane)
                 FlightUI.shared.card = .airplane(plane.hex.lowercased())
@@ -190,6 +191,8 @@ struct RootView: View {
                 AlertsBanner(alerts: ownShip.ahead)
                 // The radio, while the app listens or a call to us waits.
                 RadioOverlay()
+                // The flight's instruments, at flying speed (#218).
+                InstrumentsBar()
             }
             .padding(.trailing, 64)
         }
@@ -213,6 +216,12 @@ struct RootView: View {
         .task { await Tracking.shared.run() }
         .onChange(of: traffic.planes) { _, planes in Tracking.shared.heard(planes) }
         .onChange(of: ownShip.ahead) { _, alerts in SpokenAlerts.shared.hear(alerts) }
+        // Each fix, own ship's or the dry run's airplane, asked of the
+        // engine once for the instruments, the strip and the glide ring
+        // (InFlight); again when the route changes under it.
+        .onChange(of: dryRun.fix ?? ownShip.fix, initial: true) { _, fix in InFlight.shared.took(fix, plan: plan) }
+        .onChange(of: plan.course) { _, _ in InFlight.shared.took(dryRun.fix ?? ownShip.fix, plan: plan) }
+        .onChange(of: ownShip.groundFt) { _, ft in InFlight.shared.terrainFt = ft }
         // The window's UndoManager for the route's history: shake to undo
         // and the Edit menu (PlanHistory).
         .onAppear { plan.undoManager = undoManager }

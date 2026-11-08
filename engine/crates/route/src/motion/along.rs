@@ -26,28 +26,14 @@ pub struct Along {
 /// The nearest point on the line's segments, each worked on a flat patch
 /// of the earth round it (a leg of a few miles is one), measured along the
 /// line from its start. None with fewer than two points.
+/// The projection is the instruments' (instruments::along), the one copy.
 pub fn along(at: LatLon, line: &[LatLon]) -> Option<Along> {
-    if line.len() < 2 {
-        return None;
-    }
-    let mut best: Option<Along> = None;
-    let mut cursor = 0.0;
-    for (i, w) in line.windows(2).enumerate() {
-        let (a, b) = (w[0], w[1]);
-        let length = distance_nm(a.0, a.1, b.0, b.1);
-        let scale = a.0.to_radians().cos();
-        let (ax, ay, bx, by) = (a.1 * scale, a.0, b.1 * scale, b.0);
-        let (px, py) = (at.1 * scale, at.0);
-        let (dx, dy) = (bx - ax, by - ay);
-        let t = if dx == 0.0 && dy == 0.0 { 0.0 } else { (((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)).clamp(0.0, 1.0) };
-        let foot = (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);
-        let off = distance_nm(at.0, at.1, foot.0, foot.1);
-        if best.as_ref().is_none_or(|b| off < b.off_nm) {
-            best = Some(Along { along_nm: cursor + length * t, total_nm: 0.0, off_nm: off, segment: i, fraction: t });
-        }
-        cursor += length;
-    }
-    best.map(|b| Along { total_nm: cursor, ..b })
+    let lengths: Vec<f64> = line.windows(2).map(|w| distance_nm(w[0].0, w[0].1, w[1].0, w[1].1)).collect();
+    let found = super::instruments::along(line, &lengths, at.0, at.1, 0)?;
+    let start: f64 = lengths[..found.segment].iter().sum();
+    let length = lengths[found.segment];
+    let fraction = if length > 0.0 { ((found.along_nm - start) / length).clamp(0.0, 1.0) } else { 0.0 };
+    Some(Along { along_nm: found.along_nm, total_nm: lengths.iter().sum(), off_nm: found.off_nm, segment: found.segment, fraction })
 }
 
 /// Whether a position is on the route: within OFF_ROUTE_NM (3 nm) of the

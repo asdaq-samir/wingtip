@@ -11514,6 +11514,655 @@
       ],
       "additionalProperties": false
     },
+    "in_flight": {
+      "description": "A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves from fuel_start_gal. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "InFlightInput",
+          "type": "object",
+          "properties": {
+            "fix": {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                },
+                "track_deg": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "speed_kt": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            "line": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "points": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "lat",
+                  "lon"
+                ]
+              }
+            },
+            "legs": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "distance_nm": {
+                    "type": "number"
+                  },
+                  "fuel_gal": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "distance_nm"
+                ]
+              }
+            },
+            "fuel_start_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "now_s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "fix"
+          ]
+        },
+        "answer": {
+          "title": "InFlightAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "on_route": {
+                  "type": "boolean"
+                },
+                "along_nm": {
+                  "type": "number"
+                },
+                "total_nm": {
+                  "type": "number"
+                },
+                "left_nm": {
+                  "type": "number"
+                },
+                "off_nm": {
+                  "type": "number"
+                },
+                "off_side": {
+                  "enum": [
+                    "left",
+                    "right",
+                    null
+                  ]
+                },
+                "desired_track_deg": {
+                  "type": "number"
+                },
+                "desired_track_mag_deg": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "track_mag_deg": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "track_error_deg": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "variation_deg": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "burnt_gal": {
+                  "type": "number"
+                },
+                "next": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "index": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "distance_nm": {
+                          "type": "number"
+                        },
+                        "bearing_deg": {
+                          "type": "number"
+                        },
+                        "bearing_mag_deg": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "ete_min": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "eta_s": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "fuel_left_gal": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "index",
+                        "name",
+                        "distance_nm",
+                        "bearing_deg",
+                        "bearing_mag_deg",
+                        "ete_min",
+                        "eta_s",
+                        "fuel_left_gal"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "destination": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "index": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "distance_nm": {
+                          "type": "number"
+                        },
+                        "bearing_deg": {
+                          "type": "number"
+                        },
+                        "bearing_mag_deg": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "ete_min": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "eta_s": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "fuel_left_gal": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "index",
+                        "name",
+                        "distance_nm",
+                        "bearing_deg",
+                        "bearing_mag_deg",
+                        "ete_min",
+                        "eta_s",
+                        "fuel_left_gal"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "on_route",
+                "along_nm",
+                "total_nm",
+                "left_nm",
+                "off_nm",
+                "off_side",
+                "desired_track_deg",
+                "desired_track_mag_deg",
+                "track_mag_deg",
+                "track_error_deg",
+                "variation_deg",
+                "burnt_gal",
+                "next",
+                "destination"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "vertical_speed": {
+      "description": "The vertical speed in feet a minute from GPS altitudes: the least-squares slope of the last 10 seconds of samples; null with fewer than three of them or under 2 seconds.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "VerticalSpeedInput",
+          "type": "object",
+          "properties": {
+            "samples": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "t_s": {
+                    "type": "number"
+                  },
+                  "altitude_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "t_s"
+                ]
+              }
+            }
+          },
+          "required": [
+            "samples"
+          ]
+        },
+        "answer": {
+          "title": "VerticalSpeedAnswer",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "glide_ring": {
+      "description": "The still-air glide ring about own ship (#218): glide_range's radius (1.5 nm per 1,000 ft, the C172S POH figure 3-1) over the higher of the ground under the airplane (a pack's terrain) and the nearest field's elevation, and its outline as 73 points on the sphere, the first repeated last. Null on the ground, under flying speed or with no height.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GlideRingInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "speed_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "terrain_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "field_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "answer": {
+          "title": "GlideRingAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "range_nm": {
+                  "type": "number"
+                },
+                "ground_ft": {
+                  "type": "number"
+                },
+                "ring": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
+                }
+              },
+              "required": [
+                "range_nm",
+                "ground_ft",
+                "ring"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "diagram_labels": {
+      "description": "The latitude and longitude labels in an FAA airport diagram's page text (\"46°51'N\", \"92°13'W\"), each once, as written, for the app to find where each is drawn.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DiagramLabelsInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "DiagramLabelsAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "diagram_graticule": {
+      "description": "How an airport diagram's page matches the ground, from its latitude and longitude labels placed on the page (points from its top left): the coordinate along lat_on_x's axis is a * lat + b, along the other c * lon + d; north_deg which way north points, clockwise from the page's top. Null with fewer than two of either, their scales more than 15% apart, or a mirrored page (wingtip.publications _graticule's check).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DiagramGraticuleInput",
+          "type": "object",
+          "properties": {
+            "labels": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "text",
+                  "x",
+                  "y"
+                ]
+              }
+            }
+          },
+          "required": [
+            "labels"
+          ]
+        },
+        "answer": {
+          "title": "DiagramGraticuleAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "lat_on_x": {
+                  "type": "boolean"
+                },
+                "a": {
+                  "type": "number"
+                },
+                "b": {
+                  "type": "number"
+                },
+                "c": {
+                  "type": "number"
+                },
+                "d": {
+                  "type": "number"
+                },
+                "north_deg": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat_on_x",
+                "a",
+                "b",
+                "c",
+                "d",
+                "north_deg"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "diagram_point": {
+      "description": "Where a point on the ground is on an airport diagram's page by its graticule, points from the top left, and whether it is on the page.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DiagramPointInput",
+          "type": "object",
+          "properties": {
+            "graticule": {
+              "type": "object",
+              "properties": {
+                "lat_on_x": {
+                  "type": "boolean"
+                },
+                "a": {
+                  "type": "number"
+                },
+                "b": {
+                  "type": "number"
+                },
+                "c": {
+                  "type": "number"
+                },
+                "d": {
+                  "type": "number"
+                },
+                "north_deg": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat_on_x",
+                "a",
+                "b",
+                "c",
+                "d",
+                "north_deg"
+              ]
+            },
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "width": {
+              "type": "number"
+            },
+            "height": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "graticule",
+            "lat",
+            "lon",
+            "width",
+            "height"
+          ]
+        },
+        "answer": {
+          "title": "DiagramPointAnswer",
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "on_page": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "x",
+            "y",
+            "on_page"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "strip_fuel": {
       "description": "The fuel figure in the strip at the sheet's foot, web, iPhone and Android alike: the fuel required to the landing of hop `hop` (the first where the route has stops, the tanks filled at each; the whole route's where it has none), less what a flight under way has burnt, never below nothing; and the flights the tanks fall short on, a fuel margin under nothing (14 CFR 91.151, 91.167).",
       "type": "object",
@@ -17265,6 +17914,12 @@
     "dry_run",
     "read_track",
     "thin_track",
+    "in_flight",
+    "vertical_speed",
+    "glide_ring",
+    "diagram_labels",
+    "diagram_graticule",
+    "diagram_point",
     "strip_fuel",
     "fuel_in_tanks",
     "fuel_estimate",

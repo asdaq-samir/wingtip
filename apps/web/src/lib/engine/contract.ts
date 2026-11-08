@@ -578,6 +578,55 @@ export type ReadTrackAnswer =
       error: string;
     };
 export type ThinTrackAnswer = unknown[];
+export type InFlightAnswer = {
+  on_route: boolean;
+  along_nm: number;
+  total_nm: number;
+  left_nm: number;
+  off_nm: number;
+  off_side: "left" | "right" | null;
+  desired_track_deg: number;
+  desired_track_mag_deg: number | null;
+  track_mag_deg: number | null;
+  track_error_deg: number | null;
+  variation_deg: number | null;
+  burnt_gal: number;
+  next: {
+    index: number;
+    name: string;
+    distance_nm: number;
+    bearing_deg: number;
+    bearing_mag_deg: number | null;
+    ete_min: number | null;
+    eta_s: number | null;
+    fuel_left_gal: number | null;
+  } | null;
+  destination: {
+    index: number;
+    name: string;
+    distance_nm: number;
+    bearing_deg: number;
+    bearing_mag_deg: number | null;
+    ete_min: number | null;
+    eta_s: number | null;
+    fuel_left_gal: number | null;
+  } | null;
+} | null;
+export type VerticalSpeedAnswer = number | null;
+export type GlideRingAnswer = {
+  range_nm: number;
+  ground_ft: number;
+  ring: [number, number][];
+} | null;
+export type DiagramLabelsAnswer = string[];
+export type DiagramGraticuleAnswer = {
+  lat_on_x: boolean;
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  north_deg: number;
+} | null;
 export type FuelInTanksAnswer = ({
   gal: number;
   low: boolean;
@@ -2048,6 +2097,48 @@ export interface EngineContract {
   thin_track: {
     input: ThinTrackInput;
     answer: ThinTrackAnswer;
+  };
+  /**
+   * A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves from fuel_start_gal. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
+   */
+  in_flight: {
+    input: InFlightInput;
+    answer: InFlightAnswer;
+  };
+  /**
+   * The vertical speed in feet a minute from GPS altitudes: the least-squares slope of the last 10 seconds of samples; null with fewer than three of them or under 2 seconds.
+   */
+  vertical_speed: {
+    input: VerticalSpeedInput;
+    answer: VerticalSpeedAnswer;
+  };
+  /**
+   * The still-air glide ring about own ship (#218): glide_range's radius (1.5 nm per 1,000 ft, the C172S POH figure 3-1) over the higher of the ground under the airplane (a pack's terrain) and the nearest field's elevation, and its outline as 73 points on the sphere, the first repeated last. Null on the ground, under flying speed or with no height.
+   */
+  glide_ring: {
+    input: GlideRingInput;
+    answer: GlideRingAnswer;
+  };
+  /**
+   * The latitude and longitude labels in an FAA airport diagram's page text ("46°51'N", "92°13'W"), each once, as written, for the app to find where each is drawn.
+   */
+  diagram_labels: {
+    input: DiagramLabelsInput;
+    answer: DiagramLabelsAnswer;
+  };
+  /**
+   * How an airport diagram's page matches the ground, from its latitude and longitude labels placed on the page (points from its top left): the coordinate along lat_on_x's axis is a * lat + b, along the other c * lon + d; north_deg which way north points, clockwise from the page's top. Null with fewer than two of either, their scales more than 15% apart, or a mirrored page (wingtip.publications _graticule's check).
+   */
+  diagram_graticule: {
+    input: DiagramGraticuleInput;
+    answer: DiagramGraticuleAnswer;
+  };
+  /**
+   * Where a point on the ground is on an airport diagram's page by its graticule, points from the top left, and whether it is on the page.
+   */
+  diagram_point: {
+    input: DiagramPointInput;
+    answer: DiagramPointAnswer;
   };
   /**
    * The fuel figure in the strip at the sheet's foot, web, iPhone and Android alike: the fuel required to the landing of hop `hop` (the first where the route has stops, the tanks filled at each; the whole route's where it has none), less what a flight under way has burnt, never below nothing; and the flights the tanks fall short on, a fuel margin under nothing (14 CFR 91.151, 91.167).
@@ -5519,6 +5610,73 @@ export interface ReadTrackInput {
 export interface ThinTrackInput {
   points: unknown[];
   most?: number | null;
+}
+export interface InFlightInput {
+  fix: {
+    lat: number;
+    lon: number;
+    track_deg?: number | null;
+    speed_kt?: number | null;
+  };
+  line?: [number, number][] | null;
+  points?:
+    | {
+        name: string;
+        lat: number;
+        lon: number;
+      }[]
+    | null;
+  legs?:
+    | {
+        distance_nm: number;
+        fuel_gal?: number | null;
+      }[]
+    | null;
+  fuel_start_gal?: number | null;
+  now_s?: number | null;
+}
+export interface VerticalSpeedInput {
+  samples: {
+    t_s: number;
+    altitude_ft?: number | null;
+  }[];
+}
+export interface GlideRingInput {
+  lat: number;
+  lon: number;
+  altitude_ft?: number | null;
+  speed_kt?: number | null;
+  terrain_ft?: number | null;
+  field_ft?: number | null;
+}
+export interface DiagramLabelsInput {
+  text: string;
+}
+export interface DiagramGraticuleInput {
+  labels: {
+    text: string;
+    x: number;
+    y: number;
+  }[];
+}
+export interface DiagramPointInput {
+  graticule: {
+    lat_on_x: boolean;
+    a: number;
+    b: number;
+    c: number;
+    d: number;
+    north_deg: number;
+  };
+  lat: number;
+  lon: number;
+  width: number;
+  height: number;
+}
+export interface DiagramPointAnswer {
+  x: number;
+  y: number;
+  on_page: boolean;
 }
 export interface StripFuelInput {
   fuel_required_gal?: number | null;

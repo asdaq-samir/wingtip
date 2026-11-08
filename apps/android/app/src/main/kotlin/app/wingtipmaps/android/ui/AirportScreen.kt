@@ -11,11 +11,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -140,6 +144,13 @@ fun PlaceCard(place: AirportPlace) {
         val where = listOfNotNull(place.ident, place.municipality, place.region).joinToString(" · ")
         Text(where, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         place.elevationFt?.let { Text("Elevation ${ft(it)}", style = MaterialTheme.typography.bodyMedium) }
+        // The FAA's diagram with the airplane on it, by the diagram's own
+        // latitude and longitude marks (#218).
+        place.airportDiagramUrl?.let { url ->
+            var open by remember { mutableStateOf(false) }
+            OutlinedButton(onClick = { open = true }) { Text("Diagram with Your Position") }
+            if (open) DiagramOwnShipDialog(place.ident, url) { open = false }
+        }
         val metar = place.metar
         if (metar?.raw != null) {
             Text(

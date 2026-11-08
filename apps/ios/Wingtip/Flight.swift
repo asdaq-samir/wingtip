@@ -1,9 +1,14 @@
 import CoreLocation
 import Foundation
 
-/// The figures of flying a planned route from where the airplane is: how
-/// far along the course line the position is, what is left, and the fuel
-/// burnt so far, the engine's (`route_position`).
+/// The small figures of a flight the screens share: whether the airplane
+/// is at flying speed (the engine's), which side of north the compass
+/// points, and the miles and bearing between two points for a list's
+/// sorting. Own ship's place on its route for the instruments and the
+/// strips -- the next waypoint, off the line, the fuel burnt -- is the
+/// engine's `in_flight` (InFlight); `route_position` (Position below) is
+/// the same projection for a position the ribbon and the Live Activity
+/// are given.
 enum Flight {
     /// Whether a groundspeed is flying speed, by the engine's rule
     /// (motion/glide.rs underway, AIRBORNE_KT 40 kt, the debrief's

@@ -11,6 +11,9 @@ struct FlightLayer {
     var path: [PathPoint] = []
     var past: [PathPoint] = []
     var flown: [PathPoint] = []
+    /// The glide ring about own ship (InFlight, the engine's glide_ring),
+    /// its outline; empty with none.
+    var glide: [CLLocationCoordinate2D] = []
     var onTraffic: ((TrafficAircraft) -> Void)?
     /// The pilot dragged the map off the airplane followed.
     var onDragged: (() -> Void)?
@@ -23,6 +26,9 @@ final class HeightPolyline: MKPolyline {
 
 /// The white casing under a flown path, so it holds over any chart colour.
 final class CasingPolyline: MKPolyline {}
+
+/// The still-air glide ring about own ship, dashed as the web app's.
+final class GlidePolyline: MKPolyline {}
 
 /// The ring round the airplane tracked, as the web app's TrafficLayer
 /// draws it.
@@ -58,6 +64,8 @@ final class FlightMapLayer: NSObject {
     private var lines: [String: [MKPolyline]] = [:]
     private var drawn: [String: [PathPoint]] = [:]
     private var centred: CLLocationCoordinate2D?
+    private var glideLine: GlidePolyline?
+    private var glideDrawn: [CLLocationCoordinate2D] = []
     private weak var map: MKMapView?
 
     func attach(_ map: MKMapView) {
@@ -85,6 +93,19 @@ final class FlightMapLayer: NSObject {
         draw("path", next.path, on: map)
         draw("past", next.past, on: map, fit: true)
         draw("flown", next.flown, on: map, fit: true)
+        drawGlide(next.glide, on: map)
+    }
+
+    /// The glide ring, drawn again only where it moved.
+    private func drawGlide(_ ring: [CLLocationCoordinate2D], on map: MKMapView) {
+        guard !ChartMap.samePath(ring, glideDrawn) else { return }
+        glideDrawn = ring
+        if let glideLine { map.removeOverlay(glideLine) }
+        glideLine = nil
+        guard ring.count >= 2 else { return }
+        let line = GlidePolyline(coordinates: ring, count: ring.count)
+        map.addOverlay(line, level: .aboveLabels)
+        glideLine = line
     }
 
     /// A path in its heights' colours over a white casing, drawn again
@@ -111,6 +132,15 @@ final class FlightMapLayer: NSObject {
     }
 
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
+        if let ring = overlay as? GlidePolyline {
+            // Dashed in the tint, as the web app's ring: what the airplane
+            // reaches in still air, not a boundary to fly by.
+            let renderer = MKPolylineRenderer(polyline: ring)
+            renderer.strokeColor = UIColor.systemBlue.withAlphaComponent(0.85)
+            renderer.lineWidth = 2
+            renderer.lineDashPattern = [8, 6]
+            return renderer
+        }
         if let casing = overlay as? CasingPolyline {
             let renderer = MKPolylineRenderer(polyline: casing)
             renderer.strokeColor = UIColor.white.withAlphaComponent(0.85)

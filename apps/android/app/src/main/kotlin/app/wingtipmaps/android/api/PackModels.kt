@@ -142,4 +142,7 @@ data class AheadAlert(
 data class Ahead(
     val alerts: List<AheadAlert>,
     val unavailable: List<String> = emptyList(),
+    /** The packs' ground under the airplane (their terrain grid's highest
+     *  in its cell, with its margin): the glide ring's ground (InFlight). */
+    @SerialName("ground_ft") val groundFt: Double? = null,
 )

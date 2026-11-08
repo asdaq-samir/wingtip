@@ -1,0 +1,276 @@
+package app.wingtipmaps.android.ui
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import app.wingtipmaps.android.api.AheadAlert
+import app.wingtipmaps.android.api.NearestAirport
+import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.nearest
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.flight.OwnShip
+import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import kotlin.math.roundToInt
+
+/**
+ * The top of the map in the air (#218), under the status bar and left of
+ * the buttons: what is ahead on the track (AlertsBanner, the planner's or
+ * the packs' alerts) and the flight's instruments (InstrumentsBar), where
+ * nothing else was drawn. Nothing moves for them.
+ */
+@Composable
+fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifier = Modifier) {
+    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    Column(modifier.padding(top = top + 8.dp, start = 8.dp, end = 64.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        AlertsBanner(ahead)
+        InstrumentsBar(state, onNearest)
+    }
+}
+
+/**
+ * What is ahead on the track, as the iOS app's and the web app's
+ * AlertsBanner: the soonest in the planner's words, red where it says
+ * stop or danger and amber otherwise, with the minutes and miles to it,
+ * and how many more.
+ */
+@Composable
+fun AlertsBanner(alerts: List<AheadAlert>) {
+    val first = alerts.minByOrNull { it.seconds } ?: return
+    val danger = first.level == "stop" || first.level == "danger"
+    Surface(color = if (danger) Color(0xFFD32F2F) else Color(0xFFF57C00), contentColor = Color.White, shape = MaterialTheme.shapes.medium) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
+                .semantics(mergeDescendants = true) {},
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(Icons.Filled.Warning, contentDescription = if (danger) "Danger ahead" else "Caution ahead")
+            Column(Modifier.weight(1f)) {
+                Text(first.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    "${first.need} · ${InstrumentsWords.minutes(first.seconds / 60)}, ${nm(first.distanceNm)}",
+                    style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (alerts.size > 1) Text("+${alerts.size - 1}", style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+/**
+ * The flight's instruments while the airplane is at flying speed: the
+ * groundspeed, track, GPS altitude and vertical speed; on the route the
+ * next waypoint's distance, time and the desired track, how far off the
+ * course line, and the destination's arrival; Nearest one tap away; and
+ * what the figures are -- a planning aid, not for navigation. Every
+ * figure is the engine's (InFlight), only the writing is here.
+ */
+@Composable
+fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
+    val fix = state.fix ?: return
+    if (!state.underway) return
+    val progress = state.progress
+    Surface(shape = MaterialTheme.shapes.large, tonalElevation = 3.dp, shadowElevation = 2.dp) {
+        Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row {
+                Cell("GS", fix.groundspeedKt?.let { "${it.roundToInt()} kt" } ?: "—", "Groundspeed")
+                Cell("TRK", InstrumentsWords.track(fix.trackDeg, progress?.trackMagDeg), "Track")
+                Cell("ALT", fix.altitudeFt?.let { String.format(Locale.US, "%,d", it.roundToInt()) } ?: "—", "GPS altitude in feet")
+                Cell("VS", InstrumentsWords.verticalSpeed(state.verticalFpm), "Vertical speed in feet a minute")
+            }
+            val next = progress?.next
+            if (progress != null && progress.onRoute && next != null) {
+                HorizontalDivider()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1.2f).semantics(mergeDescendants = true) { contentDescription = "Next, ${next.name}" }) {
+                        Text("NEXT", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(next.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Cell("DIS", String.format(Locale.US, if (next.distanceNm < 10) "%.1f" else "%.0f", next.distanceNm), "Distance in nautical miles")
+                    Cell("ETE", next.eteMin?.let(InstrumentsWords::minutesSeconds) ?: "—", "Time to go")
+                    Cell("DTK", degrees(progress.desiredTrackMagDeg ?: progress.desiredTrackDeg), "Desired track")
+                }
+                InstrumentsWords.offCourse(progress)?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                val dest = progress.destination
+                if (dest?.etaS != null) {
+                    Text(InstrumentsWords.arrival(dest, dest.etaS), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Material's tonal button: 40 dp drawn, its 48-dp touch
+                // target its own, nothing grown.
+                FilledTonalButton(onClick = onNearest) { Text("Nearest") }
+                Text(
+                    "Planning aid · not for navigation",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.Cell(name: String, value: String, spoken: String) {
+    Column(
+        Modifier.weight(1f).clearAndSetSemantics { contentDescription = "$spoken, $value" },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** The bar's writing of the engine's figures, kept apart so it is tested
+ *  without a screen. */
+object InstrumentsWords {
+    /** The track magnetic where the engine knows the variation (a route
+     *  flown), else true and marked T. */
+    fun track(trueDeg: Double?, magnetic: Double?): String = when {
+        magnetic != null -> degrees(magnetic)
+        trueDeg != null -> "${degrees(trueDeg)}T"
+        else -> "—"
+    }
+
+    /** Feet a minute to the nearest ten, as a VSI is read; signed. */
+    fun verticalSpeed(fpm: Double?): String {
+        fpm ?: return "—"
+        val r = (fpm / 10).roundToInt() * 10
+        return if (r > 0) String.format(Locale.US, "+%,d", r) else String.format(Locale.US, "%,d", r)
+    }
+
+    /** Minutes as a clock counts them down, "7:05"; past an hour "1h 12m". */
+    fun minutesSeconds(minutes: Double): String {
+        if (minutes >= 60) return hoursMinutes(minutes)
+        val s = (minutes * 60).roundToInt()
+        return String.format(Locale.US, "%d:%02d", s / 60, s % 60)
+    }
+
+    /** Whole minutes, "12 min". */
+    fun minutes(minutes: Double): String = "${minutes.roundToInt()} min"
+
+    /** The UTC clock time a flight plan and ATC use, "1432Z". */
+    fun zulu(unixS: Double): String =
+        DateTimeFormatter.ofPattern("HHmm'Z'", Locale.US).withZone(ZoneOffset.UTC).format(Instant.ofEpochMilli((unixS * 1000).toLong()))
+
+    /** How far off the course line and which side; null within a tenth. */
+    fun offCourse(p: InFlight.Progress): String? {
+        val side = p.offSide ?: return null
+        if (p.offNm < 0.1) return null
+        return "${nm(p.offNm)} $side of course"
+    }
+
+    /** The destination's arrival and the fuel the plan leaves there. */
+    fun arrival(dest: InFlight.Waypoint, etaS: Double): String {
+        val line = "${dest.name} at ${zulu(etaS)}, ${dest.distanceNm.roundToInt()} nm"
+        return dest.fuelLeftGal?.let { "$line, about ${gal(maxOf(0.0, it))} left by the plan" } ?: line
+    }
+}
+
+/**
+ * Nearest, one tap from the bar (#218): the fields nearest the airplane,
+ * the miles and the way to each, and which are within a still-air glide
+ * at pattern height (the engine's glide_reaches, AC 90-66C's 1,000 ft
+ * over the field). A tap opens the field's card.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Unit) {
+    var fields by remember { mutableStateOf<List<NearestAirport>?>(null) }
+    var problem by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(fix == null) {
+        val at = fix ?: return@LaunchedEffect
+        try {
+            fields = Planner.nearest(at.lat, at.lon, limit = 10)
+            problem = null
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            problem = "The nearest fields could not be found. ${e.message ?: ""}".trim()
+        }
+    }
+    ModalBottomSheet(onDismissRequest = onClose) {
+        Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Nearest", style = MaterialTheme.typography.titleLarge)
+            when {
+                fix == null -> Text("Finding your position…", style = MaterialTheme.typography.bodyMedium)
+                problem != null -> ProblemLine(problem)
+                fields == null -> Text("Fetching the nearest fields…", style = MaterialTheme.typography.bodyMedium)
+            }
+            LazyColumn {
+                items(fields.orEmpty(), key = { it.ident }) { field ->
+                    val reach = fix != null && glideReaches(fix, field)
+                    Column(Modifier.fillMaxWidth().clickable { onOpen(field.ident) }.padding(vertical = 10.dp)) {
+                        Text("${field.ident}  ${field.name}", style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        val parts = listOfNotNull(
+                            "${nm(field.distanceNm)} ${degrees(field.bearingDeg)}T",
+                            field.longestRunwayFt?.let { String.format(Locale.US, "%,d ft runway", it) },
+                            if (reach) "within a glide" else null,
+                        )
+                        Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    HorizontalDivider()
+                }
+            }
+        }
+    }
+}
+
+@Serializable
+private class ReachAsk(
+    @SerialName("altitude_ft") val altitudeFt: Double?,
+    @SerialName("speed_kt") val speedKt: Double?,
+    @SerialName("distance_nm") val distanceNm: Double,
+    @SerialName("elevation_ft") val elevationFt: Double?,
+)
+
+/** Whether a field is within a still-air glide at pattern height, by the
+ *  engine's glide_reaches over the field's own elevation. */
+fun glideReaches(fix: OwnShip.Fix, field: NearestAirport): Boolean =
+    runCatching {
+        Engine.call<ReachAsk, Boolean>("glide_reaches", ReachAsk(fix.altitudeFt, fix.groundspeedKt, field.distanceNm, field.elevationFt))
+    }.getOrDefault(false)

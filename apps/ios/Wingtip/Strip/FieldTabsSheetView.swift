@@ -28,7 +28,6 @@ import SwiftUI
 struct FieldTabsSheetView: View {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
-    @Environment(DryRun.self) private var dryRun
     @Environment(Session.self) private var session
     @Environment(Verdict.self) private var verdict
     @Environment(\.chartInk) private var ink
@@ -94,11 +93,10 @@ struct FieldTabsSheetView: View {
     }
 
     /// In the air on the route -- moving, within 3 nm of the line -- as
-    /// FiguresStrip counts it: a dry run's airplane counts as flying.
+    /// FiguresStrip counts it (the engine's `in_flight`, InFlight): a dry
+    /// run's airplane counts as flying.
     private var flyingFix: OwnShip.Fix? {
-        guard let fix = dryRun.fix ?? ownShip.fix, let gs = fix.groundspeedKt, Flight.underway(gs), let course = plan.course,
-              Flight.position(fix.coordinate, line: course.coordinates)?.onRoute == true else { return nil }
-        return fix
+        InFlight.shared.onRoute ? InFlight.shared.fix : nil
     }
 
     private var flying: Bool { flyingFix != nil }

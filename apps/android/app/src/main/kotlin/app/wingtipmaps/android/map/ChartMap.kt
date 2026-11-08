@@ -66,6 +66,9 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param ownShip the airplane's fix (OwnShip), drawn as the blue dot;
  *   null for none, or own ship off.
  * @param trail the path flown (OwnTrail), drawn under the route.
+ * @param glide the still-air glide ring about own ship (InFlight, the
+ *   engine's glide_ring), its outline as latitude and longitude pairs,
+ *   drawn dashed; empty for none.
  * @param follow whether the map keeps the airplane in the middle; a
  *   drag of the map ends it (`onDragged`), as Apple Maps lets go.
  * @param overlays the cycle's overlay tiles, in the first style with
@@ -107,6 +110,7 @@ fun ChartMap(
     opensAt: Pair<Double, Double>? = null,
     ownShip: OwnShip.Fix? = null,
     trail: List<PathPoint> = emptyList(),
+    glide: List<List<Double>> = emptyList(),
     follow: Boolean = false,
     onDragged: () -> Unit = {},
     onRevealed: () -> Unit = {},
@@ -152,6 +156,7 @@ fun ChartMap(
     LaunchedEffect(holder, weather) { holder.weather(weather) }
     LaunchedEffect(holder, closeTiles) { holder.close(closeTiles) }
     LaunchedEffect(holder, traffic, tracked) { holder.traffic(traffic, tracked) }
+    LaunchedEffect(holder, glide) { holder.glide(glide) }
 
     AndroidView(factory = { holder.view }, modifier = modifier)
 }
@@ -204,6 +209,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             if (lastTraffic.isNotEmpty() && !destroyed) handler.postDelayed(this, CARRY_MS)
         }
     }
+    private var lastGlide: List<List<Double>> = emptyList()
 
     fun on(event: Lifecycle.Event) {
         if (destroyed) return
@@ -254,6 +260,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 close(map, style, lastClose)
                 route(style, line)
                 trail(style, lastTrail)
+                glide(style, lastGlide)
                 ownShip(map, style, lastFix, lastFollow)
                 drawTraffic()
             }
@@ -433,6 +440,36 @@ private class MapHolder(val view: MapView, private val density: Float) {
         lastTrail = points
         if (destroyed) return
         view.getMapAsync { map -> map.getStyle { style -> trail(style, points) } }
+    }
+
+    fun glide(ring: List<List<Double>>) {
+        lastGlide = ring
+        if (destroyed) return
+        view.getMapAsync { map -> map.getStyle { style -> glide(style, ring) } }
+    }
+
+    /** The glide ring, dashed in the tint as the web app's and the
+     *  iPhone's: what the airplane reaches in still air, not a boundary
+     *  to fly by. Under the route and the airplane. */
+    private fun glide(style: Style, ring: List<List<Double>>) {
+        val geoJson = lineJson(ring.filter { it.size == 2 }.map { it[0] to it[1] })
+        val source = style.getSourceAs<GeoJsonSource>(GLIDE)
+        if (source != null) {
+            source.setGeoJson(geoJson)
+            return
+        }
+        style.addSource(GeoJsonSource(GLIDE, geoJson))
+        val layer = LineLayer(GLIDE, GLIDE).withProperties(
+            PropertyFactory.lineColor(Color.rgb(0, 122, 255)),
+            PropertyFactory.lineWidth(2f),
+            PropertyFactory.lineOpacity(0.85f),
+            PropertyFactory.lineDasharray(arrayOf(4f, 3f)),
+        )
+        when {
+            style.getLayer(ROUTE) != null -> style.addLayerBelow(layer, ROUTE)
+            style.getLayer(MapStyle.ROUTE_SLOT) != null -> style.addLayerBelow(layer, MapStyle.ROUTE_SLOT)
+            else -> style.addLayer(layer)
+        }
     }
 
     /** The map opened on the airplane's last position at a region's
@@ -616,6 +653,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         const val TAP_LINE = 10f
         /** How often each airplane is carried on between answers. */
         const val CARRY_MS = 1_000L
+        const val GLIDE = "glide-ring"
         /** The sectional's own scale, where the airplane's surroundings
          *  read: the web app's zoom on a position (lib/map). */
         const val FOLLOW_ZOOM = 9.0

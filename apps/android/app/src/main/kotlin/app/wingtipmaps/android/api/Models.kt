@@ -66,6 +66,10 @@ typealias Metar = app.wingtipmaps.android.api.generated.Metar
 /** A field's card: its weather, runways, frequencies and pattern. */
 typealias AirportPlace = app.wingtipmaps.android.api.generated.AirportPlace
 
+/** A field near a point (/api/airports/nearest), nearest first: its
+ *  distance and true bearing from the point, its elevation. */
+typealias NearestAirport = app.wingtipmaps.android.api.generated.NearestAirport
+
 /** A route's two ends and its stops, as /api/course gives them
  *  (AirportEnd), and the route as entered with the great-circle line
  *  between them as pairs of latitude and longitude (Course). */

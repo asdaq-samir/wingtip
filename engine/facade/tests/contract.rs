@@ -500,6 +500,25 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     let ways = c.ask("class_b_detours", json!({ "start": [0.0, 0.0], "end": [1.0, 0.0], "below_ft": 4500, "shelves": shelves,
         "fixes": [{ "ident": "VPNEAR", "lat": 0.5, "lon": -0.2, "vfr": true, "kind": "VFR waypoint" }] }));
     assert_eq!(ways[0]["ident"], "VPNEAR");
+    // The instruments in flight and own ship on an airport diagram (#218),
+    // on a route from Duluth east and north.
+    let line = json!([[46.84, -92.19], [46.84, -91.5], [47.2, -91.5]]);
+    let points = json!([{ "name": "KDLH", "lat": 46.84, "lon": -92.19 }, { "name": "TURN", "lat": 46.84, "lon": -91.5 },
+        { "name": "KTWM", "lat": 47.2, "lon": -91.5 }]);
+    let flying = c.ask("in_flight", json!({ "fix": { "lat": 46.85, "lon": -91.8, "track_deg": 92, "speed_kt": 115 }, "line": line,
+        "points": points, "legs": [{ "distance_nm": 28.3, "fuel_gal": 3.1 }, { "distance_nm": 21.6, "fuel_gal": 2.2 }],
+        "fuel_start_gal": 40, "now_s": 1_793_620_000 }));
+    assert_eq!(flying["next"]["name"], json!("TURN"));
+    c.ask("in_flight", json!({ "fix": { "lat": 46.85, "lon": -91.8 }, "line": [], "points": [] }));
+    c.ask("vertical_speed", json!({ "samples": [{ "t_s": 0, "altitude_ft": 3000 }, { "t_s": 5, "altitude_ft": 3040 }, { "t_s": 10, "altitude_ft": 3080 }] }));
+    c.ask("glide_ring", json!({ "lat": 46.85, "lon": -91.8, "altitude_ft": 5500, "speed_kt": 115, "terrain_ft": 1400, "field_ft": 1428 }));
+    c.ask("glide_ring", json!({ "lat": 46.85, "lon": -91.8, "speed_kt": 115 }));
+    c.ask("diagram_labels", json!({ "text": "46°51'N 46°50'N 92°13'W ELEV 1428" }));
+    let graticule = c.ask("diagram_graticule", json!({ "labels": [
+        { "text": "46°51'N", "x": 69.3, "y": 77.2 }, { "text": "46°50'N", "x": 296.6, "y": 76.6 },
+        { "text": "92°13'W", "x": 363.8, "y": 486.0 }, { "text": "92°12'W", "x": 362.7, "y": 328.2 }] }));
+    c.ask("diagram_point", json!({ "graticule": graticule, "lat": 46.84, "lon": -92.2, "width": 387.36, "height": 594 }));
+    c.ask("diagram_graticule", json!({ "labels": [] }));
 
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.

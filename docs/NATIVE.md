@@ -83,6 +83,7 @@ is docs/NATIVE-ANDROID.md.
 | Flight plan items 15 and 16 (AIM Appendix 4; 14 CFR 91.121(a)(2)) | `lib/flightPlanForm.ts` | Swift: `FilingForm` in `Views/InFlightViews.swift` | `filingForm.json` |
 | Traffic's label and the 1,000 ft "near" (14 CFR 91.159's spacing) | `lib/map/traffic.ts` | the engine: `traffic_marks` (`Traffic.marks`) | `traffic.json` |
 | A watched airplane in the air, a takeoff or landing watch going off | `lib/aircraftAlerts.ts` | the engine: `airborne_now`, `alert_fires` (`Tracking`) | the engine's own tests |
+| In flight: where the airplane is on its route, the next waypoint and the destination, the desired track, the fuel left; the vertical speed; the glide ring; own ship on an airport diagram (#218) | `navlog/dryRun.ts`, `lib/map/glide.ts` | the engine: `in_flight`, `vertical_speed`, `glide_ring`, `diagram_labels`, `diagram_graticule`, `diagram_point` (`InFlight`, `InstrumentsBar`, `DiagramPage`) | the engine's own tests, `InFlightTests` |
 | The dry run, and a GPX or KML track read | `navlog/dryRun.ts`, `lib/track.ts` | the engine: `dry_run`, `read_track`, `thin_track` (`DryRun`, `GPXTrack`) | the engine's own tests |
 | The logbook as CSV, out and in (ForeFlight Logbook Guide v14.0; 61.57(a), (b)) | `lib/logbookCsv.ts` | the engine: `csv_rows`, `logbook_csv_read`, `logbook_csv_write` (`LogbookCSV`) | `logbookCsv.json` |
 | Endorsements' words, the lapse warning (61.197), those in force, ACS codes; a handbook page's figures | `lib/endorsements.ts`, `lib/checkride.ts`, `lib/handbookText.ts` | the engine: `endorsement_render`, `endorsement_lapse`, `endorsements_in_force`, `acs_codes`, `handbook_figures` | the engine's own tests |
@@ -163,6 +164,26 @@ owner, 2026-11-03):
   a flight in progress on the Lock Screen and in the Dynamic Island with
   the next checkpoint, the ETA and the fuel, from the dry run or own ship
   under way with a routed plan.
+- **In flight** (#218, the owner's option A of 2026-11-08):
+  `Wingtip/InFlight.swift` is the view model each fix (own ship's or the
+  dry run's) is asked of the engine through once -- `in_flight`,
+  `vertical_speed`, `glide_ring` -- and FiguresStrip, both strip layouts,
+  the bar and the map read it. At flying speed `Views/InstrumentsBar.swift`
+  sits over the map under the alerts and the radio: groundspeed, track
+  (magnetic on a route, else marked T), GPS altitude, vertical speed; on
+  the route the next waypoint's distance, time to go and desired track,
+  the distance off course and the destination's arrival in Zulu with the
+  fuel the plan leaves; Nearest (the Nearest list with Divert) one tap
+  away; and "Planning aid · not for navigation". The glide ring is drawn
+  dashed about the airplane (`FlightMapLayer`'s `GlidePolyline`) over the
+  higher of the packs' ground under it (the packs' ahead answer's
+  `ground_ft`, asked with the alerts network or none) and the nearest
+  field. A field's Charts list has Diagram with your position
+  (`Views/DiagramOwnShip.swift`): the FAA's PDF drawn by PDFKit, own ship
+  placed by the diagram's own latitude and longitude marks (the free
+  d-TPP's diagrams have no GeoPDF georeference; KORD's and a few others
+  have no marks, and say so). FIS-B weather from ADS-B In is still to
+  come.
 - **The privacy manifest** (`Wingtip/PrivacyInfo.xcprivacy`): what is
   collected and the required-reason APIs used; the session is cookies in
   `HTTPCookieStorage`, and `UserDefaults` holds no secret.
