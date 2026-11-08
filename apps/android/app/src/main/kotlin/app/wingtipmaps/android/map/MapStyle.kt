@@ -12,6 +12,7 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
@@ -28,10 +29,23 @@ import kotlinx.serialization.json.putJsonObject
  * symbols wear are OverlayPictures'.
  */
 object MapStyle {
-    /** The chart's raster layers, bottom first (chartPaint is set on each). */
+    /** The chart's raster layers, bottom first (chartPaint is set on each):
+     *  the region's level, the base chart, and the terminal area chart
+     *  pinned over it (Setup's Terminal Area Charts, the web's `tac`). */
     const val CHART_UNDER = "chart-under"
     const val CHART = "chart"
-    val CHART_LAYERS = listOf(CHART_UNDER, CHART)
+    const val CHART_TERMINAL = "chart-terminal"
+    val CHART_LAYERS = listOf(CHART_UNDER, CHART, CHART_TERMINAL)
+
+    /** Close in, past the chart's own detail, the street map fades in over
+     *  it (the web's BaseGl CloseTiles): the sectional is drawn from
+     *  1:500,000, about 42 m a pixel at its last zoom, so past MapLibre's
+     *  12 it is only enlarged; from there to 13 the street map comes in
+     *  under the runways, as ForeFlight's does, and the map may go to 17. */
+    const val CLOSE = "close-street"
+    const val CLOSE_FROM = 12.0
+    const val CLOSE_FULL = 13.0
+    const val CLOSE_MAX_ZOOM = 17.0
 
     /** The overlay tiles' source, as the web's OVERLAY_SOURCE. */
     const val OVERLAY_SOURCE = "faa-overlays"
@@ -141,10 +155,29 @@ object MapStyle {
     val USES = listOf("", "private", "military", "heliport")
 
     /** A field's symbol's picture by what it is drawn as: towered or not,
-     *  its size, its use (the web's airportMarkId, with no weather pip:
-     *  the phone has no METARs on the map yet). */
-    fun airportMarkId(towered: Boolean, size: String, use: String): String =
-        "apt|${if (towered) "t" else "u"}|$size||$use"
+     *  its size, its weather pip's colour ("" for none) and its use (the
+     *  web's airportMarkId). */
+    fun airportMarkId(towered: Boolean, size: String, pip: String, use: String): String =
+        "apt|${if (towered) "t" else "u"}|$size|$pip|$use"
+
+    /** Each flight category's colour, the web's (lib/map/flightCategory
+     *  CATEGORY_COLOURS): green good, blue marginal, red instrument,
+     *  magenta worse, in the colours a pilot already reads them in. The
+     *  category itself is the planner's, worked out by the engine
+     *  (`flight_category`, AIM 7-1-7); only its colour is the app's. */
+    val CATEGORY_COLOURS: Map<String, String> = linkedMapOf(
+        "VFR" to "#1a7f37",
+        "MVFR" to "#1f6feb",
+        "IFR" to "#b3261e",
+        "LIFR" to "#a371f7",
+    )
+
+    /** The pips a field can wear: none, or a category's colour. */
+    val PIPS: List<String> = listOf("") + CATEGORY_COLOURS.values
+
+    /** A field's pip's colour by its METAR's category; none where it has
+     *  no report or a category the map has no colour for. */
+    fun pipOf(category: String?): String = category?.let { CATEGORY_COLOURS[it] } ?: ""
 
     // ---- The style ----------------------------------------------------
 
@@ -157,7 +190,15 @@ object MapStyle {
      * A layer of an archive that has not got it (an older build's) is
      * left out.
      */
-    fun styleJson(template: TileTemplate, minZoom: Int, maxZoom: Int, overlays: OverlayTiles?, night: Boolean): String =
+    fun styleJson(
+        template: TileTemplate,
+        minZoom: Int,
+        maxZoom: Int,
+        overlays: OverlayTiles?,
+        night: Boolean,
+        layers: MapLayers = MapLayers(),
+        weather: Map<String, String> = emptyMap(),
+    ): String =
         buildJsonObject {
             put("version", 8)
             put("glyphs", GLYPHS)
@@ -174,6 +215,17 @@ object MapStyle {
                         put("url", overlayUrl(overlays))
                     }
                 }
+                // The traffic's airplanes and their trend lines, empty until
+                // an answer comes (ChartMap sets them).
+                for (id in listOf(TRAFFIC, TRAFFIC_TREND)) {
+                    putJsonObject(id) {
+                        put("type", "geojson")
+                        putJsonObject("data") {
+                            put("type", "FeatureCollection")
+                            putJsonArray("features") {}
+                        }
+                    }
+                }
             }
             putJsonArray("layers") {
                 val paint = chartPaint(night)
@@ -181,13 +233,14 @@ object MapStyle {
                     add(rasterLayer(CHART_UNDER, paint, minzoom = glZoom(maxOf(minZoom, UNDERLAY_ZOOM).toDouble())))
                 }
                 add(rasterLayer(CHART, paint))
-                for (layer in overlayLayers(overlays, lines = true)) add(layer)
+                for (layer in overlayLayers(overlays, lines = true, layers, weather)) add(layer)
                 addJsonObject {
                     put("id", ROUTE_SLOT)
                     put("type", "background")
                     putJsonObject("layout") { put("visibility", "none") }
                 }
-                for (layer in overlayLayers(overlays, lines = false)) add(layer)
+                for (layer in overlayLayers(overlays, lines = false, layers, weather)) add(layer)
+                for (layer in trafficLayers()) add(layer)
             }
         }.toString()
 
@@ -218,27 +271,67 @@ object MapStyle {
         }
     }
 
+    /** The ids of the layers each switch turns off (the web's
+     *  AIRSPACE_TILE_LAYERS, NAVAID_TILE_LAYERS), and the ones a tap is
+     *  looked for in (the web's useGlTap layers). */
+    val AIRSPACE_LINES = listOf("airspace-D", "airspace-C", "airspace-B")
+    val AIRSPACE_LAYERS = AIRSPACE_LINES + "airspace-labels"
+    val NAVAID_LAYERS = listOf("navaids", "navaids-idents", "fixes", "fixes-idents")
+    const val AIRPORTS = "airports"
+    const val VORS = "navaids"
+    const val FIXES = "fixes"
+    const val WAYPOINTS = "vfr-waypoints"
+
+    /** Whether a layer is drawn with the switches as they are (the web's
+     *  applyOverlayFilters): the airspace's and the navaids' layers each
+     *  follow their switch; every other is always drawn. */
+    fun visible(id: String, layers: MapLayers): Boolean = when (id) {
+        in AIRSPACE_LAYERS -> layers.airspace
+        in NAVAID_LAYERS -> layers.navaids
+        else -> true
+    }
+
     /** The overlay layers of one part: the lines (runways, airspace) or
-     *  the marks (navaids, fixes, airports); none without an archive. */
-    fun overlayLayers(tiles: OverlayTiles?, lines: Boolean): List<JsonObject> {
+     *  the marks (navaids, fixes, airports); none without an archive. The
+     *  switches as each layer's visibility and the airports' filter, the
+     *  fields' weather as their pips. */
+    fun overlayLayers(
+        tiles: OverlayTiles?,
+        lines: Boolean,
+        layers: MapLayers = MapLayers(),
+        weather: Map<String, String> = emptyMap(),
+    ): List<JsonObject> {
         if (tiles == null) return emptyList()
         val has = tiles.layers.map { it.name }.toSet()
-        return if (lines) {
+        val specs = if (lines) {
             (if ("runways" in has) runwayLayers() else emptyList()) +
                 (if ("airspace" in has) airspaceLayers() else emptyList())
         } else {
-            val vor = e("match", e("get", "kind"), VOR_KINDS, true, false)
-            val fix = e("all", e("==", e("get", "enroute_low"), true), e("!=", e("get", "vfr"), true))
-            val waypoint = e("==", e("get", "vfr"), true)
-            (if ("navaids" in has) navaidMarks("navaids", "navaids", "vor", vor, VOR_ZOOM) else emptyList()) +
-                (if ("fixes" in has) {
-                    navaidMarks("fixes", "fixes", "fix", fix, FIX_ZOOM) +
-                        navaidMarks("vfr-waypoints", "fixes", "vfr", waypoint, FIX_ZOOM)
-                } else {
-                    emptyList()
-                }) +
-                (if ("airports" in has) listOf(airportsLayer()) else emptyList())
+            marks(has, layers, weather)
         }
+        return specs.map { spec ->
+            val id = spec["id"]!!.jsonPrimitive.content
+            if (visible(id, layers)) {
+                spec
+            } else {
+                val layout = (spec["layout"] as? JsonObject).orEmpty() + ("visibility" to JsonPrimitive("none"))
+                JsonObject(spec + ("layout" to JsonObject(layout)))
+            }
+        }
+    }
+
+    private fun marks(has: Set<String>, layers: MapLayers, weather: Map<String, String>): List<JsonObject> {
+        val vor = e("match", e("get", "kind"), VOR_KINDS, true, false)
+        val fix = e("all", e("==", e("get", "enroute_low"), true), e("!=", e("get", "vfr"), true))
+        val waypoint = e("==", e("get", "vfr"), true)
+        return (if ("navaids" in has) navaidMarks(VORS, "navaids", "vor", vor, VOR_ZOOM) else emptyList()) +
+            (if ("fixes" in has) {
+                navaidMarks(FIXES, "fixes", "fix", fix, FIX_ZOOM) +
+                    navaidMarks(WAYPOINTS, "fixes", "vfr", waypoint, FIX_ZOOM)
+            } else {
+                emptyList()
+            }) +
+            (if ("airports" in has) listOf(airportsLayer(layers, weather)) else emptyList())
     }
 
     /** A figure of a tile's feature in the sectional's hundreds of feet:
@@ -420,22 +513,47 @@ object MapStyle {
     )
     private val TOWERED = e("==", e("get", "towered"), true)
 
+    /** Which fields are drawn (the web's applyOverlayFilters): the armed
+     *  services' own fields and the private ones only where their switch
+     *  is on; a joint-use field (NASR's military "joint") always. */
+    fun airportsFilter(layers: MapLayers): JsonArray = e(
+        "all",
+        *listOfNotNull(
+            if (layers.military) null else e("!=", e("get", "military"), "military"),
+            if (layers.privateFields) null else e("!=", e("get", "use"), "private"),
+        ).toTypedArray(),
+    )
+
+    /** A field's weather pip by its ident (the web's weatherExpression):
+     *  the fields of each colour in one branch of a match; "" before the
+     *  METARs are in or where a field has none. */
+    fun weatherExpression(colours: Map<String, String>): JsonElement {
+        if (colours.isEmpty()) return JsonPrimitive("")
+        val byColour = colours.entries.groupBy({ it.value }, { it.key })
+        val branches = byColour.entries.sortedBy { it.key }.flatMap { (colour, idents) -> listOf(idents.sorted(), colour) }
+        return e("match", e("get", "ident"), *branches.toTypedArray(), "")
+    }
+
+    /** The airports' symbol's picture by its ink, size, weather and use
+     *  (airportMarkId), an expression on the tile's fields. */
+    fun airportIcon(colours: Map<String, String>): JsonArray =
+        e("concat", "apt|", e("case", TOWERED, "t", "u"), "|", AIRPORT_SIZE, "|", weatherExpression(colours), "|", AIRPORT_USE)
+
     /** The airports' one symbol layer (the web's airportMarksLayer): the
-     *  mark by its ink, size and use, its ident beside it in bold in the
-     *  field's ink (the sectional sets an airport's name in the symbol's
-     *  colour, Chart User's Guide, Airports), kept apart by MapLibre's
-     *  collision in `rank` order. The armed services' own fields and
-     *  private ones are left off, as the web's settings leave them by
-     *  default; a joint-use field is drawn. */
-    private fun airportsLayer(): JsonObject = buildJsonObject {
+     *  mark by its ink, size, weather and use, its ident beside it in bold
+     *  in the field's ink (the sectional sets an airport's name in the
+     *  symbol's colour, Chart User's Guide, Airports), kept apart by
+     *  MapLibre's collision in `rank` order, the fields the switches hide
+     *  left off (airportsFilter). */
+    private fun airportsLayer(layers: MapLayers, weather: Map<String, String>): JsonObject = buildJsonObject {
         val farthest = glZoom(AIRPORTS_FARTHEST_ZOOM)
-        put("id", "airports")
+        put("id", AIRPORTS)
         put("type", "symbol")
         from("airports")
         put("minzoom", farthest)
-        put("filter", e("all", e("!=", e("get", "military"), "military"), e("!=", e("get", "use"), "private")))
+        put("filter", airportsFilter(layers))
         putJsonObject("layout") {
-            put("icon-image", e("concat", "apt|", e("case", TOWERED, "t", "u"), "|", AIRPORT_SIZE, "||", AIRPORT_USE))
+            put("icon-image", airportIcon(weather))
             // Smaller out at a state's width, a field's own size closer in,
             // following a pinch frame by frame.
             put("icon-size", e("interpolate", e("linear"), e("zoom"), farthest, 0.7, glZoom(10.0), 1, glZoom(13.0), 1.25))
@@ -457,6 +575,126 @@ object MapStyle {
             put("text-halo-color", "#ffffff")
             put("text-halo-width", 2)
         }
+    }
+
+    // ---- Traffic ------------------------------------------------------
+
+    /** The traffic's sources and layers (the web's TrafficGl, drawn there
+     *  as markers): the airplanes, their trend lines, the ring round the
+     *  one tracked and the height and callsign under each. Over every
+     *  other layer, as the thing on the map that moves most. */
+    const val TRAFFIC = "traffic"
+    const val TRAFFIC_TREND = "traffic-trend"
+    const val TRAFFIC_TRACKED = "traffic-tracked"
+    const val TRAFFIC_LABELS = "traffic-labels"
+
+    /** Traffic's colours (the web's TRAFFIC_COLOURS): within 1,000 ft of
+     *  own ship's height amber (the engine's `traffic_marks` `near`), the
+     *  rest the ADS-B displays' cyan; a near airplane's height in a paler
+     *  amber on its dark tag. The tracked one's ring is the blue tint. */
+    const val TRAFFIC_NEAR = "#f59e0b"
+    const val TRAFFIC_FAR = "#06b6d4"
+    const val TRAFFIC_NEAR_TEXT = "#fcd34d"
+    const val TINT = "#007aff"
+
+    /** An airplane's picture: a chevron turned to its track, or a dot
+     *  where it sends none, amber or cyan. */
+    fun trafficIconId(near: Boolean, hasTrack: Boolean): String =
+        "traffic|${if (near) "near" else "far"}${if (hasTrack) "" else "|dot"}"
+
+    const val TRAFFIC_TAG = "traffic|tag"
+
+    /** Heights from Leaflet's 9 and callsigns from 10 (the web's
+     *  HEIGHT_ZOOM, CALLSIGN_ZOOM); the tracked airplane's always. */
+    const val TRAFFIC_HEIGHT_ZOOM = 9.0
+    const val TRAFFIC_CALLSIGN_ZOOM = 10.0
+
+    /** What is written under an airplane: nothing further out than the
+     *  heights' zoom, its height from there, its height and callsign from
+     *  the callsigns' zoom; the tracked one's both at every zoom. */
+    private val TRAFFIC_TEXTS: List<JsonArray> = run {
+        val tracked = e("==", e("get", "tracked"), true)
+        listOf(
+            e("case", tracked, e("get", "both"), ""),
+            e("case", tracked, e("get", "both"), e("get", "label")),
+            e("get", "both"),
+        )
+    }
+
+    /** By zoom, MapLibre's zoom expressions being a top-level step's input
+     *  alone: at each step, the text, or `of` each step's text. */
+    private fun byTrafficZoom(of: (JsonArray) -> JsonElement): JsonArray = e(
+        "step", e("zoom"),
+        of(TRAFFIC_TEXTS[0]), glZoom(TRAFFIC_HEIGHT_ZOOM), of(TRAFFIC_TEXTS[1]), glZoom(TRAFFIC_CALLSIGN_ZOOM), of(TRAFFIC_TEXTS[2]),
+    )
+
+    val TRAFFIC_TEXT: JsonArray = byTrafficZoom { it }
+
+    /** No tag where there is no text, so an empty one is not drawn. */
+    val TRAFFIC_TAG_IMAGE: JsonArray = byTrafficZoom { e("case", e("==", it, ""), "", TRAFFIC_TAG) }
+
+    fun trafficLayers(): List<JsonObject> {
+        val near = e("==", e("get", "near"), true)
+        val tracked = e("==", e("get", "tracked"), true)
+        return listOf(
+            buildJsonObject {
+                put("id", TRAFFIC_TREND)
+                put("type", "line")
+                put("source", TRAFFIC_TREND)
+                putJsonObject("layout") { put("line-cap", "round") }
+                putJsonObject("paint") {
+                    put("line-color", e("case", near, TRAFFIC_NEAR, TRAFFIC_FAR))
+                    put("line-width", 2)
+                }
+            },
+            buildJsonObject {
+                put("id", TRAFFIC_TRACKED)
+                put("type", "circle")
+                put("source", TRAFFIC)
+                put("filter", tracked)
+                putJsonObject("paint") {
+                    put("circle-radius", 15)
+                    put("circle-color", "rgba(255,255,255,0.7)")
+                    put("circle-stroke-color", TINT)
+                    put("circle-stroke-width", 2.5)
+                }
+            },
+            buildJsonObject {
+                put("id", TRAFFIC)
+                put("type", "symbol")
+                put("source", TRAFFIC)
+                putJsonObject("layout") {
+                    put("icon-image", e("get", "icon"))
+                    put("icon-rotate", e("get", "rotate"))
+                    put("icon-rotation-alignment", "map")
+                    put("icon-allow-overlap", true)
+                    put("icon-ignore-placement", true)
+                    put("symbol-sort-key", e("case", tracked, 1, 0))
+                }
+            },
+            buildJsonObject {
+                put("id", TRAFFIC_LABELS)
+                put("type", "symbol")
+                put("source", TRAFFIC)
+                putJsonObject("layout") {
+                    put("text-field", TRAFFIC_TEXT)
+                    put("text-font", e(FONT))
+                    put("text-size", 11)
+                    put("text-anchor", "top")
+                    put("text-offset", e(0, 1.1))
+                    put("text-allow-overlap", true)
+                    put("text-ignore-placement", true)
+                    put("icon-image", TRAFFIC_TAG_IMAGE)
+                    put("icon-text-fit", "both")
+                    put("icon-text-fit-padding", e(1, 4, 1, 4))
+                    put("icon-allow-overlap", true)
+                    put("icon-ignore-placement", true)
+                }
+                putJsonObject("paint") {
+                    put("text-color", e("case", near, TRAFFIC_NEAR_TEXT, "#ffffff"))
+                }
+            },
+        )
     }
 
     private fun kotlinx.serialization.json.JsonObjectBuilder.from(layer: String) {

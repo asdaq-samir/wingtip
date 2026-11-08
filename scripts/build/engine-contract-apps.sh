@@ -17,7 +17,7 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 docker=${DOCKER:-docker}
 schema=engine/contract/engine.schema.json
-ANSWERS=(traffic_marks alert_fires altitude_lines)
+ANSWERS=(traffic_marks alert_fires altitude_lines radial_of airspace_entry_rules)
 
 sources=()
 for name in "${ANSWERS[@]}"; do

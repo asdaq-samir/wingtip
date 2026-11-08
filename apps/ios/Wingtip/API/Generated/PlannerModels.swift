@@ -634,6 +634,12 @@ struct APIOverlayTilesLayer: Codable, Equatable, Sendable {
     var name: String
 }
 
+/// The browser key for Google's Map Tiles API (routers/basemaps).
+// MARK: - APIGoogleMaps
+struct APIGoogleMaps: Codable, Equatable, Sendable {
+    var key: String
+}
+
 /// A field's instrument procedures, approaches first, from the CIFP
 /// of the AIRAC cycle that took effect on `cycle` (YYMMDD); none for a
 /// field with none.

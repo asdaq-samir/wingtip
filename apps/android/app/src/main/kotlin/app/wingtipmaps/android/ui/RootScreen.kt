@@ -24,7 +24,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -47,8 +50,17 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.OwnTrail
+import app.wingtipmaps.android.flight.Geo
+import app.wingtipmaps.android.flight.Tracking
+import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.ChartMap
+import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.MapLoading
+import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.map.MapRest
+import app.wingtipmaps.android.map.MapStyle
+import app.wingtipmaps.android.map.MapWeather
+import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.strip.StripLayout
 import app.wingtipmaps.android.strip.StripTheme
@@ -88,12 +100,50 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
 
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var airport by rememberSaveable { mutableStateOf("") }
+    // The tabs' sheet, raised when a field tapped on the map opens in the
+    // Airport tab.
+    val sheet = rememberBottomSheetScaffoldState()
+    val scope = rememberCoroutineScope()
+    // What a tap on the map picked, its card over the map (MapCard).
+    var picked by remember { mutableStateOf<MapPick?>(null) }
+
+    // What the map draws over the chart (Setup's Map switches), the
+    // terminal area chart it pins, the fields' weather, the street map
+    // close in, and the traffic.
+    val context = LocalContext.current
+    val layers by remember { MapLayersStore.of(context) }.layers.collectAsStateWithLifecycle()
+    val terminal = remember(info, density) { Charts.terminal(info, density) }
+    val mapWeather: MapWeather = viewModel()
+    val weather by mapWeather.colours.collectAsStateWithLifecycle()
+    val closeTiles by charts.closeTiles.collectAsStateWithLifecycle()
+    val traffic = remember { Traffic.of(context) }
+    val trafficOn by traffic.on.collectAsStateWithLifecycle()
+    val planes by traffic.planes.collectAsStateWithLifecycle()
+    val marks by traffic.marks.collectAsStateWithLifecycle()
+    val heardAtMs by traffic.heardAtMs.collectAsStateWithLifecycle()
+    val tracked by remember { Tracking.of(context) }.hex.collectAsStateWithLifecycle()
+    val targets = remember(planes, marks, heardAtMs) {
+        val heard = heardAtMs ?: System.currentTimeMillis()
+        planes.mapIndexed { i, p -> TrafficDrawing.Target(p, marks.getOrNull(i), heard - ((p.seenS ?: 0.0) * 1000).toLong()) }
+    }
+    // Asked every five seconds while the map is shown and traffic is on.
+    DisposableEffect(trafficOn) {
+        if (trafficOn) traffic.start()
+        onDispose { traffic.stop() }
+    }
+    val onView = { view: MapRest ->
+        mapWeather.view(view)
+        traffic.mapCentre = (view.south + view.north) / 2 to (view.west + view.east) / 2
+        traffic.mapRadiusNm = Geo.nm((view.south + view.north) / 2, (view.west + view.east) / 2, view.north, view.east)
+        // The street map's session asked for only once the map is near
+        // where it comes in, as the web asks it (BaseGl CloseBase).
+        if (view.zoom >= MapStyle.CLOSE_FROM - 1) charts.wantClose()
+    }
 
     // The airplane on the chart (OwnShip, OwnTrail), on at the location
     // button: the system's permission dialog needs an Activity, so the
     // asks for location and for notifications are made from here, the
     // one screen, and answered back to the pieces that wanted them.
-    val context = LocalContext.current
     val ownShip = remember { OwnShip.of(context) }
     val opensAt = remember { ownShip.lastPosition }
     val trail = remember { OwnTrail.of(context) }
@@ -184,6 +234,28 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val sheetPeek = 120.dp + navigationBar
     val pixels = LocalDensity.current
+    // The strip (the other session's StripLayout: one field, the flight
+    // as one strip, the owner's pick of 2026-11-04), tried beside the
+    // tabs: Setup's Screen row switches (LayoutPreference). In the air,
+    // own ship at flying speed, the strip turns to the airplane.
+    val layout by rememberLayout()
+    // A tapped field opens in the Airport tab, the sheet raised to show
+    // it, as the web's map opens a field's card; under the strip, which
+    // has no tab, and for everything else, its card over the map.
+    val onPick: (MapPick) -> Unit = { pick ->
+        if (pick is MapPick.Airport && layout != LayoutPreference.STRIP) {
+            airport = pick.ident
+            tab = Tabs.AIRPORT.ordinal
+            scope.launch { sheet.bottomSheetState.expand() }
+        } else {
+            picked = pick
+        }
+    }
+    val pickedCard: @Composable () -> Unit = {
+        picked?.let { pick ->
+            ModalBottomSheet(onDismissRequest = { picked = null }) { MapCard(pick) }
+        }
+    }
     // The map and its buttons, the same under either layout. `covered` is
     // what the sheet covers when it rests at its peek, where the map
     // opens and the loading mark turns in the middle of what is left; a
@@ -199,6 +271,12 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                 line = state.course?.courseLine.orEmpty(),
                 modifier = Modifier.fillMaxSize(),
                 overlays = overlays,
+                layers = layers,
+                terminal = terminal,
+                weather = weather,
+                closeTiles = closeTiles,
+                traffic = if (trafficOn) targets else emptyList(),
+                tracked = tracked,
                 night = night,
                 bottomInset = with(pixels) { covered.roundToPx() },
                 opensAt = opensAt,
@@ -207,6 +285,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                 follow = following,
                 onDragged = { following = false },
                 onRevealed = { revealed = true },
+                onPick = onPick,
+                onView = onView,
             )
             MapLoading(
                 shown = !revealed,
@@ -231,20 +311,16 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             }
         }
     }
-    // The strip (the other session's StripLayout: one field, the flight
-    // as one strip, the owner's pick of 2026-11-04), tried beside the
-    // tabs: Setup's Screen row switches (LayoutPreference). In the air,
-    // own ship at flying speed, the strip turns to the airplane.
-    val layout by rememberLayout()
     if (layout == LayoutPreference.STRIP) {
         val flying = ownShipOn && OwnShip.underway(fix?.groundspeedKt)
         StripTheme {
             StripLayout(plan = plan, session = session, ownShip = ownShip, flying = flying, map = { mapContent(null, 0.dp) })
         }
+        pickedCard()
         return
     }
     BottomSheetScaffold(
-        scaffoldState = rememberBottomSheetScaffoldState(),
+        scaffoldState = sheet,
         sheetPeekHeight = sheetPeek,
         sheetContent = {
             Column(Modifier.fillMaxWidth().fillMaxHeight(0.9f)) {
@@ -279,4 +355,5 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             AskScreen(plan = plan, session = session, ownShip = ownShip, onClose = { asking = false })
         }
     }
+    pickedCard()
 }

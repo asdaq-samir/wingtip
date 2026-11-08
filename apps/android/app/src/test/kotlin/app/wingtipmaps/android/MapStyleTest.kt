@@ -31,6 +31,8 @@ class MapStyleTest {
     private fun style(overlays: OverlayTiles?, night: Boolean = false): JsonObject =
         Json.parseToJsonElement(MapStyle.styleJson(template, 5, 12, overlays, night)).jsonObject
 
+    private val TRAFFIC = listOf(MapStyle.TRAFFIC_TREND, MapStyle.TRAFFIC_TRACKED, MapStyle.TRAFFIC, MapStyle.TRAFFIC_LABELS)
+
     private fun ids(style: JsonObject) = style["layers"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.content }
 
     private fun layer(style: JsonObject, id: String) = style["layers"]!!.jsonArray.first { it.jsonObject["id"]!!.jsonPrimitive.content == id }.jsonObject
@@ -44,7 +46,7 @@ class MapStyleTest {
         val under = s["sources"]!!.jsonObject["chart-under"]!!.jsonObject
         assertEquals("5", under["minzoom"]!!.jsonPrimitive.content)
         assertEquals("5", under["maxzoom"]!!.jsonPrimitive.content)
-        assertEquals(listOf("chart-under", "chart", MapStyle.ROUTE_SLOT), ids(s))
+        assertEquals(listOf("chart-under", "chart", MapStyle.ROUTE_SLOT) + TRAFFIC, ids(s))
         assertEquals(13.0, MapStyle.maxZoom(12), 0.0)
     }
 
@@ -78,7 +80,7 @@ class MapStyleTest {
                 MapStyle.ROUTE_SLOT,
                 "navaids", "navaids-idents", "fixes", "fixes-idents", "vfr-waypoints", "vfr-waypoints-idents",
                 "airports",
-            ),
+            ) + TRAFFIC,
             ids(s),
         )
     }
@@ -126,8 +128,8 @@ class MapStyleTest {
             """["all",["!=",["get","military"],"military"],["!=",["get","use"],"private"]]""",
             airports["filter"].toString(),
         )
-        assertEquals("apt|t|large||", MapStyle.airportMarkId(true, "large", ""))
-        assertEquals("apt|u|other||private", MapStyle.airportMarkId(false, "other", "private"))
+        assertEquals("apt|t|large||", MapStyle.airportMarkId(true, "large", "", ""))
+        assertEquals("apt|u|other|#1a7f37|private", MapStyle.airportMarkId(false, "other", "#1a7f37", "private"))
         val colour = airports["paint"]!!.jsonObject["text-color"]!!.jsonArray
         assertEquals(MapStyle.BLUE, colour[2].jsonPrimitive.content)
         assertEquals(MapStyle.MAGENTA, colour[3].jsonPrimitive.content)

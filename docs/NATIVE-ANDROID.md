@@ -132,10 +132,54 @@ and `glOverlays.ts`):
   `OwnShip`, at most once a minute) or the whole country, with the sheet's
   peek as its padding as it is when the map opens.
 
-Not yet on the phone: the airports' weather pips (the METARs of the
-view), the settings that hide layers, taps and cards on the overlays,
-the terminal area chart, and the engine's in-view readers (`InView.kt`)
-as the overlays' source in the air with no signal.
+- **Weather pips**: each reporting field wears its METAR's flight
+  category as a pip (`MapWeather`): the planner's reporting fields of a
+  box round the view (`/api/airports/in-view?reporting`), their category
+  the engine's `flight_category` as the planner answers it, joined onto
+  the tile airports by ident in the airports layer's `icon-image`
+  (`MapStyle.airportIcon`, the web's `setAirportWeather`), asked again as
+  the view leaves the box or every ten minutes; what was heard is kept.
+- **Setup's Map switches** (`MapLayersStore`, in the DataStore settings
+  file): Airspace, VORs and Fixes, Terminal Area Charts, Private Fields,
+  Military Fields and Traffic, the web's "On the Map" rows with the
+  web's defaults, applied as the overlay layers' visibility and the
+  airports' filter (`MapStyle.visible`, `airportsFilter`, the web's
+  `applyOverlayFilters`).
+- **The terminal area chart** pinned over the sectional at every zoom it
+  exists at (`Charts.terminal`, the web's `chart-terminal`).
+- **Taps and cards**: a tap picks, in the web's order, an airplane, a
+  field, a VOR, a fix or a VFR waypoint within 22 dp, or an airspace ring
+  within 10 dp (`MapPick`, from the tapped feature's own fields as the
+  web's `volumeOfTile` and `vorOfTile` read them). A field opens in the
+  Airport tab, the sheet raised, its card asked of the planner as it
+  opens; under the strip, and for everything else, its card shows in a
+  modal sheet over the map (`ui/MapCard`), its rules the engine's
+  (`engine/MapRules`: `radial_of`, `fix_radial_distance`, `morse`,
+  `service_volume`, `navaid_hours`, `airspace_entry_rules`, `faa_words`,
+  `place_name`). The cards' Direct To and Add to Route are not here yet.
+- **Overlays with no signal**: OkHttp keeps no 206, so `OverlayCache`
+  (an interceptor on the one client) keeps each range of the archive the
+  map reads (64 MB, the oldest dropped first) and answers it from the
+  phone thereafter; on an unmetered network `Charts` fetches the whole
+  archive (about 120 MB a cycle, carrying on where a fetch stopped), and
+  every range is answered from it. The archive's name changes with each
+  build, so nothing kept goes stale; another name's files are dropped.
+- **Close in, the street map**: from MapLibre zoom 12 to 13 Google's road
+  map (the Map Tiles API) fades in over the chart under the runways, and
+  the map may go to 17 (`CloseMap`, the web's `CloseBase`), with the
+  deployment's key from `/api/map/google`. No key is set today
+  (`GOOGLE_MAPS_API_KEY` is empty), so, as on the web, the chart stays,
+  enlarged. The key is a browser key; for the phone it must also allow
+  this app (an Android restriction by package and signing certificate,
+  which `CloseMap.signer` sends as `X-Android-Package` and `X-Android-Cert`).
+- **Traffic** is drawn as on the web (`TrafficDrawing`, the traffic
+  layers in the first style): the chevron turned to its track, amber
+  where the engine's `traffic_marks` says it is near and cyan otherwise,
+  its height and callsign on a dark tag from the web's zooms, a trend
+  line to where it will be in a minute, each carried on along its track
+  a step a second between answers; own ship's own transponder left off
+  (the engine's `own_ship_hex`). A tap opens its card, with Track, which
+  rings it on the map.
 
 ## Building
 

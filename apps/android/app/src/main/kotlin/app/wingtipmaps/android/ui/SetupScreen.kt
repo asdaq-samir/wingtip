@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -38,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.flight.Traffic
+import app.wingtipmaps.android.map.MapLayersStore
 
 /**
  * The Setup tab, phase 0's part of it: the account. Signed in, the
@@ -55,7 +58,10 @@ fun SetupScreen(session: Session) {
     val linkSent by session.linkSent.collectAsStateWithLifecycle()
     var email by rememberSaveable { mutableStateOf("") }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         // The tabs, or the strip (StripLayout), as the web app's Screen row
         // has it: a setting of two is a segmented control.
         val context = LocalContext.current
@@ -95,6 +101,7 @@ fun SetupScreen(session: Session) {
         }
         ProblemLine(problem)
         Text("Map", style = MaterialTheme.typography.titleLarge)
+        MapLayerRows()
         TrafficRow()
         Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Server", style = MaterialTheme.typography.bodyMedium)
@@ -104,21 +111,47 @@ fun SetupScreen(session: Session) {
 }
 
 /**
+ * What the map draws over the chart (MapLayersStore, kept across
+ * launches), the web's map settings' "On the Map" rows in its words and
+ * order: Airspace, VORs and Fixes, Terminal Area Charts, Private Fields,
+ * Military Fields. The terminal area chart's row only where the chart has
+ * one over its base.
+ */
+@Composable
+private fun MapLayerRows() {
+    val context = LocalContext.current
+    val store = remember(context) { MapLayersStore.of(context) }
+    val layers by store.layers.collectAsStateWithLifecycle()
+    SwitchRow("Airspace", layers.airspace) { store.set(MapLayersStore.Switch.AIRSPACE, it) }
+    SwitchRow("VORs and Fixes", layers.navaids) { store.set(MapLayersStore.Switch.NAVAIDS, it) }
+    SwitchRow("Terminal Area Charts", layers.tac) { store.set(MapLayersStore.Switch.TAC, it) }
+    SwitchRow("Private Fields", layers.privateFields) { store.set(MapLayersStore.Switch.PRIVATE_FIELDS, it) }
+    SwitchRow("Military Fields", layers.military) { store.set(MapLayersStore.Switch.MILITARY, it) }
+}
+
+/**
  * The traffic layer on or off (Traffic.setOn, kept across launches), as
- * the iOS app's Setup and the web app's map settings have it: Material's
- * list item with a switch, the whole row the toggle so its touch target
- * is the row's 56 dp, more than the 48 dp Material asks, and read out as
- * one switch named "Traffic".
+ * the iOS app's Setup and the web app's map settings have it.
  */
 @Composable
 private fun TrafficRow() {
     val context = LocalContext.current
     val traffic = remember(context) { Traffic.of(context) }
     val on by traffic.on.collectAsStateWithLifecycle()
+    SwitchRow("Traffic", on) { traffic.setOn(it) }
+}
+
+/**
+ * A setting on or off: Material's list item with a switch, the whole row
+ * the toggle so its touch target is the row's 56 dp, more than the 48 dp
+ * Material asks, and read out as one switch by its name.
+ */
+@Composable
+private fun SwitchRow(title: String, on: Boolean, onChange: (Boolean) -> Unit) {
     ListItem(
-        headlineContent = { Text("Traffic") },
+        headlineContent = { Text(title) },
         trailingContent = { Switch(checked = on, onCheckedChange = null) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Switch, onValueChange = traffic::setOn),
+        modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Switch, onValueChange = onChange),
     )
 }
