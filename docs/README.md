@@ -78,7 +78,7 @@ explicit path to production on AWS.
   planner and the model (the owner, 2026-11-06: a product, not a
   framework showcase).
 - **A cheap path to production**: one EC2 server behind CloudFront, chart
-  tiles drawn once a cycle into S3, about $29 a month — see
+  tiles drawn once a cycle into S3, about $32 a month — see
   [Target Architecture](#target-architecture-aws).
 - **CI on every push.** GitHub Actions runs the test suite and lint on
   every push/PR, then builds every service image and publishes it to GHCR
@@ -131,6 +131,7 @@ The system runs today as six Docker services (`retrain` is the training image ru
 |---|---|
 | `gateway` | Spring Boot — accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React app and proxies the planner |
 | `db` | PostgreSQL — application data |
+| `mailpit` | The local inbox the sign-in mail goes to (Amazon SES on AWS) |
 | `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and model training, run as one-off jobs; `retrain` is the whole training run (`python -m wingtip.pipeline run`) in the training image, the container the developer console's Retrain starts |
 | `ml` | Jupyter environment for model development and experimentation -- on demand, behind the `notebooks` profile: `docker compose up ml` |
 | `planner` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather, and the Claude features (the written briefing, checkpoint notes, words, the assistant) -- with the engine inside it for every rule |
@@ -140,8 +141,8 @@ The system runs today as six Docker services (`retrain` is the training image ru
 <sub>Editable source: `architecture-current.drawio`. The rendered SVG has
 the diagram embedded in it, so opening `architecture-current.svg` directly
 in [draw.io](https://app.diagrams.net) (or the VS Code draw.io extension)
-works too. AWS counterpart: `architecture-aws.drawio`, rendered in
-[`README-AWS.md`](README-AWS.md).</sub>
+works too. AWS counterpart: `architecture-aws.drawio`, rendered under
+[Target architecture (AWS)](#target-architecture-aws).</sub>
 
 ### Tech stack
 
@@ -162,7 +163,7 @@ works too. AWS counterpart: `architecture-aws.drawio`, rendered in
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![TanStack Query](https://img.shields.io/badge/TanStack%20Query-FF4154?style=flat-square&logo=reactquery&logoColor=white)
-![Leaflet](https://img.shields.io/badge/Leaflet-199900?style=flat-square&logo=leaflet&logoColor=white)
+![MapLibre GL](https://img.shields.io/badge/MapLibre%20GL-396CB2?style=flat-square&logo=maplibre&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white)
 
 **Gen AI**
@@ -194,8 +195,8 @@ and the assistant; it asks the engine (`wingtip_native`) for the rules
 the engine holds, and #482 moves the rest of its Python rules there.
 Serves no pages: the front end lives in [`apps/web/`](../apps/web) and is built
 into `gateway`'s jar, which proxies here for every computation. Publishes no
-port on AWS either — it sits behind `gateway` in a private subnet, found by
-service discovery at `planner.wingtip.internal`.
+port on AWS either — on the one server only Caddy publishes a port, and the
+gateway reaches the planner by its Compose name (`http://planner:8000`).
 
 - `/api/course`, `/api/checkpoints`, `/api/navlog`, `/api/detect/stream`,
   `/api/picks`, `/api/chart-tile/{kind}` — reached by the
@@ -387,7 +388,9 @@ erDiagram
 One small server behind CloudFront runs what must stay live, and what is
 the same for every pilot is drawn ahead of time and served from the edge
 — see [`README-AWS.md`](README-AWS.md) for the design, the cost (about
-$29 a month) and the runbook.
+$32 a month) and the runbook.
+
+![AWS design](architecture-aws.svg)
 
 | Local component | AWS target |
 |---|---|

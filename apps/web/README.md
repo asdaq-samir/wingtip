@@ -1,7 +1,7 @@
 # apps/web/
 
-React 19 + TypeScript + Vite + Tailwind v4 + shadcn/ui + Leaflet front
-end, built into `gateway`'s jar and served from `/app`. Two pages, one
+React 19 + TypeScript + Vite + Tailwind v4 + shadcn/ui + MapLibre GL
+front end, built into `gateway`'s jar and served from `/app`. Two pages, one
 component (`MapPage`) in two modes:
 
 - `/app/plan` — the pilot's page, and the app's own homepage (`/app`
@@ -161,7 +161,7 @@ proxy at `host.docker.internal:8080` or use the build path above.
 apps/web/ (this folder)      the map, the header, the drawers
   ↳ lib/engine          the Rust engine as WebAssembly: every rule, asked by name, in the page
   → gateway              :8080  serves the bundle, proxies /api/planner/*, owns auth and the pilot's records
-  → planner    :8084  sectional tiles, great-circle course, checkpoints (scored by the chart model), the nav log, weather
+  → planner    :8084  chart tiles, the FAA overlays as PMTiles, great-circle course, checkpoints (scored by the chart model), the nav log, weather
 ```
 
 The front end never calls `planner`
@@ -177,7 +177,7 @@ session and one set of access rules -- the written briefing included
 e2e/*.spec.ts             Real-browser tests (Playwright): layout, toasts, Class B
 src/
   main.tsx                Entry point: route table (basename /app), the course prefetched before React mounts
-  index.css                Leaflet popup/tooltip theming, print rules
+  index.css                The theme's tokens, Sunlight's high-contrast rules, print rules
   components/              Shared UI, one level above any single page
     IconButton.tsx           Every icon-only button: a stock shadcn Button + Tooltip + accessible name, one size
     MapHeader.tsx, RouteForm.tsx, RouteInputGroup.tsx, AirportPicker.tsx   The route form both pages share
@@ -189,7 +189,8 @@ src/
     api/client.ts             Every network call, one function per endpoint
     api/types.ts               API request/response shapes, re-exported from schema.d.ts and gateway-schema.d.ts
     engine/                    The Rust engine as WebAssembly: callEngine, and contract.ts generated from its schema
-    map/                       Everything the two maps share (see Maps, below)
+    map/                       Everything the two maps share: gl/ (the MapLibre map, its style and layers) and
+                                the cards, marks and overlay tiles over it (see Maps, below)
     preferences.ts             What's remembered per browser (zustand + localStorage): charts, aeroplane, filters
     queryClient.ts             The react-query client; a failed query becomes one toast, keyed by its message
   features/
@@ -215,8 +216,9 @@ are `React.lazy`, so a pilot loading `/app/plan` never pays for either
 — importing `DevButton` used to pull the console in by accident, since
 it lived in the same module `DevPanel` did. The nav log's calendar
 popover (`react-day-picker`, one component behind one button) is lazy
-the same way. Leaflet's div-icon markers (`lib/map/icons.ts`) are built
-from template strings rather than JSX rendered with
+the same way. The div-icon marks (`lib/map/icons.ts`: traffic, own
+ship, the replay's airplane, put on the map as MapLibre markers by
+`lib/map/gl/htmlMarker.ts`) are built from template strings rather than JSX rendered with
 `renderToStaticMarkup`, which otherwise pulled the whole of
 `react-dom/server` into every page's chunk for four spans. Together
 these took the planner's cold-load JavaScript from 1.67 MB to 1.00 MB.
@@ -259,8 +261,8 @@ are checked against the running code by their own service's tests.
 newline-delimited JSON one line at a time. The CSRF header and the
 `ApiError` for a failed response are one middleware both clients use;
 the only plain `fetch`es are Spring Security's own `/logout` and the
-narrative the gateway forwards to an agent untouched, and they call the
-same two helpers.
+narrative stream the gateway passes on from the planner untouched, and
+they call the same two helpers.
 
 **Messages.** Every info, warning and error is a sonner toast, centred
 and full-width (`main.tsx`'s `Toaster` props), at most three stacked at
@@ -277,67 +279,88 @@ closes the drawer under it.
 
 **Styling.** Tailwind utilities and stock shadcn components. The only
 inline styles are colours computed from data (a rating, a flight
-category, a score) and CSS custom properties Leaflet itself reads.
+category, a score) and CSS custom properties. What the map draws in
+WebGL is styled in its layers' MapLibre paint properties
+(`lib/map/gl/glStyle.ts`, `glOverlays.ts`), not in CSS.
 
 ## Maps
 
-`lib/map/` is everything the planner's route map (`RouteMap.tsx`) and
-the training map (`ChartMap.tsx`) share, under `MapShell` — the
-container, the chart tiles, the fit-to-route, own ship, Class B, and
-the corner controls. Neither map talks to Leaflet directly.
+Both maps are MapLibre GL on one shell (`lib/map/gl`): the planner's
+(`GlRouteMap.tsx`, which `RouteMap.tsx` gives the page's state) and the
+training map (`ChartMap.tsx`). The FAA chart, the airspace, the route
+and its checkpoints are drawn in one WebGL map, so an overlay moves with
+the chart under a pinch rather than being scaled and drawn again at
+its end.
 
-**One card, three shapes it fills.** Every marker's popup — a
-checkpoint, an airport, a Class B field, a training point — is a
-`MapCard`: a title, an optional subtitle, an optional `leading` control
-(the Class B card's terminal-chart pin) and children. It sizes to its
-own content (`w-max`) up to a cap, and never narrower than the box
-Leaflet gives it (`min-w-full`) — a Leaflet *popup* writes a width onto
-its content box down to a `minWidth` floor, so a short card measured
-against `w-max` alone sat 89px wide inside a 220px box, with 15px of
-space on one side and 147 on the other; a Leaflet *tooltip* instead
-shrink-wraps its content, which is what `w-max` is for (without it, a
-raw METAR wrapped every four words). `MapPopup` and `MapTooltip` are
-the shared `<Popup>`/`<Tooltip>` wrappers underneath, carrying the one
-set of defaults every card used to set for itself, differently, at
-three call sites — including Leaflet's own close button, which is off
-everywhere (`closeButton={false}`): there is no close button on a
-card. A tap on the chart puts a card away — Leaflet's own
-`closeOnClick` — the same way tapping a map already does everywhere
-else, and it is what closes two of the three cards without any code
-here at all.
+**The shell and its layers.** `GlMapShell.tsx` owns the map itself: the
+container, the camera and what moves it (a route's fit, a point picked,
+the sheet), the one tap the layers share, and the card a tap opens.
+Everything drawn on it is a React component in `gl/layers` (`ChartGl`,
+`AirspaceGl`, `AirportsGl`, `RouteGl`, `OwnShipGl`, `TrafficGl` ...)
+that says through `glLayer.ts`'s hooks what it adds -- its sources and
+style layers, in one of the map's slots (base, chart, imagery, areas,
+lines, route, marks, top), the data it gives them, and what a tap on it
+does. The slots keep the order bottom to top however the layers come
+and go. `glStyle.ts` is the style as plain data (the chart's raster
+sources, the airspace's lines, the zooms), which the tests read without
+a map. MapLibre's zoom is a level lower than the app's levels (its
+world is 512 px across at zoom 0): every zoom the app names goes
+through `glZoom`.
 
-**A tap goes to the marker.** Every marker — checkpoint, airport,
-Class B field, training point — answers a tap the same way: select it,
-fly the map to it, open its card. This used to be three different
-answers (the planner's checkpoints flew and opened nothing, the
-training points selected without moving, Class B opened a card and
-left zooming to an icon inside it); unifying it retired the Class B
-card's own zoom button, since the tap that opens the card has already
-gone there.
+**The FAA overlays as vector tiles.** The cycle's Class B, C and D, the
+special-use areas, airports, navaids, fixes and runways come from one
+PMTiles archive the planner builds once a cycle
+(`wingtip.vector_tiles`) and serves in byte ranges
+(`/api/overlay-tiles/{name}.pmtiles`), read by protomaps' `pmtiles`
+library (`lib/map/overlayTiles.ts`). They are in the map's first style
+(`glOverlays.ts`), so they load per tile with the chart, with nothing
+asked of the planner for the view and no wait on the engine; what
+changes over them (the fields the settings hide, the route's own
+fields, each field's weather) is set on their layers.
 
-**Zoom state.** `useZoomLevel` reads the map's real zoom
-(`react-leaflet`'s `useMapEvents`) for anything drawn only once zoomed
-in — a route's checkpoints, the training map's crowd of detections.
-Every `useMapEvents` call site in this codebase memoizes its handlers
-object: react-leaflet lists it in the underlying effect's own
-dependencies, so a handlers object literal is detached and
-re-registered on *every render*, and a Leaflet event fired inside that
-render is lost. That is not theoretical — it is what made the map's
-own zoom toggle (`MapShell`'s `FitReporter`) report the wrong state
-after its first press, since the map's own zoom change and the
-listener's re-registration raced on every commit. The toggle itself
-compares the map's real zoom against `getBoundsZoom(bounds)` — what
-zoom would fit the route, with the same padding the fit uses — rather
-than a fixed number, so it works the same on a ten-mile hop and a
-transcontinental leg.
+**Loading.** The map is drawn before the engine has loaded: `GlBootMap`
+holds the chart and the overlays alone, which ask the engine nothing,
+and the planner's map takes the same map up when the engine is there
+(GlMapShell's park), with no taps, cards or buttons until then. It
+opens at the pilot's last position, in the middle of what the sheet
+leaves, and fades in once the chart's and the overlays' first tiles are
+in, at the latest after 2.5 s. Until then `components/MapLoading.tsx`,
+the app's mark turning (still under reduced motion), sits in the same
+place.
 
-**Fitting the route** happens once per route (`MapShell`, keyed on the
-two idents, not on the `bounds` object) rather than once per render of
-`bounds` — the course is a `react-query` query, it can be answered
-again (a retry, the same route asked for twice), and each answer is a
-new object; fitting on every one of those snapped the map back to the
-whole route from wherever a pilot had navigated to, seconds after a
-tap.
+**A tap goes to the nearest thing.** The map has one tap: the layers'
+taps are asked in their rank order (a mark before a line under it),
+each within its own reach of the finger (22 px each side, a 44 pt
+target), and the first that finds a feature has it. Every mark --
+checkpoint, airport, Class B field, training point -- answers the same
+way: select it, fly the map to it, open its card. A tap on the chart
+itself, nothing within reach, puts the card away.
+
+**One card.** Every card a tap opens is a `MapCard` (a title, an
+optional subtitle, the thing's own mark, and its children), shown in
+the map's panel as a `SheetCard`, as Maps opens a place's card in its
+one sheet: the panel's close is every card's, and there is no other
+surface over the chart.
+
+**Marks that move.** Traffic, own ship and the replay's airplane are
+the app's own div icons (`lib/map/icons.ts`) put on the map as MapLibre
+markers (`gl/htmlMarker.ts`), which MapLibre places in the frame it
+draws the chart, so they stay on their point through a pinch.
+
+**Zoom and the view.** `useGlView` gives the layers the view's box and
+whole level, also during a pinch or a pan, changing only when the level
+changes or the view leaves the box already asked for, so a gesture
+costs a render at each level, not each frame; a layer drawn only once
+zoomed in (a route's checkpoints, the training map's detections) reads
+the level from it.
+
+**Fitting** happens once per route (`GlMapShell`, keyed on the route's
+idents, not on the course object, which `react-query` may answer again
+as a new object), clear of the panel and the map's buttons; `useGlFit`
+does the same for Nearest's fields, the Stops, a procedure or a pattern
+picked. The map follows the sheet: MapLibre's padding is what the panel
+covers, eased in the sheet's own time, so what was in the middle of the
+room left stays there.
 
 **The first flight.** The first time the planner opens with no route on
 a device, `FirstFlight` (its view model `hooks/useFirstFlight.ts`) is a
@@ -368,8 +391,7 @@ stylesheet.
   the rest.
 - No CSS beyond Tailwind and no CSS-in-JS. `components/ui/` is
   shadcn/ui copied into the repo, so it is Tailwind classes underneath.
-- No React wrapper for Leaflet, and no `React.memo` reached for before
-  a measured render cost justified it — the one real render bug this
-  session found (stale `useMapEvents` handlers losing events) was a
-  listener-registration bug, not a missing memo, and memoizing
-  components around it would have fixed nothing.
+- No React wrapper for MapLibre (react-map-gl or the like): the map is
+  `GlMapShell`'s own, and each layer a component through `glLayer.ts`'s
+  hooks. No `React.memo` reached for before a measured render cost
+  justified it; the React Compiler memoizes the rest.
