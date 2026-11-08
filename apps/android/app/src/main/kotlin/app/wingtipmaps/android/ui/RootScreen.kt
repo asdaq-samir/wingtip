@@ -4,6 +4,7 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -46,6 +48,7 @@ import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.OwnTrail
 import app.wingtipmaps.android.map.ChartMap
+import app.wingtipmaps.android.map.MapLoading
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.strip.StripLayout
 import app.wingtipmaps.android.strip.StripTheme
@@ -71,10 +74,17 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val plan: Plan = viewModel()
     val session: Session = viewModel()
     val info by charts.info.collectAsStateWithLifecycle()
+    val overlays by charts.overlays.collectAsStateWithLifecycle()
+    val overlaysSettled by charts.overlaysSettled.collectAsStateWithLifecycle()
+    val chartProblem by charts.problem.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
     val density = LocalDensity.current.density
     val template = remember(info, density) { Charts.template(info, density) }
     val base = remember(info) { Charts.base(info) }
+    // The map shown as one thing (the web's #541, #542): the loading mark
+    // over it until the chart and the overlays are drawn, then faded once.
+    var revealed by remember { mutableStateOf(false) }
+    val night = isSystemInDarkTheme()
 
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var airport by rememberSaveable { mutableStateOf("") }
@@ -85,6 +95,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     // one screen, and answered back to the pieces that wanted them.
     val context = LocalContext.current
     val ownShip = remember { OwnShip.of(context) }
+    val opensAt = remember { ownShip.lastPosition }
     val trail = remember { OwnTrail.of(context) }
     val fix by ownShip.fix.collectAsStateWithLifecycle()
     val approximate by ownShip.approximate.collectAsStateWithLifecycle()
@@ -171,19 +182,37 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     // The sheet sits over the navigation bar (edge to edge): its pill is
     // the strip and the tabs above the bar, and its content ends above it.
     val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    // The map and its buttons, the same under either layout.
-    val mapContent: @Composable (onAsk: (() -> Unit)?) -> Unit = { onAsk ->
+    val sheetPeek = 120.dp + navigationBar
+    val pixels = LocalDensity.current
+    // The map and its buttons, the same under either layout. `covered` is
+    // what the sheet covers when it rests at its peek, where the map
+    // opens and the loading mark turns in the middle of what is left; a
+    // sheet pulled up over the map moves neither.
+    val mapContent: @Composable (onAsk: (() -> Unit)?, covered: Dp) -> Unit = { onAsk, covered ->
         Box(Modifier.fillMaxSize()) {
             ChartMap(
-                template = template,
+                // The first style waits for the overlays' name (at most
+                // Charts.FIRST_STYLE_WAIT_MS), so they are in it with the chart.
+                template = if (overlaysSettled) template else null,
                 minZoom = base?.minZoom ?: 5,
                 maxZoom = base?.maxZoom ?: 12,
                 line = state.course?.courseLine.orEmpty(),
                 modifier = Modifier.fillMaxSize(),
+                overlays = overlays,
+                night = night,
+                bottomInset = with(pixels) { covered.roundToPx() },
+                opensAt = opensAt,
                 ownShip = if (ownShipOn) fix else null,
                 trail = flown,
                 follow = following,
                 onDragged = { following = false },
+                onRevealed = { revealed = true },
+            )
+            MapLoading(
+                shown = !revealed,
+                bottomInset = covered,
+                problem = if (info == null) chartProblem else null,
+                modifier = Modifier.fillMaxSize(),
             )
             MapButtons(ownShip = ownShipMode, onOwnShip = onOwnShip, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
             // Why the airplane is not on the map, where the pilot looks
@@ -210,13 +239,13 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     if (layout == LayoutPreference.STRIP) {
         val flying = ownShipOn && OwnShip.underway(fix?.groundspeedKt)
         StripTheme {
-            StripLayout(plan = plan, session = session, ownShip = ownShip, flying = flying, map = { mapContent(null) })
+            StripLayout(plan = plan, session = session, ownShip = ownShip, flying = flying, map = { mapContent(null, 0.dp) })
         }
         return
     }
     BottomSheetScaffold(
         scaffoldState = rememberBottomSheetScaffoldState(),
-        sheetPeekHeight = 120.dp + navigationBar,
+        sheetPeekHeight = sheetPeek,
         sheetContent = {
             Column(Modifier.fillMaxWidth().fillMaxHeight(0.9f)) {
                 FiguresStrip(state)
@@ -237,7 +266,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             }
         },
     ) {
-        mapContent { asking = true }
+        mapContent({ asking = true }, sheetPeek)
     }
     // Ask (AskScreen): a question about the flight put to the assistant,
     // as a modal sheet over the map and the tabs, opened at the sparkle
