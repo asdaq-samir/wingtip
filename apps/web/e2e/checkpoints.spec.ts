@@ -186,13 +186,12 @@ test("plan page: the briefing's nav log scrolls inside the drawer, not the page"
   expect(info.scrollWidth).toBeLessThanOrEqual(info.clientWidth + 1);
 });
 
-test("plan page: iOS never zooms the page in on a phone's field: the viewport forbids it, and every field but the nav log's notes is 16px", async ({ page }) => {
+test("plan page: iOS never zooms the page in on a phone's field: every field but the nav log's notes is 16px", async ({ page }) => {
   // iOS Safari zooms the whole page in when a field under 16px takes
   // focus, and leaves it zoomed once the field blurs and the drawer
   // closes -- with the header and the route form off the top of the
-  // screen. The viewport's maximum-scale=1 (index.html) is what stops
-  // it now, so that is checked first; the fields are 16px and more all
-  // the same, all but the note box under a nav log row, which is the
+  // screen. The viewport no longer forbids zoom (#265, 2026-11-08), so
+  // the fields' own 16px is all that stops it: all but the note box under a nav log row, which is the
   // log's own 12 because the pilot wanted it in proportion to the rows.
   // Chromium never zooms, so the rest is on the computed font size
   // itself, over every field the page can show: the route form, and
@@ -201,7 +200,6 @@ test("plan page: iOS never zooms the page in on a phone's field: the viewport fo
   if (!viewport || viewport.width >= 768) return;   // `md` and up keep the small type
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute("content", /maximum-scale=1\b/);
   await page.getByTestId("sidebar-trigger-button").click();
   // The description boxes are in the nav log's section, closed until
   // its title is clicked, and each under its own row, closed until

@@ -80,13 +80,15 @@ for (const screen of SCREENS) {
     // WCAG 2.2 AA by axe-core on every screen, in the nightly full audit
     // (IOS_AUDIT): a11y.spec checks WCAG 2.1 on the main states on every
     // run. Not axe's target-size: P1 measures each control's real tap
-    // region, its ::after hit area included, which axe can't see.
+    // region, its ::after hit area included, which axe can't see (the
+    // sheet's thin grabber is exempt there too, metrics.ts's HIT_EXEMPT, by
+    // the owner's decision of 2026-11-08, #265).
     let wcag22: string[] = [];
     if (process.env.IOS_AUDIT && reference) {
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa"])
         .exclude(".maplibregl-canvas-container")
-        .disableRules(["meta-viewport", "target-size"])
+        .disableRules(["target-size"])
         .analyze();
       wcag22 = results.violations
         .filter(v => v.impact === "serious" || v.impact === "critical")
