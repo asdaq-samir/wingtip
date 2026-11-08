@@ -1020,6 +1020,7 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         _ if crate::navlog::calls::NAMES.contains(&name) => crate::navlog::calls::call(name, ask.v),
         // Route options, the way round high ground and a point named off a
         // fix (route::options).
+        #[cfg(feature = "route-options")]
         _ if crate::route::options::NAMES.contains(&name) => crate::route::options::call(name, ask.v),
         // The things that move (motion::call), then the Go / No-Go's, by
         // their own names (gonogo::calls), last.
