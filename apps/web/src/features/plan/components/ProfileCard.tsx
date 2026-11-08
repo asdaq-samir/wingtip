@@ -24,7 +24,7 @@ export default function ProfileCard({ name, line, corner, cautions = [], onClose
    *  of its own, at the owner's ask ("Vfr switch can be on the top right
    *  corner, don't need the label flight rules"). */
   corner?: ReactNode;
-  /** What the pilot's own altitude breaks, the planner's words with their
+  /** What the pilot's own altitude breaks, the engine's words with their
    *  rules (own_altitude_caution: over the airplane's service ceiling, the
    *  oxygen 14 CFR 91.211(a) asks: (a)(1) the crew past 30 minutes over
    *  12,500 ft MSL, (a)(2) the crew over 14,000, (a)(3) every occupant over

@@ -372,6 +372,21 @@
 //!   (73.83), `mountainous_at` (Part 95), `select_cruise_altitude` from the
 //!   data the planner read, `altitude_anyway` and `no_altitude` from
 //!   `{"selection", "between"?, "via"?, "where"?}`;
+//! - a pilot's own altitude's cautions (crate::altitude::cautions, #482
+//!   phase 1): `own_altitude_caution` (91.119, 91.159, 91.131, 91.155,
+//!   71.33, 91.211, 91.177(a), 91.179(b)) `{"from_ident", "to_ident",
+//!   "altitude_ft", "reasons"}` or null from `{"selection", "legs":
+//!   [{"altitude_ft"}], "between": [from, to], "profile"?}`;
+//!   `floor_caution` (91.119) a sentence or null from `{"segment",
+//!   "altitude_ft"}`; `oxygen_caution` (91.211(a)) and
+//!   `prohibited_caution` (73.83) lists of sentences from
+//!   `{"highest_ft"?, "profile"?}` and `{"selection"}`;
+//! - the IFR alternate (crate::alternates, 14 CFR 91.169):
+//!   `ifr_alternate_destination` and `ifr_alternate_check` from
+//!   `{"ident", "approaches": {"any", "precision",
+//!   "alternate_minimums_url"?}, "forecast": {"ceiling_ft"?,
+//!   "ceiling_unknown"?, "visibility_sm"?, "raw"?} | null}`,
+//!   `ifr_alternates_ranked` from `{"checks", "limit"}`;
 //!   `is_eastbound` and `lowest_vfr_cruising_altitude` (91.159(a)) from
 //!   `{"magnetic_course_deg", "floor_ft"}`, `distance_nm` from `{"lat1",
 //!   "lon1", "lat2", "lon2"}`, `region_of` from `{"lat", "lon"}`,
@@ -940,6 +955,8 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         _ if crate::aircraft::calls::NAMES.contains(&name) => crate::aircraft::calls::call(name, ask.v),
         // Instrument approaches taught and debriefed (approach::calls).
         _ if crate::approach::calls::NAMES.contains(&name) => crate::approach::calls::call(name, ask.v),
+        // The IFR alternate, 14 CFR 91.169 (alternates).
+        _ if crate::alternates::NAMES.contains(&name) => crate::alternates::call(name, ask.v),
         _ if crate::route::answers::NAMES.contains(&name) => crate::route::answers::answer(name, ask.v),
         _ if crate::navlog::calls::NAMES.contains(&name) => crate::navlog::calls::call(name, ask.v),
         // Route options, the way round high ground and a point named off a

@@ -17,6 +17,9 @@
 //!   prohibited airspace -- and the recommendation;
 //! - words: the altitude flown where none is legal (the owner's "warn,
 //!   never limit") and why none is, in a pilot's words;
+//! - cautions: what a pilot's own altitude breaks (91.119, 91.159, 91.131,
+//!   91.155, 71.33, 91.211, 91.177, 91.179) and prohibited airspace on
+//!   the way (73.83), as warnings;
 //! - calls: the names crate::call answers them by.
 //!
 //! The owner's four plans (2026-09-30) are built on these bands: lowest
@@ -24,6 +27,7 @@
 //! economical the fuel's (the nav log's, #482 phase 4).
 
 pub mod calls;
+pub mod cautions;
 pub mod clouds;
 pub mod cruising;
 pub mod floor;

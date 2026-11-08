@@ -17068,6 +17068,312 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "own_altitude_caution": {
+      "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, into Class B (91.131), over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "OwnAltitudeCautionInput",
+          "type": "object",
+          "properties": {
+            "selection": {
+              "type": "object",
+              "description": "select_cruise_altitude's answer: its `rules` and `segments`."
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "altitude_ft": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "altitude_ft"
+                ]
+              }
+            },
+            "between": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[from_ident, to_ident]"
+            },
+            "profile": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "The airplane: `supplemental_oxygen` or `pressurized` true takes 91.211's cautions away."
+            }
+          },
+          "required": [
+            "selection",
+            "legs",
+            "between"
+          ]
+        },
+        "answer": {
+          "title": "OwnAltitudeCautionAnswer",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "from_ident": {
+              "type": "string"
+            },
+            "to_ident": {
+              "type": "string"
+            },
+            "altitude_ft": {
+              "type": "number"
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "from_ident",
+            "to_ident",
+            "altitude_ft",
+            "reasons"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "floor_caution": {
+      "description": "What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FloorCautionInput",
+          "type": "object",
+          "properties": {
+            "segment": {
+              "type": "object",
+              "description": "A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested."
+            },
+            "altitude_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "segment",
+            "altitude_ft"
+          ]
+        },
+        "answer": {
+          "title": "FloorCautionAnswer",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "oxygen_caution": {
+      "description": "What 14 CFR 91.211(a) asks of a flight up to an altitude in an unpressurised airplane: over 12,500 ft MSL the crew past 30 minutes, over 14,000 the crew throughout, over 15,000 every occupant. Empty where the profile carries oxygen or is pressurised.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "OxygenCautionInput",
+          "type": "object",
+          "properties": {
+            "highest_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "profile": {
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          }
+        },
+        "answer": {
+          "title": "OxygenCautionAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "prohibited_caution": {
+      "description": "Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProhibitedCautionInput",
+          "type": "object",
+          "properties": {
+            "selection": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "selection"
+          ]
+        },
+        "answer": {
+          "title": "ProhibitedCautionAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "ifr_alternate_destination": {
+      "description": "Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IfrAlternateDestinationInput",
+          "$ref": "#/definitions/IfrAlternateIn"
+        },
+        "answer": {
+          "title": "IfrAlternateDestinationAnswer",
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "approach": {
+              "type": "boolean"
+            },
+            "ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "taf": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "ident",
+            "approach",
+            "ceiling_ft",
+            "visibility_sm",
+            "taf",
+            "required",
+            "reasons"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "ifr_alternate_check": {
+      "description": "Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IfrAlternateCheckInput",
+          "$ref": "#/definitions/IfrAlternateIn"
+        },
+        "answer": {
+          "title": "IfrAlternateCheckAnswer",
+          "$ref": "#/definitions/IfrAlternateCheck"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "ifr_alternates_ranked": {
+      "description": "The fields offered as the IFR alternate: those that will do, or that meet the standard minimums and publish their own, good first then nearest, `limit` of them.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IfrAlternatesRankedInput",
+          "type": "object",
+          "properties": {
+            "checks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "description": "An ifr_alternate_check answer with its distance_nm."
+              }
+            },
+            "limit": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "checks"
+          ]
+        },
+        "answer": {
+          "title": "IfrAlternatesRankedAnswer",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -17324,7 +17630,6 @@
     "select_cruise_altitude",
     "altitude_anyway",
     "no_altitude",
-    "performance_reference_ft",
     "performance_cruise",
     "performance_climb",
     "navlog_leg",
@@ -17350,7 +17655,15 @@
     "fuel_stops",
     "fields_along",
     "class_b_entered",
-    "class_b_detours"
+    "class_b_detours",
+    "service_ceiling_on_the_day",
+    "own_altitude_caution",
+    "floor_caution",
+    "oxygen_caution",
+    "prohibited_caution",
+    "ifr_alternate_destination",
+    "ifr_alternate_check",
+    "ifr_alternates_ranked"
   ],
   "additionalProperties": false,
   "definitions": {
@@ -22291,6 +22604,157 @@
         "lat",
         "lon",
         "winds"
+      ]
+    },
+    "IfrAlternateIn": {
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "approaches": {
+          "type": "object",
+          "properties": {
+            "any": {
+              "type": "boolean"
+            },
+            "precision": {
+              "type": "boolean"
+            },
+            "alternate_minimums_url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "any",
+            "precision"
+          ],
+          "description": "The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page."
+        },
+        "forecast": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ceiling_unknown": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "raw": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "description": "The worst its TAF forecasts over the window (taf_window), null where no TAF covers it."
+        }
+      },
+      "required": [
+        "ident",
+        "approaches"
+      ]
+    },
+    "IfrAlternateCheck": {
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "approach": {
+          "type": "boolean"
+        },
+        "precision": {
+          "type": "boolean"
+        },
+        "minimums": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ceiling_ft": {
+              "type": "number"
+            },
+            "visibility_sm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "ceiling_ft",
+            "visibility_sm"
+          ]
+        },
+        "alternate_minimums_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "taf": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "good": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "meets_standard": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "ident",
+        "approach",
+        "precision",
+        "minimums",
+        "alternate_minimums_url",
+        "ceiling_ft",
+        "visibility_sm",
+        "taf",
+        "good",
+        "meets_standard",
+        "reasons"
       ]
     }
   }

@@ -5,11 +5,11 @@
 use super::floor::{self, Ground, Obstacle, IFR_OBSTACLE_RADIUS_NM};
 use super::select::{self, Area};
 use super::words::{self, Via};
-use super::{clouds, cruising, mountainous};
+use super::{cautions, clouds, cruising, mountainous};
 use crate::json::{self, Value};
 
 /// The names this module answers.
-pub const NAMES: [&str; 14] = [
+pub const NAMES: [&str; 18] = [
     "legal_cruising_altitudes",
     "tight_cruising_altitude",
     "highest_under_clouds_ft",
@@ -24,6 +24,10 @@ pub const NAMES: [&str; 14] = [
     "altitude_anyway",
     "no_altitude",
     "cloud_clearance_at_ft",
+    "own_altitude_caution",
+    "floor_caution",
+    "oxygen_caution",
+    "prohibited_caution",
 ];
 
 type R<T> = Result<T, String>;
@@ -212,6 +216,35 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 ("class_b", Value::Bool(why.class_b)),
                 ("detail", Value::String(detail)),
             ])))
+        }
+        "own_altitude_caution" => {
+            let selection = v.get("selection").ok_or_else(|| format!("{name}: \"selection\" is missing"))?;
+            let between: Vec<&str> = list(name, v, "between")?.iter().map(|b| b.as_str().unwrap_or("")).collect();
+            let [from, to] = between[..] else {
+                return Err(format!("{name}: \"between\" is not [from, to]"));
+            };
+            let profile = v.get("profile").filter(|p| !matches!(p, Value::Null));
+            Ok(match cautions::own_altitude(selection, list(name, v, "legs")?, profile) {
+                None => "null".to_owned(),
+                Some(c) => written(&obj(vec![
+                    ("from_ident", Value::String(from.to_owned())),
+                    ("to_ident", Value::String(to.to_owned())),
+                    ("altitude_ft", Value::Number(c.altitude_ft)),
+                    ("reasons", Value::Array(c.reasons.into_iter().map(Value::String).collect())),
+                ])),
+            })
+        }
+        "floor_caution" => {
+            let segment = v.get("segment").ok_or_else(|| format!("{name}: \"segment\" is missing"))?;
+            Ok(written(&cautions::floor(segment, num(name, v, "altitude_ft")?).map_or(Value::Null, Value::String)))
+        }
+        "oxygen_caution" => {
+            let profile = v.get("profile").filter(|p| !matches!(p, Value::Null));
+            Ok(written(&Value::Array(cautions::oxygen(opt_num(name, v, "highest_ft")?, profile).into_iter().map(Value::String).collect())))
+        }
+        "prohibited_caution" => {
+            let selection = v.get("selection").ok_or_else(|| format!("{name}: \"selection\" is missing"))?;
+            Ok(written(&Value::Array(cautions::prohibited(selection).into_iter().map(Value::String).collect())))
         }
         _ => Err(format!("altitude has no rule called {name:?}")),
     }

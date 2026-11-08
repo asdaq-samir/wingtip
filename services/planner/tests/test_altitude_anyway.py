@@ -24,7 +24,10 @@ def test_over_the_high_ground_above_the_ceiling_with_its_warning():
 
 
 def test_oxygen_by_91_211s_three_heights():
-    from app.planning import oxygen_caution
+    from wingtip.engine import ask as engine
+
+    def oxygen_caution(highest_ft, profile):
+        return engine("oxygen_caution", highest_ft=highest_ft, profile=profile)
     # Each side of 12,500, 14,000 and 15,000 ft MSL (14 CFR 91.211(a)).
     assert oxygen_caution(12500.0, None) == []
     assert "(a)(1)" in oxygen_caution(13500.0, None)[0]

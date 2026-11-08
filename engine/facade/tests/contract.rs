@@ -77,6 +77,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/pilot/src/pilot/records.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
+        include_str!("../../crates/brief/src/alternates.rs"),
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
         include_str!("../../crates/route/src/approach/calls.rs"),
         include_str!("../../crates/route/src/route/answers.rs"),
@@ -500,6 +501,27 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     let ways = c.ask("class_b_detours", json!({ "start": [0.0, 0.0], "end": [1.0, 0.0], "below_ft": 4500, "shelves": shelves,
         "fixes": [{ "ident": "VPNEAR", "lat": 0.5, "lon": -0.2, "vfr": true, "kind": "VFR waypoint" }] }));
     assert_eq!(ways[0]["ident"], "VPNEAR");
+
+    // A pilot's own altitude's cautions and the IFR alternate (#482 phase 1).
+    let cautions = fixture("cautions.json");
+    for case in cautions["own_altitude"].as_array().unwrap() {
+        c.ask("own_altitude_caution", json!({ "selection": case["selection"], "legs": case["legs"], "between": case["between"], "profile": case.get("profile") }));
+    }
+    for case in cautions["floor"].as_array().unwrap() {
+        c.ask("floor_caution", json!({ "segment": case["segment"], "altitude_ft": case["altitude_ft"] }));
+    }
+    c.ask("oxygen_caution", json!({ "highest_ft": 15500, "profile": null }));
+    c.ask("prohibited_caution", json!({ "selection": cautions["prohibited"][0]["selection"] }));
+    for case in cautions["alternate_destination"].as_array().unwrap() {
+        c.ask("ifr_alternate_destination", json!({ "ident": case["ident"], "approaches": case["approaches"], "forecast": case["forecast"] }));
+    }
+    let mut checks = Vec::new();
+    for case in cautions["alternate_check"].as_array().unwrap() {
+        let mut check = c.ask("ifr_alternate_check", json!({ "ident": case["ident"], "approaches": case["approaches"], "forecast": case["forecast"] }));
+        check["distance_nm"] = json!(10.0);
+        checks.push(check);
+    }
+    c.ask("ifr_alternates_ranked", json!({ "checks": checks, "limit": 5 }));
 
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.
