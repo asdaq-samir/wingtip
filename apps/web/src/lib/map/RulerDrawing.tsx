@@ -1,15 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { cruiseTasOf } from "../aircraftChoice";
-import type { Declination } from "../magnetic";
-import { usePreferences } from "../preferences";
-import { aircraftListQuery, aircraftProfilesQuery } from "../queryClient";
 import { TEXT } from "../text";
-import { rulerWords, upright } from "./ruler";
+import type { Placed } from "./rulerPlaced";
 
-/** The ruler's words clear of the fingertips at either end, in points. */
-const FINGER_CLEAR = 36;
-/** The band's least width, for its words to fit with the fingers close. */
-const MIN_BAND = 220;
 /** How far the map may zoom under two fingers held for the ruler, in
  *  levels: a twentieth is 3.5% of its size, more than fingers at rest on
  *  glass wander; past it they are pinching. */
@@ -24,16 +15,6 @@ export const PINCHED_LEVELS = 0.05;
  * it is drawn over the map, not in it. A pinch that moves before then is
  * the map's as ever: these listeners only watch.
  */
-/** The airplane's cruise speed, for the ruler's time en route: the pilot's
- *  own airplane's, else its type's. */
-export function useCruiseTas(): number | null {
-  const remembered = usePreferences(p => p.aircraft);
-  const { data: profiles } = useQuery(aircraftProfilesQuery);
-  const { data: mine } = useQuery({ ...aircraftListQuery, enabled: remembered.aircraftId != null });
-  const own = remembered.aircraftId != null ? mine?.find(a => a.id === remembered.aircraftId) : undefined;
-  return cruiseTasOf(own ? { ...remembered, cruiseTasKt: own.cruiseTasKt } : remembered, profiles);
-}
-
 /** The ruler on the screen and its words for a screen reader, on either map. */
 export function RulerDrawing({ drawn, spoken }: { drawn: Placed | null; spoken: string }) {
   return (
@@ -66,17 +47,3 @@ export function RulerDrawing({ drawn, spoken }: { drawn: Placed | null; spoken: 
     </>
   );
 }
-
-/** The ruler between `ends` on the screen: its words upright along it,
- *  read from whichever end is then on the left. */
-type XY = { x: number; y: number };
-export type Placed = ReturnType<typeof placed>;
-
-export function placed(at: (p: XY) => { lat: number; lon: number }, [a, b]: readonly [XY, XY], declination: Declination | null, tasKt: number | null) {
-  const { angleDeg, flipped } = upright(a, b);
-  const [left, right] = flipped ? [b, a] : [a, b];
-  const words = rulerWords(at(left), at(right), declination, tasKt);
-  const width = Math.max(MIN_BAND, Math.hypot(b.x - a.x, b.y - a.y) - 2 * FINGER_CLEAR);
-  return { a, b, angleDeg, words, width, middle: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
-}
-

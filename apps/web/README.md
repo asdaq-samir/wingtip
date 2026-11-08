@@ -106,7 +106,11 @@ The gateway serves the bundle from a plain directory, read per request
 image need not be rebuilt at all. `WEB_DIST_MOUNT=/app/static/app`
 mounts `apps/web/dist` over that directory, and the `web-dev` profile's
 `web-build` runs vite in watch mode into it: a saved file is rebuilt in
-a second or two and served at once, with no restart. Both can live in
+a second or two and served at once, with no restart. Each build is
+written whole into `apps/web/.dist-next` and only then renamed into
+`dist`, index.html last (`VITE_PUBLISH_DIR`, `vite.config.ts`), so a page
+loading mid-build gets the old build or the new one, never half of one;
+the replaced builds' chunks stay an hour for pages already open. Both can live in
 `.env` (`COMPOSE_PROFILES=web-dev` for the profile), as on the owner's
 Mac; for once:
 

@@ -7,7 +7,7 @@ import { useProgressToast } from "../../lib/useProgressToast";
 import type { WorkspaceProps } from "../shell/workspace";
 import { ChartColumn, GraduationCap } from "lucide-react";
 import TabBar, { type BarTab } from "../../components/TabBar";
-import { fromLucide } from "../../components/tabGlyphs";
+import { fromLucide } from "../../components/fromLucide";
 import { useDevTab, type DevTab } from "./devTab";
 import ChartMap from "./components/ChartMap";
 import WaypointPanel, { WaypointActions } from "./components/WaypointPanel";

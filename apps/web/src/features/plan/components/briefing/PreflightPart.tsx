@@ -22,7 +22,8 @@ import FlightPlanSection from "./FlightPlanSection";
 import RiskAssessment from "./RiskAssessment";
 import FindingIcon from "../../../../components/FindingIcon";
 import MockOral from "./MockOral";
-import { BriefingNarrativePrintBlock, Flag, PassNote, Pending, SUA_FINDING, SUA_WORDS } from "./BriefingBits";
+import { BriefingNarrativePrintBlock, Flag, PassNote, Pending } from "./BriefingBits";
+import { SUA_FINDING, SUA_WORDS } from "./briefingWords";
 
 /** Preflight's sections its checks' tiles open (BriefChecks): the
  *  airspace's, the risk's and the loading's. */

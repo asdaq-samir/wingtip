@@ -1,5 +1,3 @@
-import { api } from "../api/client";
-import type { Box } from "./view";
 import { MapCard } from "./MapCard";
 import { MAGENTA } from "../useAirspace";
 import { PointWhere } from "./PointWhere";
@@ -9,29 +7,12 @@ import { fixRadialDistance } from "../navaid";
 import { TEXT } from "../text";
 
 /**
- * The VFR waypoints as the map asks for them, and the card a tap on one
- * opens (the map draws them: lib/map/gl/layers/NavaidsGl's WaypointsGl).
+ * The card a tap on a VFR waypoint opens (the map asks for them in
+ * waypointsQuery and draws them in lib/map/gl/layers/NavaidsGl's
+ * WaypointsGl).
  */
 
-/** From this zoom in, the GPS waypoints' (NavaidsLayer's FIX_ZOOM), at
- *  the owner's ask ("Vfr waypoints can show at the zoom level of gps
- *  waypoints too", 2026-11-04): further out their idents would be a
- *  scatter over every city's airspace. */
-const FROM_ZOOM = 10;
-
 export type Waypoint = { ident: string; lat: number; lon: number; description?: string | null };
-
-/** The planner asked for a box's VFR waypoints, from FROM_ZOOM: by the
- *  layer's useQuery and by the map's own events (useAhead) alike. */
-export function waypointsQuery(asked: Box, zoom: number) {
-  return {
-    queryKey: ["waypointsInView", asked.key],
-    queryFn: () => api.waypointsInView(asked.box),
-    enabled: zoom >= FROM_ZOOM,
-    staleTime: Infinity,
-    meta: { silent: true },
-  };
-}
 
 /** A VFR waypoint's card, made once it is opened: what it is and where,
  *  off the nearest VOR on the map as a controller places it, and Direct

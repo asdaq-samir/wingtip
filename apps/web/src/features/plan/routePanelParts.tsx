@@ -76,8 +76,6 @@ export const BriefingNotices = fromRoutePanel("BriefingNotices");
 export const SaveFlightButton = fromRoutePanel("SaveFlightButton");
 export const ReviewAskItem = fromRoutePanel("ReviewAskItem");
 export const ReviewAskSheet = fromRoutePanel("ReviewAskSheet");
-// The search, on a chunk of its own: the first screen draws it.
-export { RouteBox } from "./routeBoxChunk";
 export const RouteEnds = fromRoutePanel("RouteEnds");
 export const RouteSplit = fromRoutePanel("RouteSplit");
 export const Kneeboard = fromRoutePanel("Kneeboard");

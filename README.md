@@ -84,7 +84,7 @@ Demo route: **Campbell Airport (C81)** → **Duluth International (KDLH)**.
 | [`services/Dockerfile.base`](services/Dockerfile.base) | The Python base every image that imports wingtip is built from |
 | [`ml/`](ml) | The notebooks and the pipeline's and notebooks' images |
 | [`infra/`](infra) | AWS CloudFormation, the production server's files and compose file, CI's compose file, the local HTTPS certificates, the rehearsal, the dev-services sidecar and the load tests |
-| [`scripts/`](scripts) | `build/` (the engine's WebAssembly, the phones' generated models), `ci/` (the flaky-test report), `dev/` (the checks, the hooks, one-at-a-time) |
+| [`scripts/`](scripts) | `build/` (the engine's WebAssembly, the phones' generated models), `ci/` (the flaky-test report), `dev/` (the checks, the hooks, one-at-a-time, tidy-branches) |
 | [`docs/`](docs) | Full documentation, AWS deployment guide, architecture diagrams |
 
 ## Documentation

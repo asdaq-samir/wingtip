@@ -3,13 +3,14 @@ import type { FillLayerSpecification, LineLayerSpecification, RasterLayerSpecifi
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../api/client";
 import { areaColour } from "../../../weatherMap";
-import { AreaCard, PirepCard, RADAR_URL, SATELLITE_URL, WindCard, barbIcon, pirepIcon, weatherBoxOf } from "../../WeatherCards";
+import { AreaCard, PirepCard, WindCard } from "../../WeatherCards";
+import { RADAR_URL, SATELLITE_URL, barbIcon, pirepIcon, weatherBoxOf } from "../../weatherLayer";
 import { useWeatherLayers } from "../../weatherLayers";
 import { FADE_IN_MS, useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../glLayer";
 import { glZoom } from "../glStyle";
 import { useGlProbe } from "../useGlProbe";
 import { TAP } from "./common";
-import { useGlMarks, type GlMark } from "./MarksGl";
+import { useGlMarks, type GlMark } from "../useGlMarks";
 
 const REFRESH_MS = 5 * 60_000;
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
