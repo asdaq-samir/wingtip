@@ -110,10 +110,15 @@ fi
 if grep -qE '^engine/' <<<"$changed"; then
   if command -v cargo >/dev/null && cargo --version >/dev/null 2>&1; then
     # CI's own crate list (ci.yml's test job), so this checks what CI tests;
-    # one target directory for every worktree, so only the first is cold.
+    # a target directory per worktree, keyed by its path. One shared by every
+    # worktree failed falsely: Cargo took another worktree's newer build of a
+    # crate of ours, at another path, for this one's (2026-11-08).
     read -ra pkgs <<<"$(grep -oE 'cargo test --profile ci [^#]*' "$here/.github/workflows/ci.yml" | head -1 | grep -oE -- '-p [a-z0-9-]+' | xargs)"
     note "engine: cargo check"
-    CARGO_TARGET_DIR=${WINGTIP_HOOK_CARGO_TARGET:-$HOME/Library/Caches/wingtip-pre-push-cargo} \
+    # The directories of worktrees not pushed from in two weeks go (a cold
+    # check at worst).
+    find "$HOME/Library/Caches/wingtip-pre-push-cargo" -mindepth 1 -maxdepth 1 -type d -mtime +14 -exec rm -rf {} + 2>/dev/null || true
+    CARGO_TARGET_DIR=${WINGTIP_HOOK_CARGO_TARGET:-$HOME/Library/Caches/wingtip-pre-push-cargo/$(basename "$here")-$(printf '%s' "$here" | shasum -a 256 | cut -c1-8)} \
       cargo check -q --manifest-path "$here/engine/Cargo.toml" "${pkgs[@]}" || fail "cargo check"
   else
     note "engine: skipped, no Rust toolchain here (CI checks it)"

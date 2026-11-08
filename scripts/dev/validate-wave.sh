@@ -48,6 +48,10 @@ SEED=${WAVE_SEED_DATA:-$HOME/Developer/wingtip/data/raw}
 
 if [ "${1:-}" = --rebuild ]; then export CHECK_NO_CACHE=1; shift; fi
 case "${1:-}" in -h|--help) sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+# The browser step's own run, in its turn (step_e2e): the steps are not
+# this call's.
+inner=""
+if [ "${1:-}" = --e2e-suite ]; then inner=1; shift; fi
 steps=${*:-$ALL}
 for s in $steps; do
   case " $ALL " in *" $s "*) ;; *) echo "validate-wave: no step '$s' (one of: $ALL)" >&2; exit 64 ;; esac
@@ -55,8 +59,10 @@ done
 
 out=${WAVE_OUT:-$(mktemp -d "${TMPDIR:-/tmp}/validate-wave.XXXXXX")}
 mkdir -p "$out"
-echo "validate-wave: $(git -C "$here" rev-parse --short HEAD) ($(git -C "$here" branch --show-current)), steps: $steps" >&2
-echo "validate-wave: logs in $out" >&2
+if [ -z "$inner" ]; then
+  echo "validate-wave: $(git -C "$here" rev-parse --short HEAD) ($(git -C "$here" branch --show-current)), steps: $steps" >&2
+  echo "validate-wave: logs in $out" >&2
+fi
 
 compose() {
   docker compose -p "$PROJECT" -f "$here/docker-compose.yml" "$@"
@@ -187,7 +193,7 @@ EOF
 }
 
 step_e2e() {
-  "$turn" --alone "validate-wave e2e ($(basename "$here"))" "$0" --e2e-suite
+  WAVE_OUT=$out "$turn" --alone "validate-wave e2e ($(basename "$here"))" "$0" --e2e-suite
 }
 
 run_step() {
@@ -203,7 +209,7 @@ run_step() {
   echo "validate-wave: $s exit $status" >&2
 }
 
-if [ "${1:-}" = --e2e-suite ]; then e2e_suite; exit $?; fi
+if [ -n "$inner" ]; then e2e_suite; exit $?; fi
 
 has() { case " $steps " in *" $1 "*) return 0 ;; esac; return 1; }
 
@@ -236,8 +242,11 @@ for s in $steps; do
   [ "$code" = 0 ] && continue
   echo
   echo "== $s (exit $code): $out/$s.log"
-  grep -nE '(FAIL|FAILED|Error|ERROR|error[:\[]|failed|panicked|✘|BUILD FAILURE|Tests run:.*Failures: [1-9]|\*\* TEST FAILED|exit [1-9])' "$out/$s.log" \
-    | grep -vE 'warning|0 failed' | tail -12
+  # The lines that name what failed, in each tool's words: pytest's and
+  # cargo's FAILED, ESLint's and tsc's errors, Surefire's failing tests,
+  # xcodebuild's and Gradle's, Playwright's numbered failures.
+  grep -nE '(^FAILED |FAILED$|^test .* FAILED|panicked at| error |error TS[0-9]+|^\[ERROR\]   |<<< (FAILURE|ERROR)|Tests run:.*(Failures|Errors): [1-9]|\*\* TEST FAILED|error:|FAILURE:|^ +[0-9]+\) |✘|[0-9]+ failed)' "$out/$s.log" \
+    | grep -vE 'warning|^[0-9]+:\s*0 failed' | tail -15
   echo "-- last lines:"
   tail -6 "$out/$s.log"
 done
