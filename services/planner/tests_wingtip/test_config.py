@@ -21,14 +21,14 @@ def test_every_malformed_variable_is_named(monkeypatch):
 
 
 def test_the_defaults(monkeypatch):
-    for name in ("CHARTS_PREPARE_AT_ONCE", "CHARTS_FETCH_FOR_TILES", "ASSISTANT_FALLBACKS", "SWIM_HOST",
+    for name in ("CHARTS_PREPARE_AT_ONCE", "CHARTS_FETCH_FOR_TILES", "ASSISTANT_FALLBACKS",
                  "CHART_TILES_URL", "ADSBX_RAPIDAPI_KEY"):
         monkeypatch.delenv(name, raising=False)
     settings = get_settings()
     assert settings.charts_prepare_at_once == 2
     assert settings.charts_fetch_for_tiles is True
     assert settings.assistant_fallbacks is False
-    assert settings.swim_host is None and settings.chart_tiles_url is None and settings.adsbx_rapidapi_key is None
+    assert settings.chart_tiles_url is None and settings.adsbx_rapidapi_key is None
 
 
 @pytest.mark.parametrize("value, on", [("0", False), (" 0 ", False), ("1", True), ("", True), ("false", True)])

@@ -102,6 +102,11 @@ Four layers, each with one job:
   process, runs the AI features (the assistant, the written briefing) with the
   Anthropic SDK, and asks the engine every rule through
   `wingtip_native.call`.
+- **ingest** (`services/ingest`, the `ingest` service): the live feeds,
+  read always -- the FAA's SWIM feeds and the followed airplanes' adsb.fi
+  rounds -- written into the SQLite stores on the data folder the planner
+  reads (issue #535's first split from the planner). It fetches and
+  stores only; any figure is still the engine's.
 - **Spring Boot** (`services/gateway`, the `gateway` service): who the pilot
   is and what they saved -- accounts, sign-in, aircraft, flights,
   logbook and endorsements, the public API, scheduled mail. It holds no
@@ -125,7 +130,7 @@ Java, and some in the web and phone apps -- and issue #482 moves them
 in, in phases: copies the engine already has, small rules, weather parsing,
 altitude selection, the nav log, then route options.
 
-The system runs today as six Docker services (`retrain` is the training image run as the whole training run, not an image of its own):
+The system runs today as seven Docker services (`retrain` is the training image run as the whole training run, not an image of its own):
 
 | Service | Role |
 |---|---|
@@ -135,6 +140,7 @@ The system runs today as six Docker services (`retrain` is the training image ru
 | `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and model training, run as one-off jobs; `retrain` is the whole training run (`python -m wingtip.pipeline run`) in the training image, the container the developer console's Retrain starts |
 | `ml` | Jupyter environment for model development and experimentation -- on demand, behind the `notebooks` profile: `docker compose up ml` |
 | `planner` | FastAPI: works out a flight for the apps -- course, checkpoints scored by the chart model in-process, nav log, weather, and the Claude features (the written briefing, checkpoint notes, words, the assistant) -- with the engine inside it for every rule |
+| `ingest` | The live feeds, read always: the FAA's SWIM feeds (STDDS's terminal radar, FNS's NOTAMs, TFMS's flight plans) and the followed airplanes' adsb.fi rounds, written into the SQLite stores under `data/raw` that the planner reads; no port ([`services/ingest/README.md`](../services/ingest/README.md)) |
 
 ![Current local architecture](architecture-current.svg)
 
@@ -189,6 +195,23 @@ for the tabular feature pipeline.
 ## Services & Data Design
 
 ### Services in detail
+
+**`ingest`** — the live feeds, out of the planner's process since #535
+(its first split). It reads the FAA's SWIM feeds (`ingest.swim`: STDDS's
+radar tracks round the places the map looks and of the followed
+airplanes, FNS's NOTAMs, TFMS's filed routes) and asks adsb.fi for the
+followed airplanes each half minute, and writes what it hears into
+SQLite files on the data folder it shares with the planner: the live
+store (`wingtip.traffic.store`: the radar, the followed airplanes and
+their tracks, the views the map asked for), `wingtip.notams`' and
+`wingtip.filed_routes'`. The planner reads those as a pilot asks, so a
+restart of the planner drops no feed and no request waits on one. The
+planner tells ingest what is worth keeping through the same store
+(where the map looks, who is followed). No message bus and no port; its
+health check reads its beat in the live store. The map's own traffic,
+adsb.lol by region and an open card's airplane, is still asked by the
+planner as the pilot asks. See
+[`services/ingest/README.md`](../services/ingest/README.md).
 
 **`planner`** — chart vision, checkpoint selection, the nav log
 and the assistant; it asks the engine (`wingtip_native`) for the rules
@@ -394,7 +417,7 @@ $32 a month) and the runbook.
 
 | Local component | AWS target |
 |---|---|
-| `gateway`, `planner` | One EC2 server (`infra/docker-compose.prod.yml`), behind Caddy and CloudFront |
+| `gateway`, `planner`, `ingest` | One EC2 server (`infra/docker-compose.prod.yml`), behind Caddy and CloudFront |
 | `db` | Postgres on the same server, dumped to S3 nightly |
 | Chart tiles | A Fargate Spot task per 56-day cycle, published to S3, served by CloudFront |
 | Mailpit | Amazon SES |
@@ -490,6 +513,8 @@ engine/                the shared Rust engine: facade/, crates/, contract/, bind
 services/planner/      the planner: app/ (FastAPI), wingtip/ (the shared Python package --
                        pipeline.py, model_registry.py, navlog.py, altitude.py, etc.),
                        tests/ and tests_wingtip/ (their suites), its Dockerfile and requirements
+services/ingest/       the live feeds (ingest): SWIM and the followed airplanes into the
+                       stores the planner reads
 services/gateway/      Spring Boot API (gateway) — accounts, records, proxies the planner
 services/Dockerfile.base
                        the Python base (wingtip's requirements and its Rust extension)

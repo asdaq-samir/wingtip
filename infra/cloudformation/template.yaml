@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  Wingtip Maps on AWS, built for low cost: one EC2 server (gateway, planner,
+  Wingtip Maps on AWS, built for low cost: one EC2 server (gateway, planner, ingest,
   Postgres) behind CloudFront, FAA chart tiles drawn once
   per 56-day cycle by a Fargate Spot task into S3, and the web app's
   fingerprinted files cached at the edge. About $29 a month with the
@@ -157,7 +157,7 @@ Resources:
       RouteTableId: !Ref PublicRouteTable
 
   # ---------------------------------------------------------------------
-  # Images: the two the server runs, pushed by promote.yml's push-ecr.
+  # Images: the three the server runs, pushed by promote.yml's push-ecr.
   # ---------------------------------------------------------------------
   GatewayRepository:
     Type: AWS::ECR::Repository
@@ -171,6 +171,16 @@ Resources:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: wingtip/planner
+      EmptyOnDelete: true
+      LifecyclePolicy:
+        LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
+
+  # The live feeds (services/ingest), split from the planner (#535): a
+  # container of its own on the same server, sharing its data disk.
+  IngestRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: wingtip/ingest
       EmptyOnDelete: true
       LifecyclePolicy:
         LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
@@ -290,6 +300,7 @@ Resources:
                 Resource:
                   - !GetAtt GatewayRepository.Arn
                   - !GetAtt PlannerRepository.Arn
+                  - !GetAtt IngestRepository.Arn
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: [!Ref DbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
@@ -985,6 +996,7 @@ Resources:
                 Resource:
                   - !GetAtt GatewayRepository.Arn
                   - !GetAtt PlannerRepository.Arn
+                  - !GetAtt IngestRepository.Arn
               # The server changes with each Spot interruption, so deploys
               # find it by its Name tag and may run only on that.
               - Effect: Allow

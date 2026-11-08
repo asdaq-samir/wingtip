@@ -50,11 +50,12 @@ moves them in, in order.
 |---|---|
 | `gateway` | Spring Boot: accounts, sign-in, the pilot's records, the public API and scheduled mail; serves the React front end and proxies the planner |
 | `planner` | FastAPI: works out a flight (charts, checkpoints scored by the chart model in-process, the nav log, weather, the written briefing, the assistant), the engine inside it |
+| `ingest` | The live feeds, read always: the FAA's SWIM feeds (STDDS radar, FNS NOTAMs, TFMS flight plans) and the followed airplanes' adsb.fi rounds, into the SQLite stores on the data folder the planner reads ([`services/ingest/`](services/ingest)) |
 | `db` | PostgreSQL — application data |
 | `pipeline-processing` / `pipeline-training` | Data collection, feature engineering, and training, as one-off jobs; `retrain` is the whole training run in the training image, which the developer console starts |
 | `ml` | Jupyter environment for model development -- on demand: `docker compose up ml` |
 
-Six services, one `docker compose up`. Full write-up, including the AWS target architecture, is in [`docs/README.md`](docs/README.md).
+Seven services, one `docker compose up`. Full write-up, including the AWS target architecture, is in [`docs/README.md`](docs/README.md).
 
 
 ## Under the hood
@@ -80,6 +81,7 @@ Demo route: **Campbell Airport (C81)** → **Duluth International (KDLH)**.
 | [`apps/android/`](apps/android) | The native Android app: Kotlin, Compose and MapLibre over the shared Rust engine (docs/NATIVE-ANDROID.md) |
 | [`engine/`](engine) | The shared Rust engine: every aviation rule once, in ten crates (`crates/`) behind one facade (`facade/`), its contract (`contract/`), and its Python, C and WebAssembly faces (`bindings/`) |
 | [`services/planner/`](services/planner) | The planner: its HTTP layer (`app/`, FastAPI: route planning, chart vision, the chart model, the assistant), its Python package (`wingtip/`: data, charts, pipeline, model registry, and the nav log until it moves into the engine), and both their test suites (`tests/`, `tests_wingtip/`) |
+| [`services/ingest/`](services/ingest) | The live feeds (SWIM, the followed airplanes), split from the planner (#535): written into the stores the planner reads |
 | [`services/gateway/`](services/gateway) | Accounts, sign-in, the pilot's records, the public API (Spring Boot) |
 | [`services/Dockerfile.base`](services/Dockerfile.base) | The Python base every image that imports wingtip is built from |
 | [`ml/`](ml) | The notebooks and the pipeline's and notebooks' images |

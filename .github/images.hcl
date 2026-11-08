@@ -27,7 +27,7 @@ variable "PUSH" {
 # Promote workflow walks, promoting each this commit built.
 group "default" {
   targets = ["base", "ml", "pipeline-processing", "pipeline-training",
-             "planner", "gateway"]
+             "planner", "ingest", "gateway"]
 }
 
 function "image" {
@@ -99,6 +99,17 @@ target "planner" {
   cache-from = image("planner").cache-from
   cache-to   = image("planner").cache-to
   output     = image("planner").output
+}
+
+# The live feeds (services/ingest), on the same base as the planner.
+target "ingest" {
+  context    = "."
+  dockerfile = "services/ingest/Dockerfile"
+  contexts   = { wingtip-base = "target:base" }
+  tags       = image("ingest").tags
+  cache-from = image("ingest").cache-from
+  cache-to   = image("ingest").cache-to
+  output     = image("ingest").output
 }
 
 target "gateway" {

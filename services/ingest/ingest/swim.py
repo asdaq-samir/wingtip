@@ -1,23 +1,44 @@
-"""The FAA's SWIM feeds' reading, in a process of its own (app.swim starts
-it): each configured feed's connection on a thread, its messages read,
-the radar's tracks picked out and every message acknowledged here, and
-only what the planner keeps sent on to it. The Solace client's reading
-of a payload and its acknowledgement, and the radar's parsing, took most
-of a core at STDDS's 370 messages a second (py-spy, 2026-10-28), all of
-it holding the planner's GIL against the route planning a pilot waits
-on; a process of its own has a GIL of its own.
+"""The FAA's SWIM feeds, read as they come (the owner's SCDS subscriptions,
+2026-10-19), each into the store the planner reads.
 
-So it imports nothing of wingtip's, nor pandas: a spawned process starts by
-importing this module, and starts in a moment and small.
+- STDDS's terminal radar tracks -- TAIS, every STARS facility's tracks
+  with each airplane's Mode S address, its beacon code, its reported
+  altitude and, where it has one, its flight plan -- to wingtip.traffic as
+  reports heard elsewhere (the live store, wingtip.traffic.store). That
+  puts on the map the airplanes no ADS-B network hears (N3429J, a UAT
+  airplane adsb.lol never had), and records the flights of the airplanes
+  a pilot follows from takeoff, card open or not.
+- FNS's NOTAMs, each as the NOTAM System issues, replaces or cancels it,
+  to wingtip.notams' store.
+- TFMS's flight data, the NAS's flight plans and their amendments, to
+  wingtip.filed_routes' store, which counts the routes pilots file between
+  two fields.
+
+One connection a feed to its subscription's durable queue, on a thread of
+its own: each message read, handed on, then acknowledged. The radar's
+tracks are kept only round the places the map looks and for the
+followed airplanes (radar_wanted, read from the store each second): the
+country's tracks, parsed as they come, took most of a core at STDDS's 370
+messages a second (py-spy, 2026-10-28). They were read in the planner's
+process until #535 moved them here, so a restart of the planner drops no
+feed and the reading takes nothing from the planning a pilot waits on.
+
+A feed is off where its SWIM_* settings are not all set (ingest.settings);
+a dropped connection is made again after a pause, growing to a few
+minutes. Nothing here states a figure: a NOTAM's reading is the engine's
+(wingtip.notams calls notams_fns), and a track is passed on as sent.
 """
 import logging
 import math
-import os
 import re
 import threading
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime
+
+from wingtip import filed_routes, notams, traffic
+
+from .settings import get_settings
 
 log = logging.getLogger(__name__)
 
@@ -25,25 +46,24 @@ log = logging.getLogger(__name__)
 #: from the subscription's Details page.
 SETTINGS = ("SWIM_HOST", "SWIM_USERNAME", "SWIM_PASSWORD")
 FEEDS = ("STDDS", "FNS", "TFMS")
-#: The CA certificates the FAA's broker's certificate is checked against:
-#: the image's own (python:3.14-slim's ca-certificates).
-TRUST_STORE = os.environ.get("SWIM_TRUST_STORE", "/etc/ssl/certs")
 #: How long to wait before connecting again, s, doubling to the most.
 RETRY_FIRST_S, RETRY_MOST_S = 10.0, 300.0
 
 
-def _settings(feed: str) -> tuple[str, ...]:
-    return (*SETTINGS, f"SWIM_VPN_{feed}", f"SWIM_QUEUE_{feed}")
+def _feed(feed: str, name: str) -> str | None:
+    """A feed's own setting, SWIM_<NAME>_<FEED>."""
+    return getattr(get_settings(), f"swim_{name}_{feed.lower()}")
 
 
 def _host(feed: str) -> str:
     """The broker a feed's subscription is on: its own where SCDS put it
     on another (TFMS's on ems1, the others' on ems2), else the shared one."""
-    return os.environ.get(f"SWIM_HOST_{feed}") or os.environ["SWIM_HOST"]
+    return _feed(feed, "host") or get_settings().swim_host
 
 
 def configured(feed: str) -> bool:
-    return all(os.environ.get(name) for name in _settings(feed))
+    settings = get_settings()
+    return all((settings.swim_host, settings.swim_username, settings.swim_password, _feed(feed, "vpn"), _feed(feed, "queue")))
 
 
 def _number(element, tag: str) -> float | None:
@@ -198,86 +218,122 @@ def select(text: str, views, followed) -> list[tuple[dict, float]]:
     ]
 
 
-#: The feeds whose messages go to the planner as their bytes
+#: The feeds whose messages are handed on as their bytes
 #: (wingtip.filed_routes.heard looks in them before it decodes them).
 RAW = {"TFMS"}
-#: What a feed's message must hold to be worth sending to the planner:
-#: TFMS's flight plans and amendments with a route of flight
-#: ("routeOfFlight", "newRouteOfFlight"), the only ones
-#: wingtip.filed_routes keeps. The rest of TFMS, the country's tracks,
-#: went to the planner a message at a time to be thrown away there, its
-#: pickling and the planner's waking for each included.
+#: What a feed's message must hold to be worth handing on: TFMS's flight
+#: plans and amendments with a route of flight ("routeOfFlight",
+#: "newRouteOfFlight"), the only ones wingtip.filed_routes keeps. The rest
+#: of TFMS, the country's tracks, is acknowledged and dropped unread.
 WORTH_SENDING = {"TFMS": b"outeOfFlight"}
 
 
 def worth_sending(feed: str, payload: bytes | str) -> bool:
-    """Whether a message of `feed` goes on to the planner at all."""
+    """Whether a message of `feed` is handed on at all."""
     worth = WORTH_SENDING.get(feed)
     if worth is None:
         return True
     return worth in (payload if isinstance(payload, (bytes, bytearray)) else payload.encode("utf-8", "replace"))
 
 
-#: How often a feed's count of messages goes to the planner at most, s:
-#: the Dev console's figures, not worth a message of their own each.
-STATE_EVERY_S = 1.0
+#: Each feed's messages read so far, what they gave (tracks, NOTAMs,
+#: flight plans), its connection and when the last came: written to the
+#: store as the feed's beat (ingest.main), for the health check and a reader.
+STATE = {feed: {"connected": False, "messages": 0, "items": 0, "last_at": None, "error": None} for feed in FEEDS}
+#: What of the radar is wanted, (views, followed), as the store last said:
+#: read once a second (WANTED_EVERY_S), not once a message.
+WANTED: list = [([], set())]
+#: How often what is wanted is read from the store, s: the map asks for
+#: traffic every few seconds, so a second behind is in time.
+WANTED_EVERY_S = 1.0
 
 
-def _run(feed: str, out, wanted: list) -> None:
-    """Connect, read and send on until the process ends, connecting again
-    after a pause where the connection drops or cannot be made. What goes
-    to the planner, on `out`: ("radar", feed, tracks) with a radar
-    message's kept tracks, ("text", feed, payload) with each NOTAM and
-    each flight plan message worth sending (worth_sending), and ("state", feed, fields) with the feed's
-    connection and counts. `wanted` holds the planner's latest (views,
-    followed), the radar's tracks picked against it."""
+def _radar(text: str) -> int:
+    """A radar message's tracks round the places the map shows traffic,
+    and the followed ones wherever they are, into the store."""
+    found = select(text, *WANTED[0])
+    for plane, at in found:
+        traffic.heard_elsewhere(plane, at)
+    return len(found)
+
+
+#: What each feed's messages are handed to; each gives how many items it kept.
+HANDLERS = {"STDDS": _radar, "FNS": notams.heard, "TFMS": filed_routes.heard}
+
+
+#: A message's first element's name, its namespace prefix left off:
+#: "TATrackAndFlightPlan", "AIXMBasicMessage", "tfmDataService".
+_ROOT = re.compile(rb"<(?![?!])(?:[\w.-]+:)?([\w.-]+)")
+
+
+def kind(payload: bytes | str) -> str:
+    """What sort of message this is, by its first element: counted per
+    feed (STATE's "kinds"), so what each queue carries besides what is
+    kept -- TFMS's flow information, STDDS's other systems -- shows in the
+    store before a reader for it is written (#489)."""
+    head = payload[:400] if isinstance(payload, (bytes, bytearray)) else payload[:400].encode("utf-8", "replace")
+    found = _ROOT.search(head)
+    return found[1].decode("ascii", "replace") if found else "?"
+
+
+def handle(feed: str, message) -> None:
+    """One message handed to its feed's handler where it is worth it, and counted."""
+    payload = raw(message) if feed in RAW else body(message)
+    state = STATE[feed]
+    if worth_sending(feed, payload):
+        state["items"] += HANDLERS[feed](payload)
+    kinds = state.setdefault("kinds", {})
+    name = kind(payload)
+    # A bounded count: a queue sends a handful of kinds.
+    if name in kinds or len(kinds) < 50:
+        kinds[name] = kinds.get(name, 0) + 1
+    state["messages"] += 1
+    state["last_at"] = time.time()
+
+
+def _run(feed: str, stop: threading.Event) -> None:
+    """Connect, read and hand on until `stop` is set, connecting again
+    after a pause where the connection drops or cannot be made."""
     from solace.messaging.config.retry_strategy import RetryStrategy
     from solace.messaging.config.transport_security_strategy import TLS
     from solace.messaging.messaging_service import MessagingService
     from solace.messaging.resources.queue import Queue
 
+    settings = get_settings()
+    state = STATE[feed]
     pause = RETRY_FIRST_S
-    messages = 0
-    while True:
+    while not stop.is_set():
         service = receiver = None
         try:
             service = (MessagingService.builder().from_properties({
                 "solace.messaging.transport.host": _host(feed),
-                "solace.messaging.service.vpn-name": os.environ[f"SWIM_VPN_{feed}"],
-                "solace.messaging.authentication.scheme.basic.username": os.environ["SWIM_USERNAME"],
-                "solace.messaging.authentication.scheme.basic.password": os.environ["SWIM_PASSWORD"],
+                "solace.messaging.service.vpn-name": _feed(feed, "vpn"),
+                "solace.messaging.authentication.scheme.basic.username": settings.swim_username,
+                "solace.messaging.authentication.scheme.basic.password": settings.swim_password,
             }).with_transport_security_strategy(
                 # The FAA's certificate checked against the image's own CAs.
-                TLS.create().with_certificate_validation(True, validate_server_name=True, trust_store_file_path=TRUST_STORE))
+                TLS.create().with_certificate_validation(True, validate_server_name=True, trust_store_file_path=settings.swim_trust_store))
                 .with_reconnection_retry_strategy(RetryStrategy.parametrized_retry(5, 3000)).build())
             service.connect()
             receiver = service.create_persistent_message_receiver_builder().build(
-                Queue.durable_exclusive_queue(os.environ[f"SWIM_QUEUE_{feed}"]))
+                Queue.durable_exclusive_queue(_feed(feed, "queue")))
             receiver.start()
-            out.put(("state", feed, {"connected": True, "error": None}))
+            state.update(connected=True, error=None)
+            log.info("SWIM %s connected", feed)
             pause = RETRY_FIRST_S
-            sent_at = 0.0
-            while True:
+            while not stop.is_set():
                 message = receiver.receive_message(timeout=5000)
                 if message is None:
                     continue
-                if feed == "STDDS":
-                    found = select(body(message), *wanted[0])
-                    if found:
-                        out.put(("radar", feed, found))
-                else:
-                    payload = raw(message) if feed in RAW else body(message)
-                    if worth_sending(feed, payload):
-                        out.put(("text", feed, payload))
-                messages += 1
+                try:
+                    handle(feed, message)
+                except Exception:  # noqa: BLE001 -- one message must not end the reading
+                    log.warning("SWIM %s: a message not kept", feed, exc_info=True)
+                # Acknowledged once kept: the durable queue holds it until then.
                 receiver.ack(message)
-                now = time.time()
-                if now - sent_at >= STATE_EVERY_S:
-                    out.put(("state", feed, {"messages": messages, "last_at": now}))
-                    sent_at = now
         except Exception as err:  # noqa: BLE001 -- any failure: connect again after the pause
             error = f"{type(err).__name__}: {str(err)[:200]}"
-            out.put(("state", feed, {"connected": False, "error": error, "messages": messages}))
+            state.update(connected=False, error=error)
             log.warning("SWIM %s: %s; connecting again in %.0f s", feed, error, pause)
         finally:
             for closing in (receiver, service):
@@ -288,21 +344,25 @@ def _run(feed: str, out, wanted: list) -> None:
                         closing.disconnect()
                 except Exception:  # noqa: BLE001 -- already gone
                     pass
-        time.sleep(pause)
+        stop.wait(pause)
         pause = min(RETRY_MOST_S, pause * 2)
 
 
-def main(feeds, out, wanted_in) -> None:
-    """The process: each feed read on a thread of its own, while this one
-    takes the planner's (views, followed) as they change. It ends when the
-    planner does: the planner's end of `wanted_in` closes with it, however
-    it ended, and the reading cannot go on without the planner to send to."""
-    logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
-    wanted = [([], set())]
-    for feed in feeds:
-        threading.Thread(target=_run, args=(feed, out, wanted), name=f"swim-{feed.lower()}", daemon=True).start()
-    while True:
+def _want(stop: threading.Event) -> None:
+    """What of the radar is wanted, read from the store each second."""
+    while not stop.is_set():
         try:
-            wanted[0] = wanted_in.recv()
-        except (EOFError, OSError):
-            os._exit(0)
+            WANTED[0] = traffic.radar_wanted()
+        except Exception:  # noqa: BLE001 -- the store busy: the last answer stands
+            log.warning("What the map looks at was not read", exc_info=True)
+        stop.wait(WANTED_EVERY_S)
+
+
+def start(stop: threading.Event) -> list[str]:
+    """Each configured feed read on a thread of its own; the feeds started."""
+    feeds = [feed for feed in FEEDS if configured(feed)]
+    if "STDDS" in feeds:
+        threading.Thread(target=_want, args=(stop,), name="swim-wanted", daemon=True).start()
+    for feed in feeds:
+        threading.Thread(target=_run, args=(feed, stop), name=f"swim-{feed.lower()}", daemon=True).start()
+    return feeds

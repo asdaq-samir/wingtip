@@ -23,9 +23,11 @@ export REHEARSAL_DIR=${REHEARSAL_DIR:-$HOME/.wingtip-rehearsal}
 export TILES_DIR=${TILES_DIR:-$PWD/data/raw/chart_tiles.nosync}
 
 if [ "${SKIP_BUILD:-}" != 1 ]; then
-  # The planner is built FROM wingtip's base (services/Dockerfile.base).
+  # The planner and ingest are built FROM wingtip's base (services/Dockerfile.base).
   docker build -t wingtip-local/base:rehearsal -f services/Dockerfile.base --target base .
   docker build -t wingtip-local/planner:rehearsal -f services/planner/Dockerfile \
+    --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
+  docker build -t wingtip-local/ingest:rehearsal -f services/ingest/Dockerfile \
     --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
   docker build -t wingtip-local/gateway:rehearsal -f services/gateway/Dockerfile .
 fi

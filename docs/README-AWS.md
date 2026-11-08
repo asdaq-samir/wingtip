@@ -38,6 +38,8 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                           caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process) ─▶ Anthropic
                                      │
                                      └──▶ db (Postgres 18, on the data disk)
+                          ingest (the FAA's SWIM feeds, the followed airplanes) ─▶ SQLite on the
+                                     data disk, which the planner reads
                           nightly pg_dump ─▶ S3 server bucket (14 days)
 
 EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: python -m wingtip.charts refresh
@@ -328,7 +330,7 @@ docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml ps
 docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml logs -f --tail 100 gateway
 ```
 
-`/srv/wingtip` is the data disk: `data` the planner's data folder,
+`/srv/wingtip` is the data disk: `data` the planner's and ingest's data folder,
 `postgres` the database, `repo` this repository. Never edit
 `/srv/wingtip/.env`; `deploy.sh` writes it.
 

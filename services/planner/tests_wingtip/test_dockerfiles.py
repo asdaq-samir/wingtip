@@ -24,6 +24,7 @@ BASE = "services/Dockerfile.base"
 # Every image whose Dockerfile copies wingtip in, and so needs the base.
 IMAGES = {
     "services/planner/Dockerfile": "planner",
+    "services/ingest/Dockerfile": "ingest",
     "ml/Dockerfile.ml": "ml",
     "ml/Dockerfile.processing": "pipeline-processing",
     "ml/Dockerfile.training": "pipeline-training",

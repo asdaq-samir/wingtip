@@ -42,10 +42,9 @@ from wingtip import (
 from wingtip import airspace_at, congested, data_cycles
 from wingtip import cycle_pack
 from wingtip import vector_tiles
-from wingtip import traffic as traffic_data
 from wingtip import airports as airport_table
 
-from . import chart_model, chart_refresh, errors, swim, tracing
+from . import chart_model, chart_refresh, errors, tracing
 from .router_basics import PROCESSED_DIR
 from .planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, oral, plan
@@ -357,10 +356,9 @@ def _warm_reference_data() -> None:
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     threading.Thread(target=_warm_reference_data, name="reference-data-warm-up", daemon=True).start()
-    # The FAA's terminal radar through SWIM, where it is set up (app.swim).
-    swim.start()
-    # The airplanes followed, their flights recorded card open or not.
-    traffic_data.start_following()
+    # The live feeds (the FAA's SWIM radar, NOTAMs and flight plans, and
+    # the followed airplanes' adsb.fi rounds) are read by ingest
+    # (services/ingest) into the stores the planner reads: none here.
     yield
 
 

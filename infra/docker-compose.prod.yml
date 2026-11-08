@@ -96,18 +96,6 @@ services:
       # (github.com/adsbfi/opendata): off for the public app until adsb.fi
       # agrees to it (wingtip.traffic).
       ADSBFI_OPEN_DATA: "0"
-      # The FAA's SWIM feeds (app.swim): STDDS's terminal radar tracks; off
-      # without them. The owner's SCDS subscription's login and queue.
-      SWIM_HOST: ${SWIM_HOST:-}
-      SWIM_USERNAME: ${SWIM_USERNAME:-}
-      SWIM_PASSWORD: ${SWIM_PASSWORD:-}
-      SWIM_VPN_STDDS: ${SWIM_VPN_STDDS:-}
-      SWIM_QUEUE_STDDS: ${SWIM_QUEUE_STDDS:-}
-      SWIM_VPN_FNS: ${SWIM_VPN_FNS:-}
-      SWIM_QUEUE_FNS: ${SWIM_QUEUE_FNS:-}
-      SWIM_HOST_TFMS: ${SWIM_HOST_TFMS:-}
-      SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
-      SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
       CHARTS_AUTO_REFRESH: "0"
       # But the NASR files (airports, frequencies, navaids, Class B/C/D)
       # and the obstacle file are fetched again as each new edition comes
@@ -120,6 +108,37 @@ services:
       interval: 10s
       timeout: 5s
       retries: 60
+
+  # The live feeds, read always (services/ingest): the FAA's SWIM feeds
+  # and the followed airplanes, into the SQLite stores on the data folder
+  # the planner reads (the live store, the NOTAMs, the filed routes). No
+  # port; its health is its beat in the live store (ingest.health, the
+  # image's HEALTHCHECK). Off but for its beat where no SWIM_* are set.
+  ingest:
+    <<: *restart
+    image: ${IMAGE_REGISTRY}/ingest:${IMAGE_TAG:-latest}
+    volumes:
+      - /srv/wingtip/data:/workspace/data
+    # A few threads and a SQLite connection on a 4 GB server shared with
+    # the planner, the gateway and Postgres: held small.
+    mem_limit: 384m
+    environment:
+      # adsb.fi's open data is for personal, non-commercial use only
+      # (github.com/adsbfi/opendata): the followed airplanes' rounds are
+      # off for the public app until adsb.fi agrees to it.
+      ADSBFI_OPEN_DATA: "0"
+      # The FAA's SWIM feeds (ingest.swim); each off without its own. The
+      # owner's SCDS subscriptions' login and queues.
+      SWIM_HOST: ${SWIM_HOST:-}
+      SWIM_USERNAME: ${SWIM_USERNAME:-}
+      SWIM_PASSWORD: ${SWIM_PASSWORD:-}
+      SWIM_VPN_STDDS: ${SWIM_VPN_STDDS:-}
+      SWIM_QUEUE_STDDS: ${SWIM_QUEUE_STDDS:-}
+      SWIM_VPN_FNS: ${SWIM_VPN_FNS:-}
+      SWIM_QUEUE_FNS: ${SWIM_QUEUE_FNS:-}
+      SWIM_HOST_TFMS: ${SWIM_HOST_TFMS:-}
+      SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
+      SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
 
   gateway:
     <<: *restart
