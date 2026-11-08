@@ -6,6 +6,8 @@
 //! the pilot's minimums never under 14 CFR 91.155's, the fuel stops landing
 //! with 91.151's reserve -- and the four kinds named by what they are.
 
+#![cfg(feature = "route-options")]
+
 use serde_json::Value;
 use std::path::PathBuf;
 use std::time::Instant;

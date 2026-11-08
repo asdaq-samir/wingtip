@@ -13,5 +13,13 @@ name = "wingtip_route"
 [dependencies]
 wingtip-core = { path = "../core" }
 wingtip-flight = { path = "../flight" }
-wingtip-weather = { path = "../weather" }
+wingtip-weather = { path = "../weather", optional = true }
 wingtip-procedures = { path = "../procedures" }
+
+# Route options (route::options, and the weather it reads onto its grid)
+# are the planner's alone: the web never asks them, and they were 153 KB
+# of the .wasm (771 to 924 KB, #482 phase 5), so the wasm build
+# (bindings/wasm) leaves them out.
+[features]
+default = ["options"]
+options = ["dep:wingtip-weather"]

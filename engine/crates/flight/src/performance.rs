@@ -38,8 +38,8 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 /// The altitude a profile's cruise TAS and fuel burn are the airplane's
-/// at, on a standard day: flight's CRUISE_REFERENCE_FT, the one figure
-/// (`planning_figures` says it to the apps).
+/// at, on a standard day: the flight module's CRUISE_REFERENCE_FT, the one
+/// figure the apps say beside the figures (`planning_figures`).
 pub const REFERENCE_ALTITUDE_FT: f64 = crate::flight::CRUISE_REFERENCE_FT;
 /// The cruise power of a profile that names none: 65%, a light single's
 /// usual economy-cruise setting (the stock profiles' own, data/aircraft).

@@ -109,7 +109,10 @@ mod tests {
         assert_eq!(route(&["FLACK", "IRW"], |_| false, None, None), "FLACK DCT IRW");
         let dall3 = Procedure { id: "DALL3", transition: None };
         let lgc4 = Procedure { id: "LGC4", transition: None };
-        assert_eq!(route(&["EIC", "V18", "MEI", "LGC"], |w| w == "V18", Some(&dall3), Some(&lgc4)), "DALL3 EIC V18 MEI LGC LGC4");
+        // AIM Appendix 4's own example, the arrival joined at MEI ...
+        assert_eq!(route(&["EIC", "V18", "MEI"], |w| w == "V18", Some(&dall3), Some(&lgc4)), "DALL3 EIC V18 MEI LGC4");
+        // ... and flown direct from MEI to LGC first, as FLACK DCT IRW is.
+        assert_eq!(route(&["EIC", "V18", "MEI", "LGC"], |w| w == "V18", Some(&dall3), Some(&lgc4)), "DALL3 EIC V18 MEI DCT LGC LGC4");
         assert_eq!(wake(Some(15_500.0)), Some("L"));
         assert_eq!(wake(Some(15_501.0)), None);
     }

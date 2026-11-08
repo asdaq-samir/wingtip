@@ -1,11 +1,16 @@
 """A pilot's own altitude under 14 CFR 91.119's minimum safe altitudes,
 flown with a caution naming the rule, what the floor rests on and how far
-under it (app.planning.floor_caution), never refused -- at the owner's
+under it (the engine's floor_caution), never refused -- at the owner's
 "make the pilot aware but not restrict them". The figures are the rule's
 own: 1,000 ft above the highest obstacle within 2,000 ft over a congested
 area (91.119(b)), 500 ft above the surface or any structure elsewhere
 (91.119(c))."""
-from app.planning import floor_caution, own_altitude_caution
+from app.planning import own_altitude_caution
+from wingtip.engine import ask as engine
+
+
+def floor_caution(segment, altitude_ft):
+    return engine("floor_caution", segment=segment, altitude_ft=altitude_ft)
 
 # A leg over a town with a 1,500 ft tower; one over fields with ground at
 # 1,200 ft. Floors as wingtip.terrain rounds them.

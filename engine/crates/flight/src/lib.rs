@@ -9,12 +9,14 @@
 //!   atmosphere;
 //! - performance: a light piston airplane in the day's air -- its cruise
 //!   at an altitude and its climbs (the planner's wingtip.performance,
-//!   #482 phase 4);
+//!   #482 phase 4).
 //! - limits: the altitudes a flight may be planned at (71.33, 91.119(c),
 //!   91.121, 91.159, 91.179);
-//! - filing: FAA Form 7233-4's items as AIM Appendix 4 writes them.
+//! - filing: FAA Form 7233-4's items as AIM Appendix 4 writes them;
+//! - sun: night and civil twilight (14 CFR 1.1), NOAA's solar calculation.
 
 pub mod filing;
 pub mod flight;
 pub mod limits;
 pub mod performance;
+pub mod sun;

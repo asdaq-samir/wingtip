@@ -49,7 +49,7 @@ SAMPLE_INTERVAL_NM), not gridded to a fixed 30-minute quadrangle, so it
 doesn't dilute a single tall feature across a whole quadrangle the way
 the printed chart figure does. It is what the planner suggests, never a
 limit: a pilot's own altitude under 91.119's minimum is flown with a
-caution (app.planning.floor_caution).
+caution (the engine's floor_caution).
 """
 import threading
 from pathlib import Path

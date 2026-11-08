@@ -17717,6 +17717,1663 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "own_altitude_caution": {
+      "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, into Class B (91.131), over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "OwnAltitudeCautionInput",
+          "type": "object",
+          "properties": {
+            "selection": {
+              "type": "object",
+              "description": "select_cruise_altitude's answer: its `rules` and `segments`."
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "altitude_ft": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "altitude_ft"
+                ]
+              }
+            },
+            "between": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[from_ident, to_ident]"
+            },
+            "profile": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "The airplane: `supplemental_oxygen` or `pressurized` true takes 91.211's cautions away."
+            }
+          },
+          "required": [
+            "selection",
+            "legs",
+            "between"
+          ]
+        },
+        "answer": {
+          "title": "OwnAltitudeCautionAnswer",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "from_ident": {
+              "type": "string"
+            },
+            "to_ident": {
+              "type": "string"
+            },
+            "altitude_ft": {
+              "type": "number"
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "from_ident",
+            "to_ident",
+            "altitude_ft",
+            "reasons"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "floor_caution": {
+      "description": "What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FloorCautionInput",
+          "type": "object",
+          "properties": {
+            "segment": {
+              "type": "object",
+              "description": "A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested."
+            },
+            "altitude_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "segment",
+            "altitude_ft"
+          ]
+        },
+        "answer": {
+          "title": "FloorCautionAnswer",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "oxygen_caution": {
+      "description": "What 14 CFR 91.211(a) asks of a flight up to an altitude in an unpressurised airplane: over 12,500 ft MSL the crew past 30 minutes, over 14,000 the crew throughout, over 15,000 every occupant. Empty where the profile carries oxygen or is pressurised.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "OxygenCautionInput",
+          "type": "object",
+          "properties": {
+            "highest_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "profile": {
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          }
+        },
+        "answer": {
+          "title": "OxygenCautionAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "prohibited_caution": {
+      "description": "Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProhibitedCautionInput",
+          "type": "object",
+          "properties": {
+            "selection": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "selection"
+          ]
+        },
+        "answer": {
+          "title": "ProhibitedCautionAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "ifr_alternate_destination": {
+      "description": "Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IfrAlternateDestinationInput",
+          "$ref": "#/definitions/IfrAlternateIn"
+        },
+        "answer": {
+          "title": "IfrAlternateDestinationAnswer",
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "approach": {
+              "type": "boolean"
+            },
+            "ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "taf": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "ident",
+            "approach",
+            "ceiling_ft",
+            "visibility_sm",
+            "taf",
+            "required",
+            "reasons"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "ifr_alternate_check": {
+      "description": "Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IfrAlternateCheckInput",
+          "$ref": "#/definitions/IfrAlternateIn"
+        },
+        "answer": {
+          "title": "IfrAlternateCheckAnswer",
+          "$ref": "#/definitions/IfrAlternateCheck"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "ifr_alternates_ranked": {
+      "description": "The fields offered as the IFR alternate: those that will do, or that meet the standard minimums and publish their own, good first then nearest, `limit` of them.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IfrAlternatesRankedInput",
+          "type": "object",
+          "properties": {
+            "checks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "description": "An ifr_alternate_check answer with its distance_nm."
+              }
+            },
+            "limit": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "checks"
+          ]
+        },
+        "answer": {
+          "title": "IfrAlternatesRankedAnswer",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "ahead_frame": {
+      "description": "Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AheadFrameInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "track_deg": {
+              "type": "number",
+              "description": "True track over the ground."
+            },
+            "gs_kt": {
+              "type": "number"
+            },
+            "alt_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "GPS altitude, feet MSL."
+            },
+            "vs_fpm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "track_deg",
+            "gs_kt"
+          ]
+        },
+        "answer": {
+          "title": "AheadFrameAnswer",
+          "type": "object",
+          "properties": {
+            "box": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4,
+              "description": "[south, west, north, east]."
+            },
+            "near_box": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4,
+              "description": "[south, west, north, east]."
+            },
+            "lats": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "description": "Three rows: the track, left of it, right of it."
+            },
+            "lons": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "required": [
+            "box",
+            "near_box",
+            "lats",
+            "lons"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "alerts_ahead": {
+      "description": "What is ahead of own ship from the planner's data (ahead.rs): the Class B, C and D (91.129-91.131), special-use areas (91.133, AIM 3-4) and TFRs (91.137-91.145, 99.7) its track goes into in the next five minutes, and the ground or a DOF obstacle it comes within 500 ft of in the next minute (borrowed from 91.119(c)); warnings first, then the soonest. Nothing under 40 kt. Advisory: not a TAWS (TSO-C151). A list given as null was not read, and is named in `unavailable`.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AlertsAheadInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "track_deg": {
+              "type": "number"
+            },
+            "gs_kt": {
+              "type": "number"
+            },
+            "alt_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "vs_fpm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "now": {
+              "type": "number",
+              "description": "Unix seconds."
+            },
+            "ground_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The ground under the airplane."
+            },
+            "airspace": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "class": {
+                    "type": "string"
+                  },
+                  "floor_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "None: up to Class A."
+                  },
+                  "polygons": {
+                    "$ref": "#/definitions/AheadPolygons"
+                  }
+                },
+                "required": [
+                  "name",
+                  "class",
+                  "polygons"
+                ]
+              }
+            },
+            "special_use": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "P, R, MOA, W or A."
+                  },
+                  "floor_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "floor_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "times_of_use": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ground_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The ground under the area, for AGL heights."
+                  },
+                  "polygons": {
+                    "$ref": "#/definitions/AheadPolygons"
+                  }
+                },
+                "required": [
+                  "name",
+                  "type",
+                  "polygons"
+                ]
+              }
+            },
+            "tfrs": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "notam_id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "rule": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "floor_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "floor_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "effective": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Unix seconds."
+                  },
+                  "expires": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Unix seconds."
+                  },
+                  "ground_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "polygons": {
+                    "$ref": "#/definitions/AheadPolygons"
+                  }
+                },
+                "required": [
+                  "notam_id",
+                  "polygons"
+                ]
+              }
+            },
+            "near_field": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "distance_nm": {
+                  "type": "number"
+                },
+                "elevation_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "distance_nm"
+              ]
+            },
+            "swath_ground_ft": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "description": "The ground at ahead_frame's swath, its rows."
+            },
+            "obstacles": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "amsl_ft": {
+                    "type": "number"
+                  },
+                  "type": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "lat",
+                  "lon",
+                  "amsl_ft"
+                ]
+              }
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "track_deg",
+            "gs_kt",
+            "now"
+          ]
+        },
+        "answer": {
+          "title": "AlertsAheadAnswer",
+          "type": "object",
+          "properties": {
+            "alerts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "airspace",
+                      "special_use",
+                      "tfr",
+                      "terrain",
+                      "obstacle"
+                    ]
+                  },
+                  "level": {
+                    "type": "string",
+                    "enum": [
+                      "warning",
+                      "caution"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "class": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "need": {
+                    "type": "string"
+                  },
+                  "inside": {
+                    "type": "boolean"
+                  },
+                  "seconds": {
+                    "type": "number"
+                  },
+                  "distance_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "lon": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "floor_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "top_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "clearance_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "times_of_use": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "notam_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind",
+                  "level",
+                  "name",
+                  "class",
+                  "need",
+                  "inside",
+                  "seconds",
+                  "distance_nm",
+                  "lat",
+                  "lon",
+                  "floor_ft",
+                  "ceiling_ft",
+                  "top_ft",
+                  "clearance_ft",
+                  "times_of_use",
+                  "notam_id"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "unavailable": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "tfrs_as_of": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ground_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The ground under the airplane as given (ground_ft), or null: the member the phones' answer from the packs carries too, which their glide ring stands on (#218)."
+            }
+          },
+          "required": [
+            "alerts",
+            "unavailable",
+            "tfrs_as_of"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "congested_points": {
+      "description": "Whether each point is over a congested area or within 2,000 ft of one (14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet'), east-west by the cosine of the point's latitude, from the towns the planner reads (Census urban areas and gazetteer places).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CongestedPointsInput",
+          "type": "object",
+          "properties": {
+            "areas": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AheadPolygons"
+              },
+              "description": "Each town's outline."
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "description": "[[lat, lon], ...]."
+            },
+            "candidates": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "description": "For each point, the indices of the areas to measure it against; null, all of them."
+            }
+          },
+          "required": [
+            "areas",
+            "points"
+          ]
+        },
+        "answer": {
+          "title": "CongestedPointsAnswer",
+          "type": "array",
+          "items": {
+            "type": "boolean"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "field_taf": {
+      "description": "The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FieldTafInput",
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "at": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ],
+              "description": "Where the field is; null where it is not known (its own TAF only)."
+            },
+            "stations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "icao_id": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "lon": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "icao_id"
+                ]
+              }
+            }
+          },
+          "required": [
+            "ident",
+            "stations"
+          ]
+        },
+        "answer": {
+          "title": "FieldTafAnswer",
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "The station's index in `stations`; null for none within reach."
+            },
+            "nm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "How far the nearest is; null for the field's own."
+            },
+            "reach_nm": {
+              "type": "number",
+              "description": "How far a TAF is taken to speak for a field without its own."
+            }
+          },
+          "required": [
+            "index",
+            "nm",
+            "reach_nm"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "radio_script": {
+      "description": "A route's radio calls, field by field (AIM 4-2, AC 90-66C): the broadcast to listen to first, the tower's or the CTAF's calls, flight following, and the arrival, figures as spoken (AIM 4-2-8, 4-2-9).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RadioScriptInput",
+          "type": "object",
+          "properties": {
+            "call_sign": {
+              "type": "string",
+              "description": "As spoken (radio_call_sign)."
+            },
+            "airports": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "airspace_class": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "frequencies": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "frequency_mhz": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "pattern_altitude_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "takeoff": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "ident": {
+                        "type": "string",
+                        "description": "As painted, \"27\"."
+                      },
+                      "traffic": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "\"left\" or \"right\" (91.126(b)(1))."
+                      }
+                    },
+                    "required": [
+                      "ident"
+                    ],
+                    "description": "The runway end the host picked (gonogo_runway_flown); null where none has a heading."
+                  },
+                  "landing": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "ident": {
+                        "type": "string",
+                        "description": "As painted, \"27\"."
+                      },
+                      "traffic": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "\"left\" or \"right\" (91.126(b)(1))."
+                      }
+                    },
+                    "required": [
+                      "ident"
+                    ],
+                    "description": "The runway end the host picked (gonogo_runway_flown); null where none has a heading."
+                  }
+                },
+                "required": [
+                  "ident",
+                  "frequencies"
+                ]
+              }
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "true_course_deg": {
+                    "type": "number"
+                  },
+                  "altitude_ft": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to",
+                  "true_course_deg",
+                  "altitude_ft"
+                ]
+              }
+            }
+          },
+          "required": [
+            "call_sign",
+            "airports",
+            "legs"
+          ]
+        },
+        "answer": {
+          "title": "RadioScriptAnswer",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "ident": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "departure",
+                  "arrival"
+                ]
+              },
+              "calls": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string"
+                    },
+                    "mhz": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "words": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "listen": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "to",
+                    "mhz",
+                    "words"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "title",
+              "ident",
+              "kind",
+              "calls"
+            ]
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "radio_call_sign": {
+      "description": "The airplane's call sign as spoken: its make and its registration, the N dropped (AIM 4-2-4), or a blank for the registration.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RadioCallSignInput",
+          "type": "object",
+          "properties": {
+            "make": {
+              "type": "string"
+            },
+            "tail": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "make"
+          ]
+        },
+        "answer": {
+          "title": "RadioCallSignAnswer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "radio_place_name": {
+      "description": "What a pilot calls a field: its name without Airport, International and the like; its ident where nothing is left.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RadioPlaceNameInput",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ident": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ident"
+          ]
+        },
+        "answer": {
+          "title": "RadioPlaceNameAnswer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "solo_standing": {
+      "description": "A student's 61.87(n) solo endorsement on the instructor's list: the days to its last good day and its standing, caution within 7 days (the owner's choice).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "SoloStandingInput",
+          "type": "object",
+          "properties": {
+            "until": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The last day it is good, YYYY-MM-DD; null for none on record."
+            },
+            "today": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "today"
+          ]
+        },
+        "answer": {
+          "title": "SoloStandingAnswer",
+          "type": "object",
+          "properties": {
+            "days": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "standing": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "caution",
+                "stop",
+                "unknown"
+              ]
+            }
+          },
+          "required": [
+            "days",
+            "standing"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "is_night": {
+      "description": "Whether an instant is night at a point (14 CFR 1.1: outside civil twilight, the sun's centre six degrees below the horizon), by NOAA's solar calculation; a polar day is night or day all day.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IsNightInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number",
+              "description": "East positive."
+            },
+            "at_s": {
+              "type": "number",
+              "description": "UNIX seconds, UTC."
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "at_s"
+          ]
+        },
+        "answer": {
+          "title": "IsNightAnswer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "civil_twilight": {
+      "description": "Dawn and dusk (the beginning of morning and the end of evening civil twilight, 14 CFR 1.1) of the civil day whose solar noon falls on the UTC day `day_s` lies in; null each in a polar day, `night_all_day` then saying which kind.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CivilTwilightInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "day_s": {
+              "type": "number",
+              "description": "Any instant of the UTC day, UNIX seconds."
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "day_s"
+          ]
+        },
+        "answer": {
+          "title": "CivilTwilightAnswer",
+          "type": "object",
+          "properties": {
+            "dawn_s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "dusk_s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "night_all_day": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "dawn_s",
+            "dusk_s",
+            "night_all_day"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "night_on_the_way": {
+      "description": "Whether any of a trip from `start` to `end` of `minutes` (its stops' time on the ground counted), leaving at `depart_s`, falls in the night, judged every half hour along the straight line: 14 CFR 91.151(a)(2)'s 45 minutes then.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NightOnTheWayInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "depart_s": {
+              "type": "number"
+            },
+            "minutes": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "start",
+            "end",
+            "depart_s",
+            "minutes"
+          ]
+        },
+        "answer": {
+          "title": "NightOnTheWayAnswer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "night_at_either_end": {
+      "description": "Whether a flight is at night leaving `start` at `depart_s` or arriving at `end` at `arrive_s` (14 CFR 1.1; 91.151(a)'s reserve).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NightAtEitherEndInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "depart_s": {
+              "type": "number"
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "arrive_s": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "start",
+            "depart_s",
+            "end",
+            "arrive_s"
+          ]
+        },
+        "answer": {
+          "title": "NightAtEitherEndAnswer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "checkpoints_select": {
+      "description": "The nav log's checkpoints from the chart model's scored candidates, as their indices in route order: greedy by score, at least `min_spacing_nm` apart (10), none under `min_score` (2.5; null for every score), at most `max_count`, and with `length_nm` none within 3 nm of a hop's ends.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CheckpointsSelectInput",
+          "type": "object",
+          "properties": {
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "along_track_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "predicted_score": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "min_spacing_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "max_count": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "min_score": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Missing: 2.5; null: every score."
+            },
+            "length_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "candidates"
+          ]
+        },
+        "answer": {
+          "title": "CheckpointsSelectAnswer",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "below_vfr_minimums": {
+      "description": "Whether a ceiling or a visibility is under 14 CFR 91.155(c), (d)'s basic VFR minimums (1,000 ft, 3 sm); a missing figure is below nothing.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "BelowVfrMinimumsInput",
+          "type": "object",
+          "properties": {
+            "ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "answer": {
+          "title": "BelowVfrMinimumsAnswer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -18005,7 +19662,28 @@
     "workings_right",
     "endorsement_records",
     "inspections_due",
-    "vor_check_limit_deg"
+    "vor_check_limit_deg",
+    "own_altitude_caution",
+    "floor_caution",
+    "oxygen_caution",
+    "prohibited_caution",
+    "ifr_alternate_destination",
+    "ifr_alternate_check",
+    "ifr_alternates_ranked",
+    "ahead_frame",
+    "alerts_ahead",
+    "congested_points",
+    "field_taf",
+    "radio_script",
+    "radio_call_sign",
+    "radio_place_name",
+    "solo_standing",
+    "is_night",
+    "civil_twilight",
+    "night_on_the_way",
+    "night_at_either_end",
+    "checkpoints_select",
+    "below_vfr_minimums"
   ],
   "additionalProperties": false,
   "definitions": {
@@ -22609,7 +24287,8 @@
           "type": [
             "boolean",
             "null"
-          ]
+          ],
+          "description": "Night at either end (14 CFR 91.151's 45 minutes) as the host judged it; missing or null, the engine judges it over the flight's window (sun.rs)."
         },
         "terrain_ft": {
           "type": [
@@ -22947,6 +24626,175 @@
         "words"
       ],
       "additionalProperties": false
+    },
+    "IfrAlternateIn": {
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "approaches": {
+          "type": "object",
+          "properties": {
+            "any": {
+              "type": "boolean"
+            },
+            "precision": {
+              "type": "boolean"
+            },
+            "alternate_minimums_url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "any",
+            "precision"
+          ],
+          "description": "The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page."
+        },
+        "forecast": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ceiling_unknown": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "raw": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "description": "The worst its TAF forecasts over the window (taf_window), null where no TAF covers it."
+        }
+      },
+      "required": [
+        "ident",
+        "approaches"
+      ]
+    },
+    "IfrAlternateCheck": {
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "approach": {
+          "type": "boolean"
+        },
+        "precision": {
+          "type": "boolean"
+        },
+        "minimums": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ceiling_ft": {
+              "type": "number"
+            },
+            "visibility_sm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "ceiling_ft",
+            "visibility_sm"
+          ]
+        },
+        "alternate_minimums_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "taf": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "good": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "meets_standard": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "ident",
+        "approach",
+        "precision",
+        "minimums",
+        "alternate_minimums_url",
+        "ceiling_ft",
+        "visibility_sm",
+        "taf",
+        "good",
+        "meets_standard",
+        "reasons"
+      ]
+    },
+    "AheadPolygons": {
+      "description": "An area's outline: polygons, each its outer ring and its holes, each ring [[lon, lat], ...].",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
     }
   }
 }

@@ -298,6 +298,24 @@ pub fn forecast_hour(hours_ahead: Option<f64>) -> &'static str {
     }
 }
 
+/// The airplane's service ceiling on the day: the book figure is a density
+/// altitude (where the best climb has fallen to 100 fpm, FAA-H-8083-25C
+/// ch. 11), so it is found as an altitude in the forecast temperatures
+/// (wingtip_flight::performance::altitude_at_density_altitude), to the
+/// nearest 100 ft. A warm day brings it down, a cold one lifts it. The
+/// book figure itself where the profile is empty: a standard day's,
+/// assumed rather than known.
+pub fn service_ceiling_on_the_day(book_ft: f64, profile: &[(f64, f64)]) -> f64 {
+    if profile.is_empty() {
+        return book_ft;
+    }
+    let ft = wingtip_flight::performance::altitude_at_density_altitude(book_ft, |h| {
+        temperature_at(profile, h).unwrap_or_else(|| wingtip_flight::flight::isa_temp_c(h))
+    });
+    // Ties to even, as the planner's round() gave it before the move.
+    (ft / 100.0).round_ties_even() * 100.0
+}
+
 #[cfg(test)]
 mod aloft_tests {
     use super::*;
@@ -326,6 +344,20 @@ mod aloft_tests {
         assert_eq!(temperature_at(&p, 4500.0), Some(7.0));
         let below = temperature_at(&p, 0.0).unwrap();
         assert!((below - (10.0 + 3000.0 * 0.0019812)).abs() < 1e-9, "{below}");
+    }
+
+    #[test]
+    fn the_service_ceiling_comes_down_on_a_warm_day_and_up_on_a_cold_one() {
+        // wingtip.performance's test of altitude_at_density_altitude, kept
+        // with the call the altitude selection now asks.
+        use wingtip_flight::flight::isa_temp_c;
+        let plus = |dev: f64| vec![(0.0, isa_temp_c(0.0) + dev), (20000.0, isa_temp_c(20000.0) + dev)];
+        assert_eq!(service_ceiling_on_the_day(13500.0, &plus(0.0)), 13500.0);
+        let warm = service_ceiling_on_the_day(13500.0, &plus(15.0));
+        let cold = service_ceiling_on_the_day(13500.0, &plus(-10.0));
+        assert!(11500.0 < warm && warm < 12000.0, "{warm}");
+        assert!(14500.0 < cold && cold < 15000.0, "{cold}");
+        assert_eq!(service_ceiling_on_the_day(13500.0, &[]), 13500.0);
     }
 
     #[test]

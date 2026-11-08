@@ -160,6 +160,9 @@
 //!   `{"cruiseTasKt"?, "cruisePowerPct"?, "fuelBurnGph"?, "usableFuelGal"?,
 //!   "climbTasKt"?, "serviceCeilingFt"?}` each `{"value", "words"}`, from
 //!   `{"text"}`, the text read off its photo;
+//! - `solo_standing`: `{"days", "standing"}` ("ok", "caution" within 7
+//!   days, "stop", "unknown") from `{"until"?, "today"}`, a student's
+//!   61.87(n) solo endorsement on the instructor's list;
 //! - `endorsement_lapse`: the warning an instructor sees once their date
 //!   has passed on the day of signing (14 CFR 61.197(a), (e)), or null,
 //!   from `{"until"?, "until_kind"?: "RE"|"EXP", "signed_on"}`, days as
@@ -311,6 +314,14 @@
 //!   3-2-1's "Class B"), from `{"text"?}`, or each of `{"texts": [text]}`
 //!   as a list, a long list's rows in one call; `title_case` and
 //!   `place_name` (a town as it is spelt, "McCook") the same way;
+//! - `radio_script`: a route's radio calls (AIM 4-2, AC 90-66C), `[{"title",
+//!   "ident", "kind", "calls": [{"to", "mhz", "words", "note"?,
+//!   "listen"?}]}]` from `{"call_sign", "airports": [{"ident", "name"?,
+//!   "airspace_class"?, "frequencies", "pattern_altitude_ft"?, "takeoff"?,
+//!   "landing"?: {"ident", "traffic"?}}], "legs"}`; `radio_call_sign` from
+//!   `{"make", "tail"?}` ("Cessna Three Four Five Sierra Papa", AIM 4-2-4);
+//!   `radio_place_name`, a field as a pilot calls it, from `{"name"?,
+//!   "ident"}`;
 //! - `sigmet_hazard` from `{"hazard"?, "kind"?}`; `gairmet_title` from
 //!   `{"hazard", "severity"?}`; `pirep_conditions`, a string or null, from
 //!   `{"turbulence"?, "icing"?}`;
@@ -372,6 +383,20 @@
 //!   with an unknown ceiling only what the visibility settles;
 //!   `vfr_basic_minimums` (91.155(c), (d)) `{"ceiling_ft", "visibility_sm"}`
 //!   from `{}`;
+//! - `is_night` (14 CFR 1.1: outside civil twilight, the sun six degrees
+//!   down; NOAA's solar calculation) from `{"lat", "lon", "at_s"}`;
+//!   `civil_twilight` `{"dawn_s", "dusk_s", "night_all_day"}` (null each
+//!   where the day is polar) from `{"lat", "lon", "day_s"}`, the civil day
+//!   whose solar noon falls on the UTC day `day_s` is in;
+//!   `night_on_the_way` (91.151(a)(2) on a trip with stops) from
+//!   `{"start": [lat, lon], "end", "depart_s", "minutes"}`;
+//!   `night_at_either_end` from `{"start", "depart_s", "end", "arrive_s"}`;
+//! - `checkpoints_select` (the chart model's candidates to the nav log's
+//!   checkpoints): their indices in route order from `{"candidates":
+//!   [{"along_track_nm", "predicted_score"}], "min_spacing_nm"?,
+//!   "max_count"?, "min_score"? (null for none), "length_nm"?}`;
+//! - `below_vfr_minimums` (91.155(c), (d)) from `{"ceiling_ft"?,
+//!   "visibility_sm"?}`, a missing figure below nothing;
 //! - `reserve_min` (91.151(a), 91.167(a)(3)) from `{"ifr"?, "night"?}`;
 //!   `isa_temp_c` from `{"altitude_ft"}`, `density_ratio` from
 //!   `{"altitude_ft", "oat_c"}`, `density_altitude_ft` from `{"sigma"}`,
@@ -389,6 +414,21 @@
 //!   (73.83), `mountainous_at` (Part 95), `select_cruise_altitude` from the
 //!   data the planner read, `altitude_anyway` and `no_altitude` from
 //!   `{"selection", "between"?, "via"?, "where"?}`;
+//! - a pilot's own altitude's cautions (crate::altitude::cautions, #482
+//!   phase 1): `own_altitude_caution` (91.119, 91.159, 91.131, 91.155,
+//!   71.33, 91.211, 91.177(a), 91.179(b)) `{"from_ident", "to_ident",
+//!   "altitude_ft", "reasons"}` or null from `{"selection", "legs":
+//!   [{"altitude_ft"}], "between": [from, to], "profile"?}`;
+//!   `floor_caution` (91.119) a sentence or null from `{"segment",
+//!   "altitude_ft"}`; `oxygen_caution` (91.211(a)) and
+//!   `prohibited_caution` (73.83) lists of sentences from
+//!   `{"highest_ft"?, "profile"?}` and `{"selection"}`;
+//! - the IFR alternate (crate::alternates, 14 CFR 91.169):
+//!   `ifr_alternate_destination` and `ifr_alternate_check` from
+//!   `{"ident", "approaches": {"any", "precision",
+//!   "alternate_minimums_url"?}, "forecast": {"ceiling_ft"?,
+//!   "ceiling_unknown"?, "visibility_sm"?, "raw"?} | null}`,
+//!   `ifr_alternates_ranked` from `{"checks", "limit"}`;
 //!   `is_eastbound` and `lowest_vfr_cruising_altitude` (91.159(a)) from
 //!   `{"magnetic_course_deg", "floor_ft"}`, `distance_nm` from `{"lat1",
 //!   "lon1", "lat2", "lon2"}`, `region_of` from `{"lat", "lon"}`,
@@ -418,6 +458,16 @@
 //! - `vfr_minimums` (91.155(a)) `{"day", "night"}` or null, from
 //!   `{"class", "altitude_ft", "agl_ft"?}`; `drill_decks`, the light gun's
 //!   and the minimums' cards, from `{}` (crate::drills);
+//! - `ahead_frame` `{"box", "near_box", "lats", "lons"}` from `{"lat",
+//!   "lon", "track_deg", "gs_kt", "alt_ft"?, "vs_fpm"?}`, where the data
+//!   is wanted; then `alerts_ahead` `{"alerts", "unavailable",
+//!   "tfrs_as_of"}` from the same with `"now"`, `"ground_ft"`, the
+//!   `"airspace"`, `"special_use"` and `"tfrs"` with their `"polygons"`,
+//!   `"near_field"`, `"swath_ground_ft"` and the DOF's `"obstacles"`, a
+//!   list null where it was not read (crate::ahead);
+//! - `congested_points` `[bool]` from `{"areas": [polygons], "points":
+//!   [[lat, lon]], "candidates"?: [[index]]}`, 91.119(b)'s 2,000 ft
+//!   (altitude::congested);
 //! - `route_position` `{"along_nm", "total_nm", "left_nm", "off_nm",
 //!   "on_route", "leg", "leg_fraction", "burnt_gal"}` or null, from
 //!   `{"at", "line"? | "points"?, "legs"?}` (motion::along);
@@ -526,7 +576,11 @@
 //!   "wind_speed_kt"}` or null (a list of them for `"altitudes"`) from
 //!   `{"levels": {altitude_ft: {"wind_dir_true_deg", "wind_speed_kt"}},
 //!   "altitude_ft"}`; `forecast_hour`: "06", "12" or "24" from
-//!   `{"hours_ahead"?}`.
+//!   `{"hours_ahead"?}`;
+//! - `field_taf`: the TAF that speaks for a field, its own or the nearest
+//!   within 25 nm, `{"index", "nm", "reach_nm"}` (index null for none, nm
+//!   null for its own) from `{"ident", "at"?: {"lat", "lon"}, "stations":
+//!   [{"icao_id", "lat"?, "lon"?}]}`.
 //!
 //! The traffic list's filters and the registry's airplanes, as above:
 //!
@@ -786,6 +840,21 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             json::opt_string(&mut out, warning.as_deref());
             Ok(out)
         }
+        "solo_standing" => {
+            let until = match ask.v.get("until") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(s)) => Some(s.as_str()),
+                Some(_) => return Err("solo_standing: \"until\" is not a string".to_owned()),
+            };
+            let (days, standing) = endorsements::solo_standing(until, ask.str("today")?)?;
+            // A whole number of days, as the contract types it (integer).
+            let mut out = String::from("{\"days\":");
+            out.push_str(&days.map_or("null".to_owned(), |d| d.to_string()));
+            out.push_str(",\"standing\":");
+            json::string(&mut out, standing);
+            out.push('}');
+            Ok(out)
+        }
         "endorsements_in_force" => {
             let signed = ask
                 .list("signed")?
@@ -900,7 +969,11 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         "airspace_column" => crate::rules::column_json(ask.v),
         "mode_c_veil" => crate::rules::veil_json(ask.v),
         "notams_fns" | "notam_text" | "metar_read" | "taf_read" | "winds_read" | "tfr_detail_read" | "ceiling_ft"
-        | "sky_ceiling" | "report_flight_category" | "vfr_basic_minimums" | "vfr_not_recommended_reasons" => weather_rule(&ask),
+        | "sky_ceiling" | "report_flight_category" | "vfr_basic_minimums" | "vfr_not_recommended_reasons" | "below_vfr_minimums" => {
+            weather_rule(&ask)
+        }
+        "is_night" | "civil_twilight" | "night_on_the_way" | "night_at_either_end" => sun_rule(&ask),
+        "checkpoints_select" => checkpoints_rule(&ask),
         "reserve_min" | "isa_temp_c" | "density_ratio" | "density_altitude_ft" | "pressure_altitude_ft" | "is_eastbound"
         | "lowest_vfr_cruising_altitude" | "distance_nm" | "region_of" | "descent_ft_per_nm" | "wind_correction_deg"
         | "groundspeed_kt" => flight_rule(&ask),
@@ -951,6 +1024,8 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             Ok(crate::cycles::to_json(&crate::cycles::cycle(kind, effective, on)))
         }
         _ if crate::drills::NAMES.contains(&name) => crate::drills::call(name, ask.v),
+        // What is ahead of own ship from the planner's data (ahead.rs).
+        _ if crate::ahead::NAMES.contains(&name) => crate::ahead::call(name, ask.v),
         _ if crate::pilot::records::NAMES.contains(&name) => crate::pilot::records::call(name, ask.v),
         _ if crate::wording::NAMES.contains(&name) => crate::wording::answer(name, ask.v),
         // A field's weather (forecast::calls), the traffic list's filters and
@@ -960,10 +1035,13 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         _ if crate::aircraft::calls::NAMES.contains(&name) => crate::aircraft::calls::call(name, ask.v),
         // Instrument approaches taught and debriefed (approach::calls).
         _ if crate::approach::calls::NAMES.contains(&name) => crate::approach::calls::call(name, ask.v),
+        // The IFR alternate, 14 CFR 91.169 (alternates).
+        _ if crate::alternates::NAMES.contains(&name) => crate::alternates::call(name, ask.v),
         _ if crate::route::answers::NAMES.contains(&name) => crate::route::answers::answer(name, ask.v),
         _ if crate::navlog::calls::NAMES.contains(&name) => crate::navlog::calls::call(name, ask.v),
         // Route options, the way round high ground and a point named off a
         // fix (route::options).
+        #[cfg(feature = "route-options")]
         _ if crate::route::options::NAMES.contains(&name) => crate::route::options::call(name, ask.v),
         // The things that move (motion::call), then the Go / No-Go's, by
         // their own names (gonogo::calls), last.
@@ -1092,6 +1170,14 @@ fn weather_rule(ask: &Ask) -> Result<String, String> {
             json::opt_string(&mut out, category);
             Ok(out)
         }
+        // Whether a ceiling or a visibility is under 91.155(c), (d)'s basic
+        // VFR minimums (1,000 ft, 3 sm, rules.rs): a missing figure is not
+        // below anything, the caller saying it is unknown.
+        "below_vfr_minimums" => {
+            let below = ask.opt_num("ceiling_ft")?.is_some_and(|c| c < crate::rules::SURFACE_AREA_CEILING_FT)
+                || ask.opt_num("visibility_sm")?.is_some_and(|v| v < crate::rules::SURFACE_AREA_VISIBILITY_SM);
+            Ok(below.to_string())
+        }
         // The forecast's along-route reasons, held to the basic VFR
         // minimums the airspace rules keep (91.155(c), (d)), which the
         // weather crate is under.
@@ -1218,6 +1304,81 @@ fn flight_rule(ask: &Ask) -> Result<String, String> {
         }
     };
     json::number(&mut out, figure);
+    Ok(out)
+}
+
+/// Night and civil twilight (crate::sun, 14 CFR 1.1).
+fn sun_rule(ask: &Ask) -> Result<String, String> {
+    use crate::sun;
+    let pair = |key: &str| -> Result<(f64, f64), String> {
+        match ask.v.get(key).and_then(Value::as_array) {
+            Some([a, b]) => a.as_f64().zip(b.as_f64()).ok_or_else(|| format!("{}: \"{key}\" is not [lat, lon]", ask.name)),
+            _ => Err(format!("{}: \"{key}\" is not [lat, lon]", ask.name)),
+        }
+    };
+    let mut out = String::new();
+    match ask.name {
+        "is_night" => out.push_str(if sun::is_night(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?) { "true" } else { "false" }),
+        "civil_twilight" => {
+            let t = sun::civil_twilight(ask.num("lat")?, ask.num("lon")?, ask.num("day_s")?);
+            out.push_str("{\"dawn_s\":");
+            json::opt_number(&mut out, t.dawn_s);
+            out.push_str(",\"dusk_s\":");
+            json::opt_number(&mut out, t.dusk_s);
+            out.push_str(",\"night_all_day\":");
+            out.push_str(match t.night_all_day {
+                Some(true) => "true",
+                Some(false) => "false",
+                None => "null",
+            });
+            out.push('}');
+        }
+        "night_on_the_way" => {
+            let night = sun::night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?);
+            out.push_str(if night { "true" } else { "false" });
+        }
+        _ => {
+            let night = sun::night_at_either_end(pair("start")?, ask.num("depart_s")?, pair("end")?, ask.num("arrive_s")?);
+            out.push_str(if night { "true" } else { "false" });
+        }
+    }
+    Ok(out)
+}
+
+/// The nav log's checkpoints from the chart model's candidates
+/// (route::checkpoints).
+fn checkpoints_rule(ask: &Ask) -> Result<String, String> {
+    use crate::route::checkpoints::{self, Candidate};
+    let candidates: Vec<Candidate> = ask
+        .list("candidates")?
+        .iter()
+        .map(|c| Candidate {
+            along_track_nm: c.get("along_track_nm").and_then(Value::as_f64),
+            score: c.get("predicted_score").and_then(Value::as_f64),
+        })
+        .collect();
+    // A missing min_score is the planner's MIN_SCORE; null takes every score.
+    let min_score = match ask.v.get("min_score") {
+        None => Some(checkpoints::MIN_SCORE),
+        Some(Value::Null) => None,
+        Some(Value::Number(n)) => Some(*n),
+        Some(_) => return Err(format!("{}: \"min_score\" is not a number or null", ask.name)),
+    };
+    let picked = checkpoints::select(
+        &candidates,
+        ask.opt_num("min_spacing_nm")?.unwrap_or(checkpoints::MIN_SPACING_NM),
+        ask.opt_num("max_count")?.map(|n| n.max(0.0) as usize),
+        min_score,
+        ask.opt_num("length_nm")?,
+    );
+    let mut out = String::from("[");
+    for (i, p) in picked.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&p.to_string());
+    }
+    out.push(']');
     Ok(out)
 }
 

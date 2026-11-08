@@ -53,11 +53,11 @@ workspace.
 | `procedures` | figures (debrief, diversion, holding, lost comms, words) | core, flight |
 | `radio` | clearance, readback, atis | core |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), aircraft | core |
-| `brief` | gonogo, runway | core, flight, procedures |
+| `brief` | gonogo, runway, alternates (91.169's IFR alternate) | core, flight, procedures |
 | `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route), approach, navlog | core, flight, weather, procedures |
 | `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, procedures, radio |
-| `wording` | wording | core, procedures, airspace |
-| `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words) | core, flight, procedures |
+| `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
+| `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas) | core, flight, weather, procedures |
 | `facade/` | call | all of them |
 
 Why these lines:
@@ -92,10 +92,13 @@ Why these lines:
   names (it stays in `airspace`, not `radio`, as it reads the phone's
   packs through `pack` and `pack_query`, which `radio` is under), and `figures` because `rules` writes its figures with
   `figures::words`; `wording` sits on top of it for `rules`' entry rules
-  and call types by class.
-- `altitude` takes `flight` for 91.159's lowest altitude and `procedures`
-  for `figures::words`, which its words where no altitude fits are written
-  in; nothing above it uses it but the facade.
+  and call types by class, and on `brief` and `route` for the radio
+  script's runway words and its 3:1 ten-mile altitude (`route` without
+  its `options`).
+- `altitude` takes `flight` for 91.159's lowest altitude and the limits,
+  `weather` for the TAF's reach round a field (`forecast::field`), and
+  `procedures` for `figures::words`, which its words where no altitude
+  fits are written in; nothing above it uses it but the facade.
 - `route` takes `flight` for the nav log: its legs fly the wind triangle
   and the airplane's performance, which sit in `flight` because the
   altitude selection needs the service ceiling on the day from them too.
@@ -225,6 +228,29 @@ Then the callers switch to the name and the old copy is deleted.
   `no_altitude`). The planner reads the ground, the obstacles, the towns,
   the airspace and the weather and passes them in; held to the shared
   fixture `altitude.json`.
+- Night, the planning cautions and the IFR alternate are the engine's too
+  (#482 phase 1, claude/engine-phase1c): night and civil twilight by
+  NOAA's solar calculation (`crates/flight`'s sun: `is_night`,
+  `night_on_the_way`, 14 CFR 1.1 and 91.151), which the nav log's fuel
+  plan and route options read; what a pilot's own altitude breaks
+  (`crates/altitude`'s cautions: 91.119, 91.131, 91.155, 91.159, 71.33,
+  91.211's oxygen, 91.177 and 91.179 under IFR, 73.83) and whether a
+  point is over a congested area under 91.119(b) (`congested_points`);
+  whether an IFR flight needs an alternate and whether a field will do
+  (`crates/brief`'s alternates, 91.169); the nav log's checkpoints from
+  the chart model's scores (`checkpoints_select`); what is ahead of own
+  ship with the DOF's obstacles (`crates/airspace`'s ahead,
+  `alerts_ahead`); the service ceiling in the day's temperatures
+  (`service_ceiling_on_the_day`); and on the web the field's TAF
+  (`field_taf`), the radio calls' words (`crates/wording`'s script,
+  `radio_script`) and a student's solo endorsement's standing
+  (`solo_standing`, 61.87(n)). Held to the shared fixtures
+  `planning.json`, `cautions.json`, `ahead.json`, `congested.json` and
+  `webRules.json`.
+- Route options (`crates/route`'s options) are a cargo feature, `options`
+  (the facade's `route-options`), on for the planner and the phones and
+  off in the web's WebAssembly, which never asks them: they were 150 KB of
+  the module.
 - The planner's own copies are going (#482 phase 0): the airspace column
   and the Mode C veil (`airspace_column`, `mode_c_veil`), an FNS message's
   NOTAMs (`notams_fns`), a report's ceiling and category (`ceiling_ft`,

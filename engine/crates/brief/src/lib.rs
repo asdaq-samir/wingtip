@@ -4,6 +4,8 @@
 //! runway pick, and the runway rules by name read their input as the Go /
 //! No-Go's do.
 //!
+//! - alternates: the IFR alternate, 14 CFR 91.169 -- whether the
+//!   destination needs one and whether a field will do as one;
 //! - gonogo: the Brief's Go / No-Go -- its seven findings and the line
 //!   over them, the pilot's minimums, icing under IFR, the risk
 //!   assessment, the runway check, the weight and balance and the pass
@@ -12,6 +14,7 @@
 //!   flown, its pattern's side, entry, altitude and legs, a POH's
 //!   short-field distances and how an end suits the airplane.
 
+pub mod alternates;
 pub mod gonogo;
 pub mod runway;
 

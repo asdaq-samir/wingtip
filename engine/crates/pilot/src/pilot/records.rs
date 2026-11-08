@@ -260,7 +260,7 @@ mod tests {
         assert!(due.contains(r#""transponder_check_until":"2026-02-28""#), "{due}");
         assert!(due.contains(r#""elt_until":null"#), "{due}");
         let vor = ask("inspections_due", r#"{"vor_check":{"on":"2026-11-01","kind":"AIRBORNE","error_deg":-5},"hundred_hour_at_hours":1234.5}"#);
-        assert!(vor.contains(r#""vor_check":{"limit_deg":6,"within":true,"until":"2026-12-01"}"#), "{vor}");
+        assert!(vor.contains(r#""vor_check":{"limit_deg":6.0,"within":true,"until":"2026-12-01"}"#), "{vor}");
         assert!(vor.contains(r#""hundred_hour_due_at_hours":1334.5"#), "{vor}");
     }
 

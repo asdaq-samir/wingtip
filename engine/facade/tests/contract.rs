@@ -74,9 +74,11 @@ fn code_names() -> BTreeSet<String> {
     for src in [
         include_str!("../../crates/wording/src/wording/mod.rs"),
         include_str!("../../crates/airspace/src/drills.rs"),
+        include_str!("../../crates/airspace/src/ahead.rs"),
         include_str!("../../crates/pilot/src/pilot/records.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
+        include_str!("../../crates/brief/src/alternates.rs"),
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
         include_str!("../../crates/route/src/approach/calls.rs"),
         include_str!("../../crates/route/src/route/answers.rs"),
@@ -519,6 +521,76 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         { "text": "92°13'W", "x": 363.8, "y": 486.0 }, { "text": "92°12'W", "x": 362.7, "y": 328.2 }] }));
     c.ask("diagram_point", json!({ "graticule": graticule, "lat": 46.84, "lon": -92.2, "width": 387.36, "height": 594 }));
     c.ask("diagram_graticule", json!({ "labels": [] }));
+
+    // A pilot's own altitude's cautions and the IFR alternate (#482 phase 1).
+    let cautions = fixture("cautions.json");
+    for case in cautions["own_altitude"].as_array().unwrap() {
+        c.ask("own_altitude_caution", json!({ "selection": case["selection"], "legs": case["legs"], "between": case["between"], "profile": case.get("profile") }));
+    }
+    for case in cautions["floor"].as_array().unwrap() {
+        c.ask("floor_caution", json!({ "segment": case["segment"], "altitude_ft": case["altitude_ft"] }));
+    }
+    c.ask("oxygen_caution", json!({ "highest_ft": 15500, "profile": null }));
+    c.ask("prohibited_caution", json!({ "selection": cautions["prohibited"][0]["selection"] }));
+    for case in cautions["alternate_destination"].as_array().unwrap() {
+        c.ask("ifr_alternate_destination", json!({ "ident": case["ident"], "approaches": case["approaches"], "forecast": case["forecast"] }));
+    }
+    let mut checks = Vec::new();
+    for case in cautions["alternate_check"].as_array().unwrap() {
+        let mut check = c.ask("ifr_alternate_check", json!({ "ident": case["ident"], "approaches": case["approaches"], "forecast": case["forecast"] }));
+        check["distance_nm"] = json!(10.0);
+        checks.push(check);
+    }
+    c.ask("ifr_alternates_ranked", json!({ "checks": checks, "limit": 5 }));
+    // What is ahead of own ship (ahead.rs) and 91.119(b)'s congested areas.
+    let own = json!({ "lat": 42.0, "lon": -88.0, "track_deg": 90.0, "gs_kt": 120.0, "alt_ft": 3000.0, "vs_fpm": 0.0 });
+    let frame = c.ask("ahead_frame", own.clone());
+    let mut given = own.clone();
+    given["now"] = json!(1791655200);
+    given["ground_ft"] = json!(800);
+    given["airspace"] = json!([{ "name": "ROCKFORD CLASS C", "class": "C", "floor_ft": 0, "ceiling_ft": 5000,
+        "polygons": [[[[-87.9, 41.97], [-87.8, 41.97], [-87.8, 42.03], [-87.9, 42.03], [-87.9, 41.97]]]] }]);
+    given["special_use"] = json!([]);
+    given["tfrs"] = json!([]);
+    given["near_field"] = Value::Null;
+    given["swath_ground_ft"] = json!(frame["lats"].as_array().unwrap().iter().map(|r| vec![800.0; r.as_array().unwrap().len()]).collect::<Vec<_>>());
+    given["obstacles"] = json!([{ "lat": 42.0, "lon": -87.98, "amsl_ft": 2700, "type": "TOWER" }]);
+    c.ask("alerts_ahead", given);
+    c.ask("congested_points", json!({ "areas": [[[[[-90.0, 45.0], [-89.98, 45.0], [-89.98, 45.01], [-90.0, 45.01], [-90.0, 45.0]]]]],
+        "points": [[45.005, -89.99], [46.0, -89.0]], "candidates": [[0], []] }));
+    // The web's rules moved into the engine (webRules.json): a field's TAF,
+    // the radio calls and a student's solo endorsement.
+    let web = fixture("webRules.json");
+    for case in web["fieldTaf"].as_array().unwrap() {
+        c.ask("field_taf", case["input"].clone());
+    }
+    for case in web["callSign"].as_array().unwrap() {
+        c.ask("radio_call_sign", json!({ "make": case["make"], "tail": case["tail"] }));
+    }
+    for case in web["placeName"].as_array().unwrap() {
+        c.ask("radio_place_name", json!({ "name": case["name"], "ident": case["ident"] }));
+    }
+    c.ask("radio_script", web["radioScript"]["input"].clone());
+    for case in web["soloStanding"].as_array().unwrap() {
+        c.ask("solo_standing", json!({ "until": case["until"], "today": case["today"] }));
+    }
+
+    // Night, the checkpoints and 91.155's basic minimums (planning.json).
+    let planning = fixture("planning.json");
+    for case in planning["twilight"].as_array().unwrap() {
+        c.ask("civil_twilight", json!({ "lat": case["lat"], "lon": case["lon"], "day_s": case["day_s"] }));
+    }
+    for case in planning["night"].as_array().unwrap() {
+        c.ask("is_night", json!({ "lat": case["lat"], "lon": case["lon"], "at_s": case["at_s"] }));
+    }
+    for case in planning["on_the_way"].as_array().unwrap() {
+        c.ask("night_on_the_way", json!({ "start": case["start"], "end": case["end"], "depart_s": case["depart_s"], "minutes": case["minutes"] }));
+    }
+    c.ask("night_at_either_end", json!({ "start": [41.88, -87.63], "depart_s": 1790096400, "end": [41.88, -87.63], "arrive_s": 1790100000 }));
+    c.ask("checkpoints_select", json!({ "candidates": [{ "along_track_nm": 0, "predicted_score": 3.0 }, { "along_track_nm": 30, "predicted_score": null }],
+        "min_spacing_nm": 10, "min_score": null, "length_nm": 40 }));
+    c.ask("below_vfr_minimums", json!({ "ceiling_ft": 900, "visibility_sm": null }));
+    c.ask("service_ceiling_on_the_day", json!({ "book_ft": 13500, "profile": [[3000, 10], [6000, 4]] }));
 
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.

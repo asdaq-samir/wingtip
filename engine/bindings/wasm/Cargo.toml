@@ -12,5 +12,8 @@ crate-type = ["cdylib"]
 # None but the engine: no wasm-bindgen, so building it takes only cargo
 # and the wasm32-unknown-unknown target, and the JavaScript side is the
 # few lines of apps/web/src/lib/engine/engine.ts.
+#
+# Route options are left out (the facade's route-options feature): the web
+# never asks them, and they were 153 KB of the module.
 [dependencies]
-wingtip-engine = { path = "../../facade" }
+wingtip-engine = { path = "../../facade", default-features = false }

@@ -9,6 +9,8 @@
 //!   shelf, and the altitude wheel's rows;
 //! - clouds: 91.155's distance under a cloud base, and each leg's lowest
 //!   forecast base from the TAFs near it;
+//! - congested: whether a point is over a congested area, or within
+//!   91.119(b)'s 2,000 ft of one, from the towns the planner reads;
 //! - floor: the terrain and obstacle floor of each leg under VFR (91.119)
 //!   and the minimum IFR altitude (91.177(a)), over Part 95's mountainous
 //!   areas (`mountainous`);
@@ -17,6 +19,9 @@
 //!   prohibited airspace -- and the recommendation;
 //! - words: the altitude flown where none is legal (the owner's "warn,
 //!   never limit") and why none is, in a pilot's words;
+//! - cautions: what a pilot's own altitude breaks (91.119, 91.159, 91.131,
+//!   91.155, 71.33, 91.211, 91.177, 91.179) and prohibited airspace on
+//!   the way (73.83), as warnings;
 //! - calls: the names crate::call answers them by.
 //!
 //! The owner's four plans (2026-09-30) are built on these bands: lowest
@@ -24,7 +29,9 @@
 //! economical the fuel's (the nav log's, #482 phase 4).
 
 pub mod calls;
+pub mod cautions;
 pub mod clouds;
+pub mod congested;
 pub mod cruising;
 pub mod floor;
 pub mod mountainous;

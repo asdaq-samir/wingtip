@@ -12,7 +12,9 @@
 //! one and what it says.
 
 pub mod answers;
+pub mod checkpoints;
 pub mod holds;
+#[cfg(feature = "options")]
 pub mod options;
 pub mod picks;
 pub mod points;

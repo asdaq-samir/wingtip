@@ -8,15 +8,11 @@
  * GET /api/instructor already gives (InstructorDto): a student's own
  * currency is their logbook's, which the gateway keeps to them.
  */
-import { differenceInCalendarDays, parseISO } from "date-fns";
 import type { CrossCountryReview, Instructor, StudentRow } from "./api/types";
 import { reviewRoute, said } from "./endorsements";
 import { riskLine } from "./frat";
 import type { Finding } from "./findings";
-
-/** A 14 CFR 61.87(n) solo endorsement is good for 90 days; one lapsing
- *  within this many days, or lapsed, wants the instructor. */
-export const LAPSE_SOON_DAYS = 7;
+import { callEngine } from "./engine/engine";
 
 export interface StudentLine {
   row: StudentRow;
@@ -33,8 +29,11 @@ export interface StudentLine {
 
 const RISK_FINDING: Record<string, Finding> = { low: "ok", caution: "caution", high: "stop" };
 
-/** The days from today to a date, negative once it is gone by. */
-const daysTo = (iso: string, today: string) => differenceInCalendarDays(parseISO(iso), parseISO(today));
+/** A student's 14 CFR 61.87(n) solo endorsement on `today`, the engine's
+ *  (`solo_standing`): the days to its last good day, negative once gone
+ *  by, and its standing -- lapsing within a week (the owner's choice) or
+ *  lapsed wants the instructor. */
+const soloStanding = (until: string | null | undefined, today: string) => callEngine("solo_standing", { until: until ?? null, today });
 
 function lapseWords(days: number, on: string): string {
   if (days < 0) return `lapsed ${said(on)}`;
@@ -49,16 +48,17 @@ export function studentLines(instructor: Instructor, today: string): { needs: St
     const reviews = waiting(s);
     const next = reviews[0];
     const due = reviews.find(r => r.flightOn <= today);
-    const soloDays = s.soloUntil ? daysTo(s.soloUntil, today) : null;
+    const solo = soloStanding(s.soloUntil, today);
+    const soloDays = solo.days;
     const needs: StudentLine["needs"] = due
       ? {
         words: `Solo ${reviewRoute(due)} ${due.flightOn === today ? "today" : said(due.flightOn)} · ${due.flight.risk ? riskLine(due.flight.risk) : "no risk assessment"}`,
         action: "Sign off",
       }
-      : soloDays != null && soloDays <= LAPSE_SOON_DAYS
+      : soloDays != null && solo.standing !== "ok"
         ? { words: `Solo endorsement ${lapseWords(soloDays, s.soloUntil!)}`, action: "Endorse" }
         : null;
-    const currency: Finding = soloDays == null ? "unknown" : soloDays < 0 ? "stop" : soloDays <= LAPSE_SOON_DAYS ? "caution" : "ok";
+    const currency: Finding = solo.standing;
     const goNoGo: Finding = next?.flight.risk ? RISK_FINDING[next.flight.risk.level] ?? "unknown" : "unknown";
     const status = [
       next ? `${reviewRoute(next)} ${next.flightOn === today ? "today" : said(next.flightOn)}` : null,

@@ -11,7 +11,7 @@ from fastapi import HTTPException
 
 from wingtip import aircraft as aircraft_module
 from wingtip import altitude as altitude_module
-from wingtip import airspace, geo, navlog, sun, weather
+from wingtip import airspace, geo, navlog, weather
 from wingtip.config import PLAN_LIMIT_S
 from wingtip.engine import ask as engine
 
@@ -249,10 +249,12 @@ def flight_totals(leg_list: list, profile: dict, r, depart: datetime | None, rul
     t["planned_at"] = now().isoformat().replace("+00:00", "Z")
     t["winds"] = weather.winds_period(forecast_hour_for(depart))
     depart = now() if depart is None else depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)
-    night = sun.is_night(r.start[0], r.start[1], depart)
-    if t["ete_min"] is not None:
-        arrival = depart + timedelta(minutes=t["ete_min"])
-        night = night or sun.is_night(r.end[0], r.end[1], arrival)
+    # 14 CFR 1.1's night at the departure, and at the destination on
+    # arrival where the time aloft is known: the engine's (sun.rs).
+    arrival = depart + timedelta(minutes=t["ete_min"]) if t["ete_min"] is not None else depart
+    end = r.end if t["ete_min"] is not None else r.start
+    night = engine("night_at_either_end", start=list(r.start), depart_s=depart.timestamp(), end=list(end),
+                   arrive_s=arrival.timestamp())
     t.update(engine("navlog_fuel_plan", total_fuel_gal=t["fuel_gal"], profile=profile, night=bool(night), rules=rules,
                     alternate_gal=(alternate or {}).get("fuel_gal") or 0.0))
     t["alternate"] = alternate
@@ -433,138 +435,18 @@ def _utc(text: str) -> datetime:
 def own_altitude_caution(selection: dict, legs: list, between: tuple[str, str], profile: dict | None = None) -> dict | None:
     """What is wrong with an altitude the pilot set for a hop -- the whole
     route's Custom one, or a waypoint's own -- against the band the planner
-    worked out for each of its legs, which the pilot's altitude is flown
-    over unchecked: under the terrain and obstacles' floor (14 CFR 91.119's
-    minimum safe altitudes, floor_caution), off the hemispheric
-    rule more than 3,000 ft above the ground (14 CFR 91.159), into Class B
-    without the clearance planned for (14 CFR 91.131), over the aircraft's
-    service ceiling, or inside the cloud clearance under a forecast base
-    (14 CFR 91.155). Under IFR (the selection's `rules`): under the
-    minimum IFR altitude (14 CFR 91.177(a)), or off the thousands the
-    direction of flight takes (91.179(b)). A warning, never a refusal: the
-    pilot may have reasons the planner cannot see -- ATC may assign
-    otherwise -- and it says why rather than stopping them. None when
+    worked out for each of its legs: the engine's `own_altitude_caution`
+    (14 CFR 91.119, 91.159, 91.131, 91.155, 71.33, 91.211, and under IFR
+    91.177(a) and 91.179(b)). A warning, never a refusal. None when
     nothing is."""
-    reasons: list[str] = []
-    altitude = None
-    if selection.get("rules") == "ifr":
-        return _own_ifr_altitude_caution(selection, legs, between, profile)
-    for leg, segment in zip(legs, selection.get("segments", [])):
-        altitude = leg["altitude_ft"]
-        rule_from = segment.get("hemispheric_rule_from_ft")
-        shelf, ceiling = segment.get("airspace_ceiling_ft"), segment.get("service_ceiling_ft")
-        clouds = segment.get("cloud_ceiling_ft")
-        found = []
-        under = floor_caution(segment, altitude)
-        if under:
-            found.append(under)
-        if rule_from is not None and altitude > rule_from and segment.get("eastbound") is not None:
-            east = segment["eastbound"]
-            if (altitude - (1500 if east else 500)) % 2000:
-                found.append(f"{'Eastbound' if east else 'Westbound'} above {rule_from:,.0f} ft flies "
-                             f"{'odd' if east else 'even'} thousands plus 500 (14 CFR 91.159)")
-        if shelf is not None and altitude >= shelf:
-            found.append(f"Into Class B from {max(shelf, 0):,.0f} ft: it needs a clearance (14 CFR 91.131)")
-        if ceiling is not None and altitude > ceiling:
-            found.append(f"Over the aircraft's {ceiling:,.0f} ft service ceiling")
-        if clouds is not None and altitude > clouds:
-            found.append(f"Inside the cloud clearance under {clouds:,.0f} ft (14 CFR 91.155)")
-        reasons += [r for r in found if r not in reasons]
-    highest = max((leg["altitude_ft"] for leg in legs), default=None)
-    if highest is not None and highest >= CLASS_A_FT:
-        reasons.append("At or over 18,000 ft MSL: Class A, flown under IFR with a clearance alone (14 CFR 71.33, 91.135)")
-    reasons += oxygen_caution(highest, profile)
-    if not reasons or altitude is None:
-        return None
-    return {"from_ident": between[0], "to_ident": between[1], "altitude_ft": altitude, "reasons": reasons}
+    return engine("own_altitude_caution", selection=_caution_selection(selection),
+                  legs=[{"altitude_ft": leg["altitude_ft"]} for leg in legs], between=list(between), profile=profile)
 
 
-#: The DOF's own abbreviations of an obstacle's type (its TYPE column), in
-#: words; the rest are words already ("TOWER", "WINDMILL") and are said in
-#: lower case.
-_OBSTACLE_WORDS = {
-    "T-L TWR": "transmission line tower", "BLDG": "building", "BLDG-TWR": "building tower",
-    "CTRL TWR": "control tower", "GEN UTIL": "utility structure", "ELEC SYS": "electrical structure",
-    "MET": "meteorological tower",
-}
-
-
-def floor_caution(segment: dict, altitude: float) -> str | None:
-    """What a leg flown at `altitude` breaks of 14 CFR 91.119 under VFR, in
-    a pilot's words: the rule, what the floor rests on and how far under it
-    the leg is ("300 ft under the 2,500 ft 14 CFR 91.119(b) asks over a
-    congested area: 1,000 ft over the highest obstacle within 2,000 ft,
-    here a 1,500 ft tower"). Against the rule's own figure, the
-    obstacle's top and its clearance, not the floor rounded up to the
-    next 100 ft (wingtip.terrain): 2,480 ft over a 1,480 ft tower keeps
-    91.119(b). A planner without those says the floor alone, as it did.
-    None where the leg keeps it."""
-    floor, highest, clearance = segment.get("floor_ft"), segment.get("highest_ft"), segment.get("obstacle_clearance_ft")
-    if highest is None or clearance is None:
-        if floor is not None and altitude < floor:
-            return f"Under the {floor:,.0f} ft the terrain and obstacles need (14 CFR 91.119)"
-        return None
-    need = highest + clearance
-    if altitude >= need:
-        return None
-    kind = segment.get("obstacle_type")
-    # "an 800 ft tower", "an 11,000 ft ...": the article as the figure is said.
-    figure = f"{highest:,.0f}"
-    article = "an" if figure.startswith("8") or figure[:3] in ("11,", "18,") else "a"
-    what = (f"{article} {figure} ft {_OBSTACLE_WORDS.get(kind, kind.lower()) if kind else 'obstacle'}"
-            if segment.get("highest_is_obstacle") else f"the ground at {highest:,.0f} ft")
-    # 91.119(b) over a congested area, and where the towns could not be
-    # read (congested None), since the planner then took its 1,000 ft.
-    if clearance >= 1000:
-        where = "over a congested area" if segment.get("congested") else "where a congested area could not be ruled out"
-        return (f"{need - altitude:,.0f} ft under the {need:,.0f} ft 14 CFR 91.119(b) asks {where}: "
-                f"{clearance:,.0f} ft over the highest obstacle within 2,000 ft, here {what}")
-    return f"{need - altitude:,.0f} ft under the {need:,.0f} ft 14 CFR 91.119(c) asks: {clearance:,.0f} ft over {what}"
-
-
-#: Class A's floor, feet MSL (14 CFR 71.33(a)): no VFR flight in it (91.135).
-CLASS_A_FT = 18_000.0
-
-
-def oxygen_caution(highest_ft: float | None, profile: dict | None) -> list[str]:
-    """What 14 CFR 91.211(a) asks of a flight up to `highest_ft` in an
-    airplane with no pressurised cabin, its cabin at the altitude flown:
-    over 12,500 ft MSL the crew's oxygen for any of it past 30 minutes,
-    over 14,000 ft for all of it, over 15,000 ft every occupant's. None
-    where the profile carries oxygen or a pressurised cabin, as the plans
-    do (the engine's navlog plans, wingtip_route::navlog::plans::OXYGEN_CAP_FT)."""
-    if highest_ft is None or highest_ft <= 12_500 or (profile or {}).get("supplemental_oxygen") or (profile or {}).get("pressurized"):
-        return []
-    if highest_ft > 15_000:
-        return ["Over 15,000 ft MSL: oxygen for the crew the whole time there and for every occupant (14 CFR 91.211(a)(2), (3))"]
-    if highest_ft > 14_000:
-        return ["Over 14,000 ft MSL: oxygen for the crew the whole time there (14 CFR 91.211(a)(2))"]
-    return ["Over 12,500 ft MSL: oxygen for the crew for any of it past 30 minutes (14 CFR 91.211(a)(1))"]
-
-
-def _own_ifr_altitude_caution(selection: dict, legs: list, between: tuple[str, str], profile: dict | None = None) -> dict | None:
-    """own_altitude_caution for a flight under IFR."""
-    reasons: list[str] = []
-    altitude = None
-    for leg, segment in zip(legs, selection.get("segments", [])):
-        altitude = leg["altitude_ft"]
-        floor, ceiling = segment.get("floor_ft"), segment.get("service_ceiling_ft")
-        found = []
-        if floor is not None and altitude < floor:
-            found.append(f"Under the {floor:,.0f} ft minimum IFR altitude: {segment.get('obstacle_clearance_ft', 1000):,.0f} ft "
-                         f"over the highest obstacle within 4 nm (14 CFR 91.177(a))")
-        if segment.get("eastbound") is not None:
-            east = segment["eastbound"]
-            if altitude % 1000 or (altitude // 1000) % 2 != (1 if east else 0):
-                found.append(f"{'Eastbound' if east else 'Westbound'} under IFR flies {'odd' if east else 'even'} "
-                             f"thousands, unless ATC assigns otherwise (14 CFR 91.179)")
-        if ceiling is not None and altitude > ceiling:
-            found.append(f"Over the aircraft's {ceiling:,.0f} ft service ceiling")
-        reasons += [r for r in found if r not in reasons]
-    reasons += oxygen_caution(max((leg["altitude_ft"] for leg in legs), default=None), profile)
-    if not reasons or altitude is None:
-        return None
-    return {"from_ident": between[0], "to_ident": between[1], "altitude_ft": altitude, "reasons": reasons}
+def _caution_selection(selection: dict) -> dict:
+    """The members of a selection the cautions read: its rules, segments
+    and special-use airspace."""
+    return {k: selection[k] for k in ("rules", "segments", "special_use") if k in selection}
 
 
 def altitude_anyway(selection: dict) -> float | None:
@@ -586,11 +468,9 @@ def _engine_selection(selection: dict) -> dict:
 
 
 def prohibited_caution(selection: dict) -> list[str]:
-    """Prohibited airspace on the way, as a warning: nobody flies in it
-    without its using agency's authorization (14 CFR 73.83), which an ATC
-    clearance is not."""
-    return [f"Through {a['name']}, prohibited airspace (14 CFR 73.83)"
-            for a in selection.get("special_use", []) if a.get("type") == "P"]
+    """Prohibited airspace on the way, as a warning (14 CFR 73.83): the
+    engine's `prohibited_caution`."""
+    return engine("prohibited_caution", selection=_caution_selection(selection))
 
 
 def no_altitude(

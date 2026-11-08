@@ -402,9 +402,14 @@ fn options(a: &Ask) -> Result<String, String> {
     let (start, end) = (a.dep.at, a.dest.at);
     let mut unchecked = Vec::new();
     let (mut grid, gs) = read_grid(a, &mut unchecked)?;
-    // 91.151: 30 minutes by day, 45 at night (the planner judges the
-    // night at both ends).
-    let reserve_gal = flight::reserve_min(false, a.night) / 60.0 * a.profile.burn_gph;
+    // 91.151: 30 minutes by day, 45 at night, night judged at both ends
+    // of the flight's window (14 CFR 1.1, wingtip_flight::sun) unless the
+    // host says.
+    let night = a.night.unwrap_or_else(|| {
+        let (leave, arrive) = window(a);
+        wingtip_flight::sun::night_at_either_end(start, leave, end, arrive)
+    });
+    let reserve_gal = flight::reserve_min(false, night) / 60.0 * a.profile.burn_gph;
     if a.fields.is_none() {
         unchecked.push("fuel fields".into());
     }

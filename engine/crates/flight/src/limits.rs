@@ -23,6 +23,16 @@ pub const LOWEST_FT: f64 = 500.0;
 /// steps by 500 ft.
 pub const STEP_FT: f64 = 500.0;
 
+/// 14 CFR 91.211(a), supplemental oxygen in an airplane without a
+/// pressurised cabin, its cabin at the altitude flown: (a)(1) above
+/// 12,500 ft MSL up to 14,000 ft, the minimum flight crew for any of it
+/// past 30 minutes; (a)(2) above 14,000 ft, the crew the whole time;
+/// (a)(3) above 15,000 ft, every occupant provided with it. One copy for
+/// the nav log's plans (held under the first) and the cautions.
+pub const OXYGEN_CREW_PAST_30_MIN_FT: f64 = 12_500.0;
+pub const OXYGEN_CREW_FT: f64 = 14_000.0;
+pub const OXYGEN_EVERYONE_FT: f64 = 15_000.0;
+
 /// The highest altitude for the flight rules flown.
 pub fn highest_ft(ifr: bool) -> f64 {
     if ifr {

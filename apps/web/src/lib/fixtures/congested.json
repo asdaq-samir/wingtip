@@ -1,0 +1,152 @@
+{
+  "_note": "14 CFR 91.119(b)'s congested areas (the engine's congested_points, engine/crates/altitude/src/altitude/congested.rs), the cases wingtip.congested's tests held it to: a town a mile on a side with its south-west corner at 45 N 90 W, and a second far to the north. A point counts inside a town or within 2,000 ft of one, east-west by the cosine of its own latitude; a degree of latitude is 60 x 6,076.12 ft. engine/facade/tests/ahead.rs reads them.",
+  "areas": [
+    [
+      [
+        [
+          [
+            -90.0,
+            45.0
+          ],
+          [
+            -89.97951804877309,
+            45.0
+          ],
+          [
+            -89.97951804877309,
+            45.01448292660448
+          ],
+          [
+            -90.0,
+            45.01448292660448
+          ],
+          [
+            -90.0,
+            45.0
+          ]
+        ]
+      ]
+    ],
+    [
+      [
+        [
+          [
+            -90.0,
+            45.2
+          ],
+          [
+            -89.99,
+            45.2
+          ],
+          [
+            -89.99,
+            45.21
+          ],
+          [
+            -90.0,
+            45.21
+          ],
+          [
+            -90.0,
+            45.2
+          ]
+        ]
+      ]
+    ]
+  ],
+  "cases": [
+    {
+      "name": "inside the town",
+      "points": [
+        [
+          45.0072414633,
+          -89.9897590244
+        ]
+      ],
+      "congested": [
+        true
+      ]
+    },
+    {
+      "name": "1,999 ft south counts, 2,001 does not",
+      "points": [
+        [
+          44.9945167859,
+          -89.9897590244
+        ],
+        [
+          44.9945113,
+          -89.9897590244
+        ]
+      ],
+      "congested": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "1,999 ft west counts, 2,001 does not",
+      "points": [
+        [
+          45.0072414633,
+          -90.0077544357
+        ],
+        [
+          45.0072414633,
+          -90.007762194
+        ]
+      ],
+      "congested": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "off a corner the distance is to the corner: 1,980 ft and 2,051",
+      "points": [
+        [
+          44.9961598301,
+          -90.0054308204
+        ],
+        [
+          44.9960226811,
+          -90.0056247783
+        ]
+      ],
+      "congested": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "a point measured only against its candidates",
+      "points": [
+        [
+          45.0072414633,
+          -89.9897590244
+        ],
+        [
+          45.0072414633,
+          -89.9897590244
+        ]
+      ],
+      "candidates": [
+        [
+          0
+        ],
+        [
+          1
+        ]
+      ],
+      "congested": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "no points",
+      "points": [],
+      "congested": []
+    }
+  ]
+}

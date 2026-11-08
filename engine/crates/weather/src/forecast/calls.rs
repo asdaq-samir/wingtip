@@ -1,12 +1,12 @@
 //! The forecast's rules as crate::call answers them, JSON in and out; the
 //! names and their inputs are listed in call.rs with the others.
 
-use super::{awc, category_of, hours, route};
+use super::{awc, category_of, field, hours, route};
 use crate::json::{self, Value};
 use crate::{metar, winds};
 
 /// The names this module answers.
-pub const NAMES: [&str; 21] = [
+pub const NAMES: [&str; 22] = [
     "flight_category",
     "ceiling_visibility",
     "field_hours",
@@ -28,6 +28,7 @@ pub const NAMES: [&str; 21] = [
     "service_ceiling_on_the_day",
     "wind_at_altitude",
     "forecast_hour",
+    "field_taf",
 ];
 
 type R<T> = Result<T, String>;
@@ -278,22 +279,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             None => out.push_str("null"),
         },
         "temperature_at" => json::opt_number(&mut out, winds::temperature_at(&profile(name, v)?, num(name, v, "altitude_ft")?)),
-        // The service ceiling on the day: the book's figure is a density
-        // altitude (where the best climb has fallen to 100 fpm on any
-        // day), found in the forecast's temperatures by
-        // wingtip_flight::performance, to the nearest 100 ft as the
-        // planner gave it; the book figure where there are none.
-        "service_ceiling_on_the_day" => {
-            let book_ft = num(name, v, "book_ft")?;
-            let air = profile(name, v)?;
-            let found = if air.is_empty() {
-                book_ft
-            } else {
-                let temp_at = |h: f64| winds::temperature_at(&air, h).unwrap_or_else(|| wingtip_flight::flight::isa_temp_c(h));
-                (wingtip_flight::performance::altitude_at_density_altitude(book_ft, temp_at) / 100.0).round_ties_even() * 100.0
-            };
-            json::number(&mut out, found);
-        }
+        "service_ceiling_on_the_day" => json::number(&mut out, winds::service_ceiling_on_the_day(num(name, v, "book_ft")?, &profile(name, v)?)),
         "wind_at_altitude" => {
             let lv = levels(name, v)?;
             match v.get("altitudes") {
@@ -313,6 +299,34 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             }
         }
         "forecast_hour" => json::string(&mut out, winds::forecast_hour(opt_num(name, v, "hours_ahead")?)),
+        "field_taf" => {
+            let at = match v.get("at") {
+                None | Some(Value::Null) => None,
+                Some(p) => Some((num(name, p, "lat")?, num(name, p, "lon")?)),
+            };
+            let stations = list(name, v, "stations")?
+                .iter()
+                .map(|s| {
+                    let icao_id = s.get("icao_id").and_then(Value::as_str).ok_or_else(|| format!("{name}: a station has no \"icao_id\""))?;
+                    let at = match (opt_num(name, s, "lat")?, opt_num(name, s, "lon")?) {
+                        (Some(lat), Some(lon)) => Some((lat, lon)),
+                        _ => None,
+                    };
+                    Ok(field::Station { icao_id, at })
+                })
+                .collect::<R<Vec<_>>>()?;
+            let found = field::field_taf(text(name, v, "ident")?, at, &stations);
+            out.push_str("{\"index\":");
+            match found {
+                Some((i, _)) => out.push_str(&i.to_string()),
+                None => out.push_str("null"),
+            }
+            out.push_str(",\"nm\":");
+            json::opt_number(&mut out, found.and_then(|(_, nm)| nm));
+            out.push_str(",\"reach_nm\":");
+            json::number(&mut out, field::TAF_REACH_NM);
+            out.push('}');
+        }
         _ => return Err(format!("the engine has no rule called {name:?}")),
     }
     Ok(out)

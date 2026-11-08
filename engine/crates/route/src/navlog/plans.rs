@@ -27,7 +27,7 @@ pub const STEP_PENALTY_FT_NM: f64 = 10_000.0;
 /// supplemental oxygen (14 CFR 91.211(a)(1)): no plan goes there unless
 /// the profile says the airplane carries it or is pressurised. The lowest
 /// plan cannot reach it anyway; the other three are held under it.
-pub const OXYGEN_CAP_FT: f64 = 12_500.0;
+pub const OXYGEN_CAP_FT: f64 = wingtip_flight::limits::OXYGEN_CREW_PAST_30_MIN_FT;
 
 /// The altitudes each leg's plans may fly, from the altitude selection's
 /// `segments` (one a leg, each with its legal `candidates_ft`): held under

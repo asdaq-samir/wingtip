@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -r ml/requirements-ml
 # missing, rather than a notebook cell later. This image carries no
 # source (compose mounts the checkout), so it is the packages alone:
 # wingtip's own list, then the notebooks'.
-RUN python -B -c "import wingtip_native, numpy, pandas, requests, pyarrow.parquet, shapely.ops, shapefile, pyproj, scipy.spatial, pygeomag, astral, sklearn, joblib, matplotlib, PIL, folium, notebook"
+RUN python -B -c "import wingtip_native, numpy, pandas, requests, pyarrow.parquet, shapely.ops, shapefile, pyproj, scipy.spatial, pygeomag, sklearn, joblib, matplotlib, PIL, folium, notebook"
 
 # Non-root (the base's appuser), matching every other image
 # (the jobs' and the planner's) -- this one used to run (and

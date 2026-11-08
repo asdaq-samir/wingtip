@@ -16,7 +16,9 @@ one job (the owner kept both server languages on this split, 2026-11-06):
   winds, runways, fuel, weather limits, Go / No-Go, altitude selection, holds, procedures,
   the clearance reader, the debrief, a pilot's currency and a student's
   61.109 experience, endorsements and inspections, the altitude limits,
-  91.155's minimums, the filing form's items. No network, no screen, no clock of its own. Each rule is a name in `engine/facade/src/call.rs`,
+  91.155's minimums, the filing form's items, night (14 CFR 1.1), the
+  planning cautions, the IFR alternate (91.169), congested areas, what is
+  ahead, the checkpoint pick and the radio calls' words. No network, no screen, no clock of its own. Each rule is a name in `engine/facade/src/call.rs`,
   JSON in and out, typed in `engine/contract/engine.schema.json`.
 - **The planner** (FastAPI, `services/planner`: `app` over `wingtip`) works
   out a flight: it fetches the FAA's data, reads the weather and the live

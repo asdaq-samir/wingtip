@@ -8,15 +8,14 @@ neither the map nor a briefing waits on tfr.faa.gov (#535).
 """
 from __future__ import annotations
 
-import json
 import math
 import time
 from datetime import datetime, timezone
 
-import wingtip_native
 from shapely.geometry import LineString, Point, shape
 
 from . import weather_store
+from .engine import ask as engine
 from .geo import along_track_distance_nm
 
 #: How often the service reads the shapes again: the site updates them
@@ -32,18 +31,25 @@ class TfrUnavailable(RuntimeError):
     """The weather service has no list of tfr.faa.gov's."""
 
 
+def _when(tfr: dict, start: datetime, end: datetime) -> str | None:
+    """A TFR's window against a flight's time from `start` to `end`: the
+    engine's gonogo_hazard_window with no margin -- "before" it begins,
+    "after" it ends, "during", or None where it gives no time at all. A TFR
+    is in force only from its effective to its expiry time, as its NOTAM
+    gives them (AIM 3-5-3; 14 CFR 91.137-91.145); one with no expiry is
+    until further notice, and a time that cannot be read is no time."""
+    def at(key: str) -> float | None:
+        try:
+            return datetime.fromisoformat(tfr[key].replace("Z", "+00:00")).timestamp() if tfr.get(key) else None
+        except ValueError:
+            return None
+    return engine("gonogo_hazard_window", enter=start.timestamp(), leave=end.timestamp(), valid_from=at("effective"),
+                  valid_to=at("expires"), margin_min=0)
+
+
 def _ended(detail: dict, now: datetime) -> bool:
-    """Whether a TFR's NOTAM has passed its expiry: a TFR is in force only
-    from its effective to its expiry time, as its NOTAM gives them (AIM
-    3-5-3; 14 CFR 91.137-91.145). One with no expiry is until further
-    notice."""
-    expires = detail.get("expires")
-    if not expires:
-        return False
-    try:
-        return datetime.fromisoformat(expires.replace("Z", "+00:00")) < now
-    except ValueError:
-        return False
+    """Whether a TFR's NOTAM has passed its expiry (_when's "after")."""
+    return _when(detail, now, now) == "after"
 
 
 def failing() -> bool:
@@ -81,14 +87,8 @@ def all_tfrs() -> list:
 
 def in_force(tfr: dict, start: datetime, end: datetime) -> bool:
     """Whether a TFR is in force at any time from `start` to `end` (UTC):
-    one with no times is taken as in force. The engine's window
-    (pass_times.rs, `gonogo_hazard_window`), with no margin."""
-    def at(key: str) -> float | None:
-        return datetime.fromisoformat(tfr[key].replace("Z", "+00:00")).timestamp() if tfr.get(key) else None
-    when = json.loads(wingtip_native.call("gonogo_hazard_window", json.dumps({
-        "enter": start.timestamp(), "leave": end.timestamp(), "valid_from": at("effective"), "valid_to": at("expires"),
-        "margin_min": 0})))
-    return when not in ("before", "after")
+    one with no times is taken as in force (_when, the engine's)."""
+    return _when(tfr, start, end) not in ("before", "after")
 
 
 def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEAR_NM) -> list:
