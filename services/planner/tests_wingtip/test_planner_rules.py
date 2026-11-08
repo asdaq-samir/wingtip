@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
+import wingtip_native
 
 from wingtip import airspace_at, navlog, notams, tfr, weather
 
@@ -30,9 +31,10 @@ def test_an_fns_messages_notams(case):
 
 @pytest.mark.parametrize("case", FIXTURE["ceiling"])
 def test_a_reports_ceiling(case):
-    period = {"clouds": [{"cover": layer["cover"], "base": layer["base_ft"]} for layer in case["layers"]],
-              "vert_vis": case["vert_vis_ft"]}
-    assert weather._ceiling_ft(period) == case["ceiling_ft"]
+    # The weather store keeps the engine's reading (awc_tafs_read), its
+    # ceiling the engine's ceiling_ft.
+    asked = {"layers": case["layers"], "vert_vis_ft": case["vert_vis_ft"]}
+    assert json.loads(wingtip_native.call("ceiling_ft", json.dumps(asked))) == case["ceiling_ft"]
 
 
 def test_a_tfr_is_in_force_when_its_window_meets_the_span():

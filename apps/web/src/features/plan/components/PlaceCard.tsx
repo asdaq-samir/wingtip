@@ -38,7 +38,7 @@ import { runwaysLeftOut, stripsOf } from "../../../lib/runwaySketch";
 import { TEXT } from "../../../lib/text";
 import { diagramRunwaysPicture } from "../../../lib/diagram";
 import { ago, useMinuteClock, zuluTime } from "../../../lib/clock";
-import { arrivalHour, hoursOf, sentenceOf, tafOf } from "../../../lib/hourly";
+import { arrivalHour, hoursOf, sentenceOf } from "../../../lib/hourly";
 import { HourlyForecast } from "./HourlyForecast";
 import { sameField } from "../../../lib/procedures";
 import { ctafOf, frequencyOf, mhzText } from "../../../lib/frequencies";
@@ -393,7 +393,7 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
   const tafText = place?.taf ?? null;
   const now = useMinuteClock();
   const hourly = useMemo(() => {
-    const hours = hoursOf({ metar, taf: tafOf(tafText, now), now });
+    const hours = hoursOf({ metar, taf: tafText, now });
     return { hours, sentence: sentenceOf(hours) };
   }, [metar, tafText, now]);
   // The hour the planned flight lands in, where this is its destination.

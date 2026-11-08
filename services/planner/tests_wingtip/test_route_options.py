@@ -30,10 +30,10 @@ NO_FIELDS = fields()
 
 def taf(ident, lat, lon, ceiling=None, visibility=10.0, wx=""):
     now = time.time()
-    clouds = [{"cover": "BKN", "base": int(ceiling)}] if ceiling else []
+    # A period as the weather store keeps it, read by the engine (awc_tafs_read).
     return {"icaoId": ident, "lat": lat, "lon": lon, "elevation_ft": 0, "raw": "", "fcsts": [{
-        "timeFrom": now - 3600, "timeTo": now + 24 * 3600, "change": "", "clouds": clouds,
-        "visib": str(visibility), "vert_vis": None, "wx": wx,
+        "timeFrom": now - 3600, "timeTo": now + 24 * 3600, "change": "", "ceiling_ft": int(ceiling) if ceiling else None,
+        "ceiling_unknown": False, "visibility_sm": visibility, "wx": wx,
     }]}
 
 
@@ -109,7 +109,7 @@ def test_a_ceiling_forecast_with_no_height_is_marked_not_passed_as_vfr(sky):
     known (14 CFR 1.1), so the field is marked as marginal weather is, not
     left as the clear day it would read as with no ceiling."""
     station = taf("UNKN", 0.0, 2.0, visibility=10.0)
-    station["fcsts"][0]["clouds"] = [{"cover": "OVC", "base": None}]
+    station["fcsts"][0].update(ceiling_ft=None, ceiling_unknown=True)
     sky["tafs"].append(station)
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     fastest = next(o for o in out["options"] if "fastest" in o["kinds"])

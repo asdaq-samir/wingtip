@@ -7,7 +7,7 @@ import math
 import pytest
 
 from wingtip.navlog import groundspeed_kt, wind_correction_angle_deg
-from wingtip.weather import _interp_circular_deg
+from wingtip.weather import wind_in_levels
 
 
 def test_direct_headwind_no_wca_reduces_groundspeed():
@@ -37,12 +37,18 @@ def test_direct_crosswind_matches_hand_derivation():
 
 
 def test_circular_interpolation_across_the_360_wrap():
-    assert _interp_circular_deg(350, 10, 0.5) == pytest.approx(0.0, abs=1e-9)
-    assert _interp_circular_deg(10, 350, 0.5) == pytest.approx(0.0, abs=1e-9)
+    # Halfway between two levels, the engine's (winds.rs) short way round.
+    def between(d1, d2, frac):
+        levels = {3000: {"wind_dir_true_deg": d1, "wind_speed_kt": 10}, 7000: {"wind_dir_true_deg": d2, "wind_speed_kt": 10}}
+        return wind_in_levels(levels, 3000 + 4000 * frac)["wind_dir_true_deg"] % 360
+
+    assert min(between(350, 10, 0.5), 360 - between(350, 10, 0.5)) == pytest.approx(0.0, abs=1e-9)
+    assert min(between(10, 350, 0.5), 360 - between(10, 350, 0.5)) == pytest.approx(0.0, abs=1e-9)
 
 
 def test_circular_interpolation_normal_case():
-    assert _interp_circular_deg(100, 200, 0.25) == pytest.approx(125.0, abs=1e-9)
+    levels = {3000: {"wind_dir_true_deg": 100, "wind_speed_kt": 10}, 7000: {"wind_dir_true_deg": 200, "wind_speed_kt": 10}}
+    assert wind_in_levels(levels, 4000)["wind_dir_true_deg"] == pytest.approx(125.0, abs=1e-9)
 
 
 def _leg_with_wind(monkeypatch, wind_dir, wind_speed, tas=100.0, oat_c=None, altitude_ft=6000.0):
