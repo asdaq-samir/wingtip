@@ -24,7 +24,13 @@
 //!   `kind` is the SIZE column, OurAirports' size written into the pack
 //!   (wingtip.cycle_pack.airport_sizes); a pack without it has every field "other".
 //!   `military` is OWNERSHIP_TYPE_CODE's, null from a pack without that
-//!   column. `flight_category` is a live METAR's and always null here.
+//!   column. `towered` is whether TWR_TYPE_CODE names a control tower
+//!   (ATCT, ATCT-A/C, ATCT-TRACON and the rest; NON-ATCT is none), as
+//!   wingtip.faa_data.towered_fields reads it, false from a pack without
+//!   that column: the sectional draws a towered field blue and every
+//!   other magenta (FAA Aeronautical Chart User's Guide, VFR Terms and
+//!   Symbols, Airports). `flight_category` is a live METAR's and always
+//!   null here.
 //!   `airspace_class` is read off the pack's own airspace, as
 //!   wingtip.airspace.surface_classes reads it off the file: the lowest class
 //!   whose floor is the surface over the field, else E where a Class E
@@ -511,6 +517,7 @@ struct Pin {
     kind: &'static str,
     military: Option<&'static str>,
     private: bool,
+    towered: bool,
 }
 
 fn rank(kind: &str) -> usize {
@@ -570,6 +577,7 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
     let mut pins: Vec<Pin> = Vec::new();
     for p in packs {
         let Some(t) = p.section("airports").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else { continue };
+        let tower = t.col("TWR_TYPE_CODE");
         let (id, icao, site, name, lat, lon, status, size, owner, use_) = (
             t.col("ARPT_ID"),
             t.col("ICAO_ID"),
@@ -615,6 +623,7 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
                 kind,
                 military,
                 private: get(use_) == "PR" && military.is_none(),
+                towered: get(tower).to_uppercase().starts_with("ATCT"),
             });
         }
     }
@@ -636,7 +645,7 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
         json::number(&mut out, p.lon);
         out.push_str(&format!(",\"kind\":\"{}\",\"flight_category\":null,\"military\":", p.kind));
         json::opt_string(&mut out, p.military);
-        out.push_str(&format!(",\"private\":{},\"airspace_class\":\"{}\",\"primary_of\":", p.private, surface_class(packs, p.lat, p.lon)));
+        out.push_str(&format!(",\"private\":{},\"towered\":{},\"airspace_class\":\"{}\",\"primary_of\":", p.private, p.towered, surface_class(packs, p.lat, p.lon)));
         match primary.iter().find(|f| f.0 == p.faa_id) {
             Some((_, c)) => out.push_str(&format!("\"{c}\"")),
             None => out.push_str("null"),

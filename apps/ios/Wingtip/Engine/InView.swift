@@ -33,6 +33,12 @@ extension CyclePacks {
     private func inView<T: Decodable>(_ type: T.Type, south: Double, west: Double, north: Double, east: Double,
                                       _ call: (UnsafePointer<UnsafePointer<UInt8>?>?, UnsafePointer<Int>?, Int, Double, Double, Double, Double) -> UnsafeMutablePointer<CChar>?) -> T? {
         guard let packs = packs(south: south, west: west, north: north, east: east) else { return nil }
+        return Self.inView(type, packs: packs, south: south, west: west, north: north, east: east, call)
+    }
+
+    /// The same, from packs in hand.
+    static func inView<T: Decodable>(_ type: T.Type, packs: [Data], south: Double, west: Double, north: Double, east: Double,
+                                     _ call: (UnsafePointer<UnsafePointer<UInt8>?>?, UnsafePointer<Int>?, Int, Double, Double, Double, Double) -> UnsafeMutablePointer<CChar>?) -> T? {
         let answer: UnsafeMutablePointer<CChar>? = Self.withPointers(packs[...], [], []) { ptrs, lens in
             ptrs.withUnsafeBufferPointer { p in
                 lens.withUnsafeBufferPointer { l in
@@ -45,10 +51,16 @@ extension CyclePacks {
         return try? Planner.snakeCase.decode(T.self, from: Data(String(cString: answer).utf8))
     }
 
+    private struct AirportsAnswer: Decodable { let airports: [AirportPin] }
+
     /// The fields in the box (AirportsInView), biggest first; nil with no pack.
     func airportsInView(south: Double, west: Double, north: Double, east: Double) -> [AirportPin]? {
-        struct Answer: Decodable { let airports: [AirportPin] }
-        return inView(Answer.self, south: south, west: west, north: north, east: east, wt_airports_in_view)?.airports
+        inView(AirportsAnswer.self, south: south, west: west, north: north, east: east, wt_airports_in_view)?.airports
+    }
+
+    /// The fields in the box from packs in hand (the tests' Chicago cut).
+    static func airportsInView(packs: [Data], south: Double, west: Double, north: Double, east: Double) -> [AirportPin]? {
+        inView(AirportsAnswer.self, packs: packs, south: south, west: west, north: north, east: east, wt_airports_in_view)?.airports
     }
 
     /// The Class B, C, D and surface E volumes in the box with their rings

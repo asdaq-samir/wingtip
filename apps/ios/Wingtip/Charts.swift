@@ -41,11 +41,18 @@ final class Charts {
         return layers.first { $0.kind == "sec" } ?? layers.first { $0.base }
     }
 
+    /// The base chart's tiles, from the 256-pixel pyramid whatever density
+    /// the layer offers (/api/chart's chart_layers[].scales, [1, 2] for
+    /// every kind since #510). MapKit lays a tile overlay's picture one
+    /// pixel to a point whatever its size or its PNG's density: a 512-point
+    /// tile composed of the 512-pixel @2x tiles (1024 pixels) was drawn
+    /// twice as large from its corner, Beloit's chart under O'Hare's
+    /// position (the simulator, 2026-11-08), and the same with 144 dpi in
+    /// its header. The 512-point tile of four 256-pixel tiles one level
+    /// finer already has the pixels of one @2x tile; more on the screen
+    /// needs a renderer of the app's own drawing the tiles, not done yet.
     var template: TileTemplate? {
         guard let info, let base else { return nil }
-        // The 512-pixel tiles wherever the kind was drawn at them: every
-        // iPhone's screen is 2x or 3x.
-        return TileTemplate(cycle: info.chartCycle, revision: info.chartRevision ?? 0, tilesBase: info.chartTilesBase, kind: base.kind,
-                            scale: base.scales?.contains(2) == true ? 2 : 1)
+        return TileTemplate(cycle: info.chartCycle, revision: info.chartRevision ?? 0, tilesBase: info.chartTilesBase, kind: base.kind, scale: 1)
     }
 }
