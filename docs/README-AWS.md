@@ -38,11 +38,14 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                         EC2 t3a.medium on Spot, a group of one (Amazon Linux 2023,
                         infra/docker-compose.prod.yml), its fixed address and data disk
                         taken over by whichever server is running
-                          caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process) ─▶ Anthropic
-                                     │
+                          caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process)
+                                     │    ▲
+                                     │    └── assistant (every Claude call, 256 MB) ─▶ Anthropic
+                                     ├──▶ assistant (the Claude paths)
                                      └──▶ db (Postgres 18, on the data disk)
-                          ingest (the FAA's SWIM feeds, the followed airplanes) ─▶ SQLite on the
-                                     data disk, which the planner reads
+                          ingest (the FAA's SWIM feeds, the followed airplanes, 384 MB) ─▶ SQLite
+                          weather (METARs, TAFs, advisories, the GFS's winds, GLMP, TFRs, 384 MB)
+                                     ─▶ the weather store; both on the data disk, which the planner reads
                           nightly pg_dump ─▶ S3 server bucket (14 days)
 
 EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: the charts job (services/jobs/charts), refresh
@@ -339,7 +342,8 @@ docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml ps
 docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml logs -f --tail 100 gateway
 ```
 
-`/srv/wingtip` is the data disk: `data` the planner's and ingest's data folder,
+`/srv/wingtip` is the data disk: `data` the data folder the planner shares
+with ingest, weather and the assistant,
 `postgres` the database, `repo` this repository. Never edit
 `/srv/wingtip/.env`; `deploy.sh` writes it.
 

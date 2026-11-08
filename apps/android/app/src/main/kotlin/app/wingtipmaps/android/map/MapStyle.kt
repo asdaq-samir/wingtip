@@ -122,7 +122,8 @@ object MapStyle {
 
     /** The airports' farthest zoom, Leaflet's (the web's
      *  AIRPORTS_FARTHEST_ZOOM); within it each field is in the tiles from
-     *  its own zoom by its rank (wingtip.vector_tiles.AIRPORT_MIN_ZOOM). */
+     *  its own zoom by its rank (AIRPORT_MIN_ZOOM in
+     *  services/jobs/charts/overlays.py). */
     const val AIRPORTS_FARTHEST_ZOOM = 4.0
     /** The VORs from a region's zoom, the fixes and the VFR waypoints from
      *  10, Leaflet's (the web's VOR_ZOOM, FIX_ZOOM). */

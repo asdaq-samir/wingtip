@@ -771,6 +771,8 @@ CI job breakdown is in the [Appendix](#appendix).
 | `docker compose run --rm charts overlays` | The overlay tiles alone, where the cycle pack has none | — |
 | `docker compose run --rm charts pack` | Every finished kind's loose tiles into its archives: the one-off conversion of a cycle drawn before there were archives | — |
 | `docker compose up planner` | Planning + chart-vision API; `gateway` proxies to it and starts it | `8084` |
+| `docker compose up ingest` | The live feeds: SWIM and the followed airplanes into the live store the planner reads | — |
+| `docker compose up assistant` | Every Claude call; the gateway sends the Claude paths to it | — |
 | `docker compose up weather` | The weather service: fetches the weather into `data/raw/weather` for the planner | — |
 
 Notes:
@@ -826,16 +828,18 @@ empty commit:
 
 | Job | What it does |
 |---|---|
-| `test` | ruff + pytest over `services/planner/wingtip` |
+| `test` | ruff + pytest over `services/planner/wingtip`, and over the jobs (`services/jobs/charts`) |
 | `changes` | A path filter (`dorny/paths-filter`) telling both `build-images` and `docs` which service images a change could have touched. Runs on pull requests (where `build-images` uses it to build only the touched images) and on pushes to `main` (where `build-images` ignores it on purpose — main's images stay fully in sync with every dependency bump — but `docs` uses it to skip the three heavy `pdoc` steps below when nothing they document changed). |
 | `test-web` | `tsc --noEmit`, `vitest` and a production build over `apps/web/` — filters, ordering, what counts as rated, and which leg leaves a checkpoint, all pure functions needing no browser |
 | `test-gateway` | `mvn test` — gateway's JUnit suite, including the Testcontainers Postgres test |
-| `e2e` | The browser suite (`apps/web/e2e`, Playwright) against the stack a pilot uses — the gateway and the planner built from the commit, Postgres and Mailpit — under `infra/docker-compose.ci.yml`, with the planner's reference data (about a gigabyte it fetches for itself) kept in the Actions cache between runs. Run on every push, and on a pull request that touches anything the stack is built from. Its images and the page are built once for each content key by `build (e2e)` and pulled by all eight shards, on a push and on a pull request from one of this repository's branches; only a fork's or Dependabot's pull request, whose token cannot push, has each shard build its own. |
+| `e2e` | The browser suite (`apps/web/e2e`, Playwright) against the stack a pilot uses — the gateway, the planner and the weather service built from the commit, Postgres and Mailpit — under `infra/docker-compose.ci.yml`, with the planner's reference data (about a gigabyte it fetches for itself) kept in the Actions cache between runs. Run on every push, and on a pull request that touches anything the stack is built from. Its images and the page are built once for each content key by `build (e2e)` and pulled by all eight shards, on a push and on a pull request from one of this repository's branches; only a fork's or Dependabot's pull request, whose token cannot push, has each shard build its own. |
 | `test-planner` | ruff + pytest over `services/planner/tests/` — its own dependency set (`services/planner/requirements-dev.txt`), separate from `test`'s unrelated `services/planner/wingtip` ones |
+| `test-ingest` | ruff + pytest over `services/ingest/tests/` — the live feeds' readers and the live store, with wingtip and the engine it imports |
+| `test-assistant` | ruff + pytest over `services/assistant/tests/` — every Claude call, the model and the planner stood in for; no engine |
 | `test-weather` | ruff + pytest over `services/weather/tests/` — the weather service's fetches and parsers, and the planner's readers over what it stores |
 | `docs` | Regenerates Javadoc + godoc on every push/PR. wingtip's `pdoc` is made by the `test` job from the packages its tests have just installed, and uploaded as `pdoc-wingtip`. Output uploads as a `documentation` artifact. |
 | `build-images` | Builds every service Dockerfile, publishes each to GHCR on push to `main`. Every Python image's last build step imports that service's own code and the packages it imports lazily (`import app.main, rasterio.vrt, …`, `import wingtip.pipeline, …`), so a missing dependency fails the build -- here and in a local `docker compose build` alike -- the check that would have caught 2026-09-22's missing `pyproj` in four images |
-| `push-ecr` | Copies the three images the CloudFormation stack deploys (`gateway`, `planner`, `weather`) from GHCR to ECR as `sha-<commit>` and `latest` via OIDC, the images CI tested rather than a rebuild, in the `production` environment the deploy role trusts; activates automatically once `AWS_ROLE_ARN`/`AWS_REGION` repo variables exist |
+| `push-ecr` | Copies the images the CloudFormation stack deploys (`gateway`, `planner`, `ingest`, `assistant`, `weather`, and the charts job's `charts`) from GHCR to ECR as `sha-<commit>` and `latest` via OIDC, the images CI tested rather than a rebuild, in the `production` environment the deploy role trusts; activates automatically once `AWS_ROLE_ARN`/`AWS_REGION` repo variables exist |
 
 `build-images` gates on the test jobs, so a failing test never produces a
 published image. A cold run (every cache empty, every path filter

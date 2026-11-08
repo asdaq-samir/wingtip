@@ -97,8 +97,9 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
 
 /** The airports' zooms, Leaflet's (AirportsLayer's): the farthest out any
  *  is drawn. Within it each field is in the tiles from its own zoom by
- *  its rank (wingtip.vector_tiles.AIRPORT_MIN_ZOOM): towered, then the
- *  long hard runways, other public fields, private ones, heliports. */
+ *  its rank (AIRPORT_MIN_ZOOM in services/jobs/charts/overlays.py):
+ *  towered, then the long hard runways, other public fields, private
+ *  ones, heliports. */
 export const AIRPORTS_FARTHEST_ZOOM = 4;
 
 /** A field's size from its longest runway (NASR APT_RWY RWY_LEN), the

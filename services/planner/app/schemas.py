@@ -389,7 +389,7 @@ class Totals(BaseModel):
 
 class WindsPeriod(BaseModel):
     """The period of the winds and temperatures aloft a plan flies: the
-    GFS model's (wingtip.modelwinds), since the FB ended with the NAM (NWS
+    GFS model's (fetched by services/weather, read from wingtip.weather_store), since the FB ended with the NAM (NWS
     Service Change Notice 26-47). Valid at `valid_at`, for use from
     `use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round
     the forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the

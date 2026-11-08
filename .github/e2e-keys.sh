@@ -30,5 +30,6 @@ set -euo pipefail
 key() { { echo "zstd"; git ls-tree -r HEAD -- "$@"; } | git hash-object --stdin | cut -c1-16; }
 echo "gateway $(key services/gateway/Dockerfile services/gateway/pom.xml services/gateway/src/main)"
 echo "planner $(key services/planner/Dockerfile services/Dockerfile.base services/planner/requirements.txt services/planner/requirements-wingtip.txt services/planner/requirements-wingtip-charts.txt engine)"
+echo "weather $(key services/weather/Dockerfile services/weather/requirements.txt services/Dockerfile.base services/planner/requirements-wingtip.txt engine)"
 echo "page $(git ls-tree -r HEAD -- apps/web services/planner/openapi.json services/assistant/openapi.json services/gateway/openapi.json apps/web/.nvmrc \
   | grep -v $'\tapps/web/e2e/' | git hash-object --stdin | cut -c1-16)"

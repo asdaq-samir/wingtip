@@ -1,4 +1,4 @@
-# The two images the browser suite runs against in CI (the e2e job in
+# The three images the browser suite runs against in CI (the e2e job in
 # workflows/ci.yml), for `docker buildx bake`: the same contexts and
 # Dockerfiles docker-compose.yml builds them from. A bake file rather
 # than the compose files themselves, which bake reads too: its parser
@@ -27,6 +27,9 @@ variable "GATEWAY_KEY" {
 variable "PLANNER_KEY" {
   default = ""
 }
+variable "WEATHER_KEY" {
+  default = ""
+}
 
 function "cache" {
   params = [image]
@@ -52,7 +55,7 @@ function "pushed" {
 }
 
 group "ci" {
-  targets = ["gateway", "planner"]
+  targets = ["gateway", "planner", "weather"]
 }
 
 target "gateway" {
@@ -82,6 +85,21 @@ target "planner" {
   cache-from = cache("planner")
   cache-to   = PLANNER_KEY == "" ? [] : ["type=inline"]
   output     = pushed(PLANNER_KEY)
+}
+
+# The weather service (services/weather), since 2026-11-08 the only
+# fetcher of the weather the planner reads (wingtip.weather_store): with
+# no weather service the suite's planner would read an empty store. Built
+# FROM the same base as the planner; its code, like the planner's, is the
+# checkout, mounted by docker-compose.yml.
+target "weather" {
+  context    = "."
+  dockerfile = "services/weather/Dockerfile"
+  contexts   = { wingtip-base = "target:base" }
+  tags       = tags("weather", WEATHER_KEY)
+  cache-from = cache("weather")
+  cache-to   = WEATHER_KEY == "" ? [] : ["type=inline"]
+  output     = pushed(WEATHER_KEY)
 }
 
 # The image the suite's tests run in: the Playwright image (PLAYWRIGHT_FROM,

@@ -658,7 +658,7 @@ jobs:
   # jobs at once, and eight shards, the seven suites, the docs, the e2e
   # images and the image builds' one job are nineteen. What each runner
   # spends before its first test is the rest, so that is done at once
-  # rather than in turn: the two images and the Playwright, Postgres
+  # rather than in turn: the three images and the Playwright, Postgres
   # and Mailpit images are pulled in the background while the caches
   # below are restored, and each service is started the moment it can
   # be.
@@ -829,7 +829,7 @@ jobs:
           EOF
           nohup bash /tmp/e2e-out/public.sh > /dev/null 2>&1 < /dev/null &
           nohup bash -c 'bash /tmp/e2e-out/playwright.sh > /tmp/e2e-out/playwright.log 2>&1; r=$?; echo "$(($(date +%s) - T0)) the Playwright image, $(tail -1 /tmp/e2e-out/playwright.log)" >> /tmp/e2e-out/timeline; echo $r > /tmp/e2e-out/playwright.exit' > /dev/null 2>&1 < /dev/null &
-      # Then the two images this commit runs, under the names
+      # Then the three images this commit runs, under the names
       # infra/docker-compose.ci.yml runs them by: each the one e2e-images built
       # for its key (.github/e2e-keys.sh), which nearly always an earlier
       # commit's run did, so it is pulled at once. Each shard used to
@@ -1089,7 +1089,7 @@ jobs:
               exit 1
             fi
           done
-          docker compose -f docker-compose.yml -f infra/docker-compose.ci.yml up -d --no-build --wait gateway planner
+          docker compose -f docker-compose.yml -f infra/docker-compose.ci.yml up -d --no-build --wait gateway planner weather
           echo "$(($(date +%s) - T0)) healthy" >> /tmp/e2e-out/timeline
           for _ in $(seq 1 240); do
             curl -sf -o /dev/null http://localhost:8080/app/plan && break
@@ -1273,7 +1273,7 @@ jobs:
       - name: The stack's logs, when the tests did not pass
         if: always() && steps.tests.outcome != 'success'
         run: |
-          docker compose -f docker-compose.yml -f infra/docker-compose.ci.yml logs --no-color --tail 300 gateway planner
+          docker compose -f docker-compose.yml -f infra/docker-compose.ci.yml logs --no-color --tail 300 gateway planner weather
           docker compose -f docker-compose.yml -f infra/docker-compose.ci.yml logs --no-color --tail 60 planner \
             | grep -vE "GET /api/(chart-tile|tiles)|200 OK|404 Not Found" | tail -25 \
             | python3 -c 'import sys; t=sys.stdin.read().replace("%","%25").replace("\n","%0A"); print(f"::warning title=planner log, at the end::{t[:4000]}")'
@@ -1393,8 +1393,8 @@ jobs:
             data/raw/chart_tiles.nosync
           key: ${{ steps.cycle.outputs.key }}
 
-  # The browser suite's two images (.github/ci-images.hcl) -- the
-  # gateway and the planner -- and the page the gateway serves there. Each is built once per key, a
+  # The browser suite's three images (.github/ci-images.hcl) -- the
+  # gateway, the planner and the weather service -- and the page the gateway serves there. Each is built once per key, a
   # hash of what decides what it does in the suite's stack
   # (.github/e2e-keys.sh). The images are pushed under `e2e-<key>` and
   # `e2e`, the last pushed; never `latest`, which only the Promote
