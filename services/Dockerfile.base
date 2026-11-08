@@ -57,6 +57,9 @@ RUN --mount=type=bind,from=native,source=/wheels,target=/tmp/wheels \
 # The user every image runs as. Each image switches to it once its own
 # files are in.
 RUN useradd -m appuser
+# The live store's folder, owned by the services' user, so an empty
+# Docker volume mounted on it starts with that owner (docker-compose.yml).
+RUN mkdir -p /live && chown appuser:appuser /live
 # The build fails here if wingtip's own dependencies or its extension do
 # not import, rather than each image that builds on this.
 RUN python -B -c "import wingtip_native, numpy, pandas, requests, cachetools, pyarrow.parquet, shapely.ops, shapefile, pyproj, pydantic_settings, scipy.spatial, pygeomag, astral"
