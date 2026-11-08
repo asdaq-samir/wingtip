@@ -25,7 +25,7 @@ git -C "$main" fetch -q origin "$branch"
 if [ ! -d "$live" ]; then
   git -C "$main" worktree add -q --detach "$live" "origin/$branch"
 fi
-git -C "$live" checkout -q --detach "origin/$branch"
+git -C "$live" checkout -q --force --detach "origin/$branch"  # the live tree only mirrors the branch
 # The owner's local files, shared rather than copied.
 # .env and the certificates are read on the Mac, so links do; data/ is
 # read inside the containers through the repo mount, where a link to a
