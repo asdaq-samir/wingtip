@@ -137,6 +137,7 @@ struct ProfileCard: View {
             plan.ownAltitudeFt = altitude
             plan.ownAltitudeLegal = legal.contains(altitude)
         }
+        Feel.tap(.altitude)
         plan.plan()
     }
 
@@ -144,6 +145,7 @@ struct ProfileCard: View {
         guard !kind.isEmpty else { return }
         plan.ownAltitudeFt = nil
         plan.altitudeChoice = kind
+        Feel.tap(.altitude)
         plan.plan()
     }
 }

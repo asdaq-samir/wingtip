@@ -188,10 +188,10 @@ final class ClearanceListener {
     }
 
     /// A call to us: a time-sensitive notification while the app is not
-    /// in front, the haptics in the app (the call is on its screen).
+    /// in front, the warning's tap in the app (the call is on its screen; Feel).
     private func tell(_ text: String) {
         if !Notifications.tell("ATC called you", text) {
-            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            Feel.tap(.warning)
         }
     }
 

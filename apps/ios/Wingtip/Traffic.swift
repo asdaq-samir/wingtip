@@ -51,8 +51,9 @@ final class Traffic {
         }
     }
 
-    /// One answer about a point, where traffic is on and there is one.
-    private func ask(near fix: OwnShip.Fix?) async {
+    /// One answer about a point, where traffic is on and there is one: on
+    /// the clock, and when a traffic list is pulled down (TrafficFindView).
+    func ask(near fix: OwnShip.Fix?) async {
         guard on, let at = fix?.coordinate ?? mapCentre else { return }
         let radius = min(60, max(10, mapRadiusNm))
         let answer: TrafficAnswer

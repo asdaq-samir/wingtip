@@ -21,6 +21,7 @@ struct AirportSearchView: View {
     @State private var found: [AirportSuggestion] = []
     @State private var places: [PlaceFound] = []
     @State private var searching: Task<Void, Never>?
+    @Namespace private var cards
     private var shelf: AirportShelf { .shared }
 
     var body: some View {
@@ -51,7 +52,7 @@ struct AirportSearchView: View {
                     if shelf.shows != .nearest, !nearest.isEmpty {
                         Section(title: "Nearest") {
                             ForEach(nearest.prefix(5)) { field in
-                                NavigationLink(value: field.ident) { NearestRow(field: field) }
+                                NavigationLink(value: field.ident) { NearestRow(field: field) }.cardSource(field.ident, in: cards)
                             }
                         }
                     }
@@ -70,6 +71,7 @@ struct AirportSearchView: View {
                                 }
                                 // The UI tests' handle on a result (WingtipUITests/FlowTests).
                                 .accessibilityIdentifier("airport-result-\(field.ident)")
+                                .cardSource(field.ident, in: cards)
                             }
                         }
                     }
@@ -89,7 +91,8 @@ struct AirportSearchView: View {
             }
             .navigationTitle("Airport")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(for: String.self) { text in AirportDestination(route: AirportRoute(text), nearest: nearest).closesBack() }
+            // A card grows out of its row (CardZoom).
+            .navigationDestination(for: String.self) { text in AirportDestination(route: AirportRoute(text), nearest: nearest).closesBack().zoomsFrom(text, in: cards) }
             .searchable(text: Binding(get: { query }, set: { query = $0 }), prompt: AirportQuery.prompt)
             .textInputAutocapitalization(.characters)
             .autocorrectionDisabled()
@@ -283,7 +286,7 @@ struct NearFromView: View {
             } else if let problem {
                 ProblemLine(problem)
             } else {
-                ProgressView("Fetching the nearest fields…")
+                Skeleton(rows: 4, label: "Fetching the nearest fields")
             }
         }
         .navigationTitle("Nearest")

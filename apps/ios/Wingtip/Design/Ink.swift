@@ -13,6 +13,9 @@ enum WingtipInk {
     static let caution = Color(dynamic(\.cautionInk))
     /// What is fine.
     static let go = Color(dynamic(\.goInk))
+    /// A loading row's bars (Skeleton): the border's grey, as the muted
+    /// fill (#F5F5F5) is lost on a list's white row.
+    static let skeleton = Color(dynamic(\.border))
 
     private static func dynamic(_ role: KeyPath<WingtipPalette, UIColor>) -> UIColor {
         UIColor { $0.userInterfaceStyle == .dark ? WingtipPalette.dark[keyPath: role] : WingtipPalette.light[keyPath: role] }

@@ -381,7 +381,7 @@ struct StripSheetView: View {
            let ft = (try? Clearance.read(text))?.maintainFt {
             guard plan.routed else { return "Plan a route first; then say an altitude, \"altitude 5500\"." }
             plan.ownAltitudeFt = Double(ft)
-            plan.ownAltitudeLegal = false
+            plan.ownAltitudeLegal = false; Feel.tap(.altitude)
             plan.plan()
             up()
             return ""

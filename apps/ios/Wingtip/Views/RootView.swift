@@ -105,6 +105,8 @@ struct RootView: View {
                         // The welcome, once per install, over the planner's sheet;
                         // its flight shown half way up on FPL (WelcomeHost).
                         .modifier(WelcomeHost(opened: { tab = .fpl; detent = .medium }))
+                        // The sheet settling at a size, felt (WingtipHaptic.detent).
+                        .sensoryFeedback(WingtipHaptic.detent, trigger: detent) { _, _ in !reduceMotion }
                     }
             case .split:
                 SplitLayout(map: map, tab: $tab, airports: $airports, card: $sideCard)
@@ -123,6 +125,8 @@ struct RootView: View {
         .onChange(of: tab) { _, now in sceneTab = now.rawValue }
         // The picked look's tint, the brand's blue by default (Look).
         .lookTint()
+        // The key actions' taps, none with Reduce Motion on (Feel).
+        .modifier(FeelHost())
     }
 
     /// A field or a point opened from the map: in the Airport tab, half
