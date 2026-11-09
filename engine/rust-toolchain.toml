@@ -1,0 +1,4 @@
+[toolchain]
+# The engine's Rust, written from .tool-versions by scripts/build/toolchain.sh.
+channel = "1.99.1"
+profile = "minimal"

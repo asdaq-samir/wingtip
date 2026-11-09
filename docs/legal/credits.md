@@ -19,6 +19,8 @@ the terms it is used under.
 | FAA SWIM: NOTAMs, flow programs, terminal data and airspace status | Public domain | As above; reached under the FAA's SWIM access agreement |
 | NOAA Aviation Weather Center: METARs, TAFs, PIREPs, SIGMETs and G-AIRMETs | Public domain | As above |
 | NOAA models: GFS winds and temperatures aloft, GLMP, magnetic declination | Public domain | As above |
+| NWS NEXRAD radar mosaic loop, via the Iowa Environmental Mesonet (Iowa State University); not for navigation, check official weather | Public domain | IEM's terms put its products in the public domain and ask that it be credited |
+| NOAA GOES East and West satellite loop, via NOAA nowCOAST; not for navigation, check official weather | Public domain | As above for NOAA's; nowCOAST asks no fees and sets no constraints |
 | USGS The National Map imagery | Public domain | As above |
 | US Census Bureau geocoder and gazetteer | Public domain | As above |
 | OurAirports: runways, frequencies and fields abroad | Public domain | OurAirports dedicates its data to the public domain |

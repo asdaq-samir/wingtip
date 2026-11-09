@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 
@@ -58,7 +58,7 @@ fun ExportRow(model: ExportModel = viewModel()) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
-        trailingContent = { if (state.fetching) CircularProgressIndicator(Modifier.size(WingtipSpace.Xl)) },
+        trailingContent = { if (state.fetching) LoadingIndicator(Modifier.size(WingtipSpace.Xl)) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, enabled = !state.fetching) { model.fetch() },
     )

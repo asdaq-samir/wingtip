@@ -14,9 +14,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.OfflineRegion
+import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import app.wingtipmaps.android.ui.ProblemLine
@@ -89,12 +87,11 @@ fun DownloadsScreen(model: DownloadsModel = viewModel()) {
                 )
             }
             // A discrete setting of two: a segmented control (decision 0017).
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                listOf(2 to R.string.offline_sharp, 1 to R.string.offline_smaller).forEachIndexed { i, (value, label) ->
-                    SegmentedButton(selected = scale == value, onClick = { model.setScale(value) },
-                        shape = SegmentedButtonDefaults.itemShape(index = i, count = 2)) { Text(stringResource(label)) }
-                }
-            }
+            ChoiceGroup(
+                listOf(2 to stringResource(R.string.offline_sharp), 1 to stringResource(R.string.offline_smaller)),
+                selected = scale,
+                onPick = model::setScale,
+            )
             ListItem(
                 headlineContent = { Text(stringResource(R.string.offline_pick_map)) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),

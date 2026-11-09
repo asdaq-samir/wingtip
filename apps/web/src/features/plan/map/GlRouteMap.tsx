@@ -33,6 +33,8 @@ import { TfrGl } from "./layers/TfrGl";
 import { FlownTrackGl, LegHighlightGl, OwnTrailGl, ReplayGl } from "./layers/TracksGl";
 import { TrafficGl } from "./layers/TrafficGl";
 import { WeatherGl } from "./layers/WeatherGl";
+import { WeatherLoopGl } from "../../weather-loop";
+import { useWeatherLayers } from "../../../lib/map/sources/weatherLayers";
 import { useGlFit } from "./useGlFit";
 import type { AloftPoint } from "./terrain/geometry";
 import { useTerrainView } from "./terrain/useTerrainView";
@@ -142,6 +144,8 @@ function Layers(p: GlRouteMapProps) {
   useGlFit(p.focusedPattern, p.focusedPattern.length ? p.patternFocus : null, 13);
   const route = course ? [course.departure.ident, ...(course.stops ?? []).map((s) => s.ident), course.destination.ident] : [];
   const terrain = useTerrainView();
+  // The radar and satellite loop under the advisories, while one is on.
+  const loop = useWeatherLayers((s) => s.loop !== "off");
   return (
     <>
       <LandWaterGl />
@@ -152,6 +156,7 @@ function Layers(p: GlRouteMapProps) {
         </Suspense>
       )}
       <OverlayGl />
+      {loop && <WeatherLoopGl />}
       <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />
       <TfrGl />
       <AirspaceGl />

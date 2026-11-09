@@ -21,6 +21,7 @@ on:
     paths:
       - apps/android/**
       - engine/**
+      - .tool-versions
       - apps/web/src/lib/fixtures/**
       - scripts/build/api-models-apps.*
       - design/**
@@ -65,7 +66,7 @@ jobs:
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6
         with:
           distribution: temurin
-          java-version: "25"
+          java-version-file: .tool-versions
       - name: The SDK's licences
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
       # The engine's libraries as the last run that built this engine left
@@ -78,10 +79,11 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/android/app/engine
-          key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
+          key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         # wingtip-engine through its C functions (engine/bindings/ffi), for each
-        # ABI, with the runner's own rustup and NDK, where the engine changed.
+        # ABI, with the runner's rustup at .tool-versions' Rust
+        # (rust-toolchain.toml) and its NDK, where the engine changed.
         if: steps.engine.outputs.cache-hit != 'true'
         run: engine/bindings/ffi/build-android.sh
       - name: The site's host

@@ -587,6 +587,26 @@ object WingtipMotion {
     const val PRESS_MS = 100
 }
 
+/** A spring: Compose's spring() damping ratio and stiffness. */
+@Immutable
+data class WingtipSpringSpec(val dampingRatio: Float, val stiffness: Float)
+
+/** Material 3 Expressive's springs, the motion scheme's. */
+object WingtipSpring {
+    /** A small part's move: a button's corners on a press, a choice's pill. */
+    val FastSpatial = WingtipSpringSpec(0.6f, 800f)
+    /** A card's or a menu's move. */
+    val DefaultSpatial = WingtipSpringSpec(0.8f, 380f)
+    /** A move across much of the screen. */
+    val SlowSpatial = WingtipSpringSpec(0.8f, 200f)
+    /** A small part's colour or opacity. */
+    val FastEffects = WingtipSpringSpec(1f, 3800f)
+    /** A card's colour or opacity. */
+    val DefaultEffects = WingtipSpringSpec(1f, 1600f)
+    /** A large area's colour or opacity. */
+    val SlowEffects = WingtipSpringSpec(1f, 800f)
+}
+
 /** The taps felt on a key action, as View.performHapticFeedback's constants; one
  *  from API 30 has its fallback below that. */
 object WingtipHaptic {

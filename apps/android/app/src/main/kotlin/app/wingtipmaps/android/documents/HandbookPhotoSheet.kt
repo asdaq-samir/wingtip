@@ -8,9 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.aircraft.AircraftFormFields
+import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.ui.ProblemLine
@@ -87,15 +85,7 @@ fun HandbookPhotoSheet(type: String, onClose: () -> Unit, model: HandbookPhotoMo
 @Composable
 private fun PageKindRow(page: Documents.Kind, onPick: (Documents.Kind) -> Unit) {
     val kinds = listOf(Documents.Kind.PERFORMANCE to R.string.photo_performance, Documents.Kind.WEIGHT_BALANCE to R.string.photo_weight_balance)
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        kinds.forEachIndexed { i, (kind, words) ->
-            SegmentedButton(
-                selected = page == kind,
-                onClick = { onPick(kind) },
-                shape = SegmentedButtonDefaults.itemShape(index = i, count = kinds.size),
-            ) { Text(stringResource(words), maxLines = 1) }
-        }
-    }
+    ChoiceGroup(kinds.map { (kind, words) -> kind to stringResource(words) }, selected = page, onPick = onPick)
 }
 
 /** The airplane's figures from the confirmed items, for the pilot to

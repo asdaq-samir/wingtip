@@ -26,6 +26,7 @@ on:
       - apps/web/src/lib/fixtures/**
       - apps/web/src/lib/acs.json
       - engine/**
+      - .tool-versions
       - services/planner/tests_wingtip/fixtures/native/**
       - scripts/build/api-models-apps.*
       - design/**
@@ -63,6 +64,13 @@ jobs:
       KEY_P8: ${{ secrets.APP_STORE_KEY_P8 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      # .tool-versions' Xcode (scripts/ci/select-xcode.sh, DEVELOPER_DIR for
+      # the steps after), before anything builds: the engine's Apple targets
+      # link against its SDK too. iPhone Duo's own layout (to the screen's
+      # edge, bars down the side) needs the iOS 27.1 SDK or later; an app
+      # built with an older one is letterboxed on the inner screen.
+      - name: The Xcode .tool-versions names
+        run: scripts/ci/select-xcode.sh
       # The engine's framework as the last run that built this engine left
       # it: the three Apple targets took 148 s of a 284 s job (run
       # 42110145019), and the engine changes far less often than the app.
@@ -73,11 +81,11 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/ios/Frameworks/WingtipEngine.xcframework
-          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
+          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         # wingtip-engine through its C functions (engine/bindings/ffi), which the app
-        # answers the airspace from with no network. The runner's own
-        # rustup, where the engine changed.
+        # answers the airspace from with no network. The runner's rustup,
+        # at .tool-versions' Rust (rust-toolchain.toml), where the engine changed.
         if: steps.engine.outputs.cache-hit != 'true'
         run: engine/bindings/ffi/build-xcframework.sh
       - name: The Xcode project, from project.yml
@@ -85,17 +93,6 @@ jobs:
           # The Mac mini's runner has xcodegen already, and no Homebrew.
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate --spec apps/ios/project.yml --project apps/ios
-      - name: The newest Xcode on the runner
-        run: |
-          # iPhone Duo's own layout (to the screen's edge, bars down the
-          # side) needs an app built with the iOS 27.1 SDK; an older one is
-          # letterboxed on the inner screen. The runner's default Xcode can
-          # lag its newest.
-          # The Mac mini's runner has the one Xcode.app, already selected,
-          # and no password-less sudo; GitHub's has numbered ones.
-          newest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -viE 'beta|_rc' | sort -V | tail -1 || true)
-          if [ -n "$newest" ]; then sudo xcode-select -s "$newest"; fi
-          xcodebuild -version
       - name: Archived, signed and uploaded to TestFlight
         run: |
           key="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"

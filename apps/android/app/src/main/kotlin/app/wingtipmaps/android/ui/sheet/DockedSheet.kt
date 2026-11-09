@@ -14,12 +14,17 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -135,14 +140,19 @@ fun DockedSheet(
     sheet: @Composable ColumnScope.() -> Unit,
 ) {
     val density = LocalDensity.current
-    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
+    // The keyboard, less the navigation bar the peek already clears: the
+    // pill and half stops ride up over it, so a field in the sheet is
+    // never typed into under the keyboard (edge to edge, where the window
+    // is not resized for it).
+    val keyboard = (WindowInsets.ime.getBottom(density) - WindowInsets.navigationBars.getBottom(density)).coerceAtLeast(0)
     val scope = rememberCoroutineScope()
     BoxWithConstraints(modifier.fillMaxSize()) {
         val height = with(density) { maxHeight.toPx() }
         val fullAt = with(density) { (top + WingtipSpace.Sm).toPx() }
-        val pillAt = height - with(density) { peek.toPx() }
-        val halfAt = (height / 2).coerceIn(fullAt, pillAt)
-        val anchors = remember(height, fullAt, pillAt) {
+        val pillAt = (height - keyboard - with(density) { peek.toPx() }).coerceAtLeast(fullAt)
+        val halfAt = ((height - keyboard) / 2).coerceIn(fullAt, pillAt)
+        val anchors = remember(height, fullAt, pillAt, halfAt) {
             DraggableAnchors {
                 SheetStop.PILL at pillAt
                 SheetStop.HALF at halfAt
@@ -196,7 +206,8 @@ fun DockedSheet(
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = BottomSheetDefaults.Elevation,
         ) {
-            Column(Modifier.fillMaxWidth()) {
+            // Clear of a cutout or a navigation bar at the side in landscape.
+            Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))) {
                 // A drag is no way to move the sheet with TalkBack: the
                 // handle says where the sheet rests and offers a stop up and
                 // a stop down as actions, as Material's own sheets do.

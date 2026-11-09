@@ -218,6 +218,8 @@ struct RootView: View {
                     RadioOverlay()
                     // The flight's instruments, at flying speed (#218).
                     InstrumentsBar()
+                    // The radar or satellite loop's bar while one is on.
+                    WeatherLoopBar()
                 }
                 .padding(.trailing, 64)
             }

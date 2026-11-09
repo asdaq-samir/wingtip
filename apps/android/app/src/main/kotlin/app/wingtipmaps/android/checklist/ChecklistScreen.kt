@@ -17,9 +17,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -37,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.ui.ProblemLine
@@ -57,15 +55,7 @@ fun ChecklistScreen(airplane: String, kind: ChecklistKind, modifier: Modifier = 
     LaunchedEffect(airplane, kind) { model.show(airplane, kind) }
 
     Column(modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            ChecklistKind.entries.forEachIndexed { i, k ->
-                SegmentedButton(
-                    selected = state.kind == k,
-                    onClick = { model.show(airplane, k) },
-                    shape = SegmentedButtonDefaults.itemShape(index = i, count = ChecklistKind.entries.size),
-                ) { Text(k.title) }
-            }
-        }
+        ChoiceGroup(ChecklistKind.entries.map { it to it.title }, selected = state.kind) { k -> model.show(airplane, k) }
         ProblemLine(state.problem)
         // The emergency assistant from the emergency checklists: the best
         // fields within a glide, this list opened at the emergency, the

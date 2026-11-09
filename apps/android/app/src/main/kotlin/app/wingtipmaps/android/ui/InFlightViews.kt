@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -45,9 +47,11 @@ import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.nearest
+import app.wingtipmaps.android.design.RollingFigure
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
+import app.wingtipmaps.android.design.titleMediumEmphasized
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -75,8 +79,14 @@ import kotlin.math.roundToInt
  */
 @Composable
 fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifier = Modifier, copilot: @Composable () -> Unit = {}) {
-    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    Column(modifier.padding(top = top + 8.dp, start = 8.dp, end = 64.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // Under the status bar and clear of a cutout or a side navigation
+    // bar in landscape (edge to edge).
+    Column(
+        modifier
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+            .padding(top = 8.dp, start = 8.dp, end = 64.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         AlertsBanner(ahead)
         // The copilot's one message, under what is ahead (CopilotBanner).
         copilot()
@@ -196,7 +206,9 @@ private fun RowScope.Cell(name: String, value: String, spoken: String, said: Str
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleMedium, maxLines = if (largeType()) 2 else 1, overflow = TextOverflow.Ellipsis)
+        // Groundspeed, altitude, the miles and the time to the next point
+        // roll their digits as they change, rather than blink.
+        RollingFigure(value, style = MaterialTheme.typography.titleMediumEmphasized, maxLines = if (largeType()) 2 else 1)
     }
 }
 

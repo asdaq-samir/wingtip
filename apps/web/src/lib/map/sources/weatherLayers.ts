@@ -5,6 +5,15 @@ import { persist } from "zustand/middleware";
  *  the FD product's own (AC 00-45H: 3,000 to 39,000 ft), or none. */
 export type WindsAt = "off" | "plan" | 3000 | 6000 | 9000 | 12000 | 18000;
 
+/** The radar and satellite loop (features/weather-loop): off, the radar,
+ *  the GOES infrared or visible picture, or the radar over the infrared
+ *  (the owner's five, 2026-11-09). */
+export type LoopKind = "off" | "radar" | "ir" | "visible" | "both";
+
+/** How fast the loop plays: a menu, as a discrete setting is (the owner,
+ *  2026-09-30), not a slider. */
+export type LoopSpeed = "slow" | "normal" | "fast";
+
 /**
  * Which weather the map draws, at the owner's pick (the canvas's map
  * weather, A: the map's own button, 2026-10-20), each the pilot's to turn
@@ -13,10 +22,12 @@ export type WindsAt = "off" | "plan" | 3000 | 6000 | 9000 | 12000 | 18000;
  * the tap meant for the airport, the airspace or the chart under it (CI's
  * run 42198681351: places, classb, airspace-lines and route-fit), as the
  * radar's tiles darkened every map before the pilot had asked for weather.
+ * The radar and the satellite picture are one choice, the loop's, since
+ * the loop replaced their two switches (2026-11-09).
  */
 interface WeatherLayers {
-  radar: boolean;
-  satellite: boolean;
+  loop: LoopKind;
+  loopSpeed: LoopSpeed;
   areas: boolean;
   pireps: boolean;
   winds: WindsAt;
@@ -24,7 +35,7 @@ interface WeatherLayers {
 }
 
 export const useWeatherLayers = create<WeatherLayers>()(
-  persist((set) => ({ radar: false, satellite: false, areas: false, pireps: false, winds: "off", set: (patch) => set(patch) }), {
+  persist((set) => ({ loop: "off", loopSpeed: "normal", areas: false, pireps: false, winds: "off", set: (patch) => set(patch) }), {
     name: "wingtip.weatherLayers",
     partialize: ({ set: _set, ...kept }) => kept,
   }),

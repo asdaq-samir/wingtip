@@ -4273,6 +4273,27 @@ struct APIWeatherAsk: Codable, Equatable, Sendable {
     var stops: [String]?
 }
 
+/// The radar or satellite loop the map plays, oldest frame first, the
+/// step between frames, how old the newest may be before the apps label
+/// it old, and the sources' credit.
+// MARK: - APIWeatherLoop
+struct APIWeatherLoop: Codable, Equatable, Sendable {
+    var credit: String
+    var frames: [APILoopFrame]
+    var kind: String
+    var oldAfterS, stepS: Double
+}
+
+/// One frame of the loop (wingtip.weather_loop): when it was made, ISO
+/// UTC -- the older of its layers' times -- and each layer's XYZ tile
+/// template, None where the frame does not draw it. The satellite's
+/// carries `{bbox-epsg-3857}`, the tile's box in web Mercator metres.
+// MARK: - APILoopFrame
+struct APILoopFrame: Codable, Equatable, Sendable {
+    var radarTiles, satelliteTiles: String?
+    var valid: String
+}
+
 /// The weather the map draws in the part of it in sight, for `at`
 /// (UNIX seconds): areas, pilot reports, the winds aloft where an altitude
 /// was asked for, and when the radar mosaic was made (ISO UTC).

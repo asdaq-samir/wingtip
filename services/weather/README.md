@@ -3,9 +3,10 @@
 Fetches the weather the planner reads, on a schedule, into the **weather
 store**: one file per product in `data/raw/weather` (`WEATHER_STORE`), on
 the data folder the planner mounts too. The planner only reads it
-(`wingtip.weather`, `wingtip.glmp`, `wingtip.tfr`, `wingtip.weather_map`),
-so no pilot's request waits on aviationweather.gov, NOMADS, tfr.faa.gov or
-IEM. Split out of the planner on 2026-11-08 (#535).
+(`wingtip.weather`, `wingtip.glmp`, `wingtip.tfr`, `wingtip.weather_map`,
+`wingtip.weather_loop`),
+so no pilot's request waits on aviationweather.gov, NOMADS, tfr.faa.gov,
+IEM or nowCOAST. Split out of the planner on 2026-11-08 (#535).
 
 It fetches, parses into the stored form and stores. Every rule over the
 weather -- the ceiling (14 CFR 1.1), the flight category (AIM 7-1-7,
@@ -26,6 +27,7 @@ and at the second otherwise (`app/settings.py`, `WEATHER_*_EVERY_S`).
 | `glmp` | Gridded LAMP's hourly issue, ceiling and visibility grids (`.npy` beside the record) | 10 min | 1 h | while it is one of the last three issues |
 | `tfrs` | tfr.faa.gov's shapes and each NOTAM's XNOTAM detail | 10 min | 30 min | no limit; ended TFRs left out of a list older than 10 min |
 | `radar` | IEM's record of when the NEXRAD mosaic was made | 2 min | 15 min | no limit |
+| `satellite` | the times of nowCOAST's GOES East and West infrared and visible pictures (its WMS capabilities), the last three hours | 5 min | 30 min | no limit |
 
 A failed fetch leaves the stored copy in place and writes
 `<name>.attempt.json` beside it, which the pilot's Status page reads as

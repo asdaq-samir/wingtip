@@ -15,7 +15,7 @@
 # container, the engine compiled from nothing, pip into a fresh container,
 # Maven's downloads again. What is kept between runs, and shared by every
 # worktree:
-# - wingtip-check-web:<hash>: node (apps/web/.nvmrc) with web's node_modules for this
+# - wingtip-check-web:<hash>: node (.tool-versions') with web's node_modules for this
 #   package-lock, installed at /node_modules, which Node, TypeScript and
 #   ESLint all find by walking up from /repo/apps/web. Built when the lock
 #   changes; npm's downloads in BuildKit's cache (id wingtip-npm).
@@ -43,7 +43,10 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 
-RUST_IMAGE=rust:1.99-slim-bookworm
+# Each toolchain at .tool-versions' version, the one the images and CI run.
+tool() { "$here/scripts/build/toolchain.sh" get "$1"; }
+RUST=$(tool rust) PYTHON=$(tool python) JAVA=$(tool java) MAVEN=$(tool maven) NODE=$(tool nodejs)
+RUST_IMAGE=rust:$RUST-slim-bookworm
 # CI's (ci.yml's test job).
 CARGO_MACHETE=0.9.1
 
@@ -73,7 +76,7 @@ prune_tags() {
 
 web_image() {
   local node tag ctx
-  node=$(tr -d ' \n' < "$here/apps/web/.nvmrc")
+  node=$NODE
   tag=wingtip-check-web:$({ echo "node $node"; cat "$here/apps/web/package.json" "$here/apps/web/package-lock.json"; } | sha)
   if [ -n "${CHECK_NO_CACHE:-}" ] || ! docker image inspect "$tag" >/dev/null 2>&1; then
     ctx=$(mktemp -d)
@@ -121,7 +124,7 @@ py_image() {
   (cd "$here" && git ls-files -z -co --exclude-standard -- engine | xargs -0 tar cf - 2>/dev/null) | tar xf - -C "$ctx"
   cat > "$ctx/Dockerfile" <<EOF
 # The wheel's stage: the same for every directory, so BuildKit builds it once.
-FROM python:3.15-slim AS native
+FROM python:$PYTHON-slim AS native
 COPY --from=$RUST_IMAGE /usr/local/cargo /usr/local/cargo
 COPY --from=$RUST_IMAGE /usr/local/rustup /usr/local/rustup
 ENV PATH=/usr/local/cargo/bin:\$PATH CARGO_HOME=/usr/local/cargo RUSTUP_HOME=/usr/local/rustup
@@ -188,7 +191,7 @@ print(sorted(ds, key=lambda d: d["name"])[-1]["udid"] if ds else "")'
 # the same engine copies it instead of compiling three targets again.
 phone_engine() {
   local kind=$1 out=$2 script=$3 key cache
-  key=$(cd "$here" && git ls-files -z -co --exclude-standard -- engine/facade engine/crates engine/bindings/ffi 'engine/Cargo.*' \
+  key=$(cd "$here" && git ls-files -z -co --exclude-standard -- engine/facade engine/crates engine/bindings/ffi 'engine/Cargo.*' engine/rust-toolchain.toml \
     | xargs -0 shasum -a 256 | sha)
   cache=$HOME/Library/Caches/wingtip-checks/engine-$kind-$key
   if [ ! -d "$cache" ]; then
@@ -211,12 +214,12 @@ run_area() {
       docker run --rm -v "$here:/repo" --tmpfs /repo/apps/web/node_modules -w /repo/apps/web "$tag" \
         sh -c 'ln -s /node_modules/* /node_modules/.bin node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip --no-progress && npx vitest run'
       ;;
-    py) run_py services/planner requirements-dev-wingtip.txt 3.15 wingtip tests_wingtip ;;
-    planner) run_py services/planner requirements-dev.txt 3.15 app tests ;;
-    ingest) run_py services/ingest requirements-dev.txt 3.15 ingest tests ;;
-    assistant) run_py services/assistant requirements-dev.txt 3.15 app tests ;;
-    weather) run_py services/weather requirements-dev.txt 3.15 app tests ;;
-    jobs) run_py services/jobs requirements-dev-jobs.txt 3.15 charts charts/tests ;;
+    py) run_py services/planner requirements-dev-wingtip.txt "$PYTHON" wingtip tests_wingtip ;;
+    planner) run_py services/planner requirements-dev.txt "$PYTHON" app tests ;;
+    ingest) run_py services/ingest requirements-dev.txt "$PYTHON" ingest tests ;;
+    assistant) run_py services/assistant requirements-dev.txt "$PYTHON" app tests ;;
+    weather) run_py services/weather requirements-dev.txt "$PYTHON" app tests ;;
+    jobs) run_py services/jobs requirements-dev-jobs.txt "$PYTHON" charts charts/tests ;;
     engine)
       # The crates' layering, as engine/README.md's table gives it (seconds).
       python3 "$here/scripts/ci/engine_layers.py"
@@ -233,7 +236,7 @@ run_area() {
       key=$(worktree_key)
       # The target is a volume of this worktree's own, labelled with its path
       # so tidy-local.sh can remove it when the worktree is gone.
-      local tvol=wingtip-cargo-target-tests-1.99-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
+      local tvol=wingtip-cargo-target-tests-$RUST-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
       docker volume inspect "$tvol" >/dev/null 2>&1 || docker volume create --label "wingtip.worktree=$here" "$tvol" >/dev/null
       docker run --rm -v "$here:/w/$key" \
         -v wingtip-cargo-registry:/usr/local/cargo/registry -v wingtip-cargo-git:/usr/local/cargo/git \
@@ -246,10 +249,12 @@ run_area() {
       # answers from ../assistant/openapi.json.
       docker run --rm -v "$here/services":/services -v /services/gateway/target -v fp-m2:/root/.m2 \
         -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
-        -w /services/gateway maven:3.9-eclipse-temurin-25 mvn -B -q test
+        -w /services/gateway "maven:$MAVEN-eclipse-temurin-$JAVA" mvn -B -q test
       ;;
     ios)
       local sim
+      # .tool-versions' Xcode, as CI's (scripts/ci/select-xcode.sh).
+      DEVELOPER_DIR=$("$here/scripts/ci/select-xcode.sh") && export DEVELOPER_DIR
       phone_engine ios apps/ios/Frameworks/WingtipEngine.xcframework engine/bindings/ffi/build-xcframework.sh
       xcodegen generate --spec "$here/apps/ios/project.yml" --project "$here/apps/ios" --quiet
       sim=$(newest_iphone)
@@ -261,9 +266,9 @@ run_area() {
       ;;
     android)
       local sdk=$HOME/Library/Android/sdk
-      # Java 25, the build's (gradle-daemon-jvm.properties): one installed,
-      # else the Temurin 25 Gradle fetched into ~/.gradle/jdks.
-      export JAVA_HOME=${JAVA_HOME:-$(ls -d /Library/Java/JavaVirtualMachines/*25*/Contents/Home "$HOME"/Library/Java/JavaVirtualMachines/*25*/Contents/Home "$HOME"/.gradle/jdks/*25*/*/Contents/Home 2>/dev/null | tail -1)}
+      # .tool-versions' Java, the build's (gradle-daemon-jvm.properties): one
+      # installed, else the Temurin Gradle fetched into ~/.gradle/jdks.
+      export JAVA_HOME=${JAVA_HOME:-$(ls -d /Library/Java/JavaVirtualMachines/*"$JAVA"*/Contents/Home "$HOME"/Library/Java/JavaVirtualMachines/*"$JAVA"*/Contents/Home "$HOME"/.gradle/jdks/*"$JAVA"*/*/Contents/Home 2>/dev/null | tail -1)}
       export ANDROID_HOME=${ANDROID_HOME:-$sdk}
       export ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)}
       phone_engine android apps/android/app/engine engine/bindings/ffi/build-android.sh
@@ -280,6 +285,8 @@ run_area() {
       local base=()
       git -C "$here" rev-parse -q --verify origin/main >/dev/null && base=(--base origin/main)
       python3 "$here/scripts/ci/file_sizes.py" "${base[@]+"${base[@]}"}"
+      # Every version the repo states is .tool-versions' (seconds).
+      "$here/scripts/build/toolchain.sh" --check
       # No unused Python (vulture, with its list of what it cannot see used).
       "$here/scripts/ci/dead_python.sh"
       ;;

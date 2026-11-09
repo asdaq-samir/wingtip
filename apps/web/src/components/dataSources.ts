@@ -18,6 +18,17 @@ export const DATA_SOURCES: { name: string; licence: string; href?: string }[] = 
   { name: "FAA SWIM: NOTAMs, flow programs, terminal data and airspace status", licence: PUBLIC_DOMAIN },
   { name: "NOAA Aviation Weather Center: METARs, TAFs, PIREPs, SIGMETs and G-AIRMETs", licence: PUBLIC_DOMAIN },
   { name: "NOAA models: GFS winds and temperatures aloft, GLMP, magnetic declination", licence: PUBLIC_DOMAIN },
+  // The map's radar and satellite loop (features/weather-loop): IEM asks to be credited.
+  {
+    name: "NWS NEXRAD radar mosaic loop, via the Iowa Environmental Mesonet (Iowa State University); not for navigation, check official weather",
+    licence: PUBLIC_DOMAIN,
+    href: "https://mesonet.agron.iastate.edu/disclaimer.php",
+  },
+  {
+    name: "NOAA GOES East and West satellite loop, via NOAA nowCOAST; not for navigation, check official weather",
+    licence: PUBLIC_DOMAIN,
+    href: "https://nowcoast.noaa.gov",
+  },
   { name: "USGS The National Map imagery", licence: PUBLIC_DOMAIN },
   { name: "US Census Bureau geocoder and gazetteer", licence: PUBLIC_DOMAIN },
   { name: "OurAirports: runways, frequencies and fields abroad", licence: PUBLIC_DOMAIN, href: "https://ourairports.com/data/" },

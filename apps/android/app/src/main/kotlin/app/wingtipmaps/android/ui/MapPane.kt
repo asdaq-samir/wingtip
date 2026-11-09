@@ -1,7 +1,9 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -11,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +55,8 @@ import app.wingtipmaps.android.map.MapRest
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.TrafficDrawing
+import app.wingtipmaps.android.map.WeatherLoopBar
+import app.wingtipmaps.android.notify.LiveFlight
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.receiver.ReceiverChip
 import app.wingtipmaps.android.route.RouteLegModel
@@ -152,7 +157,17 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val glideRatio = rememberAirplaneNow(plan).glideRatio
     LaunchedEffect(glideRatio) { InFlight.shared.glideRatio = glideRatio }
     val ringKept by GlideRing.flow(context).collectAsStateWithLifecycle()
-    LaunchedEffect(fix, ownShip.on, state.course, state.legs) { InFlight.shared.took(if (ownShip.on) fix else null, state) }
+    // Each fix taken by the engine as it comes, whether the app is in
+    // front or put away (the activity lives on beside own ship's
+    // service), so the Live Update on the status bar (LiveFlight) goes on
+    // counting down with the phone in a pocket.
+    val planNow by rememberUpdatedState(state)
+    LaunchedEffect(ship, ownShip.on, state.course, state.legs) {
+        ship.fix.collect { taken ->
+            InFlight.shared.took(if (ownShip.on) taken else null, planNow)
+            LiveFlight.took(context, InFlight.shared.state.value, planNow)
+        }
+    }
     LaunchedEffect(ahead) { SpokenAlerts.of(context).hear(ahead) }
     // While the emergency assistant is open, the line from the airplane
     // to the field it picked (the same model EmergencyHost holds).
@@ -201,8 +216,16 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         )
         MapLoading(shown = !revealed, bottomInset = covered, problem = if (info == null) chartProblem else null, modifier = Modifier.fillMaxSize())
         MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
-        // The receiver heard: "Stratux · 12 targets · GPS".
-        ReceiverChip(Modifier.align(Alignment.TopCenter).padding(top = WingtipSpace.Sm))
+        // The receiver heard: "Stratux · 12 targets · GPS"; under it the
+        // radar or satellite loop's bar while one is on.
+        Column(
+            Modifier.align(Alignment.TopCenter).padding(top = WingtipSpace.Sm),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+        ) {
+            ReceiverChip()
+            WeatherLoopBar()
+        }
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of
             // the buttons where nothing else was (#218).

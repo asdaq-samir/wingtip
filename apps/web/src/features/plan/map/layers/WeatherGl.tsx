@@ -1,14 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import type { FillLayerSpecification, LineLayerSpecification, RasterLayerSpecification } from "maplibre-gl";
+import type { FillLayerSpecification, LineLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../../lib/api/client";
 import { areaColour } from "../../lib/weatherMap";
 import { AreaCard, PirepCard, WindCard } from "../WeatherCards";
-import { RADAR_URL, SATELLITE_URL, barbIcon, pirepIcon, weatherBoxOf } from "../weatherLayer";
+import { barbIcon, pirepIcon, weatherBoxOf } from "../weatherLayer";
 import { useWeatherLayers } from "../../../../lib/map/sources/weatherLayers";
 import { WINDS_MODELLED } from "../../../../lib/windsAloft";
-import { FADE_IN_MS, useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
-import { glZoom } from "../../../../lib/map/gl/glStyle";
+import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { TAP } from "../../../../lib/map/gl/layers/common";
 import { useGlMarks, type GlMark } from "../../../../lib/map/gl/useGlMarks";
@@ -38,15 +37,16 @@ const AREA_LAYERS: (FillLayerSpecification | LineLayerSpecification)[] = [
 ];
 
 /**
- * The weather on the map at the pilot's pick (useWeatherLayers): radar and
- * satellite as raster layers from IEM, the advisories' areas, the PIREPs
- * and the winds aloft from the planner's weather map for the view --
+ * The weather on the map at the pilot's pick (useWeatherLayers): the
+ * advisories' areas, the PIREPs and the winds aloft from the planner's
+ * weather map for the view (the radar and satellite are the loop's,
+ * features/weather-loop) --
  * drawn bold, as what changes by the hour over the chart. A tap on an
  * area, a PIREP or a barb opens its card.
  */
 export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | null; altitudeFt: number | null }) {
   const { map, openCard } = useGlMap();
-  const { radar, satellite, areas, pireps, winds } = useWeatherLayers();
+  const { areas, pireps, winds } = useWeatherLayers();
   const [box, setBox] = useState(() => weatherBoxOf(map.getBounds()));
   useEffect(() => {
     const rest = () =>
@@ -63,12 +63,11 @@ export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | nul
   const { data } = useQuery({
     queryKey: ["weatherMap", box, windsFt],
     queryFn: () => api.weatherMap(box, windsFt),
-    enabled: areas || pireps || windsFt !== null || radar,
+    enabled: areas || pireps || windsFt !== null,
     staleTime: REFRESH_MS,
     refetchInterval: REFRESH_MS,
     meta: { silent: true },
   });
-  const radarUrl = data?.radar_valid ? `${RADAR_URL}?v=${encodeURIComponent(data.radar_valid)}` : RADAR_URL;
 
   useGlLayer("areas", { [AREAS]: empty() }, AREA_LAYERS);
   // Faded in as the first answer comes, not snapped on over the chart.
@@ -121,28 +120,5 @@ export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | nul
     [data, pireps, windsFt, openCard],
   );
   useGlMarks(marks, true);
-  return (
-    <>
-      {satellite && <WeatherTiles key="sat" id="wx-satellite" url={SATELLITE_URL} max={9} opacity={0.45} />}
-      {radar && <WeatherTiles key={radarUrl} id="wx-radar" url={radarUrl} max={10} opacity={0.6} />}
-    </>
-  );
-}
-
-/** A weather raster over the chart (IEM's tiles), made again as its
- *  address changes (the radar's time). */
-function WeatherTiles({ id, url, max, opacity }: { id: string; url: string; max: number; opacity: number }) {
-  const source = { [id]: { type: "raster" as const, tiles: [url], tileSize: 256, maxzoom: max } };
-  // Each tile faded in as it comes (MapLibre's own raster fade), and the
-  // layer as a whole as it is turned on or the radar's time moves on.
-  const layer: RasterLayerSpecification = {
-    id,
-    type: "raster",
-    source: id,
-    minzoom: glZoom(3),
-    paint: { "raster-opacity": opacity, "raster-fade-duration": FADE_IN_MS },
-  };
-  useGlLayer("areas", source, [layer]);
-  useGlFadeIn([layer], true);
   return null;
 }

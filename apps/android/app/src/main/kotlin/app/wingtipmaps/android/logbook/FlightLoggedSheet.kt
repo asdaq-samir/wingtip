@@ -12,7 +12,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +28,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.LogbookDraft
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
@@ -61,7 +61,7 @@ fun FlightLoggedSheet(state: LogbookDraftModel.State, model: LogbookDraftModel) 
             if (!state.signedIn) Text(stringResource(R.string.flight_logged_sign_in), style = MaterialTheme.typography.bodyMedium)
             if (state.pending) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                    CircularProgressIndicator(Modifier.size(WingtipSize.Chip))
+                    LoadingIndicator(Modifier.size(WingtipSize.Chip))
                     Text(stringResource(R.string.flight_logged_drawing), style = MaterialTheme.typography.bodyMedium)
                 }
             }

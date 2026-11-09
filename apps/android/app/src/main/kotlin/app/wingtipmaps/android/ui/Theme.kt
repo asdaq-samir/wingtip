@@ -13,16 +13,20 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
+import app.wingtipmaps.android.design.ExpressiveMotion
+import app.wingtipmaps.android.design.WingtipMotionScheme
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipPalette
 import app.wingtipmaps.android.design.generated.WingtipPalettes
 import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipTypography
+import app.wingtipmaps.android.design.rememberReduceMotion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -158,7 +162,8 @@ val WingtipShapes = Shapes(
 /**
  * The one Wingtip Material theme, for both layouts: the look picked in
  * Setup (Wingtip by default), light or dark with the system, its type
- * roles and shapes from the tokens. Material You stays off: the brand's
+ * roles, shapes and Material 3 Expressive's springs from the tokens.
+ * Material You stays off: the brand's
  * blue is the tint, where the wallpaper's colours would put a tappable
  * thing in whatever colour the wallpaper was.
  */
@@ -167,12 +172,15 @@ fun WingtipTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
     val look = rememberLook().value ?: Look.WINGTIP
     val palette = look.palette(dark)
+    // Material 3 Expressive's springs for the app's expressive parts,
+    // still under Remove animations (WingtipMotionScheme).
+    val reduce = rememberReduceMotion()
+    val motion = remember(reduce) { WingtipMotionScheme(reduce) }
     CompositionLocalProvider(LocalWingtipPalette provides palette, LocalInk provides InkColors.of(palette, dark)) {
         MaterialTheme(
             colorScheme = palette.materialScheme(dark),
             typography = WingtipTypography,
             shapes = WingtipShapes,
-            content = content,
-        )
+        ) { ExpressiveMotion.Provide(motion, content) }
     }
 }

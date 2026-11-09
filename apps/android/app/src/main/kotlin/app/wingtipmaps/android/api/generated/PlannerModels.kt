@@ -7042,6 +7042,41 @@ data class WeatherAsk (
 )
 
 /**
+ * The radar or satellite loop the map plays, oldest frame first, the
+ * step between frames, how old the newest may be before the apps label
+ * it old, and the sources' credit.
+ */
+@Serializable
+data class WeatherLoop (
+    val credit: String,
+    val frames: List<LoopFrame>,
+    val kind: String,
+
+    @SerialName("old_after_s")
+    val oldAfterS: Double,
+
+    @SerialName("step_s")
+    val stepS: Double
+)
+
+/**
+ * One frame of the loop (wingtip.weather_loop): when it was made, ISO
+ * UTC -- the older of its layers' times -- and each layer's XYZ tile
+ * template, None where the frame does not draw it. The satellite's
+ * carries `{bbox-epsg-3857}`, the tile's box in web Mercator metres.
+ */
+@Serializable
+data class LoopFrame (
+    @SerialName("radar_tiles")
+    val radarTiles: String? = null,
+
+    @SerialName("satellite_tiles")
+    val satelliteTiles: String? = null,
+
+    val valid: String
+)
+
+/**
  * The weather the map draws in the part of it in sight, for `at`
  * (UNIX seconds): areas, pilot reports, the winds aloft where an altitude
  * was asked for, and when the radar mosaic was made (ISO UTC).

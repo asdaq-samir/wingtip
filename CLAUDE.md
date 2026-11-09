@@ -216,21 +216,27 @@ them). The table is what it runs:
 
 | Changed | Run, from that directory |
 |---|---|
-| `apps/web/` | `npm run types && npx tsc --noEmit && npx eslint . && npx knip && npx vitest run`: ESLint holds the layers and feature boundaries (`boundaries/layers`, `eslint/boundaries.js`); knip finds unused files, exports, types and dependencies (`knip.jsonc`, which says why each thing it leaves out is left out) |
+| `apps/web/` | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npx vitest run`: ESLint holds the layers and feature boundaries (`boundaries/layers`, `eslint/boundaries.js`); knip finds unused files, exports, types and dependencies (`knip.jsonc`, which says why each thing it leaves out is left out) |
 | `services/planner/` (app) | `ruff check app tests && lint-imports && pytest tests/` (in `services/planner`; `lint-imports` holds `.importlinter`'s contracts: wingtip never imports app, no router imports another) |
 | `services/planner/wingtip`, `tests_wingtip/` | `ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/` (in `services/planner`) |
-| `engine/` (Rust, `wingtip_native`) | `python3 scripts/ci/engine_layers.py` (each crate uses only the crates engine/README.md's table allows), `cargo machete` (no unused dependency), then the engine's `cargo test --profile ci` (`ci.yml`'s line); `maturin build -m engine/bindings/py/Cargo.toml` and install the wheel, then `pytest tests_wingtip/test_native.py` (in `services/planner`); every image that copies `services/planner/wingtip` is built FROM `services/Dockerfile.base`, which builds and installs it once (`services/planner/tests_wingtip/test_dockerfiles.py`), and none of them starts without it |
+| `engine/` (Rust, `wingtip_native`) | `python3 scripts/ci/engine_layers.py` (each crate uses only the crates engine/README.md's table allows), `cargo machete` (no unused dependency), `cargo clippy --workspace --all-targets -- -D warnings`, then the engine's `cargo test --profile ci` (`ci.yml`'s line); `maturin build -m engine/bindings/py/Cargo.toml` and install the wheel, then `pytest tests_wingtip/test_native.py` (in `services/planner`); every image that copies `services/planner/wingtip` is built FROM `services/Dockerfile.base`, which builds and installs it once (`services/planner/tests_wingtip/test_dockerfiles.py`), and none of them starts without it |
 | `services/ingest/` | `ruff check ingest tests && pytest tests/` (in `services/ingest`, after `pip install -r requirements-dev.txt` and the engine's wheel) |
 | `services/weather/` | `ruff check app tests && pytest tests/` (in `services/weather`, after `pip install -r requirements-dev.txt` and the engine's wheel) |
 | `services/assistant/` | `ruff check app tests && pytest tests/` (in `services/assistant`, after `pip install -r requirements-dev.txt`); `python -m app.openapi` after a schema or route change |
 | `services/jobs/` | `ruff check charts && pytest charts/tests/` (in `services/jobs`; CI runs them in its `test` job) |
 | `services/gateway/` | `mvn -B test` (needs Docker, for Testcontainers) |
 | `apps/ios/` (the native app) | On the Mac mini (Xcode and XcodeGen are there): `xcodegen` in `apps/ios/`, then `xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -destination "platform=iOS Simulator,name=<newest iPhone>" test` through `scripts/dev/one-at-a-time.sh`; `native-ios.yml` runs the same, iPad included (docs/NATIVE.md) |
-| `apps/android/` (the native app) | On the Mac mini: `./gradlew testDebugUnitTest lintDebug assembleDebug` in `apps/android/` (the build runs on JDK 25, `gradle/gradle-daemon-jvm.properties`; any JDK starts it), after `engine/bindings/ffi/build-android.sh`; `native-android.yml` builds the engine for each ABI, runs the unit tests, lint and a debug APK, then the instrumented tests on an emulator (docs/NATIVE-ANDROID.md) |
-| any source file (the `arch` area, from the root) | `python3 scripts/ci/file_sizes.py --base origin/main` (no new or grown file over 400 lines past `scripts/ci/file_sizes_allow.txt`, a list that only shrinks), then `scripts/ci/dead_python.sh` (vulture at 80% over services/, ml/ and scripts/; what it cannot see used is in `scripts/ci/vulture_allow.py` with why). CI's `rules-boundary` job also runs `python3 scripts/ci/rules_boundary.py` (no aviation figure outside the engine) |
+| `apps/android/` (the native app) | On the Mac mini: `./gradlew testDebugUnitTest lintDebug assembleDebug` in `apps/android/` (the build runs on Temurin 25, `gradle/gradle-daemon-jvm.properties`; any JDK starts it), after `engine/bindings/ffi/build-android.sh`; `native-android.yml` builds the engine for each ABI, runs the unit tests, lint and a debug APK, then the instrumented tests on an emulator (docs/NATIVE-ANDROID.md) |
+| any source file (the `arch` area, from the root) | `python3 scripts/ci/file_sizes.py --base origin/main` (no new or grown file over 400 lines past `scripts/ci/file_sizes_allow.txt`, a list that only shrinks), `scripts/build/toolchain.sh --check` (every version the repo states is `.tool-versions`'), then `scripts/ci/dead_python.sh` (vulture at 80% over services/, ml/ and scripts/; what it cannot see used is in `scripts/ci/vulture_allow.py` with why). CI's `rules-boundary` job also runs `python3 scripts/ci/rules_boundary.py` (no aviation figure outside the engine) |
 
 Python wants `pip install -r requirements-dev.txt` (the app's suite) or
 `requirements-dev-wingtip.txt` (wingtip's) in `services/planner` first.
+
+Each toolchain has one version, on the Mac, in the images and in CI:
+`.tool-versions` (Java, Python, Rust, Node, Xcode, Gradle, Maven and the
+formatters). CI's setup actions and the scripts read it; bump it there and
+run `scripts/build/toolchain.sh`, which writes the places that cannot read
+it (images, pom, Gradle, `rust-toolchain.toml`, `.nvmrc`, docs).
 
 A pre-push hook runs the quick ones for what a push changes against
 origin/main: `tsc` and ESLint for `apps/web/`, ruff for Python, `cargo check`

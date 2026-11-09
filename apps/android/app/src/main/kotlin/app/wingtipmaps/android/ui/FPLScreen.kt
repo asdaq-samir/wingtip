@@ -14,13 +14,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,6 +42,8 @@ import app.wingtipmaps.android.airplane.AskFigures
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogTotals
+import app.wingtipmaps.android.design.ChoiceGroup
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
@@ -99,7 +97,7 @@ fun FPLScreen(plan: Plan) {
             // The route's Brief beside its Plan, where the pilot looks for it
             // once the route is in (OpenScreen's sheet, as the strip has it).
             if (state.routed && !state.planning) TextButton(onClick = { ScreenRequests.ask(Screen.BRIEF) }) { Text(stringResource(R.string.brief)) }
-            if (state.planning) CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
+            if (state.planning) LoadingIndicator(Modifier.size(WingtipSpace.Xl))
             state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
         FlightRulesRow(onChanged = { if (state.routed) plan.plan() })
@@ -134,18 +132,10 @@ internal fun FlightRulesRow(onChanged: () -> Unit) {
     val context = LocalContext.current
     val choices = remember(context) { FlightChoices.of(context) }
     val rules by choices.rules.collectAsStateWithLifecycle()
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        FlightRules.entries.forEachIndexed { i, r ->
-            SegmentedButton(
-                selected = rules == r,
-                onClick = {
-                    if (rules != r) {
-                        choices.setRules(r)
-                        onChanged()
-                    }
-                },
-                shape = SegmentedButtonDefaults.itemShape(index = i, count = FlightRules.entries.size),
-            ) { Text(r.name, maxLines = 1) }
+    ChoiceGroup(FlightRules.entries.map { it to it.name }, selected = rules) { r ->
+        if (rules != r) {
+            choices.setRules(r)
+            onChanged()
         }
     }
 }

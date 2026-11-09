@@ -11992,6 +11992,42 @@
         "title": "LogbookEntry",
         "type": "object"
       },
+      "LoopFrame": {
+        "description": "One frame of the loop (wingtip.weather_loop): when it was made, ISO\nUTC -- the older of its layers' times -- and each layer's XYZ tile\ntemplate, None where the frame does not draw it. The satellite's\ncarries `{bbox-epsg-3857}`, the tile's box in web Mercator metres.",
+        "properties": {
+          "radar_tiles": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radar Tiles"
+          },
+          "satellite_tiles": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Satellite Tiles"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valid"
+        ],
+        "title": "LoopFrame",
+        "type": "object"
+      },
       "LostComms": {
         "description": "91.185: VFR's words, the routes in the rule's order, each segment's\naltitude and why, and when to leave the clearance limit.",
         "properties": {
@@ -20672,6 +20708,49 @@
         "title": "WeatherDataset",
         "type": "object"
       },
+      "WeatherLoop": {
+        "description": "The radar or satellite loop the map plays, oldest frame first, the\nstep between frames, how old the newest may be before the apps label\nit old, and the sources' credit.",
+        "properties": {
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/LoopFrame"
+            },
+            "title": "Frames",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "radar",
+              "ir",
+              "visible",
+              "both"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "old_after_s": {
+            "title": "Old After S",
+            "type": "number"
+          },
+          "step_s": {
+            "title": "Step S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "frames",
+          "step_s",
+          "old_after_s",
+          "credit"
+        ],
+        "title": "WeatherLoop",
+        "type": "object"
+      },
       "WeatherMap": {
         "description": "The weather the map draws in the part of it in sight, for `at`\n(UNIX seconds): areas, pilot reports, the winds aloft where an altitude\nwas asked for, and when the radar mosaic was made (ISO UTC).",
         "properties": {
@@ -21019,7 +21098,7 @@
   "paths": {
     "/": {
       "get": {
-        "description": "This service has no pages. The front end is built into the Spring\nBoot gateway's jar and served from there, which is also the only\nthing that calls this -- so this answers a health probe and says\nwhere the UI went.",
+        "description": "This service has no pages. The front end is built into the Spring Boot gateway's jar and served\nfrom there, which is also the only thing that calls this -- so this answers a health probe and\nsays where the UI went.",
         "operationId": "index__get",
         "responses": {
           "200": {
@@ -28132,6 +28211,57 @@
           }
         },
         "summary": "Waypoints In View",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/weather/loop": {
+      "get": {
+        "description": "The loop's frames, oldest first: the radar's last hour five minutes\napart, or a satellite picture's last two hours ten minutes apart; each\nframe's time and its tile templates. An empty list where the weather\nservice holds nothing of the source yet.",
+        "operationId": "weather_loop_frames_api_weather_loop_get",
+        "parameters": [
+          {
+            "description": "Radar; the infrared or visible satellite picture; or radar over the infrared",
+            "in": "query",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "description": "Radar; the infrared or visible satellite picture; or radar over the infrared",
+              "enum": [
+                "radar",
+                "ir",
+                "visible",
+                "both"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherLoop"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Weather Loop Frames",
         "x-gateway": {
           "access": "public"
         }

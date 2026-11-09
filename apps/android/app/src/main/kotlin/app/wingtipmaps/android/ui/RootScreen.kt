@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -38,6 +37,8 @@ import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.design.SharedAxisContent
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.predictiveBack
+import app.wingtipmaps.android.design.rememberPredictiveBack
 import app.wingtipmaps.android.emergency.EmergencyHost
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.InFlight
@@ -56,6 +57,7 @@ import app.wingtipmaps.android.ui.sheet.SheetStop
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import app.wingtipmaps.android.ui.sheet.rememberDockedSheetState
 import app.wingtipmaps.android.welcome.WelcomeHost
+import app.wingtipmaps.android.widget.NextFlightFeed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -170,8 +172,9 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         })
     } else {
         // At the pill with the Airport tab's card open, Back closes the
-        // card (the sheet's own Back, lowering it, comes first).
-        BackHandler(enabled = sheet.stop == SheetStop.PILL && tab == Tabs.AIRPORT.ordinal && airportState.place != null) {
+        // card (the sheet's own Back, lowering it, comes first), the card
+        // drawn back with the system's predictive gesture.
+        val cardBack = rememberPredictiveBack(enabled = sheet.stop == SheetStop.PILL && tab == Tabs.AIRPORT.ordinal && airportState.place != null) {
             airports.close()
             airport = ""
         }
@@ -191,7 +194,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             // A tab gives way to the next along the row's axis (Material's
             // shared axis; a cross-fade under Reduce Motion).
             SharedAxisContent(tab, Modifier.weight(1f).fillMaxWidth()) { shown ->
-                Box(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize().then(if (Tabs.entries[shown] == Tabs.AIRPORT) Modifier.predictiveBack(cardBack) else Modifier)) {
                     when (Tabs.entries[shown]) {
                         Tabs.FPL -> FPLScreen(plan)
                         Tabs.AIRPORT -> AirportScreen(airport, plan = plan, model = airports)
@@ -253,6 +256,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     )
     // A flight recorded and ended, offered for the logbook.
     AutoLogbookHost(plan, session)
+    // The home screen's Next Flight widget, kept as the plan settles.
+    NextFlightFeed(plan)
     // The welcome, once per install: at its end the sheet comes up a stop
     // on FPL (or the strip), with the sample flight or the way to plan one.
     WelcomeHost(plan) {

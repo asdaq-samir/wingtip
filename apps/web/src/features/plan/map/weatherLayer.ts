@@ -2,18 +2,12 @@ import type { MapPirep, StationWind } from "../../../lib/api/types";
 import { barbSvg, pirepMark } from "../lib/weatherMap";
 import { divIcon, type IconLike } from "../../../lib/map/marks/icons";
 
-// The weather on the planner's map, at the pilot's pick: where its tiles
-// and its box come from, and its marks (features/plan/map/layers/WeatherGl draws
+// The weather on the planner's map, at the pilot's pick: where its box
+// comes from, and its marks (features/plan/map/layers/WeatherGl draws
 // them; WeatherCards are the cards a tap on one opens).
 
 /** The map's view as its four edges. */
 type Bounds = { getSouth(): number; getWest(): number; getNorth(): number; getEast(): number };
-
-/** IEM's tile cache: the NEXRAD base reflectivity mosaic and the GOES-East
- *  infrared picture, each kept current there, five minutes apart. */
-const IEM = "https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0";
-export const RADAR_URL = `${IEM}/nexrad-n0q-900913/{z}/{x}/{y}.png`;
-export const SATELLITE_URL = `${IEM}/goes-east-ir-4km-900913/{z}/{x}/{y}.png`;
 
 /** How far out the box asked for is rounded, degrees: a pan within it asks
  *  nothing new. */
