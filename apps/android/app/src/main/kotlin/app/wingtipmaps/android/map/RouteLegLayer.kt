@@ -1,6 +1,6 @@
 package app.wingtipmaps.android.map
 
-import android.graphics.Color
+import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.route.RouteLegs
 import org.maplibre.android.style.expressions.Expression
@@ -45,7 +45,7 @@ object RouteLegLayer {
         else Expression.eq(Expression.get(RouteLegs.LEG), Expression.literal(selected))
 
     /** The tokens' route green, a shade deeper over the dimmed night chart. */
-    private fun green(night: Boolean): Int = Color.parseColor(if (night) WingtipColors.Chart.ROUTE_GREEN_NIGHT_HEX else WingtipColors.Chart.ROUTE_GREEN_HEX)
+    private fun green(night: Boolean): Int = (if (night) WingtipColors.Chart.ROUTE_GREEN_NIGHT_HEX else WingtipColors.Chart.ROUTE_GREEN_HEX).toColorInt()
 
     /** Wider than the edge (6.5) so the green shows either side of it. */
     private const val CASING_WIDTH = 11f

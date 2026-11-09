@@ -1,8 +1,8 @@
 package app.wingtipmaps.android.emergency
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.clickable
+import androidx.core.net.toUri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -132,11 +132,11 @@ internal fun ActionsList(state: EmergencyModel.State, onSouls: (String) -> Unit,
     val phone = state.phone
     if (phone != null && picked != null) {
         Plain(stringResource(R.string.emergency_call_field, picked.ident), stringResource(R.string.emergency_call_field_line), tint = true) {
-            context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
+            context.startActivity(Intent(Intent.ACTION_DIAL, "tel:$phone".toUri()))
         }
     }
     Plain(stringResource(R.string.emergency_call_911), null, tint = true) {
-        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:911")))
+        context.startActivity(Intent(Intent.ACTION_DIAL, "tel:911".toUri()))
     }
 }
 
