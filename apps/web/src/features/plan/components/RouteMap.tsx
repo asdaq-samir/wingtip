@@ -102,6 +102,8 @@ interface Props {
    *  the course opening the nearest one's sheet (RouteLegCard). */
   routeLegs?: RouteLeg[];
   onSelectLeg?: (key: string) => void;
+  /** The leg whose Route Leg sheet is open (the only one cased in green). */
+  selectedLeg?: string | null;
 }
 
 
@@ -254,7 +256,7 @@ export default memo(function RouteMap({
   course, candidates, selected, focus, onSelectCandidate, onSelectPoint,
   airportWeather, place, start = null, onSelectPlace, legs, heldPoint, onHoldPoint, nearest = null, patterns = NO_PATTERNS, patternFocus = null,
   procedures = NO_PROCEDURES, procedureFocus = null, procedureCover, crossings = NO_CROSSINGS, directs = "", onProcedureFix, fuelStops = NO_POINTS_AT,
-  stopFields = NO_STOP_FIELDS, onPickStopField, ways, wayShown = null, onPickWay, routeLegs = NO_LEGS, onSelectLeg,
+  stopFields = NO_STOP_FIELDS, onPickStopField, ways, wayShown = null, onPickWay, routeLegs = NO_LEGS, onSelectLeg, selectedLeg,
 }: Props) {
   const focusZoom = course?.max_zoom ?? 12;
   // The pattern just picked, its corners and its entry, to bring in.
@@ -342,7 +344,7 @@ export default memo(function RouteMap({
       procedures={procedures} focusedProcedure={focusedProcedure} procedureFocus={procedureFocus} procedureCover={procedureCover}
       crossings={crossings} directs={directs} onProcedureFix={onProcedureFix}
       fuelStops={fuelStops} stopFields={stopFields} onPickStopField={onPickStopField}
-      ways={ways} wayShown={wayShown} onPickWay={onPickWay} routeLegs={glLegs} onSelectLeg={onSelectLeg}
+      ways={ways} wayShown={wayShown} onPickWay={onPickWay} routeLegs={glLegs} onSelectLeg={onSelectLeg} selectedLeg={selectedLeg}
     />
   );
 });

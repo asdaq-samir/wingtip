@@ -53,7 +53,7 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
         onProcedureFix={showFix}
         fuelStops={fuelStopPins} stopFields={stopFieldPins} onPickStopField={pickStopField}
         ways={wayLines} wayShown={lineKey === "none" ? "own" : lineKey} onPickWay={pickWay}
-        routeLegs={mapLegs} onSelectLeg={setLegAt}
+        routeLegs={mapLegs} onSelectLeg={setLegAt} selectedLeg={openLeg?.key ?? null}
       />
       </Suspense>
       {/* The next checkpoint over the map in flight (FlyingHead). */}

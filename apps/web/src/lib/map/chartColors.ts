@@ -15,7 +15,7 @@ export const COURSE_MAGENTA = "#e600e6";
  *  a colour no airspace, airway or field on the sectional is drawn in, so
  *  the route reads as the pilot's own over any of them. A shade deeper
  *  over the dimmed chart at night, so it does not glare. The phones keep
- *  the same two (NightPalette.routeGreen, ChartMap.kt's greenColour). */
+ *  the same two (NightPalette.routeGreen; the phones draw no green until they have a leg selection). */
 export const ROUTE_GREEN = "#52c41a";
 export const ROUTE_GREEN_NIGHT = "#3f9a1c";
 

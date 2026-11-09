@@ -9,7 +9,7 @@ import { usePreferences } from "../../../preferences";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
 import { useDarkTheme } from "../useDarkTheme";
-import { CHECKPOINT_SOURCE, ROUTE_SOURCE, glZoom, pointFeatures, routeCasingPaint, routeEdgePaint, routeFeature, routeLayers } from "../glStyle";
+import { CHECKPOINT_SOURCE, ROUTE_SOURCE, glZoom, pointFeatures, routeCasingPaint, routeEdgePaint, routeFeature, routeLayers, routeOuterPaint, selectedLegFilter } from "../glStyle";
 import { useGlProbe } from "../useGlProbe";
 import { GL_FONT, TAP } from "./common";
 import { ROUTE_PRIORITY } from "../declutter";
@@ -77,17 +77,19 @@ const NAMES: SymbolLayerSpecification = {
 };
 
 /**
- * The route: the course line (a magenta core cased in green, as
- * ForeFlight draws a route, with a dark edge round it; a tap on it the
- * nearest leg's Route Leg sheet), its checkpoints numbered in flight
+ * The route: the course line (a magenta core with a thin edge, and
+ * the selected leg alone cased in green, as ForeFlight draws a selected
+ * course; a tap on it the nearest leg's Route Leg sheet), its checkpoints numbered in flight
  * order and named closer in (a tap the checkpoint's card, the map flying
  * in to it), the points they were chosen from, and its departure, stops
  * and destination as every airport's mark on the chart, in its weather,
  * the ident on a dark pill (routeFieldIcon; a tap its card).
  */
-export function RouteGl({ course, checkpoints, candidates, endpoints, legs = NO_LEGS, onSelectLeg }: {
+export function RouteGl({ course, checkpoints, candidates, endpoints, legs = NO_LEGS, onSelectLeg, selectedLeg = null }: {
   course: Course | null; checkpoints: GlCheckpoint[]; candidates: GlCandidate[]; endpoints: GlEndpoint[];
   legs?: GlLeg[]; onSelectLeg?: (key: string) => void;
+  /** The leg whose Route Leg sheet is open: the only one cased in green. */
+  selectedLeg?: string | null;
 }) {
   const layers = useMemo(() => routeLayers(courseColour()), []);
   // The line in the route's slot, the marks over every mark on the chart.
@@ -99,11 +101,21 @@ export function RouteGl({ course, checkpoints, candidates, endpoints, legs = NO_
   const chartNight = usePreferences(s => s.chartNight);
   const night = dark && chartNight === "dimmed";
   useGlPaint(["route-edge"], routeEdgePaint(night, sunlight));
+  useGlPaint(["route-outer"], routeOuterPaint(night, sunlight));
   useGlPaint(["route-casing"], routeCasingPaint(night));
-  const line = useMemo(() => (course ? routeFeature(course.course_line as [number, number][]) : null), [course]);
+  // The green casing and the outer edge round it only along the selected
+  // leg (the owner, 2026-11-09: ForeFlight shows the green outline only
+  // when the course is selected): a filter, the source left as it is.
+  const { map: glMap } = useGlMap();
+  useEffect(() => {
+    for (const id of ["route-casing", "route-outer"]) if (glMap.getLayer(id)) glMap.setFilter(id, selectedLegFilter(selectedLeg));
+  }, [glMap, selectedLeg, course]);
+  const line = useMemo(() => (course ? routeFeature(course.course_line as [number, number][], legs) : null), [course, legs]);
   useGlData(ROUTE_SOURCE, line);
   // The course drawn, for the browser tests.
   useGlProbe("route-line", ["route-core"], () => ({ course: true }));
+  // Which leg is cased in green, for the browser tests.
+  useGlProbe("route-casing", ["route-casing"], f => ({ leg: String(f.properties.leg) }));
   useGlProbe("candidate-marks", ["candidates"], f => ({ key: f.properties.key }));
   // The checkpoints' names the chart shows, those MapLibre placed clear of
   // each other (a name it could not fit is not drawn), for the tests.

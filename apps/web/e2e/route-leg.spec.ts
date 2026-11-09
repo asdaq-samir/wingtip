@@ -22,6 +22,11 @@ async function legsOnScreen(page: Page): Promise<{ key: string; a: { x: number; 
   });
 }
 
+/** How many pieces of the course are drawn in green (RouteGl's route-casing probe). */
+async function casedLegs(page: Page): Promise<number> {
+  return page.locator(".maplibregl-map").first().evaluate(map => (JSON.parse(map.querySelector("[data-route-casing]")?.getAttribute("data-route-casing") ?? "[]") as unknown[]).length);
+}
+
 test("a tap beside the course opens its Route Leg sheet, its figures the nav log's", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -48,7 +53,11 @@ test("a tap beside the course opens its Route Leg sheet, its figures the nav log
   await expect(card.getByTestId("route-leg-active")).toHaveCount(0);
   await expect(card.getByTestId("route-leg-distance")).toContainText(/\d+\.\d nm/, { timeout: slow(30_000) });
   await expect(card.getByTestId("route-leg-course")).toContainText(/\d{3}°M/);
+  // The green casing shows along the selected leg only (the owner,
+  // 2026-11-09); closing the sheet takes it off again.
+  await expect.poll(() => casedLegs(page), { timeout: slow(10_000) }).toBeGreaterThan(0);
   // Close goes back one level: the map as it was.
   await cardClose(page, "route-leg-close").click();
   await expect(page.getByTestId("route-leg-card")).toHaveCount(0);
+  await expect.poll(() => casedLegs(page), { timeout: slow(10_000) }).toBe(0);
 });

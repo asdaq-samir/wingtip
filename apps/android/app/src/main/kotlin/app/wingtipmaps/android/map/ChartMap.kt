@@ -273,10 +273,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { map ->
             map.getStyle { style ->
                 val paint = MapStyle.chartPaint(night)
-                style.getLayerAs<LineLayer>(ROUTE_CASING)?.setProperties(
-                    PropertyFactory.lineColor(greenColour(night)),
-                    PropertyFactory.lineOpacity(if (night) 0.9f else 1f),
-                )
                 style.getLayerAs<LineLayer>(ROUTE_EDGE)?.setProperties(
                     PropertyFactory.lineColor(edgeColour(night)),
                     PropertyFactory.lineOpacity(if (night) 0.35f else 0.6f),
@@ -607,7 +603,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
         )
         when {
             style.getLayer(ROUTE_EDGE) != null -> style.addLayerBelow(layer, ROUTE_EDGE)
-            style.getLayer(ROUTE_CASING) != null -> style.addLayerBelow(layer, ROUTE_CASING)
             style.getLayer(ROUTE) != null -> style.addLayerBelow(layer, ROUTE)
             else -> below(style, layer, MapStyle.ROUTE_SLOT)
         }
@@ -622,8 +617,10 @@ private class MapHolder(val view: MapView, private val density: Float) {
         }
         style.addSource(GeoJsonSource(ROUTE, geoJson))
         // The course line as the web app draws it, and ForeFlight (the
-        // owner's screenshot, 2026-11-08): the chart's magenta core, a band
-        // of green either side, a dark edge round the green. Over the
+        // owner's screenshot, 2026-11-08): the chart's magenta core with a
+        // thin edge round it. ForeFlight shows the green outline only when
+        // the course is selected (the owner, 2026-11-09) and the phone has
+        // no leg selection yet, so there is no green here. Over the
         // airspace, under the navaids and the airports (the style's route
         // slot), as the web's map lays them. Widths as the web's at zoom
         // 10 (glStyle's routeLayers).
@@ -633,36 +630,23 @@ private class MapHolder(val view: MapView, private val density: Float) {
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
-        val casing = LineLayer(ROUTE_CASING, ROUTE).withProperties(
-            PropertyFactory.lineColor(greenColour(night)),
-            PropertyFactory.lineWidth(10.5f),
-            PropertyFactory.lineOpacity(if (night) 0.9f else 1f),
-            PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
-            PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
-        )
-        // The edge keeps the green legible: a dark rim by day, a faint
+        // The edge keeps the magenta legible: a dark rim by day, a faint
         // light one on the dimmed night chart (the web's routeEdgePaint).
         val edge = LineLayer(ROUTE_EDGE, ROUTE).withProperties(
             PropertyFactory.lineColor(edgeColour(night)),
-            PropertyFactory.lineWidth(12.5f),
+            PropertyFactory.lineWidth(6.5f),
             PropertyFactory.lineOpacity(if (night) 0.35f else 0.6f),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
         below(style, edge, MapStyle.ROUTE_SLOT)
-        below(style, casing, MapStyle.ROUTE_SLOT)
         below(style, layer, MapStyle.ROUTE_SLOT)
     }
-
-    /** The green either side of the course (the web's ROUTE_GREEN and
-     *  ROUTE_GREEN_NIGHT, lib/map/chartColors), a shade deeper at night. */
-    private fun greenColour(night: Boolean): Int = if (night) Color.rgb(0x3f, 0x9a, 0x1c) else Color.rgb(0x52, 0xc4, 0x1a)
 
     private fun edgeColour(night: Boolean): Int = if (night) Color.WHITE else Color.rgb(0x0b, 0x0f, 0x0a)
 
     private companion object {
         const val ROUTE = "route"
-        const val ROUTE_CASING = "route-casing"
         const val ROUTE_EDGE = "route-edge"
         /** The chart's magenta, the web's COURSE_MAGENTA. */
         val COURSE_MAGENTA = Color.rgb(0xe6, 0x00, 0xe6)

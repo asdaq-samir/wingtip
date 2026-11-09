@@ -75,6 +75,8 @@ export interface GlRouteMapProps {
   /** The route's legs, a tap on the course the nearest one's. */
   routeLegs?: GlLeg[];
   onSelectLeg?: (key: string) => void;
+  /** The leg whose sheet is open, cased in green. */
+  selectedLeg?: string | null;
 }
 
 /**
@@ -137,7 +139,7 @@ function Layers(p: GlRouteMapProps) {
           {p.onPickWay && p.ways && <WaysGl ways={p.ways} shown={p.wayShown} onPick={p.onPickWay} />}
           <LegHighlightGl course={course} />
           <PlatesGl drawings={p.procedures} />
-          <RouteGl course={course} checkpoints={p.checkpoints} candidates={p.candidates} endpoints={p.endpoints} legs={p.routeLegs} onSelectLeg={p.onSelectLeg} />
+          <RouteGl course={course} checkpoints={p.checkpoints} candidates={p.candidates} endpoints={p.endpoints} legs={p.routeLegs} onSelectLeg={p.onSelectLeg} selectedLeg={p.selectedLeg} />
           <FuelStopsGl stops={p.fuelStops} onSelect={p.onSelectPlace} />
           <FlownTrackGl course={course} />
           {dryRunning && <ReplayGl asOwnShip />}

@@ -10,12 +10,10 @@ import SwiftUI
 /// A procedure's path, told from the course line by its class.
 final class ProcedurePolyline: MKPolyline {}
 
-/// The course line's green casing either side of its magenta, as
-/// ForeFlight draws a route (and the web's route-casing).
-final class CourseCasingPolyline: MKPolyline {}
-
-/// The dark edge round the green, so it keeps its contrast on the chart
-/// (the web's route-edge).
+/// The thin edge round the course's magenta, so it keeps its contrast on
+/// the chart (the web's route-edge). The green casing is not drawn here:
+/// ForeFlight shows it only on a selected course (the owner, 2026-11-09),
+/// and the phone has no leg selection yet.
 final class CourseEdgePolyline: MKPolyline {}
 
 /// The dry run's airplane: a blue arrow in a white casing, as the web app
@@ -238,18 +236,13 @@ struct ChartMap: UIViewRepresentable {
         if context.coordinator.courseShown != course {
             context.coordinator.courseShown = course
             if let line = context.coordinator.courseLine { map.removeOverlay(line) }
-            if let casing = context.coordinator.courseCasing { map.removeOverlay(casing) }
             if let edge = context.coordinator.courseEdge { map.removeOverlay(edge) }
-            context.coordinator.courseCasing = nil
             context.coordinator.courseEdge = nil
             context.coordinator.courseLine = nil
             if let course, course.coordinates.count >= 2 {
                 let edge = CourseEdgePolyline(coordinates: course.coordinates, count: course.coordinates.count)
                 map.addOverlay(edge, level: .aboveLabels)
                 context.coordinator.courseEdge = edge
-                let casing = CourseCasingPolyline(coordinates: course.coordinates, count: course.coordinates.count)
-                map.addOverlay(casing, level: .aboveLabels)
-                context.coordinator.courseCasing = casing
                 let line = MKPolyline(coordinates: course.coordinates, count: course.coordinates.count)
                 map.addOverlay(line, level: .aboveLabels)
                 context.coordinator.courseLine = line
@@ -297,7 +290,6 @@ struct ChartMap: UIViewRepresentable {
     final class Coordinator: NSObject, MKMapViewDelegate {
         var overlay: ChartTileOverlay?
         var courseLine: MKPolyline?
-        var courseCasing: CourseCasingPolyline?
         var courseEdge: CourseEdgePolyline?
         var courseShown: Course?
         var hazardLines: [HazardPolyline] = []
@@ -352,7 +344,6 @@ struct ChartMap: UIViewRepresentable {
         /// renderer once per overlay.
         private var tiles: ChartTileRenderer?
         private var courseRenderer: MKPolylineRenderer?
-        private var casingRenderer: MKPolylineRenderer?
         private var edgeRenderer: MKPolylineRenderer?
         private var shade: CGFloat = 0
 
@@ -368,17 +359,15 @@ struct ChartMap: UIViewRepresentable {
             self.shade = shade
             tiles?.shade = shade
             courseRenderer?.strokeColor = NightPalette.course(night: shade > 0)
-            casingRenderer?.strokeColor = NightPalette.routeGreen(night: shade > 0)
             edgeRenderer?.strokeColor = NightPalette.routeEdge(night: shade > 0)
             edgeRenderer?.setNeedsDisplay()
-            casingRenderer?.setNeedsDisplay()
             courseRenderer?.setNeedsDisplay()
         }
 
-        /// The course's three strokes, points, as the web draws them where a
-        /// pilot reads a leg (glStyle's widths at zoom 10): the magenta core,
-        /// the green a band either side of it, the dark edge round that.
-        static let courseWidth: CGFloat = 4.5, casingWidth: CGFloat = 10.5, edgeWidth: CGFloat = 12.5
+        /// The course's two strokes, points, as the web draws them where a
+        /// pilot reads a leg (glStyle's widths at zoom 10): the magenta core
+        /// and the thin edge round it.
+        static let courseWidth: CGFloat = 4.5, edgeWidth: CGFloat = 6.5
 
         func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
             MainActor.assumeIsolated { extras.calloutTapped(view) }
@@ -396,15 +385,6 @@ struct ChartMap: UIViewRepresentable {
             }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
             if let plate = overlay as? PlateMapOverlay { return PlateRenderer(overlay: plate) }
-            if let casing = overlay as? CourseCasingPolyline {
-                let renderer = MKPolylineRenderer(polyline: casing)
-                renderer.strokeColor = NightPalette.routeGreen(night: shade > 0)
-                renderer.lineWidth = Self.casingWidth
-                renderer.lineJoin = .round
-                renderer.lineCap = .round
-                casingRenderer = renderer
-                return renderer
-            }
             if let edge = overlay as? CourseEdgePolyline {
                 let renderer = MKPolylineRenderer(polyline: edge)
                 renderer.strokeColor = NightPalette.routeEdge(night: shade > 0)

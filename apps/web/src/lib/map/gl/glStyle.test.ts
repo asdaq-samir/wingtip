@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ChartInfo } from "../../api/types";
 import type { AirspaceVolume } from "../overlayTypes";
 import type { LineLayerSpecification } from "maplibre-gl";
-import { absoluteTiles, airspaceLayers, airspaceText, OVERLAY_SOURCE, chartPaint, chartStyle, DAY_CONTRAST, DAY_SATURATION, glZoom, specialUseLayers } from "./glStyle";
+import { absoluteTiles, airspaceLayers, airspaceText, OVERLAY_SOURCE, chartPaint, chartStyle, DAY_CONTRAST, DAY_SATURATION, glZoom, legPiece, routeFeature, routeLayers, selectedLegFilter, specialUseLayers } from "./glStyle";
 
 const chart = {
   chart_cycle: "10-29-2026", chart_revision: 6, chart_tiles_base: null,
@@ -79,5 +79,36 @@ describe("airspaceLayers", () => {
     const layers = airspaceLayers(["Inter"]);
     const from = Object.fromEntries(layers.map(l => [l.id, l.minzoom]));
     expect(from).toMatchObject({ "airspace-B": glZoom(6), "airspace-B-band": glZoom(6), "airspace-C": glZoom(7), "airspace-D": glZoom(8), "airspace-labels": glZoom(8) });
+  });
+});
+
+describe("the course's casing", () => {
+  const line: [number, number][] = [[45, -93], [45.5, -93], [46, -93], [46, -92]];
+  const legs = [
+    { key: "a", from: { lat: 45, lon: -93 }, to: { lat: 45.5, lon: -93 } },
+    { key: "b", from: { lat: 45.5, lon: -93 }, to: { lat: 46, lon: -92 } },
+  ];
+
+  it("is green only along the selected leg, none while no leg is", () => {
+    const layers = routeLayers();
+    const by = Object.fromEntries(layers.map(l => [l.id, l as LineLayerSpecification]));
+    // No green on the whole route: the core and its thin edge show it all.
+    expect(by["route-core"]!.filter).toEqual(["==", ["get", "part"], "route"]);
+    expect(by["route-edge"]!.filter).toEqual(["==", ["get", "part"], "route"]);
+    // The casing and the edge that frames it wait for a selected leg.
+    expect(by["route-casing"]!.filter).toEqual(selectedLegFilter(null));
+    expect(by["route-outer"]!.filter).toEqual(selectedLegFilter(null));
+    expect(selectedLegFilter("b")).toEqual(["all", ["==", ["get", "part"], "leg"], ["==", ["get", "leg"], "b"]]);
+    expect(layers.map(l => l.id)).toEqual(["route-outer", "route-edge", "route-casing", "route-core"]);
+  });
+
+  it("gives each leg its own piece of the course to be cased", () => {
+    const { features } = routeFeature(line, legs);
+    expect(features.map(f => f.properties)).toEqual([{ part: "route" }, { part: "leg", leg: "a" }, { part: "leg", leg: "b" }]);
+    expect(features[1]!.geometry.coordinates).toEqual([[-93, 45], [-93, 45.5]]);
+    // The second leg runs on through the vertex the line turns at.
+    expect(features[2]!.geometry.coordinates).toEqual([[-93, 45.5], [-93, 46], [-92, 46]]);
+    // A leg with no length has nothing to case.
+    expect(legPiece(line, { lat: 45, lon: -93 }, { lat: 45, lon: -93 })).toBeNull();
   });
 });
