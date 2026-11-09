@@ -10,14 +10,14 @@ import { useAtcListen } from "../lib/atc/listenSetting";
 import { cn } from "cn";
 import { useFlying } from "../lib/mapChrome";
 import { useWeatherLayers } from "../lib/map/sources/weatherLayers";
+// The radar and satellite loop's bar, lazy in its feature: fetched once a loop is turned on.
+import { LoopBar } from "../features/weather-loop";
 
 const RadioLayer = lazy(() => import("./RadioLayer"));
 // The in-flight copilot, fetched with its first flight.
 const CopilotBanner = lazy(() => import("../features/copilot").then((m) => ({ default: m.CopilotBanner })));
 // The ATC copilot (features/atc), fetched once the pilot turns it on.
 const AtcCopilot = lazy(() => import("../features/atc").then((m) => ({ default: m.AtcCopilot })));
-// The radar and satellite loop's bar (features/weather-loop), fetched once one is turned on.
-const LoopBar = lazy(() => import("../features/weather-loop").then((m) => ({ default: m.LoopBar })));
 
 /**
  * The map's lines: at the top, the screen's width, over a panel at the
