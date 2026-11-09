@@ -12,6 +12,7 @@ import { useDarkTheme } from "../useDarkTheme";
 import { CHECKPOINT_SOURCE, ROUTE_SOURCE, glZoom, pointFeatures, routeCasingPaint, routeEdgePaint, routeFeature, routeLayers } from "../glStyle";
 import { useGlProbe } from "../useGlProbe";
 import { GL_FONT, TAP } from "./common";
+import { ROUTE_PRIORITY } from "../declutter";
 import { useGlMarks, type GlMark } from "../useGlMarks";
 import { LEG_RANK, LEG_REACH, nearestLeg, type GlLeg } from "../legTap";
 
@@ -117,7 +118,11 @@ export function RouteGl({ course, checkpoints, candidates, endpoints, legs = NO_
   useGlData(CHECKPOINT_SOURCE, dots);
   const others = useMemo(() => pointFeatures(candidates.map(c => ({ key: c.key, lat: c.lat, lon: c.lon, label: "", colour: c.colour }))), [candidates]);
   useGlData(CANDIDATES, others);
-  const fields = useMemo<GlMark[]>(() => endpoints.map(e => ({
+  // The route's marks give way by priority (declutter): its destination's
+  // ident over every other, its other fields next, the checkpoints in
+  // flight order after them, the tops of climb and descent last.
+  const fields = useMemo<GlMark[]>(() => endpoints.map((e, i) => ({
+    priority: i === endpoints.length - 1 ? ROUTE_PRIORITY.destination : ROUTE_PRIORITY.field,
     key: e.ident, lat: e.lat, lon: e.lon, onTap: e.select,
     icon: e.fix ? fixMarkIcon(e.ident) : routeFieldIcon(e.ident, e.space, e.colour),
   })), [endpoints]);
@@ -128,6 +133,8 @@ export function RouteGl({ course, checkpoints, candidates, endpoints, legs = NO_
   const { openCard } = useGlMap();
   const numbered = useMemo<GlMark[]>(() => checkpoints.map(c => ({
     key: `cp-${c.key}`, lat: c.lat, lon: c.lon, icon: dotIcon(c.colour, c.number),
+    // The earlier of two that meet kept: the one flown to first.
+    priority: ROUTE_PRIORITY.checkpoint - c.number / 1000,
     onTap: () => { c.select(); openCard(c.card); },
   })), [checkpoints, openCard]);
   useGlMarks(numbered);
