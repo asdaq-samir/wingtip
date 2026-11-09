@@ -33,6 +33,8 @@ import app.wingtipmaps.android.map.MapRest
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.TrafficDrawing
+import app.wingtipmaps.android.route.RouteLegModel
+import app.wingtipmaps.android.route.RoutePoints
 
 /**
  * The map and what is over it, the same under either layout: the chart
@@ -55,6 +57,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val chartProblem by charts.problem.collectAsStateWithLifecycle()
     val closeTiles by charts.closeTiles.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
+    // The route's points, where its line is cut into legs, and the leg
+    // whose sheet is open (RouteLegModel), cased in green.
+    val routePoints = remember(state.course) { RoutePoints.of(state.course) }
+    val selectedLeg by viewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
     val density = LocalDensity.current
     val template = remember(info, density.density) { Charts.template(info, density.density) }
     val base = remember(info) { Charts.base(info) }
@@ -118,6 +124,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             maxZoom = base?.maxZoom ?: 12,
             line = state.course?.courseLine.orEmpty(),
             modifier = Modifier.fillMaxSize(),
+            routePoints = routePoints,
+            selectedLeg = selectedLeg,
             overlays = overlays,
             layers = layers,
             terminal = terminal,

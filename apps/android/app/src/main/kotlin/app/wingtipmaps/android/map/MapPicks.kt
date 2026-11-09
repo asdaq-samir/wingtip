@@ -60,6 +60,9 @@ sealed interface MapPick {
     /** An airplane of the traffic, by its ICAO address. */
     data class Plane(val hex: String) : MapPick
 
+    /** A leg of the route's line, by its number from the departure. */
+    data class RouteLeg(val index: Int) : MapPick
+
     companion object {
         private fun text(v: Any?): String? = v?.toString()?.takeIf { it.isNotEmpty() }
         private fun number(v: Any?): Double? = when (v) {

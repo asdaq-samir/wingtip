@@ -174,4 +174,14 @@
     <!-- The Brief's forecast icing (brief/). -->
     <string name="icing_forecast">Forecast Icing</string>
     <string name="icing_unchecked">The forecast icing could not be checked: aviationweather.gov didn\'t respond. Verify separately before flight.</string>
+
+    <!-- The Route Leg sheet, from a tap on the route's line (route/). -->
+    <string name="route_leg">Route Leg</string>
+    <string name="route_leg_to">to</string>
+    <string name="route_leg_active">Active Leg</string>
+    <string name="route_leg_direct">Direct %1$s</string>
+    <string name="route_leg_cancel_direct">Cancel Direct</string>
+    <string name="route_leg_remove">Remove %1$s</string>
+    <string name="route_leg_distance">Distance</string>
+    <string name="route_leg_course">Course</string>
 </resources>

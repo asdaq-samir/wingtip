@@ -20,6 +20,8 @@ import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.route.RouteLegs
+import app.wingtipmaps.android.route.RoutePoint
 import app.wingtipmaps.android.tiles.TileTemplate
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -65,6 +67,9 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  *
  * @param line the route's great-circle line as pairs of latitude and
  *   longitude (Course.courseLine); empty for none.
+ * @param routePoints the route's points, where the line is cut into its
+ *   legs (RouteLegs), so a tap on it picks a leg; `selectedLeg` the one
+ *   cased in green while its Route Leg sheet is open.
  * @param ownShip the airplane's fix (OwnShip), drawn as the blue dot;
  *   null for none, or own ship off.
  * @param trail the path flown (OwnTrail), drawn under the route.
@@ -100,6 +105,8 @@ fun ChartMap(
     maxZoom: Int,
     line: List<List<Double>>,
     modifier: Modifier = Modifier,
+    routePoints: List<RoutePoint> = emptyList(),
+    selectedLeg: Int? = null,
     overlays: OverlayTiles? = null,
     layers: MapLayers = MapLayers(),
     terminal: Charts.Companion.Terminal? = null,
@@ -150,7 +157,8 @@ fun ChartMap(
     LaunchedEffect(holder, template, minZoom, maxZoom, overlays) { holder.style(template, minZoom, maxZoom, overlays, line) }
     LaunchedEffect(holder, night) { holder.paint(night) }
     LaunchedEffect(holder, bottomInset) { holder.inset(bottomInset) }
-    LaunchedEffect(holder, line) { holder.route(line) }
+    LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints) }
+    LaunchedEffect(holder, selectedLeg) { holder.selectLeg(selectedLeg) }
     LaunchedEffect(holder, ownShip, follow) { holder.ownShip(ownShip, follow) }
     LaunchedEffect(holder, trail) { holder.trail(trail) }
     LaunchedEffect(holder, layers) { holder.layers(layers) }
@@ -212,6 +220,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
         }
     }
     private var lastGlide: List<List<Double>> = emptyList()
+    private var lastPoints: List<RoutePoint> = emptyList()
+    private var lastLeg: Int? = null
 
     fun on(event: Lifecycle.Event) {
         if (destroyed) return
@@ -260,7 +270,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 styled = true
                 terminal(style, lastTerminal)
                 close(map, style, lastClose)
-                route(style, line)
+                route(style, line, lastPoints)
                 trail(style, lastTrail)
                 glide(style, lastGlide)
                 ownShip(map, style, lastFix, lastFollow)
@@ -275,6 +285,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { map ->
             map.getStyle { style ->
                 val paint = MapStyle.chartPaint(night)
+                RouteLegLayer.paint(style, night)
                 style.getLayerAs<LineLayer>(ROUTE_EDGE)?.setProperties(
                     PropertyFactory.lineColor(edgeColour(night)),
                     PropertyFactory.lineOpacity(if (night) 0.35f else 0.6f),
@@ -439,9 +450,16 @@ private class MapHolder(val view: MapView, private val density: Float) {
         onRevealed()
     }
 
-    fun route(line: List<List<Double>>) {
+    fun route(line: List<List<Double>>, points: List<RoutePoint>) {
+        lastPoints = points
         if (destroyed) return
-        view.getMapAsync { map -> map.getStyle { style -> route(style, line) } }
+        view.getMapAsync { map -> map.getStyle { style -> route(style, line, points) } }
+    }
+
+    fun selectLeg(leg: Int?) {
+        lastLeg = leg
+        if (destroyed) return
+        view.getMapAsync { map -> map.getStyle { style -> RouteLegLayer.select(style, leg) } }
     }
 
     fun ownShip(fix: OwnShip.Fix?, follow: Boolean) {
@@ -546,6 +564,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
         } ?: near(TAP_MARK, MapStyle.FIXES, MapStyle.WAYPOINTS)?.let { f ->
             val (lat, lon) = pointOf(f) ?: return@let null
             MapPick.Point(f.getStringProperty("ident") ?: return@let null, f.getBooleanProperty("vfr") == true, lat, lon, tileVors(style))
+        } ?: near(TAP_LINE, ROUTE)?.let { f ->
+            // A leg of the route, before the airspace under it.
+            f.getNumberProperty(RouteLegs.LEG)?.toInt()?.let { MapPick.RouteLeg(it) }
         } ?: near(TAP_LINE, *MapStyle.AIRSPACE_LINES.toTypedArray())?.let { f ->
             MapPick.airspace(properties(f), at.latitude, at.longitude)
         }
@@ -630,8 +651,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
         }
     }
 
-    private fun route(style: Style, line: List<List<Double>>) {
-        val geoJson = lineJson(line.filter { it.size == 2 }.map { it[0] to it[1] })
+    private fun route(style: Style, line: List<List<Double>>, points: List<RoutePoint>) {
+        // A line a leg, so a tap says which and the selected one is cased.
+        val geoJson = RouteLegs.json(RouteLegs.cut(line, points))
         val source = style.getSourceAs<GeoJsonSource>(ROUTE)
         if (source != null) {
             source.setGeoJson(geoJson)
@@ -641,8 +663,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
         // The course line as the web app draws it, and ForeFlight (the
         // owner's screenshot, 2026-11-08): the chart's magenta core with a
         // thin edge round it. ForeFlight shows the green outline only when
-        // the course is selected (the owner, 2026-11-09) and the phone has
-        // no leg selection yet, so there is no green here. Over the
+        // the course is selected (the owner, 2026-11-09): the leg whose
+        // Route Leg sheet is open (RouteLegLayer). Over the
         // airspace, under the navaids and the airports (the style's route
         // slot), as the web's map lays them. Widths as the web's at zoom
         // 10 (glStyle's routeLayers).
@@ -663,6 +685,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         )
         below(style, edge, MapStyle.ROUTE_SLOT)
         below(style, layer, MapStyle.ROUTE_SLOT)
+        RouteLegLayer.add(style, ROUTE, ROUTE_EDGE, night, lastLeg)
     }
 
     private fun edgeColour(night: Boolean): Int = if (night) Color.WHITE else Color.rgb(0x0b, 0x0f, 0x0a)

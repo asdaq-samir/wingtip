@@ -61,6 +61,8 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
         is MapPick.Vor -> pick.ident
         is MapPick.Point -> pick.ident
         is MapPick.Plane -> pick.hex.uppercase()
+        // A leg's sheet is its own (RouteLegHost), never a card.
+        is MapPick.RouteLeg -> ""
     }
     val actions = rememberRouteActions(plan)
     // An action that changes the route closes the card, so the route is
@@ -90,6 +92,7 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
                     PointActions(CardKind.NAVAID, pick, actions, act)
                 }
                 is MapPick.Plane -> PlaneCard(pick.hex)
+                is MapPick.RouteLeg -> {}
             }
         }
     }

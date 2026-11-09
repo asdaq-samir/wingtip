@@ -28,6 +28,7 @@ import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.route.RouteEdits
 
 /**
  * The route being planned and what the planner has said of it so far: the
@@ -56,6 +57,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
         /** Why there is no plan, in the planner's words; null when there is. */
         val problem: String? = null,
         val planning: Boolean = false,
+        /** The point a Route Leg's Direct flies to, and the route as it was
+         *  before, for its Cancel (the web's `direct` and `was`). */
+        val direct: String? = null,
+        val was: RouteEdits.Route? = null,
     ) {
         val routed: Boolean get() = dep.isNotEmpty() && dest.isNotEmpty()
     }
@@ -80,9 +85,32 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 dep = dep.trim().uppercase(),
                 dest = dest.trim().uppercase(),
                 stops = stops.map { s -> s.trim().uppercase() }.filter { s -> s.isNotEmpty() },
+                direct = null, was = null,
             )
         }
         plan()
+    }
+
+    /** A Route Leg's Direct: from the airplane (else the departure) to the
+     *  leg's end and on (RouteEdits.direct), the route kept for Cancel. */
+    fun directToStop(ident: String, at: OwnShip.Fix?) {
+        val s = _state.value
+        val was = s.was ?: RouteEdits.Route(s.dep, s.stops, s.dest)
+        val next = RouteEdits.direct(was, ident, at?.let(::positionIdent)) ?: return
+        plan(next.dep, next.dest, next.stops)
+        _state.update { it.copy(direct = ident, was = was) }
+    }
+
+    /** Cancel Direct: the route as it was before it. */
+    fun cancelDirect() {
+        val was = _state.value.was ?: return
+        plan(was.dep, was.dest, was.stops)
+    }
+
+    /** A Route Leg's Remove: the stop taken out of the route. */
+    fun removeStop(ident: String) {
+        val s = _state.value
+        plan(s.dep, s.dest, RouteEdits.without(s.stops, ident))
     }
 
     /** One of the planner's airplane types picked; the route, where there
