@@ -64,8 +64,9 @@ server cron, hourly ─▶ docker compose run --rm charts-overlays
   the tiles and the app's files, three answers: the chart the map draws
   (a minute), the airport search as a pilot types, and the stock
   aircraft (an hour each). Each says so itself (`app.router_basics` in the
-  planner), the gateway passes the header on for those paths alone
-  (`PlannerProxyController`), and CloudFront keys them by path and query
+  planner), the gateway passes the header on for the routes the planner
+  marks `SHARED` alone (`app.gateway`, read by the gateway's
+  `UpstreamRoutes`), and CloudFront keys them by path and query
   string, never by cookie. Everything with weather in it (the fields in
   view, an airport's card, the Class B list, the airspace at a point), a
   route's answers, and anything of one pilot's is `no-store`, which

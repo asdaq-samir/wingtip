@@ -65,6 +65,7 @@ from ..schemas import (
     Totals,
 )
 from ..checkpoint_scoring import route_checkpoints
+from ..gateway import PUBLIC, SHARED, gateway
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -1160,7 +1161,7 @@ def _chart_info() -> dict:
     }
 
 
-@router.get("/api/chart")
+@router.get("/api/chart", openapi_extra=SHARED)
 def chart_info(response: Response) -> ChartInfo:
     """The chart the map draws, for a map with no route on it yet: the
     planner's page opens on a search bar over the chart, as Maps does.
@@ -1170,7 +1171,7 @@ def chart_info(response: Response) -> ChartInfo:
     return ChartInfo(**_chart_info())
 
 
-@router.get("/api/route-profile")
+@router.get("/api/route-profile", openapi_extra=PUBLIC)
 def route_profile(dep: str, dest: str, stops: str = "") -> RouteProfile:
     """The route's side view: the ground under it every 2 nm and the
     Class B, C and D airspace it passes through, floor and ceiling, along
@@ -1197,7 +1198,7 @@ def route_check(dep: str = "", dest: str = "", stops: str = "") -> RouteChecked:
     return RouteChecked(stops=stops_of(stops))
 
 
-@router.get("/api/course")
+@router.get("/api/course", openapi_extra=PUBLIC)
 def course(dep: str, dest: str, stops: str = "") -> Course:
     """Just the course line and its endpoints, through any stops.
 
@@ -1255,7 +1256,7 @@ async def _read_ahead(
     chart_model.READ_AHEAD.set(ahead)
 
 
-@router.get("/api/checkpoints", dependencies=[Depends(_read_ahead)])
+@router.get("/api/checkpoints", dependencies=[Depends(_read_ahead)], openapi_extra=PUBLIC)
 def checkpoints(dep: str, dest: str, stops: str = "") -> Checkpoints:
     """Scored candidates and the subset worth flying, hop by hop along
     the whole route: fast once each hop's chart has been read, a few
@@ -1272,6 +1273,10 @@ def checkpoints(dep: str, dest: str, stops: str = "") -> Checkpoints:
     "/api/foreflight-pack/{route}/{file}",
     response_class=Response,
     responses={200: {"content": {"application/zip": {}}, "description": "The pack, a ZIP"}},
+    # ForeFlight's downloader fetches it in byte ranges and will not
+    # install a pack sent without its size; a download shows its name.
+    openapi_extra=gateway("public", range=True,
+                          headers=("Content-Disposition", "Content-Length", "Content-Range", "Accept-Ranges")),
 )
 def foreflight_pack(route: str, file: str, request: Request) -> Response:
     """The route's checkpoints as a ForeFlight content pack (app.foreflight),
@@ -1418,7 +1423,7 @@ def plan(q: Annotated[PlanQuery, Depends()]) -> Plan:
 LocalMinutes = Annotated[float, Query(gt=0, le=12 * 60)]
 
 
-@router.get("/api/local-flight")
+@router.get("/api/local-flight", openapi_extra=PUBLIC)
 def local_flight(q: Annotated[PlanQuery, Depends()], duration_min: LocalMinutes = 60.0) -> Totals:
     """A flight that leaves and lands at the same airport -- the pattern,
     practice approaches, an hour's sightseeing: no course and no legs to
@@ -1442,7 +1447,7 @@ def local_flight(q: Annotated[PlanQuery, Depends()], duration_min: LocalMinutes 
     )
 
 
-@router.get("/api/navlog", dependencies=[Depends(_read_ahead)])
+@router.get("/api/navlog", dependencies=[Depends(_read_ahead)], openapi_extra=PUBLIC)
 def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
     """Altitude and the dead-reckoning legs, as newline-delimited JSON --
     the slow half, because it reads terrain, the obstacle file, the

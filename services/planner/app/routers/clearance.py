@@ -11,6 +11,7 @@ from fastapi import APIRouter, Query, Response
 from wingtip import airports, fixes, procedures, spoken
 
 from ..schemas import ClearanceAsk, ClearancePlaces, ClearanceWords
+from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 from .devml import _near
 
 router = APIRouter()
@@ -133,7 +134,7 @@ def _procedure(field: str | None, ask, kind: str, places: list[dict]) -> dict | 
     return {"id": found["id"], "transition": via, "sure": found["sure"]}
 
 
-@router.post("/api/clearance/places")
+@router.post("/api/clearance/places", openapi_extra=PUBLIC_READ_BY_POST)
 def clearance_places(ask: ClearanceAsk) -> ClearancePlaces:
     """The places a clearance said, found near the route: its limit (an
     airport by its name, AIM 4-4-3 a), each phrase of its route as the
@@ -153,7 +154,7 @@ def clearance_places(ask: ClearanceAsk) -> ClearancePlaces:
     }
 
 
-@router.get("/api/clearance/words")
+@router.get("/api/clearance/words", openapi_extra=PUBLIC)
 def clearance_words(response: Response, near: str = Query(default=""), dep: str = Query(default="")) -> ClearanceWords:
     """The names a clearance near the route will likely say, for the
     phone's recognizer to listen for: the departure's SIDs as said, the

@@ -11,6 +11,7 @@ from wingtip import airports, airspace, airspace_at, alerts, altitude, elevation
 from wingtip.units import M_TO_FT
 
 from ..schemas import AirspaceAt, AlertsAhead, PointOffFix
+from ..gateway import PUBLIC
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ def _ground_ft(lat: float, lon: float) -> float | None:
     return float(nearest[0]["elevation_ft"]) if nearest and nearest[0].get("elevation_ft") is not None else None
 
 
-@router.get("/api/airspace/at", response_model=AirspaceAt, response_model_by_alias=True)
+@router.get("/api/airspace/at", response_model=AirspaceAt, response_model_by_alias=True, openapi_extra=PUBLIC)
 def airspace_at_point(
     lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180),
 ) -> AirspaceAt:
@@ -74,7 +75,7 @@ def airspace_at_point(
     )
 
 
-@router.get("/api/airspace/ahead", response_model=AlertsAhead, response_model_by_alias=True)
+@router.get("/api/airspace/ahead", response_model=AlertsAhead, response_model_by_alias=True, openapi_extra=PUBLIC)
 def airspace_ahead(
     lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180),
     track: float = Query(ge=0, le=360, description="True track over the ground, degrees"),

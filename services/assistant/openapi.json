@@ -1254,7 +1254,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Ask Assistant"
+        "summary": "Ask Assistant",
+        "x-gateway": {
+          "access": "signed-in",
+          "paid": "ASSISTANT"
+        }
       }
     },
     "/api/briefing/narrative": {
@@ -1292,7 +1296,12 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Write Narrative"
+        "summary": "Write Narrative",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 262144,
+          "paid": "NARRATIVE"
+        }
       }
     },
     "/api/checkpoint-notes/generate": {
@@ -1348,7 +1357,12 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Describe Checkpoints"
+        "summary": "Describe Checkpoints",
+        "x-gateway": {
+          "access": "signed-in",
+          "paid": "CHECKPOINT_NOTES",
+          "pilot": true
+        }
       }
     },
     "/api/oral/grade": {
@@ -1387,7 +1401,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Oral Grade"
+        "summary": "Oral Grade",
+        "x-gateway": {
+          "access": "developer",
+          "paid": "ORAL"
+        }
       }
     },
     "/api/oral/question": {
@@ -1426,7 +1444,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Oral Question"
+        "summary": "Oral Question",
+        "x-gateway": {
+          "access": "developer",
+          "paid": "ORAL"
+        }
       }
     },
     "/api/words/changes": {
@@ -1468,7 +1490,12 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Changes Words"
+        "summary": "Changes Words",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 65536,
+          "paid": "WORDS"
+        }
       }
     },
     "/api/words/debrief": {
@@ -1510,7 +1537,12 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Debrief Words"
+        "summary": "Debrief Words",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 65536,
+          "paid": "WORDS"
+        }
       }
     },
     "/api/words/notams": {
@@ -1552,7 +1584,12 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Notam Words"
+        "summary": "Notam Words",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 65536,
+          "paid": "WORDS"
+        }
       }
     },
     "/api/words/risk": {
@@ -1594,7 +1631,12 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Risk Words"
+        "summary": "Risk Words",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 65536,
+          "paid": "WORDS"
+        }
       }
     },
     "/api/words/weather": {
@@ -1636,7 +1678,12 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Weather Words"
+        "summary": "Weather Words",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 65536,
+          "paid": "WORDS"
+        }
       }
     }
   }

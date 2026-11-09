@@ -26,6 +26,7 @@ from ..gonogo.words import (
     PLAN_NAME, WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, flight_level, gairmet_title, grouped, sigmet_hazard, to_fixed,
 )
 from . import briefing as briefing_router
+from ..gateway import PUBLIC_READ_BY_POST
 from .plan import NoWinds, PlanQuery, Unflyable, flown_as_picked, planned_within_limit, totals_of, unflyable_parts
 
 router = APIRouter()
@@ -115,7 +116,7 @@ def _flown_words(nav: dict) -> str:
     return f"{_altitude_range(nav)}{plan}"
 
 
-@router.post("/api/go-no-go")
+@router.post("/api/go-no-go", openapi_extra=PUBLIC_READ_BY_POST)
 def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
     """The Go / No-Go for a route: each finding -- the weather, the TFRs and
     special-use airspace, the altitude, the fuel, the runways, the weight

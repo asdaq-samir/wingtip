@@ -654,8 +654,8 @@ Resources:
               StringEquals:
                 AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
 
-  # The answers the same for every pilot (PlannerProxyController's
-  # SHARED_PATHS and the airport diagrams, the planner's app.router_basics
+  # The answers the same for every pilot (the planner's routes marked
+  # SHARED in app.gateway, the airport diagrams among them; app.router_basics'
   # SHARED_CACHE, CHART_CACHE and DIAGRAM_CACHE):
   # kept for as long as their own Cache-Control says, a day at most, and
   # not at all when they say nothing. Keyed by path and query string alone

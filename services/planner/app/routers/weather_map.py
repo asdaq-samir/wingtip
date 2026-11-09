@@ -9,6 +9,7 @@ from wingtip import weather_map
 
 from ..planning import forecast_hour_for
 from ..schemas import WeatherMap
+from ..gateway import PUBLIC
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ router = APIRouter()
 MAX_SPAN_DEG = 70.0
 
 
-@router.get("/api/weather/map", response_model=WeatherMap, response_model_by_alias=True)
+@router.get("/api/weather/map", response_model=WeatherMap, response_model_by_alias=True, openapi_extra=PUBLIC)
 def weather_on_the_map(
     south: float = Query(ge=-90, le=90), west: float = Query(ge=-180, le=180),
     north: float = Query(ge=-90, le=90), east: float = Query(ge=-180, le=180),

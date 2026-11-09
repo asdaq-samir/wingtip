@@ -15,6 +15,7 @@ from .. import prefetch
 from ..router_basics import DEFAULT_AIRCRAFT, load_route, resolve
 from ..planning import aircraft_profile, forecast_hour_for
 from ..schemas import RouteOptions
+from ..gateway import PUBLIC
 from .plan import CruiseTas, ServiceCeiling
 
 router = APIRouter()
@@ -93,7 +94,7 @@ def _most_filed(dep: str, dest: str) -> tuple[tuple[list[tuple], list[str]] | No
     return None, []
 
 
-@router.get("/api/route-options")
+@router.get("/api/route-options", openapi_extra=PUBLIC)
 def route_options(
     dep: str, dest: str,
     #: The pilot's own route's stops, "KDSM,VPBNG": what it meets is said.

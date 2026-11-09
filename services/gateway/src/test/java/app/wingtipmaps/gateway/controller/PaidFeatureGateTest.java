@@ -114,12 +114,12 @@ class PaidFeatureGateTest {
 
     @Test
     void theWordsPathsAreOneFeatureAndNothingElseIs() {
-        org.assertj.core.api.Assertions.assertThat(PlannerProxyController.paidFeatureOf("/api/words/weather"))
+        org.assertj.core.api.Assertions.assertThat(paidFeatureOf("/api/words/weather"))
                 .isEqualTo(PaidFeature.WORDS);
-        org.assertj.core.api.Assertions.assertThat(PlannerProxyController.paidFeatureOf("/api/assistant"))
+        org.assertj.core.api.Assertions.assertThat(paidFeatureOf("/api/assistant"))
                 .isEqualTo(PaidFeature.ASSISTANT);
-        org.assertj.core.api.Assertions.assertThat(PlannerProxyController.paidFeatureOf("/api/words")).isNull();
-        org.assertj.core.api.Assertions.assertThat(PlannerProxyController.paidFeatureOf("/api/go-no-go")).isNull();
+        org.assertj.core.api.Assertions.assertThat(paidFeatureOf("/api/words")).isNull();
+        org.assertj.core.api.Assertions.assertThat(paidFeatureOf("/api/go-no-go")).isNull();
     }
 
     @Test
@@ -128,6 +128,11 @@ class PaidFeatureGateTest {
         finish(post("/api/planner/checkpoint-notes").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadGateway());
         verify(subscriptions, never()).refusal(any(), any());
+    }
+
+    /** The paid feature a POST is, as its service's document marks it. */
+    private static PaidFeature paidFeatureOf(String path) {
+        return UpstreamRoutes.shipped().find("POST", path).map(UpstreamRoutes.Route::paid).orElse(null);
     }
 
     /** See PaidCallAllowanceTest: the answer is written on another thread. */

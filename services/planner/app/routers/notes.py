@@ -15,6 +15,7 @@ from wingtip import geo
 from ..router_basics import load_route
 from ..schemas import CheckpointNoteSaved, NoteSeeded, NotesToWrite, NoteToWrite, PilotNotesForgotten
 from ..checkpoint_scoring import route_checkpoints
+from ..gateway import gateway
 
 router = APIRouter()
 
@@ -102,7 +103,7 @@ def seed_note(note: SeedNoteRequest) -> NoteSeeded:
     return NoteSeeded(description=held["description"], written=written)
 
 
-@router.post("/api/checkpoint-notes")
+@router.post("/api/checkpoint-notes", openapi_extra=gateway("signed-in", pilot=True))
 def save_checkpoint_note(
     note: CheckpointNoteRequest,
     x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER),

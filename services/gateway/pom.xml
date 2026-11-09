@@ -194,6 +194,56 @@
                  the browser's pass-through proxies read nothing and need
                  none. The Dockerfile copies the document to the same
                  place relative to the pom. -->
+            <!-- The planner's and the assistant's committed OpenAPI
+                 documents, into the jar at upstreams/{planner,assistant}/:
+                 the routes the proxy forwards and who may call each are
+                 read from their x-gateway extensions (UpstreamRoutes).
+                 Built in rather than fetched from the planner at start, so
+                 the jar's rules are the ones it was tested with and do not
+                 wait on the planner being up. The Dockerfile copies both
+                 beside the pom, as it does the assistant's above. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>upstream-routes-planner</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/upstreams/planner</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/../planner</directory>
+                                    <includes>
+                                        <include>openapi.json</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>upstream-routes-assistant</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/upstreams/assistant</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/../assistant</directory>
+                                    <includes>
+                                        <include>openapi.json</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>

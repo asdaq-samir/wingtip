@@ -132,6 +132,12 @@ class PlannerProxyControllerTest {
         return mockMvc.perform(asyncDispatch(started)).andReturn();
     }
 
+    /** Whether the proxy forwards a method and an upstream path: a route
+     *  the planner's or the assistant's document marks. */
+    private static boolean forwarded(String method, String upstreamPath) {
+        return UpstreamRoutes.shipped().find(method, upstreamPath).isPresent();
+    }
+
     @Test
     void theProxyPrefixIsStrippedAndTheQueryStringIsCarried() throws Exception {
         MvcResult started = mockMvc.perform(get("/api/planner/course?dep=C81&dest=KDLH"))
@@ -158,7 +164,7 @@ class PlannerProxyControllerTest {
                 .andExpect(request().asyncStarted())
                 .andReturn());
         assertThat(received).contains("POST /api/checkpoint-notes");
-        assertThat(PlannerProxyController.isAssistant("GET", "/api/assistant")).isFalse();
+        assertThat(forwarded("GET", "/api/assistant")).isFalse();
     }
 
     @Test
@@ -202,98 +208,95 @@ class PlannerProxyControllerTest {
     void aPathThatMeansAnotherRouteAtThePlannerIsNotForwarded() {
         // Each matched a route's one segment here and is more at the
         // planner, which decodes the path, or names another host.
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/..%2F..%2Fdev/photos")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/%2e%2e/photos")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/a%5Cb/photos")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/../photos")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api//evil.example/photos")).isFalse();
-        assertThat(PlannerProxyController.isPlain("/api/airport/KDLH/photos")).isTrue();
-        assertThat(PlannerProxyController.isPlain("/api/chart-tile/sectional/10/262/380.png")).isTrue();
+        assertThat(forwarded("GET", "/api/airport/..%2F..%2Fdev/photos")).isFalse();
+        assertThat(forwarded("GET", "/api/airport/%2e%2e/photos")).isFalse();
+        assertThat(forwarded("GET", "/api/airport/a%5Cb/photos")).isFalse();
+        assertThat(forwarded("GET", "/api/airport/../photos")).isFalse();
+        assertThat(forwarded("GET", "/api//evil.example/photos")).isFalse();
+        assertThat(UpstreamRoutes.isPlain("/api/airport/KDLH/photos")).isTrue();
+        assertThat(UpstreamRoutes.isPlain("/api/chart-tile/sectional/10/262/380.png")).isTrue();
     }
 
     @Test
     void theRouteTableCoversWhatTheBrowserCalls() {
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/chart-tile/sectional/10/262/380.png")).isTrue();
+        assertThat(forwarded("GET", "/api/chart-tile/sectional/10/262/380.png")).isTrue();
         // The 512-pixel tile for a 2x or 3x screen, by the same route.
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/chart-tile/sec/10/262/380@2x.png")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/dev/services/ml/start")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/chart")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KBUR/procedures")).isTrue();
+        assertThat(forwarded("GET", "/api/chart-tile/sec/10/262/380@2x.png")).isTrue();
+        assertThat(forwarded("POST", "/api/dev/services/ml/start")).isTrue();
+        assertThat(forwarded("GET", "/api/chart")).isTrue();
+        assertThat(forwarded("GET", "/api/airport/KBUR/procedures")).isTrue();
         // The forecast wind a runway is picked into, and an airplane's state
         // for its alerts: the web app asked for both and had a 404.
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KABQ/forecast-wind")).isTrue();
+        assertThat(forwarded("GET", "/api/airport/KABQ/forecast-wind")).isTrue();
         // A stop's services (food, fuel and rest stops, 2026-10-22).
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KHYS/services")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/route-options")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/go-no-go")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/go-no-go")).isFalse();
+        assertThat(forwarded("GET", "/api/airport/KHYS/services")).isTrue();
+        assertThat(forwarded("GET", "/api/route-options")).isTrue();
+        assertThat(forwarded("POST", "/api/go-no-go")).isTrue();
+        assertThat(forwarded("GET", "/api/go-no-go")).isFalse();
         // The native app's figures (app.figures): two POSTs, two GETs.
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/debrief")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/lost-comms")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/diversion")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/holding")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/holding")).isFalse();
-        assertThat(PlannerProxyController.isAirportExtra("/api/airport/KDLH/services")).isTrue();
-        assertThat(PlannerProxyController.isAirportExtra("/api/airport/KDLH/photos")).isTrue();
-        assertThat(PlannerProxyController.isAirportExtra("/api/airport/KDLH")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KIOW/photos")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport-aerial/KIOW.jpg")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport-photo/KSCD.jpg")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/traffic/flight/a1b2c3/status")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airspace/ahead")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/weather/map")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/alternate")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/icing/route")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/traffic")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/traffic/find")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/traffic/based")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/traffic/flight/a0b7d8")).isTrue();
+        assertThat(forwarded("POST", "/api/debrief")).isTrue();
+        assertThat(forwarded("POST", "/api/lost-comms")).isTrue();
+        assertThat(forwarded("GET", "/api/diversion")).isTrue();
+        assertThat(forwarded("GET", "/api/holding")).isTrue();
+        assertThat(forwarded("POST", "/api/holding")).isFalse();
+        assertThat(forwarded("GET", "/api/airport/KIOW/photos")).isTrue();
+        assertThat(forwarded("GET", "/api/airport-aerial/KIOW.jpg")).isTrue();
+        assertThat(forwarded("GET", "/api/airport-photo/KSCD.jpg")).isTrue();
+        assertThat(forwarded("GET", "/api/traffic/flight/a1b2c3/status")).isTrue();
+        assertThat(forwarded("GET", "/api/airspace/ahead")).isTrue();
+        assertThat(forwarded("GET", "/api/weather/map")).isTrue();
+        assertThat(forwarded("GET", "/api/alternate")).isTrue();
+        assertThat(forwarded("GET", "/api/icing/route")).isTrue();
+        assertThat(forwarded("GET", "/api/traffic")).isTrue();
+        assertThat(forwarded("GET", "/api/traffic/find")).isTrue();
+        assertThat(forwarded("GET", "/api/traffic/based")).isTrue();
+        assertThat(forwarded("GET", "/api/traffic/flight/a0b7d8")).isTrue();
         // An airplane's past flights, and one of them (PastFlights): a 404
         // here, never asked of the planner, until they were listed.
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/traffic/flight/a89c1e/history")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/traffic/flight/a89c1e/history/1791723840")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/traffic/route")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/map/google")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KBUR/procedures/I08-Y")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KBUR/procedures/I08-Y/legs")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/foreflight-pack/C81-KDLH/C81-KDLH-checkpoints.zip")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/foreflight-pack")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/oral/question")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/oral/question")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/clearance/places")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/clearance/words")).isTrue();
+        assertThat(forwarded("GET", "/api/traffic/flight/a89c1e/history")).isTrue();
+        assertThat(forwarded("GET", "/api/traffic/flight/a89c1e/history/1791723840")).isTrue();
+        assertThat(forwarded("GET", "/api/traffic/route")).isTrue();
+        assertThat(forwarded("GET", "/api/map/google")).isTrue();
+        assertThat(forwarded("GET", "/api/airport/KBUR/procedures/I08-Y")).isTrue();
+        assertThat(forwarded("GET", "/api/airport/KBUR/procedures/I08-Y/legs")).isFalse();
+        assertThat(forwarded("GET", "/api/foreflight-pack/C81-KDLH/C81-KDLH-checkpoints.zip")).isTrue();
+        assertThat(forwarded("GET", "/api/foreflight-pack")).isFalse();
+        assertThat(forwarded("POST", "/api/oral/question")).isTrue();
+        assertThat(forwarded("GET", "/api/oral/question")).isFalse();
+        assertThat(forwarded("POST", "/api/clearance/places")).isTrue();
+        assertThat(forwarded("GET", "/api/clearance/words")).isTrue();
         // Gone with collecting a route: the checkpoints come off the chart.
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/build")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/routes")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/checkpoint-notes/generate")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/words/weather")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/words/risk")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/assistant")).isTrue();
+        assertThat(forwarded("POST", "/api/build")).isFalse();
+        assertThat(forwarded("GET", "/api/routes")).isFalse();
+        assertThat(forwarded("POST", "/api/checkpoint-notes/generate")).isTrue();
+        assertThat(forwarded("POST", "/api/words/weather")).isTrue();
+        assertThat(forwarded("POST", "/api/words/risk")).isTrue();
+        assertThat(forwarded("POST", "/api/assistant")).isTrue();
         // What the assistant service asks the planner for, and nobody else.
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/words/weather/sources")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/checkpoint-notes/pending")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/checkpoint-notes/seed")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/route-check")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KDLH")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airports/in-view")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/waypoints/in-view")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/local-flight")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/tfrs")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/route-profile")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airports/nearest")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/places/search")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KDLH/extra")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport-diagram/2610/KDLH.png")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport-diagram/2610/runways/KDLH.png")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport-diagram/2610/KDLH.pdf")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/airport/KDLH/procedures/R03/plate")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/approach-plate/2610/KDLH/R03.png")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/approach-plate/2610/KDLH/R03.pdf")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/faa-chart")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/faa-chart/page/dtpp/2610/EC3TO.PDF/33.png")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/faa-chart/page/dtpp/2610/EC3TO.PDF")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/chart-tile/sectional/10/262/380.jpg")).isFalse();
-        assertThat(PlannerProxyController.isForwarded("POST", "/api/dev/services/ml/stop")).isFalse();
+        assertThat(forwarded("POST", "/api/words/weather/sources")).isFalse();
+        assertThat(forwarded("POST", "/api/checkpoint-notes/pending")).isFalse();
+        assertThat(forwarded("POST", "/api/checkpoint-notes/seed")).isFalse();
+        assertThat(forwarded("GET", "/api/route-check")).isFalse();
+        assertThat(forwarded("GET", "/api/airport/KDLH")).isTrue();
+        assertThat(forwarded("GET", "/api/airports/in-view")).isTrue();
+        assertThat(forwarded("GET", "/api/waypoints/in-view")).isTrue();
+        assertThat(forwarded("GET", "/api/local-flight")).isTrue();
+        assertThat(forwarded("GET", "/api/tfrs")).isTrue();
+        assertThat(forwarded("GET", "/api/route-profile")).isTrue();
+        assertThat(forwarded("GET", "/api/airports/nearest")).isTrue();
+        assertThat(forwarded("GET", "/api/places/search")).isTrue();
+        assertThat(forwarded("GET", "/api/airport/KDLH/extra")).isFalse();
+        assertThat(forwarded("GET", "/api/airport-diagram/2610/KDLH.png")).isTrue();
+        assertThat(forwarded("GET", "/api/airport-diagram/2610/runways/KDLH.png")).isTrue();
+        assertThat(forwarded("GET", "/api/airport-diagram/2610/KDLH.pdf")).isFalse();
+        assertThat(forwarded("GET", "/api/airport/KDLH/procedures/R03/plate")).isTrue();
+        assertThat(forwarded("GET", "/api/approach-plate/2610/KDLH/R03.png")).isTrue();
+        assertThat(forwarded("GET", "/api/approach-plate/2610/KDLH/R03.pdf")).isFalse();
+        assertThat(forwarded("GET", "/api/faa-chart")).isTrue();
+        assertThat(forwarded("GET", "/api/faa-chart/page/dtpp/2610/EC3TO.PDF/33.png")).isTrue();
+        assertThat(forwarded("GET", "/api/faa-chart/page/dtpp/2610/EC3TO.PDF")).isFalse();
+        assertThat(forwarded("GET", "/api/chart-tile/sectional/10/262/380.jpg")).isFalse();
+        assertThat(forwarded("POST", "/api/dev/services/ml/stop")).isFalse();
     }
 
     @Test
@@ -342,9 +345,9 @@ class PlannerProxyControllerTest {
 
     @Test
     void thePhonesPacksAreForwardedWithTheirUpstreamCacheControl() throws Exception {
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/cycle-packs")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/cycle-pack/2026-10-29/n40w092.pack")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/cycle-pack/2026-10-29")).isFalse();
+        assertThat(forwarded("GET", "/api/cycle-packs")).isTrue();
+        assertThat(forwarded("GET", "/api/cycle-pack/2026-10-29/n40w092.pack")).isTrue();
+        assertThat(forwarded("GET", "/api/cycle-pack/2026-10-29")).isFalse();
         responseHeaders.put("Cache-Control", "public, max-age=2419200, immutable");
 
         // A region's pack, its cycle in its address: kept the whole cycle
@@ -427,9 +430,9 @@ class PlannerProxyControllerTest {
 
     @Test
     void theOverlayTilesArchiveIsReadInRangesAndKeptForItsCycle() throws Exception {
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/overlay-tiles")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/overlay-tiles/2026-10-29-v1-0badf00d.pmtiles")).isTrue();
-        assertThat(PlannerProxyController.isForwarded("GET", "/api/overlay-tiles/a/b.pmtiles")).isFalse();
+        assertThat(forwarded("GET", "/api/overlay-tiles")).isTrue();
+        assertThat(forwarded("GET", "/api/overlay-tiles/2026-10-29-v1-0badf00d.pmtiles")).isTrue();
+        assertThat(forwarded("GET", "/api/overlay-tiles/a/b.pmtiles")).isFalse();
         responseStatus = 206;
         responseHeaders.put("Cache-Control", "public, max-age=2419200, immutable");
         responseHeaders.put("Content-Range", "bytes 0-1/2");

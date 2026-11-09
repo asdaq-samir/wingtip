@@ -36,8 +36,8 @@ SAME_PLACE_NM = 0.1
 #: weather: the airport search, as a pilot types each letter, and the
 #: aircraft picker. Never an answer with a METAR or a TFR in it, which
 #: change within the hour; nor a route's, whose course starts the chart's
-#: reads; nor anything of one pilot's. PlannerProxyController passes the
-#: header on for these paths alone, and the CDN keeps by it
+#: reads; nor anything of one pilot's. The gateway passes the header on
+#: for the routes marked so (app.gateway's SHARED) alone, and the CDN keeps by it
 #: (infra/cloudformation/template.yaml).
 SHARED_CACHE = "public, max-age=300, s-maxage=3600"
 

@@ -10,11 +10,12 @@ from wingtip import vector_tiles
 
 from ..router_basics import DIAGRAM_CACHE, SHARED_CACHE
 from ..schemas import CyclePacks, OverlayTiles
+from ..gateway import SHARED, gateway
 
 router = APIRouter()
 
 
-@router.get("/api/cycle-packs", response_model=CyclePacks)
+@router.get("/api/cycle-packs", response_model=CyclePacks, openapi_extra=SHARED)
 def cycle_packs() -> JSONResponse:
     """The regions there are packs of, for the cycle the planner holds.
     404 until the planner has built them (after its warm-up, once a
@@ -27,7 +28,7 @@ def cycle_packs() -> JSONResponse:
 
 
 @router.get("/api/cycle-pack/{cycle}/{region}.pack",
-            responses={200: {"content": {"application/octet-stream": {}}}})
+            responses={200: {"content": {"application/octet-stream": {}}}}, openapi_extra=SHARED)
 def cycle_pack_file(cycle: str, region: str) -> FileResponse:
     """One region's pack of a cycle, by its name in /api/cycle-packs. Its
     cycle is in its address, so it is kept as an airport diagram is: the
@@ -38,7 +39,7 @@ def cycle_pack_file(cycle: str, region: str) -> FileResponse:
     return FileResponse(path, media_type="application/octet-stream", headers={"Cache-Control": DIAGRAM_CACHE})
 
 
-@router.get("/api/overlay-tiles", response_model=OverlayTiles)
+@router.get("/api/overlay-tiles", response_model=OverlayTiles, openapi_extra=SHARED)
 def overlay_tiles() -> JSONResponse:
     """The overlay tiles' archive of the cycle the planner holds: its name,
     which its address takes, its zooms and layers. 404 until the planner
@@ -53,7 +54,12 @@ def overlay_tiles() -> JSONResponse:
 @router.get("/api/overlay-tiles/{name}.pmtiles",
             responses={200: {"content": {"application/octet-stream": {}}},
                        206: {"description": "The byte range asked for (Range: bytes=a-b)",
-                             "content": {"application/octet-stream": {}}}})
+                             "content": {"application/octet-stream": {}}}},
+            # Read in byte ranges: the range asked goes through, and the
+            # range answered and the ETag, which the map's PMTiles reader
+            # checks every range against, come back.
+            openapi_extra=gateway("public", cache=True, range=True,
+                                  headers=("Content-Length", "Content-Range", "Accept-Ranges", "ETag")))
 def overlay_tiles_file(name: str) -> FileResponse:
     """The archive by its name in /api/overlay-tiles, whole or -- as a map
     reads it, a tile at a time -- the byte ranges asked for (206, with

@@ -502,8 +502,10 @@ jobs:
               - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
             test-gateway:
               - services/gateway/**
-              # the assistant's answers PlannerClient reads are generated from it
+              # the assistant's answers PlannerClient reads are generated from it,
+              # and the routes the proxy forwards come from both (UpstreamRoutes)
               - services/assistant/openapi.json
+              - services/planner/openapi.json
             test-planner:
               - services/planner/**
               - engine/**

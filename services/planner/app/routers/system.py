@@ -36,6 +36,7 @@ from ..schemas import (
 )
 
 from . import devservices
+from ..gateway import DEVELOPER
 
 router = APIRouter()
 
@@ -212,7 +213,7 @@ def _pipeline_status() -> PipelineStatus:
     return PipelineStatus(startable=detail is None, last_run=last, detail=detail)
 
 
-@router.get("/api/status")
+@router.get("/api/status", openapi_extra=DEVELOPER)
 def status() -> Status:
     """One snapshot of the whole stack, for Settings' Dev tab. The
     network probes run side by side so a service that is down costs one
@@ -242,7 +243,7 @@ def status() -> Status:
         )
 
 
-@router.post("/api/charts/refresh")
+@router.post("/api/charts/refresh", openapi_extra=DEVELOPER)
 def refresh_charts() -> ChartRefreshStarted:
     """Fetch and render the FAA's current chart cycle now, and the
     overlay tiles where due: the charts job's container (services/jobs/
@@ -256,7 +257,7 @@ def refresh_charts() -> ChartRefreshStarted:
     return ChartRefreshStarted(started=started, current_cycle=charts.current_cycle())
 
 
-@router.post("/api/retrain")
+@router.post("/api/retrain", openapi_extra=DEVELOPER)
 def retrain() -> RetrainStarted:
     """Starts one training run (`python -m wingtip.pipeline run`): the
     chart model (retrain, evaluate, promote) and the landmark model where

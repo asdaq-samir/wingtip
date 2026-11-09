@@ -17306,7 +17306,11 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Aircraft Profiles"
+        "summary": "Aircraft Profiles",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/aircraft/inspections": {
@@ -17387,7 +17391,11 @@
             "description": "The USGS imagery could not be had"
           }
         },
-        "summary": "Airport Aerial"
+        "summary": "Airport Aerial",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/airport-diagram/{cycle}/runways/{ident}.png": {
@@ -17435,7 +17443,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airport Diagram Runways"
+        "summary": "Airport Diagram Runways",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/airport-diagram/{cycle}/{ident}.png": {
@@ -17483,7 +17495,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airport Diagram"
+        "summary": "Airport Diagram",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/airport-photo/{ident}.jpg": {
@@ -17525,7 +17541,11 @@
             "description": "Wikimedia could not be reached"
           }
         },
-        "summary": "Airport Photo"
+        "summary": "Airport Photo",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/airport/{ident}": {
@@ -17565,7 +17585,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airport Place"
+        "summary": "Airport Place",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/airport/{ident}/forecast-wind": {
@@ -17625,7 +17648,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airport Forecast Wind"
+        "summary": "Airport Forecast Wind",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/airport/{ident}/photos": {
@@ -17665,7 +17691,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airport Photos Of"
+        "summary": "Airport Photos Of",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/airport/{ident}/procedures": {
@@ -17708,7 +17738,10 @@
             "description": "The FAA's procedure file could not be had"
           }
         },
-        "summary": "Airport Procedures"
+        "summary": "Airport Procedures",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/airport/{ident}/procedures/{procedure}": {
@@ -17779,7 +17812,10 @@
             "description": "The FAA's procedure file could not be had"
           }
         },
-        "summary": "Airport Procedure"
+        "summary": "Airport Procedure",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/airport/{ident}/procedures/{procedure}/plate": {
@@ -17834,7 +17870,10 @@
             "description": "The FAA's procedure file could not be had"
           }
         },
-        "summary": "Airport Procedure Plate"
+        "summary": "Airport Procedure Plate",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/airport/{ident}/services": {
@@ -17874,7 +17913,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airport Services"
+        "summary": "Airport Services",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/airports/in-view": {
@@ -17971,7 +18014,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airports In View"
+        "summary": "Airports In View",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/airports/index": {
@@ -18010,7 +18056,15 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airport Index"
+        "summary": "Airport Index",
+        "x-gateway": {
+          "access": "public",
+          "cache": true,
+          "headers": [
+            "Content-Encoding",
+            "Vary"
+          ]
+        }
       }
     },
     "/api/airports/nearest": {
@@ -18075,7 +18129,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Nearest Airports"
+        "summary": "Nearest Airports",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/airports/search": {
@@ -18136,7 +18193,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airport Search"
+        "summary": "Airport Search",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/airspace/ahead": {
@@ -18249,7 +18310,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airspace Ahead"
+        "summary": "Airspace Ahead",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/airspace/at": {
@@ -18302,7 +18366,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Airspace At Point"
+        "summary": "Airspace At Point",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/alternate": {
@@ -18372,7 +18439,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Alternate"
+        "summary": "Alternate",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/approach-plate/{cycle}/{ident}/{procedure}.png": {
@@ -18429,7 +18499,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Approach Plate"
+        "summary": "Approach Plate",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/briefing": {
@@ -18551,7 +18625,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Briefing"
+        "summary": "Briefing",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/chart": {
@@ -18570,7 +18647,11 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Chart Info"
+        "summary": "Chart Info",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/chart-tile/{kind}/{z}/{x}/{y}.png": {
@@ -18639,7 +18720,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Chart Tile"
+        "summary": "Chart Tile",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/chart-tile/{kind}/{z}/{x}/{y}@2x.png": {
@@ -18708,7 +18793,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Chart Tile 2X"
+        "summary": "Chart Tile 2X",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/charts/refresh": {
@@ -18727,7 +18816,10 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Refresh Charts"
+        "summary": "Refresh Charts",
+        "x-gateway": {
+          "access": "developer"
+        }
       }
     },
     "/api/checkpoint-notes": {
@@ -18784,7 +18876,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Save Checkpoint Note"
+        "summary": "Save Checkpoint Note",
+        "x-gateway": {
+          "access": "signed-in",
+          "pilot": true
+        }
       }
     },
     "/api/checkpoint-notes/mine": {
@@ -18998,7 +19094,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Checkpoints"
+        "summary": "Checkpoints",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/class-b": {
@@ -19017,7 +19116,10 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Class B Airports"
+        "summary": "Class B Airports",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/classify": {
@@ -19070,7 +19172,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Classify"
+        "summary": "Classify",
+        "x-gateway": {
+          "access": "developer"
+        }
       }
     },
     "/api/clearance/places": {
@@ -19109,7 +19214,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Clearance Places"
+        "summary": "Clearance Places",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
+        }
       }
     },
     "/api/clearance/words": {
@@ -19160,7 +19269,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Clearance Words"
+        "summary": "Clearance Words",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/course": {
@@ -19219,7 +19331,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Course"
+        "summary": "Course",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/cycle-pack/{cycle}/{region}.pack": {
@@ -19267,7 +19382,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Cycle Pack File"
+        "summary": "Cycle Pack File",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/cycle-packs": {
@@ -19286,7 +19405,11 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Cycle Packs"
+        "summary": "Cycle Packs",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/debrief": {
@@ -19325,7 +19448,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Debrief"
+        "summary": "Debrief",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
+        }
       }
     },
     "/api/detect/stream": {
@@ -19384,7 +19511,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Detect Stream"
+        "summary": "Detect Stream",
+        "x-gateway": {
+          "access": "developer"
+        }
       }
     },
     "/api/dev/services": {
@@ -19403,7 +19533,10 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Dev Services"
+        "summary": "Dev Services",
+        "x-gateway": {
+          "access": "developer"
+        }
       }
     },
     "/api/dev/services/{service}/start": {
@@ -19443,7 +19576,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Start Dev Service"
+        "summary": "Start Dev Service",
+        "x-gateway": {
+          "access": "developer"
+        }
       }
     },
     "/api/diversion": {
@@ -19663,7 +19799,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Diversion"
+        "summary": "Diversion",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/faa-chart": {
@@ -19719,7 +19858,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Faa Chart"
+        "summary": "Faa Chart",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/faa-chart/page/{source}/{edition}/{pdf}/{page}.png": {
@@ -19788,7 +19931,11 @@
             "description": "The FAA could not be reached"
           }
         },
-        "summary": "Faa Chart Page"
+        "summary": "Faa Chart Page",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/foreflight-pack/{route}/{file}": {
@@ -19833,7 +19980,17 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Foreflight Pack"
+        "summary": "Foreflight Pack",
+        "x-gateway": {
+          "access": "public",
+          "headers": [
+            "Content-Disposition",
+            "Content-Length",
+            "Content-Range",
+            "Accept-Ranges"
+          ],
+          "range": true
+        }
       }
     },
     "/api/go-no-go": {
@@ -19872,7 +20029,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Go No Go"
+        "summary": "Go No Go",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
+        }
       }
     },
     "/api/holding": {
@@ -20011,7 +20172,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Holding"
+        "summary": "Holding",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/icing/route": {
@@ -20096,7 +20260,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Icing On The Route"
+        "summary": "Icing On The Route",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/live/atis": {
@@ -20138,7 +20305,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Digital Atis"
+        "summary": "Digital Atis",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/live/departures": {
@@ -20182,7 +20352,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Departure Events"
+        "summary": "Departure Events",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/live/flow": {
@@ -20225,7 +20398,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Flow Programs"
+        "summary": "Flow Programs",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/live/itws": {
@@ -20268,7 +20444,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Itws Alerts"
+        "summary": "Itws Alerts",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/live/rvr": {
@@ -20310,7 +20489,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Runway Rvr"
+        "summary": "Runway Rvr",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/live/saa": {
@@ -20353,7 +20535,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Saa Status"
+        "summary": "Saa Status",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/local-flight": {
@@ -20737,7 +20922,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Local Flight"
+        "summary": "Local Flight",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/lost-comms": {
@@ -20776,7 +20964,11 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Lost Comms"
+        "summary": "Lost Comms",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
+        }
       }
     },
     "/api/map/ages": {
@@ -20795,7 +20987,10 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Map Layer Ages"
+        "summary": "Map Layer Ages",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/map/google": {
@@ -20814,7 +21009,10 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Google Maps"
+        "summary": "Google Maps",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/model-comparison": {
@@ -20833,7 +21031,10 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Model Comparison"
+        "summary": "Model Comparison",
+        "x-gateway": {
+          "access": "developer"
+        }
       }
     },
     "/api/navlog": {
@@ -21215,7 +21416,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Navlog Stream"
+        "summary": "Navlog Stream",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/overlay-tiles": {
@@ -21234,7 +21438,11 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Overlay Tiles"
+        "summary": "Overlay Tiles",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/overlay-tiles/{name}.pmtiles": {
@@ -21279,7 +21487,18 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Overlay Tiles File"
+        "summary": "Overlay Tiles File",
+        "x-gateway": {
+          "access": "public",
+          "cache": true,
+          "headers": [
+            "Content-Length",
+            "Content-Range",
+            "Accept-Ranges",
+            "ETag"
+          ],
+          "range": true
+        }
       }
     },
     "/api/picks": {
@@ -21345,7 +21564,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Remove Pick"
+        "summary": "Remove Pick",
+        "x-gateway": {
+          "access": "developer"
+        }
       },
       "post": {
         "operationId": "add_pick_api_picks_post",
@@ -21381,7 +21603,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Add Pick"
+        "summary": "Add Pick",
+        "x-gateway": {
+          "access": "developer"
+        }
       }
     },
     "/api/pilot/currency": {
@@ -21605,7 +21830,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Places Search"
+        "summary": "Places Search",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/plan": {
@@ -21996,7 +22224,10 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Retrain"
+        "summary": "Retrain",
+        "x-gateway": {
+          "access": "developer"
+        }
       }
     },
     "/api/route-check": {
@@ -22251,7 +22482,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Route Options"
+        "summary": "Route Options",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/route-profile": {
@@ -22310,7 +22544,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Route Profile"
+        "summary": "Route Profile",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/status": {
@@ -22329,7 +22566,10 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Status"
+        "summary": "Status",
+        "x-gateway": {
+          "access": "developer"
+        }
       }
     },
     "/api/stops/along": {
@@ -22388,7 +22628,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Stops Along"
+        "summary": "Stops Along",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/stops/near": {
@@ -22453,7 +22696,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Stops Near"
+        "summary": "Stops Near",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/tfrs": {
@@ -22472,7 +22718,10 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Tfrs"
+        "summary": "Tfrs",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/traffic": {
@@ -22539,7 +22788,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Traffic Near"
+        "summary": "Traffic Near",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/traffic/based": {
@@ -22583,7 +22835,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Traffic Based"
+        "summary": "Traffic Based",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/traffic/find": {
@@ -22627,7 +22882,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Traffic Find"
+        "summary": "Traffic Find",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/traffic/flight/{hex_id}": {
@@ -22668,7 +22926,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Traffic Flight"
+        "summary": "Traffic Flight",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/traffic/flight/{hex_id}/history": {
@@ -22747,7 +23008,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Traffic History"
+        "summary": "Traffic History",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/traffic/flight/{hex_id}/history/{flight_id}": {
@@ -22798,7 +23062,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Traffic Past Flight"
+        "summary": "Traffic Past Flight",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/traffic/flight/{hex_id}/status": {
@@ -22839,7 +23106,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Traffic Status"
+        "summary": "Traffic Status",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/traffic/route": {
@@ -22925,7 +23195,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Traffic Route"
+        "summary": "Traffic Route",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/waypoints/in-view": {
@@ -23012,7 +23285,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Waypoints In View"
+        "summary": "Waypoints In View",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/weather/map": {
@@ -23127,7 +23403,10 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Weather On The Map"
+        "summary": "Weather On The Map",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/words/changes/sources": {

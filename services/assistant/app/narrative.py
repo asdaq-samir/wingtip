@@ -30,6 +30,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .schemas import NarrativeDelta, NarrativeDone, NarrativeError
+from .gateway import gateway
 from .settings import get_settings
 
 log = logging.getLogger(__name__)
@@ -307,7 +308,11 @@ def stream(request: NarrativeRequest) -> Iterator[str]:
 router = APIRouter()
 
 
-@router.post("/api/briefing/narrative", responses={200: {"content": {"application/x-ndjson": {}}}})
+# A long cross-country with every leg field is a few tens of KB (and
+# NarrativeRequest takes MAX_LEGS legs at most); every byte is prompt text
+# a billed call reads, so the gateway forwards 256 KB at most.
+@router.post("/api/briefing/narrative", responses={200: {"content": {"application/x-ndjson": {}}}},
+             openapi_extra=gateway("signed-in", paid="NARRATIVE", body_limit=256 * 1024))
 def write_narrative(request: NarrativeRequest) -> StreamingResponse:
     """The narrative as lines of NarrativeMessage: `delta` (a piece of
     the text) as Claude writes it, then `done` with the whole briefing,
