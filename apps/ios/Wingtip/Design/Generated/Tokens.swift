@@ -529,6 +529,7 @@ enum WingtipMotion {
 enum WingtipSize {
     static let tapTarget: CGFloat = 44
     static let chip: CGFloat = 32
+    static let tabBar: CGFloat = 64
     static let panel: CGFloat = 384
     static let panelWide: CGFloat = 448
     static let desktop: CGFloat = 1024

@@ -68,7 +68,7 @@ struct InstrumentsBar: View {
                 }
             }
             .padding(10)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .floatingGlass(in: floatingCard)
             .padding(.horizontal, 12)
             // Eight figures across a phone: past the second accessibility
             // size they would not fit, so the bar stops there.
@@ -92,7 +92,7 @@ struct InstrumentsBar: View {
             Label(problem, systemImage: "exclamationmark.triangle")
                 .font(.footnote).foregroundStyle(.orange)
                 .padding(10)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .floatingGlass(in: floatingCard)
                 .padding(.horizontal, 12)
         }
     }

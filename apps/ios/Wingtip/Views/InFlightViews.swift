@@ -680,14 +680,14 @@ struct WatchBanner: View {
                 .accessibilityLabel("Dismiss")
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(.regularMaterial, in: Capsule())
+            .floatingGlass(in: Capsule())
         } else if let problem = Tracking.shared.watchProblem {
             // A watch that could not be checked says so where it would
             // have gone off, rather than staying quiet.
             Label(problem, systemImage: "exclamationmark.triangle")
                 .font(.subheadline).foregroundStyle(.orange).lineLimit(2)
                 .padding(.horizontal, 12).padding(.vertical, 8)
-                .background(.regularMaterial, in: Capsule())
+                .floatingGlass(in: Capsule())
         }
     }
 }

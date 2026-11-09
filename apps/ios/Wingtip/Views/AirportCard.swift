@@ -247,7 +247,7 @@ struct AirportPictures: View {
                                 // Its photographer and licence, as Commons' licences ask.
                                 Text(credit).font(.caption2).lineLimit(1)
                                     .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .background(.thinMaterial, in: Capsule()).padding(6)
+                                    .floatingGlass(in: Capsule(), material: .thinMaterial).padding(6)
                             }
                     }
                     .accessibilityLabel("\(place.ident) from the ground, full screen")

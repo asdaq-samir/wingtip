@@ -133,7 +133,7 @@ struct SplitLayout<Map: View>: View {
                     FiguresStrip()
                         .padding(.vertical, 10)
                         .frame(maxWidth: 520)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .floatingGlass(in: floatingCard)
                         .padding(.bottom, 16)
                         .padding(.horizontal, 16)
                 }

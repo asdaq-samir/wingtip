@@ -24,7 +24,7 @@ struct UndoBar: View {
             }
             .padding(.leading, 16)
             .padding(.trailing, 8)
-            .background(.thickMaterial, in: Capsule())
+            .floatingGlass(in: Capsule(), material: .thickMaterial)
             .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
             .padding(.horizontal, 16)
             // A slide up from the foot; a fade alone with Reduce Motion on.

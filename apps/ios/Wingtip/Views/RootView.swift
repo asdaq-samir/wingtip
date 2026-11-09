@@ -96,8 +96,9 @@ struct RootView: View {
                         .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { sheetHeight = $0 }
                         .presentationDetents([RootView.pill, .medium, .large], selection: $detent)
                         .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-                        .presentationBackground(.regularMaterial)
-                        .presentationCornerRadius(24)
+                        // The system's Liquid Glass sheet and its own corners
+                        // on iOS 26; the material on iOS 18 (Design/Glass.swift).
+                        .sheetGlass()
                         .interactiveDismissDisabled()
                     }
             case .split:
@@ -202,10 +203,10 @@ struct RootView: View {
                 // The licence's credit, beside the traffic it covers.
                 if traffic.on, !traffic.planes.isEmpty {
                     Text(Traffic.credit(traffic.source)).font(.caption2).padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(.thinMaterial, in: Capsule())
+                        .floatingGlass(in: Capsule(), material: .thinMaterial)
                     if let problem = traffic.marksProblem {
                         Text(problem).font(.caption2).foregroundStyle(.orange).padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(.thinMaterial, in: Capsule())
+                            .floatingGlass(in: Capsule(), material: .thinMaterial)
                     }
                 }
             }
@@ -313,6 +314,8 @@ struct RootView: View {
 /// and Setup.
 struct SheetView: View {
     @Environment(Plan.self) private var plan
+    /// In the iPad's sidebar, whose tab bar is at the top.
+    @Environment(\.splitLayout) private var split
     @Binding var tab: RootView.Tabs
     @Binding var airports: [String]
     /// At the pill: the figures over the tab bar, nothing else.
@@ -324,16 +327,16 @@ struct SheetView: View {
     var body: some View {
         TabView(selection: $tab) {
             Tab("FPL", systemImage: "point.topleft.down.to.point.bottomright.curvepath", value: RootView.Tabs.fpl) {
-                FPLView()
+                FPLView().clearOfTabBar(!split)
             }
             Tab("Airport", systemImage: "airplane.departure", value: RootView.Tabs.airport) {
-                AirportSearchView(path: $airports)
+                AirportSearchView(path: $airports).clearOfTabBar(!split)
             }
             Tab("Aircraft", systemImage: "airplane", value: RootView.Tabs.aircraft) {
-                AircraftView()
+                AircraftView().clearOfTabBar(!split)
             }
             Tab("Setup", systemImage: "gearshape", value: RootView.Tabs.setup) {
-                SetupView()
+                SetupView().clearOfTabBar(!split)
             }
         }
         // The pill shows the flight's figures where the tab's own content
@@ -341,7 +344,7 @@ struct SheetView: View {
         .overlay(alignment: .top) {
             if pill {
                 FiguresStrip()
-                    .padding(.top, 14)
+                    .padding(.top, WingtipSpace.md)
                     .frame(maxWidth: .infinity)
                     .background(.regularMaterial)
                     .transition(.opacity)
@@ -351,7 +354,7 @@ struct SheetView: View {
         // The Undo bar over the tab bar, where the edit was made.
         .overlay(alignment: .bottom) {
             UndoBar()
-                .padding(.bottom, 60)
+                .padding(.bottom, WingtipSize.tabBar)
                 .animation(.easeOut(duration: 0.25), value: plan.undoNote)
         }
         // An airplane's card, a point pressed on the map, a hold, a flown

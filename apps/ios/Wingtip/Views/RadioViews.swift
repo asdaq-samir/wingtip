@@ -45,7 +45,7 @@ struct RadioOverlay: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+                    .floatingGlass(in: floatingCard)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("What the radio is saying: open the log")
@@ -120,7 +120,7 @@ struct RadioCallBanner: View {
             if let problem { Text(problem).font(.footnote).foregroundStyle(.red) }
         }
         .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+        .floatingGlass(in: floatingCard)
     }
 
     /// Direct to the place said, found near the route and the airplane.

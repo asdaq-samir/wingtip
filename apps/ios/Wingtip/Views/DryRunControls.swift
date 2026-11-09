@@ -28,7 +28,7 @@ struct DryRunControls: View {
         }
         .padding(.horizontal, 8)
         // The system material goes opaque by itself with Reduce Transparency on.
-        .background(.regularMaterial, in: Capsule())
+        .floatingGlass(in: Capsule())
         // One line over the map: it stops growing at the second
         // accessibility size, where the four controls would no longer fit.
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)

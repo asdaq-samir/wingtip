@@ -109,7 +109,7 @@ struct PictureViewer: View {
                 if let credit = picture.credit, images != nil {
                     Text(credit).font(.caption2).foregroundStyle(.secondary)
                         .padding(.horizontal, 8).padding(.vertical, 4)
-                        .background(.thinMaterial, in: Capsule())
+                        .floatingGlass(in: Capsule(), material: .thinMaterial)
                         .padding(.bottom, 8)
                 }
             }

@@ -67,7 +67,7 @@ struct StripFieldRow: View {
             }
             .padding(.horizontal, 12)
             .frame(height: 44)
-            .background(.ultraThinMaterial, in: Capsule())
+            .floatingGlass(in: Capsule(), material: .ultraThinMaterial)
             .overlay(Capsule().strokeBorder(ink.ink.opacity(0.08), lineWidth: 1))
             StripProfileMenu()
         }
