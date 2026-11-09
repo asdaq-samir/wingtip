@@ -873,6 +873,12 @@ class DepartureEvents(BaseModel):
     events: Annotated[list[DepartureEvent] | None, Field(title='Events')] = None
 
 
+class ClimbRateFpm(RootModel[float | None]):
+    root: Annotated[float | None, Field(gt=0.0, le=5000.0, title='Climb Rate Fpm')] = (
+        None
+    )
+
+
 class ClimbTasKt(RootModel[float | None]):
     root: Annotated[float | None, Field(gt=0.0, le=1000.0, title='Climb Tas Kt')] = None
 
@@ -895,10 +901,18 @@ class Day(RootModel[str | None]):
     ] = None
 
 
+class GlideRatio(RootModel[float | None]):
+    root: Annotated[float | None, Field(gt=1.0, le=80.0, title='Glide Ratio')] = None
+
+
 class ServiceCeilingFt(RootModel[float | None]):
     root: Annotated[
         float | None, Field(ge=1000.0, le=30000.0, title='Service Ceiling Ft')
     ] = None
+
+
+class TaxiFuelGal(RootModel[float | None]):
+    root: Annotated[float | None, Field(ge=0.0, le=50.0, title='Taxi Fuel Gal')] = None
 
 
 class DestinationCheck(BaseModel):
@@ -1516,7 +1530,9 @@ class GlideFigures(BaseModel):
     )
     best_glide_kias: Annotated[float | None, Field(title='Best Glide Kias')] = None
     ratio: Annotated[float | None, Field(title='Ratio')] = None
-    source: Annotated[str | None, Field(title='Source')] = None
+    source: Annotated[
+        str | None, Field(title='Source')
+    ] = "The pilot's own figure, from the airplane's handbook"
 
 
 class GoogleMaps(BaseModel):
@@ -1799,6 +1815,15 @@ class LogbookEntry(BaseModel):
     totalHours: Annotated[float | None, Field(title='Totalhours')] = 0
     toweredLandings: Annotated[int | None, Field(title='Toweredlandings')] = 0
     tracking: Annotated[bool | None, Field(title='Tracking')] = False
+
+
+class LoopFrame(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    radar_tiles: Annotated[str | None, Field(title='Radar Tiles')] = None
+    satellite_tiles: Annotated[str | None, Field(title='Satellite Tiles')] = None
+    valid: Annotated[str | None, Field(title='Valid')] = None
 
 
 class LostCommsRoute(BaseModel):
@@ -3347,6 +3372,19 @@ class WeatherDataset(BaseModel):
     name: Annotated[str | None, Field(title='Name')] = None
 
 
+class WeatherLoop(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    credit: Annotated[str | None, Field(title='Credit')] = None
+    frames: Annotated[list[LoopFrame] | None, Field(title='Frames')] = None
+    kind: Annotated[
+        Literal['radar', 'ir', 'visible', 'both'] | None, Field(title='Kind')
+    ] = None
+    old_after_s: Annotated[float | None, Field(title='Old After S')] = None
+    step_s: Annotated[float | None, Field(title='Step S')] = None
+
+
 class Wind(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -4548,6 +4586,7 @@ class AircraftProfile(BaseModel):
         None
     )
     takeoff: ShortField | None = None
+    taxi_fuel_gal: Annotated[float | None, Field(title='Taxi Fuel Gal')] = None
     type: Annotated[str | None, Field(title='Type')] = None
     usable_fuel_gal: Annotated[float | None, Field(title='Usable Fuel Gal')] = None
 
@@ -4857,6 +4896,7 @@ class DepartureWindowAsk(BaseModel):
     climb_fuel_burn_gph: Annotated[float | None, Field(title='Climb Fuel Burn Gph')] = (
         None
     )
+    climb_rate_fpm: Annotated[ClimbRateFpm | None, Field(title='Climb Rate Fpm')] = None
     climb_tas_kt: Annotated[ClimbTasKt | None, Field(title='Climb Tas Kt')] = None
     crossings: Annotated[str | None, Field(title='Crossings')] = ''
     cruise_power_pct: Annotated[
@@ -4869,6 +4909,7 @@ class DepartureWindowAsk(BaseModel):
     depart: Annotated[AwareDatetime | None, Field(title='Depart')] = None
     dest: Annotated[str | None, Field(title='Dest')] = None
     fuel_burn_gph: Annotated[float | None, Field(title='Fuel Burn Gph')] = None
+    glide_ratio: Annotated[GlideRatio | None, Field(title='Glide Ratio')] = None
     ground: Annotated[str | None, Field(title='Ground')] = ''
     holds: Annotated[str | None, Field(title='Holds')] = ''
     hours: Annotated[int | None, Field(ge=1, le=48, title='Hours')] = 48
@@ -4884,6 +4925,7 @@ class DepartureWindowAsk(BaseModel):
     ] = None
     start: Annotated[AwareDatetime | None, Field(title='Start')] = None
     stops: Annotated[str | None, Field(title='Stops')] = ''
+    taxi_fuel_gal: Annotated[TaxiFuelGal | None, Field(title='Taxi Fuel Gal')] = None
     ticked: Annotated[list[str] | None, Field(title='Ticked')] = []
     usable_fuel_gal: Annotated[float | None, Field(title='Usable Fuel Gal')] = None
 
@@ -4950,6 +4992,7 @@ class GoNoGoAsk(BaseModel):
     climb_fuel_burn_gph: Annotated[float | None, Field(title='Climb Fuel Burn Gph')] = (
         None
     )
+    climb_rate_fpm: Annotated[ClimbRateFpm | None, Field(title='Climb Rate Fpm')] = None
     climb_tas_kt: Annotated[ClimbTasKt | None, Field(title='Climb Tas Kt')] = None
     crossings: Annotated[str | None, Field(title='Crossings')] = ''
     cruise_power_pct: Annotated[
@@ -4962,6 +5005,7 @@ class GoNoGoAsk(BaseModel):
     depart: Annotated[AwareDatetime | None, Field(title='Depart')] = None
     dest: Annotated[str | None, Field(title='Dest')] = None
     fuel_burn_gph: Annotated[float | None, Field(title='Fuel Burn Gph')] = None
+    glide_ratio: Annotated[GlideRatio | None, Field(title='Glide Ratio')] = None
     ground: Annotated[str | None, Field(title='Ground')] = ''
     holds: Annotated[str | None, Field(title='Holds')] = ''
     load: AirplaneLoad | None = None
@@ -4975,6 +5019,7 @@ class GoNoGoAsk(BaseModel):
         ServiceCeilingFt | None, Field(title='Service Ceiling Ft')
     ] = None
     stops: Annotated[str | None, Field(title='Stops')] = ''
+    taxi_fuel_gal: Annotated[TaxiFuelGal | None, Field(title='Taxi Fuel Gal')] = None
     ticked: Annotated[list[str] | None, Field(title='Ticked')] = []
     usable_fuel_gal: Annotated[float | None, Field(title='Usable Fuel Gal')] = None
 
