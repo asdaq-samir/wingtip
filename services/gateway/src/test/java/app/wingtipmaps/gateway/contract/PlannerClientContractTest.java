@@ -1,0 +1,264 @@
+package app.wingtipmaps.gateway.contract;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+
+import app.wingtipmaps.gateway.domain.LogbookEntry;
+import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.repository.MagicLinkRepository;
+import app.wingtipmaps.gateway.repository.PilotRepository;
+import app.wingtipmaps.gateway.service.AccountService;
+import app.wingtipmaps.gateway.service.AppleRevocation;
+import app.wingtipmaps.gateway.service.PlannerClient;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.Test;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.transaction.support.TransactionTemplate;
+
+/**
+ * Every call the gateway makes to the planner by hand -- PlannerClient's
+ * rules and the briefing, and AccountService's forgetting of a pilot's
+ * notes -- held to services/planner/openapi.json, the planner's own
+ * document as this jar was built with it. Each call is made for real
+ * against a stub that answers with every field the document says the
+ * operation answers; what the client sent is then checked against the
+ * operation (the path and method exist, every required field or query
+ * parameter is sent, nothing is sent the operation does not take, each
+ * value is of its type and null only where the planner takes null), and
+ * the type the client reads the answer into against the answer (each
+ * record component is a field the planner sends, of a type that holds
+ * it, and a primitive only where the planner always sends a value).
+ * Jackson reads a field the planner renamed as null or 0 without a word,
+ * and the planner ignores a field it does not know, so a rename on either
+ * side shows nowhere else before a pilot's currency reads 0 hours.
+ */
+class PlannerClientContractTest {
+
+    /** One call as made: the client method it is, and how to make it. */
+    record Call(String name, Consumer<Clients> make) {
+        String method() {
+            return name.replaceAll(" .*", "");
+        }
+    }
+
+    record Clients(PlannerClient planner, AccountService accounts) {
+    }
+
+    private static final LocalDate DAY = LocalDate.of(2026, 11, 9);
+
+    /** Each method that asks the planner, once with every optional field
+     *  given and once, where it has any, with them left out. */
+    static final List<Call> CALLS = List.of(
+            new Call("briefing", c -> c.planner().briefing("KDLH", "KMSP", List.of("KHYR"), Instant.parse("2026-11-09T15:00:00Z"), 95.0)),
+            new Call("briefing (no stops)", c -> c.planner().briefing("KDLH", "KMSP", List.of(), Instant.parse("2026-11-09T15:00:00Z"), null)),
+            new Call("changes", c -> c.planner().changes("KDLH", "KMSP", List.of("KHYR"), Stub.briefing, Stub.briefing)),
+            new Call("currency", c -> c.planner().currency(logbook(), DAY.minusYears(1), DAY.plusYears(2), DAY.minusMonths(3), DAY)),
+            new Call("currency (no dates)", c -> c.planner().currency(logbook(), null, null, null, DAY)),
+            new Call("experience", c -> c.planner().experience(logbook(), DAY)),
+            new Call("endorsements", c -> c.planner().endorsements(List.of(new PlannerClient.Held("solo", DAY, "C172"),
+                    new PlannerClient.Held("solo-xc", DAY, null)), DAY.plusDays(3))),
+            new Call("endorsements (no flight)", c -> c.planner().endorsements(List.of(), null)),
+            new Call("endorsementKinds", c -> c.planner().endorsementKinds()),
+            new Call("fill", c -> c.planner().fill("solo", "A. Pilot", Map.of("makeModel", "C172"))),
+            new Call("inspections", c -> c.planner().inspections(DAY, DAY, DAY, DAY, 1234.5, DAY, "VOT", 2.0)),
+            new Call("inspections (none recorded)", c -> c.planner().inspections(null, null, null, null, null, null, null, null)),
+            new Call("AccountService.delete", c -> c.accounts().delete(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))));
+
+    /** PlannerClient's methods that ask nothing themselves. */
+    private static final Set<String> NOT_CALLS = Set.of(
+            "endorsementKind"); // a filter over endorsementKinds()
+
+    /** The gateway forwards the briefings it watches to the assistant,
+     *  which hands the body whole to the planner's words sources: the body
+     *  is the planner's ChangesAsk, though the assistant is who is asked. */
+    private static final Map<String, String> BODY_FOR = Map.of("changes", "/api/words/changes/sources");
+
+    /** Read whole into a type the answer is not checked against: the
+     *  briefing is carried as text and never read (PlannerClient says so),
+     *  and the changes' words are the assistant's, a model generated from
+     *  its own document as the gateway builds. */
+    private static final Set<String> NOT_READ = Set.of("briefing", "changes", "AccountService.delete");
+
+    @Test
+    void everyCallFitsThePlannersDocument() {
+        List<String> problems = problems(OpenApiContract.shipped("planner"), OpenApiContract.shipped("assistant"));
+        if (!problems.isEmpty()) {
+            fail("The gateway's calls do not fit services/planner/openapi.json:\n  " + String.join("\n  ", problems));
+        }
+    }
+
+    @Test
+    void everyMethodThatAsksThePlannerIsCovered() {
+        Set<String> methods = Arrays.stream(PlannerClient.class.getDeclaredMethods())
+                .filter(m -> Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()) && !m.isSynthetic())
+                .map(Method::getName).collect(Collectors.toCollection(TreeSet::new));
+        methods.removeAll(NOT_CALLS);
+        Set<String> covered = CALLS.stream().map(Call::method).filter(n -> !n.contains(".")).collect(Collectors.toCollection(TreeSet::new));
+        assertThat(covered).as("PlannerClient's public methods each need a Call in CALLS (or a reason in NOT_CALLS)")
+                .isEqualTo(methods);
+    }
+
+    // The negative cases: a copy of the document with one thing changed, as
+    // a rename in the planner would change it, is caught and named.
+
+    @Test
+    void anAnswerFieldRenamedIsNamed() {
+        JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
+        rename(planner, "Currency", "totalHours", "totalHoursFlown");
+        assertThat(problems(planner, OpenApiContract.shipped("assistant")))
+                .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.currency:").contains("answer.totalHours (CurrencyDto) is read")
+                        .contains("totalHoursFlown"));
+    }
+
+    @Test
+    void aBodyFieldRenamedIsNamed() {
+        JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
+        rename(planner, "CurrencyAsk", "today", "asOf");
+        assertThat(problems(planner, OpenApiContract.shipped("assistant")))
+                .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.currency:").contains("body.today is sent, but the planner has no such field"))
+                .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.currency:").contains("body.asOf is required, but is not sent"));
+    }
+
+    @Test
+    void aQueryParameterRenamedIsNamed() {
+        JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
+        for (JsonNode param : planner.at("/paths/~1api~1briefing/get/parameters")) {
+            if (param.path("name").asText().equals("ete_min")) {
+                ((ObjectNode) param).put("name", "ete_minutes");
+            }
+        }
+        assertThat(problems(planner, OpenApiContract.shipped("assistant")))
+                .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.briefing:").contains("query parameter 'ete_min' is sent"));
+    }
+
+    @Test
+    void anAnswerFieldMadeNullableIsNamed() {
+        JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
+        ObjectNode have = (ObjectNode) planner.at("/components/schemas/ExperienceItem/properties/have");
+        JsonNode was = have.deepCopy();
+        have.removeAll();
+        ArrayNode anyOf = have.putArray("anyOf");
+        anyOf.add(was);
+        anyOf.addObject().put("type", "null");
+        assertThat(problems(planner, OpenApiContract.shipped("assistant")))
+                .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.experience:").contains("answer[].have may be null"));
+    }
+
+    @Test
+    void anOperationGoneIsNamed() {
+        JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
+        ((ObjectNode) planner.get("paths")).remove("/api/pilot/endorsement-kinds");
+        assertThat(problems(planner, OpenApiContract.shipped("assistant")))
+                .anySatisfy(p -> assertThat(p).isEqualTo(
+                        "PlannerClient.endorsementKinds: GET /api/pilot/endorsement-kinds is not in services/planner/openapi.json"));
+    }
+
+    private static void rename(JsonNode document, String schema, String from, String to) {
+        ObjectNode properties = (ObjectNode) document.at("/components/schemas/" + schema + "/properties");
+        properties.set(to, properties.remove(from));
+        ArrayNode required = (ArrayNode) document.at("/components/schemas/" + schema + "/required");
+        for (int i = 0; i < required.size(); i++) {
+            if (required.get(i).asText().equals(from)) {
+                required.set(i, required.textNode(to));
+            }
+        }
+    }
+
+    /** What is wrong with every call in CALLS against the two documents,
+     *  each problem headed by the client method it is in. */
+    static List<String> problems(JsonNode plannerDocument, JsonNode assistantDocument) {
+        OpenApiContract planner = new OpenApiContract(plannerDocument);
+        List<String> problems = new ArrayList<>();
+        try (Stub plannerStub = new Stub("planner", planner); Stub assistantStub = new Stub("assistant", new OpenApiContract(assistantDocument))) {
+            Stub.briefing = new AnswerContract(planner).sample(planner.operation("GET", "/api/briefing")
+                    .flatMap(OpenApiContract::answerSchema).orElseThrow()).toString();
+            Clients clients = new Clients(new PlannerClient(plannerStub.url(), assistantStub.url()), accounts(plannerStub.url()));
+            for (Call call : CALLS) {
+                String who = call.method().contains(".") ? call.method() : "PlannerClient." + call.method();
+                List<Stub.Asked> asked = new ArrayList<>();
+                plannerStub.asked.clear();
+                assistantStub.asked.clear();
+                try {
+                    call.make().accept(clients);
+                } catch (PlannerClient.Unavailable | AccountService.AccountNotDeletedException refused) {
+                    // What it asked is checked below: a refusal is the stub's 404.
+                }
+                asked.addAll(plannerStub.asked);
+                asked.addAll(assistantStub.asked);
+                if (asked.isEmpty()) {
+                    problems.add(who + ": asked nothing of the planner");
+                }
+                for (Stub.Asked one : asked) {
+                    problems.addAll(check(call, one, planner).stream().map(p -> who + ": " + p).toList());
+                }
+            }
+        }
+        return problems.stream().distinct().toList();
+    }
+
+    private static List<String> check(Call call, Stub.Asked asked, OpenApiContract planner) {
+        List<String> problems = new ArrayList<>();
+        OpenApiContract document = asked.stub().contract;
+        JsonNode operation = document.operation(asked.method(), asked.path()).orElse(null);
+        if (operation == null) {
+            problems.add(asked.method() + " " + asked.path() + " is not in services/" + asked.stub().service + "/openapi.json");
+            return problems;
+        }
+        problems.addAll(document.checkQuery(operation, asked.query()));
+        Map<String, JsonNode> headers = OpenApiContract.parameters(operation, "header");
+        asked.headers().forEach((name, value) -> {
+            if (name.toLowerCase().startsWith("x-") && headers.keySet().stream().noneMatch(name::equalsIgnoreCase)) {
+                problems.add("header " + name + " is sent, but the operation takes no such header " + headers.keySet());
+            }
+        });
+        String bodyPath = BODY_FOR.get(call.method());
+        JsonNode bodyOperation = bodyPath == null ? operation : planner.operation("POST", bodyPath).orElse(null);
+        if (bodyOperation == null) {
+            problems.add("POST " + bodyPath + ", which takes this body on, is not in services/planner/openapi.json");
+        } else {
+            JsonNode schema = OpenApiContract.requestSchema(bodyOperation).orElse(null);
+            OpenApiContract against = bodyPath == null ? document : planner;
+            if (schema != null && asked.body().isBlank()) {
+                problems.add("no body is sent, but " + asked.method() + " " + asked.path() + " takes one");
+            } else if (schema != null) {
+                problems.addAll(against.check(Stub.parse(asked.body()), schema, "body"));
+            }
+        }
+        if (!NOT_READ.contains(call.method())) {
+            Type reads = Arrays.stream(PlannerClient.class.getMethods()).filter(m -> m.getName().equals(call.method()))
+                    .findFirst().orElseThrow().getGenericReturnType();
+            OpenApiContract.answerSchema(operation).ifPresentOrElse(
+                    schema -> problems.addAll(new AnswerContract(document).checkRead(reads, schema, "answer")),
+                    () -> problems.add(asked.method() + " " + asked.path() + " answers no JSON, but its answer is read"));
+        }
+        return problems;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static AccountService accounts(String plannerUrl) {
+        return new AccountService(mock(PilotRepository.class), mock(MagicLinkRepository.class),
+                mock(FindByIndexNameSessionRepository.class), mock(TransactionTemplate.class), mock(AppleRevocation.class), plannerUrl);
+    }
+
+    private static List<LogbookEntry> logbook() {
+        Pilot pilot = new Pilot("pilot@example.com", "A. Pilot", "sub-1");
+        return List.of(new LogbookEntry(pilot).set(LocalDate.of(2026, 9, 20), "N12345", "C172", null, 1.5, 0, 0, 3, 1, null)
+                .instrument(6, true, false));
+    }
+}

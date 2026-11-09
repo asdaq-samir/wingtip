@@ -106,6 +106,25 @@ def test_the_weather_tool_keeps_the_metar_as_sent_as_a_source(fake_planner):
     assert [s.id for s in box.sources] == ["metar:KDLH"] and box.sources[0].label == "METAR KDLH 1753Z"
 
 
+def test_a_tfr_and_a_runway_are_read_by_the_planners_own_field_names(fake_planner):
+    # The briefing's Tfr has notam_id and the fields read from the NOTAM,
+    # no text of it; a runway is named by its ends (openapi.json).
+    tfr = {"notam_id": "5/1234", "title": "Security", "kind": "SECURITY", "floor_ft": 0, "floor_ref": "SFC",
+           "ceiling_ft": 3000, "ceiling_ref": "MSL", "effective": "2026-11-09T12:00:00Z", "expires": None,
+           "active_now": True, "crosses": True, "along_track_nm": 12.0}
+    fake_planner.answer("/api/briefing", {"tfrs": [tfr], "hazards": [], "metars": {}})
+    box = Toolbox(Context(dep="KDLH", dest="KMSP"))
+    answer = json.loads(box.by_name["briefing_for"].call({}))
+    assert answer["tfrs"][0]["notam_id"] == "5/1234" and answer["tfrs"][0]["crosses"] is True
+    assert box.sources[0].label == "TFR 5/1234"
+    assert box.sources[0].text == "Security; SECURITY; 0 ft SFC to 3000 ft MSL; 2026-11-09T12:00:00Z"
+    fake_planner.answer("/api/airport/KDLH", {"ident": "KDLH", "name": "Duluth Intl", "elevation_ft": 1428.0,
+                                              "runways": [{"ends": "09/27", "length_ft": 10162}]})
+    box = Toolbox()
+    box.by_name["airport"].call({"ident": "KDLH"})
+    assert box.sources[0].text.endswith("runways 09/27 10162 ft")
+
+
 def test_a_tool_that_fails_tells_the_model_in_the_planners_words(fake_planner):
     fake_planner.answer("/api/airport/ZZZZ", PlannerError(404, "No US airport goes by 'ZZZZ'."))
     assert Toolbox().by_name["weather_at"].call({"ident": "ZZZZ"}) == "Error: No US airport goes by 'ZZZZ'."

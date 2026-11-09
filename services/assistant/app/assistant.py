@@ -190,6 +190,22 @@ def _zulu(observed: str | None) -> str:
         return ""
 
 
+#: A briefing's TFR as the model is given it: the planner's Tfr fields.
+TFR_FIELDS = ("notam_id", "title", "kind", "purpose", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref",
+              "effective", "expires", "active_now", "crosses", "on_route")
+
+
+def _tfr_line(tfr: dict) -> str:
+    """A TFR as its source reads: what it is, its band and its hours."""
+    def level(ft, ref) -> str:
+        return "" if ft is None else f"{ft:g} ft {ref or ''}".strip()
+    band = " to ".join(x for x in (level(tfr.get("floor_ft"), tfr.get("floor_ref")),
+                                   level(tfr.get("ceiling_ft"), tfr.get("ceiling_ref"))) if x)
+    hours = " to ".join(x for x in (tfr.get("effective"), tfr.get("expires")) if x)
+    parts = (tfr.get("title") or tfr.get("purpose"), tfr.get("kind"), band, hours)
+    return "; ".join(str(p) for p in parts if p) or _json(tfr)
+
+
 class Toolbox:
     """The tools of one answer, made for the request: the SDK wants plain
     functions, and the answer runs in a thread pool a call at a time
@@ -315,9 +331,10 @@ class Toolbox:
             hazards.append({k: h.get(k) for k in ("type", "hazard", "altitude_low_ft", "altitude_high_ft", "on_route")})
         tfrs = []
         for n, t in enumerate(brief.get("tfrs") or [], 1):
-            text = t.get("raw") or t.get("text") or t.get("description") or _json(t)
-            self.source(f"tfr:{n}", f"TFR {t.get('notam') or t.get('notam_id') or t.get('id') or n}", str(text)[:2000])
-            tfrs.append({k: t.get(k) for k in ("notam", "notam_id", "id", "name", "title", "type", "from", "to", "on_route") if k in t})
+            # The briefing's TFR (its Tfr schema) carries no NOTAM text, only
+            # the fields read from it: the source is those, in a line.
+            self.source(f"tfr:{n}", f"TFR {t.get('notam_id') or n}", _tfr_line(t)[:2000])
+            tfrs.append({k: t.get(k) for k in TFR_FIELDS if k in t})
         answer = {"route": f"{dep} {stops} {dest}".replace("  ", " "), "hazards": hazards, "tfrs": tfrs,
                   "fields_below_vfr": brief.get("fields_below_vfr"), "vfr_not_recommended": brief.get("vfr_not_recommended"),
                   "metars": brief.get("metars"), "forecast": brief.get("forecast"),
@@ -389,7 +406,7 @@ class Toolbox:
         keep = ("ident", "name", "municipality", "region", "elevation_ft", "kind", "airspace_class", "towered", "private",
                 "military", "lighting", "radio_notes", "pattern", "runways", "frequencies")
         answer = {k: place.get(k) for k in keep}
-        runways = ", ".join(f"{r.get('ident') or r.get('id') or ''} {r.get('length_ft') or ''} ft".strip()
+        runways = ", ".join(f"{r.get('ends') or ''} {r.get('length_ft') or ''} ft".strip()
                             for r in place.get("runways") or [])
         self.source(f"airport:{place.get('ident')}", f"{place.get('ident')} {place.get('name') or ''}".strip(),
                     f"Elevation {place.get('elevation_ft')} ft; Class {place.get('airspace_class') or 'G'}; runways {runways}")
