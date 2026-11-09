@@ -98,6 +98,13 @@ final class Verdict {
         }
     }
 
+    /// A flight logged: the currency (the engine's, from the logbook) is
+    /// asked again with the next Go / No-Go.
+    func logbookChanged() {
+        currencyAsked = false
+        currency = nil
+    }
+
     /// The findings that need an airplane's figures: the fuel, the
     /// runways' distances and crosswind limits, the weight and balance
     /// (the web's AIRPLANE_ITEMS).

@@ -94,7 +94,11 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         // The path flown, and the phone's position kept in the background
         // only while flying (the location background mode, project.yml):
         // on the ground the reading stops with the app, as any map's does.
-        let flying = OwnTrail.shared.took(fix)
+        // The flight recorder (the automatic logbook) keeps it in the
+        // background past the flying speed too, until the engine finds
+        // the airplane landed and at rest: 1.1's flight time ends there.
+        let recording = FlightRecorder.shared.took(fix)
+        let flying = OwnTrail.shared.took(fix) || recording
         if manager.allowsBackgroundLocationUpdates != flying { manager.allowsBackgroundLocationUpdates = flying }
     }
 

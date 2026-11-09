@@ -250,6 +250,8 @@ struct RootView: View {
         .task(id: "\(InFlight.shared.underway)|\(plan.tail ?? "")|\(AtcCopilot.shared.mode.rawValue)") {
             await AtcCopilot.shared.follow(flying: InFlight.shared.underway, tail: plan.tail)
         }
+        // The flight logged from its track once it has landed and come to rest.
+        .modifier(AutoLogbookHost())
         // Each fix, own ship's or the dry run's airplane, asked of the
         // engine once for the instruments, the strip and the glide ring
         // (InFlight); again when the route changes under it.
