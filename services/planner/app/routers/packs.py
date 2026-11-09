@@ -9,7 +9,7 @@ from wingtip import cycle_pack
 from wingtip import vector_tiles
 
 from ..router_basics import DIAGRAM_CACHE, SHARED_CACHE
-from ..schemas import CyclePacks, OverlayTiles
+from ..schemas.packs import CyclePacks, OverlayTiles
 from ..gateway import SHARED, gateway
 
 router = APIRouter()

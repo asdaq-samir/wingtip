@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from .. import planning as planning_module
+from wingtip import planning as planning_module
 from ..router_basics import load_route
 from ..gonogo import live as live_reports
 from ..gonogo.frat import assessment as risk_assessment, self_checks
@@ -26,8 +26,9 @@ from ..gonogo.words import (
     PLAN_NAME, WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, flight_level, gairmet_title, grouped, sigmet_hazard, to_fixed,
 )
 from . import briefing as briefing_router
+from wingtip import flight_plan as fp
+from .plan import PlanQuery, named_checkpoints
 from ..gateway import PUBLIC_READ_BY_POST
-from .plan import NoWinds, PlanQuery, Unflyable, flown_as_picked, planned_within_limit, totals_of, unflyable_parts
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -64,22 +65,22 @@ def _as_dict(value) -> dict:
 
 def plan_for(q: PlanQuery, r) -> Planned:
     """The route planned as /api/plan plans it, bounded the same way."""
-    profile = q.profile()
-    _, _, runs, outcome = planned_within_limit(r, q, profile)
-    aircraft = {"name": q.aircraft, **profile}
-    if isinstance(outcome, Unflyable):
-        why, _ = unflyable_parts(outcome, runs)
+    asked = q.asked()
+    _, _, runs, outcome = fp.plan_within_limit(r, asked, lambda: named_checkpoints(r))
+    aircraft = {"name": q.aircraft, **asked.profile}
+    if isinstance(outcome, fp.Unflyable):
+        why, _ = fp.unflyable_parts(outcome, runs)
         return Planned(nav=None, legs=[], totals=None, problem=why["brief"])
     options = [_as_dict(o) for o in outcome.options]
-    if isinstance(outcome, NoWinds):
+    if isinstance(outcome, fp.NoWinds):
         # The altitude line came, then the winds failed: no legs, no totals.
         return Planned(nav={"flown": None, "altitude_ft": None, "options": options, "selection": outcome.selection,
                             "aircraft": aircraft, "cautions": []}, legs=[], totals=None)
     nav = {"flown": outcome.choice or "custom", "altitude_ft": outcome.altitude_ft, "options": options,
            "selection": outcome.selection, "aircraft": aircraft, "cautions": [_as_dict(c) for c in outcome.cautions]}
-    outcome, flown = flown_as_picked(r, runs, outcome, q)
+    outcome, flown = fp.flown_as_picked(r, runs, outcome, asked)
     legs = [_as_dict(leg) for leg in flown]
-    totals = totals_of(r, runs, outcome, profile, q.rules, q.alternate, q.own_ground())
+    totals = fp.totals_of(r, runs, outcome, asked)
     return Planned(nav=nav, legs=legs, totals=totals)
 
 
@@ -227,7 +228,9 @@ def findings_for(ask: GoNoGoAsk, q: PlanQuery, r, planned: Planned, briefing: di
 
     # The loading (lib/weightBalance): the pilot's, else the POH's sample
     # airplane with the usable fuel aboard.
-    profile = (nav or {}).get("aircraft") or {"name": q.aircraft, **q.profile()}
+    # With no airplane (aircraft=none) there is no loading to balance.
+    airplane = q.profile()
+    profile = (nav or {}).get("aircraft") or ({"name": q.aircraft, **airplane} if airplane else {})
     loading = profile.get("loading")
     usable = profile.get("usable_fuel_gal")
     load = ask.load.model_dump() if ask.load else (
@@ -280,7 +283,7 @@ def findings_for(ask: GoNoGoAsk, q: PlanQuery, r, planned: Planned, briefing: di
         },
         "runways": {
             "pending": not nav or not briefing,
-            "worked": not nav or (bool(nav["aircraft"].get("takeoff")) and bool(nav["aircraft"].get("landing"))),
+            "worked": not nav or (bool((nav["aircraft"] or {}).get("takeoff")) and bool((nav["aircraft"] or {}).get("landing"))),
             "short": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["over"] for d in c["distances"]))),
             "crosswind": list(dict.fromkeys(c["field"]["ident"] for c in checks if c["crosswind_over"])),
             "beyond": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["beyond"] for d in c["distances"]))),
@@ -328,7 +331,7 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
     # Under IFR, the alternate (14 CFR 91.169), its ETA the nav log's.
     if q.rules == "ifr" and totals and totals.get("ete_min") is not None:
         eta = depart + timedelta(minutes=totals["ete_min"])
-        tas = (nav or {}).get("aircraft", {}).get("cruise_tas_kt") or 110
+        tas = ((nav or {}).get("aircraft") or {}).get("cruise_tas_kt") or 110
         items = with_alternate(items, alternate_finding(alternate_for(r.idents[-1], eta, tas, q.alternate)))
 
     return GoNoGo(

@@ -237,6 +237,19 @@ pub fn pattern_altitude(elevation_ft: Option<f64>, published_agl_ft: Option<f64>
     (agl, elevation_ft.map(|e| (e + agl).round_ties_even()), published_agl_ft.is_some())
 }
 
+/// The pattern altitude as a pilot sets it on the altimeter and the
+/// planner flies it down to (the planner's routers.plan field_pattern_ft
+/// before the move): the field's elevation and the pattern's height above
+/// it (pattern_altitude) to the nearest hundred feet, halves to even as
+/// Python's round. No rule sets the rounding -- AC 90-66C gives the height
+/// above the field, the Chart Supplement a TPA in whole feet -- so it is a
+/// simplification of at most 50 ft, for a figure read off an altimeter
+/// marked in hundreds; the published TPA itself is pattern_altitude's.
+pub fn pattern_altitude_flown(elevation_ft: Option<f64>, published_agl_ft: Option<f64>) -> Option<f64> {
+    let agl = published_agl_ft.unwrap_or(PATTERN_AGL_FT);
+    elevation_ft.map(|e| ((e + agl) / 100.0).round_ties_even() * 100.0)
+}
+
 /// A runway end as the map and the card take it (wingtip.pattern with_traffic):
 /// its ident, its true heading (super::wind::end_heading_true_deg) and
 /// which way its pattern is flown -- right where the FAA flags it (NASR's

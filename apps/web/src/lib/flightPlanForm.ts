@@ -172,7 +172,7 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     add("13", "time", "Departure time (UTC)", depart ? utcFigures(depart) : null,
       i > 0 ? `When you leave ${hop.departure}.` : depart ? undefined : "No departure time picked.");
 
-    add("15", "speed", "Cruising speed", first ? cruisingSpeed(first.tas_kt) : null);
+    add("15", "speed", "Cruising speed", first?.tas_kt != null ? cruisingSpeed(first.tas_kt) : null);
     // The level of the flight's first leg; a plan that steps says where.
     // Under IFR the next is asked of ATC on the way: the FAA's systems
     // neither process nor show a change filed in item 15 (AIM Appendix 4).

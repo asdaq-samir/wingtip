@@ -1,11 +1,11 @@
-"""app.planning's own pieces: the aircraft profile an override must not
+"""wingtip.planning's own pieces: the aircraft profile an override must not
 corrupt for the next pilot, and SingleFlightTTLCache's actual promise --
 one computation per key, even from several threads at once.
 """
 import threading
 import time
 
-from app import planning
+from wingtip import planning
 
 
 def test_an_aeroplanes_own_override_does_not_leak_into_the_stock_profile():
@@ -328,11 +328,15 @@ def test_with_no_chart_model_the_palettes_constants_score_them(monkeypatch):
 def test_an_aircraft_name_that_is_a_path_is_not_opened():
     """The aircraft name is the request's: only a stock profile's bare
     name picks a file, and a path (the loader opens one with a suffix as
-    it is) is a 422, never read (CodeQL's py/path-injection)."""
+    it is) is refused, never read (CodeQL's py/path-injection): a 422 from
+    the planner (app.main's handler)."""
     import pytest
-    from fastapi import HTTPException
+    from fastapi.testclient import TestClient
+
+    from app.main import app
 
     for name in ("/etc/hostname.json", "../aircraft/c172.json", "c172.json", "nosuchplane"):
-        with pytest.raises(HTTPException) as refused:
+        with pytest.raises(planning.UnknownAircraft):
             planning.aircraft_profile(name)
-        assert refused.value.status_code == 422
+    resp = TestClient(app).get("/api/plan", params={"dep": "C81", "dest": "KDLH", "aircraft": "nosuchplane"})
+    assert resp.status_code == 422 and "nosuchplane" in resp.json()["detail"]

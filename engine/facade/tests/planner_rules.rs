@@ -130,3 +130,46 @@ fn a_figure_in_the_webs_words() {
         }
     }
 }
+
+/// Two answers the same to a part in 10^9: the fixture's straight line was
+/// worked on wingtip.geo's sphere by a haversine, the engine's by atan2.
+fn close(a: &Value, b: &Value) -> bool {
+    match (a, b) {
+        (Value::Number(x), Value::Number(y)) => {
+            let (x, y) = (x.as_f64().unwrap(), y.as_f64().unwrap());
+            (x - y).abs() <= 1e-9 * x.abs().max(y.abs()).max(1.0)
+        }
+        (Value::Object(x), Value::Object(y)) => x.len() == y.len() && x.iter().all(|(k, v)| y.get(k).is_some_and(|w| close(v, w))),
+        _ => a == b,
+    }
+}
+
+#[test]
+fn a_flights_fuel_stop_figures() {
+    // The planner's routers.plan worst_burn_per_nm and fuel_stops_of's
+    // arithmetic before the move: the worst stretch's burn, the detour,
+    // and 91.151(a)(2)'s night reserve where the trip runs into the dark.
+    let all = fixture();
+    for c in all["worstBurnPerNm"].as_array().unwrap() {
+        let legs = c["legs"].as_array().unwrap().iter().map(|l| (l["distance_nm"].as_f64().unwrap_or(0.0), l["fuel_gal"].as_f64())).collect::<Vec<_>>();
+        let got = wingtip_engine::navlog::fuel_stop::worst_burn_per_nm(&legs, c["over_nm"].as_f64().unwrap());
+        let want = c["worst"].as_f64();
+        assert!(got.zip(want).map_or(got.is_none() && want.is_none(), |(g, w)| (g - w).abs() < 1e-12), "{c}: got {got:?}");
+    }
+    let cases = all["fuelStopNeed"].as_array().unwrap();
+    assert!(cases.iter().any(|c| c["need"].is_null()) && cases.iter().any(|c| !c["need"].is_null()));
+    for c in cases {
+        let input = json!({ "totals": c["totals"], "legs": c["legs"], "start": c["start"], "end": c["end"], "depart_s": c["depart_s"] });
+        let got = ask("navlog_fuel_stop_need", input);
+        assert!(close(&got, &c["need"]), "{c}\ngot {got}");
+    }
+}
+
+#[test]
+fn the_pattern_altitude_flown_to_the_hundred_feet() {
+    let all = fixture();
+    for c in all["patternFlown"].as_array().unwrap() {
+        let got = ask("pattern_altitude", json!({ "elevation_ft": c["elevation_ft"], "published_agl_ft": c["published_agl_ft"] }));
+        assert!(same(&got["flown_ft"], &c["flown_ft"]), "{c}: got {got}");
+    }
+}

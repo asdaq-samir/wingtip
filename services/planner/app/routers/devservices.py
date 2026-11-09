@@ -23,7 +23,7 @@ from fastapi import APIRouter, HTTPException
 
 from wingtip import retry
 
-from ..schemas import DevService, DevServices, DevServiceStarted
+from ..schemas.devservices import DevService, DevServices, DevServiceStarted
 from ..settings import get_settings
 from ..gateway import DEVELOPER
 

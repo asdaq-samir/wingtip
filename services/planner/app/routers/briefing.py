@@ -24,7 +24,8 @@ from wingtip import icing_forecast
 
 from .. import exposure
 from ..router_basics import load_route
-from ..schemas import Alternates, Briefing, IcingForecast, MapLayerAges, Tfrs
+from ..schemas.common import Briefing
+from ..schemas.briefing import Alternates, IcingForecast, MapLayerAges, Tfrs
 from ..gateway import PUBLIC
 
 #: How long past the arrival the forecast is read over, and the flight

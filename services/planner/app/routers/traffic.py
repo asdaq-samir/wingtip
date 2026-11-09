@@ -5,7 +5,7 @@ import datetime as dt
 from fastapi import APIRouter, HTTPException, Path, Query
 from wingtip import traffic
 
-from ..schemas import AircraftBases, FlightDetail, FlightRoute, FlightStatus, PastFlight, PastFlights, Traffic, TrafficFound
+from ..schemas.traffic import AircraftBases, FlightDetail, FlightRoute, FlightStatus, PastFlight, PastFlights, Traffic, TrafficFound
 from ..gateway import PUBLIC
 
 router = APIRouter()

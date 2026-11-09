@@ -79,7 +79,7 @@ function ceilingReason(s: NavLogAltitude["altitude_selection"]): string | null {
 /** The airplane as its profile names it, "Cessna 172", and its own
  *  name where the profile gives no type: never put in capitals, which
  *  turned a profile's "c172" into a shout in the middle of a sentence. */
-const airplaneName = (nav: NavLogAltitude) => nav.aircraft.type ?? nav.aircraft.name;
+const airplaneName = (nav: NavLogAltitude) => nav.aircraft?.type ?? nav.aircraft?.name ?? "airplane";
 const midSentence = (words: string) => (/^[A-Z][a-z]/.test(words) ? words.charAt(0).toLowerCase() + words.slice(1) : words);
 
 /** Consecutive segments under the same shelf, for "the ceiling leg by
@@ -155,12 +155,17 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
   const otherHalf = s.segments.filter(seg => seg.eastbound !== null && seg.eastbound !== undefined && seg.eastbound !== s.eastbound);
   // A service ceiling is a density altitude: the forecast temperatures
   // bring it down on a warm day and lift it on a cold one.
-  const bookCeiling = nav.aircraft.service_ceiling_ft;
+  // With no airplane there is none: the band is the rules' and the
+  // airspace's alone.
+  const bookCeiling = nav.aircraft?.service_ceiling_ft ?? null;
   const ceilingToday = s.service_ceiling_ft;
-  ceilingParts.push(ceilingToday != null && Math.abs(ceilingToday - bookCeiling) >= 100
-    ? `the ${airplaneName(nav)}'s service ceiling, ${altFt(bookCeiling)} ft density altitude, which is ${
-      altFt(ceilingToday)} ft in the forecast temperatures`
-    : `the ${airplaneName(nav)}'s service ceiling of ${altFt(bookCeiling)} ft`);
+  const ceilingWords = (lead: string) => (bookCeiling == null ? null
+    : ceilingToday != null && Math.abs(ceilingToday - bookCeiling) >= 100
+      ? `${lead} ${airplaneName(nav)}'s service ceiling, ${altFt(bookCeiling)} ft density altitude, which is ${
+        altFt(ceilingToday)} ft in the forecast temperatures`
+      : `${lead} ${airplaneName(nav)}'s service ceiling of ${altFt(bookCeiling)} ft`);
+  const ceilingPart = ceilingWords("the");
+  if (ceilingPart) ceilingParts.push(ceilingPart);
   const runs = ceilingRuns(s.segments);
   const runsText = runs.length > 1
     ? runs.map((r, i) => {
@@ -186,7 +191,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
   // altitude. Legs from a planner that did not say have none.
   const aircraft = nav.aircraft;
   const flown = legs.filter(leg => leg.tas_kt != null);
-  const cruiseInItsAir = cruiseByAltitude(flown, aircraft.cruise_power_pct);
+  const cruiseInItsAir = aircraft ? cruiseByAltitude(flown, aircraft.cruise_power_pct) : [];
   const standardDayLegs = flown.filter(leg => leg.oat_c == null).length;
 
   const highestLegal = Math.max(...s.segments.flatMap(seg => seg.candidates_ft), ...s.candidates_ft);
@@ -248,9 +253,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
       value: ceilingValue,
       body: (
         <>
-          {ceilingToday != null && Math.abs(ceilingToday - bookCeiling) >= 100
-            ? `The ${airplaneName(nav)}'s service ceiling, ${altFt(bookCeiling)} ft density altitude, which is ${altFt(ceilingToday)} ft in the forecast temperatures. `
-            : `The ${airplaneName(nav)}'s service ceiling of ${altFt(bookCeiling)} ft. `}
+          {ceilingWords("The") ? `${ceilingWords("The")}. ` : ""}
           Under IFR no Class B shelf, cloud or Class A caps it: the clearance takes the flight into each.
         </>
       ),
@@ -362,7 +365,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
         {` ${WINDS_MODELLED}, `}for the least time, and economical for the least fuel, every climb counted.{" "}
         {nav.options.map(o => (
           `${PLAN_NAME[o.kind]}: ${describeSteps(o)}, ${describeTime(o)}, ${describeFuel(o)}`
-          + (o.climb_penalty_min > 0 ? `, ${Math.round(o.climb_penalty_min)} min of it climbing` : "")
+          + (o.climb_penalty_min != null && o.climb_penalty_min > 0 ? `, ${Math.round(o.climb_penalty_min)} min of it climbing` : "")
           + (o.tailwind_kt !== null ? `, ${Math.abs(Math.round(o.tailwind_kt))} kt ${o.tailwind_kt >= 0 ? "tailwind" : "headwind"} on average` : "")
           + "."
         )).join(" ")}
@@ -384,7 +387,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
     ...(plansAbove ? [] : [plans]),
     ...(ifr ? ifrSteps : vfrSteps),
     ...(plansAbove ? [plans] : []),
-    ...(cruiseInItsAir.length > 0 ? [{
+    ...(aircraft && cruiseInItsAir.length > 0 ? [{
       key: "performance",
       title: "Performance in the day's air",
       body: (

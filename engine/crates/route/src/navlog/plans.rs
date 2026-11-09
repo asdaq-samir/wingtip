@@ -1,7 +1,7 @@
 //! The four altitude plans -- lowest, highest, fastest, economical -- over
 //! the legal altitudes of each leg, and the route flown at each altitude
 //! for the altitude wheel: the planner's wingtip.navlog altitude_profiles,
-//! and app.routers.plan's join_options and join_figures for a route with
+//! and wingtip.flight_plan's join_options and join_figures for a route with
 //! stops. Which altitudes are legal (14 CFR 91.119, 91.159, 91.155, the
 //! airspace and the service ceiling) is the altitude selection's; this
 //! assembles the plans over them.
@@ -34,8 +34,10 @@ pub const OXYGEN_CAP_FT: f64 = wingtip_flight::limits::OXYGEN_CREW_PAST_30_MIN_F
 /// the oxygen altitude where a leg has a choice -- a leg whose only legal
 /// altitudes are above it keeps them, the alternative being no plan at
 /// all. None where some leg has no legal altitude at all, or the segments
-/// are not one a leg: then no plan can fly the route.
-pub fn candidates(segments: &[Value], legs: usize, profile: &Profile) -> R<Option<Vec<Vec<f64>>>> {
+/// are not one a leg: then no plan can fly the route. With no airplane
+/// (`profile` None) nothing says it carries oxygen: held under, the safer
+/// side.
+pub fn candidates(segments: &[Value], legs: usize, profile: Option<&Profile>) -> R<Option<Vec<Vec<f64>>>> {
     if segments.len() != legs {
         return Ok(None);
     }
@@ -49,28 +51,30 @@ pub fn candidates(segments: &[Value], legs: usize, profile: &Profile) -> R<Optio
         if options.is_empty() {
             return Ok(None);
         }
-        let held: Vec<f64> = if profile.oxygen { options.clone() } else { options.iter().copied().filter(|a| *a <= OXYGEN_CAP_FT).collect() };
+        let held: Vec<f64> = if profile.is_some_and(|p| p.oxygen) { options.clone() } else { options.iter().copied().filter(|a| *a <= OXYGEN_CAP_FT).collect() };
         out.push(if held.is_empty() { options } else { held });
     }
     Ok(Some(out))
 }
 
-/// The legs flown at their altitudes, each worked out once in its air.
+/// The legs flown at their altitudes, each worked out once in its air: by
+/// the airplane, or with none (`profile` None) the legs' courses and
+/// miles alone, with no climbs.
 pub struct Flights<'a> {
     name: &'a str,
     fixes: &'a [Value],
-    profile: &'a Profile,
+    profile: Option<&'a Profile>,
     air: &'a [LegAir],
-    pub climber: Climber,
+    pub climber: Option<Climber>,
     cache: RefCell<HashMap<(usize, u64), Obj>>,
 }
 
 impl<'a> Flights<'a> {
-    pub fn new(name: &'a str, fixes: &'a [Value], profile: &'a Profile, air: &'a [LegAir]) -> R<Self> {
+    pub fn new(name: &'a str, fixes: &'a [Value], profile: Option<&'a Profile>, air: &'a [LegAir]) -> R<Self> {
         if air.len() + 1 != fixes.len() {
             return Err(format!("{name}: {} fixes make {} legs, and the air is given for {}", fixes.len(), fixes.len().saturating_sub(1), air.len()));
         }
-        Ok(Flights { name, fixes, profile, air, climber: Climber::new(&profile.airplane), cache: RefCell::new(HashMap::new()) })
+        Ok(Flights { name, fixes, profile, air, climber: profile.map(|p| Climber::new(&p.airplane)), cache: RefCell::new(HashMap::new()) })
     }
 
     /// Leg `i` flown at `altitude_ft`.
@@ -87,7 +91,10 @@ impl<'a> Flights<'a> {
 
     fn legs_flown(&self, altitudes: &[f64], start_ft: Option<f64>) -> R<Vec<Obj>> {
         let legs = altitudes.iter().enumerate().map(|(i, a)| self.leg_at(i, *a)).collect::<R<Vec<_>>>()?;
-        with_climbs(&legs, start_ft, self.profile, &self.climber)
+        match (self.profile, &self.climber) {
+            (Some(profile), Some(climber)) => with_climbs(&legs, start_ft, profile, climber),
+            _ => Ok(legs),
+        }
     }
 }
 
@@ -226,16 +233,21 @@ impl Plan<'_> {
     /// longer makes the cruise power. All four pay for the initial climb
     /// from the departure field -- from the lowest altitude anyone could
     /// fly, without one -- so their totals compare like for like.
+    ///
+    /// With no airplane, the lowest and highest alone -- the band's, which
+    /// no airplane changes -- their times, fuel, climbs and winds along
+    /// null: the fastest and the most economical are an airplane's.
     pub fn plans(&self) -> R<Value> {
         let f = &self.flights;
-        let profile = f.profile;
+        let Some(profile) = f.profile else { return self.band_plans() };
+        let climber = f.climber.as_ref().ok_or("an airplane with no climb")?;
         let start_ft = match self.departure_elevation_ft {
             Some(e) => e,
             None => self.candidates.iter().flatten().copied().fold(f64::INFINITY, f64::min),
         };
         let from = |prev: Option<f64>| prev.unwrap_or(start_ft);
-        let climb_step = |i: usize, prev: Option<f64>, a: f64| climb_penalty_min(from(prev), a, profile, &f.climber, Some(&f.leg_at(i, a)?));
-        let fuel_step = |i: usize, prev: Option<f64>, a: f64| climb_fuel_penalty_gal(from(prev), a, profile, &f.climber, Some(&f.leg_at(i, a)?));
+        let climb_step = |i: usize, prev: Option<f64>, a: f64| climb_penalty_min(from(prev), a, profile, climber, Some(&f.leg_at(i, a)?));
+        let fuel_step = |i: usize, prev: Option<f64>, a: f64| climb_fuel_penalty_gal(from(prev), a, profile, climber, Some(&f.leg_at(i, a)?));
         let fixed_step = |_: usize, prev: Option<f64>, a: f64| Ok(if prev.is_some_and(|p| p != a) { STEP_PENALTY_FT_NM } else { 0.0 });
         let minutes = |i: usize, a: f64| Ok(f.leg_at(i, a)?.opt("ete_min")?.unwrap_or(f64::INFINITY));
         let gallons = |i: usize, a: f64| Ok(f.leg_at(i, a)?.opt("fuel_gal")?.unwrap_or(f64::INFINITY));
@@ -276,9 +288,43 @@ impl Plan<'_> {
             plans.push((kind.to_string(), plan));
         }
 
-        // The route flown at each altitude any leg may fly, for the
-        // altitude wheel's figures; `everywhere` says whether every leg
-        // flies it.
+        Ok(object(vec![("plans", Value::Object(plans)), ("by_altitude", Value::Array(self.by_altitude()?))]))
+    }
+
+    /// The lowest and highest plans with no airplane: each leg's altitude
+    /// as an airplane's plans pick them (STEP_PENALTY_FT_NM), its legs'
+    /// courses and miles, and nothing an airplane would make of them.
+    fn band_plans(&self) -> R<Value> {
+        let f = &self.flights;
+        let fixed_step = |_: usize, prev: Option<f64>, a: f64| Ok(if prev.is_some_and(|p| p != a) { STEP_PENALTY_FT_NM } else { 0.0 });
+        let low = |i: usize, a: f64| Ok(a * f.leg_at(i, a)?.num("distance_nm")?);
+        let high = |i: usize, a: f64| Ok(-a * f.leg_at(i, a)?.num("distance_nm")?);
+        let paths = [best_path(&self.candidates, &low, &fixed_step)?, best_path(&self.candidates, &high, &fixed_step)?];
+        let mut plans = Vec::with_capacity(2);
+        for (kind, altitudes) in PLAN_KINDS.iter().zip(&paths) {
+            let legs = f.legs_flown(altitudes, self.departure_elevation_ft)?;
+            let t = totals(&legs)?;
+            let plan = object(vec![
+                ("steps", Value::Array(steps(altitudes, &legs)?)),
+                ("needs_oxygen", Value::Bool(altitudes.iter().any(|a| *a > OXYGEN_CAP_FT))),
+                ("ete_min", Value::Null),
+                ("fuel_gal", Value::Null),
+                ("climb_penalty_min", Value::Null),
+                ("tailwind_kt", Value::Null),
+                ("unflyable_legs", t.get("unflyable_legs").cloned().unwrap_or(Value::Null)),
+                ("legs_without_wind", t.get("legs_without_wind").cloned().unwrap_or(Value::Null)),
+                ("legs", Value::Array(legs.into_iter().map(Obj::value).collect())),
+                ("totals", t),
+            ]);
+            plans.push((kind.to_string(), plan));
+        }
+        Ok(object(vec![("plans", Value::Object(plans)), ("by_altitude", Value::Array(self.by_altitude()?))]))
+    }
+
+    /// The route flown at each altitude any leg may fly, for the altitude
+    /// wheel's figures; `everywhere` says whether every leg flies it. With
+    /// no airplane, its times, fuel and wind along null.
+    fn by_altitude(&self) -> R<Vec<Value>> {
         let mut all: Vec<f64> = self.candidates.iter().flatten().copied().collect();
         all.sort_by(f64::total_cmp);
         all.dedup();
@@ -294,7 +340,7 @@ impl Plan<'_> {
                 ("everywhere", Value::Bool(self.nearest(target).iter().all(|a| *a == target))),
             ]));
         }
-        Ok(object(vec![("plans", Value::Object(plans)), ("by_altitude", Value::Array(by_altitude))]))
+        Ok(by_altitude)
     }
 }
 
@@ -311,6 +357,10 @@ pub fn join_options(by_hop: &[Vec<Obj>], lengths: &[f64]) -> R<Vec<Value>> {
     }
     let mut joined = Vec::with_capacity(4);
     for kind in PLAN_KINDS {
+        // With no airplane a hop's plans are the lowest and highest alone.
+        if by_hop.iter().all(|options| options.iter().all(|o| o.text("kind") != Some(kind))) {
+            continue;
+        }
         let mine = by_hop
             .iter()
             .map(|options| options.iter().find(|o| o.text("kind") == Some(kind)).ok_or_else(|| format!("a hop has no {kind} plan")))
@@ -332,7 +382,7 @@ pub fn join_options(by_hop: &[Vec<Obj>], lengths: &[f64]) -> R<Vec<Value>> {
             ("steps", Value::Array(steps)),
             ("ete_min", total("ete_min")?),
             ("fuel_gal", total("fuel_gal")?),
-            ("climb_penalty_min", number(py_round(count("climb_penalty_min")?, 1))),
+            ("climb_penalty_min", if mine.iter().all(|o| o.has("climb_penalty_min")) { number(py_round(count("climb_penalty_min")?, 1)) } else { Value::Null }),
             ("tailwind_kt", if weight != 0.0 { number(py_round(tailwind / weight, 1)) } else { Value::Null }),
             ("unflyable_legs", number(count("unflyable_legs")?)),
             ("legs_without_wind", number(count("legs_without_wind")?)),

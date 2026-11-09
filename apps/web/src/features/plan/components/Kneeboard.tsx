@@ -89,7 +89,7 @@ export default function Kneeboard({ course, selected, legs, totals, nav, briefin
               <tr key={r.key} className={isLegPoint(r) ? "italic" : undefined}>
                 <td className="max-w-[1.6in] truncate">{rowPoint(r).name}</td>
                 <td>{altFt(alt)}</td>
-                <td>{leg ? bearing(leg.magnetic_heading_deg) : ""}</td>
+                <td>{leg?.magnetic_heading_deg != null ? bearing(leg.magnetic_heading_deg) : ""}</td>
                 <td>{leg ? one(leg.distance_nm) : ""}</td>
                 <td>{leg?.groundspeed_kt != null ? Math.round(leg.groundspeed_kt) : ""}</td>
                 <td>{leg ? one(leg.ete_min) : ""}</td>

@@ -39,7 +39,7 @@ interface NarrativeInput {
  */
 export function useNarrative({ dep, dest, planKey, nav, legs, whole }: NarrativeInput) {
   const request: NarrativeRequest | null = nav && nav.altitude_ft !== null && nav.flown !== null ? {
-    departure_ident: dep, destination_ident: dest, aircraft_name: nav.aircraft.name,
+    departure_ident: dep, destination_ident: dest, aircraft_name: nav.aircraft?.name ?? "no airplane picked",
     altitude_ft: nav.altitude_ft, altitude_selection: nav.altitude_selection, flown: nav.flown, legs,
   } : null;
   // The nav log's own key, not a few fields of it: this one left out the

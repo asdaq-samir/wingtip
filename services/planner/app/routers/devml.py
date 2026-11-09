@@ -10,7 +10,7 @@ from wingtip import aircraft, airports, model_registry, places
 from wingtip import fixes as fixes_module
 
 from ..router_basics import SHARED_CACHE
-from ..schemas import AircraftProfiles, AirportSearch, ModelComparison
+from ..schemas.devml import AircraftProfiles, AirportSearch, ModelComparison
 from ..gateway import DEVELOPER, SHARED, gateway
 
 router = APIRouter()

@@ -85,6 +85,10 @@ pub fn call(name: &str, v: &Value) -> Option<R<String>> {
             // A whole number of feet, as the planner's int.
             out.push_str(",\"altitude_ft\":");
             out.push_str(&altitude.map_or("null".to_owned(), whole));
+            // To the hundred feet, as the planner flies down to it.
+            let (elevation, published_agl) = (i.opt_num(v, "elevation_ft")?, i.opt_num(v, "published_agl_ft")?);
+            out.push_str(",\"flown_ft\":");
+            out.push_str(&pick::pattern_altitude_flown(elevation, published_agl).map_or("null".to_owned(), whole));
             out.push_str(&format!(",\"published\":{published}}}"));
             Ok(out)
         })(),

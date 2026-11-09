@@ -301,11 +301,23 @@ fn a_pattern_is_joined_on_the_45_from_its_side_and_over_midfield_from_the_other(
 #[test]
 fn the_pattern_altitude_is_the_faas_where_published_and_1000_ft_above_the_field_where_not() {
     assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 742.0, "published_agl_ft": 800.0})),
-               json!({"agl_ft": 800.0, "altitude_ft": 1542, "published": true}));
-    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 727.0})), json!({"agl_ft": 1000.0, "altitude_ft": 1727, "published": false}));
+               json!({"agl_ft": 800.0, "altitude_ft": 1542, "flown_ft": 1500, "published": true}));
+    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 727.0})),
+               json!({"agl_ft": 1000.0, "altitude_ft": 1727, "flown_ft": 1700, "published": false}));
     assert_eq!(ask("pattern_altitude", json!({}))["altitude_ft"], Value::Null);
     // Halves to even, as the planner's round.
     assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 812.5}))["altitude_ft"], json!(1812));
+}
+
+#[test]
+fn the_pattern_altitude_flown_is_to_the_nearest_hundred_feet_from_the_unrounded_sum() {
+    // KOSH, 808 ft: 1,808 flown at 1,800; a field at 750 ft is 1,750, a
+    // half, to the even 1,800; 1,749.6 stays 1,700 (not 1,750 then 1,800).
+    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 808.0}))["flown_ft"], json!(1800));
+    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 750.0}))["flown_ft"], json!(1800));
+    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 650.0}))["flown_ft"], json!(1600));
+    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 749.6}))["flown_ft"], json!(1700));
+    assert_eq!(ask("pattern_altitude", json!({}))["flown_ft"], Value::Null);
 }
 
 #[test]

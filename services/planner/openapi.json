@@ -2095,7 +2095,7 @@
         "type": "object"
       },
       "AlternateLeg": {
-        "description": "The leg from the destination on to the IFR alternate: flown at the\nroute's last altitude in its winds, or in still air where they could\nnot be read (`still_air`).",
+        "description": "The leg from the destination on to the IFR alternate: flown at the\nroute's last altitude in its winds, or in still air where they could\nnot be read (`still_air`). With no airplane, its miles alone: the\ntime and fuel None.",
         "properties": {
           "altitude_ft": {
             "title": "Altitude Ft",
@@ -2106,12 +2106,26 @@
             "type": "number"
           },
           "ete_min": {
-            "title": "Ete Min",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ete Min"
           },
           "fuel_gal": {
-            "title": "Fuel Gal",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Gal"
           },
           "ident": {
             "title": "Ident",
@@ -2446,7 +2460,7 @@
         "type": "object"
       },
       "AltitudeCaution": {
-        "description": "An altitude the pilot set for a hop (`from_ident` to `to_ident`) and\nwhat is wrong with it against the planner's band there\n(app.planning.own_altitude_caution): a warning, not a refusal.",
+        "description": "An altitude the pilot set for a hop (`from_ident` to `to_ident`) and\nwhat is wrong with it against the planner's band there\n(wingtip.planning.own_altitude_caution): a warning, not a refusal.",
         "properties": {
           "altitude_ft": {
             "title": "Altitude Ft",
@@ -2533,11 +2547,18 @@
         "type": "object"
       },
       "AltitudeOption": {
-        "description": "One of the four plans -- lowest, highest, fastest, economical --\nas its steps and what it costs. `ete_min` is the flying time with every climb\nflown (`climb_penalty_min` is how many of those minutes are climb),\nthe figure the plans are compared on; `tailwind_kt` the\ndistance-weighted wind component along the course, positive helping,\nover the legs that had wind data.",
+        "description": "One of the four plans -- lowest, highest, fastest, economical --\nas its steps and what it costs. `ete_min` is the flying time with every climb\nflown (`climb_penalty_min` is how many of those minutes are climb),\nthe figure the plans are compared on; `tailwind_kt` the\ndistance-weighted wind component along the course, positive helping,\nover the legs that had wind data. With no airplane, the lowest and\nhighest alone, their times, fuel, climb and wind None.",
         "properties": {
           "climb_penalty_min": {
-            "title": "Climb Penalty Min",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climb Penalty Min"
           },
           "ete_min": {
             "anyOf": [
@@ -9669,8 +9690,15 @@
             "type": "number"
           },
           "density_altitude_ft": {
-            "title": "Density Altitude Ft",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Density Altitude Ft"
           },
           "distance_nm": {
             "title": "Distance Nm",
@@ -9692,8 +9720,15 @@
             "type": "string"
           },
           "fuel_burn_gph": {
-            "title": "Fuel Burn Gph",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Burn Gph"
           },
           "fuel_gal": {
             "anyOf": [
@@ -9743,8 +9778,15 @@
             "type": "number"
           },
           "magnetic_heading_deg": {
-            "title": "Magnetic Heading Deg",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Magnetic Heading Deg"
           },
           "magnetic_variation_deg": {
             "title": "Magnetic Variation Deg",
@@ -9762,8 +9804,15 @@
             "title": "Oat C"
           },
           "power_pct": {
-            "title": "Power Pct",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Pct"
           },
           "procedure": {
             "anyOf": [
@@ -9776,8 +9825,15 @@
             ]
           },
           "tas_kt": {
-            "title": "Tas Kt",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tas Kt"
           },
           "to": {
             "title": "To",
@@ -9808,12 +9864,26 @@
             "type": "number"
           },
           "true_heading_deg": {
-            "title": "True Heading Deg",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Heading Deg"
           },
           "wca_deg": {
-            "title": "Wca Deg",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wca Deg"
           },
           "wind": {
             "anyOf": [
@@ -10047,7 +10117,7 @@
         "type": "object"
       },
       "LegProcedure": {
-        "description": "A leg flown by the procedures picked -- out by a departure, in by an\narrival and an approach (wingtip.procedure_paths.flown) -- rather than as\nthe route goes: its path from the leg's start, [lat, lon] pairs; the\naltitude the chart sets at each point (None where it sets none); its\nlength; whether it comes down to a runway; where its final starts, the\nindex in `path` of its final approach fix; where its missed approach\npoint is, the index in `path` the missed approach is flown from (short\nof the runway's threshold, where the path ends, on a VOR's or a LOC's\napproach); and the approach's missed approach. The miles it is more than the leg's own, and the time and\nfuel they take at the leg's ground speed and cruise burn, are in the\nleg's `ete_min` and `fuel_gal` (plan.with_procedures).",
+        "description": "A leg flown by the procedures picked -- out by a departure, in by an\narrival and an approach (wingtip.procedure_paths.flown) -- rather than as\nthe route goes: its path from the leg's start, [lat, lon] pairs; the\naltitude the chart sets at each point (None where it sets none); its\nlength; whether it comes down to a runway; where its final starts, the\nindex in `path` of its final approach fix; where its missed approach\npoint is, the index in `path` the missed approach is flown from (short\nof the runway's threshold, where the path ends, on a VOR's or a LOC's\napproach); and the approach's missed approach. The miles it is more than the leg's own, and the time and\nfuel they take at the leg's ground speed and cruise burn, are in the\nleg's `ete_min` and `fuel_gal` (wingtip.flight_plan.with_procedures);\nwith no airplane, the time and fuel None.",
         "properties": {
           "final_at": {
             "anyOf": [
@@ -10103,12 +10173,26 @@
             "default": null
           },
           "more_gal": {
-            "title": "More Gal",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "More Gal"
           },
           "more_min": {
-            "title": "More Min",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "More Min"
           },
           "more_nm": {
             "title": "More Nm",
@@ -11214,7 +11298,14 @@
         "description": "Which altitudes the legs that follow fly. `flown` is the planner's\nplan of that name, or \"custom\" for a pilot's own altitude; None when\nthe winds the legs need could not be read, so no leg follows -- the\nstream's next line is the error. `altitude_ft` is the first leg's (a\nplan may step), and None exactly when `flown` is. `options` are the\nfour plans, offered beside a pilot's own as well; empty only when the\nwinds failed before they could be made.\n\nIt used to say all of that with `choice: null` and an empty `options`,\nwhich a winds outage produced too: the page showed \"0 ft \u00b7 yours\",\nwith Custom pressed, for an altitude nobody typed.",
         "properties": {
           "aircraft": {
-            "$ref": "#/components/schemas/AircraftProfile"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AircraftProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "altitude_figures": {
             "default": [],
@@ -11318,7 +11409,7 @@
         "type": "object"
       },
       "NavLogError": {
-        "description": "The stream's failure. `retry` False where asking again gets the\nsame answer -- a route with no legal altitude -- so the page offers\nno Try again for it. For that one `detail` is the headline, and\n`reasons` and `advice` say why and what to do: the page lists them in\nthe nav log (app.planning.no_altitude).",
+        "description": "The stream's failure. `retry` False where asking again gets the\nsame answer -- a route with no legal altitude -- so the page offers\nno Try again for it. For that one `detail` is the headline, and\n`reasons` and `advice` say why and what to do: the page lists them in\nthe nav log (wingtip.planning.no_altitude).",
         "properties": {
           "advice": {
             "anyOf": [
@@ -11410,8 +11501,15 @@
             "type": "number"
           },
           "density_altitude_ft": {
-            "title": "Density Altitude Ft",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Density Altitude Ft"
           },
           "distance_nm": {
             "title": "Distance Nm",
@@ -11433,8 +11531,15 @@
             "type": "string"
           },
           "fuel_burn_gph": {
-            "title": "Fuel Burn Gph",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Burn Gph"
           },
           "fuel_gal": {
             "anyOf": [
@@ -11486,8 +11591,15 @@
             "type": "number"
           },
           "magnetic_heading_deg": {
-            "title": "Magnetic Heading Deg",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Magnetic Heading Deg"
           },
           "magnetic_variation_deg": {
             "title": "Magnetic Variation Deg",
@@ -11506,8 +11618,15 @@
             "title": "Oat C"
           },
           "power_pct": {
-            "title": "Power Pct",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Pct"
           },
           "procedure": {
             "anyOf": [
@@ -11521,8 +11640,15 @@
             "default": null
           },
           "tas_kt": {
-            "title": "Tas Kt",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tas Kt"
           },
           "to": {
             "title": "To",
@@ -11555,8 +11681,15 @@
             "type": "number"
           },
           "true_heading_deg": {
-            "title": "True Heading Deg",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Heading Deg"
           },
           "type": {
             "const": "leg",
@@ -11565,8 +11698,15 @@
             "type": "string"
           },
           "wca_deg": {
-            "title": "Wca Deg",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wca Deg"
           },
           "wind": {
             "anyOf": [
@@ -13496,7 +13636,14 @@
       "Plan": {
         "properties": {
           "aircraft": {
-            "$ref": "#/components/schemas/AircraftProfile"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AircraftProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "altitude_cautions": {
             "default": [],
@@ -22212,7 +22359,7 @@
     },
     "/api/local-flight": {
       "get": {
-        "description": "A flight that leaves and lands at the same airport -- the pattern,\npractice approaches, an hour's sightseeing: no course and no legs to\nplan, so its totals are the time aloft at the aeroplane's cruise burn,\nwith the fuel check a route's has (the start and taxi allowance, the\nVFR reserve by day or by night, the usable fuel). Night is judged at\nthe field at both ends of the time aloft, from now where no\ndeparture time is given (planning.flight_totals). A 422 for a route\nthat is not one airport to itself.",
+        "description": "A flight that leaves and lands at the same airport -- the pattern,\npractice approaches, an hour's sightseeing: no course and no legs to\nplan, so its totals are the time aloft at the aeroplane's cruise burn,\nwith the fuel check a route's has (the start and taxi allowance, the\nVFR reserve by day or by night, the usable fuel). Night is judged at\nthe field at both ends of the time aloft, from now where no\ndeparture time is given (planning.flight_totals). A 422 for a route\nthat is not one airport to itself. With no airplane, the time aloft and\nthe reserve's minutes alone: no fuel is worked out.",
         "operationId": "local_flight_api_local_flight_get",
         "parameters": [
           {
@@ -22708,7 +22855,7 @@
     },
     "/api/navlog": {
       "get": {
-        "description": "Altitude and the dead-reckoning legs, as newline-delimited JSON --\nthe slow half, because it reads terrain, the obstacle file, the\nairspace shapefile and live winds; asked for separately so none of\nthat delays the chart. Each line is one app.schemas.NavLogMessage.\n\nStreamed rather than a single blocking response so a pilot sees the\ntable fill in as it goes rather than a blank screen: a \"stage\" line\nbefore each real piece of work (scoring, the altitude plans), an\n\"altitude\" line the moment those are decided -- the four plans and\nthe one chosen (altitude_choice, see /api/plan) with it -- one \"leg\"\nline per leg, then one \"done\" line with the totals, which need\nevery leg in before they mean anything. Its own implementation, not\na wrapper over /api/plan: that one commits to a single synchronous\nJSON response, and mixing a streaming and a non-streaming contract\ninto one function would compromise both. The overlap is the same\nhandful of calls into app.planning and wingtip.navlog either way.\n\nAn unflyable route (some leg with no legal cruising altitude at all)\nis reported as an \"error\" line, not an HTTP error status -- by the\ntime that's known, a 200 and a stream of NDJSON have already gone\nout, and an HTTP status can't change after that.",
+        "description": "Altitude and the dead-reckoning legs, as newline-delimited JSON --\nthe slow half, because it reads terrain, the obstacle file, the\nairspace shapefile and live winds; asked for separately so none of\nthat delays the chart. Each line is one app.schemas.NavLogMessage.\n\nStreamed rather than a single blocking response so a pilot sees the\ntable fill in as it goes rather than a blank screen: a \"stage\" line\nbefore each real piece of work (scoring, the altitude plans), an\n\"altitude\" line the moment those are decided -- the four plans and\nthe one chosen (altitude_choice, see /api/plan) with it -- one \"leg\"\nline per leg, then one \"done\" line with the totals, which need\nevery leg in before they mean anything. Its own implementation, not\na wrapper over /api/plan: that one commits to a single synchronous\nJSON response, and mixing a streaming and a non-streaming contract\ninto one function would compromise both. The overlap is the same\nhandful of calls into wingtip.flight_plan either way.\n\nAn unflyable route (some leg with no legal cruising altitude at all)\nis reported as an \"error\" line, not an HTTP error status -- by the\ntime that's known, a 200 and a stream of NDJSON have already gone\nout, and an HTTP status can't change after that.",
         "operationId": "navlog_stream_api_navlog_get",
         "parameters": [
           {

@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 
 from wingtip import departure_window as forecast, runway_wind, weather
 
-from .. import planning as planning_module
+from wingtip import planning as planning_module
 from ..gonogo import ask as engine
 from ..router_basics import load_route
 from ..routers.gonogo import (

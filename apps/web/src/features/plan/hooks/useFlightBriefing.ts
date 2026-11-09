@@ -176,7 +176,7 @@ export function useFlightBriefing({
   // The call sign the radio calls use: the pilot's own airplane's
   // registration where they fly one, and its make from its profile.
   const flying = usePreferences(s => s.aircraft);
-  const make = nav?.aircraft.type?.split(" ")[0] || "Airplane";
+  const make = nav?.aircraft?.type?.split(" ")[0] || "Airplane";
   const ownCallSign = callSign(make, flying.aircraftId != null ? shortName(flying.label) : null);
   // The risk assessment (lib/frat): the briefing's, the nav log's and the
   // logbook's factors, and what the pilot ticks. Published for the Save
@@ -230,7 +230,7 @@ export function useFlightBriefing({
       const inUse = runwayFlown(a.runways, picked);
       return { ident: i, name: a.name, airspaceClass: a.airspace_class, patternFt: a.pattern?.altitude_ft, runway: inUse && (picked || inUse.byWind) ? runwayNumber(inUse.end.ident) : null };
     }),
-    aircraft: nav?.aircraft.type ?? nav?.aircraft.name, cruiseFt: nav?.altitude_ft,
+    aircraft: nav?.aircraft?.type ?? nav?.aircraft?.name, cruiseFt: nav?.altitude_ft,
     distanceNm: totals?.distance_nm ?? course?.distance_nm, eteMin: totals?.ete_min, fuelGal: totals?.fuel_gal,
     reserveMin: totals?.reserve_min, night: totals?.night,
     depart: depart ? format(new Date(depart), "EEE d MMM, HH:mm") : null,
@@ -254,7 +254,7 @@ export function useFlightBriefing({
   const hops = totals?.hops ?? [];
   // Under IFR, the alternate (AlternateSection): its ETA the nav log's.
   const etaIso = totals?.ete_min != null ? new Date(new Date(depart || opened).getTime() + totals.ete_min * 60_000).toISOString() : null;
-  const alternateWhere = { dest, eta: ifr ? etaIso : null, tasKt: nav?.aircraft.cruise_tas_kt ?? 110 };
+  const alternateWhere = { dest, eta: ifr ? etaIso : null, tasKt: nav?.aircraft?.cruise_tas_kt ?? 110 };
   const alternateCheck = useAlternate(alternateWhere);
   const alternateFound = ifr ? alternateFinding(alternateCheck.data) : null;
   const verdictFound: VerdictItem[] = verdictItems({
@@ -289,7 +289,7 @@ export function useFlightBriefing({
       ifr,
     },
     runways: {
-      pending: !nav || !briefing, worked: !nav || (!!nav.aircraft.takeoff && !!nav.aircraft.landing),
+      pending: !nav || !briefing, worked: !nav || (!!nav.aircraft?.takeoff && !!nav.aircraft?.landing),
       short: [...new Set(checks.filter(c => c.distances.some(d => d.over)).map(c => c.field.ident))],
       crosswind: [...new Set(checks.filter(c => c.crosswindOver).map(c => c.field.ident))],
       beyond: [...new Set(checks.filter(c => c.distances.some(d => d.beyond)).map(c => c.field.ident))],
@@ -404,7 +404,7 @@ export function useFlightBriefing({
   // the profile is that type's. Worked out only for Preflight, which
   // shows the forms.
   const ownType = flying.aircraftId != null ? flying.label.split(" · ")[1] ?? null : null;
-  const profileType = nav?.aircraft.designator ?? null;
+  const profileType = nav?.aircraft?.designator ?? null;
   const planType = flying.aircraftId != null ? ownType : profileType;
   const planForms = part === "preflight" ? flightPlanForms({
     rules: ifr ? "ifr" : "vfr", dep, dest, route, landings: stops,
@@ -413,7 +413,7 @@ export function useFlightBriefing({
     aircraft: {
       ident: flying.aircraftId != null ? shortName(flying.label) : null,
       type: planType,
-      maxTakeoffLb: planType && planType === profileType ? nav?.aircraft.loading?.max_takeoff_lb ?? null : null,
+      maxTakeoffLb: planType && planType === profileType ? nav?.aircraft?.loading?.max_takeoff_lb ?? null : null,
       // Items 10 and 19's colour, from the pilot's own airplane's page.
       equipment: flownOwn?.equipment ?? null, surveillance: flownOwn?.surveillance ?? null, colour: flownOwn?.colour ?? null,
     },

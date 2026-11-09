@@ -9,8 +9,8 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
+from wingtip import planning
 
-from app import planning
 from app.main import app
 from app.routers import gonogo
 from app.window import hours as window_hours

@@ -13,6 +13,7 @@ import { FINDING_TONE, type Finding } from "../../../../lib/findings";
 import { TEXT } from "../../../../lib/text";
 import { grouped } from "../../../../lib/units";
 import { mhzText } from "../../../../lib/frequencies";
+import { useAirplaneChosen } from "../../../../lib/preferences";
 import { useVerdict, verdictLine } from "../../../../lib/verdict";
 import type { PanelTab } from "../navlog/panelTab";
 import CategoryBadge from "./CategoryBadge";
@@ -186,6 +187,11 @@ export default function BriefGlance({ onOpen, before: first, afterVerdict, after
   const lines = items.length ? glanceLines(items, glance) : null;
   const before = glance?.before;
   const enroute = glance?.enroute;
+  // With no airplane the fuel to spare and the weight and balance are not
+  // shown at all, not a dash: both are an airplane's figures, and the
+  // planner works out none of them (the owner, 2026-11-09: "only show the
+  // distance and the things you can without airplane profile").
+  const airplane = useAirplaneChosen();
   return (
     <div className="flex flex-col gap-2.5 pt-1 pb-4" data-testid="brief-glance">
       {verdict && (
@@ -231,11 +237,15 @@ export default function BriefGlance({ onOpen, before: first, afterVerdict, after
           <>
             <Stat label="Risk" value={before?.risk ? `${before.risk.score} · ${before.risk.level === "high" ? "High" : before.risk.level === "caution" ? "Caution" : "Low"}` : DASH}
               finding={before?.risk ? ({ high: "stop", caution: "caution", low: "ok" } as const)[before.risk.level] : undefined} />
-            <Stat label="Fuel spare" value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH} finding={before?.spareGal != null && before.spareGal < 0 ? "stop" : undefined} />
-            <Stat label="W&B" value={before?.balance ? (before.balance.within ? "Within" : "Outside") : DASH} finding={before?.balance && !before.balance.within ? "stop" : undefined} />
+            {airplane && (
+              <>
+                <Stat label="Fuel spare" value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH} finding={before?.spareGal != null && before.spareGal < 0 ? "stop" : undefined} />
+                <Stat label="W&B" value={before?.balance ? (before.balance.within ? "Within" : "Outside") : DASH} finding={before?.balance && !before.balance.within ? "stop" : undefined} />
+              </>
+            )}
           </>
         )}
-        note={before?.balance?.problem ?? undefined}
+        note={airplane ? before?.balance?.problem ?? undefined : undefined}
       />
       {glance?.depart && <FieldCard tab="depart" label="Depart" field={glance.depart} landing={false} onOpen={onOpen} />}
       <Card

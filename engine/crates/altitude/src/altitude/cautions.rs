@@ -1,7 +1,7 @@
 //! What is wrong with an altitude the pilot set, in a pilot's words: a
 //! warning, never a refusal, at the owner's "I don't want to put hard
 //! limits on anything. A warning tick or a label is enough" (2026-10-23).
-//! Moved from app.planning's own_altitude_caution, floor_caution,
+//! Moved from wingtip.planning's (then app.planning's) own_altitude_caution, floor_caution,
 //! oxygen_caution and prohibited_caution (#482 phase 1); the selection is
 //! select's answer with the planner's own members (`special_use`).
 

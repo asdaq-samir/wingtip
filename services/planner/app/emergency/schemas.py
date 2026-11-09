@@ -2,7 +2,7 @@
 best_fields reads a candidate, with what the screen shows beside it."""
 from pydantic import BaseModel
 
-from ..schemas import DemonstratedCrosswind, ShortField
+from ..schemas.plan import DemonstratedCrosswind, ShortField
 
 
 class EmergencyRunwayEnd(BaseModel):

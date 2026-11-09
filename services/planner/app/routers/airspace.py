@@ -10,7 +10,7 @@ from fastapi import APIRouter, Query
 from wingtip import airports, airspace, airspace_at, alerts, altitude, elevation, fixes, sua, tfr
 from wingtip.units import M_TO_FT
 
-from ..schemas import AirspaceAt, AlertsAhead, PointOffFix
+from ..schemas.airspace import AirspaceAt, AlertsAhead, PointOffFix
 from ..gateway import PUBLIC
 
 log = logging.getLogger(__name__)

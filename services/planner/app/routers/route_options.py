@@ -13,8 +13,8 @@ from wingtip import route_options as wingtip_route_options
 
 from .. import prefetch
 from ..router_basics import DEFAULT_AIRCRAFT, load_route, resolve
-from ..planning import aircraft_profile, forecast_hour_for
-from ..schemas import RouteOptions
+from wingtip.planning import aircraft_profile, forecast_hour_for
+from ..schemas.route_options import RouteOptions
 from ..gateway import PUBLIC
 from .plan import CruiseTas, ServiceCeiling
 

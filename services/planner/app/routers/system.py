@@ -20,7 +20,7 @@ from ..chart_cycle import check as chart_cycle_check
 from ..feeds import watch as feeds_watch
 from ..router_basics import PROCESSED_DIR, paths
 from ..settings import CHARTS_REFRESH_WINDOW, CHARTS_REFRESH_WORKERS, get_settings
-from ..schemas import (
+from ..schemas.system import (
     ChartModelSnapshot,
     ChartRefreshStarted,
     CorridorStatus,

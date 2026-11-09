@@ -10,7 +10,7 @@ import re
 from fastapi import APIRouter, Query, Response
 from wingtip import airports, fixes, procedures, spoken
 
-from ..schemas import ClearanceAsk, ClearancePlaces, ClearanceWords
+from ..schemas.clearance import ClearanceAsk, ClearancePlaces, ClearanceWords
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 from .devml import _near
 

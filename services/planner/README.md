@@ -25,7 +25,8 @@ cruise altitude and course line (`planning.py`), the corridor read
 `wingtip.navlog`'s. The planner calls no model: every Claude call is the
 `assistant` service's (services/assistant), which asks the endpoints
 here for its figures.
-Every response, streamed lines included, is a model in `app/schemas.py`:
+Every response, streamed lines included, is a model in `app/schemas/` (one module per router,
+`common.py` for those shared):
 FastAPI validates against it and publishes it in `openapi.json`,
 committed here and checked by `services/planner/tests/test_openapi.py`. After changing a
 model, run `python -m app.openapi` and commit the result; `apps/web/`

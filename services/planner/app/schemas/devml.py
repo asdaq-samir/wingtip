@@ -1,0 +1,49 @@
+"""The shapes app.routers.devml sends and takes, as Pydantic models."""
+from typing import Literal
+
+from pydantic import BaseModel
+
+
+class AirportSuggestion(BaseModel):
+    """An airport the search answers -- or, asked with `fixes`, a named
+    fix (`kind` "fix": a VFR waypoint, a GPS waypoint), its `name` the
+    kind of fix and its `region` the state it is in."""
+
+    ident: str
+    name: str
+    municipality: str | None = None
+    region: str | None = None
+    kind: Literal["airport", "fix"] = "airport"
+
+
+class AirportSearch(BaseModel):
+    airports: list[AirportSuggestion]
+
+
+class ModelComparisonEntry(BaseModel):
+    """One of the scikit-learn models retrain() compared; `score` is its
+    5-fold CV MAE, lower is better."""
+
+    name: str
+    score: float | None
+    promoted: bool
+
+
+class ModelComparison(BaseModel):
+    models: list[ModelComparisonEntry]
+    trained_at: str | None
+    n_labeled: int | None
+
+
+class AircraftProfileSummary(BaseModel):
+    """One of data/aircraft/*.json, for the nav log's aircraft picker."""
+
+    name: str
+    type: str
+    cruise_tas_kt: float
+    fuel_burn_gph: float
+    service_ceiling_ft: float
+
+
+class AircraftProfiles(BaseModel):
+    profiles: list[AircraftProfileSummary]

@@ -127,12 +127,14 @@ export function cruiseByAltitude(legs: Leg[], cruisePowerPct: number | null | un
   const byAltitude = new Map<number, Leg[]>();
   for (const leg of legs) byAltitude.set(leg.altitude_ft, [...(byAltitude.get(leg.altitude_ft) ?? []), leg]);
   return [...byAltitude.entries()].sort(([a], [b]) => a - b).map(([altitude, at]) => {
-    const temps = at.flatMap(leg => (leg.oat_c == null ? [] : [leg.oat_c]));
-    const power = Math.min(...at.map(leg => leg.power_pct));
+    // Legs flown with no airplane have none of these: left out.
+    const known = (pick: (leg: Leg) => number | null | undefined) => at.flatMap(leg => { const v = pick(leg); return v == null ? [] : [v]; });
+    const temps = known(leg => leg.oat_c);
+    const power = Math.min(...known(leg => leg.power_pct));
     return `${altFt(altitude)} ft: `
       + (temps.length ? `${range(temps, t => String(Math.round(t)), " to ")} °C, ` : "")
-      + `density altitude ${range(at.map(leg => leg.density_altitude_ft), d => altFt(Math.round(d / 100) * 100))} ft, `
-      + `${range(at.map(leg => leg.tas_kt), t => String(Math.round(t)))} kt, ${range(at.map(leg => leg.fuel_burn_gph), b => b.toFixed(1))} gph`
+      + `density altitude ${range(known(leg => leg.density_altitude_ft), d => altFt(Math.round(d / 100) * 100))} ft, `
+      + `${range(known(leg => leg.tas_kt), t => String(Math.round(t)))} kt, ${range(known(leg => leg.fuel_burn_gph), b => b.toFixed(1))} gph`
       + (cruisePowerPct != null && power < cruisePowerPct - 0.5 ? ` (full throttle, ${Math.round(power)}%)` : "");
   });
 }

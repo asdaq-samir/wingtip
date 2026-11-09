@@ -53,6 +53,8 @@ export function windTriangle(tc: number, tas: number, windFromDeg: number, windK
 /** The diversion from a point on `leg` to a field `distanceNm` away on a
  *  true course of `tcDeg`, flown in the leg's air at its cruise burn. */
 export function divert(leg: Leg, tcDeg: number, distanceNm: number): Diversion | null {
+  // No airplane, no diversion to fly: its heading, time and fuel are an airplane's.
+  if (leg.tas_kt == null || leg.fuel_burn_gph == null) return null;
   const { solved } = callEngine("diversion", {
     true_course_deg: tcDeg, distance_nm: distanceNm, tas_kt: leg.tas_kt, fuel_burn_gph: leg.fuel_burn_gph,
     magnetic_variation_deg: leg.magnetic_variation_deg, wind: leg.wind ?? null,

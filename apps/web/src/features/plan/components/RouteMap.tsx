@@ -185,7 +185,7 @@ function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; numb
           {leg.out && (
             <>
               <dt className="text-muted-foreground">On from it</dt>
-              <dd>{`${threeFigures(leg.out.magnetic_heading_deg)}° · ${feet(leg.out.altitude_ft)}${leg.out.groundspeed_kt != null ? ` · ${Math.round(leg.out.groundspeed_kt)} kt` : ""}`}</dd>
+              <dd>{`${leg.out.magnetic_heading_deg != null ? `${threeFigures(leg.out.magnetic_heading_deg)}° · ` : ""}${feet(leg.out.altitude_ft)}${leg.out.groundspeed_kt != null ? ` · ${Math.round(leg.out.groundspeed_kt)} kt` : ""}`}</dd>
             </>
           )}
           {leg.into && (

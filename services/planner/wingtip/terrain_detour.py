@@ -4,7 +4,7 @@ clear of the ground at an altitude the airplane can reach.
 
 The planner says when a route has no legal altitude because the terrain
 under its straight line needs more than the airplane's service ceiling
-allows (app.planning.no_altitude); a pilot then goes round, by the passes
+allows (wingtip.planning.no_altitude); a pilot then goes round, by the passes
 and the low country. The way round -- which cells can be flown over, the
 shortest way over them and the stepping stones along it -- is the
 engine's (engine/crates/route/src/route/options/terrain.rs,

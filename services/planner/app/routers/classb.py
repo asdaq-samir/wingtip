@@ -18,7 +18,7 @@ import time
 from fastapi import APIRouter
 from wingtip import airspace, altitude, classb, weather
 
-from ..schemas import ClassBAirport, ClassBResponse
+from ..schemas.classb import ClassBAirport, ClassBResponse
 from ..gateway import PUBLIC
 
 log = logging.getLogger(__name__)

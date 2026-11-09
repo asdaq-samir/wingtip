@@ -7750,6 +7750,13 @@
               ],
               "description": "Feet MSL, whole; null with no elevation."
             },
+            "flown_ft": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Feet MSL to the nearest hundred (halves to even), as the planner flies down to it; null with no elevation."
+            },
             "published": {
               "type": "boolean"
             }
@@ -7757,6 +7764,7 @@
           "required": [
             "agl_ft",
             "altitude_ft",
+            "flown_ft",
             "published"
           ]
         }
@@ -15123,8 +15131,12 @@
             "service_ceilings_ft": {
               "type": "array",
               "items": {
-                "type": "number"
-              }
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "description": "Null on a leg: no airplane, no ceiling of its own."
             },
             "variation_deg": {
               "type": [
@@ -15265,7 +15277,10 @@
               "type": "boolean"
             },
             "service_ceiling_ft": {
-              "type": "number"
+              "type": [
+                "number",
+                "null"
+              ]
             },
             "cloud_base_ft": {
               "type": [
@@ -15610,7 +15625,15 @@
               "type": "number"
             },
             "profile": {
-              "$ref": "#/definitions/NavLogProfile"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogProfile"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
             },
             "wind": {
               "anyOf": [
@@ -15669,7 +15692,15 @@
               "type": "number"
             },
             "profile": {
-              "$ref": "#/definitions/NavLogProfile"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogProfile"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
             },
             "air": {
               "type": "array",
@@ -15720,7 +15751,15 @@
               ]
             },
             "profile": {
-              "$ref": "#/definitions/NavLogProfile"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogProfile"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
             }
           },
           "required": [
@@ -15845,7 +15884,15 @@
               ]
             },
             "profile": {
-              "$ref": "#/definitions/NavLogProfile"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogProfile"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
             },
             "night": {
               "type": [
@@ -15879,10 +15926,16 @@
               "type": "number"
             },
             "reserve_gal": {
-              "type": "number"
+              "type": [
+                "number",
+                "null"
+              ]
             },
             "taxi_gal": {
-              "type": "number"
+              "type": [
+                "number",
+                "null"
+              ]
             },
             "fuel_required_gal": {
               "type": [
@@ -15982,7 +16035,15 @@
               "type": "number"
             },
             "profile": {
-              "$ref": "#/definitions/NavLogProfile"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogProfile"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
             },
             "air": {
               "anyOf": [
@@ -16037,10 +16098,16 @@
               "type": "number"
             },
             "ete_min": {
-              "type": "number"
+              "type": [
+                "number",
+                "null"
+              ]
             },
             "fuel_gal": {
-              "type": "number"
+              "type": [
+                "number",
+                "null"
+              ]
             },
             "altitude_ft": {
               "type": "number"
@@ -16083,7 +16150,15 @@
               "type": "number"
             },
             "profile": {
-              "$ref": "#/definitions/NavLogProfile"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogProfile"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
             }
           },
           "required": [
@@ -16137,7 +16212,15 @@
               }
             },
             "profile": {
-              "$ref": "#/definitions/NavLogProfile"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogProfile"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
             },
             "departure_elevation_ft": {
               "type": [
@@ -16209,7 +16292,15 @@
               }
             },
             "profile": {
-              "$ref": "#/definitions/NavLogProfile"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogProfile"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
             },
             "departure_elevation_ft": {
               "type": [
@@ -16505,6 +16596,175 @@
             "minItems": 2,
             "maxItems": 2
           }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navlog_fuel_stop_need": {
+      "description": "What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavLogFuelStopNeedInput",
+          "type": "object",
+          "properties": {
+            "totals": {
+              "type": "object",
+              "description": "The flight's nav log totals with its fuel check (navlog_totals, navlog_fuel_plan).",
+              "properties": {
+                "fuel_margin_gal": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "usable_fuel_gal": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "distance_nm": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fuel_gal": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "ete_min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "taxi_gal": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "reserve_gal": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "rules": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "night": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "distance_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "fuel_gal": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "start": {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            "end": {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            "depart_s": {
+              "type": "number",
+              "description": "The departure, unix seconds (now where none was given: the engine has no clock)."
+            }
+          },
+          "required": [
+            "totals",
+            "legs",
+            "start",
+            "end",
+            "depart_s"
+          ]
+        },
+        "answer": {
+          "title": "NavLogFuelStopNeedAnswer",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "fuel_per_nm": {
+              "type": "number"
+            },
+            "min_per_nm": {
+              "type": "number"
+            },
+            "usable_gal": {
+              "type": "number"
+            },
+            "taxi_gal": {
+              "type": "number"
+            },
+            "reserve_gal": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "fuel_per_nm",
+            "min_per_nm",
+            "usable_gal",
+            "taxi_gal",
+            "reserve_gal"
+          ]
         }
       },
       "required": [
@@ -21926,6 +22186,7 @@
     "navlog_join_figures",
     "navlog_hold",
     "navlog_racetrack",
+    "navlog_fuel_stop_need",
     "navlog_approach_end",
     "route_options_frame",
     "route_options",
@@ -25352,7 +25613,10 @@
           ]
         },
         "service_ceiling_ft": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "cloud_base_ft": {
           "type": [
@@ -25712,16 +25976,25 @@
           ]
         },
         "wca_deg": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "true_heading_deg": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "magnetic_variation_deg": {
           "type": "number"
         },
         "magnetic_heading_deg": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "magnetic_course_deg": {
           "type": "number"
@@ -25745,13 +26018,22 @@
           ]
         },
         "tas_kt": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "fuel_burn_gph": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "power_pct": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "oat_c": {
           "type": [
@@ -25760,7 +26042,10 @@
           ]
         },
         "density_altitude_ft": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "climb_min": {
           "type": [
@@ -25891,7 +26176,10 @@
           ]
         },
         "climb_penalty_min": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "tailwind_kt": {
           "type": [

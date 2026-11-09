@@ -258,6 +258,13 @@ export const errorMessage = (err: unknown, fallback: string) => (err ? describeE
 /** A route's stops as the planner takes them, "KDSM,KLNK"; none, none. */
 const stopsParam = (stops?: string[]) => (stops?.length ? stops.join(",") : undefined);
 
+/** The airplane the planner plans with: "none" for no airplane picked
+ *  (preferences' NO_AIRPLANE), which it plans with none -- the route's own
+ *  figures, and null for every one that needs an airplane -- rather than
+ *  the stock profile it was asked with before (the owner, 2026-11-09:
+ *  "don't assume"). */
+const plannerAircraft = (aircraft?: AircraftChoice) => (aircraft?.none ? "none" : aircraft?.profile);
+
 /** The airport index's shape (wingtip.airports.search_index), in its address
  *  so a day's copy in the browser of an older shape is not read as this
  *  one: 2, each field's place after its size (2026-10-22). */
@@ -302,7 +309,7 @@ export const api = {
           // Picked on the wheel: each leg at its nearest legal altitude.
           altitude_nearest: altitudeFt && altitudeNearest ? true : undefined,
           altitude_choice: altitudeChoice && altitudeChoice !== "fastest" ? altitudeChoice : undefined,
-          aircraft: aircraft?.profile,
+          aircraft: plannerAircraft(aircraft),
           cruise_tas_kt: aircraft?.cruiseTasKt,
           fuel_burn_gph: aircraft?.fuelBurnGph,
           usable_fuel_gal: aircraft?.usableFuelGal,
@@ -404,7 +411,7 @@ export const api = {
     planner.GET("/api/local-flight", {
       params: {
         query: {
-          dep: ident, dest: ident, duration_min: durationMin, aircraft: aircraft?.profile,
+          dep: ident, dest: ident, duration_min: durationMin, aircraft: plannerAircraft(aircraft),
           cruise_tas_kt: aircraft?.cruiseTasKt, fuel_burn_gph: aircraft?.fuelBurnGph, usable_fuel_gal: aircraft?.usableFuelGal,
           climb_tas_kt: aircraft?.climbTasKt, climb_fuel_burn_gph: aircraft?.climbFuelBurnGph,
           cruise_power_pct: aircraft?.cruisePowerPct, service_ceiling_ft: aircraft?.serviceCeilingFt, depart: depart || undefined,

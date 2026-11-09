@@ -9,7 +9,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from ..router_basics import DEFAULT_AIRCRAFT
-from ..schemas import AltitudeChoice, FlightRules, Loading
+from ..schemas.common import AltitudeChoice, FlightRules, Loading
 
 Finding = Literal["ok", "caution", "stop", "unknown", "pending"]
 VerdictKey = Literal["weather", "airspace", "altitude", "fuel", "runways", "balance", "risk"]

@@ -55,6 +55,9 @@ export interface Workings {
  *  leg; a wind faster than the airplane, no leg at all). */
 export function workingsOf(leg: Leg): Workings | null {
   if (leg.groundspeed_kt == null || leg.groundspeed_kt <= 0 || leg.ete_min == null || leg.fuel_gal == null) return null;
+  // No airplane, no wind triangle to work: its figures are an airplane's.
+  if (leg.tas_kt == null || leg.wca_deg == null || leg.true_heading_deg == null || leg.magnetic_heading_deg == null
+    || leg.fuel_burn_gph == null || leg.power_pct == null || leg.density_altitude_ft == null) return null;
   const tc = leg.true_course_deg;
   const windDir = leg.wind?.wind_dir_true_deg ?? 0;
   const windKt = leg.wind?.wind_speed_kt ?? 0;
@@ -74,7 +77,7 @@ export function workingsOf(leg: Leg): Workings | null {
   // were taken for -- "Climb, added 2 min" on a leg with none to climb
   // (the FPL audit's A4).
   const p = leg.procedure;
-  const procedure = p && p.more_nm > 0.05 ? { nm: p.more_nm, min: p.more_min, gal: p.more_gal } : null;
+  const procedure = p && p.more_nm > 0.05 ? { nm: p.more_nm, min: p.more_min ?? 0, gal: p.more_gal ?? 0 } : null;
   const climbMin = leg.ete_min - ete - (procedure?.min ?? 0);
   const climbGal = leg.fuel_gal - fuel - (procedure?.gal ?? 0);
   const east = variation >= 0;

@@ -50,11 +50,13 @@ from . import chart_model, chart_refresh, errors, tracing
 from .chart_cycle import check as chart_cycle
 from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
-from .planning import StillComputing
+from wingtip.planning import StillComputing, UnknownAircraft
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan
 from .routers import clearance, copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain
 from .routers import traffic, weather_map, window, words
-from .schemas import STREAM_MESSAGES, Index
+from .schemas.chart import DetectMessage
+from .schemas.common import Index
+from .schemas.plan import NavLogMessage
 from .settings import get_settings
 
 # Nothing else in the process configured logging, so every log.info() in
@@ -368,11 +370,19 @@ async def _weather_service_error(request: Request, exc: weather.WeatherServiceEr
 
 @app.exception_handler(StillComputing)
 async def _still_computing(request: Request, exc: StillComputing):
-    # A computation for this route has run past its limit (app.planning):
+    # A computation for this route has run past its limit (wingtip.planning):
     # a 504 that says what it is still waiting on, and that asking again
     # in a minute gets the answer it goes on to cache.
     errors.record_for(request, 504, str(exc))
     return JSONResponse(status_code=504, content={"detail": str(exc)})
+
+
+@app.exception_handler(UnknownAircraft)
+async def _unknown_aircraft(request: Request, exc: UnknownAircraft):
+    # A stock profile asked by a name it does not go by (wingtip.planning
+    # aircraft_profile): the request's fault, a 422 with its words, from
+    # /api/plan, /api/navlog, the figures and route options alike.
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
 
 
 @app.get("/")
@@ -388,6 +398,14 @@ for module in (plan, chart, briefing, notes, devml, system, classb, devservices,
                route_options, gonogo, figures, clearance, packs, words, weather_map, pilot, live, feeds, terrain, window, emergency,
                copilot):
     app.include_router(module.router)
+
+
+# The unions no route returns, published into the OpenAPI components by
+# _openapi so apps/web/ gets a TypeScript type for each stream.
+STREAM_MESSAGES = {
+    "NavLogMessage": NavLogMessage,
+    "DetectMessage": DetectMessage,
+}
 
 
 def _openapi() -> dict:
