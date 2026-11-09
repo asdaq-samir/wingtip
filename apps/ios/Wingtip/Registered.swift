@@ -25,36 +25,3 @@ enum Registered {
 
 /// The FAA registry's record (AircraftRegistration), generated.
 typealias AircraftRegistration = APIAircraftRegistration
-
-/// The figures the nav log flies an airplane on: the type's, or the
-/// pilot's own where set.
-struct Figures: Codable, Equatable, Sendable {
-    var cruiseTasKt: Double?
-    var fuelBurnGph: Double?
-    var usableFuelGal: Double?
-    var cruisePowerPct: Double?
-    var climbTasKt: Double?
-    var climbFuelBurnGph: Double?
-    var serviceCeilingFt: Double?
-
-    /// The nav log's query for them, only the ones set.
-    var query: [String: String?] {
-        [
-            "cruise_tas_kt": cruiseTasKt.map { String($0) }, "fuel_burn_gph": fuelBurnGph.map { String($0) },
-            "usable_fuel_gal": usableFuelGal.map { String($0) }, "cruise_power_pct": cruisePowerPct.map { String($0) },
-            "climb_tas_kt": climbTasKt.map { String($0) }, "climb_fuel_burn_gph": climbFuelBurnGph.map { String($0) },
-            "service_ceiling_ft": serviceCeilingFt.map { String($0) },
-        ]
-    }
-
-    init(cruiseTasKt: Double? = nil, fuelBurnGph: Double? = nil, usableFuelGal: Double? = nil, cruisePowerPct: Double? = nil, climbTasKt: Double? = nil, climbFuelBurnGph: Double? = nil, serviceCeilingFt: Double? = nil) {
-        self.cruiseTasKt = cruiseTasKt; self.fuelBurnGph = fuelBurnGph; self.usableFuelGal = usableFuelGal
-        self.cruisePowerPct = cruisePowerPct; self.climbTasKt = climbTasKt; self.climbFuelBurnGph = climbFuelBurnGph
-        self.serviceCeilingFt = serviceCeilingFt
-    }
-
-    init(_ own: OwnAircraftRecord) {
-        self.init(cruiseTasKt: own.cruiseTasKt, fuelBurnGph: own.fuelBurnGph, usableFuelGal: own.usableFuelGal, cruisePowerPct: own.cruisePowerPct,
-                  climbTasKt: own.climbTasKt, climbFuelBurnGph: own.climbFuelBurnGph)
-    }
-}

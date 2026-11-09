@@ -56,17 +56,19 @@ final class Emergency {
     /// The question's key: asked again as the airplane moves on about half
     /// a mile (a hundredth of a degree, about what a light single glides in
     /// twenty seconds) or comes down 500 ft, not at each fix.
-    static func key(_ fix: OwnShip.Fix, aircraft: String?) -> String {
+    static func key(_ fix: OwnShip.Fix, aircraft: String?, glideRatio: Double? = nil) -> String {
         let at = { (deg: Double) in Int((deg / 0.01).rounded()) }
         let alt = fix.altitudeFt.map { Int(($0 / 500).rounded()) } ?? -1
-        return "\(at(fix.coordinate.latitude)),\(at(fix.coordinate.longitude)),\(alt),\(aircraft ?? "")"
+        return "\(at(fix.coordinate.latitude)),\(at(fix.coordinate.longitude)),\(alt),\(aircraft ?? ""),\(glideRatio ?? 0)"
     }
 
     /// The fields round the airplane, asked where the key changed, and
-    /// ranked by the engine at every fix.
-    func refresh(fix: OwnShip.Fix?, aircraft: String?) async {
+    /// ranked by the engine at every fix. The pilot's own glide ratio goes
+    /// with the airplane, over its type's (or alone, for an own airplane of
+    /// no stock type).
+    func refresh(fix: OwnShip.Fix?, aircraft: String?, glideRatio: Double? = nil) async {
         guard open != nil, let fix else { return }
-        let key = Self.key(fix, aircraft: aircraft)
+        let key = Self.key(fix, aircraft: aircraft, glideRatio: glideRatio)
         if key != askedKey {
             asking = true
             defer { asking = false }
@@ -74,6 +76,7 @@ final class Emergency {
                 answer = try await Planner.fetch(APIEmergencyFields.self, "/api/emergency/fields", [
                     "lat": String(fix.coordinate.latitude), "lon": String(fix.coordinate.longitude),
                     "altitude_ft": fix.altitudeFt.map { String(Int($0.rounded())) }, "aircraft": aircraft,
+                    "glide_ratio": glideRatio.map { String($0) },
                 ], timeout: Planner.inFlight)
                 askedKey = key
                 problem = nil

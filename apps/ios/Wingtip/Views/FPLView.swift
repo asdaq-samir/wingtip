@@ -112,18 +112,25 @@ struct FPLView: View {
                 RouteExtrasSection()
                 if let totals = plan.totals {
                     Section {
-                        FigureRow {
-                            stripFigure("TO", plan.dest)
-                            stripFigure("DIST", Format.distance(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
-                            // Time and fuel are an airplane's: none picked,
-                            // none shown (docs/decisions/0011).
-                            if plan.airplaneChosen {
-                                stripFigure("ETE", totals.eteMin.map(Format.duration) ?? Format.none, spoken: totals.eteMin.map(SpokenFigures.minutes))
-                                stripFigure("FUEL", Format.fuel(totals.fuelGal), spoken: totals.fuelGal.map(SpokenFigures.gallons),
-                                            warn: (totals.fuelMarginGal ?? 0) < 0)
+                        // The airplane's time and fuel open its profile,
+                        // where they are set (the owner, 2026-11-09).
+                        AirplaneFiguresLink {
+                            FigureRow {
+                                stripFigure("TO", plan.dest)
+                                stripFigure("DIST", Format.distance(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
+                                // Time and fuel are an airplane's: none picked,
+                                // none shown (docs/decisions/0011).
+                                if plan.airplaneChosen {
+                                    stripFigure("ETE", totals.eteMin.map(Format.duration) ?? Format.none, spoken: totals.eteMin.map(SpokenFigures.minutes))
+                                    stripFigure("FUEL", Format.fuel(totals.fuelGal), spoken: totals.fuelGal.map(SpokenFigures.gallons),
+                                                warn: (totals.fuelMarginGal ?? 0) < 0)
+                                }
                             }
+                            .accessibilityElement(children: .combine)
                         }
-                        .accessibilityElement(children: .combine)
+                        // What the totals and the climbs lack of the airplane,
+                        // asked in place: its start and taxi fuel, its climb.
+                        if plan.airplaneChosen { AskFigureRow(needs: [.fuelTotals, .climb]) }
                     }
                 }
                 if plan.course != nil {

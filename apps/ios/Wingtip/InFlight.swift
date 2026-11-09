@@ -110,13 +110,13 @@ final class InFlight {
 
     /// The glide ratio the ring is drawn at, or nil for no ring: off by
     /// default, on by itself while the emergency assistant is open (or
-    /// where the pilot switched it on), and only with an airplane picked
-    /// whose profile gives its glide (its POH's Section 3, as the planner's
-    /// /api/emergency/fields sends it) -- never another airplane's.
-    static func ringRatio(plan: Plan, defaults: UserDefaults = .standard) -> Double? {
-        guard plan.airplaneChosen, Emergency.shared.open != nil || defaults.bool(forKey: ringKey),
-              let airplane = Emergency.shared.answer?.airplane, airplane.name == plan.aircraft else { return nil }
-        return airplane.glide?.ratio
+    /// where the pilot switched it on, the Map's Glide Ring), and only with
+    /// an airplane picked whose figures give its glide ratio (its POH's
+    /// Section 3: the pilot's own over its type's book, airplane_figures)
+    /// -- never another airplane's.
+    static func ringRatio(plan: Plan, defaults: UserDefaults = .standard, airplanes: Airplanes = .shared) -> Double? {
+        guard plan.airplaneChosen, Emergency.shared.open != nil || defaults.bool(forKey: ringKey) else { return nil }
+        return airplanes.value(.glideRatio, plan: plan)
     }
 
     /// The engine's `in_flight` for a fix on the plan's route; nil with no

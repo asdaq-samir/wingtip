@@ -243,7 +243,7 @@ struct FlightServiceView: View {
         .task {
             status = try? await Gateway.flightService()
             if aircraftId.isEmpty { aircraftId = plan.tail ?? "" }
-            if aircraftType.isEmpty, plan.airplaneChosen { aircraftType = plan.aircraft.uppercased() }
+            if aircraftType.isEmpty, let type = plan.stockType { aircraftType = type }
         }
     }
 

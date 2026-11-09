@@ -63,9 +63,10 @@ final class Verdict {
         ask.cruiseTasKt = figures.cruiseTasKt; ask.fuelBurnGph = figures.fuelBurnGph; ask.usableFuelGal = figures.usableFuelGal
         ask.cruisePowerPct = figures.cruisePowerPct; ask.climbTasKt = figures.climbTasKt; ask.climbFuelBurnGph = figures.climbFuelBurnGph
         ask.serviceCeilingFt = figures.serviceCeilingFt
+        ask.climbRateFpm = figures.climbRateFpm; ask.taxiFuelGal = figures.taxiFuelGal; ask.glideRatio = figures.glideRatio
         ask.day = Day.string(today)
         ask.minimums = minimums
-        ask.load = loads[plan.aircraft]
+        ask.load = loads[plan.loadKey]
         ask.ticked = ticked.sorted()
         // The gateway's currency is the planner's PilotCurrency by name.
         ask.currency = try currency.map { try Engine.recoded($0) }

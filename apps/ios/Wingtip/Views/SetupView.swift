@@ -25,7 +25,7 @@ struct SetupView: View {
             List {
                 Section(title: "Account") {
                     if let pilot = session.pilot {
-                        LabeledContent("Signed in as", value: pilot.displayName ?? pilot.email ?? "you")
+                        LabeledContent("Signed in as", value: pilot.displayName)
                         LabeledContent("Email", value: pilot.email)
                         NavigationLink("Contact") { ContactView().closesBack() }
                         ExportDataButton()
@@ -57,6 +57,9 @@ struct SetupView: View {
                 }
                 Section(title: "Map") {
                     Toggle("Traffic", isOn: Binding(get: { traffic.on }, set: { traffic.on = $0 }))
+                    // The glide ring outside an emergency (the owner's pick
+                    // of its place, 2026-11-09); off by default.
+                    GlideRingToggle()
                     // A Stratux, Sentry or the like on the cockpit's Wi-Fi:
                     // its traffic and FIS-B weather with no internet.
                     ReceiverModePicker()

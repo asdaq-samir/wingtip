@@ -36,7 +36,9 @@ struct EmergencySheet: View {
             .navigationTitle("Emergency")
             .navigationBarTitleDisplayMode(.inline)
             .closeButton { model.close() }
-            .task(id: fix.map { Emergency.key($0, aircraft: emergencyAircraft) }) { await model.refresh(fix: fix, aircraft: emergencyAircraft) }
+            .task(id: fix.map { Emergency.key($0, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio) }) {
+                await model.refresh(fix: fix, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio)
+            }
             .onChange(of: fix) { _, new in if let new { model.rank(new) } }
         }
     }

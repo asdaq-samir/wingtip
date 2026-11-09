@@ -44,12 +44,15 @@ struct AircraftView: View {
                     }
                     .foregroundStyle(.primary)
                     if let tail = plan.tail {
-                        LabeledContent("Flying", value: plan.airplaneChosen
-                            ? "\(tail) on \(plan.aircraft.uppercased())\(plan.figures.cruiseTasKt == nil ? "" : ", your figures")"
-                            : "\(tail), a type the planner has no figures for")
-                        // The figures the planner flies it on, the pilot's to
-                        // set from the handbook, or read off a photo of it.
-                        NavigationLink("Planning Figures") { AirplaneFiguresView().closesBack() }
+                        LabeledContent("Flying") {
+                            // The N-number opens its profile (the owner, 2026-11-09).
+                            TailButton(tail: tail) {
+                                Text(plan.aircraft == Plan.ownAirplane ? "\(tail), on your figures" : "\(tail) on \(plan.aircraft.uppercased())")
+                            }
+                        }
+                        // Every figure the planner flies it on, each with its
+                        // source, the pilot's to set (AirplaneProfileView).
+                        TailButton(tail: tail) { Text("Figures") }
                     }
                     // The airplane's checklists, normal and emergency, kept on
                     // this device by its N-number, else by its type.
@@ -58,21 +61,30 @@ struct AircraftView: View {
                 if session.signedIn || !own.isEmpty {
                     Section(title: "Yours") {
                         ForEach(own) { airplane in
-                            Button {
-                                typed = airplane.tailNumber
-                                fly()
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(airplane.tailNumber).font(.headline.monospaced())
-                                        Text("\(airplane.typeDesignator) · \(Format.speed(airplane.cruiseTasKt)) · \(Format.number(airplane.fuelBurnGph, decimals: 1)) gal/h")
-                                            .font(.footnote).foregroundStyle(.secondary)
+                            HStack {
+                                Button {
+                                    typed = airplane.tailNumber
+                                    fly()
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(airplane.tailNumber).font(.headline.monospaced())
+                                            Text("\(airplane.typeDesignator) · \(Format.speed(airplane.cruiseTasKt)) · \(Format.number(airplane.fuelBurnGph, decimals: 1)) gal/h")
+                                                .font(.footnote).foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        if plan.tail == airplane.tailNumber { Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Flying now") }
                                     }
-                                    Spacer()
-                                    if plan.tail == airplane.tailNumber { Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Flying now") }
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.borderless)
+                                .foregroundStyle(.primary)
+                                // Its profile, a tap apart from flying it, as
+                                // a list's detail button is.
+                                TailButton(tail: airplane.tailNumber) {
+                                    Image(systemName: "info.circle").accessibilityLabel("\(airplane.tailNumber) profile")
                                 }
                             }
-                            .foregroundStyle(.primary)
                         }
                         // Added, edited and deleted on their own page, with
                         // each one's checklist, squawks and inspections.

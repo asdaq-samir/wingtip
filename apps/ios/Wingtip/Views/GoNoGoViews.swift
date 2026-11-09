@@ -44,6 +44,9 @@ enum VerdictTarget: Equatable {
     case section(String)
     case loading
     case risk
+    /// The airplane's figures the finding is worked from (its fuel, its
+    /// runway distances): its profile (AirplaneProfileView).
+    case airplane
 
     /// The Brief's anchors the weather's and the airspace's findings open.
     static let weatherAnchor = "brief-weather"
@@ -55,6 +58,7 @@ enum VerdictTarget: Equatable {
         case "airspace": return .section(airspaceAnchor)
         case "balance": return .loading
         case "risk": return .risk
+        case "fuel", "runways": return .airplane
         default: return nil
         }
     }
@@ -119,6 +123,9 @@ struct GoNoGoSection: View {
                         .accessibilityElement(children: .combine)
                     }
                 }
+                // What the airplane's findings lack, asked in place (the
+                // owner, 2026-11-09); its charts a link to its profile.
+                AskFigureRow(needs: [.fuelTotals, .takeoffLanding], pickDetail: "Its fuel and runway findings are worked from its figures")
             } else if let problem = verdict.problem {
                 Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
             } else {
@@ -174,6 +181,8 @@ struct GoNoGoSection: View {
             NavigationLink { LoadingView().closesBack() } label: { content }
         case .risk?:
             NavigationLink { RiskView().closesBack() } label: { content }
+        case .airplane?:
+            AirplaneFiguresLink { content }
         case nil:
             content
         }
@@ -223,6 +232,8 @@ struct FindingFold: View {
                 NavigationLink("See the loading") { LoadingView().closesBack() }
             case .risk?:
                 NavigationLink("See the risk assessment") { RiskView().closesBack() }
+            case .airplane?:
+                AirplaneFiguresLink { Text("See the Airplane's Figures") }
             case nil:
                 EmptyView()
             }
@@ -260,7 +271,7 @@ struct RiskView: View {
                     .accessibilityElement(children: .combine)
                 }
                 let own = Set((verdict.answer?.selfChecks ?? []).map(\.key))
-                let raised = (risk.factors ?? []).filter { !own.contains($0.key) }
+                let raised = risk.factors.filter { !own.contains($0.key) }
                 Section(title: "From the Briefing and Your Logbook") {
                     if raised.isEmpty {
                         Text("Nothing raised").foregroundStyle(.secondary)
