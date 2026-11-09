@@ -625,7 +625,7 @@ def test_a_route_with_stops_figures_at_each_altitude_join_its_hops():
     """A hop that does not offer an altitude flies its nearest, the lower
     on a tie; times and fuel summed, the wind weighed by length."""
     from app.routers.plan import join_figures
-    from app.schemas import AltitudeFigure
+    from app.schemas.plan import AltitudeFigure
 
     def f(alt, ete, fuel, wind, everywhere=True):
         return AltitudeFigure(altitude_ft=alt, ete_min=ete, fuel_gal=fuel, tailwind_kt=wind, everywhere=everywhere)

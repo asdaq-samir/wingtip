@@ -18,7 +18,7 @@ from wingtip.terrain import DEFAULT_FAA_CACHE_DIR
 from .. import chart_model, chart_refresh, errors
 from ..router_basics import PROCESSED_DIR, paths
 from ..settings import CHARTS_REFRESH_WINDOW, CHARTS_REFRESH_WORKERS, get_settings
-from ..schemas import (
+from ..schemas.system import (
     ChartModelSnapshot,
     ChartRefreshStarted,
     CorridorStatus,

@@ -1,7 +1,7 @@
 """app.routers.clearance: a clearance's places found near the route, and
 the names its recognizer is told to listen for."""
 from app.routers import clearance
-from app.schemas import ClearanceAsk, SpokenProcedureAsk
+from app.schemas.clearance import ClearanceAsk, SpokenProcedureAsk
 
 PLACES = [
     {"ident": "GEP", "name": "Gopher", "what": "navaid", "lat": 45.15, "lon": -93.37},

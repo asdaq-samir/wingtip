@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.routers import briefing as briefing_router
 from app.routers import words as words_router
-from app.schemas import Briefing
+from app.schemas.common import Briefing
 
 client = TestClient(app)
 METAR_C81 = "KC81 061353Z AUTO 27008KT 10SM CLR 15/07 A2992"

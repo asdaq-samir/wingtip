@@ -3,7 +3,7 @@ layers: Google's map tiles (the Map Tiles API), where the deployment has
 a key for them."""
 from fastapi import APIRouter, HTTPException
 
-from ..schemas import GoogleMaps
+from ..schemas.basemaps import GoogleMaps
 from ..settings import get_settings
 
 router = APIRouter()

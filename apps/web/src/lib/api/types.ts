@@ -8,7 +8,7 @@
  * ./assistant-schema.d.ts, this app's Spring
  * Boot endpoints from services/gateway/openapi.json into
  * ./gateway-schema.d.ts -- and re-exported here under the names the pages
- * use, so a field renamed in services/planner/app/schemas.py or in a
+ * use, so a field renamed in services/planner/app/schemas/ or in a
  * Java DTO is a compile error at every call site rather than a silent
  * `undefined` at runtime. What is written by hand below is only what
  * no server schema describes: the page's own compositions.

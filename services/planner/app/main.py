@@ -51,7 +51,9 @@ from .router_basics import PROCESSED_DIR
 from .planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan
 from .routers import clearance, figures, gonogo, live, packs, pilot, route_options, system, traffic, weather_map, words
-from .schemas import STREAM_MESSAGES, Index
+from .schemas.chart import DetectMessage
+from .schemas.common import Index
+from .schemas.plan import NavLogMessage
 from .settings import get_settings
 
 # Nothing else in the process configured logging, so every log.info() in
@@ -377,6 +379,14 @@ def index() -> Index:
 for module in (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, traffic, basemaps,
                route_options, gonogo, figures, clearance, packs, words, weather_map, pilot, live):
     app.include_router(module.router)
+
+
+# The unions no route returns, published into the OpenAPI components by
+# _openapi so apps/web/ gets a TypeScript type for each stream.
+STREAM_MESSAGES = {
+    "NavLogMessage": NavLogMessage,
+    "DetectMessage": DetectMessage,
+}
 
 
 def _openapi() -> dict:

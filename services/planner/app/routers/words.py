@@ -33,8 +33,8 @@ from ..figures.schemas import Debrief, DebriefAnswer, DebriefTolerances
 from ..gonogo import ask as engine
 from ..gonogo.schemas import RiskAssessment
 from ..gonogo.words import WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, gairmet_title, num, one, sigmet_hazard
-from ..schemas import Briefing, ForecastStation, GAirmet, Hazard, OnRoute
-from ..schemas import WordsSource as Source, WordsSources
+from ..schemas.common import Briefing, ForecastStation, GAirmet, Hazard, OnRoute
+from ..schemas.words import WordsSource as Source, WordsSources
 from . import briefing as briefing_router
 
 router = APIRouter()

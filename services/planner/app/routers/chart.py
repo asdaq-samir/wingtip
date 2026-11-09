@@ -12,7 +12,7 @@ from .. import chart_model
 from ..chart_model import TRAINING_HALF_WIDTH_NM
 from ..router_basics import line, load_route, ndjson, route_key
 from ..detection import detect_job, faa_airports
-from ..schemas import (
+from ..schemas.chart import (
     Classification,
     DetectBlock,
     DetectDone,

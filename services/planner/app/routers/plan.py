@@ -45,9 +45,11 @@ from ..planning import (
     own_altitude_caution, prohibited_caution, route_line, route_totals,
 )
 from .. import planning as planning_module
-from ..schemas import (
+from ..schemas.common import (
     AltitudeChoice,
     FlightRules,
+)
+from ..schemas.plan import (
     AltitudeFigure, AltitudeOption,
     ChartLayer,
     ChartSheet,

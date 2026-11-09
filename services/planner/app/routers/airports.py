@@ -26,7 +26,7 @@ from wingtip import (
 )
 
 from ..router_basics import DIAGRAM_CACHE, load_route
-from ..schemas import (
+from ..schemas.airports import (
     AirportPhotos, AirportPlace, AirportServices, ForecastWind, AirportsInView, ChartPages, NearestAirports,
     PlacesFound,
     PlateOverlay,

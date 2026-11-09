@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, StringConstraints
 
-from ..schemas import Wind
+from ..schemas.common import Wind
 
 # --- The debrief --------------------------------------------------------
 

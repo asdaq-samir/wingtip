@@ -10,7 +10,7 @@ import time
 from fastapi import APIRouter, Query
 from wingtip import datis, departures, flow, itws, rvr, saa
 
-from ..schemas import AirportAtis, AirportRvr, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses
+from ..schemas.live import AirportAtis, AirportRvr, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses
 
 router = APIRouter()
 

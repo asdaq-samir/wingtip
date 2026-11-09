@@ -13,7 +13,7 @@ from wingtip import checkpoint_notes
 from wingtip import geo
 
 from ..router_basics import load_route
-from ..schemas import CheckpointNoteSaved, NoteSeeded, NotesToWrite, NoteToWrite, PilotNotesForgotten
+from ..schemas.notes import CheckpointNoteSaved, NoteSeeded, NotesToWrite, NoteToWrite, PilotNotesForgotten
 from ..checkpoint_scoring import route_checkpoints
 
 router = APIRouter()
