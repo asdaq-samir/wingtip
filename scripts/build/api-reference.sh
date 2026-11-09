@@ -7,7 +7,7 @@
 #
 #   scripts/build/api-reference.sh [out-dir]     default: build/api-reference
 #
-# Run in Docker (node, as the Mac has none; the version is apps/web/.nvmrc's)
+# Run in Docker (node, as the Mac has none; the version is .tool-versions')
 # with Redocly CLI pinned below. CI runs it and uploads the result as the
 # `api-reference` artifact (ci.yml, the docs job, which Docker is on the
 # runner for); the HTML is not committed:
@@ -21,7 +21,7 @@ REDOCLY=@redocly/cli@2.2.0
 out=${1:-$here/build/api-reference}
 mkdir -p "$out"
 out=$(cd "$out" && pwd)
-node=$(tr -d ' \n' < "$here/apps/web/.nvmrc")
+node=$("$here/scripts/build/toolchain.sh" get nodejs)
 
 # The service's document, the title the page carries.
 services="planner:services/planner/openapi.json gateway:services/gateway/openapi.json assistant:services/assistant/openapi.json"

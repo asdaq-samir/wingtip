@@ -114,7 +114,7 @@ if has_area web; then
     # if a check has built it; the newest one otherwise (a lock a commit or
     # two older types the same nearly always); else it is built here, once,
     # the way check.sh builds it, and both share it from then on.
-    node=$(tr -d ' \n' < "$here/apps/web/.nvmrc")
+    node=$("$here/scripts/build/toolchain.sh" get nodejs)
     tag=wingtip-check-web:$({ echo "node $node"; cat "$here/apps/web/package.json" "$here/apps/web/package-lock.json"; } | shasum -a 256 | cut -c1-16)
     if ! docker image inspect "$tag" >/dev/null 2>&1; then
       newest=$(docker image ls wingtip-check-web --format '{{.CreatedAt}}|{{.Repository}}:{{.Tag}}' | sort -r | head -1 | cut -d'|' -f2)
@@ -151,8 +151,10 @@ fi
 # --- Python: ruff over the files changed, each under its own settings -------
 py_files=$(grep -E '\.py$' <<<"$changed" | grep -v '^services/planner/app/detection\.py$' || true)
 if [ -n "$py_files" ]; then
-  if command -v ruff >/dev/null; then ruff=(ruff)
-  elif command -v uvx >/dev/null; then ruff=(uvx -q ruff)
+  # .tool-versions' ruff, as CI's and format.sh's: the PATH's only at that version.
+  want_ruff=$("$here/scripts/build/toolchain.sh" get ruff)
+  if command -v ruff >/dev/null && [ "$(ruff --version 2>/dev/null)" = "ruff $want_ruff" ]; then ruff=(ruff)
+  elif command -v uvx >/dev/null; then ruff=(uvx -q "ruff@$want_ruff")
   else ruff=()
   fi
   if [ ${#ruff[@]} -gt 0 ]; then
@@ -225,6 +227,8 @@ fi
 if has_area arch; then
   note "arch: the file-size budget"
   out=$(python3 "$here/scripts/ci/file_sizes.py" --base origin/main) || { grep "::error" <<<"$out"; fail "file sizes"; }
+  note "arch: every version is .tool-versions'"
+  out=$("$here/scripts/build/toolchain.sh" --check) || { grep "::error" <<<"$out"; fail "toolchain drift (scripts/build/toolchain.sh writes them)"; }
 fi
 
 if [ "$failed" -ne 0 ]; then

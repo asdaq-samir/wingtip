@@ -47,7 +47,7 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 docker=${DOCKER:-docker}
 
-"$docker" run --rm -v "$here:/w" -w /w node:24-slim sh -ec '
+"$docker" run --rm -v "$here:/w" -w /w "node:$("$here/scripts/build/toolchain.sh" get nodejs)-slim" sh -ec '
   swift_dir=apps/ios/Wingtip/API/Generated
   kotlin_dir=apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated
   mkdir -p "$swift_dir" "$kotlin_dir" /tmp/api
