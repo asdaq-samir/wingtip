@@ -29,6 +29,8 @@ import { standing, subscriptionQuery, useSold } from "../../lib/subscription";
 import PilotGuide from "./PilotGuide";
 import PilotPage from "./PilotPage";
 import SetupPill from "./SetupPill";
+import { ChecklistsRow, CoachRow, EmergencyGroup, PracticeRow, SetupChecklistsPage, SetupCoachPage } from "./SetupRows";
+import PracticePage from "./Practice";
 import TabPage, { TAB_PAGE_GAP } from "../../components/TabPage";
 
 // Loaded when it is drawn, as PaidPrompt does: imported here it put the
@@ -105,6 +107,11 @@ function Personal({
     minimums: { title: "Minimums", content: <MinimumsPanel /> },
     subscription: { title: "Subscription", content: <SubscriptionPanel /> },
     pilot: { title: "Pilot details", content: <PilotPage /> },
+    // Setup's rows for what was three or four taps down (SetupRows), the
+    // same pages their deeper homes open; useOpenScreen names two of them.
+    checklists: { title: "Checklists", content: <SetupChecklistsPage aircraft={aircraft} /> },
+    coach: { title: "Coach", content: <SetupCoachPage /> },
+    practice: { title: "Practice", content: <PracticePage /> },
   };
   return (
     <>
@@ -141,6 +148,7 @@ function Personal({
                     </RowBadge>
                   }
                 />
+                <ChecklistsRow aircraft={aircraft} />
                 <PageRow
                   page="flights"
                   title="Flights"
@@ -163,6 +171,8 @@ function Personal({
                     </RowBadge>
                   }
                 />
+                <CoachRow disabled={!signedIn} value={!signedIn ? SIGNED_OUT : undefined} />
+                <PracticeRow />
                 <PageRow
                   page="minimums"
                   title="Minimums"
@@ -176,6 +186,7 @@ function Personal({
               </ListGroup>
             </div>
           </AccountCard>
+          <EmergencyGroup />
           {signedIn && sold && (
             <ListGroup>
               <SubscriptionRow />

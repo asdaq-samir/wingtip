@@ -30,13 +30,18 @@ not timed on a device.
   `ScreenRequests`. A link, a figure tapped and a shortcut row all use it.
   Each is a `switch`/`when` over the generated list, so a screen added to
   `design/screens.json` fails each app's build until that app opens it.
-- **The same verbs:** Edit, Delete, Move, Undo; More Info for a thing's card;
+- **The same verbs:** Edit, Delete, Move, Undo, Copy; More Info for a thing's card;
   Direct To, Set Altitude…, Hold Here…, Add a Stop After, Remove for a point
   of the route. "Airplane", never "aircraft", except in the FAA's own form
   wording (the flight plan's "Aircraft identification").
 - **Undo where it happened:** after a delete, an Undo row in the list it
-  went from (web `components/UndoRow`, iOS `Views/UndoRow`), or the route's
-  Undo bar for the route; not a toast.
+  went from (web `components/UndoRow`, iOS `Views/UndoRow`, Android
+  `ui/UndoRow`), or the route's Undo bar under the route (web
+  `RouteUndoBar`, iOS `UndoBar`, Android `RouteUndoRow`); never a toast.
+- **Frequencies copy:** every frequency shown copies with a tap (web
+  `FrequencyButton`) or a hold (iOS `FrequencyActions`, Android
+  `FrequencyRow`). No platform has Tune: none reaches a radio (the
+  receiver is ADS-B/FIS-B in, the Bluetooth audio records only).
 - **Look:** new rows and buttons are the platform's existing ones (web
   `ListRow` and the tint for what is tapped, iOS `List` rows and `Button`s
   with `WingtipSpace`, Android Material `TextButton`/`ListItem` with
@@ -67,7 +72,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `nearest` | Nearest | yes | yes | yes | The fields nearest the airplane. |
 | `ask` | Ask | -- | yes | yes | Ask the assistant about the flight. |
 | `emergency` | Emergency Assistant | yes | yes | yes | The emergency assistant: the nearest fields, the checklist, 7700 and 121.5. |
-| `checklists` | Checklists | -- | yes | yes | The picked airplane's checklists. |
+| `checklists` | Checklists | yes | yes | yes | The picked airplane's checklists. |
 | `airplanes` | Your Airplanes | yes | yes | -- | The pilot's own airplanes, their figures, checklists and squawks. |
 | `logbook` | Logbook | yes | yes | yes | The pilot's logbook and currency. |
 | `coach` | Coach | yes | yes | yes | The training coach. |
@@ -99,23 +104,25 @@ the web's address once used, so a reload or Back does not open it again.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| FPL: route box, route list, nav log rows | FPL | 1 | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; Undo bar after a removal |
+| FPL: route box, route list, nav log rows | FPL | 1 | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; **Undo bar under the route after a removal or clear (was a toast; new)** |
 | Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; **Dist opens the nav log (new)** |
 | Brief | FPL → Brief | 2 | Alternate filed or taken off; Ask chips apply changes |
 | Nav log card | FPL → ••• → Nav log; **Dist tapped (new)** | 3 → 1 | Rows select; **a field's name opens its card (new)** |
 | Profile | FPL → Profile | 2 | VFR/IFR, altitude in the side view, Dry run |
-| Saved flights | FPL (no route) → Saved; Setup → Flights | 2 | Delete with a confirm; name and notes not editable (no API) |
-| Airport card | Tap a field; a route row's More Info; **a nav log field (new)** | 1 | Add stop, Fly Here, favorite |
+| Saved flights | FPL (no route) → Saved; Setup → Flights | 2 | **Name and notes edited in the row (Edit in its menu; new)**; delete with a confirm |
+| Airport card | Tap a field; a route row's More Info; **a nav log field (new)** | 1 | Add stop, Fly Here, favorite; **frequencies copy (new)** |
 | Airport Favorites | Airport → Favorites | 2 | Drag to reorder, swipe to delete, **Undo row (new)** |
 | Nearest | Airport → Nearest | 2 | Change the place it is from |
 | Airplane card, past flight | Tap traffic; its past row | 1, 2 | Replay |
 | Map menu | Map button | 1 | Every switch in place |
-| Emergency assistant | Flying head; voice; emergency checklist | 1 in flight, 5–6 on the ground → `open=emergency` | -- |
+| Emergency assistant | Flying head; voice; **Setup → Emergency Assistant (new)**; the checklist page | 1 in flight, 5–6 → **2** on the ground | Its frequencies copy |
 | Setup | Setup | 1 | Layout tiles in place |
-| Airplanes, Flights, Logbook, Minimums | Setup → row | 2 | Minimums inline; logbook entry and airplane in popover forms |
-| Coach, Checkride, Instructing | Setup → Logbook → row | 3 | Checkride inline |
-| Checklists, Squawks | Setup → Airplanes → airplane → row | 4 | Checklist as one text; squawks inline |
-| Holding, Lost comms, drills | Setup → Guide → row | 3 | -- |
+| Airplanes, Flights, Logbook, Minimums | Setup → row | 2 | Minimums inline; **logbook entry edited in the row, delete with an Undo row (new)**; airplane in a popover form |
+| Checklists | **Setup → Checklists (new)**; Setup → Airplanes → airplane → row | 4 → **2** | Checklist as one text |
+| Coach | **Setup → Coach (new)**; Setup → Logbook → Coach | 3 → **2** | -- |
+| Practice (Holding, Lost comms, the drills) | **Setup → Practice (new)**; Setup → Guide → row | 3 → **2** | -- |
+| Checkride, Instructing | Setup → Logbook → row | 3 | Checkride inline |
+| Squawks | Setup → Airplanes → airplane → row | 4 | Squawks inline |
 
 ### iOS
 
@@ -124,27 +131,29 @@ the web's address once used, so a reload or Back does not open it again.
 | FPL | FPL | 1 | From/To and altitude inline; stops Edit (delete, move) and each point's menu (**More Info and the destination's Brief, new**); Undo bar |
 | Figures strip | none | 0 | **Tapped, the nav log (new)** |
 | Nav Log | FPL → ••• → Nav Log; **the strip (new)** | 3 → 1 | -- |
-| Brief, Profile, Flights | FPL → row or toolbar | 2 | Saved flights: **swipe to delete with an Undo row, swipe right or hold for Flown Track (new)**; title now "Saved Flights" |
+| Brief, Profile, Flights | FPL → row or toolbar; **Setup → Saved Flights (new)** | 2 | Saved flights: swipe to delete with an Undo row; swipe right or hold for Flown Track and **Edit: name and notes in the row (new)** |
 | Passenger Briefing | FPL → Brief → Passengers | 3 → link | DatePicker |
 | Risk Assessment, Weight & Balance | Brief → finding | 4 | Toggles, figures |
-| Airport card | Tap a field; Airport → row; **a route point's More Info (new)** | 1 | Fly Here, Add Stop, Favorite |
-| Airplane, checklists | Airplane → row | 2 | Checklist edited as text |
+| Airport card | Tap a field; Airport → row; **a route point's More Info (new)** | 1 | Fly Here, Add Stop, Favorite; **frequencies copy on hold (new)** |
+| Airplane, checklists | Airplane → row; **Setup → Checklists (new)** | 2 | Checklist edited as text |
 | Your Airplanes → airplane → Squawks | Airplane → Your Airplanes → … | 3–4 | Forms; squawk delete has no Undo |
-| Setup pages (Logbook, Coach, Minimums, Guide, Downloads, About) | Setup → row | 2 | Logbook entry form, swipe delete with confirm |
-| Emergency | Instruments bar (flying); checklist | 1 / 3 | -- |
+| Setup pages (Logbook, Coach, Minimums, Guide, Downloads, About; **Practice, Your Airplanes, new**) | Setup → row | 2 | **Logbook entry edited in the row; swipe delete with an Undo row (new)** |
+| Emergency | Instruments bar (flying); **Setup → Emergency Assistant, Airplane → Emergency Assistant (new)** | 1 / 3 → **2** | Its frequencies copy |
+| An alert ahead, a copilot message | the banner | 0 | **Tapped: the airspace card; the message's Direct To and More Info (new)** |
 
 ### Android
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| FPL (its legs are the nav log) | FPL | 1 | Departure, destination, stops typed; VFR/IFR; leg rows open the leg |
+| FPL (its legs are the nav log) | FPL | 1 | Departure, destination, stops typed; VFR/IFR; leg rows open the leg; **each point's ⋮ menu: More Info, Brief (destination), Direct To, Hold Here, Add a Stop After…, Move Up, Move Down, Remove; Undo row over the legs (new)** |
 | Figures strip | none | 0 | **Tapped, the FPL tab's legs (new)** |
 | Brief | strip layout only | unreachable in tabs → 2 (**FPL → Brief, new**) | Departure hour |
-| Airport tab, card | Airport; tap a field | 1 | Search |
-| Airplane tab, checklists | Airplane → Checklist | 2 | Ticks; Edit as text |
-| Setup, Logbook, Coach | Setup → Logbook → Coach | 2 / 3 | Logbook entries read-only |
+| Airport tab, card | Airport; tap a field | 1 | Search; **Frequencies section, tap to copy (new)** |
+| Airplane tab, checklists | Airplane → Checklist; **Setup → Checklists (new)** | 2 | Ticks; Edit as text |
+| Setup, Logbook, Coach | Setup → Logbook; **Setup → Coach (new)** | 2 / 3 → **2** | **Logbook entries edited in the row; Delete with an Undo row (new; were read-only)** |
 | Downloads, Passenger Briefing, About | Setup → row | 2 | Downloads delete with no confirm or Undo |
-| Emergency | Instruments bar; Airplane → Emergency → Assistant | 1 / 3 | -- |
+| Emergency | Instruments bar; **Setup → Emergency Assistant, Airplane → Emergency Assistant (new)** | 1 / 3 → **2** | Its frequencies copy |
+| Alerts ahead, a copilot message | the banner | 1 | **Tapped: the Ahead sheet, More Info on a Class B, C or D; the message's Fly to and More Info (new)** |
 | Nearest, Ask | Instruments bar; the sparkle | 1 | -- |
 
 ## Contextual actions: where each lives
@@ -155,41 +164,47 @@ or overflow).
 
 | On | Actions | Web | iOS | Android |
 |---|---|---|---|---|
-| A waypoint of the route | Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove | point menu (all) | point menu (all but Add a Stop After; More Info new) | route leg sheet: Direct, Remove |
-| The destination | More Info (weather, frequencies, runways, approaches), Brief, Nearest | More Info; Brief on FPL | point menu: More Info, **Brief (new)** | **Brief beside Plan (new)** |
+| A waypoint of the route | Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Move, Remove, Undo | point menu (all) | point menu (all but Add a Stop After; More Info new) | **⋮ point menu: all but Set Altitude… (no per-point altitude on Android); Undo row (new)** |
+| The destination | More Info (weather, frequencies, runways, approaches), Brief, Nearest | More Info; Brief on FPL | point menu: More Info, **Brief (new)** | Brief beside Plan; **point menu: More Info, Brief (new)** |
 | The figures | the nav log | **Dist (new)** | **strip (new)** | **strip (new)** |
 | A nav log row | its field's card | **name (new)** | leg detail | leg sheet |
-| A saved flight | Open, Flown Track (replay, profile), Debrief, Delete, Undo | page; Debrief on its page | **swipe and hold: Flown Track, Delete; Undo (new)** | -- |
+| A saved flight | Open, Edit (name, notes), Flown Track (replay, profile), Debrief, Delete, Undo | page; Debrief on its page; **Edit in the row's menu (new)** | swipe and hold: Flown Track, **Edit (new)**, Delete; Undo | -- (no saved flights on Android yet) |
+| A logbook entry | Edit, Delete, Undo | **in the row; Undo row (new)** | **in the row; Undo row (new)** | **in the row; Undo row (new)** |
+| A frequency | Copy (Tune nowhere: no radio link) | **tap (new)** | **hold (new)** | **tap (new)** |
 | A flight just ended | Debrief the approaches · Log it | FlightLoggedSheet | FlightLoggedSheet | FlightLoggedSheet |
-| An approach | Brief, Dry Run, Load into Route, Plate | procedures sheet | procedure menu | -- (not on Android yet) |
-| An alert | what it is and its fix | AlertsBanner opens it | **not tappable (gap)** | **not tappable (gap)** |
+| An approach | Brief, Dry Run, Load into Route, Plate | procedures sheet | -- (ProceduresRow picks the procedure only; gap) | -- (no approach list on Android; gap) |
+| An alert | what it is and its fix | AlertsBanner opens it | **the airspace card; copilot: Direct To, More Info (new)** | **the Ahead sheet; copilot: Fly to, More Info (new)** |
 | A Go / No-Go item, a Brief line | its fix | opens its page | targets only | **not tappable (gap)** |
 
 ## Gaps left, for the owner
 
-These need a decision, a server change or another branch's work:
+The nav follow-ups (2026-11-09) closed the first list's gaps 1 to 8 as far
+as each platform has the screen. What is left needs a decision, a server
+change or another branch's work:
 
-1. **Emergency assistant on the ground** (web 5–6 taps, iOS 3, Android 3).
-   It lost its map button on 2026-11-08 by the owner's call. A row for it
-   in Setup's list, or in the Airplane tab's checklists, would make it 2;
-   `open=emergency` opens it from a link meanwhile.
-2. **Checklists and Squawks on the web** (4 taps, inside the airplane
-   form). A Checklists row in Setup's list beside Airplanes would make it 2.
-3. **Coach, Checkride, Instructing, the drills** (3 taps, web). Rows in
-   Setup's list would make them 2.
-4. **Saved flights' name and notes** can't be changed anywhere: the gateway
-   has no update for a flight (`PUT /api/flights/{id}` exists only for its
-   track). An endpoint, then an inline field on each platform.
-5. **Logbook entries on Android** are read-only; entries on the web and
-   iOS open a form rather than editing in the row.
-6. **The route's Undo is a toast on the web** (`use-plan-history`), where
-   the rule is "where it happened". The iPhone's is a bar over the sheet.
-7. **Alerts and Go / No-Go lines on the phones** don't open their fix; the
-   ready-to-fly branch is doing the Go / No-Go fixes.
-8. **Frequencies** (all three) show but can't be copied or tuned.
-9. **Android has no Profile, saved flights, favorites list or Guide**
-   (`design/screens.json` says which platform has which screen); that is
-   the android-parity branch's.
-10. **Close inconsistencies left:** the iOS Pick an Airplane sheet has no
-    close button (the own-figures branch owns that view); Android's
-    airport diagram is a full-screen dialog with no swipe.
+1. **Approach actions on the phones.** iOS's `ProceduresRow` only picks a
+   procedure and its transition (this page said earlier it had a procedure
+   menu; it does not), and Android lists no approaches at all, so neither
+   has Brief, Dry Run, Load into Route or Plate on an approach row.
+2. **No Tune anywhere.** No platform reaches a radio; Copy is the action.
+   The web nav log and ATIS rows, Android's ATC card, nav log, D-ATIS and
+   the strip's chips show no frequency to copy (the ATC card is
+   android-parity's).
+3. **Alerts ahead have no one-tap fix**: the planner sends only the rule
+   (`need`), so the phones open the airspace's card (iOS) or the Ahead
+   sheet (Android) with it; a fix needs the planner to say one. TFRs,
+   special-use areas, terrain and obstacles have no card on Android.
+4. **Android's route Undo row** shows only on the FPL tab (an edit from the
+   map's Route Leg sheet makes one there); the point menu is not on the
+   departure or in the strip layout, and has no Set Altitude… (no
+   per-point altitude on Android).
+5. **Logbook delete differs underneath:** the web deletes at once and its
+   Undo logs the flight again (a new id), the phones hold the DELETE until
+   the Undo goes. The web's confirm before a delete is gone on all three.
+6. **Android has no Profile, saved flights, favorites list, Guide or
+   Practice** (`design/screens.json`); that is the android-parity branch's,
+   and saved flights' Edit follows it there.
+7. **Close inconsistencies left:** the iOS Pick an Airplane sheet has no
+   close button (the own-figures branch); Android's airport diagram is a
+   full-screen dialog with no swipe.
+8. **Go / No-Go lines** opening their fix are the ready-to-fly branch's.

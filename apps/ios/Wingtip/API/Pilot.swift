@@ -54,6 +54,13 @@ extension Gateway {
         try await send("POST", "/api/flights", json: flight)
     }
 
+    /// A saved flight's name or notes changed (PATCH /api/flights/{id}):
+    /// a field left nil is kept, a blank one clears it; the flight's
+    /// summary as it now stands comes back.
+    static func updateFlight(_ id: Int, _ change: GWUpdateFlightRequest) async throws -> SavedFlight {
+        try await send(SavedFlight.self, "PATCH", "/api/flights/\(id)", json: change)
+    }
+
     static func deleteFlight(_ id: Int) async throws {
         try await send("DELETE", "/api/flights/\(id)")
     }

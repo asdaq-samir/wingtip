@@ -12,6 +12,8 @@ const FLIGHT = {
   departureIdent: "A",
   destinationIdent: "B",
   stops: [],
+  name: null,
+  notes: null,
   aircraftTailNumber: null,
   cruiseAltitudeFt: 3500,
   totalDistanceNm: 60,

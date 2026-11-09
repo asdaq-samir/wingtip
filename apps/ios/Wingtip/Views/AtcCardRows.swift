@@ -12,6 +12,7 @@ struct AtcCardRows: View {
         VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             ForEach(Array(card.items.enumerated()), id: \.offset) { _, item in
                 Text(item.words).font(.subheadline.weight(.semibold)).monospacedDigit()
+                    .frequencyActions(item.kind == "frequency" ? item.mhz : nil)
             }
             if let readback = card.readback {
                 let complete = readback.check.items.isEmpty

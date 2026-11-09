@@ -188,7 +188,8 @@ object Notifications {
             .build()
     }
 
-    private fun openApp(context: Context): PendingIntent =
+    /** The app opened from a notification's tap. */
+    internal fun openApp(context: Context): PendingIntent =
         PendingIntent.getActivity(
             context, 0, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,

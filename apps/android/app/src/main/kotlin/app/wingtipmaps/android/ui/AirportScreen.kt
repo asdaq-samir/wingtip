@@ -136,5 +136,11 @@ fun PlaceCard(place: AirportPlace) {
         }
         // What SWIM says now: the D-ATIS, the RVR, a ground stop or delay.
         LiveAirportRows(place.ident)
+        // The field's frequencies as NASR lists them, each copied with a tap.
+        val frequencies = place.frequencies.filter { it.frequencyMhz != null }
+        if (frequencies.isNotEmpty()) {
+            SectionTitle(stringResource(R.string.frequencies))
+            frequencies.forEach { f -> FrequencyRow(f.description ?: f.type.orEmpty(), Format.frequency(f.frequencyMhz!!)) }
+        }
     }
 }

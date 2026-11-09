@@ -6,6 +6,8 @@ import { cn } from "cn";
 import IconButton from "./IconButton";
 import ListenThrough from "./ListenThrough";
 import ClearancePhoto from "./ClearancePhoto";
+import ClearancePlace from "./ClearancePlace";
+import FrequencyButton from "./FrequencyButton";
 import { ListGroup, ListRow } from "./GroupedList";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
@@ -21,7 +23,6 @@ import {
   type Clearance,
   type ClearedItem,
   type Found,
-  type FoundPlace,
 } from "../lib/clearance";
 import { useCanListen } from "../lib/speechLocal";
 import { heardThrough, useAtcRadio, useRadioActions, type PlannedRoute } from "../lib/atcRadio";
@@ -41,24 +42,6 @@ const EXAMPLE =
   "“Cleared to the Duluth airport via Gopher then as filed, maintain three thousand, departure one two five point three five, squawk four five two one.”";
 const EXAMPLE_READBACK = "“Duluth, Gopher, three thousand, one two five point three five, four five two one, Skyhawk three alpha bravo.”";
 
-/** A place as found: its ident, or the words said where nothing was
- *  found, in amber where it was found by its sound only, for the pilot to
- *  check. */
-function Place({ place }: { place: FoundPlace }) {
-  if (!place.ident)
-    return (
-      <span className="text-destructive" title="Not found">
-        “{place.said}”?
-      </span>
-    );
-  return (
-    <span className={cn(!place.sure && "text-amber-600 dark:text-amber-400")} title={place.name ?? undefined}>
-      {place.ident}
-      {!place.sure && "?"}
-    </span>
-  );
-}
-
 /** The route as cleared, its parts in order, each as found. */
 function RouteWords({ items, asFiled, found }: { items: ClearedItem[]; asFiled: boolean; found: Found | undefined }) {
   const parts: ReactNode[] = [];
@@ -69,7 +52,7 @@ function RouteWords({ items, asFiled, found }: { items: ClearedItem[]; asFiled: 
     else if (item.kind === "airway") parts.push(item.ident);
     else if (item.kind === "places") {
       const places = found?.route?.[run++] ?? [{ said: item.said, sure: true, ident: item.said.toUpperCase() }];
-      parts.push(...places.map((p, k) => <Place key={`${i}-${k}`} place={p} />));
+      parts.push(...places.map((p, k) => <ClearancePlace key={`${i}-${k}`} place={p} />));
     } else {
       const picked = found?.[item.kind];
       parts.push(
@@ -337,7 +320,7 @@ export default function ClearanceCard({
   const limit = clearance.classB ? (
     "Class Bravo airspace"
   ) : places?.limit?.ident ? (
-    <Place place={places.limit} />
+    <ClearancePlace place={places.limit} />
   ) : (
     clearance.limit && capital(clearance.limit)
   );
@@ -432,7 +415,9 @@ export default function ClearanceCard({
               )}
               {altitude && <Line name="Altitude">{altitude}</Line>}
               {clearance.frequency && (
-                <Line name="Frequency">{`${clearance.facility ? capital(clearance.facility) : ""} ${clearance.frequency}`.trim()}</Line>
+                <Line name="Frequency">
+                  <FrequencyButton mhz={clearance.frequency} name={capital(clearance.facility ?? "")} named />
+                </Line>
               )}
               {clearance.squawk && <Line name="Transponder">{clearance.squawk}</Line>}
             </div>

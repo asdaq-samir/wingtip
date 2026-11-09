@@ -79,8 +79,10 @@ struct ChecklistView: View {
     }
 }
 
-/// The two rows an airplane's checklists open from, on the Aircraft tab
-/// and on one of the pilot's airplanes.
+/// The rows an airplane's checklists open from, on the Aircraft tab, on
+/// one of the pilot's airplanes and on Setup's Checklists: the two lists,
+/// and the emergency assistant beside them (2 taps from the map on the
+/// ground, docs/navigation.md's gap 1).
 struct ChecklistRows: View {
     let airplane: String
 
@@ -95,6 +97,34 @@ struct ChecklistRows: View {
         } label: {
             Label("Emergency", systemImage: "exclamationmark.triangle")
         }
+        EmergencyAssistantRow()
+    }
+}
+
+/// The emergency assistant opened by its name (RootView.openScreen), as a
+/// link's `open=emergency` opens it: the best fields, the checklist, the MAYDAY.
+struct EmergencyAssistantRow: View {
+    var body: some View {
+        Button { PendingCommand.shared.command = .open(.emergency) } label: {
+            Label(Screen.emergency.title, systemImage: "exclamationmark.triangle.fill")
+        }
+        .foregroundStyle(WingtipInk.problem)
+    }
+}
+
+/// Setup's Checklists: the picked airplane's checklists, as the Airplane
+/// tab lists them, one row from Setup.
+struct ChecklistsPage: View {
+    @Environment(Plan.self) private var plan
+
+    var body: some View {
+        List {
+            Section(title: plan.airplaneName ?? "No Airplane Picked") {
+                ChecklistRows(airplane: LocalChecklists.airplane(of: plan))
+            }
+        }
+        .navigationTitle(Screen.checklists.title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

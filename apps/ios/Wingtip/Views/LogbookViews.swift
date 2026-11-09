@@ -30,16 +30,17 @@ struct UntilText: View {
 /// dates they give, instrument currency (61.57(c), (d)) with the last
 /// proficiency check -- all worked out by the gateway; then the totals,
 /// the file in and out, and the flights, newest first, each opened to
-/// change and swiped away, asked first.
+/// change in its own row (LogbookEntriesModel) and swiped away with an Undo.
 struct LogbookView: View {
     @Environment(Session.self) private var session
     @Environment(Plan.self) private var plan
-    @State private var entries: [LogbookEntry]?
+    /// The flights listed, the one open in its row and the one just deleted.
+    @State private var flights = LogbookEntriesModel()
     @State private var currency: Currency?
     @State private var reminders: Reminders?
     @State private var problem: String?
-    @State private var editing: Editing?
-    @State private var toDelete: LogbookEntry?
+    /// A new flight in the form, from the plus.
+    @State private var adding: LogbookEntryRequest?
     @State private var importing = false
     @State private var imported: String?
     @State private var exportFile: URL?
@@ -47,12 +48,6 @@ struct LogbookView: View {
     /// A file read, shown before its flights go in.
     @State private var preview: (name: String, read: LogbookCSV.Imported)?
     @State private var sending = false
-
-    /// The flight in the form: a new one, or one logged.
-    struct Editing: Identifiable {
-        var id: Int? = nil
-        var entry: LogbookEntryRequest
-    }
 
     var body: some View {
         List {
@@ -84,13 +79,24 @@ struct LogbookView: View {
                     LogbookPhotoRow { await load() }
                 }
                 Section(title: "Flights") {
-                    if let entries {
+                    if let removed = flights.removed {
+                        UndoRow(words: "Removed \(LogbookEntriesModel.title(removed.entry))", undo: flights.undo,
+                                done: { Task { await keep(removed.entry) } })
+                    }
+                    if let entries = flights.entries {
                         if entries.isEmpty { Text("No flights logged yet: the plus logs one.").foregroundStyle(.secondary) }
                         ForEach(entries) { e in
-                            LogbookRow(entry: e) { editing = Editing(id: e.id, entry: LogbookEntryRequest(e)) }
-                                .swipeActions {
-                                    Button("Delete", role: .destructive) { toDelete = e }
+                            // Tapped, the flight opens in its row to change (Edit);
+                            // its N-number, a tap of its own, opens the airplane's profile.
+                            LogbookRow(entry: e) { if flights.editingID == e.id { flights.cancelEdit() } else { flights.edit(e) } }
+                                .contextMenu {
+                                    Button("Edit", systemImage: "pencil") { flights.edit(e) }
+                                    Button("Delete", systemImage: "trash", role: .destructive) { delete(e) }
                                 }
+                                .swipeActions {
+                                    Button("Delete", systemImage: "trash", role: .destructive) { delete(e) }
+                                }
+                            if flights.editingID == e.id { LogbookEntryEditRows(model: flights) { await load() } }
                         }
                     } else if problem == nil {
                         ProgressView()
@@ -105,33 +111,25 @@ struct LogbookView: View {
         .toolbar {
             if session.signedIn {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { editing = Editing(entry: .blank(aircraft: plan.tail)) } label: { Label("Log a Flight", systemImage: "plus") }
+                    Button { adding = .blank(aircraft: plan.tail) } label: { Label("Log a Flight", systemImage: "plus") }
                 }
             }
         }
-        .sheet(item: $editing) { e in
+        .sheet(isPresented: Binding(get: { adding != nil }, set: { if !$0 { adding = nil } })) {
             NavigationStack {
-                LogbookEntryForm(entry: e.entry, isNew: e.id == nil) { saved in
-                    if let id = e.id { try await Gateway.updateLogbookEntry(id, saved) } else { try await Gateway.addLogbookEntry(saved) }
+                LogbookEntryForm(entry: adding ?? .blank(aircraft: plan.tail), isNew: true) { saved in
+                    try await Gateway.addLogbookEntry(saved)
                     await load()
                 }
             }
-        }
-        .confirmationDialog("Take this flight out of the logbook?", isPresented: Binding(get: { toDelete != nil }, set: { if !$0 { toDelete = nil } }),
-                            titleVisibility: .visible, presenting: toDelete) { e in
-            Button("Delete", role: .destructive) {
-                Task {
-                    do { try await Gateway.deleteLogbookEntry(e.id); await load() } catch { problem = error.localizedDescription }
-                }
-            }
-        } message: { _ in
-            Text("It goes from your logbook and your currency. This can't be undone.")
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.commaSeparatedText, .plainText]) { result in
             Task { await bringIn(result) }
         }
         .task(id: session.signedIn) { await load() }
         .refreshable { await load() }
+        // Left with an Undo still up: the delete kept.
+        .onDisappear { if let removed = flights.removed { Task { await keep(removed.entry) } } }
     }
 
     // What falls due, the pilot's and their airplanes', soonest first, each
@@ -251,15 +249,27 @@ struct LogbookView: View {
         })
     }
 
+    /// Off the list at once; any earlier delete's Undo gone with it, and kept.
+    private func delete(_ e: LogbookEntry) {
+        if let earlier = flights.delete(e) { Task { await keep(earlier) } }
+    }
+
+    /// The delete sent once its Undo is gone, then the currency worked out again without it.
+    private func keep(_ e: LogbookEntry) async {
+        if let failed = await flights.keep(e) { problem = failed }
+        await load()
+    }
+
     private func remind(_ on: Bool) async {
         do { reminders = try await Gateway.setReminders(on) } catch { problem = error.localizedDescription }
     }
 
     private func load() async {
-        guard session.signedIn else { entries = nil; currency = nil; return }
+        guard session.signedIn else { flights.entries = nil; currency = nil; return }
         do {
             let list = try await Gateway.logbook()
-            entries = list
+            // A flight whose Undo is still up stays off the list.
+            flights.entries = list.filter { $0.id != flights.removed?.entry.id }
             currency = try await Gateway.currency()
             reminders = try? await Gateway.reminders()
             paperwork = try? await Gateway.paperwork()
@@ -309,106 +319,6 @@ struct LogbookView: View {
     }
 }
 
-/// One flight's form: a paper logbook's columns, with the ones a
-/// student's 61.109 experience and instrument currency (61.57(c)) are
-/// counted from.
-struct LogbookEntryForm: View {
-    @State var entry: LogbookEntryRequest
-    let isNew: Bool
-    var save: (LogbookEntryRequest) async throws -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var saving = false
-    @State private var problem: String?
-
-    var body: some View {
-        Form {
-            Section {
-                DatePicker("Date", selection: Binding(get: { Day.date(entry.flownOn) ?? Date() }, set: { entry.flownOn = Day.string($0) }),
-                           in: ...Date(), displayedComponents: .date)
-                words("Route", \.route, placeholder: "KDLH KHIB")
-                words("Airplane", \.aircraft, placeholder: "N12345", codes: true)
-                words("Type", \.aircraftType, placeholder: "C172", codes: true)
-            }
-            Section(title: "Time") {
-                hours("Total", \.totalHours)
-                hours("Night", \.nightHours)
-                hours("Cross-country", \.crossCountryHours)
-                hours("Dual received", \.dualHours)
-                hours("Solo", \.soloHours)
-                hours("Sim. instrument", \.instrumentHours)
-            }
-            Section(title: "Landings") {
-                count("Day", \.dayLandings)
-                count("Night", \.nightLandings)
-                count("Towered", \.toweredLandings)
-            }
-            Section(title: "Distance") {
-                miles("Distance", \.distanceNm)
-                miles("Longest leg", \.longestLegNm)
-            }
-            Section(title: "Instrument") {
-                count("Approaches", \.approaches)
-                Toggle("Holding", isOn: $entry.holding)
-                Toggle("Tracking", isOn: $entry.tracking)
-            }
-            Section(title: "Remarks") {
-                TextField("Remarks", text: Binding(get: { entry.remarks ?? "" }, set: { entry.remarks = $0 }), axis: .vertical).lineLimit(1...4)
-            }
-            ProblemLine(problem)
-        }
-        .navigationTitle(isNew ? "Log a Flight" : "The Flight")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    saving = true
-                    Task {
-                        do { try await save(entry); dismiss() } catch { problem = error.localizedDescription }
-                        saving = false
-                    }
-                }
-                .disabled(saving)
-            }
-        }
-    }
-
-    private func words(_ title: String, _ key: WritableKeyPath<LogbookEntryRequest, String?>, placeholder: String, codes: Bool = false) -> some View {
-        LabeledContent(title) {
-            TextField(placeholder, text: Binding(get: { entry[keyPath: key] ?? "" }, set: { entry[keyPath: key] = $0 }))
-                .multilineTextAlignment(.trailing)
-                .textInputAutocapitalization(codes ? .characters : .sentences)
-                .autocorrectionDisabled(codes)
-        }
-    }
-
-    private func hours(_ title: String, _ key: WritableKeyPath<LogbookEntryRequest, Double>) -> some View {
-        LabeledContent(title) {
-            HStack(spacing: WingtipSpace.xs) {
-                TextField("0", value: Binding(get: { entry[keyPath: key] }, set: { entry[keyPath: key] = max(0, $0) }), format: .number)
-                    .multilineTextAlignment(.trailing).keyboardType(.decimalPad)
-                Text("h").foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func miles(_ title: String, _ key: WritableKeyPath<LogbookEntryRequest, Double>) -> some View {
-        LabeledContent(title) {
-            HStack(spacing: WingtipSpace.xs) {
-                TextField("0", value: Binding(get: { entry[keyPath: key] }, set: { entry[keyPath: key] = max(0, $0) }), format: .number)
-                    .multilineTextAlignment(.trailing).keyboardType(.decimalPad)
-                Text("nm").foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func count(_ title: String, _ key: WritableKeyPath<LogbookEntryRequest, Int>) -> some View {
-        Stepper(value: Binding(get: { entry[keyPath: key] }, set: { entry[keyPath: key] = max(0, $0) }), in: 0...99) {
-            LabeledContent(title, value: "\(entry[keyPath: key])")
-        }
-    }
-}
-
 #Preview("UntilText") {
     List {
         UntilText(date: "2027-06-30")
@@ -423,11 +333,4 @@ struct LogbookEntryForm: View {
     NavigationStack { LogbookView() }
         .environment(Session())
         .environment(Plan())
-}
-
-#Preview("LogbookEntryForm") {
-    NavigationStack {
-        LogbookEntryForm(entry: LogbookEntryRequest(flownOn: "2026-10-28", aircraft: "N3429J", aircraftType: "P28A", route: "KDLH KHIB", totalHours: 1.2, crossCountryHours: 1.2, dayLandings: 2, distanceNm: 62.4, longestLegNm: 62.4),
-                         isNew: false) { _ in }
-    }
 }

@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 import design_tokens_haptic as haptic
+import design_tokens_spring as spring
 from design_tokens_formats import gen_formats
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -618,6 +619,7 @@ def gen_kotlin(tree, sch):
             L.append("    const val %s_MS = %d" % (re.sub("-", "_", k).upper(), round(v * 1000)))
     L.append("}")
     L.append("")
+    L += spring.kotlin(tokens(tree["spring"]), pascal)
     L += haptic.kotlin(tokens(tree["haptic"]))
     L.append("object WingtipSize {")
     for k, t in tokens(tree["size"]).items():

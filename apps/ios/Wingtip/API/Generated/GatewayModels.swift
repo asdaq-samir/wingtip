@@ -267,7 +267,7 @@ struct GWFlightDto: Codable, Equatable, Sendable {
     var cruiseAltitudeFt: Int?
     var departureIdent, destinationIdent: String
     var id: Int
-    var picks, plannedFor: String?
+    var name, notes, picks, plannedFor: String?
     var risk: GWRiskAssessmentDto?
     var stops: [String]
     var totalDistanceNm, totalEteMin, totalFuelGal: Double?
@@ -390,7 +390,7 @@ struct GWFlightSummaryDto: Codable, Equatable, Sendable {
     var cruiseAltitudeFt: Int?
     var departureIdent, destinationIdent: String
     var id: Int
-    var picks, plannedFor: String?
+    var name, notes, picks, plannedFor: String?
     var risk: GWRiskAssessmentDto?
     var stops: [String]
     var totalDistanceNm, totalEteMin, totalFuelGal: Double?
@@ -808,7 +808,7 @@ struct GWSaveFlightRequest: Codable, Equatable, Sendable {
     var picks: String?
     var plannedFor: String?
     var risk: GWRiskAssessmentDto?
-    var stops: [String?]?
+    var stops: [String]?
     var totalDistanceNm, totalEteMin, totalFuelGal: Double?
 }
 
@@ -894,6 +894,12 @@ struct GWTokenRequest: Codable, Equatable, Sendable {
     var deviceCode: String
 }
 
+// MARK: - GWUpdateFlightRequest
+struct GWUpdateFlightRequest: Codable, Equatable, Sendable {
+    var name: String?
+    var notes: String?
+}
+
 // MARK: - GWVorCheckRequest
 struct GWVorCheckRequest: Codable, Equatable, Sendable {
     var checkedOn: String
@@ -913,5 +919,5 @@ struct GWWatchFlightRequest: Codable, Equatable, Sendable {
     var departAt: String
 }
 
-typealias GWStreamingResponseBody = [String: JSONValue]
+typealias GWStreamingResponseBody = JSONValue
 

@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +21,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.format.Format
@@ -66,15 +64,7 @@ fun ReceiverSettingRows() {
             Text(stringResource(R.string.receiver_setting), style = MaterialTheme.typography.bodyLarge)
         }
         val choices = listOf(ReceiverMode.AUTO to stringResource(R.string.receiver_auto), ReceiverMode.OFF to stringResource(R.string.receiver_off))
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            choices.forEachIndexed { i, (value, label) ->
-                SegmentedButton(
-                    selected = mode == value,
-                    onClick = { receiver.setMode(value) },
-                    shape = SegmentedButtonDefaults.itemShape(index = i, count = choices.size),
-                ) { Text(label, maxLines = 1) }
-            }
-        }
+        ChoiceGroup(choices, selected = mode, onPick = receiver::setMode)
         picture?.receiver?.takeIf { mode == ReceiverMode.AUTO && it.heartbeatAt != null }?.let {
             Text(it.summary, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

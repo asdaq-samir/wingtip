@@ -13,15 +13,11 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,6 +49,8 @@ import app.wingtipmaps.android.atc.RadioListener
 import app.wingtipmaps.android.briefing.PassengerScreen
 import app.wingtipmaps.android.copilot.CopilotMode
 import app.wingtipmaps.android.copilot.CopilotSetting
+import app.wingtipmaps.android.design.ChoiceGroup
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
@@ -128,7 +126,7 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         SectionTitle(stringResource(R.string.account))
         val signedIn = pilot
         when {
-            !loaded -> CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
+            !loaded -> LoadingIndicator(Modifier.size(WingtipSpace.Xl))
             signedIn != null -> {
                 Text(signedIn.email, style = MaterialTheme.typography.bodyLarge)
                 OutlinedButton(onClick = { session.signOut(context) }) { Text(stringResource(R.string.sign_out)) }
@@ -158,9 +156,15 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { logbook = true },
             )
+            // The Coach beside the logbook it is made from: two taps, not three.
+            ScreenRow(Screen.COACH, R.string.coach, R.string.coach_line)
             // Everything the account holds, as a file the pilot keeps.
             ExportRow()
         }
+        // The airplane's checklists and the emergency assistant, signed in
+        // or not, two taps from the map (docs/navigation.md's gaps 1 and 2).
+        ScreenRow(Screen.CHECKLISTS, R.string.checklists, R.string.checklists_line)
+        EmergencyAssistantRow()
         // The pilot's own minimums, kept on this phone (no sign-in), as
         // the web keeps them with the pilot's own things.
         SectionTitle(stringResource(R.string.personal_minimums))
@@ -253,18 +257,11 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
     }
 }
 
-/** A setting of a few choices: Material's segmented buttons. */
+/** A setting of a few choices: Material 3 Expressive's connected
+ *  button group (ChoiceGroup). */
 @Composable
 private fun <T> Segmented(choices: List<Pair<T, String>>, selected: T?, onPick: (T) -> Unit) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        choices.forEachIndexed { i, (value, label) ->
-            SegmentedButton(
-                selected = selected == value,
-                onClick = { onPick(value) },
-                shape = SegmentedButtonDefaults.itemShape(index = i, count = choices.size),
-            ) { Text(label, maxLines = 1) }
-        }
-    }
+    ChoiceGroup(choices, selected, onPick = onPick)
 }
 
 /**

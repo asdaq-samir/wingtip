@@ -134,18 +134,18 @@ export default function ChecklistPage({
           </ListGroup>
         );
       })}
-      {/* From the emergency list, the assistant: the best fields within a
-          glide, this list opened at the emergency, the MAYDAY. */}
-      {kind === "emergency" && (
-        <ListGroup>
-          <ListRow
-            title={<span className="font-medium text-tint">Emergency assistant</span>}
-            description="Best fields within a glide, the checklist and the MAYDAY"
-            onClick={() => openEmergency("checklist")}
-            data-testid="checklist-emergency"
-          />
-        </ListGroup>
-      )}
+      {/* From either list, the assistant: the best fields within a glide,
+          this list opened at the emergency, the MAYDAY -- on the normal
+          list too, a tap from wherever the checklists are open
+          (docs/navigation.md's gap 1). */}
+      <ListGroup>
+        <ListRow
+          title={<span className="font-medium text-tint">Emergency Assistant</span>}
+          description="Best fields within a glide, the checklist and the MAYDAY"
+          onClick={() => openEmergency("checklist")}
+          data-testid="checklist-emergency"
+        />
+      </ListGroup>
       <ListGroup>
         {!empty && (
           <ListRow

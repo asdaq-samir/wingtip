@@ -36,6 +36,7 @@ import androidx.core.net.toUri
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.ui.FrequencyRow
 import app.wingtipmaps.android.ui.SectionTitle
 
 /**
@@ -100,12 +101,17 @@ internal fun ActionsList(state: EmergencyModel.State, onSouls: (String) -> Unit,
         SectionTitle(stringResource(R.string.emergency_radio))
         Plain(stringResource(R.string.emergency_squawk, mayday.squawk), mayday.squawkWords, bold = true)
         mayday.channels.forEach { c ->
-            ListItem(
-                headlineContent = { Text(c.label) },
-                supportingContent = { Text(c.why) },
-                trailingContent = c.mhz?.let { mhz -> { Text(Format.frequency(mhz), fontWeight = FontWeight.SemiBold) } },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            )
+            // A frequency to try, copied with a tap (FrequencyRow).
+            val mhz = c.mhz
+            if (mhz != null) {
+                FrequencyRow(c.label, Format.frequency(mhz), c.why)
+            } else {
+                ListItem(
+                    headlineContent = { Text(c.label) },
+                    supportingContent = { Text(c.why) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+            }
         }
         SectionTitle(stringResource(R.string.emergency_mayday))
         Column(Modifier.padding(vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {

@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,7 +52,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.predictiveBack
+import app.wingtipmaps.android.design.rememberPredictiveBack
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.diagramFixUsable
@@ -121,7 +123,10 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
         }
     }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(Modifier.fillMaxSize()) {
+        // The page drawn back with the system's predictive gesture as Back
+        // closes it.
+        val back = rememberPredictiveBack(enabled = true, onBack = onClose)
+        Surface(Modifier.fillMaxSize().predictiveBack(back)) {
             Column(Modifier.fillMaxSize()) {
                 Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("$ident airport diagram", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
@@ -132,7 +137,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
                     when {
                         shown != null -> DiagramWithOwnShip(shown, fix)
                         problem != null -> ProblemLine(problem)
-                        else -> CircularProgressIndicator()
+                        else -> LoadingIndicator()
                     }
                 }
                 page?.let {

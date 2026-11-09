@@ -14,13 +14,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,6 +42,8 @@ import app.wingtipmaps.android.airplane.AskFigures
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogTotals
+import app.wingtipmaps.android.design.ChoiceGroup
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
@@ -54,6 +52,8 @@ import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
 import app.wingtipmaps.android.route.LegWords
+import app.wingtipmaps.android.route.RoutePointMenu
+import app.wingtipmaps.android.route.RouteUndoRow
 
 /**
  * The flight plan: the route typed, planned, and the nav log's legs as
@@ -97,14 +97,16 @@ fun FPLScreen(plan: Plan) {
             // The route's Brief beside its Plan, where the pilot looks for it
             // once the route is in (OpenScreen's sheet, as the strip has it).
             if (state.routed && !state.planning) TextButton(onClick = { ScreenRequests.ask(Screen.BRIEF) }) { Text(stringResource(R.string.brief)) }
-            if (state.planning) CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
+            if (state.planning) LoadingIndicator(Modifier.size(WingtipSpace.Xl))
             state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
         FlightRulesRow(onChanged = { if (state.routed) plan.plan() })
         ProblemLine(state.problem)
         LazyColumn(Modifier.weight(1f)) {
+            // The last edit to the route, undone where it was made (RouteUndo).
+            item(key = "undo") { RouteUndoRow(plan) }
             itemsIndexed(state.legs) { i, leg ->
-                LegRow(leg, onOpen = { open = i })
+                LegRow(leg, onOpen = { open = i }) { RoutePointMenu(leg.to, plan) }
                 HorizontalDivider()
             }
             state.totals?.let { totals ->
@@ -130,32 +132,33 @@ internal fun FlightRulesRow(onChanged: () -> Unit) {
     val context = LocalContext.current
     val choices = remember(context) { FlightChoices.of(context) }
     val rules by choices.rules.collectAsStateWithLifecycle()
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        FlightRules.entries.forEachIndexed { i, r ->
-            SegmentedButton(
-                selected = rules == r,
-                onClick = {
-                    if (rules != r) {
-                        choices.setRules(r)
-                        onChanged()
-                    }
-                },
-                shape = SegmentedButtonDefaults.itemShape(index = i, count = FlightRules.entries.size),
-            ) { Text(r.name, maxLines = 1) }
+    ChoiceGroup(FlightRules.entries.map { it to it.name }, selected = rules) { r ->
+        if (rules != r) {
+            choices.setRules(r)
+            onChanged()
         }
     }
 }
 
 /** One leg's row: to where at what cruise altitude, how far, the
- *  magnetic heading, the time; a tap opens the leg. TalkBack reads the
- *  row as one sentence in words (LegWords), so a swipe is a leg. */
+ *  magnetic heading, the time; a tap opens the leg, and its end's menu
+ *  (RoutePointMenu) sits at the row's end. TalkBack reads the row as one
+ *  sentence in words (LegWords), so a swipe is a leg. */
 @Composable
-private fun LegRow(leg: Leg, onOpen: () -> Unit) {
+private fun LegRow(leg: Leg, onOpen: () -> Unit, menu: @Composable () -> Unit) {
     val openLeg = stringResource(R.string.said_open_leg)
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        LegFigures(leg, Modifier.weight(1f).clickable(role = Role.Button, onClickLabel = openLeg, onClick = onOpen))
+        menu()
+    }
+}
+
+/** The leg's figures, read as one sentence; `modifier` makes them the
+ *  row's tap. */
+@Composable
+private fun LegFigures(leg: Leg, modifier: Modifier) {
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = openLeg, onClick = onOpen)
-            .clearAndSetSemantics { contentDescription = LegWords.row(leg) }
-            .padding(vertical = WingtipSpace.Sm),
+        modifier.clearAndSetSemantics { contentDescription = LegWords.row(leg) }.padding(vertical = WingtipSpace.Sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1.4f)) {

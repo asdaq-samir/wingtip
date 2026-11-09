@@ -15,7 +15,9 @@ const SETUP_PAGES: Partial<Record<ScreenId, string[]>> = {
   flights: ["flights"],
   airplanes: ["aircraft"],
   logbook: ["logbook"],
-  coach: ["logbook", "coach"],
+  // Setup's own rows since 2026-11-09 (SetupRows), two taps from the map.
+  coach: ["coach"],
+  checklists: ["checklists"],
   minimums: ["minimums"],
   guide: ["guide"],
   about: ["about"],
@@ -110,6 +112,7 @@ export function useOpenScreen({
       case "airplanes":
       case "logbook":
       case "coach":
+      case "checklists":
       case "minimums":
       case "guide":
       case "about":

@@ -115,7 +115,7 @@ struct RadioCallBanner: View {
                         }
                     }
                     if let frequency = clearance.frequency {
-                        Button("Copy \(frequency)") { UIPasteboard.general.string = frequency }
+                        FrequencyCopyButton(figure: frequency)
                     }
                     if let squawk = clearance.squawk { Text("Squawk \(squawk)").font(.subheadline.weight(.semibold)) }
                 }

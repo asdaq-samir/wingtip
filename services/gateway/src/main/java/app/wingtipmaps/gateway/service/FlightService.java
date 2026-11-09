@@ -9,6 +9,7 @@ import app.wingtipmaps.gateway.dto.SaveFlightCheckpointRequest;
 import app.wingtipmaps.gateway.dto.SaveFlightRequest;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrackPointDto;
+import app.wingtipmaps.gateway.dto.UpdateFlightRequest;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.FlightTrackRepository;
@@ -100,6 +101,13 @@ public class FlightService {
                     request.risk().factors());
         }
         return flights.save(flight);
+    }
+
+    /** Renames this pilot's flight or changes its notes; empty where the
+     *  flight is not theirs. */
+    @Transactional
+    public Optional<Flight> update(Pilot pilot, Long id, UpdateFlightRequest request) {
+        return get(pilot, id).map(f -> flights.save(f.edited(request.name(), request.notes())));
     }
 
     /** The flight's saved track, where it is this pilot's flight and has

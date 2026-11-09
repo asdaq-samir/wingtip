@@ -1,0 +1,196 @@
+import { Pencil, Route, Share, Trash2 } from "lucide-react";
+import { cn } from "cn";
+import EmptyState from "../../../components/EmptyState";
+import { ListGroup, ListRow } from "../../../components/GroupedList";
+import { ConsolePages, PageRow } from "../../../components/ConsolePages";
+import { EditToggle, ListPageHead, RemoveMinus } from "../../../components/Favorites";
+import QueryState from "../../../components/QueryState";
+import RowMenu from "../../../components/RowMenu";
+import { SwipeToDelete } from "../../../components/SwipeToDelete";
+import { useConfirm } from "../../../components/useConfirm";
+import { describeError } from "../../../lib/api/client";
+import type { FlightSummary } from "../../../lib/api/types";
+import { planHrefOf } from "../../../lib/flightLink";
+import { feet, nm } from "../../../lib/format";
+import { LEVEL_TONE, riskLine, type RiskLevel } from "../../../lib/frat";
+import { routeName } from "../../../lib/identSchema";
+import { showError } from "../../../lib/problems";
+import { cancelled, shareOrCopy } from "../../../lib/share";
+import FlightPage from "../FlightPage";
+import FlightFields from "./FlightFields";
+import { flightTitle } from "./flightEdit";
+import { useSavedFlights, type SavedFlightsModel } from "./useSavedFlights";
+
+const shareOf = (f: FlightSummary) => ({ title: flightTitle(f), url: new URL(`/app${planHrefOf(f)}`, location.origin).toString() });
+
+/** A saved flight's row: its name (its route where it has none) and
+ *  tail, then the route under a name, the figures, the risk it was saved
+ *  with and the pilot's notes. */
+function rowOf(f: FlightSummary) {
+  const route = routeName(f.departureIdent, f.destinationIdent, f.stops);
+  return {
+    title: (
+      <>
+        <span className={cn("font-semibold", !f.name && "font-mono")}>{flightTitle(f)}</span>
+        {f.aircraftTailNumber && <span className="text-muted-foreground"> {f.aircraftTailNumber}</span>}
+      </>
+    ),
+    description: (
+      <span className="tabular-nums">
+        {f.name && <span className="block font-mono">{route}</span>}
+        {feet(f.cruiseAltitudeFt)}
+        {f.totalDistanceNm != null && ` · ${nm(f.totalDistanceNm)}`} · filed {new Date(f.createdAt).toLocaleDateString()}
+        {/* The risk assessment it was saved with (lib/frat). */}
+        {f.risk && (
+          <span className={cn("block", LEVEL_TONE[f.risk.level as RiskLevel])} data-testid="flight-risk">
+            Risk {riskLine(f.risk).toLowerCase()}
+          </span>
+        )}
+        {f.notes && (
+          <span className="line-clamp-2 block whitespace-pre-line" data-testid="saved-flight-notes-shown">
+            {f.notes}
+          </span>
+        )}
+      </span>
+    ),
+  };
+}
+
+/** One flight's row: its fields while it is changed, Edit's minus and
+ *  its name to tap while the list is in Edit, else its page a tap away
+ *  with Edit, Share and Remove at its ••• or a long press. */
+function SavedFlightRow({ f, vm, askDelete }: { f: FlightSummary; vm: SavedFlightsModel; askDelete: () => void }) {
+  const title = flightTitle(f);
+  const ask = () => {
+    vm.askToDelete(f);
+    askDelete();
+  };
+  if (vm.changing === f.id) {
+    return (
+      <FlightFields
+        flight={f}
+        problem={vm.problem}
+        saving={vm.saving}
+        onSave={(name, notes) => vm.saveChange(f, name, notes)}
+        onCancel={vm.cancelChange}
+      />
+    );
+  }
+  const row = rowOf(f);
+  // Taken off as every kept list's rows are -- a swipe to the left, or
+  // Edit's minus bringing out the Delete -- asked first, the flight being
+  // the server's (SwipeToDelete, useConfirm).
+  return (
+    <SwipeToDelete label={`Delete ${title}`} onDelete={ask} share={shareOf(f)}>
+      {vm.editing ? (
+        <ListRow
+          {...row}
+          // In Edit, the name is what changes it, as iOS's lists rename a
+          // row tapped in Edit.
+          title={
+            <button
+              type="button"
+              className="relative text-left text-tint after:absolute after:-inset-y-3 after:inset-x-0"
+              onClick={() => vm.startChange(f.id)}
+              data-testid="saved-flight-rename"
+            >
+              {row.title}
+            </button>
+          }
+          media={<RemoveMinus label={`Delete ${title}…`} />}
+        />
+      ) : (
+        // Its own page: what was filed, the way back onto the map, and its
+        // debrief; at its end ••• or a long press, as every list's.
+        <RowMenu
+          label={`More for ${title}`}
+          testId="saved-flight-more"
+          actions={[
+            // Its fields take the focus, as a question does: opened once
+            // the menu has closed and let go of it (RowMenu's `asks`).
+            { label: "Edit", icon: <Pencil />, asks: true, testId: "saved-flight-edit", onSelect: () => vm.startChange(f.id) },
+            {
+              label: "Share",
+              icon: <Share />,
+              testId: "saved-flight-share",
+              onSelect: () => {
+                shareOrCopy(shareOf(f)).catch((err) => {
+                  if (!cancelled(err)) showError("Not shared", describeError(err));
+                });
+              },
+            },
+            { label: "Remove", icon: <Trash2 />, destructive: true, asks: true, onSelect: ask, testId: "saved-flight-delete" },
+          ]}
+        >
+          <PageRow page={`flight-${f.id}`} {...row} />
+        </RowMenu>
+      )}
+    </SwipeToDelete>
+  );
+}
+
+/** A signed-in pilot's own filed flights. Filing one happens from the
+ *  route's Share menu (Save); here a flight opens back on the planner
+ *  (same route and altitude), is named and noted in its row, or is
+ *  deleted. A grouped list at every width, as iOS lists things: a tap on
+ *  a row opens the flight; Edit over the list puts a red minus before
+ *  each row, which deletes it once asked in the app's own sheet, and
+ *  makes each name the way to change it. */
+export function FlightsPanel({
+  onBack,
+}: {
+  /** Shown as FPL's Saved in full (SavedStrip's title): headed as its
+   *  Recents' page is, Back at its left and Edit at its right, at the
+   *  owner's notice ("When clicking on See All for Saved it's not giving
+   *  option to go back like recents or favorites"). */
+  onBack?: () => void;
+} = {}) {
+  const vm = useSavedFlights();
+  const { list, flightToDelete } = vm;
+  const [askDelete, deleteDialog] = useConfirm({
+    title: flightToDelete ? `Delete ${flightTitle(flightToDelete)}?` : "Delete this flight?",
+    description: "The filed flight goes from your flights. This can't be undone.",
+    confirmLabel: "Delete flight",
+    destructive: true,
+    onConfirm: vm.deleteAsked,
+  });
+
+  // A page a flight (FlightPage), opened from its row.
+  const pages = Object.fromEntries(
+    (list ?? []).map((f) => [`flight-${f.id}`, { title: flightTitle(f), content: <FlightPage summary={f} planHref={planHrefOf(f)} /> }]),
+  );
+
+  // Every list's Edit (EditToggle), where this was a copy of it.
+  const edit = <EditToggle editing={vm.editing} onToggle={vm.toggleEditing} testId="flights-edit" />;
+  return (
+    <ConsolePages back="Flights" pages={pages}>
+      <section aria-label="Flights" className={onBack ? "space-y-3" : undefined}>
+        {onBack && (
+          <ListPageHead
+            title="Saved"
+            backLabel="Back to FPL"
+            onBack={onBack}
+            action={list?.length ? edit : undefined}
+            testId="saved-page"
+          />
+        )}
+        {!list ? (
+          // Where they could not be fetched, said here with Try again, where
+          // the list showed nothing.
+          <QueryState query={vm.asked} fetching="Fetching your flights…" failed="Your flights could not be fetched." />
+        ) : list.length === 0 ? (
+          <EmptyState icon={<Route />} title="No Flights">
+            Plan a route and Save it from Share; it is kept here.
+          </EmptyState>
+        ) : (
+          <ListGroup title={onBack ? undefined : "Saved flights"} action={onBack ? undefined : edit}>
+            {list.map((f) => (
+              <SavedFlightRow key={f.id} f={f} vm={vm} askDelete={askDelete} />
+            ))}
+          </ListGroup>
+        )}
+        {deleteDialog}
+      </section>
+    </ConsolePages>
+  );
+}

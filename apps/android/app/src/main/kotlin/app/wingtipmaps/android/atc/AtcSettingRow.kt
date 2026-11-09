@@ -4,9 +4,6 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.ui.AskFirstDialog
 
 /**
@@ -37,17 +35,9 @@ fun AtcSettingRow() {
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     var why by rememberSaveable { mutableStateOf(false) }
     val labels = mapOf(AtcMode.OFF to stringResource(R.string.atc_off), AtcMode.FLYING to stringResource(R.string.atc_while_flying))
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        AtcMode.entries.forEachIndexed { i, m ->
-            SegmentedButton(
-                selected = mode == m,
-                onClick = {
-                    setting.set(m)
-                    if (m == AtcMode.FLYING && !micAllowed(context)) why = true
-                },
-                shape = SegmentedButtonDefaults.itemShape(index = i, count = AtcMode.entries.size),
-            ) { Text(labels.getValue(m), maxLines = 1) }
-        }
+    ChoiceGroup(AtcMode.entries.map { it to labels.getValue(it) }, selected = mode) { m ->
+        setting.set(m)
+        if (m == AtcMode.FLYING && !micAllowed(context)) why = true
     }
     if (why) {
         AskFirstDialog(

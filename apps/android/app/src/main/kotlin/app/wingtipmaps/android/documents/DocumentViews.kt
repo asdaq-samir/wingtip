@@ -10,7 +10,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -25,6 +24,7 @@ import androidx.compose.ui.semantics.Role
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.assistant.DocumentFlag
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.LocalInk
@@ -46,7 +46,7 @@ fun AddFromPhotoRow(line: String, title: String = stringResource(R.string.add_fr
 @Composable
 fun ReadingLine() {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-        CircularProgressIndicator(Modifier.size(WingtipSize.Chip))
+        LoadingIndicator(Modifier.size(WingtipSize.Chip))
         Text(stringResource(R.string.reading_page), style = MaterialTheme.typography.bodyMedium)
     }
 }

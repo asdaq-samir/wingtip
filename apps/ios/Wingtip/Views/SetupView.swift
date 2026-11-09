@@ -39,6 +39,17 @@ struct SetupView: View {
                     }
                     ProblemLine(session.problem)
                 }
+                // Every screen of the pilot's own two taps from the map
+                // (docs/navigation.md): the emergency assistant on the
+                // ground, the checklists, the saved flights, the airplanes
+                // and the drills, each a row here as well as in its home.
+                Section(title: "Flying") {
+                    EmergencyAssistantRow()
+                    NavigationLink(Screen.checklists.title) { ChecklistsPage().closesBack() }
+                    NavigationLink(Screen.flights.title) { FlightsView().closesBack() }
+                    NavigationLink(Screen.airplanes.title) { OwnAircraftListView().closesBack() }
+                    NavigationLink("Practice") { PracticeView().closesBack() }
+                }
                 if session.signedIn {
                     Section(title: "Pilot") {
                         NavigationLink("Logbook and Currency") { LogbookView().closesBack() }

@@ -1,64 +1,57 @@
 import SwiftUI
 
-/// The pilot's saved flights: each a tap back onto the page, a swipe
-/// away, and the plan on the page saved with the button at the top.
+/// The pilot's saved flights: each a tap back onto the page, named and
+/// noted in its own row (Edit), a swipe away with its Undo, and the plan
+/// on the page saved with the button at the top. Its state is the
+/// model's (SavedFlightsModel).
 struct FlightsView: View {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
     /// The iPad's inspector's close, where it holds the list (SplitLayout).
     @Environment(\.closeCard) private var closeCard
-    @State private var flights: [SavedFlight] = []
-    @State private var problem: String?
-    @State private var saving = false
-    /// The plans saved here, each drawing the button's checkmark (SaveLabel).
-    @State private var saves = 0
-    /// The flight just deleted, kept back until its Undo is gone.
-    @State private var removed: (flight: SavedFlight, at: Int)?
+    @State private var model = SavedFlightsModel()
 
     var body: some View {
         List {
             if !session.signedIn {
                 ContentUnavailableView("Sign in to save flights", systemImage: "person.crop.circle", description: Text("Your flights are kept with your account, on every device."))
-            } else if flights.isEmpty {
+            } else if model.flights.isEmpty {
                 ContentUnavailableView("No saved flights", systemImage: "tray", description: Text("Save the plan on the page with the button above."))
             }
-            if let removed {
-                UndoRow(words: "Removed \(Self.route(removed.flight))", undo: {
-                    flights.insert(removed.flight, at: min(removed.at, flights.count))
-                    self.removed = nil
-                }, done: { keep(removed.flight) })
+            if let removed = model.removed {
+                UndoRow(words: "Removed \(SavedFlightsModel.title(removed.flight))", undo: model.undo,
+                        done: { Task { await model.keep(removed.flight) } })
             }
-            ForEach(flights) { flight in
-                Button {
-                    plan.open(flight)
-                    if let closeCard { closeCard() } else { dismiss() }
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(Self.route(flight)).font(.headline.monospaced())
-                        HStack(spacing: WingtipSpace.md) {
-                            if let nm = flight.totalDistanceNm { Text(Format.distance(nm, decimals: 0)) }
-                            if let min = flight.totalEteMin { Text(Format.duration(min)) }
-                            if let gal = flight.totalFuelGal { Text(Format.fuel(gal)) }
-                            if let tail = flight.aircraftTailNumber { Text(tail) }
-                        }
-                        .font(.footnote).foregroundStyle(.secondary)
+            ForEach(model.flights) { flight in
+                if model.editingID == flight.id {
+                    SavedFlightEditRow(model: model, route: SavedFlightsModel.route(flight))
+                } else {
+                    Button {
+                        plan.open(flight)
+                        if let closeCard { closeCard() } else { dismiss() }
+                    } label: {
+                        SavedFlightRow(flight: flight)
+                    }
+                    .foregroundStyle(.primary)
+                    // Held: Edit, its flown track (its replay, its profile
+                    // and its debrief) and Delete with its Undo; the same
+                    // a swipe away, Edit and Flown Track to the right.
+                    .contextMenu {
+                        editButton(flight)
+                        flownTrack(flight)
+                        Button("Delete", systemImage: "trash", role: .destructive) { model.delete(flight) }
+                    }
+                    .swipeActions(edge: .leading) {
+                        flownTrack(flight).tint(.accentColor)
+                        editButton(flight)
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button("Delete", systemImage: "trash", role: .destructive) { model.delete(flight) }
                     }
                 }
-                .foregroundStyle(.primary)
-                // Its flown track: the profile, on the map, from a GPX file.
-                // Its flown track a swipe away as well as held (its
-                // replay, its profile and its debrief), and Delete with its Undo.
-                .contextMenu {
-                    flownTrack(flight)
-                    Button("Delete", systemImage: "trash", role: .destructive) { delete(flight) }
-                }
-                .swipeActions(edge: .leading) { flownTrack(flight).tint(.accentColor) }
-                .swipeActions(edge: .trailing) {
-                    Button("Delete", systemImage: "trash", role: .destructive) { delete(flight) }
-                }
             }
-            ProblemLine(problem)
+            ProblemLine(model.problem)
         }
         .navigationTitle("Saved Flights")
         .navigationBarTitleDisplayMode(.inline)
@@ -66,23 +59,82 @@ struct FlightsView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     guard let request = plan.saved() else { return }
-                    saving = true
-                    Task {
-                        do { try await Gateway.save(request); saves += 1; flights = try await Gateway.flights(); problem = nil }
-                        catch { problem = error.localizedDescription }
-                        saving = false
-                    }
+                    Task { await model.save(request) }
                 } label: {
-                    SaveLabel(title: "Save This Plan", saving: saving, saves: saves)
+                    SaveLabel(title: "Save This Plan", saving: model.saving, saves: model.saves)
                 }
-                .disabled(saving || !session.signedIn || plan.totals == nil)
+                .disabled(model.saving || !session.signedIn || plan.totals == nil)
             }
         }
-        .task(id: session.signedIn) {
-            do { flights = try await Gateway.flights() } catch { problem = error.localizedDescription }
-        }
+        .task(id: session.signedIn) { await model.load() }
         // Left with an Undo still up: the delete kept.
-        .onDisappear { if let removed { keep(removed.flight) } }
+        .onDisappear { if let removed = model.removed { Task { await model.keep(removed.flight) } } }
+    }
+
+    private func editButton(_ flight: SavedFlight) -> some View {
+        Button("Edit", systemImage: "pencil") { model.edit(flight) }
+    }
+
+    private func flownTrack(_ flight: SavedFlight) -> some View {
+        Button { FlightUI.shared.card = .flown(flight.id, SavedFlightsModel.route(flight)) } label: {
+            Label("Flown Track", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+        }
+    }
+}
+
+/// A saved flight as listed: its name (else its route), the route under
+/// a name, the figures, and its notes.
+struct SavedFlightRow: View {
+    let flight: SavedFlight
+
+    var body: some View {
+        let route = SavedFlightsModel.route(flight)
+        let title = SavedFlightsModel.title(flight)
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(title == route ? .headline.monospaced() : .headline)
+            if title != route { Text(route).font(.subheadline.monospaced()).foregroundStyle(.secondary) }
+            HStack(spacing: WingtipSpace.md) {
+                if let nm = flight.totalDistanceNm { Text(Format.distance(nm, decimals: 0)) }
+                if let min = flight.totalEteMin { Text(Format.duration(min)) }
+                if let gal = flight.totalFuelGal { Text(Format.fuel(gal)) }
+                if let tail = flight.aircraftTailNumber { Text(tail) }
+            }
+            .font(.footnote).foregroundStyle(.secondary)
+            if let notes = flight.notes, !notes.isEmpty {
+                Text(notes).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
+            }
+        }
+    }
+}
+
+/// A saved flight's row open for its name and notes: Return in the name,
+/// or Save, keeps both; Cancel leaves them; why it was not kept is said here.
+struct SavedFlightEditRow: View {
+    @Bindable var model: SavedFlightsModel
+    let route: String
+    @FocusState private var nameFocused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+            Text(route).font(.subheadline.monospaced()).foregroundStyle(.secondary)
+            TextField("Name", text: $model.name, prompt: Text(route))
+                .font(.headline)
+                .focused($nameFocused)
+                .submitLabel(.done)
+                .onSubmit { Task { await model.commitEdit() } }
+            TextField("Notes", text: $model.notes, axis: .vertical)
+                .lineLimit(1...6)
+            HStack(spacing: WingtipSpace.md) {
+                Button(model.sending ? "Saving…" : "Save") { Task { await model.commitEdit() } }
+                    .fontWeight(.semibold)
+                    .disabled(model.sending)
+                Button("Cancel", role: .cancel) { model.cancelEdit() }
+                Spacer(minLength: 0)
+            }
+            .buttonStyle(.borderless)
+            ProblemLine(model.rowProblem)
+        }
+        .onAppear { nameFocused = true }
     }
 }
 
@@ -90,30 +142,4 @@ struct FlightsView: View {
     NavigationStack { FlightsView() }
         .environment(Plan())
         .environment(Session())
-}
-
-extension FlightsView {
-    static func route(_ flight: SavedFlight) -> String {
-        ([flight.departureIdent] + flight.stops + [flight.destinationIdent]).joined(separator: " → ")
-    }
-
-    func flownTrack(_ flight: SavedFlight) -> some View {
-        Button { FlightUI.shared.card = .flown(flight.id, Self.route(flight)) } label: {
-            Label("Flown Track", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
-        }
-    }
-
-    /// Taken off the list at once, deleted once its Undo is gone: an Undo
-    /// puts it back with nothing asked of the gateway.
-    func delete(_ flight: SavedFlight) {
-        if let removed { keep(removed.flight) }
-        guard let at = flights.firstIndex(where: { $0.id == flight.id }) else { return }
-        flights.remove(at: at)
-        removed = (flight, at)
-    }
-
-    func keep(_ flight: SavedFlight) {
-        if removed?.flight.id == flight.id { removed = nil }
-        Task { try? await Gateway.deleteFlight(flight.id) }
-    }
 }

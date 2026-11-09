@@ -4,8 +4,9 @@ import { clearTheRoute, openPanel, settle, sideDrawer } from "./helpers";
 /**
  * Undo in place of asking first (the owner's "make the pilot aware, never
  * restrict them"): the route cleared or a stop taken out goes at once,
- * and the bar that says so takes it back; Cmd-Z or Ctrl-Z does too, and
- * Shift with it gives the change again (hooks/planHistory).
+ * and the Undo bar under the route, where it was changed (RouteUndoBar, no
+ * toast), takes it back; Cmd-Z or Ctrl-Z does too, and Shift with it gives
+ * the change again (hooks/planHistory).
  *
  * Only the route's own address is looked at, so the planner's answers are
  * not waited for: they are let go.
@@ -21,7 +22,7 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-const undoBar = (page: Page, words: string) => page.locator("[data-sonner-toast]", { hasText: words });
+const undoBar = (page: Page, words: string) => sideDrawer(page).getByTestId("route-undo").filter({ hasText: words });
 
 // The page's own settling after a load (an ident made the field's own) is
 // part of the load, not a step to undo (SETTLE_MS): the pilot's first edit
@@ -38,7 +39,9 @@ test("a cleared route comes back from the Undo bar, and again from the keyboard"
   await expect(page).not.toHaveURL(/[?&]dep=/);
   const bar = undoBar(page, "Route Cleared");
   await expect(bar).toBeVisible();
-  await bar.getByRole("button", { name: "Undo" }).click();
+  // Not a toast: the bar is in the sheet, under the route.
+  await expect(page.locator("[data-sonner-toast]", { hasText: "Route Cleared" })).toHaveCount(0);
+  await bar.getByRole("button", { name: "Route Cleared: Undo" }).click();
   await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
   await expect(page).toHaveURL(/[?&]stops=KMSN(&|$)/);
@@ -64,7 +67,7 @@ test("a stop taken out comes back from the Undo bar that names it", async ({ pag
   await expect(page).toHaveURL(/[?&]stops=KRYV(&|$)/);
   const bar = undoBar(page, "KMSN Removed");
   await expect(bar).toBeVisible();
-  await bar.getByRole("button", { name: "Undo" }).click();
+  await bar.getByRole("button", { name: "KMSN Removed: Undo" }).click();
   await expect(page).toHaveURL(/[?&]stops=KRYV%2CKMSN(&|$)|[?&]stops=KRYV,KMSN(&|$)/);
   await expect(lines.getByRole("group", { name: "Stop 2 KMSN" })).toBeVisible();
 });

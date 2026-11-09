@@ -111,11 +111,11 @@ jobs:
           restore-keys: tests-raw-root-v1-
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.15"
+          python-version-file: .tool-versions
       - run: pip install uv
       - run: uv pip install --system -r services/planner/requirements-dev-wingtip.txt
       # wingtip's Rust extension (engine/), which wingtip.route_options and
-      # wingtip.airspace_at import: built with the runner's own Rust, in the
+      # wingtip.airspace_at import: built with .tool-versions' Rust (rust-toolchain.toml), in the
       # light `ci` profile (the image's is the release one; the sums are
       # the same either way, as nothing here is built for fast maths).
       # The runner's own temp, not /tmp: the Mac mini's runners share one
@@ -215,7 +215,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
         with:
-          node-version-file: apps/web/.nvmrc
+          node-version-file: .tool-versions
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
@@ -301,7 +301,7 @@ jobs:
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6
         with:
           distribution: temurin
-          java-version: "25"
+          java-version-file: .tool-versions
           cache: maven
       # The Java as palantir-java-format writes it (Spotless, in the pom).
       - name: The Java's layout
@@ -362,7 +362,7 @@ jobs:
           restore-keys: tests-raw-planner-v2-
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.15"
+          python-version-file: .tool-versions
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
       # The planner imports wingtip's Rust extension (engine/), as in the test job.
@@ -386,7 +386,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.15"
+          python-version-file: .tool-versions
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
       # wingtip imports its Rust extension (engine/), as in the test job.
@@ -412,7 +412,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.15"
+          python-version-file: .tool-versions
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
       - name: Generated code matches its sources
@@ -434,7 +434,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.15"
+          python-version-file: .tool-versions
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
       - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
@@ -532,6 +532,8 @@ jobs:
               # BEGIN generated from scripts/areas.yml by scripts/areas.py: edit that file, then `python3 scripts/areas.py write`
               global:
                 - .github/workflows/ci.yml
+                - .tool-versions
+                - rust-toolchain.toml
                 - .github/ci-images.hcl
                 - .dockerignore
                 - services/planner/pyproject.toml
@@ -722,6 +724,26 @@ jobs:
                 - scripts/ci/file_sizes_allow.txt
                 - scripts/ci/dead_python.sh
                 - scripts/ci/vulture_allow.py
+                - .tool-versions
+                - rust-toolchain.toml
+                - engine/rust-toolchain.toml
+                - engine/**/Cargo.toml
+                - scripts/build/toolchain.*
+                - '**/*.sh'
+                - '**/*Dockerfile*'
+                - '**/*docker-compose*.yml'
+                - .github/workflows/*.yml
+                - .devcontainer/devcontainer.json
+                - apps/web/.nvmrc
+                - apps/web/package.json
+                - services/gateway/pom.xml
+                - apps/android/app/build.gradle.kts
+                - apps/android/gradle/**
+                - services/*/requirements-dev*.txt
+                - CLAUDE.md
+                - README.md
+                - docs/*.md
+                - .claude/skills/checks/SKILL.md
               # END generated
       - name: What this run builds and tests
         id: plan
@@ -1172,13 +1194,13 @@ jobs:
       # e2e-images builds the page once for its key and the stack's
       # background piece copies it in; on a fork's or Dependabot's, which
       # e2e-images does not run for, it is built here, with Node as
-      # apps/web/.nvmrc has it and the suite's packages, from the same lock file.
+      # .tool-versions has it and the suite's packages, from the same lock file.
       # The gateway reads the page from disk when it is asked for, so it is
       # started before the page is there, and the step below waits for it.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
         if: ${{ !(github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
         with:
-          node-version-file: apps/web/.nvmrc
+          node-version-file: .tool-versions
       - name: The page, built from this commit
         if: ${{ !(github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
         working-directory: apps/web
@@ -1531,7 +1553,7 @@ jobs:
   #
   # The page's key changes on about half the commits (22 of 39). It is
   # built here, once, as the Dockerfile builds it (`npm run types`, `vite
-  # build`) with the browser suite's own packages and Node from apps/web/.nvmrc,
+  # build`) with the browser suite's own packages and Node from .tool-versions,
   # and pushed as an image of its files alone (gateway:e2e-page-<key>),
   # which each shard copies out and mounts over the gateway image's page
   # (infra/docker-compose.ci.yml). Each shard built it itself in 1deccfc's run,
@@ -1624,7 +1646,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
         if: steps.keys.outputs.page != ''
         with:
-          node-version-file: apps/web/.nvmrc
+          node-version-file: .tool-versions
       # Before setup-buildx, whose builder would otherwise be the one
       # `docker build` uses, and would leave the image out of Docker.
       - name: The page, built and pushed
@@ -1813,6 +1835,12 @@ jobs:
         run: |
           git fetch -q --depth=1 origin "$BASE"
           python3 scripts/ci/file_sizes.py --base FETCH_HEAD
+      # One version of each toolchain (the owner, 2026-11-09): every place
+      # the repo states one -- the images' tags and digests, the pom, the
+      # Gradle files, rust-toolchain.toml, .nvmrc, the dev container, the
+      # docs -- is .tool-versions', and every workflow reads that file.
+      - name: Every toolchain at .tool-versions' version
+        run: scripts/build/toolchain.sh --check
       - name: No unused Python
         run: scripts/ci/dead_python.sh
       # Every Python file as ruff format writes it (.ruff.toml's [format],
@@ -1856,7 +1884,7 @@ jobs:
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6
         with:
           distribution: temurin
-          java-version: "25"
+          java-version-file: .tool-versions
           # As test-gateway does. Javadoc resolves the same dependency
           # tree, and without this it downloads all of it every run.
           cache: maven
@@ -1896,7 +1924,7 @@ jobs:
       - uses: ./.github/actions/hub-mirror
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.15"
+          python-version-file: .tool-versions
       - run: pip install cfn-lint==1.60.0
       - run: cfn-lint infra/cloudformation/template.yaml
       - run: shellcheck infra/server/*.sh
@@ -2148,7 +2176,7 @@ jobs:
           restore-keys: tests-raw-planner-v2-
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.15"
+          python-version-file: .tool-versions
       - run: pip install uv
       - run: uv pip install --system -r services/planner/${{ matrix.suite == 'wingtip' && 'requirements-dev-wingtip.txt' || 'requirements-dev.txt' }}
       - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o /tmp/native && uv pip install --system /tmp/native/*.whl
@@ -2179,7 +2207,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
         with:
-          node-version-file: apps/web/.nvmrc
+          node-version-file: .tool-versions
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci

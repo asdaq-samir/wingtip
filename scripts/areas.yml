@@ -194,7 +194,7 @@ areas:
       - apps/web/public/support.html
   arch:
     ci: arch
-    check: scripts/ci/file_sizes.py --base origin/main (no new or grown source file over 400 lines), then scripts/ci/dead_python.sh (vulture)
+    check: scripts/ci/file_sizes.py --base origin/main (no new or grown source file over 400 lines), scripts/build/toolchain.sh --check (every version .tool-versions'), then scripts/ci/dead_python.sh (vulture)
     paths:
       # Every source file the budget counts, and the budget itself.
       - "**/*.ts"
@@ -208,10 +208,34 @@ areas:
       - scripts/ci/file_sizes_allow.txt
       - scripts/ci/dead_python.sh
       - scripts/ci/vulture_allow.py
+      # Every place scripts/build/toolchain.py holds to .tool-versions.
+      - .tool-versions
+      - rust-toolchain.toml
+      - engine/rust-toolchain.toml
+      - engine/**/Cargo.toml
+      - scripts/build/toolchain.*
+      - "**/*.sh"
+      - "**/*Dockerfile*"
+      - "**/*docker-compose*.yml"
+      - .github/workflows/*.yml
+      - .devcontainer/devcontainer.json
+      - apps/web/.nvmrc
+      - apps/web/package.json
+      - services/gateway/pom.xml
+      - apps/android/app/build.gradle.kts
+      - apps/android/gradle/**
+      - services/*/requirements-dev*.txt
+      - CLAUDE.md
+      - README.md
+      - docs/*.md
+      - .claude/skills/checks/SKILL.md
 ci_only:
   # A change here can change what any job does: all of them.
   global:
     - .github/workflows/ci.yml
+    # Every toolchain's version: each job's runtime.
+    - .tool-versions
+    - rust-toolchain.toml
     - .github/ci-images.hcl
     - .dockerignore
     - services/planner/pyproject.toml

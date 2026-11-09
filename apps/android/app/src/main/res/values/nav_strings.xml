@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The words of the actions put where the pilot looks (docs/navigation.md,
+     the owner's 2026-11-09 "just add the buttons and options where they make
+     sense"): the shortcut rows, the route point's menu, the Undo rows, the
+     logbook's edit in the row, the frequencies' Copy and the alerts' fixes.
+     The verbs are every platform's: Edit, Delete, Move, Undo, Copy. -->
+<resources>
+    <string name="checklists_line">The airplane picked\'s checklists</string>
+    <string name="emergency_assistant_ground_line">The nearest fields, the checklist, 7700 and 121.5</string>
+
+    <string name="undo">Undo</string>
+    <string name="said_point_menu">%1$s: more</string>
+
+    <string name="point_more_info">More Info</string>
+    <string name="point_direct_to">Direct To</string>
+    <string name="point_fly_as_planned">Fly as Planned</string>
+    <string name="point_hold_here">Hold Here</string>
+    <string name="point_add_stop_after">Add a Stop After…</string>
+    <string name="point_move_up">Move Up</string>
+    <string name="point_move_down">Move Down</string>
+    <string name="point_remove">Remove</string>
+    <string name="point_add_stop_after_title">Add a Stop After %1$s</string>
+    <string name="point_add">Add</string>
+    <string name="point_stop_ident">Field, VOR or fix</string>
+    <string name="undo_removed">Removed %1$s</string>
+    <string name="undo_direct">Direct to %1$s</string>
+    <string name="undo_moved">Moved %1$s</string>
+    <string name="undo_added">Added %1$s</string>
+    <string name="undo_fly_here">New route to %1$s</string>
+
+    <string name="logbook_deleted">Deleted %1$s</string>
+    <string name="logbook_remarks">Remarks</string>
+    <string name="logbook_edit_entry">Edit the entry of %1$s</string>
+    <string name="logbook_saving">Saving…</string>
+
+    <string name="frequencies">Frequencies</string>
+    <string name="frequency_copy">Copy %1$s</string>
+    <string name="frequency_copied">Copied</string>
+
+    <string name="ahead">Ahead</string>
+    <string name="said_show_ahead">Show what is ahead</string>
+    <string name="ahead_floor_top">%1$s to %2$s</string>
+    <string name="copilot_fly_to">Fly to %1$s</string>
+</resources>

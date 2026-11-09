@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -24,7 +25,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.coach.CoachScreen
 import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -34,14 +34,16 @@ import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.UndoRow
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
  * The pilot's logbook, at its least (LogbookModel): what the currency
  * says, then each entry, newest first, its date over its route, hours
- * and landings. Entries are added from a recorded flight ("Flight
- * Logged"), from a photo of a paper page (Add from a Photo), or on the
- * web. Its Coach row opens the pilot's proficiency plan (CoachScreen).
+ * and landings, each edited in its row and deleted with an Undo where it
+ * was (LogbookEntryRow). Entries are added from a recorded flight
+ * ("Flight Logged"), from a photo of a paper page (Add from a Photo), or
+ * on the web. Its Coach row opens the pilot's proficiency plan (CoachScreen).
  */
 @Composable
 fun LogbookScreen(model: LogbookModel = viewModel()) {
@@ -73,19 +75,27 @@ fun LogbookScreen(model: LogbookModel = viewModel()) {
                 Text(stringResource(R.string.logbook_empty), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        items(state.entries, key = { it.id }) { e ->
-            ListItem(
-                overlineContent = { Text(e.flownOn) },
-                headlineContent = { Text(LogbookModel.line(e)) },
-                // The airplane's N-number, a tap to its profile.
-                supportingContent = e.aircraft?.let { { Text(it, color = MaterialTheme.colorScheme.primary) } },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = e.aircraft?.let { tail -> Modifier.clickable(role = Role.Button) { ProfileOpen.open(tail) } } ?: Modifier,
-            )
+        // The entries, each edited in its row; a deleted one's Undo row
+        // where it was, until its time is up (UndoRow).
+        val removed = state.removed
+        state.entries.forEachIndexed { i, e ->
+            if (removed != null && removed.index == i) undoItem(removed, model)
+            item(key = e.id) { LogbookEntryRow(e, state, model) }
         }
+        if (removed != null && removed.index >= state.entries.size) undoItem(removed, model)
     }
     if (photo) LogbookPhotoSheet(onClose = { photo = false })
     if (coach) {
         WingtipSheet(title = stringResource(R.string.coach), onClose = { coach = false }, full = true) { CoachScreen() }
+    }
+}
+
+/** "Deleted 2026-11-09 · Undo" where the entry was. */
+private fun LazyListScope.undoItem(removed: LogbookModel.Removed, model: LogbookModel) {
+    item(key = "undo-${removed.entry.id}") {
+        UndoRow(
+            stringResource(R.string.logbook_deleted, listOfNotNull(removed.entry.flownOn, removed.entry.route?.ifEmpty { null }).joinToString(" ")),
+            key = removed.entry.id, onUndo = model::undoDelete, onDone = { model.deleteKept(removed.entry.id) },
+        )
     }
 }

@@ -4,15 +4,12 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { numberOrNull, optionalHours, pastDay, requiredPastDay, textOrNull, z } from "./formSchema";
 import { done } from "../../lib/doneNote";
-import { Info, Plus, Route, Share, Trash2 } from "lucide-react";
-import EmptyState from "../../components/EmptyState";
+import { Info, Plus } from "lucide-react";
 import FieldHit from "../../components/FieldHit";
 import RowField from "../../components/RowField";
 import { invalidProps } from "../../lib/fieldError";
 import IconButton from "../../components/IconButton";
 import { cn } from "cn";
-import { planHrefOf } from "../../lib/flightLink";
-import { routeName } from "../../lib/identSchema";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import NumberRow from "./NumberRow";
@@ -23,27 +20,19 @@ import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
 import { useConfirm } from "../../components/useConfirm";
 import { ConsolePages, PageRow } from "../../components/ConsolePages";
-import FlightPage from "./FlightPage";
 import ChecklistPage from "../../components/ChecklistPage";
 import SquawksPage from "./SquawksPage";
 import { aircraftKey, choiceOf } from "../../lib/aircraftChoice";
-import { api, describeError } from "../../lib/api/client";
-import { cancelled, shareOrCopy } from "../../lib/share";
-import { showError } from "../../lib/problems";
-import RowMenu from "../../components/RowMenu";
-import type { Aircraft, AircraftRequest, FlightSummary, HandbookFigures, InspectionsRequest, VorCheckRequest } from "../../lib/api/types";
+import { api } from "../../lib/api/client";
+import type { Aircraft, AircraftRequest, HandbookFigures, InspectionsRequest, VorCheckRequest } from "../../lib/api/types";
 import { HandbookPhotoRow, mergeHandbook, type ConfirmedHandbook } from "../document-photo";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { usePreferences } from "../../lib/preferences";
 import { TEXT } from "../../lib/text";
-import { altFt, feet, nm } from "../../lib/format";
-import { LEVEL_TONE, riskLine, type RiskLevel } from "../../lib/frat";
+import { altFt } from "../../lib/format";
 import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
-import { EditToggle, ListPageHead, RemoveMinus } from "../../components/Favorites";
-import { aircraftListQuery, aircraftProfilesQuery, flightsQuery } from "../../lib/queryClient";
-import QueryState from "../../components/QueryState";
-import { SwipeToDelete } from "../../components/SwipeToDelete";
+import { aircraftListQuery, aircraftProfilesQuery } from "../../lib/queryClient";
 import { callEngine } from "../../lib/engine/engine";
 import TogglePill from "../../components/TogglePill";
 import { daysBetween, daysWords, dueTone } from "./paperwork";
@@ -1009,162 +998,6 @@ export function AircraftPanel() {
   );
 }
 
-/** A signed-in pilot's own filed flights. Filing one happens from the
- *  route's Share menu (Save); here a flight opens
- *  back on the planner (same route and altitude) or is deleted. A
- *  grouped list at every width, as iOS lists things: a tap on a row
- *  opens the flight and puts the console away, and Edit over the list
- *  puts a red minus before each row, which deletes it once asked in
- *  the app's own sheet. It was an Open and a Delete at every row's
- *  end, and before that a card a flight on a phone and a six-column
- *  table from md up. */
-export function FlightsPanel({
-  onBack,
-}: {
-  /** Shown as FPL's Saved in full (SavedStrip's title): headed as its
-   *  Recents' page is, Back at its left and Edit at its right, at the
-   *  owner's notice ("When clicking on See All for Saved it's not giving
-   *  option to go back like recents or favorites"). */
-  onBack?: () => void;
-} = {}) {
-  const queryClient = useQueryClient();
-  const [flightToDelete, setFlightToDelete] = useState<FlightSummary | null>(null);
-  const [editing, setEditing] = useState(false);
-  const asked = useQuery(flightsQuery);
-  const list = asked.data;
-
-  const remove = useMutation({
-    mutationFn: (id: number) => api.flights.remove(id),
-    onSuccess: () => {
-      done("Flight Deleted");
-      setFlightToDelete(null);
-      void queryClient.invalidateQueries({ queryKey: ["flights"] });
-    },
-  });
-  const [askDelete, deleteDialog] = useConfirm({
-    title: flightToDelete
-      ? `Delete ${routeName(flightToDelete.departureIdent, flightToDelete.destinationIdent, flightToDelete.stops)}?`
-      : "Delete this flight?",
-    description: "The filed flight goes from your flights. This can't be undone.",
-    confirmLabel: "Delete flight",
-    destructive: true,
-    onConfirm: () => {
-      if (flightToDelete) remove.mutate(flightToDelete.id);
-    },
-  });
-
-  // A page a flight (FlightPage), opened from its row.
-  const pages = Object.fromEntries(
-    (list ?? []).map((f) => [
-      `flight-${f.id}`,
-      { title: routeName(f.departureIdent, f.destinationIdent, f.stops), content: <FlightPage summary={f} planHref={planHrefOf(f)} /> },
-    ]),
-  );
-
-  // Every list's Edit (EditToggle), where this was a copy of it.
-  const edit = <EditToggle editing={editing} onToggle={() => setEditing((e) => !e)} testId="flights-edit" />;
-  return (
-    <ConsolePages back="Flights" pages={pages}>
-      <section aria-label="Flights" className={onBack ? "space-y-3" : undefined}>
-        {onBack && (
-          <ListPageHead
-            title="Saved"
-            backLabel="Back to FPL"
-            onBack={onBack}
-            action={list?.length ? edit : undefined}
-            testId="saved-page"
-          />
-        )}
-        {!list ? (
-          // Where they could not be fetched, said here with Try again, where
-          // the list showed nothing.
-          <QueryState query={asked} fetching="Fetching your flights…" failed="Your flights could not be fetched." />
-        ) : list.length === 0 ? (
-          <EmptyState icon={<Route />} title="No Flights">
-            Plan a route and Save it from Share; it is kept here.
-          </EmptyState>
-        ) : (
-          <ListGroup title={onBack ? undefined : "Saved flights"} action={onBack ? undefined : edit}>
-            {(list ?? []).map((f) => {
-              const name = routeName(f.departureIdent, f.destinationIdent, f.stops);
-              const row = {
-                title: (
-                  <>
-                    <span className="font-mono font-semibold">{name}</span>
-                    {f.aircraftTailNumber && <span className="text-muted-foreground"> {f.aircraftTailNumber}</span>}
-                  </>
-                ),
-                description: (
-                  <span className="tabular-nums">
-                    {feet(f.cruiseAltitudeFt)}
-                    {f.totalDistanceNm != null && ` · ${nm(f.totalDistanceNm)}`} · filed {new Date(f.createdAt).toLocaleDateString()}
-                    {/* The risk assessment it was saved with (lib/frat). */}
-                    {f.risk && (
-                      <span className={cn("block", LEVEL_TONE[f.risk.level as RiskLevel])} data-testid="flight-risk">
-                        Risk {riskLine(f.risk).toLowerCase()}
-                      </span>
-                    )}
-                  </span>
-                ),
-              };
-              // Taken off as every kept list's rows are -- a swipe to the
-              // left, or Edit's minus bringing out the Delete -- asked first,
-              // the flight being the server's (SwipeToDelete, useConfirm).
-              return (
-                <SwipeToDelete
-                  key={f.id}
-                  label={`Delete ${name}`}
-                  onDelete={() => {
-                    setFlightToDelete(f);
-                    askDelete();
-                  }}
-                  share={{ title: name, url: new URL(`/app${planHrefOf(f)}`, location.origin).toString() }}
-                >
-                  {editing ? (
-                    <ListRow {...row} media={<RemoveMinus label={`Delete ${name}…`} />} />
-                  ) : (
-                    // Its own page: what was filed, the way back onto the
-                    // map, and its debrief; at its end, as Maps' Recents
-                    // set a row (the owner, 2026-10-28), ••• or a long
-                    // press with Share and Remove alone, as every list's (the
-                    // owner, 2026-10-28).
-                    <RowMenu
-                      label={`More for ${name}`}
-                      testId="saved-flight-more"
-                      actions={[
-                        {
-                          label: "Share",
-                          icon: <Share />,
-                          testId: "saved-flight-share",
-                          onSelect: () => {
-                            shareOrCopy({ title: name, url: new URL(`/app${planHrefOf(f)}`, location.origin).toString() }).catch((err) => {
-                              if (!cancelled(err)) showError("Not shared", describeError(err));
-                            });
-                          },
-                        },
-                        {
-                          label: "Remove",
-                          icon: <Trash2 />,
-                          destructive: true,
-                          asks: true,
-                          onSelect: () => {
-                            setFlightToDelete(f);
-                            askDelete();
-                          },
-                          testId: "saved-flight-delete",
-                        },
-                      ]}
-                    >
-                      <PageRow page={`flight-${f.id}`} {...row} />
-                    </RowMenu>
-                  )}
-                </SwipeToDelete>
-              );
-            })}
-          </ListGroup>
-        )}
-        {deleteDialog}
-      </section>
-    </ConsolePages>
-  );
-}
+// The saved flights, their own module now (flights/), still reached
+// through this chunk as PlanSidebar and Setup load it.
+export { FlightsPanel } from "./flights/FlightsPanel";

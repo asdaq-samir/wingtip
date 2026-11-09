@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The one formatter of each language, run over the whole tree, each at the
-# version pinned here so the Mac, the pre-push hook and CI write the same
-# bytes. Each language's settings are in the repo, where its tool looks:
+# version .tool-versions pins, so the Mac, the pre-push hook and CI write
+# the same bytes. Each language's settings are in the repo, where its tool looks:
 #
 #   web     Prettier: apps/web (TS, JS, CSS, JSON, Markdown) and
 #           scripts/build/*.mjs; .prettierrc.yaml, apps/web/.prettierignore
@@ -21,6 +21,9 @@
 # fetched: Prettier through npx (Docker's node, as the Mac has none),
 # ruff through uvx or pipx, SwiftFormat and ktlint as their release
 # binaries, checked against the sums below, into ~/.cache/wingtip-format.
+# palantir-java-format's version is the pom's (Spotless), Prettier's
+# apps/web/package.json's; scripts/build/toolchain.sh --check holds both,
+# and the sums' versions, to .tool-versions.
 # rustfmt is rustup's (`rustup component add rustfmt`), the Java Maven's
 # (Docker's Maven image where there is no mvn). A language whose tool
 # cannot be had here is skipped with a note, and the exit says so only
@@ -30,13 +33,18 @@ set -uo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 
-RUFF=0.17.4
-SWIFTFORMAT=0.64.2
-SWIFTFORMAT_SHA256=103b784eeb7bfcbdce12d07f7464a5c12bfdcc6d8d417b6989125fdc2dbf07ae
-KTLINT=1.8.0
-KTLINT_SHA256=a3fd620207d5c40da6ca789b95e7f823c54e854b7fade7f613e91096a3706d75
-# Prettier's version is apps/web/package.json's, which CI's npm ci installs.
-PRETTIER=$(sed -nE 's/^ *"prettier": "([0-9.]+)".*/\1/p' "$here/apps/web/package.json")
+tool() { "$here/scripts/build/toolchain.sh" get "$1"; }
+RUFF=$(tool ruff)
+SWIFTFORMAT=$(tool swiftformat)
+KTLINT=$(tool ktlint)
+# Each release binary's sum, beside the version it is the sum of: a bump in
+# .tool-versions changes it here too, or --check says so.
+SWIFTFORMAT_SUM="0.64.2 103b784eeb7bfcbdce12d07f7464a5c12bfdcc6d8d417b6989125fdc2dbf07ae"
+KTLINT_SUM="1.8.0 a3fd620207d5c40da6ca789b95e7f823c54e854b7fade7f613e91096a3706d75"
+SWIFTFORMAT_SHA256=${SWIFTFORMAT_SUM#* }
+KTLINT_SHA256=${KTLINT_SUM#* }
+# Prettier's, the one apps/web/package.json pins and CI's npm ci installs.
+PRETTIER=$(tool prettier)
 CACHE=${XDG_CACHE_HOME:-$HOME/.cache}/wingtip-format
 
 check=""
@@ -92,7 +100,7 @@ run_web() {
     # The repo at its own path, so the scripts' ../../ reach it; npm's
     # downloads kept in a volume of their own.
     local node
-    node=$(tr -d ' \n' < "$here/apps/web/.nvmrc")
+    node=$(tool nodejs)
     docker run --rm -v "$here:/repo" -v wingtip-format-npm:/root/.npm -w /repo/apps/web "node:$node-slim" \
       sh -c 'npx -y "prettier@$0" "$@"' "$PRETTIER" "${args[@]}"
   else
@@ -112,7 +120,11 @@ run_python() {
 }
 
 run_rust() {
-  if ! command -v cargo >/dev/null || ! cargo fmt --version >/dev/null 2>&1; then
+  # rustfmt for rust-toolchain.toml's Rust, which rustup installs minimal.
+  if command -v rustup >/dev/null && ! (cd "$here/engine" && cargo fmt --version >/dev/null 2>&1); then
+    (cd "$here/engine" && rustup component add rustfmt >/dev/null 2>&1)
+  fi
+  if ! command -v cargo >/dev/null || ! (cd "$here/engine" && cargo fmt --version >/dev/null 2>&1); then
     note "rust: skipped, no rustfmt here (rustup component add rustfmt)"
     return 3
   fi
@@ -132,9 +144,11 @@ run_swift() {
 
 run_kotlin() {
   local kt="" jbr
-  # A Java for ktlint: JAVA_HOME's, else the PATH's, else the JDK 25 the
-  # Android build runs on (check.sh's pick).
-  jbr=$(ls -d "$HOME"/Library/Java/JavaVirtualMachines/*25*/Contents/Home "$HOME"/.gradle/jdks/*25*/*/Contents/Home 2>/dev/null | tail -1)
+  # A Java for ktlint: JAVA_HOME's, else the PATH's, else .tool-versions'
+  # JDK, the one the Android build runs on (check.sh's pick).
+  local java
+  java=$(tool java)
+  jbr=$(ls -d "$HOME"/Library/Java/JavaVirtualMachines/*"$java"*/Contents/Home "$HOME"/.gradle/jdks/*"$java"*/*/Contents/Home 2>/dev/null | tail -1)
   if [ -n "${JAVA_HOME:-}" ]; then PATH=$JAVA_HOME/bin:$PATH
   elif ! java -version >/dev/null 2>&1 && [ -n "$jbr" ]; then PATH=$jbr/bin:$PATH
   fi
@@ -160,7 +174,7 @@ run_java() {
   elif docker_up; then
     # check.sh's java area's image and Maven repository.
     docker run --rm -v "$here/services":/services -v /services/gateway/target -v fp-m2:/root/.m2 \
-      -w /services/gateway maven:3.9-eclipse-temurin-25 mvn -B -q "$goal"
+      -w /services/gateway "maven:$(tool maven)-eclipse-temurin-$(tool java)" mvn -B -q "$goal"
   else
     note "java: skipped, no mvn here and no Docker${docker_ok:+ running}"
     return 3

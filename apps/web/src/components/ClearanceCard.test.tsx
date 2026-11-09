@@ -138,7 +138,8 @@ describe("the clearance card", () => {
     expect(hear.getByText("KDLH")).toBeTruthy();
     expect(hear.getByText("GEP", { exact: true })).toBeTruthy();
     expect(hear.getByText("Maintain 5,000 ft, expect 7,000 ft 10 min after departure")).toBeTruthy();
-    expect(hear.getByText("Departure 125.35")).toBeTruthy();
+    // The frequency named, and a tap copies it (FrequencyButton).
+    expect(hear.getByRole("button", { name: "Copy Departure 125.35" })).toBeTruthy();
     expect(hear.getByText("4512")).toBeTruthy();
     expect((hear.getByTestId("clearance-text") as HTMLTextAreaElement).value).toBe(CLEARED);
 

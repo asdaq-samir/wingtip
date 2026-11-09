@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -37,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -125,7 +125,7 @@ internal fun ReadyActionRow(item: EngineContract.ReadyItem, fixer: ReadyFixer, b
             item.line, color = if (tappable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
         )
-        if (busy) CircularProgressIndicator(Modifier.size(WingtipSpace.Lg))
+        if (busy) LoadingIndicator(Modifier.size(WingtipSpace.Lg))
     }
 }
 

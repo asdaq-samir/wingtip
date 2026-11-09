@@ -26,7 +26,7 @@
     { "id": "nearest", "title": "Nearest", "about": "The fields nearest the airplane.", "platforms": ["web", "ios", "android"] },
     { "id": "ask", "title": "Ask", "about": "Ask the assistant about the flight.", "platforms": ["ios", "android"] },
     { "id": "emergency", "title": "Emergency Assistant", "about": "The emergency assistant: the nearest fields, the checklist, 7700 and 121.5.", "platforms": ["web", "ios", "android"] },
-    { "id": "checklists", "title": "Checklists", "about": "The picked airplane's checklists.", "platforms": ["ios", "android"] },
+    { "id": "checklists", "title": "Checklists", "about": "The picked airplane's checklists.", "platforms": ["web", "ios", "android"] },
     { "id": "airplanes", "title": "Your Airplanes", "about": "The pilot's own airplanes, their figures, checklists and squawks.", "platforms": ["web", "ios"] },
     { "id": "logbook", "title": "Logbook", "about": "The pilot's logbook and currency.", "platforms": ["web", "ios", "android"] },
     { "id": "coach", "title": "Coach", "about": "The training coach.", "platforms": ["web", "ios", "android"] },

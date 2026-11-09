@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.annotation.StringRes
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -26,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.core.net.toUri
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.rememberPressShape
 
 /**
  * A card's actions, one name and one glyph each on every card and every
@@ -81,10 +84,14 @@ fun CardActionRow(kind: CardKind, can: (CardAction) -> Boolean, onAction: (CardA
                 }
             }
             val pad = PaddingValues(horizontal = WingtipSpace.Xs, vertical = WingtipSpace.Sm)
+            // A tile's corners draw in under the finger (Material 3
+            // Expressive's shape morph) and spring back as it lifts.
+            val touch = remember { MutableInteractionSource() }
+            val shape = rememberPressShape(touch, rest = MaterialTheme.shapes.medium, pressed = MaterialTheme.shapes.extraSmall)
             if (action == kind.actions.first()) {
-                Button(onClick = { onAction(action) }, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.medium, contentPadding = pad) { content() }
+                Button(onClick = { onAction(action) }, modifier = Modifier.weight(1f), shape = shape, contentPadding = pad, interactionSource = touch) { content() }
             } else {
-                FilledTonalButton(onClick = { onAction(action) }, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.medium, contentPadding = pad) { content() }
+                FilledTonalButton(onClick = { onAction(action) }, modifier = Modifier.weight(1f), shape = shape, contentPadding = pad, interactionSource = touch) { content() }
             }
         }
     }

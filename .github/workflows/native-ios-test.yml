@@ -26,6 +26,13 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      # .tool-versions' Xcode (scripts/ci/select-xcode.sh, DEVELOPER_DIR for
+      # the steps after), before anything builds: the engine's Apple targets
+      # link against its SDK too. iPhone Duo's own layout (to the screen's
+      # edge, bars down the side) needs the iOS 27.1 SDK or later; an app
+      # built with an older one is letterboxed on the inner screen.
+      - name: The Xcode .tool-versions names
+        run: scripts/ci/select-xcode.sh
       # rustup's tools on the PATH wherever they are: GitHub's macOS image
       # has them already; the Mac mini's runner keeps them in ~/.cargo/bin,
       # which its service PATH did not carry (rustup: command not found,
@@ -46,11 +53,11 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/ios/Frameworks/WingtipEngine.xcframework
-          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
+          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         # wingtip-engine through its C functions (engine/bindings/ffi), which the app
-        # answers the airspace from with no network. The runner's own
-        # rustup, where the engine changed.
+        # answers the airspace from with no network. The runner's rustup,
+        # at .tool-versions' Rust (rust-toolchain.toml), where the engine changed.
         if: steps.engine.outputs.cache-hit != 'true'
         run: engine/bindings/ffi/build-xcframework.sh
       # Kept at once, not at the job's end: an app that fails its tests
@@ -60,23 +67,12 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/ios/Frameworks/WingtipEngine.xcframework
-          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*') }}
+          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The Xcode project, from project.yml
         run: |
           # The Mac mini's runner has xcodegen already, and no Homebrew.
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate --spec apps/ios/project.yml --project apps/ios
-      - name: The newest Xcode on the runner
-        run: |
-          # iPhone Duo's own layout (to the screen's edge, bars down the
-          # side) needs an app built with the iOS 27.1 SDK; an older one is
-          # letterboxed on the inner screen. The runner's default Xcode can
-          # lag its newest.
-          # The Mac mini's runner has the one Xcode.app, already selected,
-          # and no password-less sudo; GitHub's has numbered ones.
-          newest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -viE 'beta|_rc' | sort -V | tail -1 || true)
-          if [ -n "$newest" ]; then sudo xcode-select -s "$newest"; fi
-          xcodebuild -version
       - name: The simulators to test on
         id: sim
         run: |

@@ -29,7 +29,7 @@ CLAUDE.md says what to run for each part of the repo; this says how to run it he
 **On the Mac, use `scripts/dev/check.sh`.** `scripts/dev/check.sh all-changed` runs every area the branch touches (`git diff origin/main...` plus the uncommitted files, mapped as CI's changes filter maps them), in parallel, each in its own turn of `scripts/dev/one-at-a-time.sh`, each area's log shown whole when it ends. `scripts/dev/check.sh web py engine …` runs named areas: `web`, `py` (services/planner/wingtip and tests_wingtip), `planner`, `engine` (CI's `cargo test --profile ci` line), `java`, `ios` and `android` (both on the host). It prints `check: <area> exit <code> in <n>s` per area and exits non-zero if any failed. `scripts/dev/check.sh --areas < paths` prints the areas without running anything.
 
 It is fast because nothing starts cold after the first run on the Mac, in any worktree:
-- `wingtip-check-web:<hash of apps/web/.nvmrc, package.json and package-lock>`: node with web's packages at `/node_modules`, found by walking up from `/repo/apps/web`. A worktree's own `apps/web/node_modules`, if it has one, is hidden behind an empty one.
+- `wingtip-check-web:<hash of the Node version (.tool-versions), package.json and package-lock>`: node with web's packages at `/node_modules`, found by walking up from `/repo/apps/web`. A worktree's own `apps/web/node_modules`, if it has one, is hidden behind an empty one.
 - `wingtip-check-py-<dir>:<hash>`: python with that directory's requirements-dev (followed through `-r`) and the wingtip_native wheel built from this `engine/`, rebuilt when either changes.
 - Volumes: `wingtip-cargo-registry`, `wingtip-cargo-git`, `wingtip-cargo-target-tests-1.99-<arch>` (the engine tests' build; each worktree is mounted at its own path, so its own crates are never taken for another's), `wingtip-check-raw` (the FAA files the Python tests fetch into `data/raw`), `fp-m2`. BuildKit's caches `wingtip-npm`, `wingtip-uv` and the wheel's target.
 - The phones' engine (xcframework, Android's `app/engine`) under `~/Library/Caches/wingtip-checks`, keyed by the engine's files; Xcode's DerivedData per worktree; Gradle's `~/.gradle`.
@@ -40,7 +40,7 @@ It is fast because nothing starts cold after the first run on the Mac, in any wo
 
 The commands below are what it runs, for reading a failure or running one by hand.
 
-**Web.** These are CI's steps; node 26 matches `apps/web/.nvmrc`.
+**Web.** These are CI's steps; node 26 is `.tool-versions`' (`apps/web/.nvmrc` is written from it).
 ```sh
 docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim sh -c 'npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx vitest run'
 ```

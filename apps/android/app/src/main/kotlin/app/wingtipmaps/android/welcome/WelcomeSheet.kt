@@ -2,7 +2,6 @@ package app.wingtipmaps.android.welcome
 
 import android.Manifest
 import android.os.Build
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +33,8 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.SharedAxisContent
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.predictiveBack
+import app.wingtipmaps.android.design.rememberPredictiveBack
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.plan.FlightChoices
@@ -85,14 +86,16 @@ fun WelcomeHost(plan: Plan, onOpen: (sample: Boolean) -> Unit) {
     val state by model.state.collectAsStateWithLifecycle()
 
     WingtipSheet(title = stringResource(R.string.welcome), onClose = { end(model.skip()) }, full = true) {
-        BackHandler(enabled = state.index > 0) { model.back() }
+        // Back goes a page back, the page drawn back with the predictive
+        // gesture before it gives way.
+        val pageBack = rememberPredictiveBack(enabled = state.index > 0) { model.back() }
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg),
         ) {
             // A page gives way to the next along X (Material's shared axis;
             // a cross-fade under Reduce Motion).
-            SharedAxisContent(state.index) { i -> WelcomePage(state.steps[i], state, plan, model) }
+            SharedAxisContent(state.index, Modifier.predictiveBack(pageBack)) { i -> WelcomePage(state.steps[i], state, plan, model) }
             WelcomeButtons(
                 step = state.step,
                 onSkip = { end(model.skip()) },

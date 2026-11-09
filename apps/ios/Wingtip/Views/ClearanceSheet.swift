@@ -195,7 +195,7 @@ struct ClearanceSheet: View {
                         }
                         if let frequency = clearance.frequency {
                             craft("Frequency", Text("\(clearance.facility?.capitalized ?? "") \(frequency)".trimmingCharacters(in: .whitespaces)),
-                                  spoken: "\(clearance.facility ?? "") \(SpokenFigures.digits(frequency))")
+                                  spoken: "\(clearance.facility ?? "") \(SpokenFigures.digits(frequency))").frequencyActions(frequency)
                         }
                         if let squawk = clearance.squawk {
                             craft("Transponder", Text(squawk), spoken: SpokenFigures.digits(squawk))

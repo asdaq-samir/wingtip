@@ -79,7 +79,7 @@ internal fun AirspaceCard(volume: MapPick.Airspace) {
     if (first != null) {
         SectionTitle(stringResource(if (first == "APP") R.string.call_approach else R.string.call_tower))
         for (f in calls.filter { it.type?.uppercase() == first }.take(3)) {
-            Fact(f.description ?: f.type ?: "", Format.frequency(f.frequencyMhz!!))
+            FrequencyRow(f.description ?: f.type ?: "", Format.frequency(f.frequencyMhz!!))
         }
     }
     asked.exceptionOrNull()?.let { ProblemLine("The entry rules failed: ${it.message}") }

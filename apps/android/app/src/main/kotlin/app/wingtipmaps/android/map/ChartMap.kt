@@ -4,6 +4,8 @@ import android.graphics.Color
 import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -11,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -146,7 +149,10 @@ fun ChartMap(
 
     LaunchedEffect(holder, template, minZoom, maxZoom, overlays, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context)) { holder.style(template, minZoom, maxZoom, overlays, line) }
     LaunchedEffect(holder, night) { holder.paint(night) }
-    LaunchedEffect(holder, bottomInset) { holder.inset(bottomInset) }
+    // Edge to edge: the credits clear a cutout or a navigation bar at the
+    // left in landscape as well as the sheet below.
+    val leftInset = WindowInsets.safeDrawing.getLeft(LocalDensity.current, LayoutDirection.Ltr)
+    LaunchedEffect(holder, bottomInset, leftInset) { holder.inset(bottomInset, leftInset) }
     LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints) }
     LaunchedEffect(holder, selectedLeg) { holder.selectLeg(selectedLeg) }
     LaunchedEffect(holder, ownShip, follow) { holder.ownShip(ownShip, follow) }
@@ -183,6 +189,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
      *  so the map never opens with a padding the sheet has since left
      *  (the web's #543). */
     private var bottomInset = 0
+    private var leftInset = 0
     private var styled = false
     private var revealed = false
     private val handler = Handler(Looper.getMainLooper())
@@ -411,9 +418,10 @@ private class MapHolder(val view: MapView, private val density: Float) {
     /** The sheet's room as the map's padding: the airplane, a fit and the
      *  map's middle in what it leaves. Eased as the sheet settles, as the
      *  web's map follows its sheet. */
-    fun inset(px: Int) {
-        if (px == bottomInset) return
+    fun inset(px: Int, left: Int = leftInset) {
+        if (px == bottomInset && left == leftInset) return
         bottomInset = px
+        leftInset = left
         if (destroyed || !opened) return
         view.getMapAsync { map ->
             CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()).let { if (app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)) map.moveCamera(it) else map.easeCamera(it, INSET_MS) }
@@ -425,7 +433,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
      *  they can be read and tapped, rather than at the screen's foot under
      *  it (the UI audit, 2026-11-09). */
     private fun credits(map: MapLibreMap, sheetPx: Int) {
-        val gap = (WingtipSpace.Sm.value * density).toInt()
+        val gap = (WingtipSpace.Sm.value * density).toInt() + leftInset
         val logoWidth = (WingtipSize.TapTarget.value * 2 * density).toInt()
         map.uiSettings.setLogoMargins(gap, 0, 0, sheetPx + gap)
         map.uiSettings.setAttributionMargins(gap + logoWidth, 0, 0, sheetPx + gap)
