@@ -26,6 +26,8 @@ We keep these until you delete them or delete your account. We do not sell them,
 
 The app keeps your settings, personal minimums, checklists, the charts and data you keep for flying without a connection, your recent flown tracks and your last known position on your device. The web app keeps them in your browser's storage; the iPhone and Android apps in their own storage. None of it is sent to us unless this page says so.
 
+If you connect the iPhone or Android app to an ADS-B receiver in the cockpit, the traffic and weather it hears over the cockpit's Wi-Fi are read and shown on your device only; nothing of it is sent anywhere, and it is not kept past a few hours.
+
 On the iPhone, the airplanes you keep or watch on the map and your planned routes are also kept in your own iCloud account, if iCloud is on for the app, so your other Apple devices have them. They go to Apple, not to us; we cannot read them. An Apple Watch paired with your iPhone receives the airplane, checklist and position the watch app shows.
 
 ## Your location

@@ -36,6 +36,20 @@ enum WingtipColor {
         static let airspaceMagenta = rgb(0xE02AD8)
         /// The dark tab an airspace's altitudes sit in, at 90%.
         static let airspaceTab = rgb(0x1C2330)
+        /// FIS-B NEXRAD's levels (DO-358B; 0 is none) drawn from light green through yellow and red to magenta, as radar pictures run from the faintest returns to the strongest. Level 1, the faintest.
+        static let nexrad1 = rgb(0x9BE59B)
+        /// NEXRAD level 2.
+        static let nexrad2 = rgb(0x34C759)
+        /// NEXRAD level 3.
+        static let nexrad3 = rgb(0xFFD60A)
+        /// NEXRAD level 4.
+        static let nexrad4 = rgb(0xFF9F0A)
+        /// NEXRAD level 5.
+        static let nexrad5 = rgb(0xFF3B30)
+        /// NEXRAD level 6.
+        static let nexrad6 = rgb(0xB0001E)
+        /// NEXRAD level 7, the strongest.
+        static let nexrad7 = rgb(0xD62AD8)
         /// Prohibited, restricted, warning and alert areas (special-use airspace, FAA Order JO 7400.10): the orange-brown hatch.
         static let specialUse = rgb(0xE0662A)
         /// A fix's and a runway number's dark ink.
@@ -526,6 +540,22 @@ enum WingtipMotion {
     static let sheetBackEase = Animation.timingCurve(0.2, 0.9, 0.3, 1, duration: 0.3)
     static let fade: TimeInterval = 0.2
     static let quick: TimeInterval = 0.15
+    static let page: TimeInterval = 0.25
+    static let skeletonPulse: TimeInterval = 1.5
+}
+
+/// The taps felt on a key action, as SwiftUI's sensory feedback
+/// (`.sensoryFeedback(WingtipHaptic.altitude, trigger:)`); the system
+/// leaves them out where the pilot has turned system haptics off.
+enum WingtipHaptic {
+    /// An altitude set: a wheel's detent, as a picker ticks.
+    static let altitude: SensoryFeedback = .selection
+    /// Direct To or Fly Here taken: the route has changed under the pilot.
+    static let directTo: SensoryFeedback = .impact(weight: .medium)
+    /// An alert or a copilot warning shown: felt as well as seen, in a busy cockpit.
+    static let warning: SensoryFeedback = .warning
+    /// The sheet settling at a detent (pill, half, full).
+    static let detent: SensoryFeedback = .impact(weight: .light)
 }
 
 enum WingtipSize {
@@ -535,5 +565,6 @@ enum WingtipSize {
     static let panel: CGFloat = 384
     static let panelWide: CGFloat = 448
     static let desktop: CGFloat = 1024
+    static let refreshPull: CGFloat = 64
     static let glassBlur: CGFloat = 15
 }

@@ -1,0 +1,50 @@
+{
+  "title": "ReceiverText",
+  "description": "A FIS-B text product as sent (AIM 4-5-9): a METAR, TAF, winds aloft or PIREP (product 413), or a NOTAM, TFR, AIRMET, SIGMET, SUA status, G-AIRMET or CWA text record.",
+  "type": "object",
+  "properties": {
+    "product": {
+      "type": "number",
+      "description": "The FIS-B product ID (DO-358B)."
+    },
+    "kind": {
+      "type": "string",
+      "description": "METAR, SPECI, TAF, WINDS, PIREP ... or NOTAM, AIRMET, SIGMET, SUA, G-AIRMET, CWA, NOTAM-TRA, NOTAM-TMOA."
+    },
+    "location": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The station or office."
+    },
+    "number": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "A text record's report number."
+    },
+    "text": {
+      "type": "string",
+      "description": "The words as sent; a METAR or TAF without its kind, as the METAR and TAF readers take it."
+    },
+    "time": {
+      "type": "string",
+      "description": "The product's time, HHMMZ."
+    },
+    "at": {
+      "type": "number",
+      "description": "When it was last sent, Unix s."
+    }
+  },
+  "required": [
+    "product",
+    "kind",
+    "location",
+    "number",
+    "text",
+    "time",
+    "at"
+  ]
+}

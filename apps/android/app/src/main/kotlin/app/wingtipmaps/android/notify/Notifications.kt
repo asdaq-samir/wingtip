@@ -53,6 +53,9 @@ object Notifications {
     /** The radio's listening service's notification id (AtcListenService). */
     const val ATC_ID = 2
 
+    /** The cockpit receiver's service's notification id (ReceiverService). */
+    const val RECEIVER_ID = 3
+
     private var asked = false
     private val _wanted = MutableStateFlow(false)
 
@@ -163,6 +166,21 @@ object Notifications {
             .setSmallIcon(R.drawable.ic_stat_wingtip)
             .setContentTitle("Listening to the Radio")
             .setContentText("The ATC copilot is listening for calls to your airplane.")
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setOngoing(true)
+            .setSilent(true)
+            .setContentIntent(openApp(context))
+            .build()
+    }
+
+    /** The cockpit receiver's service's notification: a status on own
+     *  ship's low channel, saying what is heard. */
+    fun receiver(context: Context): Notification {
+        channels(context)
+        return NotificationCompat.Builder(context, CHANNEL_OWN_SHIP)
+            .setSmallIcon(R.drawable.ic_stat_wingtip)
+            .setContentTitle("ADS-B Receiver")
+            .setContentText("Traffic and FIS-B weather from the receiver on your Wi-Fi.")
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setOngoing(true)
             .setSilent(true)

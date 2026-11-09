@@ -170,6 +170,7 @@ extension Plan {
         extras.was = was
         extras.direct = ident
         extras.procedureDirect = [:]
+        Feel.tap(.directTo)
         plan()
     }
 
@@ -191,6 +192,7 @@ extension Plan {
         extras.was = was
         extras.direct = ident
         extras.procedureDirect = [:]
+        Feel.tap(.directTo)
         plan()
     }
 
@@ -257,6 +259,7 @@ extension Plan {
             extras.was = was
             extras.direct = ident
             extras.procedureDirect = [:]
+            Feel.tap(.directTo)
         } else {
             stops.insert(ident, at: index)
         }

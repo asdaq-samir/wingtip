@@ -55,8 +55,11 @@ import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.map.MapLayersStore
+import app.wingtipmaps.android.offline.DownloadsScreen
 import app.wingtipmaps.android.pilot.MinimumsRows
+import app.wingtipmaps.android.receiver.ReceiverSettingRows
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import app.wingtipmaps.android.welcome.WelcomeMemory
 
 /**
  * The Setup tab: how the app looks (the screen's layout, the theme), the
@@ -78,6 +81,7 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
     var briefing by rememberSaveable { mutableStateOf(false) }
     var logbook by rememberSaveable { mutableStateOf(false) }
     var about by rememberSaveable { mutableStateOf(false) }
+    var downloads by rememberSaveable { mutableStateOf(false) }
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val loaded by session.loaded.collectAsStateWithLifecycle()
     val problem by session.problem.collectAsStateWithLifecycle()
@@ -148,9 +152,19 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         val traffic = remember(context) { Traffic.of(context) }
         val trafficOn by traffic.on.collectAsStateWithLifecycle()
         SwitchRow(stringResource(R.string.traffic), trafficOn) { traffic.setOn(it) }
+        // A Stratux, Sentry or the like on the cockpit's Wi-Fi: its traffic
+        // and FIS-B weather with no internet.
+        ReceiverSettingRows()
         val spoken = remember(context) { SpokenAlerts.of(context) }
         val spokenOn by spoken.on.collectAsStateWithLifecycle()
         SwitchRow(stringResource(R.string.speak_alerts), spokenOn, spoken::setOn)
+        // Regions' charts kept for flying with no signal (offline/).
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.offline_downloads)) },
+            supportingContent = { Text(stringResource(R.string.offline_downloads_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { downloads = true },
+        )
         // The in-flight copilot: off, shown, or shown and said (a setting
         // of three is a segmented control, decision 0017).
         SectionTitle(stringResource(R.string.copilot))
@@ -174,6 +188,13 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { briefing = true },
         )
+        // The welcome once more, from its first page (WelcomeHost, over
+        // whatever is open): its one home.
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.welcome_again)) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { WelcomeMemory.of(context).reset() },
+        )
         Row(Modifier.fillMaxWidth().padding(top = WingtipSpace.Lg), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(stringResource(R.string.server), style = MaterialTheme.typography.bodyMedium)
             Text(Config.host, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -195,6 +216,9 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
     }
     if (logbook) {
         WingtipSheet(title = stringResource(R.string.logbook), onClose = { logbook = false }, full = true) { LogbookScreen() }
+    }
+    if (downloads) {
+        WingtipSheet(title = stringResource(R.string.offline_downloads), onClose = { downloads = false }, full = true) { DownloadsScreen() }
     }
     if (briefing) {
         WingtipSheet(title = stringResource(R.string.passenger_briefing), onClose = { briefing = false }, full = true) {

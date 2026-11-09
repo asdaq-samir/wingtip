@@ -26,6 +26,7 @@ struct FPLView: View {
         focused = nil
         let digits = altitude.filter(\.isNumber)
         plan.ownAltitudeFt = digits.isEmpty ? nil : Double(digits).map { $0 * 100 }
+        Feel.tap(.altitude)
         plan.plan()
     }
 

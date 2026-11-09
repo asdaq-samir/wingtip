@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +23,8 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.brief.DepartureWindowStrip
 import app.wingtipmaps.android.brief.IcingRows
+import app.wingtipmaps.android.design.RefreshBox
+import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.strip.FindingIcon
@@ -41,35 +42,39 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
 fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: () -> Unit) {
     val state by model.state.collectAsStateWithLifecycle()
     WingtipSheet(title = stringResource(R.string.brief), onClose = onClose, full = true) {
-        Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
-            verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
-        ) {
-            if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-            ProblemLine(state.problem)
-            state.verdict?.let { verdict ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
-                    FindingIcon(verdict.finding, Modifier.size(WingtipSize.Chip))
-                    Text(
-                        verdict.words, style = MaterialTheme.typography.headlineSmall,
-                        color = LocalInk.current.words(verdict.finding, MaterialTheme.colorScheme.onSurfaceVariant),
+        // A pull asks the planner again, the weather in it being live; the
+        // brief is cleared as it is asked, so its skeleton shows the fetch.
+        RefreshBox(refreshing = false, onRefresh = { model.refresh(plan) }) {
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
+                verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+            ) {
+                if (state.loading) Skeleton(rows = 4)
+                ProblemLine(state.problem)
+                state.verdict?.let { verdict ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
+                        FindingIcon(verdict.finding, Modifier.size(WingtipSize.Chip))
+                        Text(
+                            verdict.words, style = MaterialTheme.typography.headlineSmall,
+                            color = LocalInk.current.words(verdict.finding, MaterialTheme.colorScheme.onSurfaceVariant),
+                        )
+                    }
+                }
+                // "When should I go?": the hours across, under the verdict.
+                DepartureWindowStrip(plan, signedIn)
+                state.risk?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                if (state.items.isNotEmpty()) SectionTitle(stringResource(R.string.brief_findings))
+                state.items.forEach { item ->
+                    ListItem(
+                        headlineContent = { Text(item.label) },
+                        supportingContent = { Text(item.detail) },
+                        leadingContent = { FindingIcon(BriefModel.finding(item.finding)) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     )
                 }
+                // In the weather's adverse conditions: the forecast icing a leg.
+                IcingRows(plan)
             }
-            // "When should I go?": the hours across, under the verdict.
-            DepartureWindowStrip(plan, signedIn)
-            state.risk?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            if (state.items.isNotEmpty()) SectionTitle(stringResource(R.string.brief_findings))
-            state.items.forEach { item ->
-                ListItem(
-                    headlineContent = { Text(item.label) },
-                    supportingContent = { Text(item.detail) },
-                    leadingContent = { FindingIcon(BriefModel.finding(item.finding)) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-            }
-            // In the weather's adverse conditions: the forecast icing a leg.
-            IcingRows(plan)
         }
     }
 }

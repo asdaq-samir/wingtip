@@ -23,6 +23,8 @@ class AirportModel : ViewModel() {
         val suggestions: List<AirportSuggestion> = emptyList(),
         val place: AirportPlace? = null,
         val problem: String? = null,
+        /** A search or a field's card being fetched: its skeleton shows. */
+        val loading: Boolean = false,
     )
 
     private val _state = MutableStateFlow(State())
@@ -37,18 +39,19 @@ class AirportModel : ViewModel() {
         searching?.cancel()
         val q = text.trim()
         if (q.length < 2) {
-            _state.update { it.copy(suggestions = emptyList()) }
+            _state.update { it.copy(suggestions = emptyList(), loading = false) }
             return
         }
         searching = viewModelScope.launch {
             delay(SEARCH_PAUSE_MS)
+            _state.update { it.copy(loading = true) }
             try {
                 val found = Planner.search(q)
-                _state.update { it.copy(suggestions = found, problem = null) }
+                _state.update { it.copy(suggestions = found, problem = null, loading = false) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(problem = e.message) }
+                _state.update { it.copy(problem = e.message, loading = false) }
             }
         }
     }
@@ -56,20 +59,27 @@ class AirportModel : ViewModel() {
     /** A field's card opened, by its ident. */
     fun open(ident: String) {
         searching?.cancel()
+        _state.update { it.copy(loading = true) }
         viewModelScope.launch {
             try {
                 val place = Planner.place(ident.trim().uppercase())
-                _state.update { it.copy(place = place, suggestions = emptyList(), query = place.ident, problem = null) }
+                _state.update { it.copy(place = place, suggestions = emptyList(), query = place.ident, problem = null, loading = false) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(problem = e.message) }
+                _state.update { it.copy(problem = e.message, loading = false) }
             }
         }
     }
 
+    /** The open field's card asked again: its METAR and what SWIM says
+     *  now, from a pull on the card. */
+    fun refresh() {
+        _state.value.place?.ident?.let(::open)
+    }
+
     /** The card closed, back to the search: what Back does at the pill. */
-    fun close() = _state.update { it.copy(place = null, query = "") }
+    fun close() = _state.update { it.copy(place = null, query = "", loading = false) }
 
     private companion object {
         const val SEARCH_PAUSE_MS = 250L

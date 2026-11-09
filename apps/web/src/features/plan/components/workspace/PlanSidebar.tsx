@@ -14,6 +14,8 @@ import AircraftCard, { AircraftRecentsPage } from "../AircraftCard";
 import AircraftPill from "../AircraftPill";
 import TabKept from "../../../../components/TabKept";
 import TabPage from "../../../../components/TabPage";
+import PullToRefresh from "../../../../components/PullToRefresh";
+import { refreshLive } from "../../../../lib/liveRefresh";
 import AirportPill from "../AirportPill";
 import FplStrip from "../FplStrip";
 import { RecentRoutesPage } from "../RecentRoutes";
@@ -68,7 +70,9 @@ export default function PlanSidebar({ vm, navLog, briefContents, briefNotice }: 
       onOpenAirport={openAirportOverFlight}
     /></Suspense> : null;
   // The airport's card, in the panel's body.
+  // Its weather asked again on a pull (PullToRefresh).
   const placeCard = place && (
+    <PullToRefresh onRefresh={() => refreshLive("airport")} testId="place-refresh">
     <Suspense fallback={null}>
       <PlaceCard
         key={place} ident={place} from={measuredFrom}
@@ -85,6 +89,7 @@ export default function PlanSidebar({ vm, navLog, briefContents, briefNotice }: 
         startOn={approachesOf === place ? "approaches" : undefined} onStarted={() => setApproachesOf(null)}
       />
     </Suspense>
+    </PullToRefresh>
   );
   // Each tab's one strip, what it shows picked from its filter, the
   // Favorites first: half way, and all the way up the same, where it was,
@@ -147,7 +152,9 @@ export default function PlanSidebar({ vm, navLog, briefContents, briefNotice }: 
         ) : (
           // The strip once, in the pill or here: at the pill's size the
           // body is out of sight but for a finger taking it up.
-          <AircraftCard onPick={plane => selectFlight(plane.hex, plane)} onPickHex={hex => selectFlight(hex)} strip={stripsDrawn ? aircraftStrip : null} />
+          <PullToRefresh onRefresh={() => refreshLive("traffic")} testId="traffic-refresh">
+            <AircraftCard onPick={plane => selectFlight(plane.hex, plane)} onPickHex={hex => selectFlight(hex)} strip={stripsDrawn ? aircraftStrip : null} />
+          </PullToRefresh>
         )))}</TabKept>
       )}
       {!cardUp && tab !== "aircraft" && nearOpen && (
@@ -212,10 +219,12 @@ export default function PlanSidebar({ vm, navLog, briefContents, briefNotice }: 
           figures out of sight while it is open, as an airport's card has
           them. */}
       {briefHere && !savedOpen && (
-        <BriefCard
-          name={routeName(planned.dep, planned.dest, planned.stops)} line={briefLine} contents={briefContents} notice={briefNotice}
-          marks={marks} onClose={closeBrief} onTap={tabTap} onLegs={showLegs} route={routeKey}
-        />
+        <PullToRefresh onRefresh={() => refreshLive("brief")} testId="brief-refresh">
+          <BriefCard
+            name={routeName(planned.dep, planned.dest, planned.stops)} line={briefLine} contents={briefContents} notice={briefNotice}
+            marks={marks} onClose={closeBrief} onTap={tabTap} onLegs={showLegs} route={routeKey}
+          />
+        </PullToRefresh>
       )}
       {/* FPL's nav log once there is a route, at the pilot's ask: the
           empty box alone before. */}

@@ -558,6 +558,20 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
   }
 }
 
+/* A page giving way to the next (lib/viewTransition): only the element
+   named wingtip-page moves, a short shared-axis slide and fade over
+   motion.page on the sheet's ease-out; the rest of the screen, the map
+   under it, is not captured as the page's root would be. */
+:root { view-transition-name: none; }
+::view-transition-group(wingtip-page) {
+  animation-duration: var(--motion-page);
+  animation-timing-function: var(--motion-sheet-ease);
+}
+::view-transition-old(wingtip-page) { animation: var(--motion-page) var(--motion-sheet-ease) both page-out; }
+::view-transition-new(wingtip-page) { animation: var(--motion-page) var(--motion-sheet-ease) both page-in; }
+@keyframes page-out { to { opacity: 0; transform: translateX(-1.5rem); } }
+@keyframes page-in { from { opacity: 0; transform: translateX(1.5rem); } }
+
 /* iOS 26's Liquid Glass, for what floats over the chart at rest (GLASS
    in mapChrome): clearer than the sheets' material, the chart under it
    blurred, brightened and its colours lifted, a rim of light round its

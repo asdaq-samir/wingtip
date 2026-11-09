@@ -7,6 +7,7 @@ import SwiftUI
 /// and tracks it.
 struct TrafficFindView: View {
     @Environment(Traffic.self) private var traffic
+    @Environment(OwnShip.self) private var ownShip
     @State private var typed = ""
     @State private var found: TrafficFound?
     @State private var asked = ""
@@ -72,7 +73,7 @@ struct TrafficFindView: View {
                     if failed, asked == wanted {
                         Text("Couldn't search. Try again in a moment.").font(.footnote).foregroundStyle(.red)
                     } else if asked != wanted || found == nil, listed.isEmpty {
-                        Text("Fetching \(wanted)…").font(.footnote).foregroundStyle(.secondary)
+                        Skeleton(rows: 2, label: "Fetching \(wanted)")
                     }
                 } header: {
                     SectionTitle("Found")
@@ -110,6 +111,12 @@ struct TrafficFindView: View {
             if let first = listed.first { open(first.hex, plane: first) } else { ask(wanted, now: true) }
         }
         .onChange(of: wanted) { _, next in ask(next, now: false) }
+        // Pulled down: the traffic round the airplane asked now, and the
+        // search asked again, the airplanes being live.
+        .refreshable {
+            ask(wanted, now: true)
+            await traffic.ask(near: ownShip.fix)
+        }
     }
 
     /// Asked once the typing pauses, half a second: each search is a
@@ -163,6 +170,7 @@ struct KeptRow: View {
 #Preview("TrafficFindView") {
     NavigationStack { TrafficFindView() }
         .environment(Traffic())
+        .environment(OwnShip())
 }
 
 #Preview("KeptRow") {

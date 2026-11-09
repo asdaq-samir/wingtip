@@ -59,7 +59,7 @@ struct AirportCard: View {
                     if !notFound { Button("Try Again") { Task { await load() } } }
                 }
             } else {
-                ProgressView("Fetching \(ident)…")
+                Skeleton(rows: 4, label: "Fetching \(ident)")
             }
         }
         .navigationTitle(ident)
@@ -81,7 +81,7 @@ struct AirportCard: View {
         }
         .environment(live)
         .fullScreenCover(item: $shown) { PictureViewer(picture: $0) }
-        .refreshable { await load() }
+        .refreshable { async let field: Void = load(); await live.loadDatis(ident); await live.loadRvr(ident, minimumSm: verdict.minimums.visibilitySm); await field } // pulled: the field's weather, the ATIS and the RVR again
         // The live reports, asked again while the card is open; the RVR
         // judged against the pilot's own visibility minimum.
         .task(id: "\(ident)|\(verdict.minimums.visibilitySm ?? -1)") { await live.watch(ident, minimumSm: verdict.minimums.visibilitySm) }
@@ -118,7 +118,7 @@ struct AirportCard: View {
     /// where it lists none.
     private func actions(_ place: AirportPlace) -> some View {
         HStack(spacing: WingtipSpace.sm) {
-            Button { plan.dest = place.ident; plan.plan() } label: { CardActionLabel(.flyHere) }
+            Button { plan.dest = place.ident; Feel.tap(.directTo); plan.plan() } label: { CardActionLabel(.flyHere) }
                 .buttonStyle(.borderedProminent)
             Button { plan.stops.append(place.ident); plan.plan() } label: { CardActionLabel(.addStop) }
                 .buttonStyle(.bordered)
@@ -334,8 +334,7 @@ struct AirportWeatherTab: View {
                 // The report as sent, never reworded.
                 if let raw = metar.raw { Text(raw).font(.footnote.monospaced()).textSelection(.enabled) }
             } else {
-                Text(place.weatherUnavailable == true ? "The weather service could not be reached" : "No weather station reports from this field")
-                    .foregroundStyle(.secondary)
+                ReceiverReportRows(ident: place.ident, otherwise: place.weatherUnavailable == true ? "The weather service could not be reached" : "No weather station reports from this field")
             }
         }
         // The National Weather Service's Gridded LAMP at the field for the

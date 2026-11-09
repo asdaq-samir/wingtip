@@ -89,12 +89,14 @@ export function ConsolePages({ back, pages, children }: {
   return (
     <div ref={top}>
       {page ? (
-        // A page of a page -- Personal's Flights, then a flight -- goes
+        // In from the right over motion.page, as a pushed page is (the
+        // tokens; Reduce Motion stills it, index.css). A page of a page --
+        // Personal's Flights, then a flight -- goes
         // back to the page under it, as iOS's navigation does one level
         // at a time: this page's head steps aside while one is open in it.
         <div
           key={open} data-slot="console-page" data-testid="console-page"
-          className="space-y-4 duration-200 animate-in fade-in slide-in-from-right-4 [&:has([data-slot=console-page])>[data-slot=page-head]]:hidden"
+          className="space-y-4 [animation-duration:var(--motion-page)] animate-in fade-in slide-in-from-right-4 [&:has([data-slot=console-page])>[data-slot=page-head]]:hidden"
         >
           <div className="flex items-center gap-2" data-slot="page-head">
             <h3 ref={title} tabIndex={-1} className={cn("flex-1 font-bold tracking-tight outline-none", TEXT.card)}>{page.title}</h3>
@@ -103,7 +105,7 @@ export function ConsolePages({ back, pages, children }: {
           {page.content}
         </div>
       ) : (
-        <div className={cn(popped && "duration-200 animate-in fade-in")}>
+        <div className={cn(popped && "[animation-duration:var(--motion-page)] animate-in fade-in")}>
           <Pages.Provider value={{ open: p => { setFrom(p); setOpen(p); }, from }}>{children}</Pages.Provider>
         </div>
       )}

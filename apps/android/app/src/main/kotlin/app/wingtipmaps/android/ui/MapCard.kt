@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -22,7 +21,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +38,8 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.name
+import app.wingtipmaps.android.design.RefreshBox
+import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.Traffic
@@ -44,6 +49,7 @@ import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import androidx.core.graphics.toColorInt
+import kotlinx.coroutines.launch
 
 /**
  * The card of what was tapped on the map, as the web's map opens one in
@@ -71,28 +77,47 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
         run()
         if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) onClose()
     }
+    // Live cards refresh on a pull: a field's weather is asked again (its
+    // skeleton shows the fetch), traffic is heard again at once.
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var asked by remember { mutableIntStateOf(0) }
+    var hearing by remember { mutableStateOf(false) }
+    val live = pick is MapPick.Airport || pick is MapPick.Plane
+    val refresh = {
+        if (pick is MapPick.Plane) {
+            scope.launch {
+                hearing = true
+                Traffic.of(context).refresh()
+                hearing = false
+            }
+        }
+        asked += 1
+    }
     WingtipSheet(title = title, onClose = onClose) {
-        Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Lg),
-            verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
-        ) {
-            when (pick) {
-                is MapPick.Airport -> AirportCard(pick.ident, actions, act)
-                is MapPick.Airspace -> {
-                    AirspaceCard(pick)
-                    PointActions(CardKind.POINT, pick, actions, act)
-                    SpecialUseRows(pick.lat, pick.lon)
+        RefreshBox(refreshing = hearing, onRefresh = refresh, enabled = live) {
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Lg),
+                verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+            ) {
+                when (pick) {
+                    is MapPick.Airport -> AirportCard(pick.ident, asked, actions, act)
+                    is MapPick.Airspace -> {
+                        AirspaceCard(pick)
+                        PointActions(CardKind.POINT, pick, actions, act)
+                        SpecialUseRows(pick.lat, pick.lon)
+                    }
+                    is MapPick.Vor -> {
+                        VorCard(pick)
+                        PointActions(CardKind.NAVAID, pick, actions, act)
+                    }
+                    is MapPick.Point -> {
+                        PointCard(pick)
+                        PointActions(CardKind.NAVAID, pick, actions, act)
+                    }
+                    is MapPick.Plane -> PlaneCard(pick.hex)
+                    is MapPick.RouteLeg -> {}
                 }
-                is MapPick.Vor -> {
-                    VorCard(pick)
-                    PointActions(CardKind.NAVAID, pick, actions, act)
-                }
-                is MapPick.Point -> {
-                    PointCard(pick)
-                    PointActions(CardKind.NAVAID, pick, actions, act)
-                }
-                is MapPick.Plane -> PlaneCard(pick.hex)
-                is MapPick.RouteLeg -> {}
             }
         }
     }
@@ -134,14 +159,16 @@ internal fun Fact(name: String, value: String, description: Boolean = false) {
 internal fun ink(hex: String) = Color(hex.toColorInt())
 
 /** A field's card, asked of the planner as it opens (the web's airport
- *  card), with the airport card's actions. */
+ *  card) and again each time `asked` changes, with the airport card's
+ *  actions; its skeleton while it comes. */
 @Composable
-private fun AirportCard(ident: String, actions: RouteActions, act: (CardAction, () -> Unit) -> Unit) {
-    val place by produceState<Result<AirportPlace>?>(null, ident) {
+private fun AirportCard(ident: String, asked: Int, actions: RouteActions, act: (CardAction, () -> Unit) -> Unit) {
+    val place by produceState<Result<AirportPlace>?>(null, ident, asked) {
+        value = null
         value = runCatching { Planner.place(ident) }
     }
     when (val got = place) {
-        null -> CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
+        null -> Skeleton(rows = 4)
         else -> got.fold(
             { field ->
                 CardActionRow(CardKind.AIRPORT, can = { actions.canAirport(it, field) }, onAction = { a -> act(a) { actions.airport(a, field) } })

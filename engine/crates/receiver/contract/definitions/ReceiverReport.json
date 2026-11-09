@@ -1,0 +1,25 @@
+{
+  "title": "ReceiverReport",
+  "description": "A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string"
+    },
+    "time": {
+      "type": "string"
+    },
+    "at": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "kind",
+    "text",
+    "time",
+    "at"
+  ]
+}

@@ -59,7 +59,9 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.R
 import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.rememberHaptics
 
 /**
  * The top of the map in the air (#218), under the status bar and left of
@@ -90,6 +92,9 @@ fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () ->
 fun AlertsBanner(alerts: List<AheadAlert>) {
     val first = alerts.minByOrNull { it.seconds } ?: return
     val danger = first.level == "stop" || first.level == "danger"
+    // A new alert first in line is felt as it appears.
+    val haptics = rememberHaptics()
+    LaunchedEffect(first.name, first.level) { haptics.tap(WingtipHaptic.WARNING) }
     Surface(color = if (danger) LocalWingtipPalette.current.destructive else LocalWingtipPalette.current.caution, contentColor = Color.White, shape = MaterialTheme.shapes.medium) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)

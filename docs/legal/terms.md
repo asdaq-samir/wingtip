@@ -14,7 +14,7 @@ The pilot in command is directly responsible for, and is the final authority as 
 
 ## What the app is not
 
-- **Not a collision-avoidance system.** The traffic on the map comes from public ADS-B services. It is late, incomplete and shows only airplanes that broadcast; look outside and follow ATC.
+- **Not a collision-avoidance system.** The traffic on the map comes from public ADS-B services, and from a cockpit receiver where you connect one. It is late, incomplete and shows only airplanes that broadcast; look outside and follow ATC.
 - **Not a radio.** The ATC copilot turns what your device hears into text with a speech recognizer, which mishears. A clearance is what the controller said, read back and confirmed on the frequency, never what the app wrote.
 - **Not an official briefing, and it files no flight plan.**
 - **Not a logbook of record.** Keep your own, and a copy of your data (Setup, Export My Data).

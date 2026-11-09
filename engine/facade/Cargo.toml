@@ -20,6 +20,7 @@ wingtip-flight = { path = "../crates/flight" }
 wingtip-inflight = { path = "../crates/inflight" }
 wingtip-pilot = { path = "../crates/pilot" }
 wingtip-radio = { path = "../crates/radio" }
+wingtip-receiver = { path = "../crates/receiver" }
 wingtip-route = { path = "../crates/route", default-features = false }
 wingtip-weather = { path = "../crates/weather" }
 wingtip-wording = { path = "../crates/wording" }

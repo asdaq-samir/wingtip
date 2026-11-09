@@ -7,7 +7,7 @@ import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } 
 import Segmented from "../../../components/Segmented";
 import StatusBadge from "../../../components/StatusBadge";
 import { Button } from "../../../components/ui/button";
-import { Spinner } from "../../../components/ui/spinner";
+import { Skeleton } from "../../../components/ui/skeleton";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import {
   approachBrief, approachQuiz, coachingSteps, lessonPath, lessonProfile, pathBetween, type CoachStep, type LessonInput,
@@ -103,7 +103,11 @@ export default function ApproachLesson({ at, aircraft, onClose, from }: {
         {error ? (
           <p className={cn(FINDING_TONE.stop, TEXT.prose)} role="alert">The approach could not be had: {error.message}</p>
         ) : isPending || !input ? (
-          <p role="status" className={cn("flex items-center gap-2 text-muted-foreground", TEXT.prose)}><Spinner aria-hidden />Fetching the approach…</p>
+          <div role="status" className="flex flex-col gap-2 py-1">
+            <span className="sr-only">Fetching the approach…</span>
+            <Skeleton aria-hidden className="h-4 w-3/5" />
+            <Skeleton aria-hidden className="h-3 w-2/5" />
+          </div>
         ) : (
           <Lesson key={`${input.drawing.airport}:${input.drawing.id}:${input.drawing.transition ?? ""}`} input={input} from={from} />
         )}

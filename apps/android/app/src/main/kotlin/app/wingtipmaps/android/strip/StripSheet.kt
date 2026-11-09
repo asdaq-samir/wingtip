@@ -71,6 +71,7 @@ fun StripLayout(
     ownShip: OwnShip,
     flying: Boolean,
     map: @Composable () -> Unit,
+    raise: Int = 0,
     model: StripModel = viewModel(),
     assistant: AssistantClient = viewModel(),
     brief: BriefModel = viewModel(),
@@ -117,6 +118,11 @@ fun StripLayout(
     // comes up from the pill (fieldLine's `up`): one stop.
     LaunchedEffect(strip.done) {
         if (strip.done > 0 && sheet.stop == SheetStop.PILL) sheet.moveTo(SheetStop.HALF)
+    }
+    // And when the welcome ends into a flight (`raise` bumped by the root):
+    // the sample's strip, or "Where to?" over the field.
+    LaunchedEffect(raise) {
+        if (raise > 0 && sheet.stop == SheetStop.PILL) sheet.moveTo(SheetStop.HALF)
     }
 
     // A screen's word from the field: what is on this phone opens; the

@@ -18,6 +18,9 @@ import re
 import sys
 from pathlib import Path
 
+import design_tokens_haptic as haptic
+from design_tokens_formats import gen_formats
+
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "design" / "tokens.json"
 WEB_CSS = ROOT / "apps/web/src/styles/tokens.css"
@@ -340,6 +343,7 @@ def gen_ts(tree):
         "/** Each text role's size in points on a touch screen, for text drawn in points (an SVG). */\n"
         "export const TYPE_POINTS = %s as const;" % ts_obj(points),
         "/** Motion: durations in seconds, curves as cubic-bezier points. */\nexport const MOTION = %s as const;" % ts_obj(motion),
+        haptic.ts(tokens(tree["haptic"]), camel),
         "/** Corners, in points. */\nexport const RADIUS = %s as const;" % ts_obj(radius),
         "/** The spacing scale, in points. */\nexport const SPACE = %s as const;" % ts_obj(space),
         "/** The least hit area, in points (Apple's HIG). */\nexport const TAP_TARGET = %d;" % tree["size"]["tap-target"]["$value"],
@@ -488,6 +492,7 @@ def gen_swift(tree, sch):
             L.append("    static let %s: TimeInterval = %g" % (camel(k), v))
     L.append("}")
     L.append("")
+    L += haptic.swift(tokens(tree["haptic"]), camel)
     L.append("enum WingtipSize {")
     for k, t in tokens(tree["size"]).items():
         L.append("    static let %s: CGFloat = %g" % (camel(k), t["$value"]))
@@ -532,6 +537,7 @@ def gen_kotlin(tree, sch):
         "",
         "package app.wingtipmaps.android.design.generated",
         "",
+        *haptic.KOTLIN_IMPORTS,
         "import androidx.compose.animation.core.CubicBezierEasing",
         "import androidx.compose.material3.Typography",
         "import androidx.compose.runtime.Immutable",
@@ -615,26 +621,13 @@ def gen_kotlin(tree, sch):
             L.append("    const val %s_MS = %d" % (re.sub("-", "_", k).upper(), round(v * 1000)))
     L.append("}")
     L.append("")
+    L += haptic.kotlin(tokens(tree["haptic"]))
     L.append("object WingtipSize {")
     for k, t in tokens(tree["size"]).items():
         v = t.get("$extensions", {}).get(EXT, {}).get("android", t["$value"])
         L.append("    val %s = %g.dp" % (pascal(k), v))
     L.append("}")
     return "\n".join(L) + "\n"
-
-
-# ---------------------------------------------------------------- formats
-
-
-def gen_formats(tree):
-    """The figure formats' example table, the one every app's formatter is
-    tested against: each format's name (camelCase), what it is for, and
-    its [input, written] pairs."""
-    table = {
-        camel(k): {"description": t.get("$description", ""), "examples": [{"input": i, "written": w} for i, w in t["$value"]]}
-        for k, t in tokens(tree["format"]).items()
-    }
-    return json.dumps({"$comment": BANNER, **table}, indent=2, ensure_ascii=False) + "\n"
 
 
 # ---------------------------------------------------------------- main
@@ -650,7 +643,7 @@ def main():
         IOS_SWIFT: gen_swift(tree, sch),
         IOS_ACCENT: gen_accent(sch),
         ANDROID_KT: gen_kotlin(tree, sch),
-        FORMATS: gen_formats(tree),
+        FORMATS: gen_formats(tokens(tree["format"]), camel, BANNER),
     }
     stale = []
     for path, text in outputs.items():

@@ -1,0 +1,108 @@
+{
+  "about": "A portable ADS-B receiver's GDL 90 stream over Wi-Fi (Garmin's GDL 90 Data Interface Specification 560-1058-00 Rev A; ForeFlight's ID message), read by the engine's receiver_read and the views over it (receiver_traffic, receiver_reports, receiver_nexrad). Two datagrams a second apart, built by engine/crates/receiver/tests/stream.rs: the specification's own Heartbeat (2.2.4) and Traffic Report (3.5.4, N825V), a Sentry's ID message, own ship N12345 near O'Hare at 3,000 ft pressure altitude and 3,200 ft MSL by GPS, and an uplink from a station at 41.9 N 87.9 W with O'Hare's METAR and TAF (FIS-B product 413), a TFR's text (product 8) and one regional NEXRAD block (product 63), then a damaged frame. Expected values are the specification's and the built products', not the engine's.",
+  "datagrams": [
+    {
+      "at": 1762700000,
+      "hex": "7e650001ffffffffffffffff53656e747279000053656e747279204144532d4200000000000000019fa17e7e008141dbd00802b38b7e7e0a00a123451dd4c4c17d5e4b0a098906e00040014e31323334352020001d727e7e0b0280000a11077e7e1400ab45491fef15a889780f09a907b00120014e383235562020200057d67e"
+    },
+    {
+      "at": 1762700001,
+      "hex": "7e008141dbd00802b38b7e7e07ffffff3b975582fc972000278006743b503455014a02cf484830e71d35cda832df0c722d4831c133601855f0d70830e2f370ca0073c31c9d5011a02cf484830e71c72c1a830e71cafc70c78832df0c722d4810d933604c3530d70740138000203b2020102da05500001d4384045064a0dafc72cf48032090c11cf8093204c60edcf0c30194068000fc3b4084513c0b0df8f8f8d800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006f4e7e7e1400ab45591fef15a889780f09a907b00120014e383235562020200057d67e"
+    }
+  ],
+  "afterFirst": {
+    "name": "Sentry",
+    "msl": true,
+    "gps": true,
+    "live": true,
+    "summary": "Sentry · 1 target · GPS",
+    "targets": 1,
+    "ownship": {
+      "hex": "a12345",
+      "callsign": "N12345",
+      "pressure_ft": 3000,
+      "geometric_ft": 3200,
+      "speed_kt": 110,
+      "track_deg": 90
+    },
+    "target": {
+      "hex": "ab4549",
+      "callsign": "N825V",
+      "source": "ADS-B",
+      "pressure_ft": 5000,
+      "speed_kt": 123,
+      "track_deg": 45,
+      "vertical_fpm": 64,
+      "category": "A1",
+      "nic": 10,
+      "nacp": 9,
+      "airborne": true
+    }
+  },
+  "afterSecond": {
+    "texts": 3,
+    "nexrad": 1,
+    "bad_frames": 1,
+    "station": [
+      41.9,
+      -87.9
+    ]
+  },
+  "traffic": {
+    "own_ft": 3200,
+    "internet": [
+      {
+        "hex": "ab4549",
+        "lat": 44.9,
+        "lon": -123.0,
+        "altitude_ft": 5100,
+        "callsign": "N825V",
+        "seen_s": 4
+      },
+      {
+        "hex": "a12345",
+        "lat": 41.95,
+        "lon": -87.9,
+        "altitude_ft": 3150,
+        "seen_s": 2
+      },
+      {
+        "hex": "c0ffee",
+        "lat": 42.0,
+        "lon": -88.0,
+        "altitude_ft": 4500,
+        "callsign": "UAL1",
+        "seen_s": 3
+      }
+    ],
+    "expect": [
+      {
+        "hex": "ab4549",
+        "altitude_ft": 5200,
+        "pressure_altitude": false
+      },
+      {
+        "hex": "c0ffee",
+        "altitude_ft": 4500
+      }
+    ]
+  },
+  "reports": {
+    "ident": "ORD",
+    "metar": "KORD 091453Z 27012KT 10SM FEW050 08/M02 A3012",
+    "taf": "KORD 091120Z 0912/1018 27012KT P6SM SCT050"
+  },
+  "nexrad": {
+    "rectsByLevel": {
+      "3": 1,
+      "5": 1
+    },
+    "time": "1452Z"
+  },
+  "later": {
+    "after_s": 25,
+    "live": false,
+    "targets": 0,
+    "summary": "Sentry · not heard"
+  }
+}

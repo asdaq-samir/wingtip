@@ -33,8 +33,9 @@ longer than it takes to answer the request.
   and nothing stores it (the gateway's log of a planner outage names the path only). The position itself is read on the device, with
   the permission the browser, iOS or Android asks for.
 - **A cockpit receiver's traffic and FIS-B weather** (the iOS and Android
-  apps, with Traffic on): heard on the cockpit's Wi-Fi and shown on the
-  device; nothing of it is sent anywhere.
+  apps, with ADS-B Receiver on Auto): heard on the cockpit's Wi-Fi, read
+  by the engine on the device and shown there; nothing of it is sent
+  anywhere or kept past a few hours.
 - **The radio, with the ATC copilot on.** No audio is recorded or sent
   to us. The device's speech recognizer turns it into text: Apple's on the
   iPhone (on the device where it can, `requiresOnDeviceRecognition`,

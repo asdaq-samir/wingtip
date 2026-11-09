@@ -7,6 +7,7 @@ import { useNavEdge } from "../../../hooks/use-nav-edge";
 import { api } from "../../../lib/api/client";
 import type { ProcedureDrawing } from "../../../lib/api/types";
 import { altitudesOf, altitudesParam } from "../../../lib/identSchema";
+import { feel } from "../../../lib/haptics";
 import { showError } from "../../../lib/problems";
 import { approachRunway, proceduresOf, proceduresParam, sameField, transitionWords, typedProcedure, type PickedProcedure, type TypedProcedure } from "../../../lib/procedures";
 import { procedureQuery, queryClient } from "../../../lib/queryClient";
@@ -133,6 +134,7 @@ export function useProcedurePicks({ planned, searchParams, setSearchParams, setP
   const directTo = useCallback((open: OpenFix, direct: boolean) => {
     const at = routeProcedures.find(r => sameField(r.ident, open.field) && r.kind === open.kind);
     if (!at) return;
+    if (direct) feel("directTo");
     pickProcedures(pickedProcedures.map(p => (sameField(p.ident, at.ident) && p.id === at.id ? { ...p, direct: direct ? open.fix.ident : null } : p)), null);
   }, [routeProcedures, pickedProcedures, pickProcedures]);
   // The patterns flown: none at a field the route lands at by an
