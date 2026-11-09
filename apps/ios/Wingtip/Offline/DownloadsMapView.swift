@@ -39,7 +39,7 @@ struct DownloadsMapView: View {
     }
 
     private var foot: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: WingtipSpace.sm) {
             if let picked {
                 LabeledContent(picked.name, value: DownloadsView.size(model.size(of: picked)))
                 Button("Download \(picked.name)") { asking = true }

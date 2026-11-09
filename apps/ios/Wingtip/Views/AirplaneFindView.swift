@@ -23,7 +23,7 @@ struct AirplaneRow: View {
         HStack {
             Image(systemName: "airplane").rotationEffect(.degrees((plane.trackDeg ?? 90) - 90)).foregroundStyle(.secondary)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(KeptAirplane.name(plane)).font(.headline)
                 Text(AirplaneRow.line(plane)).font(.footnote).foregroundStyle(.secondary)
                     .accessibilityLabel(Self.spoken(plane))

@@ -29,7 +29,7 @@ struct InstrumentsBar: View {
                 if let progress = flight.progress, progress.onRoute, let next = progress.next {
                     Divider()
                     HStack(spacing: WingtipSpace.xs) {
-                        VStack(alignment: .leading, spacing: 1) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text("NEXT").font(.caption2).foregroundStyle(.secondary)
                             Text(next.name).font(.headline).lineLimit(1).minimumScaleFactor(0.7)
                         }
@@ -104,9 +104,9 @@ struct InstrumentsBar: View {
     }
 
     private func cell(_ name: String, _ value: String, unit: String? = nil, spoken: String?) -> some View {
-        VStack(spacing: 1) {
+        VStack(spacing: WingtipSpace.xxs) {
             Text(name).font(.caption2).foregroundStyle(.secondary)
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.xxs) {
                 Text(value).font(.headline.monospacedDigit())
                     // Groundspeed, altitude, distance and time roll to
                     // each new fix rather than blink.

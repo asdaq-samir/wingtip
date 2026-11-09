@@ -80,7 +80,7 @@ private struct SmallCard: View {
     let flight: WidgetSnapshot
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             RouteTitle(flight: flight)
             VerdictLine(verdict: flight.verdict)
             Spacer(minLength: 0)
@@ -101,8 +101,8 @@ private struct MediumCard: View {
     let flight: WidgetSnapshot
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 RouteTitle(flight: flight)
                 VerdictLine(verdict: flight.verdict)
                 if let words = flight.verdictWords {
@@ -119,7 +119,7 @@ private struct MediumCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Divider()
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 Text("Departure \(flight.dep)")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -149,8 +149,8 @@ private struct LockLine: View {
     let flight: WidgetSnapshot
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            HStack(spacing: 4) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+            HStack(spacing: WingtipSpace.xs) {
                 Image(systemName: "airplane")
                 Text(FlightWords.route(flight))
                     .lineLimit(1)
@@ -174,8 +174,8 @@ private struct NoFlight: View {
     let family: WidgetFamily
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+            HStack(spacing: WingtipSpace.sm) {
                 Image(systemName: "airplane")
                     .foregroundStyle(.blue)
                 Text("No flight planned")
@@ -197,7 +197,7 @@ private struct RouteTitle: View {
     let flight: WidgetSnapshot
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: WingtipSpace.sm) {
             Image(systemName: "airplane")
                 .foregroundStyle(.blue)
             Text(FlightWords.route(flight))
@@ -214,7 +214,7 @@ private struct VerdictLine: View {
     let verdict: String?
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: WingtipSpace.xs) {
             Image(systemName: VerdictMark.symbol(verdict))
             Text(VerdictMark.word(verdict))
         }
@@ -228,7 +228,7 @@ private struct WeatherLine: View {
     let flight: WidgetSnapshot
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: WingtipSpace.xs) {
             if let category = flight.depFlightCategory {
                 Text(category)
                     .font(.caption.weight(.bold))

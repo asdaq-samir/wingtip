@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.route.LegWords
@@ -37,7 +38,7 @@ fun StripAir(state: Plan.State, rows: List<StripRow>, position: Position?, modif
     // The next point: the end of the leg the airplane is on; the first
     // leg's with no fix yet.
     val next = rows.drop(1).getOrNull(position?.leg ?: 0)
-    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         RibbonLine(points = points, position = position)
         if (next != null) {
             val (name, leg) = when (next) {
@@ -58,7 +59,7 @@ fun StripAir(state: Plan.State, rows: List<StripRow>, position: Position?, modif
                     maxLines = if (largeType()) 2 else 1, overflow = TextOverflow.Ellipsis,
                 )
                 if (leg != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Lg), verticalAlignment = Alignment.Bottom) {
                         Text(StripData.legFigures(leg), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         leg.eteMin?.let { Text(Format.duration(it), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }

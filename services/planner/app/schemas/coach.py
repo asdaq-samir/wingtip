@@ -73,6 +73,7 @@ class CoachDebrief(BaseModel):
     kind: Literal["approach", "flight"]
     flown_on: date
     place: str = Field("", max_length=40)
+    procedure: str | None = Field(None, max_length=60, description='An approach\'s procedure as the chart names it ("ILS Y RWY 08").')
     elevation_ft: float | None = Field(None, description="The field's, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4).")
     profile: list[CoachProfilePoint] = Field([], max_length=400)
     findings: list[CoachFinding] = Field([], max_length=40)
@@ -121,6 +122,7 @@ class CoachEvidence(BaseModel):
     id: str
     flown_on: date
     place: str
+    procedure: str | None = Field(None, description='The approach procedure flown ("ILS Y RWY 08"), where the line is an approach\'s.')
     area: str
     text: str
 

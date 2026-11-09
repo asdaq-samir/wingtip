@@ -17799,6 +17799,13 @@
                   "place": {
                     "type": "string"
                   },
+                  "procedure": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The approach procedure flown (\"ILS Y RWY 08\"), where the line is an approach's."
+                  },
                   "area": {
                     "type": "string",
                     "description": "The weak area's key."
@@ -17811,6 +17818,7 @@
                   "id",
                   "flown_on",
                   "place",
+                  "procedure",
                   "area",
                   "text"
                 ],
@@ -25520,6 +25528,13 @@
         "place": {
           "type": "string",
           "description": "Where: the approach's field, or the flight's route (\"KMSN-KJVL\")."
+        },
+        "procedure": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "An approach's procedure as the chart names it (\"ILS Y RWY 08\"); none for a flight."
         },
         "elevation_ft": {
           "type": [

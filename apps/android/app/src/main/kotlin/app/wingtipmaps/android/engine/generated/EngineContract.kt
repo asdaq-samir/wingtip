@@ -1638,6 +1638,10 @@ object EngineContract {
          */
         val place: String? = null,
         /**
+         * An approach's procedure as the chart names it ("ILS Y RWY 08"); none for a flight.
+         */
+        val procedure: String? = null,
+        /**
          * The field's elevation, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4); without it the gate is not checked.
          */
         @SerialName("elevation_ft")
@@ -7345,6 +7349,10 @@ object EngineContract {
         @SerialName("flown_on")
         val flownOn: String,
         val place: String,
+        /**
+         * The approach procedure flown ("ILS Y RWY 08"), where the line is an approach's.
+         */
+        val procedure: String? = null,
         /**
          * The weak area's key.
          */

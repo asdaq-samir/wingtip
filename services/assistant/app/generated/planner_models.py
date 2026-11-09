@@ -483,6 +483,17 @@ class RemindDays(RootModel[int | None]):
     root: Annotated[int | None, Field(ge=0, le=365, title='Reminddays')] = None
 
 
+class Procedure(RootModel[str | None]):
+    root: Annotated[
+        str | None,
+        Field(
+            description='An approach\'s procedure as the chart names it ("ILS Y RWY 08").',
+            max_length=60,
+            title='Procedure',
+        ),
+    ] = None
+
+
 class CoachDue(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -520,6 +531,13 @@ class CoachEvidence(BaseModel):
     flown_on: Annotated[date | None, Field(title='Flown On')] = None
     id: Annotated[str | None, Field(title='Id')] = None
     place: Annotated[str | None, Field(title='Place')] = None
+    procedure: Annotated[
+        str | None,
+        Field(
+            description='The approach procedure flown ("ILS Y RWY 08"), where the line is an approach\'s.',
+            title='Procedure',
+        ),
+    ] = None
     text: Annotated[str | None, Field(title='Text')] = None
 
 
@@ -792,6 +810,7 @@ class DataSource(BaseModel):
     fetched_at: Annotated[str | None, Field(title='Fetched At')] = None
     kept_until: Annotated[str | None, Field(title='Kept Until')] = None
     name: Annotated[str | None, Field(title='Name')] = None
+    stale: Annotated[bool | None, Field(title='Stale')] = False
 
 
 class Note(RootModel[str | None]):
@@ -3674,6 +3693,13 @@ class CoachDebrief(BaseModel):
         Field(max_length=40, title='Patterns', validate_default=True),
     ] = []
     place: Annotated[str | None, Field(max_length=40, title='Place')] = ''
+    procedure: Annotated[
+        Procedure | None,
+        Field(
+            description='An approach\'s procedure as the chart names it ("ILS Y RWY 08").',
+            title='Procedure',
+        ),
+    ] = None
     profile: Annotated[
         list[CoachProfilePoint] | None,
         Field(max_length=400, title='Profile', validate_default=True),

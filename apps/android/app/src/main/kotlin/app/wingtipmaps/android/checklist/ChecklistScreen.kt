@@ -78,7 +78,7 @@ fun ChecklistScreen(airplane: String, kind: ChecklistKind, modifier: Modifier = 
 @Composable
 private fun RunView(state: ChecklistModel.State, model: ChecklistModel, modifier: Modifier) {
     if (state.sections.isEmpty()) {
-        Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
             Text(
                 if (state.kind == ChecklistKind.EMERGENCY) {
                     "No emergency checklist for this airplane yet. Write it from the airplane's flight manual."
@@ -96,7 +96,7 @@ private fun RunView(state: ChecklistModel.State, model: ChecklistModel, modifier
             state.sections.forEachIndexed { s, section ->
                 item(key = "s$s") {
                     Row(
-                        Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp).semantics(mergeDescendants = true) { heading() },
+                        Modifier.fillMaxWidth().padding(top = WingtipSpace.Lg, bottom = WingtipSpace.Xs).semantics(mergeDescendants = true) { heading() },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(section.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
@@ -118,7 +118,7 @@ private fun RunView(state: ChecklistModel.State, model: ChecklistModel, modifier
                 }
             }
         }
-        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().padding(vertical = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             OutlinedButton(onClick = model::startOver, enabled = state.ticked.isNotEmpty()) { Text("Start Over") }
             TextButton(onClick = model::edit) { Text("Edit") }
         }
@@ -127,7 +127,7 @@ private fun RunView(state: ChecklistModel.State, model: ChecklistModel, modifier
 
 @Composable
 private fun EditView(state: ChecklistModel.State, model: ChecklistModel, modifier: Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         Text(
             "A line starting # is a section; every other line is an item, \"Fuel selector -- Both\". Copy it from the airplane's flight manual.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -138,7 +138,7 @@ private fun EditView(state: ChecklistModel.State, model: ChecklistModel, modifie
             textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
             modifier = Modifier.fillMaxWidth().weight(1f),
         )
-        Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().padding(bottom = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             // The phases' headings only offered over an empty editor, so
             // nothing the pilot wrote is written over.
             if (state.draft.isBlank()) {

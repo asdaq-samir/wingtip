@@ -71,7 +71,8 @@
             </array>
         </dict>
         <!-- MetricKit's daily figures: launch and resume times, hang time,
-             scroll hitches, sent the same way (DiagnosticsReporter). -->
+             scroll hitches, peak memory and the exits forced for memory,
+             sent the same way (DiagnosticsReporter). -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypePerformanceData</string>

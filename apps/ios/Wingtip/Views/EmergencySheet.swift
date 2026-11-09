@@ -28,10 +28,10 @@ struct EmergencySheet: View {
         NavigationStack {
             List {
                 EmergencyFieldsSection(fix: fix, ownShipOff: ownShip.denied)
-                if plan.airplaneChosen {
-                    checklistSection
+                if let guidance = Emergency.guidance(airplaneChosen: plan.airplaneChosen) {
+                    guidanceSection(guidance)
                 } else {
-                    guidanceSection
+                    checklistSection
                 }
                 EmergencyRadioSections(mayday: mayday, phoneIdent: model.picked?.ident, phone: model.pickedPhone)
             }
@@ -60,9 +60,9 @@ struct EmergencySheet: View {
     /// 2026-11-09): the engine's emergency_guidance, each item with its
     /// source (AIM 6-1, 6-2, 6-3; FAA-H-8083-3C ch. 18), and the picker for
     /// an airplane -- never an airplane's checklist or figure.
-    @ViewBuilder private var guidanceSection: some View {
+    @ViewBuilder private func guidanceSection(_ items: [EngineContract.EmergencyGuidanceAnswerItemsItem]) -> some View {
         Section(title: "What to Do") {
-            ForEach(Array(((try? Engine.emergencyGuidance().items) ?? []).enumerated()), id: \.offset) { _, item in
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                 CardRow(title: item.title, detail: "\(item.detail) (\(item.source))")
             }
             PickAirplaneRow(detail: "Its own emergency checklist and glide")

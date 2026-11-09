@@ -63,7 +63,13 @@ function WelcomeSheet({ onPlan, onOpened }: { onPlan: (parts: RouteParts) => voi
           <WelcomePage vm={vm} />
           {!asks && (
             <div className="grid gap-2">
-              <Button type="button" size="lg" className="h-12 rounded-[14px] font-semibold" onClick={vm.next} data-testid="welcome-next">
+              <Button
+                type="button"
+                size="lg"
+                className="h-12 rounded-(--radius-control) font-semibold"
+                onClick={vm.next}
+                data-testid="welcome-next"
+              >
                 Next
               </Button>
               <Button type="button" variant="ghost" onClick={vm.skip} data-testid="welcome-skip">

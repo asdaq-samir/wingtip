@@ -7,7 +7,7 @@ import { useMinuteClock } from "../lib/useMinuteClock";
 import { cycleWarning, dayWords } from "../lib/dataCycles";
 import { savedWords, useSaved } from "../lib/fromCache";
 import { useOnline } from "../lib/kept/useOnline";
-import { ageWords, mapAgesQuery, useLayerAges } from "../lib/map/sources/layerAges";
+import { ageWords, mapAgesQuery, staleWords, useLayerAges } from "../lib/map/sources/layerAges";
 import { TEXT } from "../lib/text";
 
 /**
@@ -19,8 +19,11 @@ import { TEXT } from "../lib/text";
  * each source the planner downloads -- the METARs, TAFs, AIRMETs and
  * SIGMETs, G-AIRMETs, PIREPs, winds aloft and TFRs -- with when its copy
  * was fetched and, where the source is not answering, to when the copy
- * held is used by its product's own validity (wingtip.weather); and the
- * traffic, as the map last heard it. Asked again each minute while open.
+ * held is used by its product's own validity (wingtip.weather), and where
+ * one has stopped coming in past its usual cadence -- the NOTAMs, the
+ * radar and satellite frames among them -- that it is not updating (the
+ * planner's feed watch, app.feeds.status_rows); and the traffic, as the
+ * map last heard it. Asked again each minute while open.
  */
 export default function StatusPanel() {
   const now = useMinuteClock();
@@ -51,7 +54,13 @@ export default function StatusPanel() {
               title={s.name}
               data-testid="status-source"
               value={ageWords(s.fetched_at ? Date.parse(s.fetched_at) : null, now) ?? "Not yet"}
-              description={s.failing ? <span className={cn("text-destructive-ink", TEXT.detail)}>{failingWords(s)}</span> : undefined}
+              description={
+                s.failing || s.stale ? (
+                  <span className={cn("text-destructive-ink", TEXT.detail)}>
+                    {s.failing ? failingWords(s) : staleWords(s.fetched_at, now)}
+                  </span>
+                ) : undefined
+              }
             />
           ))
         ) : (

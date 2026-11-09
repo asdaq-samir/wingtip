@@ -206,7 +206,7 @@ struct StripSheetView: View {
             RadioCallBanner(call: call)
         }
         if listener.listening || listener.problem != nil {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 if let problem = listener.problem { ProblemLine(problem) }
                 ForEach(listener.heard.suffix(2)) { t in
                     Text(t.text).lineLimit(2).foregroundStyle(t.forUs ? Color.accentColor : Color.primary)

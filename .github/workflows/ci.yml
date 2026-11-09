@@ -722,6 +722,11 @@ jobs:
                 - '**/*.java'
                 - scripts/ci/file_sizes.py
                 - scripts/ci/file_sizes_allow.txt
+                - scripts/ci/brand_guard.py
+                - scripts/ci/brand_guard_allow.txt
+                - design/tokens.json
+                - apps/web/src/*.css
+                - apps/web/src/**/*.css
                 - scripts/ci/dead_python.sh
                 - scripts/ci/vulture_allow.py
                 - .tool-versions
@@ -856,7 +861,8 @@ jobs:
     # the owner's Mac mini once the repository is private (the owner,
     # 2026-11-06: "CI is too heavy for mini ... so it runs in minutes even
     # on the mini"): a pull request and main's push run only the tests
-    # tagged @smoke, about thirty, one per journey a pilot takes, on the
+    # tagged @smoke, about thirty, one per journey a pilot takes, and the
+    # one tagged @flight-critical (plan, nav log, emergency, offline), on the
     # phone, in one job; everything -- every test, desktop, the iPhones,
     # the iPad, the audit -- runs every night and when started by hand,
     # over ten shards. A nightly failure says so in its run; it does not
@@ -1334,7 +1340,7 @@ jobs:
         env:
           IOS_AUDIT: ${{ (github.event_name == 'schedule' || inputs.standards) && '1' || '' }}
           SCREENSHOTS: /out/screens
-          PROJECTS: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '' || '--project=mobile --grep @smoke' }}
+          PROJECTS: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '' || '--project=mobile --grep "@smoke|@flight-critical"' }}
           # The JSON report, for the flaky tests below (those that passed
           # on their retry): listed in the nightly issue, not failing the run.
           PLAYWRIGHT_JSON_OUTPUT_NAME: /out/results.json
@@ -1817,6 +1823,36 @@ jobs:
       - name: The legal pages match docs/legal
         run: python3 scripts/build/legal_pages.py --check
 
+  # What must never break in the air (the owner, 2026-11-09), on every
+  # change, whatever it touched: the engine held to worked examples from
+  # the FAA's own texts (apps/web/src/lib/fixtures/flightCritical.json:
+  # the nav log's wind triangle, groundspeed, heading and fuel from
+  # FAA-H-8083-25C ch. 16, cruising altitudes under 14 CFR 91.159 and
+  # 91.179, fuel reserves under 91.151 and 91.167, VFR minimums under
+  # 91.155, hold entries under AIM 5-3-8, glide at a ratio), and the
+  # planner's KMSN to KOSH nav log adding up and its nearest fields in
+  # order. The browser's journey (plan, nav log, emergency, offline) needs
+  # the whole stack, so it runs in e2e, picked by its @flight-critical tag
+  # on every run; the phones' twins of these tests run in Native iOS and
+  # Native Android (FlightCriticalTests.swift, FlightCriticalEngineTest.kt).
+  flight-critical:
+    name: Flight-critical
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - name: The engine's worked examples
+        run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine --test flight_critical
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+        with:
+          python-version-file: .tool-versions
+      - run: pip install uv && uv pip install --system -r services/planner/requirements-dev.txt
+      # The planner asks the engine every rule (wingtip_native), as in test-planner.
+      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
+      - name: The planner's nav log and nearest fields
+        working-directory: services/planner
+        run: pytest tests/test_flight_critical.py -v
+
   # No source file new or grown past 400 lines (scripts/ci/file_sizes.py),
   # past what scripts/ci/file_sizes_allow.txt lists of the files over it
   # when the budget came in; and that list only shrinks against the base
@@ -1841,6 +1877,12 @@ jobs:
       # docs -- is .tool-versions', and every workflow reads that file.
       - name: Every toolchain at .tool-versions' version
         run: scripts/build/toolchain.sh --check
+      # Every colour, type size, padding, gap and corner in the apps from
+      # design/tokens.json (the owner, 2026-11-09: "make the styling
+      # consistent with the branding"), past what
+      # scripts/ci/brand_guard_allow.txt lists with why. Seconds.
+      - name: No raw style value outside the design tokens
+        run: python3 scripts/ci/brand_guard.py
       - name: No unused Python
         run: scripts/ci/dead_python.sh
       # Every Python file as ruff format writes it (.ruff.toml's [format],
@@ -2285,7 +2327,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, architecture, links, site]
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, flight-critical, architecture, links, site]
     if: always()
     steps:
       - name: Every job passed or was not needed

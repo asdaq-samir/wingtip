@@ -24,6 +24,8 @@ from wingtip import data_cycles, tfr, weather
 from wingtip import icing_forecast
 
 from .. import exposure, route_briefing
+from ..feeds import status_rows
+from ..feeds import watch as feeds_watch
 from ..route_briefing import read_fixes, read_numbers
 from ..schemas.common import Briefing
 from ..schemas.briefing import Alternates, IcingForecast, MapLayerAges, Tfrs
@@ -38,16 +40,20 @@ def map_layer_ages() -> MapLayerAges:
     from, for the map's settings to say how old each is: the METARs
     (aviationweather.gov's METAR file, held and refreshed by wingtip.weather)
     and the TFRs (tfr.faa.gov); and each source the planner keeps
-    through an outage, for the pilot's Status page; and each FAA data
-    set's edition and whether it is still in its cycle."""
+    through an outage, for the pilot's Status page, each said where it
+    has stopped updating (app.feeds.status_rows); and each FAA data set's
+    edition and whether it is still in its cycle."""
     sources = [
         {**s, "fetched_at": exposure.iso(s["fetched_at"]), "kept_until": exposure.iso(s["kept_until"])} for s in weather.sources_status()
     ]
-    sources.append({"name": "TFRs", "fetched_at": exposure.iso(tfr.fetched_at()), "kept_until": None, "failing": tfr.failing()})
+    tfrs_at = exposure.iso(tfr.fetched_at())
+    sources.append({"name": "TFRs", "key": "tfrs", "fetched_at": tfrs_at, "kept_until": None, "failing": tfr.failing()})
     return {
         "metars_at": exposure.iso(weather.dataset_status().get("metars")),
-        "tfrs_at": exposure.iso(tfr.fetched_at()),
-        "sources": sources,
+        "tfrs_at": tfrs_at,
+        # Each marked where the minute's feed watch found it not updating,
+        # with the NOTAMs and the radar and satellite frames beside them.
+        "sources": status_rows.mark(sources, feeds_watch.last_lines()),
         # Each FAA data set's edition and whether it is in its cycle
         # (wingtip.data_cycles), for the pilot to see one out of date.
         "data_cycles": data_cycles.held(),

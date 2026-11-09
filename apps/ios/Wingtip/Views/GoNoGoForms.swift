@@ -96,7 +96,7 @@ struct LoadingView: View {
                 Text(unit).foregroundStyle(.secondary)
             }
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(title)
                 if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
             }

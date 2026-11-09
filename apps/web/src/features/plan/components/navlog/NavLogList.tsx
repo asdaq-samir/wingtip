@@ -186,7 +186,7 @@ export function NavLogList({
             return (
               <Fragment key={row.key}>
                 {wind && !first && (
-                  <div aria-hidden="true" className="relative flex h-7 items-center pl-[3.125rem]">
+                  <div aria-hidden="true" className="relative flex h-7 items-center pl-12.5">
                     <span className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
                     <span
                       className={cn(
@@ -202,7 +202,7 @@ export function NavLogList({
                 {airway && (
                   // Under IFR along an airway, where it is joined or its
                   // altitudes change: the route column of a paper IFR log.
-                  <div aria-hidden="true" className="relative flex h-7 items-center pl-[3.125rem]">
+                  <div aria-hidden="true" className="relative flex h-7 items-center pl-12.5">
                     <span className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
                     <span
                       className={cn(
@@ -345,7 +345,7 @@ export function NavLogList({
                     // put the row away, in the selection's tint with it.
                     // Twelve under it: the note's field reaches nine past its
                     // box for a finger (DescriptionCell's label).
-                    <div role="row" className="rounded-b-xl bg-foreground/8 pr-2 pb-3 pl-[3.125rem]">
+                    <div role="row" className="rounded-b-xl bg-foreground/8 pr-2 pb-3 pl-12.5">
                       <div role="cell" aria-colspan={7} className={cn("text-foreground/70", TEXT.detail)}>
                         {note(row, selected)}
                       </div>

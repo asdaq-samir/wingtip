@@ -35,7 +35,7 @@ final class PlaneMarkView: MKAnnotationView {
         backgroundColor = NightPalette.markFill
         layer.cornerRadius = 14
         layer.borderWidth = 1
-        layer.borderColor = UIColor(white: 0.1, alpha: 0.4).cgColor
+        layer.borderColor = WingtipColor.Chart.shade.withAlphaComponent(0.4).cgColor
         addSubview(arrow)
         displayPriority = .required
         isEnabled = false

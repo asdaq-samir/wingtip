@@ -54,6 +54,7 @@ import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.predictiveBack
 import app.wingtipmaps.android.design.rememberPredictiveBack
 import app.wingtipmaps.android.engine.Engine
@@ -129,7 +130,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
         val back = rememberPredictiveBack(enabled = true, onBack = onClose)
         Surface(Modifier.fillMaxSize().predictiveBack(back)) {
             Column(Modifier.fillMaxSize()) {
-                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg, end = WingtipSpace.Xs), verticalAlignment = Alignment.CenterVertically) {
                     Text("$ident airport diagram", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                     IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = "Close") }
                 }
@@ -146,7 +147,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
                         DiagramPage.note(it, fixAsked),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(12.dp),
+                        modifier = Modifier.padding(WingtipSpace.Md),
                     )
                 }
             }

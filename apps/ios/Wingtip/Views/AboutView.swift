@@ -33,7 +33,7 @@ struct AboutView: View {
             }
             Section(title: "Credits") {
                 ForEach(AboutCredits.data + AboutCredits.software, id: \.self) { credit in
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text(credit.what)
                         Text(credit.terms).font(.footnote).foregroundStyle(.secondary)
                     }

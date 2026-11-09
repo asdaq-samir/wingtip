@@ -19,11 +19,15 @@ So each is held to what it normally does:
   (its own health check's HEALTHY_WITHIN_S): its word of each feed is then
   as old as that.
 - The weather products by the weather service's own answer (its GET /),
-  which holds each to three of its idle turns and its product's validity.
+  which holds each to three of its idle turns and its product's validity:
+  the METARs and TAFs, the AIRMETs, SIGMETs and PIREPs, the winds aloft,
+  GLMP, the TFRs and the NEXRAD and GOES frames' times.
+- The FAA's data sets by their cycles (wingtip.data_cycles): the charts,
+  NASR, the CIFP, the DOF and the offline packs, stale once past theirs.
 
-The planner (app.feed_health) reads this each minute, shows it in the
+The planner (app.feeds.watch) reads this each minute, shows it in the
 developer console, and raises an alert for a feed stale longer than
-FEED_ALERT_AFTER_MIN.
+FEED_ALERT_AFTER_MIN, which the gateway mails (UptimeWatch).
 """
 
 from __future__ import annotations
@@ -171,8 +175,41 @@ def weather_feeds(url: str | None, now: float, get=requests.get) -> list[dict]:
     return out
 
 
+def cycles(entries: list[dict]) -> list[dict]:
+    """Each FAA data set's line from its edition (wingtip.data_cycles, the
+    engine's data_cycle): the charts on their 56-day cycle, NASR, the CIFP
+    and the offline packs on the 28-day AIRAC, the DOF on its own. An
+    edition past its cycle is stale: 14 CFR 91.103 asks for the current
+    one, and with the refresh off nothing else fetches the next."""
+    out = []
+    for e in entries:
+        expired = e.get("state") == "expired"
+        detail = (
+            f"edition {e.get('edition')} ended {e.get('expires')}, {e.get('behind')} cycle(s) behind"
+            if expired
+            else f"edition {e.get('edition')}, in force until {e.get('expires')}"
+        )
+        out.append(
+            {"name": e["key"], "kind": "cycle", "what": e["name"], "last_at": None, "state": STALE if expired else OK, "detail": detail}
+        )
+    return out
+
+
+def _held_cycles() -> list[dict]:
+    """The FAA data sets' lines, from the editions on disk (never the
+    network); none, and logged, where they cannot be read."""
+    from . import data_cycles
+
+    try:
+        return cycles(data_cycles.held())
+    except Exception:  # noqa: BLE001 -- the feeds' lines are still worth having
+        log.warning("FAA data editions not read", exc_info=True)
+        return []
+
+
 def check(weather_url: str | None, now: float | None = None) -> list[dict]:
-    """Every feed's line, SWIM first, then the weather."""
+    """Every feed's line: SWIM first, then the weather, then the FAA's
+    data cycles."""
     now = time.time() if now is None else now
     try:
         beats = store.beats()
@@ -192,7 +229,7 @@ def check(weather_url: str | None, now: float | None = None) -> list[dict]:
         ]
     if beats is not None:
         lines = swim(beats, now)
-    return lines + weather_feeds(weather_url, now)
+    return lines + weather_feeds(weather_url, now) + _held_cycles()
 
 
 class Watch:

@@ -13,6 +13,7 @@ import { PickedGl } from "../../../lib/map/gl/layers/RouteExtrasGl";
 import { RouteGl, type GlCandidate, type GlEndpoint } from "../../../lib/map/gl/layers/RouteGl";
 import { usePreferences } from "../../../lib/preferences";
 import { COLORS, hasRating, isVisible, pointKey, type Filters } from "../logic";
+import { CATEGORY_UNKNOWN, CHART } from "../../../lib/tokens";
 
 interface Props {
   course: Course | null;
@@ -33,7 +34,7 @@ interface Props {
 
 const NO_HOLD = () => {};
 /** An unrated point's grey. */
-const UNRATED = "#8fa3b0";
+const UNRATED = CATEGORY_UNKNOWN;
 
 /**
  * The training map: the chart, the airspace, the VORs, the course and its
@@ -77,7 +78,7 @@ export default function ChartMap({
     () =>
       endpoints
         .filter(isEndpoint)
-        .map((e) => ({ ident: e.ident, lat: e.lat, lon: e.lon, colour: "#ffffff", space: null, fix: false, select: () => onSelect(e) })),
+        .map((e) => ({ ident: e.ident, lat: e.lat, lon: e.lon, colour: CHART.casing, space: null, fix: false, select: () => onSelect(e) })),
     [endpoints, onSelect],
   );
   return (

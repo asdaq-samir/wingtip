@@ -88,7 +88,7 @@ private struct OfflineKeptRow: View {
     let retry: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             LabeledContent(kept.name, value: ByteCountFormatter.string(fromByteCount: Int64(kept.bytes), countStyle: .file))
             Text(caption).font(.footnote).foregroundStyle(kept.expired() ? WingtipInk.caution : .secondary)
             if !kept.complete, kept.failed == nil {

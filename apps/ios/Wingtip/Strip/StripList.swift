@@ -15,6 +15,8 @@ struct StripList: View {
     let onDebrief: () -> Void
     @Environment(\.chartInk) private var ink
     @State private var unfolded = false
+    /// A checkpoint dot's paper casing, in points: its line's width, drawn outside the dot.
+    private static let casing: CGFloat = 3
 
     var body: some View {
         if let first = points.first, let last = points.last, first.kind == .departure, points.count >= 2 {
@@ -57,13 +59,14 @@ struct StripList: View {
     private func checkpoint(_ point: StripPoint, number: Int?) -> some View {
         HStack(alignment: .top, spacing: WingtipSpace.md) {
             Circle().fill(ink.brown).frame(width: 14, height: 14)
-                .overlay(Circle().strokeBorder(ink.paper, lineWidth: 3).padding(-3))
-                .padding(.leading, 2).padding(.top, WingtipSpace.lg)
+                // The paper casing drawn outside the dot, as wide as its own line.
+                .overlay(Circle().strokeBorder(ink.paper, lineWidth: Self.casing).padding(-Self.casing))
+                .padding(.leading, WingtipSpace.xxs).padding(.top, WingtipSpace.lg)
             Button {
                 if let leg = point.leg { onLeg(leg) }
             } label: {
                 HStack(spacing: WingtipSpace.md) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text("\(number.map { "\($0). " } ?? "")\(point.name)")
                             .font(ChartInk.text.weight(.medium)).lineLimit(1)
                         if let leg = point.leg {
@@ -104,11 +107,11 @@ struct StripList: View {
         HStack(alignment: .top, spacing: WingtipSpace.md) {
             Circle().fill(ink.paper).frame(width: 14, height: 14)
                 .overlay(Circle().strokeBorder(ink.magenta, lineWidth: 2))
-                .padding(.leading, 2).padding(.top, WingtipSpace.lg)
+                .padding(.leading, WingtipSpace.xxs).padding(.top, WingtipSpace.lg)
             Button(action: onDebrief) {
                 HStack(spacing: WingtipSpace.md) {
                     Image(systemName: "flag.checkered").foregroundStyle(ink.tint).accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text("Debrief").font(ChartInk.text.weight(.semibold))
                         Text("After the flight, from its saved track").font(ChartInk.note).foregroundStyle(ink.muted)
                     }
@@ -153,7 +156,7 @@ struct StripFieldCard: View {
             VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 HStack(alignment: .top, spacing: WingtipSpace.sm) {
                     Button { onOpen(point.name) } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(point.name).font(ChartInk.text.weight(.bold)).foregroundStyle(ink.tint)
                             if !point.longName.isEmpty {
                                 Text(point.longName).font(ChartInk.detail).foregroundStyle(ink.muted).lineLimit(1)
@@ -166,7 +169,7 @@ struct StripFieldCard: View {
                     .accessibilityHint("Opens the field's card")
                     Spacer(minLength: 0)
                     if let minutes = point.minutesFlown {
-                        VStack(alignment: .trailing, spacing: 2) {
+                        VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
                             Text(Format.time(Date().addingTimeInterval(minutes * 60)))
                                 .font(ChartInk.text.weight(.semibold).monospacedDigit())
                             Text(atLabel).font(ChartInk.note).foregroundStyle(ink.muted)

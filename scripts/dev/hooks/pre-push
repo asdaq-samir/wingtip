@@ -229,6 +229,8 @@ if has_area arch; then
   out=$(python3 "$here/scripts/ci/file_sizes.py" --base origin/main) || { grep "::error" <<<"$out"; fail "file sizes"; }
   note "arch: every version is .tool-versions'"
   out=$("$here/scripts/build/toolchain.sh" --check) || { grep "::error" <<<"$out"; fail "toolchain drift (scripts/build/toolchain.sh writes them)"; }
+  note "arch: no raw style value outside the design tokens"
+  out=$(python3 "$here/scripts/ci/brand_guard.py") || { grep -A3 "::error" <<<"$out"; fail "brand guard (design/tokens.json)"; }
 fi
 
 if [ "$failed" -ne 0 ]; then

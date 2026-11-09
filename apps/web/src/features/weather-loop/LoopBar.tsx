@@ -43,7 +43,7 @@ export function LoopBar() {
         : null;
   return (
     <div
-      className={cn(GLASS, "pointer-events-auto flex w-[min(100%,24rem)] items-center gap-2 rounded-[22px] py-1 pr-3 pl-1")}
+      className={cn(GLASS, "pointer-events-auto flex w-[min(100%,24rem)] items-center gap-2 rounded-(--radius-banner) py-1 pr-3 pl-1")}
       data-testid="weather-loop-bar"
       role="group"
       aria-label={`${name} loop`}

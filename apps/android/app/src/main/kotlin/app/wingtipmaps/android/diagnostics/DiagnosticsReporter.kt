@@ -16,7 +16,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 /**
  * Posts a report to the gateway (POST /api/diagnostics), which keeps the
- * faults 90 days for the developer and puts the figures in the speed
+ * faults 30 days for the developer and puts the figures in the speed
  * trend under "android". Never throws: a report that could not be sent
  * says so by returning false, and its faults are tried again next start.
  */

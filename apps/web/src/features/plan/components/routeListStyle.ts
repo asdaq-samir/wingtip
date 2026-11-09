@@ -21,7 +21,7 @@ export const POINT_CARD = cn(
   "has-[[data-dragging]]:opacity-40 has-[[data-over]]:ring-2 has-[[data-over]]:ring-tint",
 );
 /** The room between a card and the next, the course's line across it. */
-export const CARD_GAP = "mb-[1.375rem]";
+export const CARD_GAP = "mb-5.5";
 
 /** A card's runways and procedures, started 20 in, 5 clear of the line
  *  down the marks' column (CardThread), not under the ident's 38 as the

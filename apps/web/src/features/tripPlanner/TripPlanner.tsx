@@ -96,10 +96,7 @@ export default function TripPlanner({ onClose }: { onClose: () => void }) {
       {/* The proposal's shape where it will be, until its first words. */}
       {state.status && !(p || state.words) && <SkeletonLines className="w-4/5 rounded-2xl rounded-bl-md bg-card px-3.5 py-3" />}
       {(p || state.words) && (
-        <div
-          className="flex flex-col gap-3 rounded-2xl rounded-bl-md bg-card px-3.5 py-3 shadow-[0_1px_4px_rgb(0_0_0/0.06)]"
-          data-testid="trip-proposal"
-        >
+        <div className="flex flex-col gap-3 rounded-2xl rounded-bl-md bg-card px-3.5 py-3 shadow-float" data-testid="trip-proposal">
           {state.words && (
             <p className={cn("whitespace-pre-wrap", TEXT.prose)} data-testid="trip-words">
               {state.words}

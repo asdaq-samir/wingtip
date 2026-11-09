@@ -5,7 +5,7 @@ import Foundation
 /// nothing of the pilot's in it -- no account, no position, no N-number,
 /// no route. The version, the system and the kind of device say which
 /// build a crash is in; the gateway scrubs what slips into a call stack
-/// (queries, addresses, home paths, ids) before it keeps a fault 90 days.
+/// (queries, addresses, home paths, ids) before it keeps a fault 30 days.
 /// Built from plain values, so the rules of the body are tested without
 /// MetricKit's payloads, which a test cannot make (DiagnosticsReporter
 /// reads those).

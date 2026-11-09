@@ -253,7 +253,7 @@ struct AirportPictures: View {
                             .overlay(alignment: .bottomLeading) {
                                 // Its photographer and licence, as Commons' licences ask.
                                 Text(credit).font(.caption2).lineLimit(1)
-                                    .padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
+                                    .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xxs)
                                     .floatingGlass(in: Capsule(), material: .thinMaterial).padding(WingtipSpace.sm)
                             }
                     }

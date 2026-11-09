@@ -56,13 +56,15 @@ function flightDebrief(flight: Flight, points: TrackPoint[], patterns: Record<st
   };
 }
 
-/** An approach debriefed, trimmed: its profile and findings, and the
- *  field's elevation for the 500 ft gate. */
+/** An approach debriefed, trimmed: its procedure, its profile and
+ *  findings, and the field's elevation for the 500 ft gate. */
 export function approachDebrief(a: ApproachDebrief, elevationFt: number | null, flownOn: string): CoachDebrief {
   return {
     kind: "approach",
     flown_on: flownOn,
     place: a.airport,
+    // The chart's name ("ILS Y RWY 08"), so the coach says which approach.
+    procedure: a.name,
     elevation_ft: elevationFt,
     legs: [],
     patterns: [],

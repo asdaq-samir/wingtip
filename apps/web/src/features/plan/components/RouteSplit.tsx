@@ -44,7 +44,7 @@ export default function RouteSplit({
 }) {
   const many = stops.length;
   return (
-    <div className={cn("flex h-[3.25rem] min-w-0 flex-1 items-center rounded-[1.625rem]", PANEL_FIELD_FILL)} data-testid="route-split">
+    <div className={cn("flex h-[3.25rem] min-w-0 flex-1 items-center rounded-full", PANEL_FIELD_FILL)} data-testid="route-split">
       <End value={dep} name={depName} onChange={onDep} label="Departure" testId="route-split-departure">
         <Mark round filled={!!dep} />
       </End>
@@ -102,7 +102,7 @@ function End({
       ariaLabel={value ? `${label} ${value}, change` : label}
       testId={testId}
       className={cn(
-        "h-full min-w-0 flex-1 gap-2 rounded-[1.625rem] bg-transparent px-3.5 shadow-none hover:bg-transparent",
+        "h-full min-w-0 flex-1 gap-2 rounded-full bg-transparent px-3.5 shadow-none hover:bg-transparent",
         end ? "justify-end" : "justify-start",
       )}
     >

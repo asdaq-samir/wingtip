@@ -209,7 +209,7 @@ export function PhoneSheetContent({
         data-swipe-handle=""
         className={cn(
           "absolute inset-x-0 z-10 flex h-4 touch-none justify-center",
-          edge === "bottom" ? "top-0 items-start pt-[5px]" : "bottom-0 items-end pb-[5px]",
+          edge === "bottom" ? "top-0 items-start pt-1.25" : "bottom-0 items-end pb-1.25",
         )}
       >
         <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" />

@@ -65,9 +65,9 @@ struct LampView: View {
 
     private func colour(_ l: Drills.Light) -> Color {
         switch l {
-        case .green: return Color(red: 0.09, green: 0.64, blue: 0.29)
-        case .red: return Color(red: 0.86, green: 0.15, blue: 0.15)
-        case .white: return Color(red: 0.97, green: 0.98, blue: 0.99)
+        case .green: return Color(uiColor: WingtipColor.Signal.green)
+        case .red: return Color(uiColor: WingtipColor.Signal.red)
+        case .white: return Color(uiColor: WingtipColor.Signal.white)
         }
     }
 

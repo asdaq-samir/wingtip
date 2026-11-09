@@ -266,6 +266,20 @@ app:
   flight-service:
     provider: ${APP_FLIGHT_SERVICE_PROVIDER:none}
 
+  # The launch's monitor (UptimeWatch, docs/OPERATIONS.md): each minute
+  # (cron, UTC; "-" turns it off) the planner, the assistant, the weather
+  # service and this app's readiness are asked whether they are up, and the
+  # planner which live feeds have gone stale; one down for down-after, or a
+  # feed the planner calls alerting, is mailed to alert-emails (the
+  # developer-emails where none are given), and again when it is back.
+  # weather-url is the weather service's address on the stack's network;
+  # blank, it is not watched.
+  monitoring:
+    cron: ${APP_MONITORING_CRON:30 * * * * *}
+    down-after: ${APP_MONITORING_DOWN_AFTER:PT5M}
+    alert-emails: ${APP_ALERT_EMAILS:}
+    weather-url: ${WEATHER_SERVICE_URL:}
+
 # The flight watch (FlightWatchService): how often the watched flights
 # departing within the window are re-briefed and the planner asked what
 # changed, an ISO duration. Each check is a briefing and one Claude call

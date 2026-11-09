@@ -157,6 +157,13 @@
               "place": {
                 "type": "string"
               },
+              "procedure": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The approach procedure flown (\"ILS Y RWY 08\"), where the line is an approach's."
+              },
               "area": {
                 "type": "string",
                 "description": "The weak area's key."
@@ -169,6 +176,7 @@
               "id",
               "flown_on",
               "place",
+              "procedure",
               "area",
               "text"
             ],
