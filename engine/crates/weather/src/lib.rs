@@ -9,13 +9,17 @@
 //!   (14 CFR 91.103);
 //! - rvr: runway visual range against a visibility minimum (91.175(h));
 //! - cycles: when an FAA data set's edition stops counting (AIRAC,
-//!   the 56-day charts, the obstacle file).
+//!   the 56-day charts, the obstacle file);
+//! - ready: ready to fly -- whether the device holds the charts, the
+//!   cycle packs, the weather and the NOTAMs the flight needs, and what to
+//!   fix while there is still a signal.
 
 pub mod cycles;
 pub mod forecast;
 pub mod metar;
 pub mod notam;
 pub mod notam_rank;
+pub mod ready;
 pub mod rvr;
 pub mod taf;
 pub mod tfr;

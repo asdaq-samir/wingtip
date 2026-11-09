@@ -7651,6 +7651,160 @@ object EngineContract {
     )
 
     /**
+     * One thing ready_to_fly checked: whether it is fine, a line to act on and the fix done in place.
+     */
+    @Serializable
+    data class ReadyItem(
+        /**
+         * route, airplane, altitude, charts, packs, briefing, fields, notams, saved, location, battery or receiver.
+         */
+        val key: String,
+        /**
+         * Never a stop: warn, never limit.
+         */
+        val finding: String,
+        /**
+         * One line a pilot acts on.
+         */
+        val line: String,
+        val detail: String,
+        /**
+         * Where its limit comes from: the FAA schedule, the CFR section, the AIM paragraph, or the app's choice.
+         */
+        val source: String,
+        /**
+         * What the app does in place for it; null where nothing on the device fixes it.
+         */
+        val fix: String? = null,
+    )
+
+    @Serializable
+    data class ReadyToFlyAnswer(
+        val ready: Boolean,
+        val finding: String,
+        val line: String,
+        val actions: List<EngineContract.ReadyItem>,
+        val items: List<EngineContract.ReadyItem>,
+        /**
+         * YYYY-MM-DD: the next AIRAC cycle's first day.
+         */
+        @SerialName("next_cycle")
+        val nextCycle: String,
+        @SerialName("next_cycle_ident")
+        val nextCycleIdent: String,
+        @SerialName("briefing_age_min")
+        val briefingAgeMin: Double? = null,
+    )
+
+    @Serializable
+    data class ReadyToFlyInput(
+        /**
+         * Unix seconds, UTC: the engine has no clock.
+         */
+        val now: Double,
+        /**
+         * The flight plan: a route, the airplane's name and the cruise altitude, null where not set.
+         */
+        val plan: EngineContract.ReadyToFlyInputPlan? = null,
+        /**
+         * The route's offline chart tiles: kept or not, the kept edition's effective date (YYYY-MM-DD) and the download's size. Null leaves the item out.
+         */
+        val charts: EngineContract.ReadyToFlyInputCharts? = null,
+        /**
+         * The cycle packs (airports, airspace, procedures): the AIRAC edition held (YYYY-MM-DD), null where none is. Null leaves the item out.
+         */
+        val packs: EngineContract.ReadyToFlyInputPacks? = null,
+        val briefing: EngineContract.ReadyToFlyInputBriefing? = null,
+        /**
+         * The departure, destination and alternate: each METAR's observed time (Unix seconds) and whether a TAF is in.
+         */
+        val fields: List<EngineContract.ReadyToFlyInputFieldsItem>? = null,
+        val notams: EngineContract.ReadyToFlyInputNotams? = null,
+        /**
+         * What the platform tells: a member null or missing leaves its item out.
+         */
+        val device: EngineContract.ReadyToFlyInputDevice? = null,
+        val receiver: EngineContract.ReadyToFlyInputReceiver? = null,
+    )
+
+    @Serializable
+    data class ReadyToFlyInputBriefing(
+        @SerialName("fetched_at")
+        val fetchedAt: Double? = null,
+    )
+
+    /**
+     * The route's offline chart tiles: kept or not, the kept edition's effective date (YYYY-MM-DD) and the download's size. Null leaves the item out.
+     */
+    @Serializable
+    data class ReadyToFlyInputCharts(
+        val kept: Boolean? = null,
+        /**
+         * False where the platform cannot keep tiles (a browser with no service worker).
+         */
+        @SerialName("can_keep")
+        val canKeep: Boolean? = null,
+        val edition: String? = null,
+        @SerialName("download_mb")
+        val downloadMb: Double? = null,
+    )
+
+    /**
+     * What the platform tells: a member null or missing leaves its item out.
+     */
+    @Serializable
+    data class ReadyToFlyInputDevice(
+        @SerialName("battery_pct")
+        val batteryPct: Double? = null,
+        val charging: Boolean? = null,
+        val location: String? = null,
+        @SerialName("plan_saved")
+        val planSaved: Boolean? = null,
+    )
+
+    @Serializable
+    data class ReadyToFlyInputFieldsItem(
+        val ident: String,
+        val role: String? = null,
+        @SerialName("metar_observed")
+        val metarObserved: Double? = null,
+        val taf: Boolean? = null,
+    )
+
+    @Serializable
+    data class ReadyToFlyInputNotams(
+        @SerialName("fetched_at")
+        val fetchedAt: Double? = null,
+    )
+
+    /**
+     * The cycle packs (airports, airspace, procedures): the AIRAC edition held (YYYY-MM-DD), null where none is. Null leaves the item out.
+     */
+    @Serializable
+    data class ReadyToFlyInputPacks(
+        val edition: String? = null,
+        @SerialName("can_update")
+        val canUpdate: Boolean? = null,
+    )
+
+    /**
+     * The flight plan: a route, the airplane's name and the cruise altitude, null where not set.
+     */
+    @Serializable
+    data class ReadyToFlyInputPlan(
+        val route: Boolean? = null,
+        val airplane: String? = null,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+    )
+
+    @Serializable
+    data class ReadyToFlyInputReceiver(
+        val used: Boolean? = null,
+        val connected: Boolean? = null,
+    )
+
+    /**
      * A FIS-B NEXRAD block (products 63 regional and 64 CONUS): 32 bins across and 4 down, north row first, each a level 0 to 7.
      */
     @Serializable
