@@ -70,6 +70,7 @@ enum VerdictTarget: Equatable {
 /// them, which the weather is held to.
 struct GoNoGoSection: View {
     @Environment(Verdict.self) private var verdict
+    @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
     /// Scrolls the Brief to one of its sections.
     var open: (String) -> Void
@@ -101,6 +102,7 @@ struct GoNoGoSection: View {
                 }
                 .foregroundStyle(FindingStyle.colour(answer.line.finding))
                 .accessibilityElement(children: .combine)
+                KeptAgeLine(kind: .goNoGo, key: ReadyToFly.flightKey(plan))
                 // At a glance (the owner's rule, 2026-11-03): at most three
                 // lines a pilot acts on, each opening to its why, and the
                 // rest in one row.
@@ -348,6 +350,7 @@ struct RiskView: View {
     }
     .environment(Verdict())
     .environment(Session())
+    .environment(Plan())
 }
 
 #Preview("FindingFold") {

@@ -52,6 +52,7 @@ struct WeatherLoopBar: View {
                         .font(.caption)
                         .monospacedDigit()
                     }
+                    KeptAgeLine(kind: .weatherLoop, key: loop.kind.rawValue)
                 }
             }
         }
