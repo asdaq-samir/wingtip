@@ -412,6 +412,7 @@ struct ShareMenu: View {
     @Environment(Plan.self) private var plan
     @Environment(\.openURL) private var openURL
     @State private var sharing: ShareItems?
+    @State private var includeTail = false
 
     struct ShareItems: Identifiable {
         let id = UUID()
@@ -420,7 +421,8 @@ struct ShareMenu: View {
 
     var body: some View {
         Menu {
-            ShareLink(item: RouteShare.link(plan)) { Label("Share Link", systemImage: "link") }
+            ShareLink(item: RouteShare.link(plan, includeTail: includeTail)) { Label("Share Link", systemImage: "link") }
+            if let tail = plan.tail { Toggle("Include \(tail)", isOn: $includeTail) }
             ShareLink(item: RouteShare.navLogText(plan)) { Label("Nav Log as Text", systemImage: WingtipIcon.navLog) }
             Button { pdf() } label: { Label("Nav Log as PDF", systemImage: "doc.richtext") }
             // ForeFlight sends the route on to the panel wirelessly (Garmin's
@@ -459,13 +461,11 @@ struct ShareMenu: View {
 /// The route as it goes to other places.
 @MainActor
 enum RouteShare {
-    /// The plan's own address on the website.
-    static func link(_ plan: Plan) -> URL {
-        var items = [URLQueryItem(name: "dep", value: plan.dep), URLQueryItem(name: "dest", value: plan.dest)]
-        if !plan.stops.isEmpty { items.append(URLQueryItem(name: "stops", value: plan.stops.joined(separator: ","))) }
-        if let feet = plan.ownAltitudeFt { items.append(URLQueryItem(name: "altitude_ft", value: String(Int(feet)))) }
-        if !plan.extras.holds.isEmpty { items.append(URLQueryItem(name: "holds", value: plan.extras.holds.compactMap { try? $0.text() }.joined(separator: ","))) }
-        return Config.gateway.appending(path: "/app/plan").appending(queryItems: items)
+    /// The plan as a shared flight's link (SharedPlan): opened as a preview
+    /// on the other pilot's phone or browser; the N-number only when asked.
+    static func link(_ plan: Plan, includeTail: Bool = false) -> URL {
+        SharedPlan(dep: plan.dep, dest: plan.dest, stops: plan.stops, altitudeFt: (plan.ownAltitudeFt ?? plan.altitudeFt).map { Int($0) },
+                   type: plan.aircraft == Plan.noAirplane ? nil : plan.aircraft.uppercased(), rules: FlightRules.saved(), tail: plan.tail).link(includeTail: includeTail)
     }
 
     static func fileName(_ plan: Plan) -> String {

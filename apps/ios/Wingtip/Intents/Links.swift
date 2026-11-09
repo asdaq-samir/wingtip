@@ -20,6 +20,11 @@ enum Links {
             return trackExtensions.contains(url.pathExtension.lowercased()) ? .track(url) : nil
         }
         guard let query = query(of: url) else { return nil }
+        // A flight another pilot sent (`open=shared`): previewed first, so
+        // read before the route below, which would plan it at once.
+        if query[Screen.linkKey]?.lowercased() == Screen.shared.rawValue {
+            return SharedFlightLink.of(query).map { .sharedFlight($0) }
+        }
         if let place = ident(query["place"]) { return .weather(ident: place) }
         if let hex = query["flight"]?.trimmingCharacters(in: .whitespaces).lowercased(), !hex.isEmpty { return .aircraft(hex: hex) }
         // The route as the web app's URL has it: idents, the stops
@@ -50,7 +55,7 @@ enum Links {
     }
 
     /// An ident as the planner takes one: letters and figures, upper case.
-    private static func ident(_ raw: String?) -> String? {
+    static func ident(_ raw: String?) -> String? {
         let text = raw?.trimmingCharacters(in: .whitespaces).uppercased() ?? ""
         guard !text.isEmpty, text.count <= 8, text.allSatisfy({ $0.isLetter || $0.isNumber }) else { return nil }
         return text

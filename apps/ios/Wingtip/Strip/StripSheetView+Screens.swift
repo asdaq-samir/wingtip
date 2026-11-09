@@ -16,7 +16,7 @@ extension StripSheetView {
         case .favorites: .favorites
         case .nearest: .nearest
         case .emergency: .emergency
-        case .fpl, .airport, .ask: nil
+        case .fpl, .airport, .ask, .shared: nil
         }
     }
 
