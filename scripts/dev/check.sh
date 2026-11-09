@@ -121,7 +121,7 @@ py_image() {
   (cd "$here" && git ls-files -z -co --exclude-standard -- engine | xargs -0 tar cf - 2>/dev/null) | tar xf - -C "$ctx"
   cat > "$ctx/Dockerfile" <<EOF
 # The wheel's stage: the same for every directory, so BuildKit builds it once.
-FROM python:3.14-slim AS native
+FROM python:3.15-slim AS native
 COPY --from=$RUST_IMAGE /usr/local/cargo /usr/local/cargo
 COPY --from=$RUST_IMAGE /usr/local/rustup /usr/local/rustup
 ENV PATH=/usr/local/cargo/bin:\$PATH CARGO_HOME=/usr/local/cargo RUSTUP_HOME=/usr/local/rustup
@@ -129,7 +129,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \\
     rm -f /etc/apt/apt.conf.d/docker-clean \\
     && apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
-RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv pip install -q uv && uv pip install --system -q maturin==1.9.4
+RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv pip install -q uv && uv pip install --system -q maturin==1.16.0
 COPY engine /engine
 # The target is this worktree's own (the id carries its path's hash): Cargo
 # fingerprints by mtime, so a target shared with another worktree took its
@@ -211,12 +211,12 @@ run_area() {
       docker run --rm -v "$here:/repo" --tmpfs /repo/apps/web/node_modules -w /repo/apps/web "$tag" \
         sh -c 'ln -s /node_modules/* /node_modules/.bin node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . && npx knip --no-progress && npx vitest run'
       ;;
-    py) run_py services/planner requirements-dev-wingtip.txt 3.14 wingtip tests_wingtip ;;
-    planner) run_py services/planner requirements-dev.txt 3.14 app tests ;;
-    ingest) run_py services/ingest requirements-dev.txt 3.14 ingest tests ;;
-    assistant) run_py services/assistant requirements-dev.txt 3.14 app tests ;;
-    weather) run_py services/weather requirements-dev.txt 3.14 app tests ;;
-    jobs) run_py services/jobs requirements-dev-jobs.txt 3.14 charts charts/tests ;;
+    py) run_py services/planner requirements-dev-wingtip.txt 3.15 wingtip tests_wingtip ;;
+    planner) run_py services/planner requirements-dev.txt 3.15 app tests ;;
+    ingest) run_py services/ingest requirements-dev.txt 3.15 ingest tests ;;
+    assistant) run_py services/assistant requirements-dev.txt 3.15 app tests ;;
+    weather) run_py services/weather requirements-dev.txt 3.15 app tests ;;
+    jobs) run_py services/jobs requirements-dev-jobs.txt 3.15 charts charts/tests ;;
     engine)
       # The crates' layering, as engine/README.md's table gives it (seconds).
       python3 "$here/scripts/ci/engine_layers.py"

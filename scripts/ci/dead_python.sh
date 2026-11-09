@@ -8,7 +8,7 @@
 # (GitHub's runners have pipx); CI and scripts/dev/check.sh's arch area run it.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-VULTURE=vulture==2.14
+VULTURE=vulture==2.16
 args=(services ml scripts scripts/ci/vulture_allow.py --min-confidence 80
   --exclude '*/generated/*,*/node_modules/*,*/target/*,*/.venv/*')
 if command -v uvx >/dev/null; then

@@ -140,7 +140,7 @@ Each service fetches its own; the engine never fetches.
 
 - **Engine:** Rust, built for Python (PyO3, `wingtip_native`), WebAssembly
   and a C interface for the phones.
-- **Servers:** Python 3.14 with FastAPI; Java 25 with Spring Boot and
+- **Servers:** Python 3.15 with FastAPI; Java 25 with Spring Boot and
   Flyway; PostgreSQL 18; SQLite for the shared stores.
 - **Web:** React 19, TypeScript, Vite, TanStack Query, MapLibre GL with
   PMTiles, Vitest and Playwright.

@@ -5,11 +5,11 @@
 # font.brand), sets the store art's words. Pinned so the Mac and CI draw
 # the same pixels: the base by tag, Pillow by version, Barlow by the
 # google/fonts commit and its checksum.
-FROM python:3.13-slim-bookworm
+FROM python:3.15-slim-bookworm
 RUN apt-get update \
  && apt-get install -y --no-install-recommends librsvg2-bin fontconfig \
  && rm -rf /var/lib/apt/lists/*
-RUN pip install --no-cache-dir pillow==11.3.0
+RUN pip install --no-cache-dir pillow==13.0.0
 ADD --checksum=sha256:86577cb32f8abe3673db53ca0f4221e6856751a4f6730c867e00f720f8bb1fc5 \
     https://raw.githubusercontent.com/google/fonts/6cdf01867df0813c2390f90dff7dc66c87f14cf7/ofl/barlow/Barlow-SemiBold.ttf \
     /usr/share/fonts/truetype/barlow/Barlow-SemiBold.ttf

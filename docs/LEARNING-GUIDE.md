@@ -178,10 +178,10 @@ from its cache.
 
 | Dockerfile | Base | Why it looks like this |
 |---|---|---|
-| [`services/Dockerfile.base`](../services/Dockerfile.base) | `python:3.14-slim` (by digest) | The base the four below are built FROM: wingtip's own requirements (`services/planner/requirements-wingtip.txt`) and its Rust extension (`wingtip_native`, compiled in a stage of its own with Rust copied in, so the base carries the wheel and no toolchain), installed once. Each image names it as the build context `wingtip-base`: compose's `base` service, a bake's `target:base`. Before it, each image built the engine and installed the same requirements itself, the same layers four times over on disk. |
+| [`services/Dockerfile.base`](../services/Dockerfile.base) | `python:3.15-slim` (by digest) | The base the four below are built FROM: wingtip's own requirements (`services/planner/requirements-wingtip.txt`) and its Rust extension (`wingtip_native`, compiled in a stage of its own with Rust copied in, so the base carries the wheel and no toolchain), installed once. Each image names it as the build context `wingtip-base`: compose's `base` service, a bake's `target:base`. Before it, each image built the engine and installed the same requirements itself, the same layers four times over on disk. |
 | [`ml/Dockerfile.ml`](../ml/Dockerfile.ml) | `wingtip-base` | Jupyter and scikit-learn over `wingtip`'s own list, for notebooks 01–03 and 08, and nothing else: the PyTorch, TensorFlow, Spark and sentence-transformers comparison notebooks, and the JDK and CUDA-free torch wheel they needed, went on 2026-11-06, since only scikit-learn reaches a pilot. Carries no source; compose bind-mounts the checkout. |
 | [`services/jobs/retrain/Dockerfile`](../services/jobs/retrain/Dockerfile) | `wingtip-base` | The retrain job: scikit-learn/joblib on top, pinned to the planner's, so it runs every stage, the training run (`python -m wingtip.pipeline run`, compose's `retrain`) among them. A thin processing image beside it, shaped for a SageMaker Processing Job, went with the jobs split (#535): nothing ran it but this run. |
-| [`services/jobs/charts/Dockerfile`](../services/jobs/charts/Dockerfile) | `python:3.14-slim` → `wingtip-base` | The charts job: tippecanoe built from its tagged release in a first stage, its two programs copied on, rasterio and boto3 on top. Renders a chart cycle, packs it into archives, builds the overlay tiles, publishes to S3. |
+| [`services/jobs/charts/Dockerfile`](../services/jobs/charts/Dockerfile) | `python:3.15-slim` → `wingtip-base` | The charts job: tippecanoe built from its tagged release in a first stage, its two programs copied on, rasterio and boto3 on top. Renders a chart cycle, packs it into archives, builds the overlay tiles, publishes to S3. |
 | [`services/planner/Dockerfile`](../services/planner/Dockerfile) | `wingtip-base` | FastAPI plus the chart-vision stack (numpy, Pillow, shapely), and the chart model's scikit-learn, pinned to the retrain job's. No tippecanoe and no boto3: what builds and publishes tiles is the charts job's. Bind-mounts the repo, so a `services/planner/wingtip` edit needs a restart, not a rebuild. |
 | [`services/gateway/Dockerfile`](../services/gateway/Dockerfile) | `node:26-slim` → `maven:...` → `eclipse-temurin:25-jre` | Multi-stage, see above. |
 
@@ -196,7 +196,7 @@ disk. `docker images` on a working copy of this repo shows two kinds.
 the rest exist for building, training or testing.
 
 **The ones pulled, not built.** These look like clutter and are not;
-deleting one only forces a re-download on the next build. `python:3.14-slim`
+deleting one only forces a re-download on the next build. `python:3.15-slim`
 is the base of `wingtip-base`, which is in turn the base of every Python
 image above; each is stored once, which is why image sizes are not
 additive. `node:26-slim` and `maven:...` are build-only and
