@@ -22,8 +22,6 @@ struct ChecklistView: View {
                         .font(.body.monospaced())
                         .frame(minHeight: 280)
                         .accessibilityLabel(model.title)
-                } footer: {
-                    Text("# Before takeoff\nFuel selector -- Both\nMixture -- Rich").font(.footnote.monospaced())
                 }
                 Section {
                     // The phases' headings only, to write the airplane's own

@@ -40,7 +40,7 @@ struct AirplaneFiguresView: View {
             Section {
                 ForEach(Self.rows, id: \.key) { row in
                     LabeledContent(row.label) {
-                        HStack(spacing: 6) {
+                        HStack(spacing: WingtipSpace.sm) {
                             TextField("—", text: Binding(get: { fields[row.key] ?? "" }, set: { fields[row.key] = $0.filter { $0.isNumber || $0 == "." } }))
                                 .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: fieldWidth)
                             Text(row.unit).foregroundStyle(.secondary).frame(width: unitWidth, alignment: .leading)
@@ -48,7 +48,7 @@ struct AirplaneFiguresView: View {
                     }
                 }
             } header: {
-                Text(plan.tail.map { "Planning figures for \($0)" } ?? "Planning figures")
+                SectionTitle(plan.tail.map { "Planning Figures for \($0)" } ?? "Planning Figures")
             } footer: {
                 if !words.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {

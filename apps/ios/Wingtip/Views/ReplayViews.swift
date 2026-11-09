@@ -18,7 +18,7 @@ struct ReplaySection: View {
     var body: some View {
         @Bindable var replay = replay
         Section {
-            HStack(spacing: 12) {
+            HStack(spacing: WingtipSpace.md) {
                 Button { replay.playing ? replay.pause() : play() } label: {
                     Image(systemName: replay.playing ? "pause.fill" : "play.fill").frame(width: 32, height: 32)
                         // The 44-point hit area round the 32-point glyph, which does not grow.
@@ -32,15 +32,11 @@ struct ReplaySection: View {
                     .disabled(replay.at == nil)
                     .accessibilityLabel("Stop the replay")
                 Spacer()
-                // A discrete setting: a segmented control, not a slider.
-                Picker("Replay speed", selection: $replay.speed) {
-                    ForEach(Replay.speeds, id: \.self) { Text("\(Int($0))×").tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 180)
+                // A discrete setting, the dry run's own control.
+                SpeedPicker(name: "Replay speed", speed: $replay.speed)
             }
             .buttonStyle(.borderless)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 HStack {
                     Text(replay.here.map { Self.clock($0.t) } ?? "Altitude, ft · ground speed, kt").foregroundStyle(.secondary)
                     Spacer()

@@ -244,7 +244,7 @@ struct ClearanceSheet: View {
                         .listRowBackground(difference.same ? nil : Color.orange.opacity(0.12))
                     }
                     Section {
-                        HStack(spacing: 10) {
+                        HStack(spacing: WingtipSpace.md) {
                             Button("Enter the route") { enter() }
                                 .buttonStyle(.borderedProminent)
                                 .disabled(!ready)
@@ -255,8 +255,6 @@ struct ClearanceSheet: View {
                         .frame(maxWidth: .infinity)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets())
-                    } footer: {
-                        Text("The words are the engine's reading of what was heard (AIM 4-4-3); nothing enters the plan until you tap Enter.")
                     }
                     Section {
                         DisclosureGroup("Transcript", isExpanded: $transcriptOpen) {
@@ -332,7 +330,7 @@ struct ClearanceSheet: View {
     /// The four parts of the step in a row: done in green, the one now in
     /// the tint, the rest to come.
     private var stepsRow: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: WingtipSpace.sm) {
             ForEach(Array(parts.enumerated()), id: \.offset) { i, part in
                 Text("\(i + 1) \(part.name)")
                     .font(.caption)
