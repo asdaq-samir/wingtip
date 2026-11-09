@@ -538,7 +538,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             val box = map.projection.visibleRegion.latLngBounds
             onView(MapRest(box.latitudeSouth, box.longitudeWest, box.latitudeNorth, box.longitudeEast, map.cameraPosition.zoom))
         }
-        map.addOnMapClickListener { at -> pick(map, at) }
+        MapHold.attach(view, map, tap = { at -> pick(map, at) }, here = { onPick(it) })
         view.addOnDidBecomeIdleListener { if (styled) reveal() }
     }
 

@@ -42,7 +42,7 @@ fun rememberReduceMotion(): Boolean {
     return reduce
 }
 
-private fun readReduceMotion(context: Context): Boolean =
+internal fun readReduceMotion(context: Context): Boolean =
     reduceMotion(Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f))
 
 /** Material's shared-axis slide: 30 dp, the length its motion guide gives. */

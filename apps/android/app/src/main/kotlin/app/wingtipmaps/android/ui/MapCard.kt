@@ -43,6 +43,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.Tracking
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.here.HereCard
 import app.wingtipmaps.android.live.DepartureLine
 import app.wingtipmaps.android.live.SpecialUseRows
 import app.wingtipmaps.android.map.MapPick
@@ -66,6 +67,7 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
         is MapPick.Vor -> pick.ident
         is MapPick.Point -> pick.ident
         is MapPick.Plane -> pick.hex.uppercase()
+        is MapPick.Here -> stringResource(R.string.whats_here)
         // A leg's sheet is its own (RouteLegHost), never a card.
         is MapPick.RouteLeg -> ""
     }
@@ -115,6 +117,11 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
                         PointActions(CardKind.NAVAID, pick, actions, act)
                     }
                     is MapPick.Plane -> PlaneCard(pick.hex)
+                    is MapPick.Here -> {
+                        PointActions(CardKind.POINT, pick, actions, act)
+                        HereCard(pick.lat, pick.lon)
+                        SpecialUseRows(pick.lat, pick.lon)
+                    }
                     is MapPick.RouteLeg -> {}
                 }
             }
