@@ -1,6 +1,6 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -16,14 +16,18 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.ToolbarInset
+import app.wingtipmaps.android.design.VerticalFloatingToolbar
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.rememberPressShape
 
 /**
  * How the position button reads: off, reading but the map let go of it,
@@ -51,7 +55,12 @@ fun MapButtons(
     modifier: Modifier = Modifier,
 ) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    Column(modifier.padding(top = top + WingtipSpace.Sm, end = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+    // Material 3 Expressive's floating toolbar round the buttons, placed
+    // its inset further out so the buttons stay where they were; each
+    // button's corners draw in under the finger (rememberPressShape).
+    VerticalFloatingToolbar(modifier.padding(top = top + WingtipSpace.Sm - ToolbarInset, end = WingtipSpace.Sm - ToolbarInset)) {
+        val ownShipTouch = remember { MutableInteractionSource() }
+        val askTouch = remember { MutableInteractionSource() }
         val state = stringResource(
             when (ownShip) {
                 OwnShipMode.OFF -> R.string.own_ship_off
@@ -66,6 +75,8 @@ fun MapButtons(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = MaterialTheme.colorScheme.onSurface,
             ),
+            shape = rememberPressShape(ownShipTouch),
+            interactionSource = ownShipTouch,
             modifier = Modifier.semantics { stateDescription = state },
         ) {
             Icon(
@@ -75,7 +86,7 @@ fun MapButtons(
         }
         // In the strip the field is the way to the assistant, so no sparkle.
         if (onAsk != null) {
-            FilledTonalIconButton(onClick = onAsk) {
+            FilledTonalIconButton(onClick = onAsk, shape = rememberPressShape(askTouch), interactionSource = askTouch) {
                 Icon(WingtipIcons.brief, contentDescription = stringResource(R.string.ask_about_flight), tint = MaterialTheme.colorScheme.primary)
             }
         }

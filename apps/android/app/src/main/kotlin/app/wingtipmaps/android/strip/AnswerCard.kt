@@ -11,7 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.WingtipIcons
@@ -58,7 +58,7 @@ internal fun AnswerCard(
             }
             if (status != null) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                    CircularProgressIndicator(Modifier.size(WingtipSpace.Lg))
+                    LoadingIndicator(Modifier.size(WingtipSpace.Lg))
                     Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }

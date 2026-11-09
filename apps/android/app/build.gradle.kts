@@ -147,6 +147,8 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    // Material 3 Expressive's loading indicator's shapes (design/).
+    implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.kotlinx.serialization.json)

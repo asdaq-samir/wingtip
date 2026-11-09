@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +52,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -132,7 +132,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
                     when {
                         shown != null -> DiagramWithOwnShip(shown, fix)
                         problem != null -> ProblemLine(problem)
-                        else -> CircularProgressIndicator()
+                        else -> LoadingIndicator()
                     }
                 }
                 page?.let {

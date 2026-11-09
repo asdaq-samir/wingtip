@@ -39,6 +39,10 @@ metricsPerformance = "1.0.0"
 # WorkManager, for the chart downloads (offline/OfflineWorker.kt): an
 # archive fetched with the app in the background or closed.
 work = "2.12.0"
+# The rounded polygons and their morphs (androidx.graphics.shapes), for
+# Material 3 Expressive's loading indicator (design/LoadingIndicator.kt),
+# which the BOM's Material 3 does not have yet.
+graphicsShapes = "1.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -102,6 +106,7 @@ play-services-mlkit-document-scanner = { group = "com.google.android.gms", name 
 # JankStats: each frame's time and whether it was janky, on the activity's
 # window (diagnostics/FrameStats.kt).
 androidx-metrics-performance = { group = "androidx.metrics", name = "metrics-performance", version.ref = "metricsPerformance" }
+androidx-graphics-shapes = { group = "androidx.graphics", name = "graphics-shapes", version.ref = "graphicsShapes" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -13,15 +13,11 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,6 +49,8 @@ import app.wingtipmaps.android.atc.RadioListener
 import app.wingtipmaps.android.briefing.PassengerScreen
 import app.wingtipmaps.android.copilot.CopilotMode
 import app.wingtipmaps.android.copilot.CopilotSetting
+import app.wingtipmaps.android.design.ChoiceGroup
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
@@ -127,7 +125,7 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         SectionTitle(stringResource(R.string.account))
         val signedIn = pilot
         when {
-            !loaded -> CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
+            !loaded -> LoadingIndicator(Modifier.size(WingtipSpace.Xl))
             signedIn != null -> {
                 Text(signedIn.email, style = MaterialTheme.typography.bodyLarge)
                 OutlinedButton(onClick = { session.signOut(context) }) { Text(stringResource(R.string.sign_out)) }
@@ -256,18 +254,11 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
     }
 }
 
-/** A setting of a few choices: Material's segmented buttons. */
+/** A setting of a few choices: Material 3 Expressive's connected
+ *  button group (ChoiceGroup). */
 @Composable
 private fun <T> Segmented(choices: List<Pair<T, String>>, selected: T?, onPick: (T) -> Unit) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        choices.forEachIndexed { i, (value, label) ->
-            SegmentedButton(
-                selected = selected == value,
-                onClick = { onPick(value) },
-                shape = SegmentedButtonDefaults.itemShape(index = i, count = choices.size),
-            ) { Text(label, maxLines = 1) }
-        }
-    }
+    ChoiceGroup(choices, selected, onPick = onPick)
 }
 
 /**

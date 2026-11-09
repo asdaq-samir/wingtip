@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +35,7 @@ import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
+import app.wingtipmaps.android.design.LoadingIndicator
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
@@ -190,7 +190,7 @@ fun StripLayout(
                 state.stage?.let { stage ->
                     item(key = "stage") {
                         Row(Modifier.padding(horizontal = WingtipSpace.Lg), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                            CircularProgressIndicator(Modifier.size(WingtipSpace.Lg))
+                            LoadingIndicator(Modifier.size(WingtipSpace.Lg))
                             Text(stage, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
