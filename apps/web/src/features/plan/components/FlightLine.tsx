@@ -10,6 +10,7 @@ import { TriangleAlert } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { nextLanding, shortFlights, tripFigures } from "../figures";
 import FuelBreakdown from "./FuelBreakdown";
+import { wantScreen } from "../../../lib/navigation/wanted";
 import type { Flown } from "./navlog/dryRun";
 
 /**
@@ -121,7 +122,10 @@ export default function FlightLine({
   const { room, shown, sized, fitted, probes } = useFigureFit(ours(exact), ours(rounded), valueType, unitType);
   // Which figures are buttons (below), each its 44-point area round it.
   const tapped = (name: string) =>
-    (name === "Fuel" && !!breakdown) || (name === "To" && stops && !local) || ((name === "ETE" || name === "ETA") && !local);
+    (name === "Fuel" && !!breakdown) ||
+    (name === "To" && stops && !local) ||
+    ((name === "ETE" || name === "ETA") && !local) ||
+    (name === "Dist" && !local && !flown);
   return (
     // What the planner is working on is the toast's (useProgressToast), at
     // the pilot's ask: the strip keeps the figures, as soon as there are
@@ -231,6 +235,26 @@ export default function FlightLine({
                   <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
                     {f.value}
                   </span>
+                </button>
+              ) : f.name === "Dist" && !local && !flown ? (
+                // The distance opens the nav log it is the sum of, leg by
+                // leg (tap what you see, docs/navigation.md).
+                <button
+                  type="button"
+                  onClick={() => wantScreen("navlog")}
+                  data-testid="dist-navlog"
+                  aria-label={`${f.said}: open the nav log`}
+                  className="relative inline-flex max-w-full items-baseline text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+                >
+                  <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
+                    {f.value}
+                  </span>
+                  {f.unit && (
+                    <span className={cn(unitType, "font-normal")} style={sized("unit")} data-fitted={fitted}>
+                      {"\u00a0"}
+                      {f.unit}
+                    </span>
+                  )}
                 </button>
               ) : (f.name === "ETE" || f.name === "ETA") && !local ? (
                 <button

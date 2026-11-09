@@ -14,6 +14,7 @@ import type { ProceduresAt } from "../components/ProceduresRoute";
 import { panelNow } from "./panelNow";
 import type { PlannedRoute } from "./planAddress";
 import type { PanelTab } from "./useTabCards";
+import { useOpenScreen } from "./useOpenScreen";
 
 /**
  * The cards over FPL and the lists in full (usePlanWorkspace): the Brief,
@@ -284,6 +285,8 @@ export function useFplCards({
     });
     return () => useRadioActions.setState({ nearest: null, showProcedure: null });
   }, [setTabPick, openNearest, planned.dep, plannedStops, planned.dest, setProceduresShown]);
+  // A screen asked for by name, by a link or from inside the app.
+  useOpenScreen({ routed, searchParams, setSearchParams, setTabPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest });
   return {
     briefShown,
     navLogShown,

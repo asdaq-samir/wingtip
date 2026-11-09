@@ -85,7 +85,7 @@ export default function PilotGuide() {
             Drag the sheet between a pill, half and full. A flick moves it one size, so the chart is never far away.
           </Tip>
           <Tip title="Four tabs">
-            FPL is your flight, Airport any field you pick, Aircraft yours and the traffic around you, and Setup your settings, airplanes,
+            FPL is your flight, Airport any field you pick, Airplane yours and the traffic around you, and Setup your settings, airplanes,
             logbook and this guide.
           </Tip>
           <Tip title="Close goes back">The close button at a page's top goes back one step, not all the way out.</Tip>
