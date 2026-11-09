@@ -1528,6 +1528,134 @@ data class ClearanceWords (
 )
 
 /**
+ * What the app holds of the pilot: the logbook and the dates from the
+ * gateway, the ratings the pilot gives, a student's endorsements, the
+ * debriefs of their recent flights, their home field and their day.
+ */
+@Serializable
+data class CoachAsk (
+    val debriefs: List<CoachDebrief>? = null,
+    val entries: List<CoachLogbookEntry>,
+    val flightReviewOn: String? = null,
+    val held: List<CoachEndorsement>? = null,
+
+    /**
+     * The pilot's home field, where the sessions' fields are looked for round.
+     */
+    val home: String? = null,
+
+    val ipcOn: String? = null,
+    val medicalExpiresOn: String? = null,
+    val ratings: List<String>? = null,
+    val remindDays: Int? = null,
+    val today: String
+)
+
+/**
+ * One of the pilot's own debriefed flights, trimmed (the engine's
+ * CoachDebrief): an approach's profile and findings, or a flight's legs
+ * and pattern entries.
+ */
+@Serializable
+data class CoachDebrief (
+    /**
+     * The field's, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4).
+     */
+    @SerialName("elevation_ft")
+    val elevationFt: Double? = null,
+
+    val findings: List<CoachFinding>? = null,
+
+    @SerialName("flown_on")
+    val flownOn: String,
+
+    val kind: String,
+    val legs: List<CoachLeg>? = null,
+    val patterns: List<CoachPattern>? = null,
+    val place: String? = null,
+    val profile: List<CoachProfilePoint>? = null
+)
+
+@Serializable
+data class CoachFinding (
+    val text: String,
+    val tone: String
+)
+
+@Serializable
+data class CoachLeg (
+    @SerialName("altitude_within")
+    val altitudeWithin: Double? = null,
+
+    @SerialName("course_within")
+    val courseWithin: Double? = null,
+
+    val from: String,
+    val ok: Boolean,
+    val to: String
+)
+
+@Serializable
+data class CoachPattern (
+    val ident: String,
+
+    @SerialName("off_ft")
+    val offFt: Double,
+
+    val ok: Boolean
+)
+
+@Serializable
+data class CoachProfilePoint (
+    @SerialName("alt_ft")
+    val altFt: Double,
+
+    val off: Boolean,
+
+    @SerialName("to_go_nm")
+    val toGoNm: Double? = null
+)
+
+/**
+ * One logbook entry, the columns the currency rules read; a column
+ * missing is none of it.
+ */
+@Serializable
+data class CoachLogbookEntry (
+    val approaches: Int? = null,
+    val crossCountryHours: Double? = null,
+
+    /**
+     * Every landing, by day or at night (14 CFR 61.57(a)).
+     */
+    val dayLandings: Int? = null,
+
+    val dualHours: Double? = null,
+    val flownOn: String,
+    val holding: Boolean? = null,
+    val instrumentHours: Double? = null,
+    val nightHours: Double? = null,
+
+    /**
+     * Landings to a full stop at night (61.57(b)).
+     */
+    val nightLandings: Int? = null,
+
+    val soloHours: Double? = null,
+    val totalHours: Double? = null,
+    val tracking: Boolean? = null
+)
+
+/**
+ * An endorsement a student holds: AC 61-65K's code and its day.
+ */
+@Serializable
+data class CoachEndorsement (
+    val code: String,
+    val on: String
+)
+
+/**
  * What the copilot reads now; `unavailable` names a source ("tfr",
  * "sua") that could not be read, `at` when this was gathered.
  */
@@ -5751,6 +5879,105 @@ data class ProcedureSummary (
     val runwayTransitions: List<String>,
 
     val transitions: List<String>
+)
+
+/**
+ * The engine's proficiency_plan answer.
+ */
+@Serializable
+data class ProficiencyPlan (
+    val due: List<CoachDue>,
+    val evidence: List<CoachEvidence>,
+    val reminders: List<CoachReminder>,
+    val sessions: List<CoachSession>,
+    val today: String,
+
+    @SerialName("weak_areas")
+    val weakAreas: List<CoachWeakArea>
+)
+
+@Serializable
+data class CoachDue (
+    @SerialName("days_left")
+    val daysLeft: Int? = null,
+
+    val detail: String,
+    val from: String? = null,
+    val id: String,
+    val key: String,
+    val label: String,
+    val rule: String,
+    val status: String,
+    val until: String? = null
+)
+
+@Serializable
+data class CoachEvidence (
+    val area: String,
+
+    @SerialName("flown_on")
+    val flownOn: String,
+
+    val id: String,
+    val place: String,
+    val text: String
+)
+
+@Serializable
+data class CoachReminder (
+    @SerialName("days_left")
+    val daysLeft: Int,
+
+    val key: String,
+    val text: String,
+    val until: String? = null
+)
+
+@Serializable
+data class CoachSession (
+    val id: String,
+    val instructor: Boolean,
+    val key: String,
+    val minutes: Int,
+    val place: CoachPlace? = null,
+    val practise: String,
+    val why: List<String>,
+
+    /**
+     * Where it may count toward a WINGS flight activity; never that it does.
+     */
+    val wings: CoachWings? = null
+)
+
+@Serializable
+data class CoachPlace (
+    val approach: String? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    val ident: String,
+    val name: String
+)
+
+@Serializable
+data class CoachWings (
+    val acs: String,
+
+    /**
+     * The accident causal factor's area (AC 61-91K 6).
+     */
+    val area: String,
+
+    val note: String
+)
+
+@Serializable
+data class CoachWeakArea (
+    val acs: List<String>,
+    val evidence: List<String>,
+    val key: String,
+    val label: String
 )
 
 /**

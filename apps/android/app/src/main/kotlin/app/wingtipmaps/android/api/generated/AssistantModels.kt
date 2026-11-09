@@ -114,6 +114,40 @@ data class CheckpointNoteMessage (
     val source: String? = null
 )
 
+/**
+ * The paragraph that passed the check, the line kept for each
+ * session (by its id), the sources they cite and which model wrote them.
+ */
+@Serializable
+data class CoachWordsAnswer (
+    val model: String,
+    val sentences: List<Sentence>,
+
+    @SerialName("session_lines")
+    val sessionLines: List<SessionLine>? = null,
+
+    val sources: List<Source>,
+    val unavailable: String? = null
+)
+
+@Serializable
+data class SessionLine (
+    /**
+     * The session's id, exactly as given ("session:1").
+     */
+    val session: String,
+
+    /**
+     * The ids it rests on: its session's and those the session answers.
+     */
+    val sources: List<String>,
+
+    /**
+     * One short sentence: what to practise there and why.
+     */
+    val text: String
+)
+
 @Serializable
 data class DebriefWordsAnswer (
     @SerialName("instructor_note")

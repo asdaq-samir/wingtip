@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.logbook
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,29 +13,45 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.coach.CoachScreen
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
  * The pilot's logbook, at its least (LogbookModel): what the currency
  * says, then each entry, newest first, its date over its route, hours
  * and landings. Entries are added from a recorded flight ("Flight
- * Logged"), or on the web.
+ * Logged"), or on the web. Its Coach row opens the pilot's proficiency
+ * plan (CoachScreen).
  */
 @Composable
 fun LogbookScreen(model: LogbookModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
+    var coach by rememberSaveable { mutableStateOf(false) }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg)) {
         item {
             if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
             ProblemLine(state.problem)
+            // The pilot's proficiency plan, a row of the logbook it is
+            // made from, as the web's Logbook has it.
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.coach), color = MaterialTheme.colorScheme.primary) },
+                supportingContent = { Text(stringResource(R.string.coach_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { coach = true },
+            )
             if (state.currency.isNotEmpty()) SectionTitle(stringResource(R.string.currency))
         }
         items(state.currency) { Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = WingtipSpace.Xs)) }
@@ -52,5 +69,8 @@ fun LogbookScreen(model: LogbookModel = viewModel()) {
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
         }
+    }
+    if (coach) {
+        WingtipSheet(title = stringResource(R.string.coach), onClose = { coach = false }, full = true) { CoachScreen() }
     }
 }

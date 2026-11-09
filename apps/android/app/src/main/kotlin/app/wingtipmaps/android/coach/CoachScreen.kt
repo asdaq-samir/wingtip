@@ -1,0 +1,178 @@
+package app.wingtipmaps.android.coach
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.api.generated.ProficiencyPlan
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.LocalWingtipPalette
+import app.wingtipmaps.android.ui.ProblemLine
+import app.wingtipmaps.android.ui.SectionTitle
+
+/**
+ * The Logbook's Coach (the web's CoachPage): the pilot's own proficiency
+ * plan. On the pilot's ask, glance first: the reminders, the plan in a
+ * few words, the sessions -- what, where, how long, with an instructor,
+ * where it may count toward WINGS, and the model's line under each --
+ * then what is due and when (14 CFR 61.56, 61.57), then the weak areas
+ * with their evidence folded under each. All of it the engine's
+ * (proficiency_plan) but the words.
+ */
+@Composable
+fun CoachScreen() {
+    val context = LocalContext.current
+    val model = viewModel { CoachModel(keeper = CertificatePreference.of(context)) }
+    val state by model.state.collectAsStateWithLifecycle()
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg)) {
+        item {
+            SectionTitle(stringResource(R.string.coach_certificate))
+            CertificateMenu(state.certificate, model::choose)
+            Button(onClick = model::make, enabled = state.ready && !state.making, modifier = Modifier.padding(top = WingtipSpace.Md)) {
+                Text(stringResource(if (state.plan != null) R.string.coach_make_again else R.string.coach_make))
+            }
+            Muted(
+                if (state.making) stringResource(R.string.coach_making)
+                else stringResource(R.string.coach_make_line, state.home ?: stringResource(R.string.coach_home_none)),
+            )
+            if (state.making) LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = WingtipSpace.Sm))
+            ProblemLine(state.problem, Modifier.padding(vertical = WingtipSpace.Sm))
+        }
+        state.plan?.let { plan(it, state) }
+    }
+}
+
+private fun LazyListScope.plan(plan: ProficiencyPlan, state: CoachModel.State) {
+    if (plan.reminders.isNotEmpty()) {
+        item { SectionTitle(stringResource(R.string.coach_reminders)) }
+        items(plan.reminders, key = { "r:" + it.key }) {
+            Text(it.text, color = LocalWingtipPalette.current.cautionInk, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = WingtipSpace.Xs))
+        }
+    }
+    item {
+        val paragraph = CoachLines.paragraph(state.words)
+        when {
+            state.wording -> Muted(stringResource(R.string.coach_wording))
+            paragraph != null -> Text(paragraph, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = WingtipSpace.Md))
+            state.noWords != null -> Muted(stringResource(R.string.coach_no_words, state.noWords))
+        }
+        SectionTitle(stringResource(R.string.coach_sessions))
+        if (plan.sessions.isEmpty()) Muted(stringResource(R.string.coach_nothing))
+    }
+    val lines = CoachLines.sessionLines(plan, state.words)
+    items(plan.sessions, key = { "s:" + it.id }) { s ->
+        ListItem(
+            headlineContent = { Text(s.practise) },
+            supportingContent = {
+                Column {
+                    Text(CoachLines.session(s))
+                    CoachLines.wings(s)?.let { Text(it) }
+                    lines[s.id]?.let { Text(it, color = MaterialTheme.colorScheme.onSurface) }
+                }
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        )
+    }
+    item { SectionTitle(stringResource(R.string.coach_due)) }
+    items(plan.due, key = { "d:" + it.key }) { d ->
+        ListItem(
+            headlineContent = { Text(d.label) },
+            supportingContent = { Text(CoachLines.dueDetail(d)) },
+            trailingContent = { Text(CoachLines.status(d), color = toneColor(CoachLines.tone(d))) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        )
+    }
+    if (plan.weakAreas.isNotEmpty()) {
+        item { SectionTitle(stringResource(R.string.coach_debriefs)) }
+        items(plan.weakAreas, key = { "w:" + it.key }) { w ->
+            var open by rememberSaveable(w.key) { mutableStateOf(false) }
+            ListItem(
+                headlineContent = { Text(CoachLines.weakTitle(w)) },
+                trailingContent = { Icon(if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { open = !open },
+            )
+            if (open) {
+                CoachLines.evidence(plan, w).forEach { Muted(CoachLines.evidenceLine(it), Modifier.padding(start = WingtipSpace.Lg)) }
+            }
+        }
+    }
+}
+
+/** The certificate the pilot holds: a menu of three (decision 0017), as
+ *  the labels are too long for a segmented control at a phone's width. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CertificateMenu(certificate: Certificate, onPick: (Certificate) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = stringResource(label(certificate)),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.coach_certificate_short)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            Certificate.entries.forEach { c ->
+                DropdownMenuItem(text = { Text(stringResource(label(c))) }, onClick = { onPick(c); expanded = false })
+            }
+        }
+    }
+}
+
+private fun label(c: Certificate): Int = when (c) {
+    Certificate.STUDENT -> R.string.certificate_student
+    Certificate.PRIVATE -> R.string.certificate_private
+    Certificate.INSTRUMENT -> R.string.certificate_instrument
+}
+
+@Composable
+private fun Muted(text: String, modifier: Modifier = Modifier) {
+    Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = modifier.padding(vertical = WingtipSpace.Xs))
+}
+
+/** Red lapsed, amber soon or not begun, green current, grey unknown: the
+ *  palette's error, caution and go, as Coming Up's. */
+@Composable
+private fun toneColor(tone: CoachLines.Tone): Color = when (tone) {
+    CoachLines.Tone.STOP -> MaterialTheme.colorScheme.error
+    CoachLines.Tone.CAUTION -> LocalWingtipPalette.current.cautionInk
+    CoachLines.Tone.OK -> LocalWingtipPalette.current.goInk
+    CoachLines.Tone.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
+}
