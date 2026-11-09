@@ -29,6 +29,15 @@ describe("restingAt", () => {
     expect(restingAt(detents, 150, 5)).toBe("half");
     expect(restingAt(detents, 700, -5)).toBe("half");
   });
+  it("takes a short flick to the next size the way it went, every time", () => {
+    // The FPL audit's B2: 60 points from half or full in about 100 ms,
+    // 0.6 pt/ms, went on in two runs of three.
+    expect(restingAt(detents, 436, 0.6)).toBe("full");
+    expect(restingAt(detents, 760, -0.6)).toBe("half");
+    expect(restingAt(detents, 316, -0.6)).toBe("peek");
+    // A finger held and let go slowly is not a flick.
+    expect(restingAt(detents, 436, 0.2)).toBe("half");
+  });
   it("goes on up past half when the finger itself took it past half", () => {
     expect(restingAt(detents, 400, 2)).toBe("full");
     expect(restingAt(detents, 400, 0)).toBe("half");
