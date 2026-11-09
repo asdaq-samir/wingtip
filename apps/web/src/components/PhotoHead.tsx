@@ -18,7 +18,7 @@ const BAR_PX = 56;
 /** The share and the close over a picture: a dark pane of glass with the
  *  glyph white, which reads on a photo whatever the theme, where the
  *  sheet's own grey glass was lost on a dark one. */
-const OVER_PICTURE = "bg-black/45 text-white backdrop-blur-md hover:bg-black/55 hover:text-white dark:bg-black/45 dark:hover:bg-black/55";
+const OVER_PICTURE = "bg-black/45 text-white backdrop-blur-md hover:bg-black/55 hover:text-white dark:bg-black/45 dark:hover:bg-black/55 solid:bg-black/75 solid:backdrop-blur-none dark:solid:bg-black/75";
 
 /**
  * A card's head as a picture across its top, as Apple's Maps opens a

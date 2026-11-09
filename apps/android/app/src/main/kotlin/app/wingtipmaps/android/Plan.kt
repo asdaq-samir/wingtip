@@ -127,6 +127,13 @@ class Plan(app: Application) : AndroidViewModel(app) {
         if (_state.value.routed) plan()
     }
 
+    /** A route and its airplane picked together (About's Demo Flight), so
+     *  the route is planned once, on that airplane's figures. */
+    fun planIn(aircraft: String, dep: String, dest: String, stops: List<String>) {
+        _state.update { it.copy(aircraft = aircraft) }
+        plan(dep, dest, stops)
+    }
+
     /** Plans the route as entered: the course first, for the map, then the
      *  nav log streamed in. */
     fun plan() {

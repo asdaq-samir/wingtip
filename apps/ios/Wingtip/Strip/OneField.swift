@@ -84,6 +84,8 @@ struct StripProfileMenu: View {
     @Environment(Session.self) private var session
     @Environment(\.openStripScreen) private var open
     @Environment(\.chartInk) private var ink
+    /// Reduce Transparency: the avatar solid, as every glass is (Glass.swift).
+    @Environment(\.accessibilityReduceTransparency) private var solid
 
     private var initials: String {
         StripData.initials(name: session.pilot?.displayName ?? session.pilot?.fullName, email: session.pilot?.email)
@@ -108,7 +110,7 @@ struct StripProfileMenu: View {
             }
         } label: {
             ZStack {
-                Circle().fill(.ultraThinMaterial)
+                Circle().fill(solid ? AnyShapeStyle(WingtipInk.sheet) : AnyShapeStyle(.ultraThinMaterial))
                 Circle().strokeBorder(ink.ink.opacity(0.08), lineWidth: 1)
                 if initials.isEmpty {
                     Image(systemName: "person.fill").font(.body.weight(.medium)).foregroundStyle(ink.tint)

@@ -5,6 +5,7 @@ import { fieldListParams, fieldListsOf, prunedFieldLists } from "../lib/fieldLis
 import { MAX_STOPS, altitudesOf, altitudesParam, departureOf, identOf, routeOf, stopsOf } from "../../../lib/identSchema";
 import { sameField, type PickedProcedure } from "../../../lib/procedures";
 import { courseQuery, queryClient } from "../../../lib/queryClient";
+import { feel } from "../../../lib/haptics";
 import { rebasedRoute } from "../lib/routeRebase";
 import { patched } from "../../../lib/useSearchParamsNow";
 import type { RouteParts } from "../components/RouteBox";
@@ -99,6 +100,7 @@ export function useRouteEdits({ planned, routePoints, setSearchParams }: {
   }, [routePoints, planned.dep, planned.dest, setSearchParams]);
   // A point's own altitude set, or (null) given back to the plan.
   const setPointAltitude = useCallback((ident: string, feet: number | null) => {
+    feel("altitude");
     setSearchParams(prev => {
       const own = altitudesOf(prev.get("altitudes"));
       if (feet === null) delete own[ident];
@@ -155,6 +157,7 @@ export function useRouteEdits({ planned, routePoints, setSearchParams }: {
   // leg's floor or on the wrong thousands for its course (14 CFR 91.119,
   // 91.159).
   const flyAltitude = useCallback((ft: number, nearest = false) => {
+    feel("altitude");
     setSearchParams(prev => patched(prev, { altitude_ft: String(ft), altitude_nearest: nearest ? "1" : null, altitude_choice: null }), { replace: true });
   }, [setSearchParams]);
   return { setRoute, addStop, setPointAltitude, setStops, removeStop, insertStopAfter, acceptClassB, avoidClassB, flyAltitude };

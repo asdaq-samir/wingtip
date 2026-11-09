@@ -3,6 +3,7 @@ import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import { GLASS } from "../../lib/mapChrome";
 import { Button } from "../../components/ui/button";
+import { useAnnounce } from "../../lib/announce";
 import { TEXT } from "../../lib/text";
 import type { AtcCard as Card } from "./atcCards";
 import type { AtcItem } from "./atcEngine";
@@ -58,8 +59,11 @@ export default function AtcCard({ card, can, problem, onAct, onReadBack, onClose
   onReadBack: () => void;
   onClose: () => void;
 }) {
+  // Said to a screen reader at once, once a call (lib/announce): a
+  // role="alert" arriving whole is not read by every reader.
+  useAnnounce(`ATC: ${card.text}`, "assertive");
   return (
-    <div className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-[22px] py-2 pr-1 pl-3")} role="alert" data-testid="atc-card">
+    <div className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-[22px] py-2 pr-1 pl-3")} role="region" aria-label="Call from ATC" data-testid="atc-card">
       <div className="flex items-start gap-2">
         <Radio className="mt-1 size-5 shrink-0 text-tint" aria-hidden="true" />
         <p className={cn("min-w-0 flex-1 text-muted-foreground line-clamp-2", TEXT.note)} data-testid="atc-card-heard">{card.text}</p>

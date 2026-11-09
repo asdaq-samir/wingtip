@@ -25,6 +25,12 @@
          foreground service of the microphone type. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- A cockpit ADS-B receiver's GDL 90 on the Wi-Fi (receiver/): the
+         multicast lock lets the datagrams sent to the network's broadcast
+         address through, and the foreground service of the
+         connected-device type keeps them coming with the screen off. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <!-- Android 11 and later show an app only the services it names: the
          phone's speech recognizer, which the ATC copilot listens through. -->
     <queries>
@@ -99,6 +105,12 @@
             android:name=".atc.AtcListenService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
+
+        <!-- The cockpit receiver's listening with the screen off (receiver/ReceiverService.kt). -->
+        <service
+            android:name=".receiver.ReceiverService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
     </application>
 
 </manifest>

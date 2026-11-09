@@ -188,10 +188,12 @@ final class ClearanceListener {
     }
 
     /// A call to us: a time-sensitive notification while the app is not
-    /// in front, the haptics in the app (the call is on its screen).
+    /// in front, the warning's tap in the app (the call is on its screen; Feel).
     private func tell(_ text: String) {
+        // VoiceOver says the call at once, as the banner shows it.
+        Announce.alert("ATC called you: \(text)", urgent: true)
         if !Notifications.tell("ATC called you", text) {
-            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            Feel.tap(.warning)
         }
     }
 
@@ -300,7 +302,7 @@ final class ClearanceListener {
         input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in feed.append(buffer) }
     }
 
-    private static func allowed() async -> Bool {
+    static func allowed() async -> Bool {
         let speech = await withCheckedContinuation { (done: CheckedContinuation<Bool, Never>) in
             SFSpeechRecognizer.requestAuthorization { done.resume(returning: $0 == .authorized) }
         }

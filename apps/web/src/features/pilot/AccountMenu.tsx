@@ -11,11 +11,12 @@ import { useDevMode } from "../../hooks/use-dev-mode";
 import { pilotQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 import { useDeleteAccount } from "./useDeleteAccount";
+import { useExportAccount } from "./useExportAccount";
 import { useLogout } from "./useLogout";
 
 /**
- * The mode menu alone -- Pilot or Developer, signing out, deleting the
- * account -- where the address is set apart from it: at the right of
+ * The mode menu alone -- Pilot or Developer, a copy of the account's
+ * data, signing out, deleting the account -- where the address is set apart from it: at the right of
  * Setup's Account title, the address under that title, at the owner's
  * ask ("Email doesn't need to be in the table, it can be under account").
  */
@@ -24,6 +25,7 @@ export function AccountMenu() {
   const devMode = useDevMode();
   const logout = useLogout();
   const deleteAccount = useDeleteAccount();
+  const exportAccount = useExportAccount();
   const [askDelete, deleteDialog] = useConfirm({
     title: "Delete your account?",
     description: "Your airplanes, flights, logbook, saved tracks and the checkpoint notes you wrote go, on every "
@@ -62,6 +64,11 @@ export function AccountMenu() {
         {pilot && (
           <>
             <DropdownMenuSeparator />
+            {/* A copy of everything the account keeps, as one file: the
+                right to take one's data away, beside deleting it. */}
+            <DropdownMenuItem onSelect={() => exportAccount.mutate()} disabled={exportAccount.isPending} data-testid="export-account">
+              Export my data
+            </DropdownMenuItem>
             <DropdownMenuItem variant="destructive" onSelect={() => logout.mutate()} disabled={logout.isPending}>Sign out</DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive" data-testid="delete-account" disabled={deleteAccount.isPending}

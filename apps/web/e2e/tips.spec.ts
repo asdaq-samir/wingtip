@@ -10,7 +10,8 @@ import { consolePage, controlsInSight, openSetup, settle, slow } from "./helpers
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     if (sessionStorage.getItem("tips-fresh")) return;
-    localStorage.removeItem("wingtip.tips");
+    // The welcome (its own spec) seen, the rest not.
+    localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["welcome"] }, version: 0 }));
     sessionStorage.setItem("tips-fresh", "1");
   });
 });
@@ -54,7 +55,7 @@ test("a new pilot is shown what to look for, a tip at a time, each once", async 
   await openSetup(page);
   await consolePage(page.getByTestId("console-sheet"), "Guide");
   await page.getByTestId("tips-reset").click();
-  await expect(page.getByTestId("tips-reset")).toContainText("Tips Will Show Again");
+  await expect(page.getByTestId("tips-reset")).toContainText("Welcome and Tips Will Show Again");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await controlsInSight(page);

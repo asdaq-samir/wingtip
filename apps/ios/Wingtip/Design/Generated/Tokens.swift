@@ -36,6 +36,20 @@ enum WingtipColor {
         static let airspaceMagenta = rgb(0xE02AD8)
         /// The dark tab an airspace's altitudes sit in, at 90%.
         static let airspaceTab = rgb(0x1C2330)
+        /// FIS-B NEXRAD's levels (DO-358B; 0 is none) drawn from light green through yellow and red to magenta, as radar pictures run from the faintest returns to the strongest. Level 1, the faintest.
+        static let nexrad1 = rgb(0x9BE59B)
+        /// NEXRAD level 2.
+        static let nexrad2 = rgb(0x34C759)
+        /// NEXRAD level 3.
+        static let nexrad3 = rgb(0xFFD60A)
+        /// NEXRAD level 4.
+        static let nexrad4 = rgb(0xFF9F0A)
+        /// NEXRAD level 5.
+        static let nexrad5 = rgb(0xFF3B30)
+        /// NEXRAD level 6.
+        static let nexrad6 = rgb(0xB0001E)
+        /// NEXRAD level 7, the strongest.
+        static let nexrad7 = rgb(0xD62AD8)
         /// Prohibited, restricted, warning and alert areas (special-use airspace, FAA Order JO 7400.10): the orange-brown hatch.
         static let specialUse = rgb(0xE0662A)
         /// A fix's and a runway number's dark ink.
@@ -152,10 +166,10 @@ struct WingtipPalette: Sendable {
         airspaceBlueInk: rgb(0x1D559C),
         airspaceMagentaInk: rgb(0x962568),
         procedure: rgb(0x5B5BD6),
-        caution: rgb(0xBB4D00),
+        caution: rgb(0xB04700),
         cautionInk: rgb(0x973C00),
         cautionWash: rgb(0xFE9A00, 0.12),
-        go: rgb(0x00A63E),
+        go: rgb(0x009731),
         goInk: rgb(0x016630),
         secondary: rgb(0xF5F5F5),
         secondaryForeground: rgb(0x171717),
@@ -163,7 +177,7 @@ struct WingtipPalette: Sendable {
         mutedForeground: rgb(0x696969),
         accent: rgb(0xF5F5F5),
         accentForeground: rgb(0x171717),
-        destructive: rgb(0xE7000B),
+        destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
         border: rgb(0xE5E5E5),
         input: rgb(0x8F8F8F),
@@ -229,8 +243,8 @@ struct WingtipPalette: Sendable {
         outlineVariant: rgb(0x000000, 0)
     )
     static let sunlight = WingtipPalette(
-        airspaceBlueText: rgb(0x2465B8),
-        airspaceMagentaText: rgb(0xC0309F),
+        airspaceBlueText: rgb(0x1D559C),
+        airspaceMagentaText: rgb(0x962568),
         course: rgb(0xE600E6),
         background: rgb(0xFFFFFF),
         foreground: rgb(0x000000),
@@ -245,23 +259,23 @@ struct WingtipPalette: Sendable {
         sheet: rgb(0xFFFFFF),
         airspaceBlueInk: rgb(0x1D559C),
         airspaceMagentaInk: rgb(0x962568),
-        procedure: rgb(0x5B5BD6),
-        caution: rgb(0xBB4D00),
-        cautionInk: rgb(0x973C00),
+        procedure: rgb(0x3D3DB8),
+        caution: rgb(0x9A4A00),
+        cautionInk: rgb(0x7A3A00),
         cautionWash: rgb(0xFE9A00, 0.12),
-        go: rgb(0x00A63E),
-        goInk: rgb(0x016630),
-        secondary: rgb(0xF5F5F5),
-        secondaryForeground: rgb(0x171717),
+        go: rgb(0x13703A),
+        goInk: rgb(0x0F5F30),
+        secondary: rgb(0xEEEEEE),
+        secondaryForeground: rgb(0x000000),
         muted: rgb(0xEEEEEE),
         mutedForeground: rgb(0x333333),
-        accent: rgb(0xF5F5F5),
-        accentForeground: rgb(0x171717),
-        destructive: rgb(0xE7000B),
-        destructiveInk: rgb(0xC10007),
+        accent: rgb(0xEEEEEE),
+        accentForeground: rgb(0x000000),
+        destructive: rgb(0xB3261E),
+        destructiveInk: rgb(0x9C1C15),
         border: rgb(0x000000),
-        input: rgb(0x8F8F8F),
-        ring: rgb(0x737373),
+        input: rgb(0x333333),
+        ring: rgb(0x333333),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
         chart3: rgb(0x525252),
@@ -293,10 +307,10 @@ struct WingtipPalette: Sendable {
         airspaceBlueInk: rgb(0x1D559C),
         airspaceMagentaInk: rgb(0x962568),
         procedure: rgb(0x5B5BD6),
-        caution: rgb(0xBB4D00),
+        caution: rgb(0xB04700),
         cautionInk: rgb(0x973C00),
         cautionWash: rgb(0xFE9A00, 0.12),
-        go: rgb(0x00A63E),
+        go: rgb(0x009731),
         goInk: rgb(0x016630),
         secondary: rgb(0xF5F5F5),
         secondaryForeground: rgb(0x171717),
@@ -304,7 +318,7 @@ struct WingtipPalette: Sendable {
         mutedForeground: rgb(0x696969),
         accent: rgb(0xF5F5F5),
         accentForeground: rgb(0x171717),
-        destructive: rgb(0xE7000B),
+        destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
         border: rgb(0xE5E5E5),
         input: rgb(0x8F8F8F),
@@ -387,10 +401,10 @@ struct WingtipPalette: Sendable {
         airspaceBlueInk: rgb(0x1D559C),
         airspaceMagentaInk: rgb(0x962568),
         procedure: rgb(0x5B5BD6),
-        caution: rgb(0xBB4D00),
+        caution: rgb(0xB04700),
         cautionInk: rgb(0x973C00),
         cautionWash: rgb(0xFE9A00, 0.12),
-        go: rgb(0x00A63E),
+        go: rgb(0x009731),
         goInk: rgb(0x016630),
         secondary: rgb(0xEFE8DA),
         secondaryForeground: rgb(0x1F1A14),
@@ -398,7 +412,7 @@ struct WingtipPalette: Sendable {
         mutedForeground: rgb(0x5A5048),
         accent: rgb(0xEFE8DA),
         accentForeground: rgb(0x1F1A14),
-        destructive: rgb(0xE7000B),
+        destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
         border: rgb(0xE2D8C4),
         input: rgb(0x8F8F8F),
@@ -526,6 +540,22 @@ enum WingtipMotion {
     static let sheetBackEase = Animation.timingCurve(0.2, 0.9, 0.3, 1, duration: 0.3)
     static let fade: TimeInterval = 0.2
     static let quick: TimeInterval = 0.15
+    static let page: TimeInterval = 0.25
+    static let skeletonPulse: TimeInterval = 1.5
+}
+
+/// The taps felt on a key action, as SwiftUI's sensory feedback
+/// (`.sensoryFeedback(WingtipHaptic.altitude, trigger:)`); the system
+/// leaves them out where the pilot has turned system haptics off.
+enum WingtipHaptic {
+    /// An altitude set: a wheel's detent, as a picker ticks.
+    static let altitude: SensoryFeedback = .selection
+    /// Direct To or Fly Here taken: the route has changed under the pilot.
+    static let directTo: SensoryFeedback = .impact(weight: .medium)
+    /// An alert or a copilot warning shown: felt as well as seen, in a busy cockpit.
+    static let warning: SensoryFeedback = .warning
+    /// The sheet settling at a detent (pill, half, full).
+    static let detent: SensoryFeedback = .impact(weight: .light)
 }
 
 enum WingtipSize {
@@ -535,5 +565,6 @@ enum WingtipSize {
     static let panel: CGFloat = 384
     static let panelWide: CGFloat = 448
     static let desktop: CGFloat = 1024
+    static let refreshPull: CGFloat = 64
     static let glassBlur: CGFloat = 15
 }

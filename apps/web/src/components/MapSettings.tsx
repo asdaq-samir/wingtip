@@ -21,6 +21,7 @@ import { cycleWarning } from "../lib/dataCycles";
 import { keepingAvailable } from "../lib/map/route/keepRoute";
 import { ALERT_MODES, useAlertMode, type AlertMode } from "./alertMode";
 import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "./copilotMode";
+import { useMicPrimer } from "./MicPrimer";
 import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../lib/atc/listenSetting";
 
 /**
@@ -61,8 +62,11 @@ export default function MapSettings() {
   const [alertMode, setAlertMode] = useAlertMode();
   const [copilotMode, setCopilotMode] = useCopilotMode();
   const atcListen = useAtcListen(s => s.value);
+  // Why the microphone, before the browser asks (MicPrimer).
+  const [micPrimer, primeMic] = useMicPrimer();
   return (
     <div className="flex flex-col gap-5" data-testid="map-settings-groups">
+      {micPrimer}
       <PictureChoices
         title="Chart" value={prefs.base} onChange={v => prefs.setBase(v as BaseChart)} testId="base-chart-select"
         options={BASE_CHARTS.map(b => ({ value: b.kind, label: b.label, src: chart ? tileUrl(chart, b.kind, ...PICTURE_TILE) : undefined }))}
@@ -165,7 +169,7 @@ export default function MapSettings() {
             turns it on. */}
         <ListRow title="ATC">
           <Segmented
-            label="ATC" value={atcListen} onChange={v => setAtcListen(v as AtcListen)} testId="atc-listen-mode"
+            label="ATC" value={atcListen} onChange={v => (v === "flying" ? primeMic(() => setAtcListen("flying")) : setAtcListen(v as AtcListen))} testId="atc-listen-mode"
             options={ATC_LISTEN_MODES}
           />
         </ListRow>

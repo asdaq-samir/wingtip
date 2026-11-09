@@ -13,6 +13,8 @@ struct StripHead: View {
     @Environment(Plan.self) private var plan
     @Environment(Verdict.self) private var verdict
     @Environment(\.chartInk) private var ink
+    /// At the accessibility sizes the route's line wraps rather than is cut.
+    @Environment(\.dynamicTypeSize) private var size
     /// A finding's row, or the verdict, tapped: the Brief.
     let onBrief: () -> Void
     let onFile: () -> Void
@@ -82,8 +84,9 @@ struct StripHead: View {
             Text(line)
                 .condensedCaps()
                 .foregroundStyle(ink.magenta)
-                .lineLimit(1)
-                .accessibilityLabel(line)
+                .lineLimit(size.isAccessibilitySize ? nil : 1)
+                .accessibilityLabel(StripData.spokenHeadLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
+                                                             cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: nil))
         }
         .padding(WingtipSpace.lg)
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .bottomLeading)

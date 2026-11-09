@@ -1,10 +1,12 @@
+import { useEffect, useRef } from "react";
 import { Navigation2 } from "lucide-react";
 import { cn } from "cn";
 import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
 import QueryState from "../../components/QueryState";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
-import { threeFigures } from "../../lib/format";
+import { spokenDistance, spokenHeadingMagnetic, spokenHeadingTrue, threeFigures } from "../../lib/format";
+import { announce } from "../../lib/announce";
 import type { EmergencyModel } from "./useEmergency";
 
 /**
@@ -14,8 +16,32 @@ import type { EmergencyModel } from "./useEmergency";
  * its reach, and the engine's reasons under it, toned as the Brief's
  * findings are. Nothing is hidden for a limitation; it is said.
  */
+type Field = NonNullable<EmergencyModel["ranked"]>["fields"][number];
+
+/** A field's way there in words for a screen reader: "three four six
+ *  degrees magnetic, twelve point four nautical miles"; a true heading
+ *  said so (AIM 4-2-10) where the variation is not known. */
+function wayThere(f: Field): string {
+  const heading = f.heading_mag_deg != null ? spokenHeadingMagnetic(f.heading_mag_deg)
+    : f.heading_true_deg != null ? spokenHeadingTrue(f.heading_true_deg) : null;
+  return [heading, spokenDistance(f.distance_nm)].filter(Boolean).join(", ");
+}
+
+/** The best field told to a screen reader at once, once each time another
+ *  field becomes the best (lib/announce): the list is not a live region,
+ *  as its distances change with every fix. */
+function useBestFieldSaid(best: Field | undefined) {
+  const said = useRef<string | null>(null);
+  useEffect(() => {
+    if (!best || said.current === best.ident) return;
+    said.current = best.ident;
+    announce(`Best field ${best.ident}, ${best.name}, ${wayThere(best)}`, "assertive");
+  }, [best]);
+}
+
 export default function FieldsList({ vm }: { vm: EmergencyModel }) {
   const { ranked, picked, pick, asked, fix, showPosition } = vm;
+  useBestFieldSaid(ranked?.fields[0]);
   if (!fix) {
     return (
       <ListGroup title="Best fields">
@@ -42,7 +68,8 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
                 value={
                   <span className="flex items-center gap-1 tabular-nums">
                     <Navigation2 className="size-4 text-tint" style={{ transform: `rotate(${f.course_deg}deg)` }} aria-hidden />
-                    {heading != null ? `${threeFigures(heading)}°${f.heading_mag_deg == null ? " T" : ""} · ` : ""}{f.distance_nm.toFixed(1)} nm
+                    <span aria-hidden>{heading != null ? `${threeFigures(heading)}°${f.heading_mag_deg == null ? " T" : ""} · ` : ""}{f.distance_nm.toFixed(1)} nm</span>
+                    <span className="sr-only">{wayThere(f)}</span>
                   </span>
                 }
                 description={

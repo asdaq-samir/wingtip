@@ -200,6 +200,30 @@ and `glOverlays.ts`):
   (the engine's `own_ship_hex`). A tap opens its card, with Track, which
   rings it on the map.
 
+## Downloads: the chart with no signal
+
+Setup → Downloads (`offline/`) keeps a region's chart on the phone, as
+the iPhone's does (docs/NATIVE.md): a sectional sheet's coverage, a
+state, or the map's view, picked on a list or a map of the sheets, the
+chart kinds and Sharp (@2x) or Smaller, each sized before it is fetched
+(`/api/offline-charts`, cut by the planner's `wingtip.offline_charts`).
+`DownloadsModel` holds the screen; each archive is a WorkManager job
+(`OfflineWorker`) that fetches into a `.part` file and resumes from its
+length with a Range when WorkManager stops it at ten minutes or the
+signal goes; `OfflineStore` keeps the files in the app's files with a
+manifest. A region brings its cycle packs (`CyclePacks.keep`) and the
+whole overlays' archive (`OverlayStore.download`, on any network once
+the pilot asked for a region).
+
+MapLibre reads the archives itself: `OfflineLayers` puts a raster
+source of each into the first style (`pmtiles://file://…`) with a layer
+straight over the network's chart in the chart's paint, so a kept
+region draws from the file with or without signal and the rest of the
+map from the network as before; the TAC and IFR area archives follow
+the terminal switch as the style is built. The style is built again as
+a download lands. The cycle's update, its expiry at 0901Z on the next
+one's date and the sweep once the update is whole are the iPhone's.
+
 ## Building
 
 The owner's Mac has no Java, Gradle, Android SDK or cargo, so everything
@@ -285,7 +309,19 @@ A field's card has Diagram with Your Position (`ui/DiagramOwnShip.kt`):
 the FAA's PDF drawn by PdfRenderer, own ship placed by the diagram's own
 latitude and longitude marks, read with Android 15's PDF text (SDK
 extension 13); an older Android shows the diagram without the airplane
-and says why. FIS-B weather from ADS-B In is still to come.
+and says why.
+
+A cockpit ADS-B receiver (`receiver/`): a Stratux, Sentry, Garmin GDL
+39/52 or uAvionix receiver's GDL 90 on UDP port 4000, gathered by a
+`DatagramSocket` with the Wi-Fi's multicast lock (`ReceiverSocket`) and
+read by the engine once a second (`receiver_read`); a foreground service
+of the connected-device type (`ReceiverService`) keeps it going with the
+screen off while a receiver is heard. Its traffic is drawn ahead of the
+internet's (`receiver_traffic`, through `Traffic`), a chip on the map
+names it, a field's FIS-B METAR and TAF show on its card with no report
+from the weather service (`receiver_reports`), and FIS-B NEXRAD is drawn
+over the chart (`receiver_nexrad`, `map/NexradLayer.kt`). Setup's Map
+section has ADS-B Receiver: Auto or Off.
 
 Still to come: the tile store and the route's tiles for the air, the
 briefing, the checkpoints and the side view, the altitude wheel, the

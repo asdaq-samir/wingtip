@@ -36,7 +36,7 @@ struct FiguresStrip: View {
         let fuel = (try? asked.get()) ?? StripFuel(requiredGal: nil, short: [])
         let refused = (try? asked.get()) == nil
         let warn = plan.airplaneChosen && (!fuel.short.isEmpty || refused)
-        HStack {
+        FigureRow {
             stripFigure("TO", plan.routed ? plan.dest : "—")
             if !plan.airplaneChosen {
                 // No airplane picked: the route's own figures, To and Dist;
@@ -58,10 +58,20 @@ struct FiguresStrip: View {
         }
         .padding(.horizontal)
         .frame(maxWidth: .infinity)
-        // Four figures across a phone: past the second accessibility size
-        // they would not fit the line, so the strip stops there.
-        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// A strip's figures side by side, or one under another at the
+/// accessibility text sizes, where four across a phone would be squeezed
+/// or cut: every figure kept whole at any size the pilot reads at.
+struct FigureRow<Content: View>: View {
+    @ViewBuilder let content: Content
+    @Environment(\.dynamicTypeSize) private var size
+
+    var body: some View {
+        let layout = size.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: WingtipSpace.xs)) : AnyLayout(HStackLayout())
+        layout { content }
     }
 }
 
@@ -69,20 +79,37 @@ struct FiguresStrip: View {
 /// totals. `spoken` is the figure as VoiceOver says it (SpokenFigures),
 /// where the written one would be read as letters.
 func stripFigure(_ name: String, _ value: String, spoken: String? = nil, warn: Bool = false) -> some View {
-    VStack(spacing: 2) {
-        Text(name).font(.caption2).foregroundStyle(.secondary)
-        HStack(spacing: WingtipSpace.xs) {
-            // A mark with the red, for a pilot who does not see the colour
-            // (the owner's rule: warn, never limit).
-            if warn { Image(systemName: "exclamationmark.triangle.fill").font(.caption2) }
-            Text(value).font(.headline.monospacedDigit())
+    StripFigure(name: name, value: value, warn: warn)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(stripFigureName(name)), \(spoken ?? value)\(warn ? ", under the reserve" : "")")
+}
+
+/// The figure under its name; at the accessibility sizes, its name at the
+/// left and the figure at the right of its own line (FigureRow), the
+/// figure free to wrap rather than be cut.
+private struct StripFigure: View {
+    let name: String
+    let value: String
+    let warn: Bool
+    @Environment(\.dynamicTypeSize) private var size
+
+    var body: some View {
+        let layout = size.isAccessibilitySize ? AnyLayout(HStackLayout(spacing: WingtipSpace.sm)) : AnyLayout(VStackLayout(spacing: 2))
+        layout {
+            Text(name).font(.caption2).foregroundStyle(.secondary)
+            if size.isAccessibilitySize { Spacer(minLength: 0) }
+            HStack(spacing: WingtipSpace.xs) {
+                // A mark with the red, for a pilot who does not see the
+                // colour (the owner's rule: warn, never limit).
+                if warn { Image(systemName: "exclamationmark.triangle.fill").font(.caption2) }
+                Text(value).font(.headline.monospacedDigit())
+            }
+            .foregroundStyle(warn ? Color.red : Color.primary)
+            .lineLimit(size.isAccessibilitySize ? nil : 1)
+            .minimumScaleFactor(size.isAccessibilitySize ? 1 : 0.8)
         }
-        .foregroundStyle(warn ? Color.red : Color.primary)
-        .lineLimit(1).minimumScaleFactor(0.8)
+        .frame(maxWidth: .infinity)
     }
-    .frame(maxWidth: .infinity)
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel("\(stripFigureName(name)), \(spoken ?? value)\(warn ? ", under the reserve" : "")")
 }
 
 /// The strip's short headings in full for VoiceOver.

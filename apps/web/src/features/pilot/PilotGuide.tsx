@@ -115,7 +115,8 @@ export default function PilotGuide() {
   );
 }
 
-/** The first-run tips (lib/firstRunTips), offered again from the start: the
+/** The first-run tips (lib/firstRunTips), offered again from the start, the
+ *  welcome with them (its one key among theirs; Setup's one home for it): the
  *  guide's short version, at its top, at the owner's ask (2026-10-27,
  *  "Tips can move to guide"), where they were a group of the Settings
  *  page. */
@@ -126,7 +127,7 @@ function TipsGroup() {
     <ListGroup>
       <ListRow
         media={<RowBadge colour={SETTING_BADGE.tips}><Lightbulb /></RowBadge>}
-        title={asked ? "Tips Will Show Again" : "Show Tips Again"} disabled={asked}
+        title={asked ? "Welcome and Tips Will Show Again" : "Show Welcome and Tips Again"} disabled={asked}
         onClick={() => { reset(); setAsked(true); }} data-testid="tips-reset"
       />
     </ListGroup>

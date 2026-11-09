@@ -84,47 +84,17 @@ class AirplaneModel : ViewModel() {
  * and its checklists. The airplane by N-number, with the pilot's own
  * figures, is a later phase.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     val profiles by model.profiles.collectAsStateWithLifecycle()
     val problem by model.problem.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
-    var expanded by remember { mutableStateOf(false) }
     var checklist by remember { mutableStateOf<ChecklistKind?>(null) }
     var photo by remember { mutableStateOf(false) }
     val picked = profiles.firstOrNull { it.name == state.aircraft }
 
     Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-            OutlinedTextField(
-                value = picked?.let(::label) ?: state.aircraft.uppercase().ifEmpty { stringResource(R.string.no_airplane) },
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.tab_airplane)) },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
-            )
-            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                // None is a choice, and the default: no airplane is assumed.
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.no_airplane)) },
-                    onClick = {
-                        plan.setAircraft("")
-                        expanded = false
-                    },
-                )
-                profiles.forEach { profile ->
-                    DropdownMenuItem(
-                        text = { Text(label(profile)) },
-                        onClick = {
-                            plan.setAircraft(profile.name)
-                            expanded = false
-                        },
-                    )
-                }
-            }
-        }
+        AirplanePicker(profiles, selected = state.aircraft, onPick = plan::setAircraft)
         ProblemLine(problem)
         picked?.let { ProfileFigures(it) }
         RegistrationField()
@@ -154,6 +124,46 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         val title = stringResource(R.string.checklists_of, state.aircraft.uppercase())
         WingtipSheet(title = title, onClose = { checklist = null }, full = true) {
             ChecklistScreen(airplane = state.aircraft, kind = kind)
+        }
+    }
+}
+
+/**
+ * One of the planner's airplane types, or No Airplane (the default: none
+ * is assumed, decision 0011), from a menu: the Airplane tab's and the
+ * welcome's one picker.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun AirplanePicker(profiles: List<AircraftProfileSummary>, selected: String, onPick: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val picked = profiles.firstOrNull { it.name == selected }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = picked?.let(::label) ?: selected.uppercase().ifEmpty { stringResource(R.string.no_airplane) },
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.tab_airplane)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.no_airplane)) },
+                onClick = {
+                    onPick("")
+                    expanded = false
+                },
+            )
+            profiles.forEach { profile ->
+                DropdownMenuItem(
+                    text = { Text(label(profile)) },
+                    onClick = {
+                        onPick(profile.name)
+                        expanded = false
+                    },
+                )
+            }
         }
     }
 }

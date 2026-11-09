@@ -155,7 +155,7 @@ struct StripSheetView: View {
         .scrollDismissesKeyboard(.interactively)
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .top, spacing: 0) { fieldRow }
-        .animation(.easeOut(duration: 0.3), value: focused)
+        .motion(.easeOut(duration: 0.3), value: focused)
         .accessibilityIdentifier("strip-sheet")
     }
 
@@ -179,7 +179,7 @@ struct StripSheetView: View {
                 }
             }
         }
-        .background(.regularMaterial)
+        .glassBackground()
     }
 
     /// The first flight's welcome, the field at the foot being the way in.
@@ -253,8 +253,8 @@ struct StripSheetView: View {
     private var navLog: some View {
         List {
             Section(plan.altitudeFt.map { "Nav Log · \(Format.cruiseAltitude($0))" } ?? "Nav Log") {
-                ForEach(plan.legs) { leg in
-                    NavigationLink(value: StripPage.leg(leg)) { LegRow(leg: leg) }
+                ForEach(Array(plan.legs.enumerated()), id: \.element.id) { i, leg in
+                    NavigationLink(value: StripPage.leg(leg)) { LegRow(leg: leg, number: i + 1) }
                 }
             }
         }
@@ -309,7 +309,7 @@ struct StripSheetView: View {
                 if let at = ownShip.fix?.coordinate, let near = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 1).first {
                     dep = near.ident
                 }
-                if dep.isEmpty, let home = session.pilot?.homeBase, !home.isEmpty { dep = home.uppercased() }
+                if dep.isEmpty, let home = session.pilot?.homeBase ?? WelcomeModel.savedHome(), !home.isEmpty { dep = home.uppercased() }
                 if dep.isEmpty { return "Say where from too: \"C81 KDLH\", or allow your position." }
             }
             if dep == dest, stops.isEmpty { return "\(dest) is where you are. Say somewhere to fly to." }
@@ -381,7 +381,7 @@ struct StripSheetView: View {
            let ft = (try? Clearance.read(text))?.maintainFt {
             guard plan.routed else { return "Plan a route first; then say an altitude, \"altitude 5500\"." }
             plan.ownAltitudeFt = Double(ft)
-            plan.ownAltitudeLegal = false
+            plan.ownAltitudeLegal = false; Feel.tap(.altitude)
             plan.plan()
             up()
             return ""

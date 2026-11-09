@@ -171,7 +171,7 @@ struct BriefView: View {
                 } else if let problem = plan.briefingProblem {
                     ContentUnavailableView("No briefing", systemImage: "exclamationmark.triangle", description: Text(problem))
                 } else {
-                    ProgressView("Fetching the briefing…")
+                    Section { Skeleton(rows: 4, label: "Fetching the briefing") }
                 }
                 // The passengers' briefing (91.107, the SAFETY briefing) and
                 // the flight to send them, after the weather.
@@ -190,6 +190,13 @@ struct BriefView: View {
         .navigationBarTitleDisplayMode(.inline)
         // The UI tests' sign the Brief is up (WingtipUITests/FlowTests).
         .accessibilityIdentifier("brief")
+        // Pulled down: the briefing and the Go / No-Go asked afresh, the
+        // weather being live; the reports stay on the page meanwhile.
+        .refreshable {
+            guard plan.routed else { return }
+            await plan.brief(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)
+            await verdict.refresh(plan: plan, signedIn: session.signedIn)
+        }
         .task {
             if plan.briefing == nil, plan.routed {
                 await plan.brief(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)

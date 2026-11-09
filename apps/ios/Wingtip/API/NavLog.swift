@@ -138,6 +138,8 @@ enum NavLog {
             "altitude_nearest": altitudeFt != nil && nearest ? "true" : nil,
             // One of the four plans; fastest is the planner's own.
             "altitude_choice": choice.flatMap { $0 == "fastest" ? nil : $0 },
+            // The rules kept (FlightRules): sent where IFR, VFR being the planner's default.
+            "rules": FlightRules.saved() == .ifr ? "ifr" : nil,
         ]) { $1 }) { _, route in route }
         // The pilot's own edits of the route (RouteExtras): points'
         // altitudes, holds, crossings, a procedure flown direct.

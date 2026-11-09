@@ -1014,6 +1014,11 @@ extension Engine {
         try rule("notams_fns", EngineContract.NotamsFnsInput(text: text))
     }
 
+    /// A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.
+    static func notamsRanked(notams: [EngineContract.NotamsRankedInputNotamsItem], fields: [EngineContract.NotamsRankedInputFieldsItem]? = nil, from: String? = nil, until: String? = nil, cruiseFt: Double? = nil, airspaces: [String]? = nil) throws -> EngineContract.NotamsRankedAnswer {
+        try rule("notams_ranked", EngineContract.NotamsRankedInput(notams: notams, fields: fields, from: from, until: until, cruiseFt: cruiseFt, airspaces: airspaces))
+    }
+
     /// Whether a transmission is said to the airplane `tail` (AIM 4-2-4).
     static func ourCall(text: String, tail: String) throws -> Bool {
         try rule("our_call", EngineContract.OurCallInput(text: text, tail: tail))
@@ -1164,6 +1169,11 @@ extension Engine {
         try rule("procedures_write", EngineContract.ProceduresWriteInput(picks: picks))
     }
 
+    /// A pilot's proficiency plan: what is due and when (the flight review, 14 CFR 61.56(c); passengers by day and at night, 61.57(a), (b); instrument currency, 61.57(c), (d); a student's solo endorsement, 61.87(n), (p); the medical as given), the reminders for those lapsing within remind_days, the weak areas the pilot's own debriefs show (an approach off course or glidepath under the 500 ft gate, AC 61-98D 2.1.4; an approach past full scale or under a minimum; a downwind off pattern altitude, ACS PA.III.B; a leg not held, PA.VI.A), each with its evidence, and up to four sessions: what to practise, why, the nearest suited field of `places`, how long, and whether it may count toward a WINGS flight activity (AC 61-91K 7.3). Every decision is the engine's; a model only words it, citing the ids.
+    static func proficiencyPlan(today: String, entries: [EngineContract.LogbookEntry], flightReviewOn: String? = nil, medicalExpiresOn: String? = nil, ipcOn: String? = nil, ratings: [String]? = nil, held: [EngineContract.ProficiencyPlanInputHeldItem]? = nil, debriefs: [EngineContract.CoachDebrief]? = nil, places: [EngineContract.PracticePlace]? = nil, remindDays: Int? = nil) throws -> EngineContract.ProficiencyPlanAnswer {
+        try rule("proficiency_plan", EngineContract.ProficiencyPlanInput(today: today, entries: entries, flightReviewOn: flightReviewOn, medicalExpiresOn: medicalExpiresOn, ipcOn: ipcOn, ratings: ratings, held: held, debriefs: debriefs, places: places, remindDays: remindDays))
+    }
+
     /// Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
     static func prohibitedCaution(selection: [String: JSONValue]) throws -> [String] {
         try rule("prohibited_caution", EngineContract.ProhibitedCautionInput(selection: selection))
@@ -1212,6 +1222,26 @@ extension Engine {
     /// A readback against the clearance or instruction heard (AIM 4-4-7 b): what was missed or said otherwise, each marked where 4-4-7 b asks it be read back, and the warning line; with `tail`, the call sign too (4-4-7 b.1).
     static func readbackCheck(cleared: String, said: String, tail: String? = nil) throws -> EngineContract.ReadbackCheckAnswer {
         try rule("readback_check", EngineContract.ReadbackCheckInput(cleared: cleared, said: said, tail: tail))
+    }
+
+    /// FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.
+    static func receiverNexrad(picture: EngineContract.ReceiverPicture? = nil) throws -> EngineContract.ReceiverNexradAnswer {
+        try rule("receiver_nexrad", EngineContract.ReceiverNexradInput(picture: picture))
+    }
+
+    /// A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).
+    static func receiverRead(data: String? = nil, at: Double, picture: EngineContract.ReceiverPicture? = nil) throws -> EngineContract.ReceiverPicture {
+        try rule("receiver_read", EngineContract.ReceiverReadInput(data: data, at: at, picture: picture))
+    }
+
+    /// A field's latest METAR (or SPECI) and TAF sent over FIS-B (AIM 4-5-9), as sent, with when; the K of a contiguous-states ICAO identifier matched either way (ORD, KORD).
+    static func receiverReports(picture: EngineContract.ReceiverPicture? = nil, ident: String) throws -> EngineContract.ReceiverReportsAnswer {
+        try rule("receiver_reports", EngineContract.ReceiverReportsInput(picture: picture, ident: ident))
+    }
+
+    /// The traffic to draw: the receiver's own targets, their pressure altitudes put on own ship's scale by own ship's height less its pressure altitude, then the internet's airplanes the receiver does not hear (by ICAO address), never own ship.
+    static func receiverTraffic(picture: EngineContract.ReceiverPicture? = nil, internet: [EngineContract.HeardPlane]? = nil, ownFt: Double? = nil, at: Double) throws -> [EngineContract.HeardPlane] {
+        try rule("receiver_traffic", EngineContract.ReceiverTrafficInput(picture: picture, internet: internet, ownFt: ownFt, at: at))
     }
 
     /// The phone pack's region holding a point, "n40w088": a square of 4 degrees named by its south-west corner.

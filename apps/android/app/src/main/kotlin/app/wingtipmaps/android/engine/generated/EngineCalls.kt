@@ -1219,6 +1219,12 @@ fun Engine.notamsFns(text: String): Result<List<EngineContract.NotamsFnsAnswerIt
     rule("notams_fns", EngineContract.NotamsFnsInput(text = text))
 
 /**
+ * A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.
+ */
+fun Engine.notamsRanked(notams: List<EngineContract.NotamsRankedInputNotamsItem>, fields: List<EngineContract.NotamsRankedInputFieldsItem>? = null, from: String? = null, until: String? = null, cruiseFt: Double? = null, airspaces: List<String>? = null): Result<EngineContract.NotamsRankedAnswer> =
+    rule("notams_ranked", EngineContract.NotamsRankedInput(notams = notams, fields = fields, from = from, until = until, cruiseFt = cruiseFt, airspaces = airspaces))
+
+/**
  * Whether a transmission is said to the airplane `tail` (AIM 4-2-4).
  */
 fun Engine.ourCall(text: String, tail: String): Result<Boolean> =
@@ -1399,6 +1405,12 @@ fun Engine.proceduresWrite(picks: List<EngineContract.ProceduresWriteInputPicksI
     rule("procedures_write", EngineContract.ProceduresWriteInput(picks = picks))
 
 /**
+ * A pilot's proficiency plan: what is due and when (the flight review, 14 CFR 61.56(c); passengers by day and at night, 61.57(a), (b); instrument currency, 61.57(c), (d); a student's solo endorsement, 61.87(n), (p); the medical as given), the reminders for those lapsing within remind_days, the weak areas the pilot's own debriefs show (an approach off course or glidepath under the 500 ft gate, AC 61-98D 2.1.4; an approach past full scale or under a minimum; a downwind off pattern altitude, ACS PA.III.B; a leg not held, PA.VI.A), each with its evidence, and up to four sessions: what to practise, why, the nearest suited field of `places`, how long, and whether it may count toward a WINGS flight activity (AC 61-91K 7.3). Every decision is the engine's; a model only words it, citing the ids.
+ */
+fun Engine.proficiencyPlan(today: String, entries: List<EngineContract.LogbookEntry>, flightReviewOn: String? = null, medicalExpiresOn: String? = null, ipcOn: String? = null, ratings: List<String>? = null, held: List<EngineContract.ProficiencyPlanInputHeldItem>? = null, debriefs: List<EngineContract.CoachDebrief>? = null, places: List<EngineContract.PracticePlace>? = null, remindDays: Int? = null): Result<EngineContract.ProficiencyPlanAnswer> =
+    rule("proficiency_plan", EngineContract.ProficiencyPlanInput(today = today, entries = entries, flightReviewOn = flightReviewOn, medicalExpiresOn = medicalExpiresOn, ipcOn = ipcOn, ratings = ratings, held = held, debriefs = debriefs, places = places, remindDays = remindDays))
+
+/**
  * Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
  */
 fun Engine.prohibitedCaution(selection: Map<String, JsonElement>): Result<List<String>> =
@@ -1457,6 +1469,30 @@ fun Engine.readTrack(text: String): Result<JsonElement> =
  */
 fun Engine.readbackCheck(cleared: String, said: String, tail: String? = null): Result<EngineContract.ReadbackCheckAnswer> =
     rule("readback_check", EngineContract.ReadbackCheckInput(cleared = cleared, said = said, tail = tail))
+
+/**
+ * FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.
+ */
+fun Engine.receiverNexrad(picture: EngineContract.ReceiverPicture? = null): Result<EngineContract.ReceiverNexradAnswer> =
+    rule("receiver_nexrad", EngineContract.ReceiverNexradInput(picture = picture))
+
+/**
+ * A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).
+ */
+fun Engine.receiverRead(data: String? = null, at: Double, picture: EngineContract.ReceiverPicture? = null): Result<EngineContract.ReceiverPicture> =
+    rule("receiver_read", EngineContract.ReceiverReadInput(data = data, at = at, picture = picture))
+
+/**
+ * A field's latest METAR (or SPECI) and TAF sent over FIS-B (AIM 4-5-9), as sent, with when; the K of a contiguous-states ICAO identifier matched either way (ORD, KORD).
+ */
+fun Engine.receiverReports(picture: EngineContract.ReceiverPicture? = null, ident: String): Result<EngineContract.ReceiverReportsAnswer> =
+    rule("receiver_reports", EngineContract.ReceiverReportsInput(picture = picture, ident = ident))
+
+/**
+ * The traffic to draw: the receiver's own targets, their pressure altitudes put on own ship's scale by own ship's height less its pressure altitude, then the internet's airplanes the receiver does not hear (by ICAO address), never own ship.
+ */
+fun Engine.receiverTraffic(picture: EngineContract.ReceiverPicture? = null, internet: List<EngineContract.HeardPlane>? = null, ownFt: Double? = null, at: Double): Result<List<EngineContract.HeardPlane>> =
+    rule("receiver_traffic", EngineContract.ReceiverTrafficInput(picture = picture, internet = internet, ownFt = ownFt, at = at))
 
 /**
  * The phone pack's region holding a point, "n40w088": a square of 4 degrees named by its south-west corner.

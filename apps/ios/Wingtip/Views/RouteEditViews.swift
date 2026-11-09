@@ -263,7 +263,7 @@ struct RoutePointMenu: View {
     /// hold set, flown direct: more".
     private var spoken: String {
         var parts = [ident]
-        if let feet = plan.extras.altitudes[ident.uppercased()] { parts.append(SpokenFigures.feet(Double(feet))) }
+        if let feet = plan.extras.altitudes[ident.uppercased()] { parts.append(Format.spokenAltitude(Double(feet))) }
         if plan.hold(at: ident) != nil { parts.append("hold set") }
         if plan.extras.direct == ident { parts.append("flown direct") }
         return parts.joined(separator: ", ") + ": more"

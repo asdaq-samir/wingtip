@@ -15,6 +15,7 @@ import { metarWords } from "./metarWords";
 import { commandsOf } from "./pilotCommand";
 import { altitudeWords, readbackCheck } from "../lib/readback";
 import { say } from "../lib/speech";
+import { useAnnounce } from "../lib/announce";
 import { TEXT } from "../lib/text";
 import { useAsk } from "../lib/ask/useAsk";
 import { openEmergency } from "../lib/emergencyStore";
@@ -324,8 +325,11 @@ function RadioCall({ call }: { call: Transmission }) {
     () => (heardAny(readClearance(call.text)) ? heard.find(t => t.id > call.id && t.final && !t.forUs && heardAny(readClearance(t.text))) ?? null : null),
     [heard, call],
   );
+  // Said to a screen reader at once, once a call (lib/announce): a role="alert"
+  // arriving whole is not read by every reader.
+  useAnnounce(`ATC: ${call.text}`, "assertive");
   return (
-    <div className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-[22px] py-2 pr-1 pl-3")} role="alert" data-testid="radio-call">
+    <div className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-[22px] py-2 pr-1 pl-3")} role="region" aria-label="Call from ATC" data-testid="radio-call">
       <div className="flex items-start gap-2">
         <Radio className="mt-1 size-5 shrink-0 text-tint" aria-hidden="true" />
         <p className={cn("min-w-0 flex-1 font-semibold", TEXT.detail)} data-testid="radio-call-text">{call.text}</p>

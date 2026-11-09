@@ -9,8 +9,6 @@
 # writes the altitude it is given and decides nothing (the engine's
 # words_flight_level writes it the same way for the phones and the planner).
 apps/web/src/lib/format/figures.ts 1
-apps/ios/Wingtip/Views/ProfileCard.swift 1
-apps/android/app/src/main/kotlin/app/wingtipmaps/android/strip/StripData.kt 1
 services/planner/app/gonogo/words.py 1
 
 # A typed wrapper over the engine's wind_triangle, not a copy of it.

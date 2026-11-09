@@ -128,7 +128,7 @@ public class Aircraft {
     private String colour;
 
     /** Its handbook figures as its pilot confirmed them from a photographed
-     *  page (V35; the engine contract's HandbookFigures), kept as sent;
+     *  page (V36; the engine contract's HandbookFigures), kept as sent;
      *  null until then. */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

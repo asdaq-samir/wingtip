@@ -56,11 +56,18 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     }
 
     func start() {
-        manager.requestWhenInUseAuthorization()
+        // The system's question waits for the welcome, which says why first
+        // and asks it on Allow (askLocation); launches after it ask here.
+        if !WelcomeModel.wanted() { manager.requestWhenInUseAuthorization() }
         manager.startUpdatingLocation()
         if aheadEvery == nil {
             aheadEvery = Ticker.shared.every(Self.aheadEveryS) { [weak self] in self?.askAhead() }
         }
+    }
+
+    /// The system's question for the position, on the welcome's Allow.
+    func askLocation() {
+        manager.requestWhenInUseAuthorization()
     }
 
     func stop() {

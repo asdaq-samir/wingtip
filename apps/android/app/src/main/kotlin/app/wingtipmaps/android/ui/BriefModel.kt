@@ -75,6 +75,13 @@ class BriefModel : ViewModel() {
         }
     }
 
+    /** The same route's brief asked again, from a pull on the Brief: the
+     *  weather in it is live. */
+    fun refresh(plan: Plan.State) {
+        _state.update { it.copy(route = null) }
+        brief(plan)
+    }
+
     private operator fun State.plus(answer: GoNoGo) = copy(
         verdict = Verdict(finding(answer.line.finding), answer.line.words),
         items = answer.items,

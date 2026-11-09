@@ -239,5 +239,190 @@
         "written": "0°"
       }
     ]
+  },
+  "spokenAltitude": {
+    "description": "An altitude as VoiceOver, TalkBack and a screen reader say it (the accessibility label of a written altitude or cruising altitude): the separate digits of the thousands, then the hundreds, as a pilot hears it from ATC (AIM 4-2-9a), and what is left in words. A screen reader is not a radio, so nine is \"nine\", not the radio's \"niner\" (AIM 4-2-8).",
+    "examples": [
+      {
+        "input": 4500,
+        "written": "four thousand five hundred feet"
+      },
+      {
+        "input": 12500,
+        "written": "one two thousand five hundred feet"
+      },
+      {
+        "input": 10000,
+        "written": "one zero thousand feet"
+      },
+      {
+        "input": 780,
+        "written": "seven hundred eighty feet"
+      },
+      {
+        "input": 1234,
+        "written": "one thousand two hundred thirty-four feet"
+      },
+      {
+        "input": -210,
+        "written": "minus two hundred ten feet"
+      },
+      {
+        "input": 0,
+        "written": "zero feet"
+      },
+      {
+        "input": null,
+        "written": "not known"
+      }
+    ]
+  },
+  "spokenHeading": {
+    "description": "A course, heading, track or wind direction said: its three figures one by one (AIM 4-2-10), north as three six zero, as the written form (FAA Order JO 7110.65, 2-4-17).",
+    "examples": [
+      {
+        "input": 346,
+        "written": "three four six degrees"
+      },
+      {
+        "input": 45,
+        "written": "zero four five degrees"
+      },
+      {
+        "input": 0,
+        "written": "three six zero degrees"
+      },
+      {
+        "input": 359.6,
+        "written": "three six zero degrees"
+      }
+    ]
+  },
+  "spokenHeadingMagnetic": {
+    "description": "A magnetic course or heading said, with its reference: the nav log's magnetic course and heading.",
+    "examples": [
+      {
+        "input": 346,
+        "written": "three four six degrees magnetic"
+      },
+      {
+        "input": 0,
+        "written": "three six zero degrees magnetic"
+      }
+    ]
+  },
+  "spokenHeadingTrue": {
+    "description": "A true course or heading said, with \"true\" added as AIM 4-2-10 asks wherever a direction is not magnetic.",
+    "examples": [
+      {
+        "input": 346,
+        "written": "three four six degrees true"
+      }
+    ]
+  },
+  "spokenDistance": {
+    "description": "A distance said in words, to the written tenth, a whole number with no \"point zero\".",
+    "examples": [
+      {
+        "input": 102.4,
+        "written": "one hundred two point four nautical miles"
+      },
+      {
+        "input": 24,
+        "written": "twenty-four nautical miles"
+      },
+      {
+        "input": 1,
+        "written": "one nautical mile"
+      },
+      {
+        "input": null,
+        "written": "not known"
+      }
+    ]
+  },
+  "spokenSpeed": {
+    "description": "An airspeed, ground speed or wind speed said in words, whole knots as written.",
+    "examples": [
+      {
+        "input": 110,
+        "written": "one hundred ten knots"
+      },
+      {
+        "input": 8.4,
+        "written": "eight knots"
+      },
+      {
+        "input": 1,
+        "written": "one knot"
+      },
+      {
+        "input": null,
+        "written": "not known"
+      }
+    ]
+  },
+  "spokenFuel": {
+    "description": "Fuel said in words, US gallons to the written tenth.",
+    "examples": [
+      {
+        "input": 12,
+        "written": "twelve gallons"
+      },
+      {
+        "input": 32.25,
+        "written": "thirty-two point three gallons"
+      },
+      {
+        "input": 1,
+        "written": "one gallon"
+      },
+      {
+        "input": null,
+        "written": "not known"
+      }
+    ]
+  },
+  "spokenDuration": {
+    "description": "A time aloft, a time left or an age said in full words, rounded to the minute as written.",
+    "examples": [
+      {
+        "input": 65,
+        "written": "one hour five minutes"
+      },
+      {
+        "input": 45,
+        "written": "forty-five minutes"
+      },
+      {
+        "input": 180,
+        "written": "three hours"
+      },
+      {
+        "input": 61,
+        "written": "one hour one minute"
+      },
+      {
+        "input": 119.6,
+        "written": "two hours"
+      },
+      {
+        "input": 0,
+        "written": "zero minutes"
+      }
+    ]
+  },
+  "spokenZulu": {
+    "description": "A UTC time said digit by digit and \"zulu\", as the AIM gives a time (AIM 4-2-13), nine as \"nine\".",
+    "examples": [
+      {
+        "input": "2026-11-09T14:32:00Z",
+        "written": "one four three two zulu"
+      },
+      {
+        "input": "2026-11-09T03:05:00Z",
+        "written": "zero three zero five zulu"
+      }
+    ]
   }
 }

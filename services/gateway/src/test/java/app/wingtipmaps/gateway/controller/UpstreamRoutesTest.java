@@ -43,21 +43,34 @@ class UpstreamRoutesTest {
      * Routes added since the hand list was replaced, each with its rules:
      * no old entry to hold it to, so held to what its decorator says.
      */
-    static final Map<String, String> ADDED = Map.of(
-            "POST /api/departure-window", "planner signed-in csrf",
+    static final Map<String, String> ADDED = Map.ofEntries(
+            Map.entry("POST /api/departure-window", "planner signed-in csrf"),
             // The emergency assistant's fields: public, no sign-in in an emergency.
-            "GET /api/emergency/fields", "planner public csrf",
+            Map.entry("GET /api/emergency/fields", "planner public csrf"),
             // The in-flight copilot's reads round the airplane, public as /api/live/* is.
-            "GET /api/copilot/around", "planner public csrf",
+            Map.entry("GET /api/copilot/around", "planner public csrf"),
             // The 3D map's terrain tiles and the obstacles standing in a box.
-            "GET /api/terrain-tile/{z}/{x}/{y}.png", "planner public csrf",
-            "GET /api/terrain/obstacles", "planner public csrf",
+            Map.entry("GET /api/terrain-tile/{z}/{x}/{y}.png", "planner public csrf"),
+            Map.entry("GET /api/terrain/obstacles", "planner public csrf"),
             // A logbook entry drawn from the app's own track: the pilot's,
             // and it changes nothing (the phones hold no CSRF cookie).
-            "POST /api/logbook-draft", "planner signed-in no-csrf",
+            Map.entry("POST /api/logbook-draft", "planner signed-in no-csrf"),
+            // The charts kept on the device for flying offline: the box, the
+            // regions of a cycle and their archives, public as the tiles are.
+            Map.entry("GET /api/offline-box", "planner public csrf"),
+            Map.entry("GET /api/offline-charts", "planner public csrf"),
+            Map.entry("GET /api/offline-charts/{cycle}/{region}", "planner public csrf"),
+            Map.entry("GET /api/offline-charts/{cycle}/{region}/{archive}.pmtiles", "planner public csrf"),
+            // The flight's NOTAMs ranked by the engine, and their line each.
+            Map.entry("POST /api/notams/ranked", "planner public no-csrf"),
+            Map.entry("POST /api/words/notams/ranked", "assistant signed-in csrf"),
+            // The pilot's proficiency plan (its words are a /api/words/{kind}).
+            Map.entry("POST /api/pilot/coach", "planner signed-in no-csrf"),
+            // A trip in the pilot's words worked into a proposal.
+            Map.entry("POST /api/trip-plan", "assistant signed-in csrf"),
             // A photographed page read and checked: a billed call against
             // the pilot's allowance, so a forged one is refused.
-            "POST /api/read-document", "assistant signed-in csrf");
+            Map.entry("POST /api/read-document", "assistant signed-in csrf"));
 
     @Test
     void theEmergencyFieldsArePublicFromThePlanner() {
@@ -69,7 +82,9 @@ class UpstreamRoutesTest {
 
     @Test
     void everyRouteTheDocumentsMarkIsOneTheHandListForwardedWithTheSameRules() {
-        assertThat(routes).hasSize(89 + ADDED.size());
+        // 89 the hand list had, and the coach's words, which its
+        // /api/words/{kind} let through before there was such a kind.
+        assertThat(routes).hasSize(90 + ADDED.size());
         List<String> differences = new ArrayList<>();
         for (Route route : routes) {
             String sample = RoutesBefore.sample(route.pattern().getPatternString());

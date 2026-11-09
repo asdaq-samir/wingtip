@@ -3,6 +3,7 @@ package app.wingtipmaps.android.ui
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -14,13 +15,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.api.AirportPin
+import app.wingtipmaps.android.map.MapMarks
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.atc.AtcCopilotHost
 import app.wingtipmaps.android.copilot.CopilotBanner
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.emergency.EmergencyModel
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.Geo
@@ -38,6 +52,8 @@ import app.wingtipmaps.android.map.MapRest
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.TrafficDrawing
+import app.wingtipmaps.android.receiver.Receiver
+import app.wingtipmaps.android.receiver.ReceiverChip
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RoutePoints
 
@@ -88,12 +104,24 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         val heard = heardAtMs ?: System.currentTimeMillis()
         planes.mapIndexed { i, p -> TrafficDrawing.Target(p, marks.getOrNull(i), heard - ((p.seenS ?: 0.0) * 1000).toLong()) }
     }
+    // The cockpit's ADS-B receiver, listened for from the first map on
+    // (Receiver: once a second while its setting is Auto).
+    LaunchedEffect(Unit) { Receiver.of(context).start() }
     // Asked every five seconds while the map is shown and traffic is on.
     DisposableEffect(trafficOn) {
         if (trafficOn) traffic.start()
         onDispose { traffic.stop() }
     }
+    // The fields in view as actions on the map, with a screen reader on
+    // (MapMarks): the chart's symbols are pictures TalkBack cannot read.
+    var fieldsInView by remember { mutableStateOf<List<AirportPin>>(emptyList()) }
+    val scope = rememberCoroutineScope()
+    var marksJob by remember { mutableStateOf<Job?>(null) }
     val onView = { view: MapRest ->
+        if (A11y.screenReader(context)) {
+            marksJob?.cancel()
+            marksJob = scope.launch { fieldsInView = MapMarks.fieldsInView(context, view) }
+        }
         mapWeather.view(view)
         traffic.mapCentre = (view.south + view.north) / 2 to (view.west + view.east) / 2
         traffic.mapRadiusNm = Geo.nm((view.south + view.north) / 2, (view.west + view.east) / 2, view.north, view.east)
@@ -124,6 +152,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
     val emergency by viewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
 
+    val mapSaid = if (fieldsInView.isEmpty()) stringResource(R.string.said_map) else pluralStringResource(R.plurals.said_map_fields, fieldsInView.size, fieldsInView.size)
+    val fieldActions = fieldsInView.map { pin ->
+        CustomAccessibilityAction(stringResource(R.string.said_open_field, MapMarks.label(pin))) { onPick(MapPick.Airport(pin.ident)); true }
+    }
     Box(Modifier.fillMaxSize()) {
         ChartMap(
             // The first style waits for the overlays' name (at most
@@ -132,7 +164,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             minZoom = base?.minZoom ?: 5,
             maxZoom = base?.maxZoom ?: 12,
             line = state.course?.courseLine.orEmpty(),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().semantics {
+                contentDescription = mapSaid
+                customActions = fieldActions
+            },
             routePoints = routePoints,
             selectedLeg = selectedLeg,
             overlays = overlays,
@@ -157,6 +192,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         )
         MapLoading(shown = !revealed, bottomInset = covered, problem = if (info == null) chartProblem else null, modifier = Modifier.fillMaxSize())
         MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
+        // The receiver heard: "Stratux · 12 targets · GPS".
+        ReceiverChip(Modifier.align(Alignment.TopCenter).padding(top = WingtipSpace.Sm))
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of
             // the buttons where nothing else was (#218).

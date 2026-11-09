@@ -43,6 +43,8 @@ final class AtcCopilot {
     private(set) var problem: String?
     @ObservationIgnored private var read: [Int: String] = [:]
     @ObservationIgnored private var started = false
+    /// The cards whose readback VoiceOver has said.
+    @ObservationIgnored private var announced: Set<Int> = []
 
     static let kept = 4
     /// How long after a call our own transmission is still its readback, s.
@@ -73,6 +75,16 @@ final class AtcCopilot {
                 problem = "Couldn't read that call: \(error.localizedDescription)"
             }
         }
+        announceReadbacks()
+    }
+
+    /// Each readback's check said by VoiceOver once, as its card shows it:
+    /// a pilot's eyes are outside when the readback is made.
+    private func announceReadbacks() {
+        for card in cards where card.readback != nil && !announced.contains(card.id) {
+            announced.insert(card.id)
+            if let check = card.readback?.check { Announce.alert(Self.readbackLines(check).joined(separator: ". ")) }
+        }
     }
 
     /// The cards after one settled transmission (the web's heardInto): a
@@ -99,6 +111,7 @@ final class AtcCopilot {
         guard let i = cards.firstIndex(where: { $0.id == id }) else { return }
         cards[i].awaiting = true
         cards[i].readback = nil
+        announced.remove(id)
         let listener = ClearanceListener.shared
         guard !listener.listening else { return }
         guard let said = await listener.hearOnce(), !said.isEmpty, let j = cards.firstIndex(where: { $0.id == id }) else {
@@ -111,6 +124,7 @@ final class AtcCopilot {
             problem = "Couldn't check the readback: \(error.localizedDescription)"
         }
         cards[j].awaiting = false
+        announceReadbacks()
     }
 
     /// A readback's lines: complete, else each item missed or said

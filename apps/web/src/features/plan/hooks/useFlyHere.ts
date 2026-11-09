@@ -4,6 +4,7 @@ import type { SetURLSearchParams } from "react-router-dom";
 import type { PanelState } from "../../../lib/mapChrome";
 import type { AircraftChoice, AirportPlace } from "../../../lib/api/types";
 import { positionIdent } from "../../../lib/identSchema";
+import { feel } from "../../../lib/haptics";
 import { positionNow, useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
 import { checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
@@ -93,6 +94,7 @@ export function useFlyHere({ planned, place, depart, aircraft, load, setLoad, se
     return () => { gone = true; };
   }, [place, fromFor]);
   const flyHere = useCallback(async (to: Pick<AirportPlace, "ident">) => {
+    feel("directTo");
     const from = await fromFor(to.ident, await positionNow());
     const next: Record<string, string> = { dest: to.ident };
     if (from) next.dep = from;

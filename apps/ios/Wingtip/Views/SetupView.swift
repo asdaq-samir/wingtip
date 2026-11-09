@@ -28,6 +28,7 @@ struct SetupView: View {
                         LabeledContent("Signed in as", value: pilot.displayName ?? pilot.email ?? "you")
                         LabeledContent("Email", value: pilot.email)
                         NavigationLink("Contact") { ContactView().closesBack() }
+                        ExportDataButton()
                         Button("Sign Out", role: .destructive) { Task { await session.signOut(); plan.forgetPilot() } }
                         DeleteAccountButton()
                     } else {
@@ -41,6 +42,7 @@ struct SetupView: View {
                         NavigationLink("Logbook and Currency") { LogbookView().closesBack() }
                         NavigationLink("Training") { TrainingView().closesBack() }
                         NavigationLink("Instructing") { InstructorView().closesBack() }
+                        NavigationLink("Coach") { CoachView().closesBack() }
                     }
                 }
                 // The weather the pilot will not take off or land in, kept
@@ -50,9 +52,14 @@ struct SetupView: View {
                 Section {
                     NavigationLink("Personal Minimums") { MinimumsView().closesBack() }
                     NavigationLink("Guide") { PilotGuideView().closesBack() }
+                    // The first launch's welcome, shown again from here alone.
+                    Button("Show Welcome Again") { WelcomeModel.shared.again() }
                 }
                 Section(title: "Map") {
                     Toggle("Traffic", isOn: Binding(get: { traffic.on }, set: { traffic.on = $0 }))
+                    // A Stratux, Sentry or the like on the cockpit's Wi-Fi:
+                    // its traffic and FIS-B weather with no internet.
+                    ReceiverModePicker()
                     SpokenAlertsToggle()
                     ForgetNotesButton()
                     Toggle("VFR Waypoints", isOn: $waypointsOn)
@@ -104,11 +111,17 @@ struct SetupView: View {
                     } else {
                         LabeledContent("Edition", value: "Fetching…")
                     }
+                    // Regions' charts kept for flying with no signal.
+                    NavigationLink("Downloads") { DownloadsView().closesBack() }
                     ProblemLine(charts.problem)
                 }
                 Section {
                     LabeledContent("Server", value: Config.host)
                     LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+                    // The build, the data's cycles, the planning aid's words,
+                    // the credits, the legal pages and the demo flight, as
+                    // Settings > General > About has them.
+                    NavigationLink("About") { AboutView().closesBack() }
                 }
             }
             .navigationTitle("Setup")

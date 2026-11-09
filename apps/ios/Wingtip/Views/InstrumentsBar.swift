@@ -22,7 +22,7 @@ struct InstrumentsBar: View {
                     cell("TRK", Self.track(fix.trackDeg, magnetic: flight.progress?.trackMagDeg),
                          spoken: fix.trackDeg.map { "Track \(SpokenFigures.degrees(flight.progress?.trackMagDeg ?? $0))" })
                     cell("ALT", fix.altitudeFt.map(Format.grouped) ?? "—", unit: "ft",
-                         spoken: fix.altitudeFt.map { "GPS altitude \(SpokenFigures.feet($0))" })
+                         spoken: fix.altitudeFt.map { "GPS altitude \(Format.spokenAltitude($0))" })
                     cell("VS", Self.verticalSpeed(flight.verticalFpm), unit: "fpm",
                          spoken: flight.verticalFpm.map { "Vertical speed \(SpokenFigures.feetPerMinute(Self.roundedFpm($0)))" })
                 }

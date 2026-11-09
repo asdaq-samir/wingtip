@@ -8,6 +8,7 @@ import { GLASS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 import { acknowledge, alertTitle, alertWhen, alertWhere, useAhead } from "../lib/map/position/ahead";
 import { useSpokenAlerts } from "./speak";
+import { useFeelOnNew } from "../lib/haptics";
 import { saaWords } from "../lib/liveReports";
 
 /** A warning's red and a caution's amber, as a cockpit's are. */
@@ -30,6 +31,8 @@ export default function AlertsBanner() {
   const ahead = useAhead();
   // Said aloud too, where the pilot has asked for it.
   useSpokenAlerts(ahead);
+  // And felt, as a new one comes up first (lib/haptics).
+  useFeelOnNew(ahead?.alerts[0]?.id, "warning");
   const [open, setOpen] = useState(false);
   if (!ahead) return null;
   const { alerts, unavailable, failed } = ahead;
@@ -41,8 +44,10 @@ export default function AlertsBanner() {
   return (
     <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-alerts-banner="">
       <Alert
-        // A warning is said at once to a screen reader; a caution as it can.
-        role={level === "warning" ? "alert" : "status"}
+        // Said to a screen reader once each as it comes (useSpokenAlerts,
+        // lib/announce), not as a live region: the countdown under the
+        // name changes every few seconds and would be read again each time.
+        role="region" aria-label="Alerts ahead"
         className={cn(
           "flex min-h-11 gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
           // Opened, the sign by the first line rather than the middle.

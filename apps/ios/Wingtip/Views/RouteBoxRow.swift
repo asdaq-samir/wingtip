@@ -56,7 +56,7 @@ struct RouteBoxRow: View {
                 .focused(focused, equals: .altitude)
                 .onSubmit(fly)
                 .accessibilityLabel("Cruise altitude, hundreds of feet")
-                .accessibilityValue(plan.altitudeFt.map(SpokenFigures.feet) ?? "the planner's pick")
+                .accessibilityValue(plan.altitudeFt.map { Format.spokenAltitude($0) } ?? "the planner's pick")
         }
         .fixedSize()
     }

@@ -5,6 +5,8 @@
 //! - forecast: a field's flight category from what is known of its
 //!   ceiling and visibility, and an hour of its TAF from the groups then;
 //! - validity: when a weather report stops counting;
+//! - notam_rank: which of a flight's NOTAMs matter to it, best first
+//!   (14 CFR 91.103);
 //! - rvr: runway visual range against a visibility minimum (91.175(h));
 //! - cycles: when an FAA data set's edition stops counting (AIRAC,
 //!   the 56-day charts, the obstacle file).
@@ -13,6 +15,7 @@ pub mod cycles;
 pub mod forecast;
 pub mod metar;
 pub mod notam;
+pub mod notam_rank;
 pub mod rvr;
 pub mod taf;
 pub mod tfr;

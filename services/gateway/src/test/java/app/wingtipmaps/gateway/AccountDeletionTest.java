@@ -3,7 +3,11 @@ package app.wingtipmaps.gateway;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.wingtipmaps.gateway.domain.Aircraft;
@@ -130,7 +134,7 @@ class AccountDeletionTest {
                 new FlightCheckpoint(0, "C81", "departure", 42.3172, -88.0905, 0.0)
                         .withLeg(4.0, 319.0, 322.0, 116.0, 2.1, 0.3),
                 new FlightCheckpoint(1, "KDLH", "destination", 46.8421, -92.1936, 323.4)), 2500, 323.6, 171.0, 24.2));
-        tracks.save(new FlightTrack(flight.getId(), "test", "[[42.3,-88.1],[46.8,-92.2]]", 2));
+        tracks.save(new FlightTrack(flight.getId(), "test", "[{\"t\":0,\"lat\":42.3,\"lon\":-88.1},{\"t\":60000,\"lat\":46.8,\"lon\":-92.2}]", 2));
         squawks.save(new Squawk(plane).set(LocalDate.of(2026, 10, 1), "Landing light out", true, DeferredFor.VFR_DAY, null, null));
         logbook.save(new LogbookEntry(pilot).set(LocalDate.of(2026, 10, 1), "N12345", "C172", "C81-KDLH",
                 2.5, 0, 2.5, 1, 0, null));
@@ -231,6 +235,33 @@ class AccountDeletionTest {
                 .andExpect(status().isBadGateway());
 
         assertThat(rowsOf(pilot)).isEqualTo(before);
+    }
+
+    /** The copy a pilot may take away (ExportController): everything of
+     *  theirs from the fixture above, as a download, and nothing of the
+     *  other pilot's. */
+    @Test
+    void theExportCarriesEverythingOfTheirsAndNothingOfAnyoneElses() throws Exception {
+        Pilot pilot = pilotWithEverything();
+        pilotWithEverything();
+
+        mockMvc.perform(get("/api/me/export")
+                        .with(authentication(new MagicLinkAuthenticationToken(pilot.getEmail()))))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", startsWith("attachment; filename=\"wingtip-maps-")))
+                .andExpect(jsonPath("$.format").value("wingtip-maps-export/1"))
+                .andExpect(jsonPath("$.account.email").value(pilot.getEmail()))
+                .andExpect(jsonPath("$.airplanes.length()").value(1))
+                .andExpect(jsonPath("$.airplanes[0].squawks[0].text").value("Landing light out"))
+                .andExpect(jsonPath("$.flights.length()").value(1))
+                .andExpect(jsonPath("$.flights[0].flight.checkpoints.length()").value(2))
+                .andExpect(jsonPath("$.flights[0].track").exists())
+                .andExpect(jsonPath("$.logbook.length()").value(1));
+    }
+
+    @Test
+    void nobodySignedInExportsNothing() throws Exception {
+        mockMvc.perform(get("/api/me/export")).andExpect(status().isUnauthorized());
     }
 
     @Test

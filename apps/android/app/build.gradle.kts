@@ -135,6 +135,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.okhttp)
+    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.maplibre)
     implementation(libs.material)
     // The flight pieces: own ship's fixes, the records store, the traffic
@@ -148,6 +149,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.process)
     // Add from a Photo: the page scanned by Google's document scanner.
     implementation(libs.play.services.mlkit.document.scanner)
+    // The frames drawn and the janky ones, for the diagnostics (diagnostics/).
+    implementation(libs.androidx.metrics.performance)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
@@ -155,4 +158,11 @@ dependencies {
 
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
+    // The screens' accessibility, checked by Google's framework on an
+    // emulator (AccessibilityChecksTest); the manifest's empty activity
+    // hosts each composition.
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4.accessibility)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

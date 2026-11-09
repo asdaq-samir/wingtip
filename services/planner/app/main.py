@@ -53,7 +53,7 @@ from .router_basics import PROCESSED_DIR
 from wingtip.planning import StillComputing, UnknownAircraft
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan
 from .routers import clearance, copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain
-from .routers import engine as engine_router, logbook_draft, traffic, weather_map, window, words
+from .routers import coach, engine as engine_router, logbook_draft, notam_rank, offline, traffic, weather_map, window, words
 from .schemas.chart import DetectMessage
 from .schemas.common import Index
 from .schemas.plan import NavLogMessage
@@ -396,7 +396,7 @@ def index() -> Index:
 
 for module in (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, traffic, basemaps,
                route_options, gonogo, figures, clearance, packs, words, weather_map, pilot, live, feeds, terrain, window, emergency,
-               copilot, engine_router, logbook_draft):
+               copilot, engine_router, logbook_draft, notam_rank, offline, coach):
     app.include_router(module.router)
 
 

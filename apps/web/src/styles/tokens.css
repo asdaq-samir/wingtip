@@ -25,12 +25,15 @@
   --motion-sheet-back-ease: cubic-bezier(0.2, 0.9, 0.3, 1);
   --motion-fade: 0.2s;
   --motion-quick: 0.15s;
+  --motion-page: 0.25s;
+  --motion-skeleton-pulse: 1.5s;
   --tap-target: 44px;
   --size-chip: 32px;
   --size-tab-bar: 64px;
   --size-panel: 384px;
   --size-panel-wide: 448px;
   --size-desktop: 1024px;
+  --size-refresh-pull: 64px;
   --airspace-blue-text: #2465b8;
   --airspace-magenta-text: #c0309f;
   --course: #e600e6;
@@ -48,10 +51,10 @@
   --airspace-blue-ink: #1d559c;
   --airspace-magenta-ink: #962568;
   --procedure: #5b5bd6;
-  --caution: oklch(0.555 0.163 48.998);
+  --caution: oklch(0.53 0.158 48.998);
   --caution-ink: oklch(0.473 0.137 46.201);
   --caution-wash: oklch(0.769 0.188 70.08 / 12%);
-  --go: oklch(0.627 0.194 149.214);
+  --go: oklch(0.58 0.19 149.214);
   --go-ink: oklch(0.448 0.119 151.328);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -59,7 +62,7 @@
   --muted-foreground: oklch(0.52 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.53 0.235 27.325);
   --destructive-ink: oklch(0.505 0.213 27.518);
   --border: oklch(0.922 0 0);
   --input: oklch(0.65 0 0);
@@ -202,4 +205,19 @@
   --primary-foreground: #ffffff;
   --tint: #0047a0;
   --tint-shade: #0047a0;
+  --secondary: #eeeeee;
+  --secondary-foreground: #000000;
+  --accent: #eeeeee;
+  --accent-foreground: #000000;
+  --caution: #9a4a00;
+  --caution-ink: #7a3a00;
+  --go: #13703a;
+  --go-ink: #0f5f30;
+  --destructive: #b3261e;
+  --destructive-ink: #9c1c15;
+  --ring: #333333;
+  --input: #333333;
+  --procedure: #3d3db8;
+  --airspace-blue-text: #1d559c;
+  --airspace-magenta-text: #962568;
 }

@@ -1,7 +1,7 @@
 import type { Totals } from "../../lib/api/types";
 import type { Flown } from "./components/navlog/dryRun";
 import { decimalHours, etaAt, one } from "./format";
-import { duration } from "../../lib/format";
+import { duration, NOT_KNOWN, spokenDistance, spokenDuration, spokenFuel } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 
 /** One of the flight's figures: its name over it, its unit after it. */
@@ -9,6 +9,11 @@ interface Figure {
   name: string; value: string; unit?: string; testId?: string;
   /** Red: the fuel required past what the tanks hold. */
   alert?: boolean;
+  /** The figure as a screen reader says it, its name and its value in
+   *  full words (lib/format's spoken forms): "Distance, one hundred two
+   *  point four nautical miles", where "Dist 102.4 nm" was read as
+   *  letters. Of the exact figure, whichever is shown. */
+  said: string;
 }
 
 interface TripInput {
@@ -69,12 +74,18 @@ export function tripFigures({ totals, estimate, local, destination, depart = "",
   if (guessed) {
     const { distanceNm, minutes, required } = guessed;
     return [
-      { name: "To", value: destination || "—", testId: "navlog-to" },
-      { name: "Dist", value: whole ? `${Math.ceil(distanceNm)}` : one(distanceNm), unit: "nm" },
+      { name: "To", value: destination || "—", testId: "navlog-to", said: `To ${destination || NOT_KNOWN}` },
+      { name: "Dist", value: whole ? `${Math.ceil(distanceNm)}` : one(distanceNm), unit: "nm", said: `Distance, ${spokenDistance(distanceNm)}` },
       arrival
-        ? { name: "ETA", value: etaAt(from, minutes), testId: "navlog-eta" }
-        : { name: "ETE", value: minutes == null ? "—" : `≈${whole ? decimalHours(minutes) : guessed.time}`, testId: "navlog-ete" },
-      { name: "Fuel", value: required == null ? "—" : `≈${whole ? Math.ceil(required) : one(required)}`, unit: required == null ? undefined : "gal" },
+        ? { name: "ETA", value: etaAt(from, minutes), testId: "navlog-eta", said: `Arrival, ${etaAt(from, minutes)}` }
+        : {
+          name: "ETE", value: minutes == null ? "—" : `≈${whole ? decimalHours(minutes) : guessed.time}`, testId: "navlog-ete",
+          said: `Time en route, ${minutes == null ? NOT_KNOWN : `about ${spokenDuration(minutes)}`}`,
+        },
+      {
+        name: "Fuel", value: required == null ? "—" : `≈${whole ? Math.ceil(required) : one(required)}`, unit: required == null ? undefined : "gal",
+        said: `Fuel required, ${required == null ? NOT_KNOWN : `about ${spokenFuel(required)}`}`,
+      },
     ];
   }
   const landing = nextLanding(totals, destination, flown?.hop);
@@ -99,15 +110,24 @@ export function tripFigures({ totals, estimate, local, destination, depart = "",
   // caught before the owner took them out ("Remove fuel required at the
   // bottom of arrival"): the figure says it now, its breakdown which.
   const short = strip.short.length > 0;
-  const fuelFigure = { name: "Fuel", value: fuel ?? "—", unit: fuel === null ? undefined : "gal", testId: fuel === null ? undefined : "navlog-fuel", alert: short };
-  const to = { name: "To", value: next.to || "—", testId: "navlog-to" };
-  if (local) return [to, { name: "Aloft", value: time, testId: "navlog-ete" }, fuelFigure];
+  const fuelFigure = {
+    name: "Fuel", value: fuel ?? "—", unit: fuel === null ? undefined : "gal", testId: fuel === null ? undefined : "navlog-fuel", alert: short,
+    said: `Fuel required, ${spokenFuel(required)}${short ? ", more than the tanks hold" : ""}`,
+  };
+  const to = { name: "To", value: next.to || "—", testId: "navlog-to", said: `To ${next.to || NOT_KNOWN}` };
+  const timeSaid = minutes === null ? NOT_KNOWN : spokenDuration(minutes);
+  if (local) return [to, { name: "Aloft", value: time, testId: "navlog-ete", said: `Time aloft, ${timeSaid}` }, fuelFigure];
+  // The destination's arrival after the stops' time on the ground too
+  // (Totals.ground_min); the time en route is the air's.
+  const eta = leg ? etaAt(start, minutes === null ? null : minutes + (toDestination && !flown ? leg.ground_min ?? 0 : 0)) : "—";
   return [
     to,
-    distance !== null ? { name: "Dist", value: whole ? `${Math.ceil(distance)}` : one(distance), unit: "nm" } : { name: "Dist", value: "—" },
-    // The destination's arrival after the stops' time on the ground too
-    // (Totals.ground_min); the time en route is the air's.
-    arrival ? { name: "ETA", value: leg ? etaAt(start, minutes === null ? null : minutes + (toDestination && !flown ? leg.ground_min ?? 0 : 0)) : "—", testId: "navlog-eta" } : { name: "ETE", value: time, testId: "navlog-ete" },
+    distance !== null
+      ? { name: "Dist", value: whole ? `${Math.ceil(distance)}` : one(distance), unit: "nm", said: `Distance, ${spokenDistance(distance)}` }
+      : { name: "Dist", value: "—", said: `Distance, ${NOT_KNOWN}` },
+    arrival
+      ? { name: "ETA", value: eta, testId: "navlog-eta", said: `Arrival, ${eta === "—" ? NOT_KNOWN : eta}` }
+      : { name: "ETE", value: time, testId: "navlog-ete", said: `Time en route, ${timeSaid}` },
     fuelFigure,
   ];
 }

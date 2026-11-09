@@ -4078,6 +4078,743 @@
         "title": "ClearanceWords",
         "type": "object"
       },
+      "CoachAsk": {
+        "description": "What the app holds of the pilot: the logbook and the dates from the\ngateway, the ratings the pilot gives, a student's endorsements, the\ndebriefs of their recent flights, their home field and their day.",
+        "properties": {
+          "debriefs": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachDebrief"
+            },
+            "maxItems": 40,
+            "title": "Debriefs",
+            "type": "array"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/CoachLogbookEntry"
+            },
+            "maxItems": 5000,
+            "title": "Entries",
+            "type": "array"
+          },
+          "flightReviewOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flightreviewon"
+          },
+          "held": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachEndorsement"
+            },
+            "maxItems": 60,
+            "title": "Held",
+            "type": "array"
+          },
+          "home": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The pilot's home field, where the sessions' fields are looked for round.",
+            "title": "Home"
+          },
+          "ipcOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipcon"
+          },
+          "medicalExpiresOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medicalexpireson"
+          },
+          "ratings": {
+            "default": [],
+            "items": {
+              "enum": [
+                "student",
+                "private",
+                "commercial",
+                "atp",
+                "instrument",
+                "cfi"
+              ],
+              "type": "string"
+            },
+            "title": "Ratings",
+            "type": "array"
+          },
+          "remindDays": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminddays"
+          },
+          "today": {
+            "format": "date",
+            "title": "Today",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entries",
+          "today"
+        ],
+        "title": "CoachAsk",
+        "type": "object"
+      },
+      "CoachDebrief": {
+        "description": "One of the pilot's own debriefed flights, trimmed (the engine's\nCoachDebrief): an approach's profile and findings, or a flight's legs\nand pattern entries.",
+        "properties": {
+          "elevation_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The field's, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4).",
+            "title": "Elevation Ft"
+          },
+          "findings": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachFinding"
+            },
+            "maxItems": 40,
+            "title": "Findings",
+            "type": "array"
+          },
+          "flown_on": {
+            "format": "date",
+            "title": "Flown On",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "approach",
+              "flight"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "legs": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachLeg"
+            },
+            "maxItems": 40,
+            "title": "Legs",
+            "type": "array"
+          },
+          "patterns": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachPattern"
+            },
+            "maxItems": 40,
+            "title": "Patterns",
+            "type": "array"
+          },
+          "place": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Place",
+            "type": "string"
+          },
+          "profile": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachProfilePoint"
+            },
+            "maxItems": 400,
+            "title": "Profile",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "flown_on"
+        ],
+        "title": "CoachDebrief",
+        "type": "object"
+      },
+      "CoachDue": {
+        "properties": {
+          "days_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Left"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "enum": [
+              "flight_review",
+              "solo",
+              "day_passengers",
+              "night_passengers",
+              "instrument",
+              "medical"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "rule": {
+            "title": "Rule",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "current",
+              "due_soon",
+              "lapsed",
+              "pending",
+              "unknown"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "key",
+          "id",
+          "label",
+          "rule",
+          "until",
+          "from",
+          "days_left",
+          "status",
+          "detail"
+        ],
+        "title": "CoachDue",
+        "type": "object"
+      },
+      "CoachEndorsement": {
+        "description": "An endorsement a student holds: AC 61-65K's code and its day.",
+        "properties": {
+          "code": {
+            "maxLength": 32,
+            "title": "Code",
+            "type": "string"
+          },
+          "on": {
+            "format": "date",
+            "title": "On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "on"
+        ],
+        "title": "CoachEndorsement",
+        "type": "object"
+      },
+      "CoachEvidence": {
+        "properties": {
+          "area": {
+            "title": "Area",
+            "type": "string"
+          },
+          "flown_on": {
+            "format": "date",
+            "title": "Flown On",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "place": {
+            "title": "Place",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "flown_on",
+          "place",
+          "area",
+          "text"
+        ],
+        "title": "CoachEvidence",
+        "type": "object"
+      },
+      "CoachFinding": {
+        "properties": {
+          "text": {
+            "maxLength": 300,
+            "title": "Text",
+            "type": "string"
+          },
+          "tone": {
+            "enum": [
+              "stop",
+              "caution",
+              "ok",
+              "info"
+            ],
+            "title": "Tone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tone",
+          "text"
+        ],
+        "title": "CoachFinding",
+        "type": "object"
+      },
+      "CoachLeg": {
+        "properties": {
+          "altitude_within": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude Within"
+          },
+          "course_within": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Course Within"
+          },
+          "from": {
+            "title": "From",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "ok"
+        ],
+        "title": "CoachLeg",
+        "type": "object"
+      },
+      "CoachLogbookEntry": {
+        "description": "One logbook entry, the columns the currency rules read; a column\nmissing is none of it.",
+        "properties": {
+          "approaches": {
+            "default": 0,
+            "title": "Approaches",
+            "type": "integer"
+          },
+          "crossCountryHours": {
+            "default": 0,
+            "title": "Crosscountryhours",
+            "type": "number"
+          },
+          "dayLandings": {
+            "default": 0,
+            "description": "Every landing, by day or at night (14 CFR 61.57(a)).",
+            "title": "Daylandings",
+            "type": "integer"
+          },
+          "dualHours": {
+            "default": 0,
+            "title": "Dualhours",
+            "type": "number"
+          },
+          "flownOn": {
+            "format": "date",
+            "title": "Flownon",
+            "type": "string"
+          },
+          "holding": {
+            "default": false,
+            "title": "Holding",
+            "type": "boolean"
+          },
+          "instrumentHours": {
+            "default": 0,
+            "title": "Instrumenthours",
+            "type": "number"
+          },
+          "nightHours": {
+            "default": 0,
+            "title": "Nighthours",
+            "type": "number"
+          },
+          "nightLandings": {
+            "default": 0,
+            "description": "Landings to a full stop at night (61.57(b)).",
+            "title": "Nightlandings",
+            "type": "integer"
+          },
+          "soloHours": {
+            "default": 0,
+            "title": "Solohours",
+            "type": "number"
+          },
+          "totalHours": {
+            "default": 0,
+            "title": "Totalhours",
+            "type": "number"
+          },
+          "tracking": {
+            "default": false,
+            "title": "Tracking",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "flownOn"
+        ],
+        "title": "CoachLogbookEntry",
+        "type": "object"
+      },
+      "CoachPattern": {
+        "properties": {
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "off_ft": {
+            "title": "Off Ft",
+            "type": "number"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ident",
+          "off_ft",
+          "ok"
+        ],
+        "title": "CoachPattern",
+        "type": "object"
+      },
+      "CoachPlace": {
+        "properties": {
+          "approach": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approach"
+          },
+          "distance_nm": {
+            "title": "Distance Nm",
+            "type": "number"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ident",
+          "name",
+          "distance_nm",
+          "approach"
+        ],
+        "title": "CoachPlace",
+        "type": "object"
+      },
+      "CoachProfilePoint": {
+        "properties": {
+          "alt_ft": {
+            "title": "Alt Ft",
+            "type": "number"
+          },
+          "off": {
+            "title": "Off",
+            "type": "boolean"
+          },
+          "to_go_nm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Go Nm"
+          }
+        },
+        "required": [
+          "alt_ft",
+          "off"
+        ],
+        "title": "CoachProfilePoint",
+        "type": "object"
+      },
+      "CoachReminder": {
+        "properties": {
+          "days_left": {
+            "title": "Days Left",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "key",
+          "text",
+          "until",
+          "days_left"
+        ],
+        "title": "CoachReminder",
+        "type": "object"
+      },
+      "CoachSession": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "instructor": {
+            "title": "Instructor",
+            "type": "boolean"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "place": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoachPlace"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "practise": {
+            "title": "Practise",
+            "type": "string"
+          },
+          "why": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Why",
+            "type": "array"
+          },
+          "wings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoachWings"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where it may count toward a WINGS flight activity; never that it does."
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "practise",
+          "why",
+          "place",
+          "minutes",
+          "instructor",
+          "wings"
+        ],
+        "title": "CoachSession",
+        "type": "object"
+      },
+      "CoachWeakArea": {
+        "properties": {
+          "acs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Acs",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "key": {
+            "enum": [
+              "unstable_approach",
+              "approach_deviation",
+              "pattern_altitude",
+              "cruise_holding"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "acs",
+          "evidence"
+        ],
+        "title": "CoachWeakArea",
+        "type": "object"
+      },
+      "CoachWings": {
+        "properties": {
+          "acs": {
+            "title": "Acs",
+            "type": "string"
+          },
+          "area": {
+            "description": "The accident causal factor's area (AC 61-91K 6).",
+            "title": "Area",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "area",
+          "acs",
+          "note"
+        ],
+        "title": "CoachWings",
+        "type": "object"
+      },
       "CopilotArea": {
         "description": "A TFR, a special-use area SFDPS has spoken of, or a convective\nSIGMET on the rest of the route, at a point the route meets it (a\nSIGMET's, inside its area): whether it is in force now, when it\nstarts and ends (UNIX s).",
         "properties": {
@@ -12752,6 +13489,149 @@
         "title": "NextCycle",
         "type": "object"
       },
+      "NotamReason": {
+        "description": "Why it bears on the flight, or does not, in the engine's words.",
+        "properties": {
+          "key": {
+            "enum": [
+              "time",
+              "schedule",
+              "field",
+              "runway",
+              "closed",
+              "altitude",
+              "airspace",
+              "kind"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "words"
+        ],
+        "title": "NotamReason",
+        "type": "object"
+      },
+      "NotamsRanked": {
+        "description": "The flight's NOTAMs best first, every one heard (`notams`), how many\nare said first (`top`), the day the NOTAM feed was first heard\n(`coverage_since`: earlier NOTAMs never changed since are not held) and\nwhat could not be checked (\"tfrs\").",
+        "properties": {
+          "coverage_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Since"
+          },
+          "notams": {
+            "items": {
+              "$ref": "#/components/schemas/RankedNotam"
+            },
+            "title": "Notams",
+            "type": "array"
+          },
+          "top": {
+            "title": "Top",
+            "type": "integer"
+          },
+          "unchecked": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Unchecked",
+            "type": "array"
+          }
+        },
+        "required": [
+          "notams",
+          "top"
+        ],
+        "title": "NotamsRanked",
+        "type": "object"
+      },
+      "NotamsRankedAsk": {
+        "description": "The flight as the Brief has it: its route, when it leaves (UTC when\nnaive; now when not given), how long it is (two hours when not given),\nits cruise altitude and the runway in use at each field the pilot's\nplan has picked ({\"KOSH\": \"36\"}).",
+        "properties": {
+          "altitude_ft": {
+            "anyOf": [
+              {
+                "maximum": 60000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude Ft"
+          },
+          "dep": {
+            "title": "Dep",
+            "type": "string"
+          },
+          "depart": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depart"
+          },
+          "dest": {
+            "title": "Dest",
+            "type": "string"
+          },
+          "ete_min": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1440.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ete Min"
+          },
+          "runways": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Runways",
+            "type": "object"
+          },
+          "stops": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Stops",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dep",
+          "dest"
+        ],
+        "title": "NotamsRankedAsk",
+        "type": "object"
+      },
       "NoteSeeded": {
         "description": "A generated note offered as the shared one: kept (`written`), or\nthe shared one saved meanwhile, which stays (`description` is it).",
         "properties": {
@@ -12913,6 +13793,273 @@
           "more"
         ],
         "title": "Obstacles",
+        "type": "object"
+      },
+      "OfflineArchive": {
+        "description": "One archive of a region: its kind and density, how many tiles and\nbytes it holds (`exact` once cut, else from the directory, within a\nfew KB), and its address under the planner.",
+        "properties": {
+          "archive": {
+            "title": "Archive",
+            "type": "string"
+          },
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "exact": {
+            "title": "Exact",
+            "type": "boolean"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "scale": {
+            "title": "Scale",
+            "type": "integer"
+          },
+          "tiles": {
+            "title": "Tiles",
+            "type": "integer"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "archive",
+          "kind",
+          "scale",
+          "tiles",
+          "bytes",
+          "exact",
+          "url"
+        ],
+        "title": "OfflineArchive",
+        "type": "object"
+      },
+      "OfflineBox": {
+        "description": "A box drawn on the map as a region id, snapped outward to the half\ndegree (wingtip.offline_regions.box_id).",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "OfflineBox",
+        "type": "object"
+      },
+      "OfflineCatalog": {
+        "description": "What can be kept: the cycle the map draws, the day it is replaced,\nthe next cycle where it is here ahead of its date, the archives each\ncycle has (a kind and a density: \"sec\", \"sec@2x\"), the overlays and\nthe regions.",
+        "properties": {
+          "archives": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Archives",
+            "type": "array"
+          },
+          "cycle": {
+            "title": "Cycle",
+            "type": "string"
+          },
+          "expires": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires"
+          },
+          "next_cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cycle"
+          },
+          "next_effective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Effective"
+          },
+          "overlay": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OfflineOverlay"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/OfflineRegion"
+            },
+            "title": "Regions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cycle",
+          "expires",
+          "next_cycle",
+          "next_effective",
+          "archives",
+          "overlay",
+          "regions"
+        ],
+        "title": "OfflineCatalog",
+        "type": "object"
+      },
+      "OfflineOverlay": {
+        "description": "The map's overlays of the cycle, the whole country in one archive\n(/api/overlay-tiles/{name}.pmtiles), kept with any region.",
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "bytes"
+        ],
+        "title": "OfflineOverlay",
+        "type": "object"
+      },
+      "OfflinePack": {
+        "description": "A cycle pack the region touches (/api/cycle-pack/{cycle}/{name}.pack).",
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "bytes",
+          "url"
+        ],
+        "title": "OfflinePack",
+        "type": "object"
+      },
+      "OfflineRegion": {
+        "description": "A place to keep: a sectional sheet's coverage, a state, or a box\ndrawn on the map. `sizes` are the bytes of each of its archives\nalready worked out (\"sec\", \"sec@2x\", \"tac\" ...); the rest come with\nthe region's own answer.",
+        "properties": {
+          "boxes": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Boxes",
+            "type": "array"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sizes": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Sizes",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "group",
+          "boxes",
+          "sizes"
+        ],
+        "title": "OfflineRegion",
+        "type": "object"
+      },
+      "OfflineRegionFiles": {
+        "description": "Everything a phone fetches to keep a region of a cycle: an archive\nper kind and density with tiles there, and the cycle packs it touches.",
+        "properties": {
+          "archives": {
+            "items": {
+              "$ref": "#/components/schemas/OfflineArchive"
+            },
+            "title": "Archives",
+            "type": "array"
+          },
+          "cycle": {
+            "title": "Cycle",
+            "type": "string"
+          },
+          "expires": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires"
+          },
+          "packs": {
+            "items": {
+              "$ref": "#/components/schemas/OfflinePack"
+            },
+            "title": "Packs",
+            "type": "array"
+          },
+          "region": {
+            "$ref": "#/components/schemas/OfflineRegion"
+          }
+        },
+        "required": [
+          "cycle",
+          "expires",
+          "region",
+          "archives",
+          "packs"
+        ],
+        "title": "OfflineRegionFiles",
         "type": "object"
       },
       "OnRoute": {
@@ -15074,6 +16221,62 @@
         "title": "ProcedureSummary",
         "type": "object"
       },
+      "ProficiencyPlan": {
+        "description": "The engine's proficiency_plan answer.",
+        "properties": {
+          "due": {
+            "items": {
+              "$ref": "#/components/schemas/CoachDue"
+            },
+            "title": "Due",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/CoachEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/CoachReminder"
+            },
+            "title": "Reminders",
+            "type": "array"
+          },
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/CoachSession"
+            },
+            "maxItems": 4,
+            "title": "Sessions",
+            "type": "array"
+          },
+          "today": {
+            "format": "date",
+            "title": "Today",
+            "type": "string"
+          },
+          "weak_areas": {
+            "items": {
+              "$ref": "#/components/schemas/CoachWeakArea"
+            },
+            "title": "Weak Areas",
+            "type": "array"
+          }
+        },
+        "required": [
+          "today",
+          "due",
+          "reminders",
+          "evidence",
+          "weak_areas",
+          "sessions"
+        ],
+        "title": "ProficiencyPlan",
+        "type": "object"
+      },
       "ProfileAirspace": {
         "description": "A Class B, C or D the route passes through: where along it, from\nits floor to its ceiling (feet MSL; the ceiling None where the FAA's\nfile has none).",
         "properties": {
@@ -15264,6 +16467,171 @@
           "complete"
         ],
         "title": "PyramidProgress",
+        "type": "object"
+      },
+      "RankedNotam": {
+        "description": "One NOTAM or TFR, ranked: its place in the list and score, whether it\nis one of the top three said first, whether its score is shared\n(`tied`), what was read of it, and its text as sent (`raw`).",
+        "properties": {
+          "closed": {
+            "title": "Closed",
+            "type": "boolean"
+          },
+          "ends": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "high_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High Ft"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "in_force": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Force"
+          },
+          "keyword": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyword"
+          },
+          "kind": {
+            "enum": [
+              "notam",
+              "tfr"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "low_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Ft"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "raw": {
+            "title": "Raw",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/NotamReason"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "runways": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Runways",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "starts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts"
+          },
+          "tied": {
+            "title": "Tied",
+            "type": "boolean"
+          },
+          "top": {
+            "title": "Top",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "rank",
+          "score",
+          "top",
+          "tied",
+          "field",
+          "role",
+          "keyword",
+          "runways",
+          "closed",
+          "low_ft",
+          "high_ft",
+          "in_force",
+          "reasons",
+          "raw",
+          "starts",
+          "ends"
+        ],
+        "title": "RankedNotam",
         "type": "object"
       },
       "RecentError": {
@@ -23973,6 +25341,278 @@
         }
       }
     },
+    "/api/notams/ranked": {
+      "post": {
+        "description": "Every NOTAM the FAA's feed has sent for the fields the route lands\nat and every TFR near it, best first: in force while the flight is\nthere, at its departure, stops or destination, on the runway in use,\nclosing a field, its altitudes taking in the cruise altitude, on an\nairspace the route passes (14 CFR 91.103). `top` are said first; the\nrest are folded, never dropped. `coverage_since`, the day the feed\nwas first heard (UTC).",
+        "operationId": "notams_ranked_api_notams_ranked_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotamsRankedAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotamsRanked"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notams Ranked",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
+        }
+      }
+    },
+    "/api/offline-box": {
+      "get": {
+        "description": "The id of a box drawn on the map, snapped outward to the half\ndegree, for /api/offline-charts/{cycle}/{region}.",
+        "operationId": "offline_box_api_offline_box_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "west",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "West",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "south",
+            "required": true,
+            "schema": {
+              "maximum": 85,
+              "minimum": -85,
+              "title": "South",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "east",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "East",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "north",
+            "required": true,
+            "schema": {
+              "maximum": 85,
+              "minimum": -85,
+              "title": "North",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineBox"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Offline Box",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/offline-charts": {
+      "get": {
+        "description": "The sectional sheets and the states a phone can keep the charts of,\nwith each archive's size where it is known (all of them within about\na minute of a cycle's first ask), the overlays, and the cycle's end.\n404 until the cycle's archives are on this disk.",
+        "operationId": "offline_catalog_api_offline_charts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Offline Catalog",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/offline-charts/{cycle}/{region}": {
+      "get": {
+        "description": "A region's files for a cycle, each with its size before it is\nfetched: an archive per chart kind and density it has tiles of, and\nthe cycle packs it touches. A drawn box is `box_W_S_E_N` snapped to\nthe half degree (offline_regions.box_id).",
+        "operationId": "offline_region_api_offline_charts__cycle___region__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cycle",
+            "required": true,
+            "schema": {
+              "title": "Cycle",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "region",
+            "required": true,
+            "schema": {
+              "title": "Region",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineRegionFiles"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Offline Region",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/offline-charts/{cycle}/{region}/{archive}.pmtiles": {
+      "get": {
+        "description": "The region's archive of one chart kind and density (\"sec\",\n\"sec@2x\", \"tac\", \"ifr_low\" ...), a PMTiles file of the same tiles the\nmap's chart is drawn from. Cut on the first ask (Chicago's sectional\nat 2x, 583 MB, in under a second from a warm disk) and kept for the\ncycle, which its address names.",
+        "operationId": "offline_archive_api_offline_charts__cycle___region___archive__pmtiles_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cycle",
+            "required": true,
+            "schema": {
+              "title": "Cycle",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "region",
+            "required": true,
+            "schema": {
+              "title": "Region",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "archive",
+            "required": true,
+            "schema": {
+              "title": "Archive",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/octet-stream": {}
+            },
+            "description": "Successful Response"
+          },
+          "206": {
+            "content": {
+              "application/octet-stream": {}
+            },
+            "description": "The byte range asked for (Range: bytes=a-b)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Offline Archive",
+        "x-gateway": {
+          "access": "public",
+          "cache": true,
+          "headers": [
+            "Content-Length",
+            "Content-Range",
+            "Accept-Ranges",
+            "ETag"
+          ],
+          "range": true
+        }
+      }
+    },
     "/api/overlay-tiles": {
       "get": {
         "description": "The overlay tiles' archive of the cycle the planner holds: its name,\nwhich its address takes, its zooms and layers. 404 until the planner\nhas built it (after the cycle pack, once a cycle). Kept as the airport\nsearch is: the next cycle's reaches the map within the hour.",
@@ -24157,6 +25797,43 @@
         "summary": "Add Pick",
         "x-gateway": {
           "access": "developer"
+        }
+      }
+    },
+    "/api/pilot/coach": {
+      "post": {
+        "description": "The pilot's proficiency plan: each currency with its last day and\nstatus, the reminders for those lapsing within remindDays (30 where\nnot given), the weak areas their debriefs of the last half year show\nwith each line of evidence, and up to four sessions -- what to\npractise, why, where, how long and whether it may count toward a\nWINGS flight activity (AC 61-91K 7.3).",
+        "operationId": "coach_plan_api_pilot_coach_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoachAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProficiencyPlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "A day or a debrief not of the engine's shape"
+          }
+        },
+        "summary": "Coach Plan",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 1048576,
+          "csrf": false
         }
       }
     },
@@ -26170,6 +27847,45 @@
           }
         },
         "summary": "Changes Sources"
+      }
+    },
+    "/api/words/coach/sources": {
+      "post": {
+        "description": "A proficiency plan's lines for the assistant to put into words.",
+        "operationId": "coach_sources_api_words_coach_sources_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProficiencyPlan"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordsSources"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Coach Sources"
       }
     },
     "/api/words/debrief/sources": {

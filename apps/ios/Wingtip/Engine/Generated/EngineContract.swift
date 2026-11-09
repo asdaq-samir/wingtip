@@ -1669,6 +1669,79 @@ enum EngineContract {
         }
     }
 
+    /// One of the pilot's own debriefed flights, trimmed to what proficiency_plan reads.
+    struct CoachDebrief: Codable, Equatable, Sendable {
+        /// An approach debriefed (route's approach_debrief) or a flight against its plan (debrief).
+        var kind: String
+        /// YYYY-MM-DD, the pilot's own calendar.
+        var flownOn: String
+        /// Where: the approach's field, or the flight's route ("KMSN-KJVL").
+        var place: String?
+        /// The field's elevation, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4); without it the gate is not checked.
+        var elevationFt: Double?
+        /// An approach's profile.track as its debrief gives it.
+        var profile: [EngineContract.CoachDebriefProfileItem]?
+        /// An approach debrief's findings, as worded.
+        var findings: [EngineContract.ApproachFinding]?
+        /// A flight debrief's legs.
+        var legs: [EngineContract.CoachDebriefLegsItem]?
+        /// A flight debrief's pattern entries.
+        var patterns: [EngineContract.CoachDebriefPatternsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case kind
+            case flownOn = "flown_on"
+            case place
+            case elevationFt = "elevation_ft"
+            case profile
+            case findings
+            case legs
+            case patterns
+        }
+    }
+
+    struct CoachDebriefLegsItem: Codable, Equatable, Sendable {
+        var from: String
+        var to: String
+        var altitudeWithin: Double?
+        var courseWithin: Double?
+        var ok: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case from
+            case to
+            case altitudeWithin = "altitude_within"
+            case courseWithin = "course_within"
+            case ok
+        }
+    }
+
+    struct CoachDebriefPatternsItem: Codable, Equatable, Sendable {
+        var ident: String
+        /// Its altitude less pattern altitude, ft (+ high).
+        var offFt: Double
+        var ok: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case offFt = "off_ft"
+            case ok
+        }
+    }
+
+    struct CoachDebriefProfileItem: Codable, Equatable, Sendable {
+        var toGoNm: Double?
+        var altFt: Double
+        /// Past full scale, or under a minimum, there.
+        var off: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case toGoNm = "to_go_nm"
+            case altFt = "alt_ft"
+            case off
+        }
+    }
+
     struct CompassWordInput: Codable, Equatable, Sendable {
         var bearingDeg: Double
 
@@ -4460,6 +4533,43 @@ enum EngineContract {
         var value: Double
     }
 
+    /// An airplane as the map's traffic draws it, the planner's TrafficAircraft (wingtip.traffic): who, where, how high, its track, speed and climb, how old.
+    struct HeardPlane: Codable, Equatable, Sendable {
+        var hex: String
+        var callsign: String?
+        var registration: String?
+        var type: String?
+        var category: String?
+        var lat: Double
+        var lon: Double
+        var altitudeFt: Double?
+        var pressureAltitude: Bool?
+        var trackDeg: Double?
+        var speedKt: Double?
+        var verticalFpm: Double?
+        var squawk: String?
+        var emergency: String?
+        var seenS: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case hex
+            case callsign
+            case registration
+            case type
+            case category
+            case lat
+            case lon
+            case altitudeFt = "altitude_ft"
+            case pressureAltitude = "pressure_altitude"
+            case trackDeg = "track_deg"
+            case speedKt = "speed_kt"
+            case verticalFpm = "vertical_fpm"
+            case squawk
+            case emergency
+            case seenS = "seen_s"
+        }
+    }
+
     struct HeardToken: Codable, Equatable, Sendable {
         var word: String
         /// The run of figures said as one number, as digits; left out where the word is no figure.
@@ -6538,6 +6648,115 @@ enum EngineContract {
         var text: String
     }
 
+    struct NotamsRankedAnswer: Codable, Equatable, Sendable {
+        var ranked: [EngineContract.NotamsRankedAnswerRankedItem]
+        var top: Int
+    }
+
+    struct NotamsRankedAnswerRankedItem: Codable, Equatable, Sendable {
+        var id: String
+        var rank: Int
+        var score: Int
+        /// One of the first three said with a line each; the rest are folded.
+        var top: Bool
+        /// Another NOTAM has the same score: the words may put a tie in another order.
+        var tied: Bool
+        var field: String?
+        var role: String?
+        /// Its JO 7930.2 keyword (RWY, AD, NAV, AIRSPACE...).
+        var keyword: String?
+        var runways: [String]
+        var closed: Bool
+        var lowFt: Double?
+        var highFt: Double?
+        var inForce: Bool?
+        var reasons: [EngineContract.NotamsRankedAnswerRankedItemReasonsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case rank
+            case score
+            case top
+            case tied
+            case field
+            case role
+            case keyword
+            case runways
+            case closed
+            case lowFt = "low_ft"
+            case highFt = "high_ft"
+            case inForce = "in_force"
+            case reasons
+        }
+    }
+
+    struct NotamsRankedAnswerRankedItemReasonsItem: Codable, Equatable, Sendable {
+        var key: String
+        var words: String
+    }
+
+    struct NotamsRankedInput: Codable, Equatable, Sendable {
+        var notams: [EngineContract.NotamsRankedInputNotamsItem]
+        var fields: [EngineContract.NotamsRankedInputFieldsItem]?
+        /// The flight's window, ISO 8601 UTC: for a NOTAM at no field of the route.
+        var from: String?
+        var until: String?
+        /// The cruise altitude, ft MSL.
+        var cruiseFt: Double?
+        /// The airspaces the route passes, by name (CHICAGO CLASS B).
+        var airspaces: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case notams
+            case fields
+            case from
+            case until
+            case cruiseFt = "cruise_ft"
+            case airspaces
+        }
+    }
+
+    struct NotamsRankedInputFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String
+        /// When the flight's time at the field starts, ISO 8601 UTC.
+        var from: String?
+        var until: String?
+        /// The runway ends in use there ("18", "09L"); empty where none is known.
+        var runways: [String]?
+    }
+
+    struct NotamsRankedInputNotamsItem: Codable, Equatable, Sendable {
+        var id: String
+        /// The place the NOTAM is issued for, as the feed names it (OSH, KOSH).
+        var location: String?
+        /// ISO 8601 UTC; null for in force now.
+        var starts: String?
+        /// ISO 8601 UTC; null for until further notice.
+        var ends: String?
+        var schedule: String?
+        /// The NOTAM's text as sent.
+        var text: String
+        /// A TFR's floor, ft MSL, where the planner read it.
+        var floorFt: Double?
+        /// A TFR's ceiling, ft MSL.
+        var ceilingFt: Double?
+        /// The route goes through it (a TFR the planner placed on the route).
+        var crosses: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case location
+            case starts
+            case ends
+            case schedule
+            case text
+            case floorFt = "floor_ft"
+            case ceilingFt = "ceiling_ft"
+            case crosses
+        }
+    }
+
     struct OurCallInput: Codable, Equatable, Sendable {
         var text: String
         var tail: String
@@ -6929,6 +7148,34 @@ enum EngineContract {
         var text: String
     }
 
+    /// A field near the pilot's home, as the host found it in its data.
+    struct PracticePlace: Codable, Equatable, Sendable {
+        var ident: String
+        var name: String?
+        /// From the pilot's home field.
+        var distanceNm: Double
+        /// A lighted runway (NASR), for night landings.
+        var lighted: Bool?
+        var towered: Bool?
+        /// Its instrument approaches (the FAA's CIFP).
+        var approaches: [EngineContract.PracticePlaceApproachesItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case name
+            case distanceNm = "distance_nm"
+            case lighted
+            case towered
+            case approaches
+        }
+    }
+
+    struct PracticePlaceApproachesItem: Codable, Equatable, Sendable {
+        var name: String
+        /// Has an electronic glidepath by its name: an ILS or a GLS.
+        var precision: Bool
+    }
+
     struct PressureAltitudeFtInput: Codable, Equatable, Sendable {
         var elevationFt: Double
         var altimeterInhg: Double
@@ -7093,6 +7340,178 @@ enum EngineContract {
             case inboundDeg = "inbound_deg"
             case ptCourseDeg = "pt_course_deg"
         }
+    }
+
+    struct ProficiencyDue: Codable, Equatable, Sendable {
+        var key: String
+        /// "due:<key>", what a plan's words cite.
+        var id: String
+        var label: String
+        /// The 14 CFR section.
+        var rule: String
+        /// The last day it is good, YYYY-MM-DD; null with nothing on record.
+        var until: String?
+        /// A currency not begun yet: its first day (61.57(c)(1)'s month after).
+        var from: String?
+        /// Days from today to until; negative where lapsed.
+        var daysLeft: Int?
+        var status: String
+        /// What it takes, in a sentence, with its rule.
+        var detail: String
+
+        enum CodingKeys: String, CodingKey {
+            case key
+            case id
+            case label
+            case rule
+            case until
+            case from
+            case daysLeft = "days_left"
+            case status
+            case detail
+        }
+    }
+
+    struct ProficiencyPlanAnswer: Codable, Equatable, Sendable {
+        var today: String
+        var due: [EngineContract.ProficiencyDue]
+        /// The currencies lapsing within remind_days, in a sentence each.
+        var reminders: [EngineContract.ProficiencyPlanAnswerRemindersItem]
+        /// The lines from the pilot's debriefs of the last half year.
+        var evidence: [EngineContract.ProficiencyPlanAnswerEvidenceItem]
+        /// The most evidence first.
+        var weakAreas: [EngineContract.ProficiencyPlanAnswerWeakAreasItem]
+        var sessions: [EngineContract.ProficiencySession]
+
+        enum CodingKeys: String, CodingKey {
+            case today
+            case due
+            case reminders
+            case evidence
+            case weakAreas = "weak_areas"
+            case sessions
+        }
+    }
+
+    struct ProficiencyPlanAnswerEvidenceItem: Codable, Equatable, Sendable {
+        /// "ev:1"..., newest first.
+        var id: String
+        var flownOn: String
+        var place: String
+        /// The weak area's key.
+        var area: String
+        var text: String
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case flownOn = "flown_on"
+            case place
+            case area
+            case text
+        }
+    }
+
+    struct ProficiencyPlanAnswerRemindersItem: Codable, Equatable, Sendable {
+        var key: String
+        var text: String
+        var until: String?
+        var daysLeft: Int
+
+        enum CodingKeys: String, CodingKey {
+            case key
+            case text
+            case until
+            case daysLeft = "days_left"
+        }
+    }
+
+    struct ProficiencyPlanAnswerWeakAreasItem: Codable, Equatable, Sendable {
+        var key: String
+        var label: String
+        var acs: [String]
+        var evidence: [String]
+    }
+
+    struct ProficiencyPlanInput: Codable, Equatable, Sendable {
+        /// YYYY-MM-DD.
+        var today: String
+        var entries: [EngineContract.LogbookEntry]
+        /// The last flight review, YYYY-MM-DD.
+        var flightReviewOn: String?
+        /// YYYY-MM-DD, as the pilot gives it.
+        var medicalExpiresOn: String?
+        /// The last instrument proficiency check, YYYY-MM-DD.
+        var ipcOn: String?
+        /// "student" holds the pilot to the solo endorsement instead of the flight review (61.56(g)); "instrument" adds instrument currency.
+        var ratings: [String]?
+        /// A student's endorsements.
+        var held: [EngineContract.ProficiencyPlanInputHeldItem]?
+        var debriefs: [EngineContract.CoachDebrief]?
+        var places: [EngineContract.PracticePlace]?
+        /// How many days before a currency lapses its reminder shows; 30 where null.
+        var remindDays: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case today
+            case entries
+            case flightReviewOn = "flight_review_on"
+            case medicalExpiresOn = "medical_expires_on"
+            case ipcOn = "ipc_on"
+            case ratings
+            case held
+            case debriefs
+            case places
+            case remindDays = "remind_days"
+        }
+    }
+
+    struct ProficiencyPlanInputHeldItem: Codable, Equatable, Sendable {
+        /// AC 61-65K's, as endorsement_kinds names it.
+        var code: String
+        /// YYYY-MM-DD.
+        var on: String
+    }
+
+    struct ProficiencySession: Codable, Equatable, Sendable {
+        /// "session:1"...
+        var id: String
+        /// The currency ("night_passengers", "ipc") or weak area ("unstable_approach") it answers.
+        var key: String
+        /// What to practise, with its source.
+        var practise: String
+        /// The ids it answers: "due:<key>" and evidence ids.
+        var why: [String]
+        /// The nearest field suited to it; null where any will do or none was given.
+        var place: EngineContract.ProficiencySessionPlace?
+        /// The plan's suggestion of its length, not a rule.
+        var minutes: Int
+        /// Flown with an instructor.
+        var instructor: Bool
+        /// Where it may count toward a WINGS flight activity; never a claim that it does.
+        var wings: EngineContract.ProficiencySessionWings?
+    }
+
+    struct ProficiencySessionPlace: Codable, Equatable, Sendable {
+        var ident: String
+        var name: String
+        var distanceNm: Double
+        /// The approach to fly there.
+        var approach: String?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case name
+            case distanceNm = "distance_nm"
+            case approach
+        }
+    }
+
+    struct ProficiencySessionWings: Codable, Equatable, Sendable {
+        /// The accident causal factor's area (AC 61-91K 6).
+        var area: String
+        /// The ACS task flown to.
+        var acs: String
+        var note: String
     }
 
     struct ProhibitedCautionInput: Codable, Equatable, Sendable {
@@ -7372,6 +7791,279 @@ enum EngineContract {
 
     struct ReadTrackInput: Codable, Equatable, Sendable {
         var text: String
+    }
+
+    /// A FIS-B NEXRAD block (products 63 regional and 64 CONUS): 32 bins across and 4 down, north row first, each a level 0 to 7.
+    struct ReceiverBlock: Codable, Equatable, Sendable {
+        var id: Double
+        var regional: Bool
+        var north: Double
+        var west: Double
+        var south: Double
+        var east: Double
+        /// 128 digits 0 to 7, row by row from the north-west.
+        var bins: String
+        var time: String
+        var at: Double
+    }
+
+    struct ReceiverNexradAnswer: Codable, Equatable, Sendable {
+        var levels: [EngineContract.ReceiverNexradLevel]
+        var time: String?
+        var at: Double?
+    }
+
+    struct ReceiverNexradInput: Codable, Equatable, Sendable {
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+    }
+
+    /// One NEXRAD level's rectangles, [south, west, north, east] degrees each.
+    struct ReceiverNexradLevel: Codable, Equatable, Sendable {
+        /// 1 to 7, DO-358B's levels (0 is none).
+        var level: Double
+        var rects: [[Double]]
+    }
+
+    /// Own ship as the receiver's GPS gives it.
+    struct ReceiverOwnship: Codable, Equatable, Sendable {
+        /// The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address.
+        var hex: String
+        /// The 24-bit participant address (GDL 90 3.5.1.3).
+        var address: Double
+        /// 0 ADS-B with an ICAO address, 1 ADS-B self-assigned, 2 TIS-B ICAO, 3 TIS-B track file, 4 surface vehicle, 5 ground station beacon (GDL 90 3.5.1.2).
+        var addressType: Double
+        var source: String
+        var callsign: String?
+        var lat: Double
+        var lon: Double
+        /// Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+        var pressureFt: Double?
+        var airborne: Bool
+        var extrapolated: Bool
+        var trackDeg: Double?
+        /// True track, true heading or magnetic heading (GDL 90 3.5.1.5).
+        var trackKind: String
+        var speedKt: Double?
+        var verticalFpm: Double?
+        /// GDL 90's emitter category code (3.5.1.10).
+        var emitter: Double
+        /// DO-260B's emitter category, A1 light to C5 line obstacle.
+        var category: String?
+        /// 0 none, 1 general, 2 medical, 3 minimum fuel, 4 no communication, 5 unlawful interference, 6 downed aircraft (GDL 90 3.5.1.12).
+        var emergency: Double
+        /// Navigation Integrity Category.
+        var nic: Double
+        /// Navigation Accuracy Category for Position.
+        var nacp: Double
+        var alert: Bool
+        /// When it was last heard, Unix s.
+        var at: Double
+        /// The GPS height (GDL 90 ID 11), ft: above MSL where the receiver says so (receiver.msl), else above the WGS-84 ellipsoid.
+        var geometricFt: Double?
+        /// Its Vertical Figure of Merit, m.
+        var vfomM: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case hex
+            case address
+            case addressType = "address_type"
+            case source
+            case callsign
+            case lat
+            case lon
+            case pressureFt = "pressure_ft"
+            case airborne
+            case extrapolated
+            case trackDeg = "track_deg"
+            case trackKind = "track_kind"
+            case speedKt = "speed_kt"
+            case verticalFpm = "vertical_fpm"
+            case emitter
+            case category
+            case emergency
+            case nic
+            case nacp
+            case alert
+            case at
+            case geometricFt = "geometric_ft"
+            case vfomM = "vfom_m"
+        }
+    }
+
+    /// What a receiver has said so far: hand it back with the next bytes.
+    struct ReceiverPicture: Codable, Equatable, Sendable {
+        var receiver: EngineContract.ReceiverPictureReceiver
+        var ownship: EngineContract.ReceiverOwnship?
+        var targets: [EngineContract.ReceiverTarget]
+        var texts: [EngineContract.ReceiverText]
+        var nexrad: [EngineContract.ReceiverBlock]
+    }
+
+    struct ReceiverPictureReceiver: Codable, Equatable, Sendable {
+        /// The name its ID message gives (Stratux, Sentry, SkyEcho).
+        var name: String?
+        var longName: String?
+        var stratux: Bool
+        var heartbeatAt: Double?
+        /// A Heartbeat came in the last 5 s (one a second, GDL 90 3.1).
+        var live: Bool
+        /// One line for the receiver's chip: "Stratux · 12 targets · GPS".
+        var summary: String
+        var gps: Bool
+        var utcOk: Bool
+        var batteryLow: Bool
+        var maintenance: Bool
+        /// Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid.
+        var msl: Bool
+        var frames: Double
+        /// Frames whose CRC did not match, dropped.
+        var badFrames: Double
+        var stationLat: Double?
+        var stationLon: Double?
+        var stationAt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case name
+            case longName = "long_name"
+            case stratux
+            case heartbeatAt = "heartbeat_at"
+            case live
+            case summary
+            case gps
+            case utcOk = "utc_ok"
+            case batteryLow = "battery_low"
+            case maintenance
+            case msl
+            case frames
+            case badFrames = "bad_frames"
+            case stationLat = "station_lat"
+            case stationLon = "station_lon"
+            case stationAt = "station_at"
+        }
+    }
+
+    struct ReceiverReadInput: Codable, Equatable, Sendable {
+        /// The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+        var data: String?
+        /// Now, Unix s: when the bytes came.
+        var at: Double
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+    }
+
+    /// A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.
+    struct ReceiverReport: Codable, Equatable, Sendable {
+        var kind: String
+        var text: String
+        var time: String
+        var at: Double
+    }
+
+    struct ReceiverReportsAnswer: Codable, Equatable, Sendable {
+        var metar: EngineContract.ReceiverReport?
+        var taf: EngineContract.ReceiverReport?
+    }
+
+    struct ReceiverReportsInput: Codable, Equatable, Sendable {
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+        var ident: String
+    }
+
+    /// An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.
+    struct ReceiverTarget: Codable, Equatable, Sendable {
+        /// The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address.
+        var hex: String
+        /// The 24-bit participant address (GDL 90 3.5.1.3).
+        var address: Double
+        /// 0 ADS-B with an ICAO address, 1 ADS-B self-assigned, 2 TIS-B ICAO, 3 TIS-B track file, 4 surface vehicle, 5 ground station beacon (GDL 90 3.5.1.2).
+        var addressType: Double
+        var source: String
+        var callsign: String?
+        var lat: Double
+        var lon: Double
+        /// Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+        var pressureFt: Double?
+        var airborne: Bool
+        var extrapolated: Bool
+        var trackDeg: Double?
+        /// True track, true heading or magnetic heading (GDL 90 3.5.1.5).
+        var trackKind: String
+        var speedKt: Double?
+        var verticalFpm: Double?
+        /// GDL 90's emitter category code (3.5.1.10).
+        var emitter: Double
+        /// DO-260B's emitter category, A1 light to C5 line obstacle.
+        var category: String?
+        /// 0 none, 1 general, 2 medical, 3 minimum fuel, 4 no communication, 5 unlawful interference, 6 downed aircraft (GDL 90 3.5.1.12).
+        var emergency: Double
+        /// Navigation Integrity Category.
+        var nic: Double
+        /// Navigation Accuracy Category for Position.
+        var nacp: Double
+        var alert: Bool
+        /// When it was last heard, Unix s.
+        var at: Double
+
+        enum CodingKeys: String, CodingKey {
+            case hex
+            case address
+            case addressType = "address_type"
+            case source
+            case callsign
+            case lat
+            case lon
+            case pressureFt = "pressure_ft"
+            case airborne
+            case extrapolated
+            case trackDeg = "track_deg"
+            case trackKind = "track_kind"
+            case speedKt = "speed_kt"
+            case verticalFpm = "vertical_fpm"
+            case emitter
+            case category
+            case emergency
+            case nic
+            case nacp
+            case alert
+            case at
+        }
+    }
+
+    /// A FIS-B text product as sent (AIM 4-5-9): a METAR, TAF, winds aloft or PIREP (product 413), or a NOTAM, TFR, AIRMET, SIGMET, SUA status, G-AIRMET or CWA text record.
+    struct ReceiverText: Codable, Equatable, Sendable {
+        /// The FIS-B product ID (DO-358B).
+        var product: Double
+        /// METAR, SPECI, TAF, WINDS, PIREP ... or NOTAM, AIRMET, SIGMET, SUA, G-AIRMET, CWA, NOTAM-TRA, NOTAM-TMOA.
+        var kind: String
+        /// The station or office.
+        var location: String?
+        /// A text record's report number.
+        var number: Double?
+        /// The words as sent; a METAR or TAF without its kind, as the METAR and TAF readers take it.
+        var text: String
+        /// The product's time, HHMMZ.
+        var time: String
+        /// When it was last sent, Unix s.
+        var at: Double
+    }
+
+    struct ReceiverTrafficInput: Codable, Equatable, Sendable {
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+        var internet: [EngineContract.HeardPlane]?
+        /// Own ship's height MSL from the phone's GPS, ft, where known.
+        var ownFt: Double?
+        /// Now, Unix s.
+        var at: Double
+
+        enum CodingKeys: String, CodingKey {
+            case picture
+            case internet
+            case ownFt = "own_ft"
+            case at
+        }
     }
 
     /// The field's last wind, for a calm one; both members needed where it is not empty.

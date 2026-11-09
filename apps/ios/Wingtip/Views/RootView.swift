@@ -102,10 +102,16 @@ struct RootView: View {
                         // on iOS 26; the material on iOS 18 (Design/Glass.swift).
                         .sheetGlass()
                         .interactiveDismissDisabled()
+                        // The welcome, once per install, over the planner's sheet;
+                        // its flight shown half way up on FPL (WelcomeHost).
+                        .modifier(WelcomeHost(opened: { tab = .fpl; detent = .medium }))
+                        // The sheet settling at a size, felt (WingtipHaptic.detent).
+                        .sensoryFeedback(WingtipHaptic.detent, trigger: detent) { _, _ in !reduceMotion }
                     }
             case .split:
                 SplitLayout(map: map, tab: $tab, airports: $airports, card: $sideCard)
                     .sheet(isPresented: $asking) { AskView() }
+                    .modifier(WelcomeHost(opened: { tab = .fpl }))
             }
         }
         // The scene's tab kept and brought back (SceneStorage); a launch
@@ -119,6 +125,8 @@ struct RootView: View {
         .onChange(of: tab) { _, now in sceneTab = now.rawValue }
         // The picked look's tint, the brand's blue by default (Look).
         .lookTint()
+        // The key actions' taps, none with Reduce Motion on (Feel).
+        .modifier(FeelHost())
     }
 
     /// A field or a point opened from the map: in the Airport tab, half
@@ -183,7 +191,10 @@ struct RootView: View {
             ),
             hazardLegs: plan.hazardLegs,
             bottomInset: mapInset,
-            onReveal: { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { mapShown = true } }
+            onReveal: {
+                Metrics.shared.mapShown() // Instruments' launch-to-map interval ends.
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { mapShown = true }
+            }
         )
         .ignoresSafeArea()
         // Over the map, under its buttons, until it shows: Wingtip's mark
@@ -215,15 +226,11 @@ struct RootView: View {
             VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 if dryRun.fix != nil { DryRunControls() }
                 WatchBanner()
-                // The licence's credit, beside the traffic it covers.
-                if traffic.on, !traffic.planes.isEmpty {
-                    Text(Traffic.credit(traffic.source)).font(.caption2).padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
-                        .floatingGlass(in: Capsule(), material: .thinMaterial)
-                    if let problem = traffic.marksProblem {
-                        Text(problem).font(.caption2).foregroundStyle(.orange).padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
-                            .floatingGlass(in: Capsule(), material: .thinMaterial)
-                    }
-                }
+                // The cockpit's ADS-B receiver heard, then the licence's
+                // credit beside the internet's traffic it covers.
+                ReceiverChip()
+                if traffic.credited { MapChip(Traffic.credit(traffic.source)) }
+                if traffic.on, !traffic.planes.isEmpty, let problem = traffic.marksProblem { MapChip(problem, colour: .orange) }
             }
             .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
         }
@@ -308,7 +315,7 @@ struct SheetView: View {
                 FiguresStrip()
                     .padding(.top, WingtipSpace.md)
                     .frame(maxWidth: .infinity)
-                    .background(.regularMaterial)
+                    .glassBackground()
                     .transition(.opacity)
             }
         }

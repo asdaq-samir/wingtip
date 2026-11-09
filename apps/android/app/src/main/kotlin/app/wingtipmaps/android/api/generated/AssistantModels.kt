@@ -82,10 +82,7 @@ data class Sentence (
 )
 
 /**
- * The raw thing a sentence can rest on, as the pilot can read it: a
- * METAR or a NOTAM as sent, a TAF line, a hazard's words, a finding's
- * line, a debrief figure's line. `id` is what a sentence cites
- * ("metar:KDLH", "finding:fuel"); `label` is its heading on screen.
+ * A raw thing a sentence can rest on, shown to the pilot as sent.
  */
 @Serializable
 data class Source (
@@ -112,6 +109,40 @@ data class CheckpointNoteMessage (
     val lat: Double? = null,
     val lon: Double? = null,
     val source: String? = null
+)
+
+/**
+ * The paragraph that passed the check, the line kept for each
+ * session (by its id), the sources they cite and which model wrote them.
+ */
+@Serializable
+data class CoachWordsAnswer (
+    val model: String,
+    val sentences: List<Sentence>,
+
+    @SerialName("session_lines")
+    val sessionLines: List<SessionLine>? = null,
+
+    val sources: List<Source>,
+    val unavailable: String? = null
+)
+
+@Serializable
+data class SessionLine (
+    /**
+     * The session's id, exactly as given ("session:1").
+     */
+    val session: String,
+
+    /**
+     * The ids it rests on: its session's and those the session answers.
+     */
+    val sources: List<String>,
+
+    /**
+     * One short sentence: what to practise there and why.
+     */
+    val text: String
 )
 
 @Serializable
@@ -998,6 +1029,51 @@ data class OralFocus (
 )
 
 /**
+ * The flight's NOTAMs best first, the first `top` said with their line
+ * and the rest folded; the day the NOTAM feed was first heard
+ * (`coverage_since`), what could not be checked ("tfrs"), the model that
+ * wrote the lines and, where it could not, why (`unavailable`).
+ */
+@Serializable
+data class RankedNotams (
+    @SerialName("coverage_since")
+    val coverageSince: String? = null,
+
+    val model: String,
+    val notams: List<RankedLine>,
+    val top: Int,
+    val unavailable: String? = null,
+    val unchecked: List<String>? = null
+)
+
+/**
+ * One NOTAM as the Brief shows it: its line (`why`, the model's, else
+ * the engine's reasons), whether it is said first (`top`), and what the
+ * engine read of it, with its text as sent.
+ */
+@Serializable
+data class RankedLine (
+    val ends: String? = null,
+    val field: String? = null,
+    val id: String,
+
+    @SerialName("in_force")
+    val inForce: Boolean? = null,
+
+    val kind: String,
+    val label: String,
+    val rank: Int,
+    val raw: String,
+    val reasons: List<String>,
+    val score: Int,
+    val starts: String? = null,
+    val tied: Boolean,
+    val top: Boolean,
+    val why: String,
+    val worded: Boolean
+)
+
+/**
  * A photo of a page and what it is of. `image` is the photo's bytes in
  * base64 (a JPEG the phone's scanner or the browser made, its long edge
  * about 2,000 px); `today` the app's own date, which a logbook row may
@@ -1012,6 +1088,150 @@ data class ReadAsk (
     val mediaType: String? = null,
 
     val today: String? = null
+)
+
+/**
+ * A trip in the pilot's own words ("VFR to Oshkosh Saturday morning,
+ * stay out of the Chicago Class B, back by 5"), the plan and record the
+ * app has (the assistant's Context: the departure where the words leave
+ * it out, the airplane, the minimums) and the pilot's time zone (IANA),
+ * which "Saturday" and "by 5" are read in.
+ */
+@Serializable
+data class TripAsk (
+    val context: Context? = null,
+    val text: String,
+
+    @SerialName("time_zone")
+    val timeZone: String? = null
+)
+
+@Serializable
+data class TripDone (
+    val type: String? = null
+)
+
+@Serializable
+data class TripError (
+    val type: String? = null,
+    val words: String
+)
+
+@Serializable
+data class TripMessage (
+    val label: String? = null,
+    val name: String? = null,
+    val type: String? = null,
+    val text: String? = null,
+    val proposal: TripProposal? = null,
+    val sources: List<Source>? = null,
+    val words: String? = null
+)
+
+/**
+ * The trip proposed: its legs (the return where asked), the model's
+ * short reason for it, and every constraint it could not meet, in plain
+ * words -- the model's and the planner's checks' (a deadline missed, a
+ * Class B still crossed, a price the app cannot know). Nothing is
+ * applied until the pilot taps Use.
+ */
+@Serializable
+data class TripProposal (
+    val legs: List<TripLeg>,
+    val rationale: String,
+    val unmet: List<String>
+)
+
+/**
+ * One leg of the proposal: the route and time the pilot loads
+ * (`change`), and its figures, each the planner's: the altitude the plan
+ * chose or was asked, the distance, time and fuel of its nav log, the
+ * arrival (the departure and the plan's ETE), the go window the
+ * departure is in (None where the window was not asked or the time is
+ * outside it), the airspace it passes, the plan's cautions, and the ids
+ * of the sources they rest on.
+ */
+@Serializable
+data class TripLeg (
+    val airspace: List<String>,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
+
+    val arrive: String? = null,
+
+    @SerialName("arrive_local")
+    val arriveLocal: String? = null,
+
+    val cautions: List<String>,
+    val change: TripChange,
+
+    @SerialName("depart_local")
+    val departLocal: String,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double? = null,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    val kind: String,
+    val sources: List<String>,
+    val window: TripWindow? = null
+)
+
+/**
+ * A leg as the app loads it into the FPL: the same fields as the
+ * assistant's proposed change (useAsk's AssistantChange), all of them.
+ */
+@Serializable
+data class TripChange (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
+
+    val dep: String,
+    val depart: String,
+    val dest: String,
+    val stops: List<String>
+)
+
+/**
+ * The run of go hours (the planner's departure window) the departure
+ * falls in: its first and last departure hour, UTC.
+ */
+@Serializable
+data class TripWindow (
+    val hours: Int,
+    val last: String,
+    val start: String
+)
+
+@Serializable
+data class TripPlanned (
+    val proposal: TripProposal,
+    val type: String? = null
+)
+
+@Serializable
+data class TripSources (
+    val sources: List<Source>,
+    val type: String? = null
+)
+
+@Serializable
+data class TripText (
+    val text: String,
+    val type: String? = null
+)
+
+@Serializable
+data class TripTool (
+    val label: String,
+    val name: String,
+    val type: String? = null
 )
 
 /**

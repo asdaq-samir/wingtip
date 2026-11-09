@@ -1,5 +1,6 @@
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import { PILL_RADIUS, usePanelDragging, type MapInsets, type PanelState } from "../../lib/mapChrome";
+import { feel } from "../../lib/haptics";
 import { prefersReducedMotion } from "../../lib/motion";
 import { insetsOf, restingAt, settleSeconds, type Detents } from "./engine";
 import { useSheetDrag } from "./useSheetDrag";
@@ -317,7 +318,11 @@ export function useSheetMotion({
       setMoving(true);
     },
     place: h => place(h, ""),
-    release: (h, speed) => settle(restingAt(detentsRef.current, h, speed), true, true),
+    // Let go: felt as it heads for its detent, as an iOS sheet's snap is (lib/haptics).
+    release: (h, speed) => {
+      feel("detent");
+      settle(restingAt(detentsRef.current, h, speed), true, true);
+    },
   });
   return { ask, startDrag, swallow, dragBody };
 }

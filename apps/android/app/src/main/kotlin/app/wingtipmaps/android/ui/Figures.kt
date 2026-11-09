@@ -18,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,6 +33,7 @@ import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.stripFuel
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.Spoken
 
 /**
  * The flight's figures in one line -- To, Dist, ETE, Fuel -- what the
@@ -52,43 +55,70 @@ fun FiguresStrip(state: Plan.State) {
     // A failed rule reads "Failed" in the error colour, never as no fuel
     // required (Engine.rule logs the engine's words).
     val fuel = stripFuel(state.totals, burntGal = progress?.burntGal)
-    Row(Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs)) {
-        Figure(stringResource(R.string.figure_to), if (state.routed) state.dest else Format.NONE)
+    val to = stringResource(R.string.figure_to)
+    val dist = stringResource(R.string.figure_dist)
+    val ete = stringResource(R.string.figure_ete)
+    val fuelName = stringResource(R.string.figure_fuel)
+    val saidTo = stringResource(R.string.said_to)
+    val saidDist = stringResource(R.string.leg_distance)
+    val saidEte = stringResource(R.string.leg_time)
+    val saidFuel = stringResource(R.string.said_fuel_required)
+    val failed = stringResource(R.string.failed)
+    // Each figure with what TalkBack says for it (Spoken), so "102.4 nm"
+    // is heard as miles rather than as "one hundred two point four n m".
+    val figures = buildList {
+        add(StripFigure(to, if (state.routed) state.dest else Format.NONE, "$saidTo, ${if (state.routed) state.dest else Spoken.NOT_KNOWN}"))
+        val nm = if (progress != null) progress.destination?.distanceNm ?: progress.leftNm
+        else state.totals?.distanceNm ?: state.course?.distanceNm
+        add(StripFigure(dist, Format.distance(nm), "$saidDist, ${Spoken.distance(nm)}"))
         // With no airplane, To and Dist alone: no time or fuel is guessed
         // (decision 0011).
-        if (!state.airplane) {
-            Figure(stringResource(R.string.figure_dist), Format.distance(progress?.let { it.destination?.distanceNm ?: it.leftNm } ?: state.totals?.distanceNm ?: state.course?.distanceNm))
-            return@Row
+        if (state.airplane) {
+            val min = if (progress != null) progress.destination?.eteMin else state.totals?.eteMin
+            add(StripFigure(ete, min?.let(Format::duration) ?: Format.NONE, "$saidEte, ${Spoken.duration(min)}"))
+            fuel.fold(
+                { add(StripFigure(fuelName, Format.fuel(it.requiredGal), "$saidFuel, ${Spoken.fuel(it.requiredGal)}", warn)) },
+                { add(StripFigure(fuelName, failed, "$saidFuel, $failed", warn = true)) },
+            )
         }
-        if (progress != null) {
-            Figure(stringResource(R.string.figure_dist), Format.distance(progress.destination?.distanceNm ?: progress.leftNm))
-            Figure(stringResource(R.string.figure_ete), progress.destination?.eteMin?.let(Format::duration) ?: Format.NONE)
-        } else {
-            Figure(stringResource(R.string.figure_dist), Format.distance(state.totals?.distanceNm ?: state.course?.distanceNm))
-            Figure(stringResource(R.string.figure_ete), state.totals?.eteMin?.let(Format::duration) ?: Format.NONE)
+    }
+    // At 150 % type and more four figures do not fit across a phone: two
+    // rows of two, so no figure is cut.
+    val rows = if (largeType()) figures.chunked(2) else listOf(figures)
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs),
+        verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
+    ) {
+        rows.forEach { row ->
+            Row(Modifier.fillMaxWidth()) { row.forEach { Figure(it.name, it.value, it.warn, it.said) } }
         }
-        fuel.fold(
-            { Figure(stringResource(R.string.figure_fuel), Format.fuel(it.requiredGal), warn = warn) },
-            { Figure(stringResource(R.string.figure_fuel), stringResource(R.string.failed), warn = true) },
-        )
     }
 }
+
+/** One of the strip's figures: its name, as written and as said. */
+private data class StripFigure(val name: String, val value: String, val said: String, val warn: Boolean = false)
 
 /** The strip's fuel from the planner's totals, as the engine works it for
  *  the three apps (`strip_fuel`); a failure where the engine could not. */
 fun stripFuel(totals: NavLogTotals?, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> =
     Engine.stripFuel(fuelRequiredGal = totals?.fuelRequiredGal, fuelMarginGal = totals?.fuelMarginGal, burntGal = burntGal)
 
-/** One figure of a strip, its name over it. */
+/** One figure of a strip, its name over it, read as one node: `said` is
+ *  what TalkBack says, the name and the figure in words (Spoken); the
+ *  written name and figure where none is given. At large type the figure
+ *  takes a second line rather than being cut. */
 @Composable
-fun RowScope.Figure(name: String, value: String, warn: Boolean = false) {
-    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+fun RowScope.Figure(name: String, value: String, warn: Boolean = false, said: String? = null) {
+    Column(
+        Modifier.weight(1f).clearAndSetSemantics { contentDescription = said ?: "$name, $value" },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
             value,
             style = MaterialTheme.typography.titleMedium,
             color = if (warn) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
+            maxLines = if (largeType()) 2 else 1,
             overflow = TextOverflow.Ellipsis,
         )
     }

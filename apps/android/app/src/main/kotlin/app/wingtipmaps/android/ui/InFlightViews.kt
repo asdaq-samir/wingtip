@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -56,10 +57,13 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.R
 import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.rememberHaptics
 
 /**
  * The top of the map in the air (#218), under the status bar and left of
@@ -90,6 +94,12 @@ fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () ->
 fun AlertsBanner(alerts: List<AheadAlert>) {
     val first = alerts.minByOrNull { it.seconds } ?: return
     val danger = first.level == "stop" || first.level == "danger"
+    // Said once as each new thing comes up ahead; its minutes and miles
+    // count down, so a live region would read it again every few seconds.
+    AnnounceOnce(first.name + first.need, "${if (danger) "Danger" else "Caution"} ahead: ${first.name}, ${first.need}")
+    // A new alert first in line is felt as it appears.
+    val haptics = rememberHaptics()
+    LaunchedEffect(first.name, first.level) { haptics.tap(WingtipHaptic.WARNING) }
     Surface(color = if (danger) LocalWingtipPalette.current.destructive else LocalWingtipPalette.current.caution, contentColor = Color.White, shape = MaterialTheme.shapes.medium) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
@@ -126,9 +136,9 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
     Surface(shape = MaterialTheme.shapes.large, tonalElevation = 3.dp, shadowElevation = 2.dp) {
         Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row {
-                Cell("GS", Format.speed(fix.groundspeedKt), "Groundspeed")
-                Cell("TRK", InstrumentsWords.track(fix.trackDeg, progress?.trackMagDeg), "Track")
-                Cell("ALT", fix.altitudeFt?.let { String.format(Locale.US, "%,d", it.roundToInt()) } ?: "—", "GPS altitude in feet")
+                Cell("GS", Format.speed(fix.groundspeedKt), "Groundspeed", Spoken.speed(fix.groundspeedKt))
+                Cell("TRK", InstrumentsWords.track(fix.trackDeg, progress?.trackMagDeg), "Track", InstrumentsWords.trackSaid(fix.trackDeg, progress?.trackMagDeg))
+                Cell("ALT", fix.altitudeFt?.let { String.format(Locale.US, "%,d", it.roundToInt()) } ?: "—", "GPS altitude", Spoken.altitude(fix.altitudeFt))
                 Cell("VS", InstrumentsWords.verticalSpeed(state.verticalFpm), "Vertical speed in feet a minute")
             }
             val next = progress?.next
@@ -139,9 +149,9 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
                         Text("NEXT", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(next.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Cell("DIS", String.format(Locale.US, if (next.distanceNm < 10) "%.1f" else "%.0f", next.distanceNm), "Distance in nautical miles")
-                    Cell("ETE", next.eteMin?.let(InstrumentsWords::minutesSeconds) ?: "—", "Time to go")
-                    Cell("DTK", Format.heading(progress.desiredTrackMagDeg ?: progress.desiredTrackDeg), "Desired track")
+                    Cell("DIS", String.format(Locale.US, if (next.distanceNm < 10) "%.1f" else "%.0f", next.distanceNm), "Distance", Spoken.distance(next.distanceNm))
+                    Cell("ETE", next.eteMin?.let(InstrumentsWords::minutesSeconds) ?: "—", "Time to go", Spoken.duration(next.eteMin))
+                    Cell("DTK", Format.heading(progress.desiredTrackMagDeg ?: progress.desiredTrackDeg), "Desired track", InstrumentsWords.trackSaid(progress.desiredTrackDeg, progress.desiredTrackMagDeg))
                 }
                 InstrumentsWords.offCourse(progress)?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -171,14 +181,16 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
     }
 }
 
+/** One instrument, read as its name and its figure in words (`said`,
+ *  Spoken's), the written figure where there is no spoken form. */
 @Composable
-private fun RowScope.Cell(name: String, value: String, spoken: String) {
+private fun RowScope.Cell(name: String, value: String, spoken: String, said: String = value) {
     Column(
-        Modifier.weight(1f).clearAndSetSemantics { contentDescription = "$spoken, $value" },
+        Modifier.weight(1f).clearAndSetSemantics { contentDescription = "$spoken, $said" },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, style = MaterialTheme.typography.titleMedium, maxLines = if (largeType()) 2 else 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -191,6 +203,14 @@ object InstrumentsWords {
         magnetic != null -> Format.heading(magnetic)
         trueDeg != null -> "${Format.heading(trueDeg)}T"
         else -> "—"
+    }
+
+    /** The same track said: magnetic where it is known, else "true" as
+     *  AIM 4-2-10 asks of a direction that is not magnetic. */
+    fun trackSaid(trueDeg: Double?, magnetic: Double?): String = when {
+        magnetic != null -> Spoken.headingMagnetic(magnetic)
+        trueDeg != null -> Spoken.headingTrue(trueDeg)
+        else -> Spoken.NOT_KNOWN
     }
 
     /** Feet a minute to the nearest ten, as a VSI is read; signed. */
@@ -248,6 +268,7 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
             problem = "The nearest fields could not be found. ${e.message ?: ""}".trim()
         }
     }
+    val openWord = stringResource(R.string.said_open)
     WingtipSheet(title = stringResource(R.string.nearest), onClose = onClose) {
         Column(Modifier.padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             when {
@@ -259,8 +280,8 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
                 items(fields.orEmpty(), key = { it.ident }) { field ->
                     // A glide the engine could not judge says so, never "out of reach".
                     val reach = fix?.let { glideReaches(it, field) }
-                    Column(Modifier.fillMaxWidth().clickable { onOpen(field.ident) }.padding(vertical = 10.dp)) {
-                        Text("${field.ident}  ${field.name}", style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = openWord) { onOpen(field.ident) }.padding(vertical = 10.dp)) {
+                        Text("${field.ident}  ${field.name}", style = MaterialTheme.typography.bodyLarge, maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis)
                         val parts = listOfNotNull(
                             "${Format.distance(field.distanceNm)} ${Format.heading(field.bearingDeg)}T",
                             field.longestRunwayFt?.let { "${Format.altitude(it.toDouble())} runway" },

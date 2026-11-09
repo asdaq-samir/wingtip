@@ -107,6 +107,14 @@ describe("sheetTakes", () => {
     // Short of a line to scroll, it is no box to scroll first.
     expect(sheetTakes([{ ...box, scrolls: false }, body], -30, true, true)).toBe(true);
   });
+  it("leaves a pull down a live list to refresh it once the sheet is all the way out", () => {
+    const live: Box = { pulls: true };
+    expect(sheetTakes([live, body], 30, true, false)).toBe(false);
+    // Below all the way out, the sheet still lowers.
+    expect(sheetTakes([live, body], 30, true, true)).toBe(true);
+    // And a pull up still opens it.
+    expect(sheetTakes([live, body], -30, true, true)).toBe(true);
+  });
 });
 
 describe("insetsOf", () => {

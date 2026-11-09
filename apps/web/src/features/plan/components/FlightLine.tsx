@@ -116,10 +116,14 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
     // the pilot's ask: the strip keeps the figures, as soon as there are
     // any, and with none yet their names over dashes -- it keeps its
     // place, as the panel's controls do.
-    <div className="relative" data-slot="section-summary" data-tip="flight-line">
+    <div className="@container/figures relative" data-slot="section-summary" data-tip="flight-line">
       {/* Each figure centred in its column, at the owner's ask ("Can the
-          calculations be center aligned?"), as FigureStrip's are. */}
-      <dl className={cn("grid gap-3", shown.length === 2 ? "grid-cols-2" : shown.length === 3 ? "grid-cols-3" : "grid-cols-4")}>
+          calculations be center aligned?"), as FigureStrip's are. Two by
+          two where the strip is under 16 rem wide, which with every rem
+          grown is an accessibility text size (24 px a rem and up on a
+          phone; the owner's 17.88 and 19.65 keep four), as the iPhone's
+          and Android's strips stack: four columns then cut the figures. */}
+      <dl className={cn("grid gap-3", shown.length === 2 ? "grid-cols-2" : shown.length === 3 ? "grid-cols-3" : "grid-cols-4", "@max-[16rem]/figures:grid-cols-2")}>
         {shown.map((f, i) => (
           <div key={f.name} className="min-w-0 text-center">
             {/* Its names and units a grey that reads on the pill's glass
@@ -128,7 +132,14 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
                 start and taxi, the reserve): beside the route's rows' fuel in
                 the tanks, "Fuel" read as the fuel burnt, 16.6 against the 13
                 gone from 40 to 27 (the owner's screenshot, 2026-11-06). */}
-            <dt className={cn(GROUP_HEADING, nameType, "truncate text-foreground/65")}>{f.name === "Fuel" ? "Fuel req" : f.name === "ETA" ? `ETA ${zoneName()}` : f.name}</dt>
+            {/* To a screen reader the figure in full words, name and all
+                (tripFigures' said), here or as its button's name, the
+                shorthand hidden from it: "Dist 102.4 nm" was read as
+                letters. */}
+            <dt className={cn(GROUP_HEADING, nameType, "truncate text-foreground/65")}>
+              <span aria-hidden>{f.name === "Fuel" ? "Fuel req" : f.name === "ETA" ? `ETA ${zoneName()}` : f.name}</span>
+              {!tapped(f.name) && <span className="sr-only">{f.said}</span>}
+            </dt>
             {/* Where the figure is a button, the dd does not clip: its
                 44-point area (the button's after) reached past it and was
                 cut off, so a tap 11 points over ETE or Fuel at half landed
@@ -143,7 +154,7 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
                         not grown to make it (index.css's after). */}
                     <button
                       type="button" data-testid="fuel-breakdown-open" data-alert={f.alert || undefined}
-                      aria-label={`Fuel required, ${f.value} gallons${f.alert ? ", more than the tanks hold on a flight of the route" : ""}: what it is made of`}
+                      aria-label={`${f.said}: what it is made of`}
                       className={cn("relative inline-flex max-w-full items-baseline after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']", f.alert ? "text-destructive" : "text-tint")}
                     >
                       {/* Short said by a mark too, not the red alone (WCAG 1.4.1). */}
@@ -174,7 +185,7 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
               ) : f.name === "To" && stops && !local ? (
                 <button
                   type="button" onClick={() => setToDestination(!toDestination)} data-testid="to-toggle"
-                  aria-label={`To ${f.value}: show the ${toDestination ? "next stop" : "destination"}`}
+                  aria-label={`${f.said}: show the ${toDestination ? "next stop" : "destination"}`}
                   className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
                   <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>{f.value}</span>
@@ -182,15 +193,15 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
               ) : (f.name === "ETE" || f.name === "ETA") && !local ? (
                 <button
                   type="button" onClick={() => setArrival(!arrival)} data-testid="ete-eta-toggle"
-                  aria-label={`${f.name === "ETE" ? "Time en route" : "Arrival"}, ${f.value}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
+                  aria-label={`${f.said}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
                   className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
                   <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>{f.value}</span>
                 </button>
               ) : (
                 <>
-                  <span style={sized("value")} data-fitted={fitted}>{f.value}</span>
-                  {f.unit && <span className={cn(unitType, "font-normal text-foreground/65")} style={sized("unit")} data-fitted={fitted}> {f.unit}</span>}
+                  <span aria-hidden style={sized("value")} data-fitted={fitted}>{f.value}</span>
+                  {f.unit && <span aria-hidden className={cn(unitType, "font-normal text-foreground/65")} style={sized("unit")} data-fitted={fitted}> {f.unit}</span>}
                 </>
               )}
             </dd>

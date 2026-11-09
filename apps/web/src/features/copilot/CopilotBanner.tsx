@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../compo
 import { GLASS } from "../../lib/mapChrome";
 import { LATEST_KEPT_MS, useLatestAtcCall } from "../../lib/atc/latestCall";
 import { TEXT } from "../../lib/text";
+import { useFeelOnNew } from "../../lib/haptics";
 import { useCopilot } from "./useCopilot";
 
 /** A warning's red, a caution's amber, as the alerts banner's are; an
@@ -51,13 +52,18 @@ function AtcLine() {
  */
 export default function CopilotBanner() {
   const { message, dismiss } = useCopilot();
+  // A new warning or caution felt as it comes up (lib/haptics); an advisory only shown.
+  useFeelOnNew(message && message.level !== "advisory" && !message.elsewhere ? `${message.kind}:${message.title}` : null, "warning");
   const [open, setOpen] = useState(false);
   if (!message || message.elsewhere) return <AtcLine />;
   const Icon = ICON[message.level];
   return (
     <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-copilot-banner={message.kind}>
       <Alert
-        role={message.level === "warning" ? "alert" : "status"}
+        // Told to a screen reader once by useCopilot (lib/announce): a
+        // live region arriving with its words in it is not read by every
+        // reader, and the message is read again with each look.
+        role="region" aria-label="Copilot"
         className={cn(
           "flex min-h-11 gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
           open ? "items-start *:[svg]:mt-[0.6rem]" : "items-center", INK[message.level],

@@ -88,6 +88,7 @@ struct StripRibbonRow: View {
     let points: [StripPoint]
     var position: (leg: Int, along: Double)?
     @Environment(\.chartInk) private var ink
+    @Environment(\.dynamicTypeSize) private var size
 
     private var route: String {
         if !dest.isEmpty { return "\(dep.isEmpty ? "Here" : dep) → \(dest)" }
@@ -96,8 +97,12 @@ struct StripRibbonRow: View {
 
     var body: some View {
         let figures = StripData.figures(eteMin: eteMin, fuelGal: fuelGal)
+        // At the accessibility sizes the tag, the route and its figures
+        // each take a line, whole, where one line would cut them.
+        let line = size.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: WingtipSpace.xs)) : AnyLayout(HStackLayout(spacing: WingtipSpace.sm))
         VStack(spacing: WingtipSpace.sm) {
-            HStack(spacing: WingtipSpace.sm) {
+            line {
                 if let verdict, let tag = StripData.tag(verdict.finding) {
                     Text(tag)
                         .condensedCaps(.caption, weight: .bold)
@@ -108,12 +113,15 @@ struct StripRibbonRow: View {
                 }
                 Text(route)
                     .font(ChartInk.text.weight(.semibold))
-                    .lineLimit(1)
+                    .lineLimit(size.isAccessibilitySize ? nil : 1)
+                    .accessibilityLabel(dest.isEmpty ? route : "\(dep.isEmpty ? "Here" : dep) to \(dest)")
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if !figures.isEmpty {
                     Text(figures).font(ChartInk.detail.monospacedDigit()).foregroundStyle(ink.muted)
+                        .accessibilityLabel(StripData.spokenFigures(eteMin: eteMin, fuelGal: fuelGal))
                 } else if dest.isEmpty {
-                    Text("Where to, or ask").font(ChartInk.note).foregroundStyle(ink.muted)
+                    // Whole before the app's name beside it is.
+                    Text("Where to, or ask").font(ChartInk.note).foregroundStyle(ink.muted).layoutPriority(1)
                 }
             }
             RibbonLine(points: points, position: position)

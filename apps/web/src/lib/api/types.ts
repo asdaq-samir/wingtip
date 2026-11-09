@@ -118,8 +118,7 @@ export type ChartPages = Schemas["ChartPages"];
 /** The mock oral's question, its answer graded, and what each is asked with. */
 export type OralQuestion = Assistant["OralQuestion"];
 export type OralQuestionRequest = Assistant["OralQuestionRequest"];
-/** A photographed page read and checked (the assistant's app.documents):
- *  what is sent, and the read with the engine's checks. */
+/** A photographed page sent, and read and checked (the assistant's app.documents). */
 export type ReadAsk = Assistant["ReadAsk"];
 export type DocumentRead = Assistant["DocumentRead"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];
@@ -247,6 +246,17 @@ export type NarrativeRequest = Assistant["NarrativeRequest"];
 /** One line of the narrative's stream: text as Claude writes it, then the
  *  whole briefing, or why there is none. */
 export type NarrativeMessage = Assistant["NarrativeMessage"];
+/** The flight's NOTAMs ranked by the engine with a line on each (the
+ *  Brief's NOTAMs that matter, POST /api/words/notams/ranked). */
+export type RankedNotams = Assistant["RankedNotams"];
+export type RankedNotam = Assistant["RankedLine"];
+/** A trip in the pilot's words worked into a proposal (POST
+ *  /api/trip-plan): the ask, one line of its stream, the proposal and a
+ *  leg of it, which the FPL loads on the pilot's tap. */
+export type TripAsk = Assistant["TripAsk"];
+export type TripMessage = Assistant["TripMessage"];
+export type TripProposal = Assistant["TripProposal"];
+export type TripLeg = Assistant["TripLeg"];
 export type CheckpointNoteSaved = Schemas["CheckpointNoteSaved"];
 
 /** What the nav log stream's "altitude" message carries -- the generated
@@ -324,8 +334,7 @@ export type DeviceCode = Gateway["DeviceCode"];
  *  fuel check. */
 export type Aircraft = Gateway["AircraftDto"];
 export type AircraftRequest = Gateway["AircraftRequest"];
-/** An airplane's handbook figures as its pilot confirmed them from a
- *  photographed page (the engine contract's HandbookFigures). */
+/** An airplane's handbook figures as its pilot confirmed them from a photo. */
 export type HandbookFigures = Gateway["HandbookFigures"];
 /** A VOR check for IFR as the pilot records it (14 CFR 91.171(d)). */
 export type VorCheckRequest = Gateway["VorCheckRequest"];

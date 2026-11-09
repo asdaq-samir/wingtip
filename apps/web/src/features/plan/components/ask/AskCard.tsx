@@ -11,6 +11,7 @@ import { useAtcRadio } from "../../../../lib/atcRadio";
 import { TEXT } from "../../../../lib/text";
 import SourceChips from "../../../../components/SourceChips";
 import { useAsk, type AskTurn } from "../../../../lib/ask/useAsk";
+import { TripPlanner } from "../../../tripPlanner";
 
 /** The listening code (lib/atcListening), in a chunk of its own, fetched
  *  as the card comes so the mic's tap starts listening at once: Safari
@@ -77,7 +78,9 @@ const FIRST_QUESTIONS = ["Brief me", "Is the weather within my minimums?", "What
  * the conversation as the field is focused or a question is in flight,
  * and stays open while there is one to read (Clear folds it). The
  * answer is asked with the plan, the airplane's position and the pilot's
- * own minimums and currency (useAsk). The microphone is the map's own
+ * own minimums and currency (useAsk). "Plan a trip…", the first chip,
+ * puts the trip planner (features/tripPlanner) in its place until closed.
+ * The microphone is the map's own
  * (lib/atcListening): its pill over the map types what is said, and the
  * words come here and are sent as the pause ends them.
  */
@@ -87,6 +90,8 @@ export default function AskSection() {
   const listeningFor = useAsk(s => s.listeningFor);
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
+  // "Plan a trip…": the trip planner in the section's place until closed.
+  const [trip, setTrip] = useState(false);
   const field = useRef<HTMLInputElement>(null);
   const expanded = focused || busy || turns.length > 0;
   useEffect(() => { void load(); }, []);
@@ -115,6 +120,13 @@ export default function AskSection() {
     if (listening) void listening.listenOnce([]);
     else void load().then(m => m.listenOnce([]));
   };
+  if (trip) {
+    return (
+      <PillSection title="Plan a Trip" testId="brief-ask">
+        <TripPlanner onClose={() => setTrip(false)} />
+      </PillSection>
+    );
+  }
   return (
     <PillSection
       title="Ask" testId="brief-ask"
@@ -128,6 +140,9 @@ export default function AskSection() {
       {/* The first questions as outlined chips, until one is asked. */}
       {turns.length === 0 && !busy && (
         <div className="flex gap-2 overflow-x-auto pb-1" data-testid="ask-suggestions">
+          <Button variant="outline" size="sm" className="shrink-0 rounded-full border-tint" onClick={() => setTrip(true)} data-testid="ask-plan-trip">
+            Plan a trip…
+          </Button>
           {FIRST_QUESTIONS.map(q => (
             <Button key={q} variant="outline" size="sm" className="shrink-0 rounded-full border-tint" onClick={() => void useAsk.getState().ask(q)} data-testid="ask-suggestion">
               {q}

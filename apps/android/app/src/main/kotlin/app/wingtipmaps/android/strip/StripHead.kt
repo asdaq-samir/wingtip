@@ -27,7 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,6 +38,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.InkColors
+import app.wingtipmaps.android.ui.largeType
 
 /** A finding's glyph, as the web's FindingIcon draws it. */
 @Composable
@@ -48,6 +51,16 @@ fun FindingIcon(finding: Finding, modifier: Modifier = Modifier) {
         Finding.UNKNOWN, Finding.PENDING -> Icons.AutoMirrored.Filled.HelpOutline to MaterialTheme.colorScheme.onSurfaceVariant
     }
     Icon(icon, contentDescription = null, tint = tint, modifier = modifier)
+}
+
+/** A finding said, for TalkBack where the glyph and its colour are the
+ *  only other sign of it: Go, Caution, No-Go; "not known" otherwise. */
+@Composable
+fun findingSaid(finding: Finding): String = when (finding) {
+    Finding.OK -> stringResource(R.string.verdict_go)
+    Finding.CAUTION -> stringResource(R.string.verdict_caution)
+    Finding.STOP -> stringResource(R.string.verdict_no_go)
+    Finding.UNKNOWN, Finding.PENDING -> app.wingtipmaps.android.format.Spoken.NOT_KNOWN
 }
 
 /** A finding's colour as words, 4.5:1 and more on a card. */
@@ -97,7 +110,10 @@ fun StripHead(
     val ink = LocalInk.current
     val briefWord = stringResource(R.string.brief)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        StripCard(onClick = onBrief, modifier = Modifier.fillMaxWidth().semantics { contentDescription = briefWord }) {
+        // The card reads its verdict and its line, and its action is
+        // named Brief, rather than the whole card being called "Brief" and
+        // the verdict never said.
+        StripCard(onClick = onBrief, modifier = Modifier.fillMaxWidth().semantics { onClick(label = briefWord) { onBrief(); true } }) {
             Column(Modifier.padding(16.dp).heightIn(min = 80.dp), verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.Bottom)) {
                 if (verdict != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -115,7 +131,7 @@ fun StripHead(
                 if (line != null) {
                     Text(
                         line.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -128,6 +144,8 @@ fun StripHead(
             }
         }
         actions.take(3).forEach { action ->
+            // The finding said before the line, as its glyph shows it.
+            val said = "${findingSaid(action.finding)}: ${action.line}"
             StripCard(onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth()) {
                 ListItem(
                     headlineContent = { Text(action.line, style = MaterialTheme.typography.bodyLarge) },
@@ -136,6 +154,7 @@ fun StripHead(
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clearAndSetSemantics { contentDescription = said },
                 )
             }
         }

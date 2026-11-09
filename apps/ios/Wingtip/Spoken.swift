@@ -57,11 +57,13 @@ final class SpokenAlerts {
     }
 
     /// Each answer of what is ahead.
+    /// Said aloud with the pilot's switch on; else, for a pilot with
+    /// VoiceOver, announced by it, so the banner coming in is never silent.
     func hear(_ alerts: [AheadAlert]) {
-        guard on else { return }
         let next = Self.toSay(alerts, said: said)
         said = next.said
-        if let words = next.words { say(words) }
+        guard let words = next.words else { return }
+        if on { say(words) } else { Announce.alert(words) }
     }
 
     /// A line said over whatever else is playing, which ducks for it.

@@ -1,6 +1,6 @@
-import { useId, useState } from "react";
+import { lazy, Suspense, useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, Mail, MailX, Plus, Users } from "lucide-react";
+import { GraduationCap, Mail, MailX, Plus, Target, Users } from "lucide-react";
 import { done } from "../../lib/doneNote";
 import FieldHit from "../../components/FieldHit";
 import { cn } from "cn";
@@ -29,6 +29,8 @@ import { EditToggle, RemoveMinus } from "../../components/Favorites";
 import { SwipeToDelete } from "../../components/SwipeToDelete";
 
 const today = () => localDay();
+// Its own chunk: it reads the saved flights' debriefs only when opened.
+const CoachPage = lazy(() => import("./coach/CoachPage"));
 
 /** "To 19 Dec 2026" in the tint's green, or "Not current" in red; with a
  *  `from` still to come (instrument currency from approaches flown this
@@ -184,10 +186,17 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
       pages={{
         checkride: { title: "Private pilot checkride", content: <CheckridePage /> },
         instructing: { title: "Instructing", content: <InstructorPage /> },
+        coach: { title: "Coach", content: <Suspense fallback={null}><CoachPage /></Suspense> },
       }}
     >
     <section aria-label="Logbook" className="space-y-5">
       <ListGroup>
+        {/* What is due, what the pilot's own flights show and what to
+            practise, the engine's plan in words (coach/CoachPage). */}
+        <PageRow
+          page="coach" title="Coach" media={<Target className="size-5 text-tint" />}
+          description="What is due, what your flights show, and what to practise where" testId="coach-row"
+        />
         <PageRow
           page="checkride" title="Checkride" media={<GraduationCap className="size-5 text-tint" />}
           description="61.109 experience, knowledge test codes, endorsements, your instructor"

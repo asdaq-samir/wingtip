@@ -31,7 +31,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.ui.LocalInk
@@ -65,11 +67,20 @@ fun AtcCopilotHost(plan: Plan, flying: Boolean, fix: OwnShip.Fix?) {
     if (mode == AtcMode.OFF) return
     val card = state.card
     val noPosition = stringResource(R.string.atc_direct_needs_position)
+    val haptics = rememberHaptics()
     when {
         card != null -> AtcCardView(
             card, state.kept, state.problem,
             words = { AtcWords.itemWords(it, EngineAtc::altitude) },
-            onAct = { i -> model.act(i) { ident -> fix?.let { plan.directTo(ident, it); null } ?: noPosition } },
+            onAct = { i ->
+                model.act(i) { ident ->
+                    fix?.let {
+                        plan.directTo(ident, it)
+                        haptics.tap(WingtipHaptic.DIRECT_TO)
+                        null
+                    } ?: noPosition
+                }
+            },
             onReadBack = {
                 if (allowed) model.readBack() else ask.launch(Manifest.permission.RECORD_AUDIO)
             },

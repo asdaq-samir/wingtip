@@ -14,6 +14,13 @@ export const CHART = {
   airspaceBlue: "#2f8cff",
   airspaceMagenta: "#e02ad8",
   airspaceTab: "#1c2330",
+  nexrad1: "#9be59b",
+  nexrad2: "#34c759",
+  nexrad3: "#ffd60a",
+  nexrad4: "#ff9f0a",
+  nexrad5: "#ff3b30",
+  nexrad6: "#b0001e",
+  nexrad7: "#d62ad8",
   specialUse: "#e0662a",
   fixInk: "#1c1a17",
   vfrGreen: "#148a3b",
@@ -105,6 +112,16 @@ export const MOTION = {
   sheetBackEase: [0.2, 0.9, 0.3, 1],
   fade: 0.2,
   quick: 0.15,
+  page: 0.25,
+  skeletonPulse: 1.5,
+} as const;
+
+/** The taps felt on a key action: navigator.vibrate patterns in milliseconds (lib/haptics plays them). */
+export const HAPTIC = {
+  altitude: [8],
+  directTo: [14],
+  warning: [40, 60, 40],
+  detent: [6],
 } as const;
 
 /** Corners, in points. */
@@ -139,4 +156,5 @@ export const SIZE = {
   panel: 384,
   panelWide: 448,
   desktop: 1024,
+  refreshPull: 64,
 } as const;

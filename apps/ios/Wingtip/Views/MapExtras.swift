@@ -165,12 +165,15 @@ final class MapExtrasState: NSObject {
         let hold = UILongPressGestureRecognizer(target: self, action: #selector(held(_:)))
         hold.minimumPressDuration = 0.5
         map.addGestureRecognizer(hold)
+        // The airports, checkpoints and traffic in view in VoiceOver's rotor.
+        map.accessibilityCustomRotors = MapRotors.rotors(for: map)
     }
 
     @objc private func held(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began, let map = gesture.view as? MKMapView else { return }
         let at = map.convert(gesture.location(in: map), toCoordinateFrom: map)
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        // Maps' pin-drop tap, none with Reduce Motion on, as Feel's taps.
+        if !UIAccessibility.isReduceMotionEnabled { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         onHold?(at)
     }
 

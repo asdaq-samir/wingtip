@@ -44,6 +44,15 @@ import Testing
         case "weight": return number(input).map(Format.weight)
         case "windCorrection": return number(input).map(Format.windCorrection)
         case "variation": return number(input).map(Format.variation)
+        case "spokenAltitude": return Format.spokenAltitude(number(input))
+        case "spokenHeading": return number(input).map(Format.spokenHeading)
+        case "spokenHeadingMagnetic": return number(input).map(Format.spokenHeadingMagnetic)
+        case "spokenHeadingTrue": return number(input).map(Format.spokenHeadingTrue)
+        case "spokenDistance": return Format.spokenDistance(number(input))
+        case "spokenSpeed": return Format.spokenSpeed(number(input))
+        case "spokenFuel": return Format.spokenFuel(number(input))
+        case "spokenDuration": return number(input).map(Format.spokenDuration)
+        case "spokenZulu": return (input as? String).flatMap { ISO8601DateFormatter().date(from: $0) }.map(Format.spokenZulu)
         default: return nil
         }
     }
@@ -67,5 +76,17 @@ import Testing
         #expect(Format.duration(126) == "2h 6m")
         #expect(Format.heading(0) == "360°")
         #expect(Format.distance(12, decimals: 0) == "12 nm")
+    }
+
+    /// The number words are written by hand, not by the OS's spellOut, so
+    /// they hold whatever iOS writes: hyphenated tens, no "and", large ones.
+    @Test func numberWordsAreTheTablesOwn() {
+        #expect(Format.words(45) == "forty-five")
+        #expect(Format.words(101) == "one hundred one")
+        #expect(Format.words(2_000_019) == "two million nineteen")
+        #expect(Format.words(12.04, decimals: 1) == "twelve")
+        #expect(Format.words(-0.02, decimals: 1) == "zero")
+        #expect(Format.words(3.25, decimals: 2) == "three point two five")
+        #expect(Format.spokenAltitude(1) == "one foot")
     }
 }

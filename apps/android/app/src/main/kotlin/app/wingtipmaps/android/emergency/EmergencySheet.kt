@@ -25,16 +25,21 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.strip.words
+import app.wingtipmaps.android.ui.AnnounceOnce
 import app.wingtipmaps.android.ui.BriefModel
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.largeType
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
@@ -90,19 +95,35 @@ private fun FieldsList(state: EmergencyModel.State, onPick: (String) -> Unit, on
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         )
     }
-    ranked?.fields.orEmpty().forEach { f -> FieldRow(f, picked = state.picked?.ident == f.ident) { onPick(f.ident) } }
+    val fields = ranked?.fields.orEmpty()
+    // The best field said at once, and again only when another becomes
+    // the best: the rows' miles change with every fix, so they are not a
+    // live region.
+    val best = fields.firstOrNull()
+    AnnounceOnce(best?.ident, best?.let { stringResource(R.string.said_best_field, it.ident, fieldWords(it)) })
+    fields.forEach { f -> FieldRow(f, picked = state.picked?.ident == f.ident) { onPick(f.ident) } }
 }
+
+/** A field's way and distance said: the heading magnetic, or true where
+ *  the engine has no variation for it (AIM 4-2-10), and the miles. */
+private fun fieldWords(f: EngineContract.BestField): String = listOfNotNull(
+    f.headingMagDeg?.let { "heading " + Spoken.headingMagnetic(it) } ?: f.headingTrueDeg?.let { "heading " + Spoken.headingTrue(it) },
+    Spoken.distance(f.distanceNm),
+).joinToString(", ")
 
 @Composable
 private fun FieldRow(f: EngineContract.BestField, picked: Boolean, onPick: () -> Unit) {
     val heading = f.headingMagDeg ?: f.headingTrueDeg
     val ink = LocalInk.current
+    // Read as one: the field, its way and miles in words, then the
+    // engine's reasons, rather than "270 degree dot 8.3 n m".
+    val said = (listOf(f.ident, f.name, fieldWords(f)) + f.reasons.map { it.text }).joinToString(", ")
     ListItem(
         leadingContent = { RadioButton(selected = picked, onClick = null) },
         headlineContent = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
                 Text(f.ident, fontWeight = FontWeight.SemiBold)
-                Text(f.name, modifier = Modifier.weight(1f), maxLines = 1)
+                Text(f.name, modifier = Modifier.weight(1f), maxLines = if (largeType()) 3 else 1)
             }
         },
         supportingContent = {
@@ -128,6 +149,6 @@ private fun FieldRow(f: EngineContract.BestField, picked: Boolean, onPick: () ->
             }
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.selectable(selected = picked, role = Role.RadioButton, onClick = onPick),
+        modifier = Modifier.selectable(selected = picked, role = Role.RadioButton, onClick = onPick).clearAndSetSemantics { contentDescription = said },
     )
 }

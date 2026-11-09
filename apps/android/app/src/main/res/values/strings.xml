@@ -36,6 +36,32 @@
     <string name="figure_burn">BURN</string>
     <string name="figure_ceiling">CEILING</string>
 
+    <!-- What TalkBack says for a figure's name and for a control's state,
+         where the written word is an abbreviation or nothing at all. -->
+    <string name="said_to">To</string>
+    <string name="said_fuel_required">Fuel required</string>
+    <string name="said_expanded">Expanded</string>
+    <string name="said_collapsed">Collapsed</string>
+    <string name="said_show_why">Show why</string>
+    <string name="said_warning">Warning</string>
+    <string name="said_caution">Caution</string>
+    <string name="said_note">Note</string>
+    <string name="said_open">Open</string>
+    <string name="said_open_leg">Open the leg</string>
+    <string name="said_map">Chart</string>
+    <plurals name="said_map_fields">
+        <item quantity="one">Chart, %1$d field in view. An action opens it.</item>
+        <item quantity="other">Chart, %1$d fields in view. Actions open each one.</item>
+    </plurals>
+    <string name="said_open_field">Open %1$s</string>
+    <string name="said_best_field">Best field %1$s, %2$s</string>
+    <string name="said_atc_heard">Call for you: %1$s</string>
+    <string name="said_sheet_pill">Panel lowered</string>
+    <string name="said_sheet_half">Panel at half</string>
+    <string name="said_sheet_full">Panel full screen</string>
+    <string name="said_sheet_up">Raise the panel</string>
+    <string name="said_sheet_down">Lower the panel</string>
+
     <!-- The map's buttons (the UI audit's #12: the state said, not only drawn). -->
     <string name="own_ship_button">My Position</string>
     <string name="own_ship_off">Off</string>
@@ -93,6 +119,11 @@
     <string name="fix">Fix</string>
     <string name="vfr_waypoint">VFR Waypoint</string>
     <string name="traffic">Traffic</string>
+    <string name="receiver_setting">ADS-B Receiver</string>
+    <string name="receiver_auto">Auto</string>
+    <string name="receiver_off">Off</string>
+    <string name="receiver_chip">ADS-B receiver: %1$s</string>
+    <string name="receiver_report">%1$s over FIS-B, heard %2$s</string>
     <string name="traffic_gone">No longer heard.</string>
     <string name="track">Track</string>
     <string name="stop_tracking">Stop Tracking</string>
@@ -156,6 +187,30 @@
     <string name="passengers_briefed">Briefed: %1$d of %2$d</string>
     <string name="the_flight">The Flight</string>
     <string name="server">Server</string>
+    <string name="cancel">Cancel</string>
+    <!-- The account's own data (account/): given back as a file, or deleted. -->
+    <string name="export_my_data">Export My Data</string>
+    <string name="export_my_data_line">Everything kept for your account, as one JSON file</string>
+    <string name="export_saved">Saved.</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_title">Delete your account?</string>
+    <string name="delete_account_text">Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This can\'t be undone.</string>
+    <!-- About (about/), from the foot of Setup; the planning aid in the
+         words every app says (docs/legal/credits.md). -->
+    <string name="about">About</string>
+    <string name="about_line">Version, credits, privacy and terms</string>
+    <string name="about_version">Version</string>
+    <string name="about_build">Build</string>
+    <string name="about_chart_edition">Chart Edition</string>
+    <string name="about_cycle_packs">Cycle Packs</string>
+    <string name="about_planning_aid">A Planning Aid</string>
+    <string name="about_planning_aid_text">Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1-800-WX-BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).</string>
+    <string name="about_credits">Credits</string>
+    <string name="about_legal">Legal</string>
+    <string name="about_privacy">Privacy Policy</string>
+    <string name="about_terms">Terms of Use</string>
+    <string name="about_support">Support</string>
+    <string name="about_demo_flight">Demo Flight</string>
     <string name="pilot_menu">The pilot\'s menu</string>
 
     <!-- Live reports from SWIM on the airport and airspace cards (live/). -->
@@ -263,6 +318,26 @@
     <string name="logbook_entries">Entries</string>
     <string name="logbook_empty">Nothing logged yet. A flight recorded by the app is offered here once it ends.</string>
     <string name="currency">Currency</string>
+    <!-- The Logbook's Coach, the pilot's proficiency plan (coach/). -->
+    <string name="coach">Coach</string>
+    <string name="coach_line">What is due, and sessions to fly for it</string>
+    <string name="coach_certificate">Your Certificate</string>
+    <string name="coach_certificate_short">Certificate</string>
+    <string name="certificate_student">Student</string>
+    <string name="certificate_private">Private or Higher</string>
+    <string name="certificate_instrument">Instrument Rated</string>
+    <string name="coach_make">Make My Plan</string>
+    <string name="coach_make_again">Make It Again</string>
+    <string name="coach_make_line">From your logbook and the fields near %1$s</string>
+    <string name="coach_home_none">your home base</string>
+    <string name="coach_making">Reading your logbook…</string>
+    <string name="coach_reminders">Reminders</string>
+    <string name="coach_wording">Putting your plan into words…</string>
+    <string name="coach_no_words">No words for now: %1$s</string>
+    <string name="coach_sessions">Sessions</string>
+    <string name="coach_nothing">Nothing to practise for now: every currency is good past the reminders, and no debrief shows a weak area.</string>
+    <string name="coach_due">What Is Due</string>
+    <string name="coach_debriefs">From Your Debriefs</string>
     <string name="flight_logged">Flight Logged</string>
     <string name="flight_logged_line">Drawn from this flight\'s track. Change anything, then Log it.</string>
     <string name="flight_logged_sign_in">Sign in to log it: the track is kept on this phone until then.</string>
@@ -326,4 +401,29 @@
         <item quantity="one">Log %1$d Flight</item>
         <item quantity="other">Log %1$d Flights</item>
     </plurals>
+
+    <!-- The welcome, once per install (welcome/): one page a step, Skip on
+         each, the system's permission asks only after Allow. -->
+    <string name="welcome">Welcome</string>
+    <string name="welcome_skip">Skip</string>
+    <string name="welcome_next">Next</string>
+    <string name="welcome_airplane">Your Airplane</string>
+    <string name="welcome_airplane_line">Pick the one you fly for times, fuel and headings, or plan with no airplane.</string>
+    <string name="welcome_home">Home Airport</string>
+    <string name="welcome_home_line">Where your flights usually start. You can leave it empty.</string>
+    <string name="welcome_home_is">Home: %1$s</string>
+    <string name="welcome_rules">VFR or IFR</string>
+    <string name="welcome_rules_line">How you usually fly. Change it any time in FPL.</string>
+    <string name="welcome_location">Location</string>
+    <string name="welcome_location_line">Wingtip plans from where you are and shows your airplane on the chart.</string>
+    <string name="welcome_notifications">Notifications</string>
+    <string name="welcome_notifications_line">Wingtip tells you when something on your route changes: a TFR, the weather turning.</string>
+    <string name="welcome_finish">Ready to Fly</string>
+    <string name="welcome_finish_line">See a whole flight first, Madison (KMSN) to Oshkosh (KOSH), with its route, nav log and Brief, or plan your own.</string>
+    <string name="welcome_sample">Open Sample Flight</string>
+    <string name="welcome_own">Plan My Own</string>
+    <string name="welcome_again">Show Welcome Again</string>
+    <string name="microphone">Microphone</string>
+    <string name="loading">Loading</string>
+    <string name="microphone_line">Wingtip listens to the radio to write down your clearance; nothing leaves the phone unless you ask.</string>
 </resources>

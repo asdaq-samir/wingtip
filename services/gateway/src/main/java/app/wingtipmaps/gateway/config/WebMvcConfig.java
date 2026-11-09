@@ -88,6 +88,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // short to type on a phone: the planner, opening the box for the
         // TV's code.
         registry.addRedirectViewController("/tv", "/app/plan?tv-link=1");
+        // The short addresses App Store Connect, Google Play and the apps'
+        // About screens give for the privacy policy, the terms and support:
+        // the pages the web build renders from docs/legal (apps/web's
+        // legalPages plugin), plain HTML that opens without the app.
+        registry.addRedirectViewController("/privacy", "/app/privacy.html");
+        registry.addRedirectViewController("/terms", "/app/terms.html");
+        registry.addRedirectViewController("/support", "/app/support.html");
     }
 
     @Override

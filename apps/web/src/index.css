@@ -7,6 +7,19 @@
 @import "./styles/tokens.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Reduce Transparency, or Increase Contrast, asked for on the device
+   (Safari reports iOS's Increase Contrast as prefers-contrast: more; Chrome
+   reports Reduce Transparency): every frosted surface solid, as iOS's own
+   materials go solid then (Apple's HIG, Materials). `solid:` on the
+   classes that frost; the glass utility below does it for itself. */
+@custom-variant solid {
+  @media (prefers-reduced-transparency: reduce) {
+    @slot;
+  }
+  @media (prefers-contrast: more) {
+    @slot;
+  }
+}
 /* The header at the bottom of the screen (useNavEdge): the page's root
    says data-nav="bottom" once that edge has been picked, or "auto",
    which is the bottom on a phone -- decided here, from the first frame,
@@ -300,7 +313,17 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   }
 
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
+  }
+  /* A keyboard's focus seen on everything, in the ring token at full
+     strength (3:1 or more on every surface in every look,
+     looksContrast.test.ts; WCAG 2.4.7, 1.4.11): what has no ring of its
+     own -- a plain button, a link, a list row -- gets this outline; what
+     draws its own ring (the stock components' focus-visible:ring) sets
+     outline-none over it. At half strength the ring was 2:1 on white. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   body {
     @apply bg-background text-foreground;
@@ -558,6 +581,20 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
   }
 }
 
+/* A page giving way to the next (lib/viewTransition): only the element
+   named wingtip-page moves, a short shared-axis slide and fade over
+   motion.page on the sheet's ease-out; the rest of the screen, the map
+   under it, is not captured as the page's root would be. */
+:root { view-transition-name: none; }
+::view-transition-group(wingtip-page) {
+  animation-duration: var(--motion-page);
+  animation-timing-function: var(--motion-sheet-ease);
+}
+::view-transition-old(wingtip-page) { animation: var(--motion-page) var(--motion-sheet-ease) both page-out; }
+::view-transition-new(wingtip-page) { animation: var(--motion-page) var(--motion-sheet-ease) both page-in; }
+@keyframes page-out { to { opacity: 0; transform: translateX(-1.5rem); } }
+@keyframes page-in { from { opacity: 0; transform: translateX(1.5rem); } }
+
 /* iOS 26's Liquid Glass, for what floats over the chart at rest (GLASS
    in mapChrome): clearer than the sheets' material, the chart under it
    blurred, brightened and its colours lifted, a rim of light round its
@@ -629,6 +666,18 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
   &:is(.dark *) {
     background-color: color-mix(in oklab, var(--popover) var(--glass-fill, var(--glass-fill-dark)), transparent);
     box-shadow: 0 0 0 0.5px rgb(255 255 255 / 0.08), 0 2px 12px rgb(0 0 0 / 0.45);
+  }
+  /* Solid under Reduce Transparency or Increase Contrast (the solid
+     variant above): the page's own ground, nothing of the chart through
+     it, and a hairline that can be seen in place of the frost's edge. */
+  @variant solid {
+    background-color: var(--background) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: 0 0 0 1px var(--border), 0 2px 12px rgb(0 0 0 / 0.12);
+    &:is(.dark *) {
+      background-color: var(--popover) !important;
+    }
   }
 }
 

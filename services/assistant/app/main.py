@@ -8,6 +8,10 @@ asks the engine every rule.
 - POST /api/assistant: the pilot's assistant, Claude's tool runner over
   the planner's endpoints and the engine's tagged rules, streamed
   (app.assistant, app.toolbox, app.rule_tools).
+- POST /api/trip-plan: a trip in the pilot's words worked into a
+  proposal the FPL loads on the pilot's tap, streamed (app.trip).
+- POST /api/words/notams/ranked: the flight's NOTAMs ranked by the engine,
+  a line on each (app.notam_rank).
 - POST /api/briefing/narrative: the Brief's narrative of the nav log on
   screen, streamed (app.narrative).
 - POST /api/words/{notams,weather,risk,debrief,changes}: a few sentences
@@ -30,15 +34,17 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, TypeAdapter
 
-from . import assistant, documents, narrative, notes, oral, tracing, words
+from . import assistant, coach, documents, narrative, notam_rank, notes, oral, tracing, words
 from .schemas import STREAM_MESSAGES
+from .trip import agent as trip
+from .trip.schemas import TripMessage
 from .settings import get_settings
 
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="Wingtip Maps assistant")
 
-for module in (assistant, narrative, words, notes, oral, documents):
+for module in (assistant, narrative, words, notam_rank, coach, notes, oral, trip, documents):
     app.include_router(module.router)
 
 # Traces, where an OTLP endpoint is set (app.tracing).
@@ -70,7 +76,7 @@ def _openapi() -> dict:
         return app.openapi_schema
     document = get_openapi(title=app.title, version=app.version, routes=app.routes)
     components = document.setdefault("components", {}).setdefault("schemas", {})
-    for name, union in STREAM_MESSAGES.items():
+    for name, union in {**STREAM_MESSAGES, "TripMessage": TripMessage}.items():
         schema = TypeAdapter(union).json_schema(mode="serialization", ref_template="#/components/schemas/{model}")
         components.update(schema.pop("$defs", {}))
         components[name] = schema
