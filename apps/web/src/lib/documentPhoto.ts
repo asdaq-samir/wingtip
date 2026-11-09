@@ -6,7 +6,7 @@
  * clearance card's (components/ClearancePhoto). Nothing here saves
  * anything: each screen shows what was read for the pilot to confirm.
  */
-import { api } from "./api/client";
+import { readDocument } from "./api/documents";
 import type { DocumentRead, ReadAsk } from "./api/types";
 import { localDay } from "./format/time";
 
@@ -47,7 +47,7 @@ async function base64(blob: Blob): Promise<string> {
  *  of and today's date (a logbook row may not be after it). */
 export async function readPage(kind: DocumentKind, photo: Blob): Promise<DocumentRead> {
   const image = await photoForReading(photo);
-  return api.readDocument({ kind, image, media_type: "image/jpeg", today: localDay() });
+  return readDocument({ kind, image, media_type: "image/jpeg", today: localDay() });
 }
 
 /** A flag's words in the findings' tones: "wrong" the stop's, "check" the

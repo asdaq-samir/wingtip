@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Controller, useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { numberOrNull, optionalHours, pastDay, requiredPastDay, textOrNull, z } from "./formSchema";
 import { done } from "../../lib/doneNote";
@@ -15,7 +15,8 @@ import { planHrefOf } from "../../lib/flightLink";
 import { routeName } from "../../lib/identSchema";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "../../components/ui/input-group";
+import NumberRow from "./NumberRow";
+import { keepHandbook } from "../../lib/api/documents";
 import { Spinner } from "../../components/ui/spinner";
 import PullDown from "../../components/PullDown";
 import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
@@ -396,7 +397,7 @@ export function AircraftPanel() {
   const save = useMutation({
     mutationFn: async ({ id, request, figures }: { id: number | null; request: AircraftRequest; figures: HandbookFigures | null }) => {
       const saved = id ? await api.aircraft.update(id, request) : await api.aircraft.add(request);
-      return figures ? api.aircraft.handbook(saved.id, figures) : saved;
+      return figures ? keepHandbook(saved.id, figures) : saved;
     },
     // The only other feedback a save gets is a row quietly changing in
     // a table below the form -- easy to miss with your eyes still on
@@ -690,34 +691,6 @@ export function AircraftPanel() {
       )}
     </section>
     </ConsolePages>
-  );
-}
-
-/** One of the aircraft form's figures: its label at the start, the
- *  number at the end with its unit inside the field, and what is wrong
- *  with it under the label. `name` is the accessible name, the phase
- *  and the unit in full ("Climb TAS in knots"). */
-function NumberRow({ id, title, unit, placeholder, name, field, error }: {
-  id: string;
-  title: string;
-  unit: string;
-  placeholder: string;
-  name: string;
-  field: UseFormRegisterReturn;
-  error?: string;
-}) {
-  return (
-    <ListRow id={id} title={title} description={error ? <span className="text-destructive">{error}</span> : undefined}>
-      <FieldHit htmlFor={id}>
-      <InputGroup className="h-8 w-32">
-        <InputGroupInput
-          id={id} {...field} placeholder={placeholder} className="text-right"
-          aria-label={name} inputMode="decimal" aria-invalid={!!error}
-        />
-        <InputGroupAddon align="inline-end"><InputGroupText>{unit}</InputGroupText></InputGroupAddon>
-      </InputGroup>
-      </FieldHit>
-    </ListRow>
   );
 }
 

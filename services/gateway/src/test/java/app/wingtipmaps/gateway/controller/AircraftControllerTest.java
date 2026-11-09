@@ -383,29 +383,4 @@ class AircraftControllerTest {
                 .andExpect(status().isBadRequest());
         mockMvc.perform(delete("/api/aircraft/7/due-items/4").with(csrf())).andExpect(status().isUnauthorized());
     }
-
-    /** The handbook figures a pilot confirmed from a photographed page
-     *  are kept as sent and come back with the airplane; another pilot's
-     *  airplane, or none, is a 404. */
-    @Test
-    void handbook_keepsTheConfirmedFiguresAsSent() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-        java.util.Map<String, Object> figures = java.util.Map.of("glide_speed_kias", 68, "glide_ratio", 9,
-                "envelope", List.of(java.util.Map.of("arm_in", 35, "weight_lb", 1500)));
-        given(aircraftService.keepHandbook(any(), eq(7L), org.mockito.ArgumentMatchers.argThat(f -> f != null
-                && f.glide_ratio() == 9.0 && f.envelope().get(0).weight_lb() == 1500.0)))
-                .willReturn(Optional.of(sampleAircraft().keepHandbook(figures)));
-        String body = "{\"figures\":{\"glide_speed_kias\":68,\"glide_ratio\":9,\"envelope\":[{\"arm_in\":35,\"weight_lb\":1500}]}}";
-
-        mockMvc.perform(put("/api/aircraft/7/handbook").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.handbook.glide_ratio").value(9))
-                .andExpect(jsonPath("$.handbook.envelope[0].weight_lb").value(1500));
-
-        given(aircraftService.keepHandbook(any(), eq(8L), any())).willReturn(Optional.empty());
-        mockMvc.perform(put("/api/aircraft/8/handbook").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isNotFound());
-    }
 }

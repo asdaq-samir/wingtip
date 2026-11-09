@@ -5,7 +5,7 @@ import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
 import { REQUEST_ID_HEADER, newRequestId } from "./requestId";
 import type { AirportAtis, AirportRvr, CopilotAround, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses } from "./types";
-import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, IcingForecast, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, Obstacles, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces, EmergencyFields, DepartureWindow, DepartureWindowAsk, DueItem, DueItemRequest, Paperwork, LogbookDraft, LogbookDraftAsk, DocumentRead, ReadAsk, HandbookFigures } from "./types";
+import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, IcingForecast, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, Obstacles, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces, EmergencyFields, DepartureWindow, DepartureWindowAsk, DueItem, DueItemRequest, Paperwork, LogbookDraft, LogbookDraftAsk } from "./types";
 
 /**
  * Every call the pages make. Both servers' calls go through
@@ -579,10 +579,6 @@ export const api = {
    *  the track found by the planner); nothing saved. */
   logbookDraft: (body: LogbookDraftAsk, signal?: AbortSignal) =>
     planner.POST("/api/logbook-draft", { body, signal }).then(data<LogbookDraft>),
-  /** A photographed page (a handbook's, a logbook's, a clearance note)
-   *  read into figures and checked by the engine; nothing saved
-   *  (lib/documentPhoto). */
-  readDocument: (body: ReadAsk) => assistant.POST("/api/read-document", { body }).then(data<DocumentRead>),
 
   /** The mock oral (the planner's app.oral): a question about this
    *  flight, and an answer graded. The developer's, for now. */
@@ -845,10 +841,6 @@ export const api = {
     remove: async (id: number): Promise<void> => {
       await gateway.DELETE("/api/aircraft/{id}", { params: { path: { id } } });
     },
-    /** Its handbook figures as its pilot confirmed them from a photo;
-     *  null takes them away. */
-    handbook: (id: number, figures: HandbookFigures | null) =>
-      gateway.PUT("/api/aircraft/{id}/handbook", { params: { path: { id } }, body: { figures } }).then(data<Aircraft>),
     /** Its VOR check for IFR, recorded (14 CFR 91.171(d)). */
     vorCheck: (id: number, request: VorCheckRequest) =>
       gateway.PUT("/api/aircraft/{id}/vor-check", { params: { path: { id } }, body: request }).then(data<Aircraft>),

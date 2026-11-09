@@ -22,17 +22,7 @@ import { listenOnce, startRadio, stopRadio } from "../lib/atcListening";
 import { callPattern } from "../lib/heardCall";
 import { altitudeWords, clearanceParts, readbackCheck, readbackLines } from "../lib/readback";
 import { TEXT } from "../lib/text";
-
-/** The words once they have stopped changing for a moment, so the
- *  planner is not asked at each letter typed or word heard. */
-function useSettled(text: string, ms: number): string {
-  const [settled, setSettled] = useState(text);
-  useEffect(() => {
-    const id = window.setTimeout(() => setSettled(text), ms);
-    return () => window.clearTimeout(id);
-  }, [text, ms]);
-  return settled;
-}
+import { useSettled } from "../hooks/use-settled";
 
 const capital = (words: string) => words.replace(/\b[a-z]/g, ch => ch.toUpperCase());
 const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -328,8 +318,7 @@ export default function ClearanceCard({ onDone }: {
             aria-label="The clearance as heard" data-testid="clearance-text"
             className={cn(TEXT.detail, "resize-none font-mono")}
           />
-          {/* A clearance copied down on paper, read into the words typed
-              here, for the reader below as a typed one (ClearancePhoto). */}
+          {/* A clearance copied down on paper, read into the words above. */}
           <ClearancePhoto onRead={pick} />
           {heardIt && (
             <div className="flex flex-col gap-1">
