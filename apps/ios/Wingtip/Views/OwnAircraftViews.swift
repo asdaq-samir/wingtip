@@ -72,6 +72,10 @@ struct AircraftFormView: View {
     @State private var saving = false
     @State private var problem: String?
     @State private var tried = false
+    /// The handbook's figures confirmed from a photographed page, saved
+    /// with the airplane after its own Save (HandbookPhotoSection).
+    @State private var handbook: GWHandbookFigures?
+    @State private var added: OwnAircraftRecord?
 
     var body: some View {
         let problems = tried ? form.problems : [:]
@@ -80,6 +84,7 @@ struct AircraftFormView: View {
                 field("Tail number", text: $form.tailNumber, placeholder: "N12345", key: "tailNumber", problems: problems, codes: true)
                 field("Type", text: $form.typeDesignator, placeholder: "C172", key: "typeDesignator", problems: problems, codes: true)
             }
+            HandbookPhotoSection(form: $form, pending: $handbook, kept: record?.handbook)
             Section(title: "True Airspeed") {
                 number("Climb", unit: "kt", text: $form.climbTasKt, placeholder: "74", key: "climbTasKt", problems: problems)
                 number("Cruise", unit: "kt", text: $form.cruiseTasKt, placeholder: "110", key: "cruiseTasKt", problems: problems)
@@ -152,8 +157,15 @@ struct AircraftFormView: View {
         saving = true
         defer { saving = false }
         do {
-            let saved: OwnAircraftRecord
-            if let record { saved = try await Gateway.updateAircraft(record.id, request) } else { saved = try await Gateway.addAircraft(request) }
+            var saved: OwnAircraftRecord
+            // A new airplane added once is updated on a second Save, where
+            // its handbook's figures failed after it went in.
+            if let id = record?.id ?? added?.id { saved = try await Gateway.updateAircraft(id, request) } else { saved = try await Gateway.addAircraft(request) }
+            added = record == nil ? saved : nil
+            if let handbook {
+                saved = try await Gateway.saveHandbook(saved.id, handbook)
+                self.handbook = nil
+            }
             problem = nil
             onSaved(saved)
             if record == nil { dismiss() }
@@ -218,49 +230,6 @@ struct OwnAircraftPage: View {
     private func reload() async {
         if let fresh = try? await Gateway.aircraftRecords().first(where: { $0.id == record.id }) { record = fresh }
         onChange()
-    }
-}
-
-/// A date the pilot may leave unsaid: a button to give one, then the
-/// system's date picker with a way to take it off again.
-struct OptionalDayRow: View {
-    let title: String
-    @Binding var day: String?
-    var upTo: Date? = nil
-
-    var body: some View {
-        if let value = day, let date = Day.date(value) {
-            HStack {
-                DatePicker(title, selection: Binding(get: { date }, set: { day = Day.string($0) }),
-                           in: ...(upTo ?? .distantFuture), displayedComponents: .date)
-                Button { day = nil } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                        // The 44-point hit area round the glyph, which does not grow.
-                        .contentShape(Rectangle().inset(by: -12))
-                }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Clear \(title.lowercased())")
-            }
-        } else {
-            LabeledContent(title) {
-                Button("Add Date") { day = Day.today() }.buttonStyle(.borderless)
-            }
-        }
-    }
-}
-
-/// How a last good day stands today: green to it, red past it. The day
-/// is the gateway's.
-struct StandingText: View {
-    let through: String?
-    var good = "To"
-    var past = "Past due since"
-
-    var body: some View {
-        if let through {
-            let current = Day.current(through)
-            Text("\(current ? good : past) \(Day.said(through))").foregroundStyle(current ? Color.green : Color.red)
-        }
     }
 }
 

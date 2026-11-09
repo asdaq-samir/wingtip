@@ -344,10 +344,10 @@ struct ClearanceSheet: View {
     }
 
     /// The clearance's words, to type or to read as heard.
-    private var heardField: some View {
+    @ViewBuilder private var heardField: some View {
         TextField("Tap Listen and hold the phone to the speaker, or type the clearance.",
-                  text: Binding(get: { text }, set: { text = $0; following = false }), axis: .vertical)
-            .lineLimit(3...6)
+                  text: Binding(get: { text }, set: { text = $0; following = false }), axis: .vertical).lineLimit(3...6)
+        ClearancePhotoRow { said in text = said; following = false }
     }
 
     /// The radio as heard, newest first, a call to us in the tint: a tap

@@ -79,10 +79,9 @@ struct LogbookView: View {
                         previewRows(preview.name, preview.read)
                     } else {
                         Button { importing = true } label: { Label("Import a Logbook", systemImage: "square.and.arrow.down") }
-                        if let exportFile {
-                            ShareLink(item: exportFile) { Label("Export as CSV", systemImage: "square.and.arrow.up") }
-                        }
+                        if let exportFile { ShareLink(item: exportFile) { Label("Export as CSV", systemImage: "square.and.arrow.up") } }
                     }
+                    LogbookPhotoRow { await load() }
                 }
                 Section(title: "Flights") {
                     if let entries {

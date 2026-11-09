@@ -82,6 +82,12 @@ targets:
         # phone where it can be (ClearanceListener).
         NSMicrophoneUsageDescription: Wingtip Maps listens to the radio to show what ATC says, tell you when ATC calls you, and enter a clearance's route for you to check.
         NSSpeechRecognitionUsageDescription: Wingtip Maps turns what ATC says on the radio into words, on your iPhone where it can.
+        # A page photographed with the document camera (Documents/
+        # DocumentScanner): a handbook's performance or weight and balance
+        # page, a paper logbook page or a clearance copied down, read for
+        # the pilot to confirm item by item. The photo library is reached
+        # through the system's picker, which needs no permission.
+        NSCameraUsageDescription: Wingtip Maps photographs a handbook page, a logbook page or a clearance you wrote down, to read its figures for you to check.
         # The radio heard on with the phone locked, as the owner asked
         # (2026-11-02): the microphone kept open (ClearanceListener); and
         # the position read on while the airplane is flying (OwnShip),
