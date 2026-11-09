@@ -131,15 +131,9 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "gonogo_alternate_finding" => alternates(i, v.get("data")).map(|a| verdict::finding_json(verdict::alternate_finding(a.as_ref()))),
         "gonogo_with_alternate" => with_alternate_rule(i, v),
         "gonogo_under_minimums" => under_minimums_rule(i, v),
-        "gonogo_best_crosswind" => best_crosswind_rule(i, v),
         "gonogo_icing" => icing_rule(i, v),
         "gonogo_icing_line" => icing_line_rule(i, v),
         "gonogo_risk" => frat_input(i, v).map(|f| frat::assessment_json(&frat::assess(&f))),
-        "gonogo_inspection_factors" => (|| {
-            let insp = inspections(i, v.get("inspections"))?.unwrap_or_default();
-            Ok(frat::factors_json(&frat::inspection_factors(&insp, &i.str(v, "day")?, truth(v, "ifr"))))
-        })(),
-        "gonogo_squawk_factors" => squawks(i, v, "squawks").map(|s| frat::factors_json(&frat::squawk_factors(&s, truth(v, "night"), truth(v, "ifr")))),
         "gonogo_self_checks" => Ok(frat::self_checks_json()),
         "gonogo_risk_line" => (|| {
             let score = i.num(v, "score")?;
@@ -147,20 +141,10 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             json::string(&mut out, &frat::risk_line(&i.str(v, "level")?, score as i64));
             Ok(out)
         })(),
-        "gonogo_short_field" => short_field_rule(i, v),
         "gonogo_end_distance" => end_distance_rule(i, v),
         "gonogo_density_altitude" => (|| {
             let mut out = String::new();
             json::number(&mut out, runways::density_altitude_ft(i.num(v, "pressure_alt_ft")?, i.num(v, "temp_c")?));
-            Ok(out)
-        })(),
-        "gonogo_field_air" => (|| {
-            let (pa, t) = runways::field_air(i.num(v, "elevation_ft")?, i.opt_num(v, "altimeter_in_hg")?, i.opt_num(v, "temp_c")?);
-            let mut out = String::from("{\"pressure_alt_ft\":");
-            json::number(&mut out, pa);
-            out.push_str(",\"temp_c\":");
-            json::number(&mut out, t);
-            out.push('}');
             Ok(out)
         })(),
         "gonogo_soft_surface" => (|| {
@@ -194,10 +178,6 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "gonogo_default_load" => {
             (|| Ok(weight_balance::load_json(&weight_balance::default_load(&loading(i, v)?, i.num(v, "fuel_gal")?))))()
         }
-        "gonogo_in_envelope" => (|| {
-            let env = envelope(i, v)?;
-            Ok(weight_balance::in_envelope(&env, i.num(v, "arm")?, i.num(v, "weight")?).to_string())
-        })(),
         "gonogo_pass_minutes" => (|| {
             let legs = i
                 .list(v, "legs")?
@@ -461,29 +441,6 @@ fn under_minimums_rule(i: In, v: &Value) -> R<String> {
     Ok(verdict::strings_json(&minimums::under_minimums(&mine, &w)))
 }
 
-fn best_crosswind_rule(i: In, v: &Value) -> R<String> {
-    let runways: Vec<(bool, Option<RunwayWind>)> = i
-        .list(v, "runways")?
-        .iter()
-        .map(|r| Ok((truth(r, "closed"), runway_wind(i, r)?)))
-        .collect::<R<_>>()?;
-    let reported = match i.obj(v, "reported")? {
-        None => None,
-        Some(r) => Some((i.opt_num(r, "speed_kt")?, i.opt_num(r, "gust_kt")?)),
-    };
-    Ok(match minimums::best_crosswind(&runways, reported) {
-        None => "null".into(),
-        Some((end, kt)) => {
-            let mut out = String::from("{\"end\":");
-            json::opt_string(&mut out, end.as_deref());
-            out.push_str(",\"kt\":");
-            json::number(&mut out, kt);
-            out.push('}');
-            out
-        }
-    })
-}
-
 // --- icing ------------------------------------------------------------------
 
 fn icing_rule(i: In, v: &Value) -> R<String> {
@@ -619,13 +576,6 @@ fn distances_json(d: &runways::Distances) -> String {
     runways::distances_json(&mut out, d);
     out.push('}');
     out
-}
-
-fn short_field_rule(i: In, v: &Value) -> R<String> {
-    let t = table(i, i.obj(v, "table")?.map_or_else(|| i.err("table", "is missing"), Ok)?)?;
-    let d = runways::short_field(&t, i.num(v, "pressure_alt_ft")?, i.num(v, "temp_c")?, i.num(v, "weight_lb")?, i.num(v, "headwind_kt")?,
-                                 truth(v, "grass"));
-    Ok(distances_json(&d))
 }
 
 fn end_distance_rule(i: In, v: &Value) -> R<String> {

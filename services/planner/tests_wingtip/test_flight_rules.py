@@ -29,11 +29,9 @@ def test_the_wind_triangle_is_the_fixtures(case):
         assert got is None
         return
     assert got == pytest.approx((want["wca"], want["th"], want["gs"]), abs=1e-9)
-    # The nav log's own pair agree with it where a heading holds.
+    # The nav log's own groundspeed agrees with it where a heading holds.
     sides = {"true_course_deg": case["tc"], "wind_from_deg": case["windFrom"], "wind_kt": case["windKt"], "tas_kt": case["tas"]}
-    wca = engine("wind_correction_deg", **sides)
-    assert wca == pytest.approx(want["wca"], abs=1e-9)
-    assert engine("groundspeed_kt", **sides, wca_deg=wca) == pytest.approx(want["gs"], abs=1e-9)
+    assert engine("groundspeed_kt", **sides, wca_deg=want["wca"]) == pytest.approx(want["gs"], abs=1e-9)
 
 
 @pytest.mark.parametrize("case", FIXTURE["cruisingAltitude"], ids=lambda c: f"{c['floorFt']}@{c['courseDeg']}")

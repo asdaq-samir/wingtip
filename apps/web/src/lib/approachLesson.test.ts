@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Frequency, ProcedureDrawing, ProcedureMissedLeg } from "./api/types";
+import type { Frequency, ProcedureDrawing } from "./api/types";
 import {
   alongNm, approachBrief, approachCategory, approachQuiz, coachingSteps, lessonPath, lessonProfile, pathBetween, stopwatch,
 } from "./approachLesson";
@@ -8,11 +8,6 @@ import { callEngine } from "./engine/engine";
 // The engine's names behind the lesson's sentences, asked through the
 // .wasm as approach_brief asks them inside the engine.
 const descentFpm = (gsKt: number, angleDeg: number) => callEngine("approach_descent_fpm", { gs_kt: gsKt, angle_deg: angleDeg });
-const roundedFpm = (fpm: number) => callEngine("approach_rounded_fpm", { fpm });
-const minimumsKind = (name: string) => callEngine("approach_minimums_kind", { name });
-const fixName = (ident: string) => callEngine("approach_fix_name", { ident });
-const missedWords = (legs: ProcedureMissedLeg[] | undefined) => callEngine("approach_missed_words", { legs: legs ?? [] });
-const briefFrequencies = (frequencies: Frequency[] | null) => callEngine("approach_brief_frequencies", { frequencies: frequencies ?? [] });
 const SEE_THE_PLATE = "See the plate";
 
 /** KDLH's ILS 09 via DLH as the CIFP of 29 Oct 2026 codes it: DL the IAF
@@ -80,7 +75,6 @@ describe("descentFpm", () => {
     expect(descentFpm(100, 3) / 100).toBeCloseTo(5.3, 1);
     // Steeper is faster: 3.5° at 90 kt, 557.
     expect(descentFpm(90, 3.5)).toBeCloseTo(557, 0);
-    expect(roundedFpm(descentFpm(90, 3))).toBe(480);
   });
 });
 
@@ -97,38 +91,6 @@ describe("approachCategory", () => {
     expect(approachCategory(null, 70)).toBe("B");
     expect(approachCategory(85, 70)).toBe("A");
     expect(approachCategory(null, null)).toBeNull();
-  });
-});
-
-describe("minimumsKind", () => {
-  it("is a DA on a precision approach, an MDA on a non-precision one, either on an RNAV (GPS)", () => {
-    expect(minimumsKind("ILS RWY 09")).toBe("DA");
-    expect(minimumsKind("RNAV (RNP) Y RWY 08")).toBe("DA");
-    expect(minimumsKind("RNAV (GPS) Y RWY 26L")).toBe("DA or MDA");
-    expect(minimumsKind("LOC RWY 09")).toBe("MDA");
-    expect(minimumsKind("VOR/DME-A")).toBe("MDA");
-  });
-});
-
-describe("missedWords", () => {
-  it("says the missed approach in the plate's words, leg by leg", () => {
-    expect(missedWords(ILS.missed_legs)).toBe(
-      "Climb to 3,000 on course 093°, then left turn to heading 320° to intercept, then on course 017° to CHERL climbing to 4,500, "
-      + "then hold at CHERL, right turns, 197° inbound.",
-    );
-  });
-  it("leaves to the plate what its words do not say, and is null with nothing coded", () => {
-    expect(missedWords([{ path: "CA", fix: null, course_deg: 270, turn: null, min_ft: 2000, max_ft: null }, { path: "RF", fix: "X", course_deg: null, turn: "R", min_ft: null, max_ft: null }]))
-      .toBe("Climb to 2,000 on course 270°, then as the plate shows.");
-    expect(missedWords([{ path: "AF", fix: "X", course_deg: null, turn: "R", min_ft: null, max_ft: null }])).toBeNull();
-    expect(missedWords([])).toBeNull();
-    expect(missedWords(undefined)).toBeNull();
-  });
-  it("says a climbing turn, a heading to an altitude and a direct leg", () => {
-    expect(missedWords([
-      { path: "VA", fix: null, course_deg: 0, turn: "R", min_ft: 3000, max_ft: null },
-      { path: "DF", fix: "ABC", course_deg: null, turn: null, min_ft: null, max_ft: null },
-    ])).toBe("Climbing right turn to 3,000 on heading 360°, then direct ABC.");
   });
 });
 
@@ -171,16 +133,6 @@ describe("approachBrief", () => {
   });
   it("says a procedure's data are out of date", () => {
     expect(approachBrief({ drawing: { ...ILS, stale: true } })[0]!.lines).toContain("Out of date: these are an older cycle's data");
-  });
-});
-
-describe("briefFrequencies", () => {
-  it("briefs the approach control as the plate's where the field lists none, and no CTAF it does not list", () => {
-    expect(briefFrequencies([{ type: "UNICOM", description: "UNICOM", frequency_mhz: 122.8 }]))
-      .toEqual(["Approach: see the plate", "CTAF 122.8"]);
-    // ctafOf's MULTICOM 122.9 is a guess, not this field's.
-    expect(briefFrequencies([{ type: "GND", description: "GND", frequency_mhz: 121.7 }])).toEqual(["Approach: see the plate"]);
-    expect(briefFrequencies(null)).toEqual([SEE_THE_PLATE]);
   });
 });
 
@@ -266,10 +218,8 @@ describe("the lesson's line", () => {
   });
 });
 
-describe("fixName and stopwatch", () => {
-  it("say a threshold by its runway and a time as a stopwatch does", () => {
-    expect(fixName("RW09")).toBe("the runway 09 threshold");
-    expect(fixName("PYKLA")).toBe("PYKLA");
+describe("stopwatch", () => {
+  it("says a time as a stopwatch does", () => {
     expect(stopwatch(125)).toBe("2:05");
   });
 });

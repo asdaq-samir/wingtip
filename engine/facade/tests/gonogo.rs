@@ -957,8 +957,6 @@ fn a_bad_ask_is_an_error_not_a_panic() {
     let err = |name: &str, input: &str| wingtip_engine::call::call(name, input).unwrap_err();
     assert!(err("gonogo_verdict_items", "{}").contains("\"weather\" is missing"));
     assert!(err("gonogo_risk", r#"{"day": 5}"#).contains("not a string"));
-    assert!(err("gonogo_short_field", r#"{"table": {"pressure_altitudes_ft": [0], "temperatures_c": [0], "weights_lb": [], "tables": [], "grass_ground_roll_pct": 0}, "pressure_alt_ft": 0, "temp_c": 0, "weight_lb": 0, "headwind_kt": 0}"#)
-        .contains("not a short-field table"));
     assert!(err("gonogo_sua_when", r#"{"utc": [9, 0]}"#).contains("day 0-6"));
     assert!(err("gonogo_nope", "{}").contains("no rule called"));
 }

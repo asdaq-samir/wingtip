@@ -8,15 +8,15 @@ import UIKit
 /// glass are iOS's, not a copy.
 struct RootView: View {
     @Environment(Charts.self) private var charts
-    @Environment(Plan.self) private var plan
-    @Environment(OwnShip.self) private var ownShip
+    @Environment(Plan.self) var plan
+    @Environment(OwnShip.self) var ownShip
     @Environment(DryRun.self) private var dryRun
     @Environment(Traffic.self) private var traffic
     @Environment(Verdict.self) private var verdict
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.undoManager) private var undoManager
-    @State private var detent: PresentationDetent = .medium
+    @State var detent: PresentationDetent = .medium
     @State private var sheetUp = true
     // The tab opened first; a launch argument (-tab airport) picks
     // another, for CI's pictures of each. The tab a scene was on comes
@@ -29,7 +29,7 @@ struct RootView: View {
     /// preference; a `-layout strip` launch argument sets it for CI's
     /// pictures.
     @AppStorage("layout") private var layoutName = "tabs"
-    @State private var tab: Tabs = Tabs(rawValue: UserDefaults.standard.string(forKey: "tab") ?? "") ?? .fpl
+    @State var tab: Tabs = Tabs(rawValue: UserDefaults.standard.string(forKey: "tab") ?? "") ?? .fpl
     @State private var airports: [String] = []
     @State private var following = false
     @State private var routeAway = false
@@ -45,7 +45,7 @@ struct RootView: View {
     /// over the map on the iPad.
     @State private var asking = false
     /// The iPad's inspector card (SplitLayout).
-    @State private var sideCard: SideCard?
+    @State var sideCard: SideCard?
     /// What Siri or a Shortcut asked for (the App Intents), done here once
     /// the app is on the screen: the owner's ask, 2026-11-03, Siri and
     /// Shortcuts through App Intents.
@@ -78,7 +78,7 @@ struct RootView: View {
     /// names, as the web app's pill is.
     static let pill = PresentationDetent.height(132)
 
-    private var layout: RootLayout { .of(sizeClass, verticalSizeClass) }
+    var layout: RootLayout { .of(sizeClass, verticalSizeClass) }
 
     var body: some View {
         Group {
@@ -123,7 +123,7 @@ struct RootView: View {
 
     /// A field or a point opened from the map: in the Airport tab, half
     /// way up, on the iPhone; in the inspector on the iPad.
-    private func open(_ route: String) {
+    func open(_ route: String) {
         if layout == .split {
             sideCard = .airport(route)
             return
@@ -257,89 +257,21 @@ struct RootView: View {
         .onAppear { plan.undoManager = undoManager }
         .onChange(of: undoManager) { _, manager in plan.undoManager = manager }
         // Siri listens for the fields the shortcuts' airport entity
-        // suggests (the kept route's: AirportEntityQuery.suggestedEntities), so
-        // the phrases are told again when the route changes.
-        .onAppear { WingtipShortcuts.updateAppShortcutParameters() }
-        .onChange(of: plan.idents) { _, _ in WingtipShortcuts.updateAppShortcutParameters() }
+        // suggests (the kept route's: AirportEntityQuery.suggestedEntities),
+        // and Spotlight finds them, so both are told again when the route
+        // changes (AirportSpotlight).
+        .onAppear { AirportSpotlight.refresh() }
+        .onChange(of: plan.idents) { _, _ in AirportSpotlight.refresh() }
         // Siri's or a Shortcut's ask, taken as it comes and as the app
         // opens with one waiting (the intents run before this has drawn).
         .task(id: pending.command) { await apply(pending.take()) }
-    }
-
-    /// Siri's or a Shortcut's command done in the app: a trip planned to
-    /// the field, direct to a place, the nearest airports, a field's card.
-    private func apply(_ command: PendingCommand.Command?) async {
-        guard let command else { return }
-        switch command {
-        case .planTo(let ident):
-            // From the route's departure, else from the field nearest the
-            // airplane; with neither, the FPL tab with the destination in
-            // for the pilot to give the departure.
-            plan.dest = ident
-            if plan.dep.isEmpty, let at = ownShip.fix?.coordinate,
-               let nearest = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 1).first {
-                plan.dep = nearest.ident
-            }
-            tab = .fpl
-            if detent != .medium { detent = .medium }
-            plan.plan()
-        case .directTo(let said):
-            // The place found near the route as a clearance's is (the
-            // radio's Direct To does the same); not on the route, a
-            // diversion to it from where the airplane is.
-            var points: [(Double, Double)] = []
-            if let course = plan.course {
-                points += [(course.departure.lat, course.departure.lon), (course.destination.lat, course.destination.lon)]
-            }
-            if let fix = ownShip.fix { points.append((fix.coordinate.latitude, fix.coordinate.longitude)) }
-            let near = points.map { String(format: "%.3f,%.3f", $0.0, $0.1) }.joined(separator: ";")
-            let found = try? await Planner.clearancePlaces(ClearanceAsk(near: near, route: [said]))
-            guard let ident = found?.route?.first?.first(where: { $0.ident != nil })?.ident ?? (IntentLookups.looksLikeIdent(said) ? said.uppercased() : nil) else { return }
-            if plan.routed, plan.idents.contains(ident) {
-                plan.directTo(ident, from: ownShip.fix)
-            } else if let fix = ownShip.fix {
-                plan.divert(to: ident, from: fix)
-            } else {
-                plan.dest = ident
-                tab = .fpl
-                plan.plan()
-            }
-            if detent != .medium { detent = .medium }
-        case .nearest:
-            AirportShelf.shared.show(.nearest)
-            tab = .airport
-            if detent != .medium { detent = .medium }
-        case .weather(let ident):
-            open(ident)
-        case .planRoute(let dep, let stops, let dest):
-            // A route shared from the site, planned here as it was there.
-            plan.dep = dep; plan.stops = stops; plan.dest = dest
-            tab = .fpl
-            if detent != .medium { detent = .medium }
-            plan.plan()
-        case .aircraft(let hex):
-            // The airplane's card, tracked from its next report on.
-            Tracking.shared.track(hex)
-            FlightUI.shared.card = .airplane(hex)
-        case .track(let url):
-            // A GPX or KML file handed over from Files or Mail: its track
-            // flown again on the map (Replay), at the replay's pace, as a
-            // saved flight's is from its card. A file with no timed points
-            // is left alone; the card's own import says why.
-            let reading = url.startAccessingSecurityScopedResource()
-            defer { if reading { url.stopAccessingSecurityScopedResource() } }
-            guard let data = try? Data(contentsOf: url), let points = try? GPXTrack.points(data), !points.isEmpty else { return }
-            Replay.shared.load(Replay.points(points), key: url.lastPathComponent)
-            Replay.shared.play()
-            if detent != RootView.pill { detent = RootView.pill }
-        }
     }
 }
 
 /// The four tabs of the planner, in the sheet: FPL, Airport, Airplane
 /// and Setup.
 struct SheetView: View {
-    @Environment(Plan.self) private var plan
+    @Environment(Plan.self) var plan
     /// In the iPad's sidebar, whose tab bar is at the top.
     @Environment(\.splitLayout) private var split
     @Binding var tab: RootView.Tabs

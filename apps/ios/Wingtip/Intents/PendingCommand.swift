@@ -16,6 +16,9 @@ final class PendingCommand {
         /// A route to the field, from the route's departure or the field
         /// nearest the airplane ("plan a trip to Las Vegas").
         case planTo(ident: String)
+        /// The same route, then its Brief opened ("brief my flight to
+        /// Oshkosh").
+        case brief(ident: String)
         /// A whole route, as a shared link carries one.
         case planRoute(dep: String, stops: [String], dest: String)
         /// Direct to the place said, from where the airplane is.

@@ -4,12 +4,8 @@ import type { AircraftProfile, Airport, Briefing, Course } from "../../../lib/ap
 import { callEngine } from "../../../lib/engine/engine";
 import { densityAltitudeFt, runwayChecks } from "./runwayCheck";
 
-// Two of the engine's names its runway check asks inside the engine,
+// One of the engine's names its runway check asks inside the engine,
 // asked by name through the .wasm.
-const fieldAir = (elevationFt: number, altimeterInHg: number | null, tempC: number | null) => {
-  const air = callEngine("gonogo_field_air", { elevation_ft: elevationFt, altimeter_in_hg: altimeterInHg, temp_c: tempC });
-  return { pressureAltFt: air.pressure_alt_ft, tempC: air.temp_c };
-};
 const softSurface = (runway: { surface?: string | null } | undefined) => callEngine("gonogo_soft_surface", { surface: runway?.surface ?? null });
 
 const c172 = { name: "c172", ...JSON.parse(c172Json) } as AircraftProfile;
@@ -32,15 +28,7 @@ const runway = (length: number, headwind: number, crosswind: number, extra: obje
   wind: { end: "27", headwind_kt: headwind, crosswind_kt: crosswind }, ...extra,
 });
 
-describe("a field's air and surface", () => {
-  it("is the pressure altitude off the altimeter, and a standard day's temperature where none is reported", () => {
-    // A thousand feet an inch under 29.92; ISA at 900 ft is 13.2 °C.
-    expect(fieldAir(900, 29.42, 25)).toEqual({ pressureAltFt: 1400, tempC: 25 });
-    const standard = fieldAir(900, null, null);
-    expect(standard.pressureAltFt).toBe(900);
-    expect(standard.tempC).toBeCloseTo(13.2, 1);
-  });
-
+describe("a field's surface", () => {
   it("takes turf, grass, dirt and gravel as soft, and asphalt not", () => {
     expect(["TURF", "GRS", "grass", "DIRT", "GRAVEL-G"].map(surface => softSurface({ surface } as never))).toEqual([true, true, true, true, true]);
     expect(softSurface({ surface: "ASPH-G" } as never)).toBe(false);

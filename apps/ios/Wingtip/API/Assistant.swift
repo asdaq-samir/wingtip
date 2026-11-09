@@ -13,6 +13,9 @@ enum AssistantLine: Equatable, Sendable {
     case sources([AssistantSource])
     case done
     case error(String)
+    /// Who is answering, for the caption over the answer ("From the
+    /// planner", "On this iPhone"; OnDevice/AskRoute).
+    case origin(String)
 }
 
 /// A raw thing an answer rests on (a METAR, a NOTAM), shown to the pilot
@@ -32,6 +35,8 @@ struct AssistantTurn: Identifiable, Equatable, Sendable {
     var content: String
     var sources: [AssistantSource] = []
     var problem: String?
+    /// Who wrote the answer, said over it; nil before its first word.
+    var origin: String?
 
     init(id: UUID = UUID(), role: Role, content: String, sources: [AssistantSource] = [], problem: String? = nil) {
         self.id = id
@@ -150,6 +155,8 @@ struct AssistantConversation: Equatable, Sendable {
             turns[last].problem = words
             status = nil
             answering = false
+        case .origin(let caption):
+            turns[last].origin = caption
         }
     }
 
@@ -186,6 +193,9 @@ typealias AssistantAsk = ASAssistantAsk
 final class AssistantClient {
     private(set) var conversation = AssistantConversation()
     private var running: Task<Void, Never>?
+    /// The planner, or this iPhone with no signal or when the pilot
+    /// picks it (OnDevice/AskRoute).
+    var router = AskRouter()
 
     var turns: [AssistantTurn] { conversation.turns }
     var status: String? { conversation.status }
@@ -195,15 +205,19 @@ final class AssistantClient {
     /// gateway's proxy): said where the question was asked.
     nonisolated static let notHere = "The assistant isn't on this planner yet."
 
-    func ask(_ question: String, context: AssistantContext?) {
+    /// `facts` are what the phone holds for an answer worked out on it
+    /// (OnDeviceFacts.make); without them, the context's.
+    func ask(_ question: String, context: AssistantContext?, facts: OnDeviceFacts? = nil, from pick: AskWhere = .current) {
         let question = question.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty else { return }
         cancel()
+        let earlier = conversation.turns
         conversation.ask(question)
         let ask = AssistantAsk(context: context, messages: conversation.messages)
+        let lines = router.stream(question, ask: ask, earlier: earlier, facts: facts ?? .from(context), from: pick)
         running = Task { [weak self] in
             do {
-                for try await line in Self.stream(ask) {
+                for try await line in lines {
                     guard !Task.isCancelled else { return }
                     self?.conversation.take(line)
                 }

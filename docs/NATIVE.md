@@ -130,6 +130,49 @@ writes the sentences, and never a figure of its own:
   canImport(FoundationModels)` and `#available(iOS 26, *)`, so the app
   builds on an older SDK and runs on iOS 18 without the words.
 
+## Ask and the Brief's glance, with no signal
+
+`Wingtip/OnDevice/` answers Ask in the air with nothing leaving the
+phone, and gives the Brief its glance when the planner's words cannot be
+had. The figures are the engine's on the phone or the planner's as last
+fetched; a model only words them:
+
+- **Where an answer comes from** (`AskRoute`): Ask's menu at its top left
+  picks Automatic (the planner, else this iPhone), The Planner, or On
+  This iPhone, kept as `wingtip.ask.where`. Under Automatic a phone with
+  no path out (`NWPathMonitor`) asks the phone at once, and a planner
+  that fails or errs before its first word is replaced by the phone's
+  answer; one begun stays the planner's. The caption over each answer
+  says who wrote it.
+- **The tools** (`OnDeviceTools`, Foundation Models' `Tool`): the field's
+  METAR, TAF and density altitude; the wind on its runways; the fuel; the
+  glide; the nearest fields from the cycle packs. Each asks the engine
+  (`FieldFigures`, `FlightFigures`: `wind_components`,
+  `pressure_altitude_ft`, `gonogo_density_altitude`, `filed_endurance`,
+  `glide_range`, `best_fields` over `airports_in_view`) or quotes the
+  report as sent, and hands the model `[id] label: words`; each chip
+  ends with its source line. There is no ADS-B (FIS-B) weather on the
+  phone yet, so the reports are the briefing's, with the time they were
+  fetched.
+- **The guard** (`OnDeviceAsk`): a sentence citing an id no tool handed
+  over is dropped (`Words.checked`), and so is one quoting a number not
+  in the figures it cites (`NumberGuard`).
+- **With no model** (an older iOS, Apple Intelligence off, the model
+  still downloading, or nothing kept): `EngineWords` reads the question's
+  words for its topic and says each figure as the engine's own sentence,
+  captioned "The engine on this iPhone" with why.
+- **The Brief's glance** (`BriefSummary`, `BriefSummarySection`): when
+  the Go / No-Go's words are not the planner's, "At a Glance" over it
+  gives the verdict and at most three actions (docs/decisions/0012),
+  guided generation of `BriefGlanceAnswer` from the findings held. The
+  finding must be the verdict's, each action must name a finding acted
+  on and quote only its numbers, or the engine's `Glance` is shown. Say
+  It reads it aloud.
+- `WingtipTests/OnDeviceAskTests` and `OnDeviceRouteTests` hold the
+  engine's figures through the bridge, the tools' calls through
+  `GeneratedContent`, the guided glance parsed from JSON, the guard, the
+  router's falls and the degrade with no model, with the model faked.
+
 ## Apple's guidance, and where the app stands
 
 Apple names no architecture; for SwiftUI it asks for a declarative data
@@ -139,13 +182,17 @@ rules (here the engine) for the rest. The app follows that, and these
 pieces close the gaps a review against Apple's guidance found (the
 owner, 2026-11-03):
 
-- **App Intents** (`Wingtip/Intents/`): plan a trip to a place, the
-  nearest airports, the weather at a field and direct to a place, as
-  Siri, Shortcuts and Spotlight phrases (`WingtipShortcuts`). The airport
+- **App Intents** (`Wingtip/Intents/`): plan a trip to a place, brief a
+  flight to one (the Brief opened through `BriefAsk`), the nearest
+  airports, the weather at a field, direct to a place, and start or stop
+  listening to the radio ("start recording"), as Siri, Shortcuts and
+  Spotlight phrases (`WingtipShortcuts`). The fields Siri suggests are
+  indexed in Spotlight (`AirportSpotlight`, an `IndexedEntity`) and open
+  their card (`OpenAirportIntent`). The airport
   is an App Entity (`AirportEntity`: the kept route's, the Favorites and
   the Recents suggested, the planner's search behind them), so "Plan a
   trip to KLAS in Wingtip Maps" goes in one breath. An intent that needs
-  the app sets `PendingCommand`, which `RootView` applies.
+  the app sets `PendingCommand`, which `RootView` applies (`RootView+Commands.swift`).
 - **Home Screen widgets** (`WingtipWidgets/FlightWidgets.swift`,
   `Wingtip/WidgetFeed.swift`, `Wingtip/Shared/WidgetSnapshot.swift`): the
   next flight's route, figures, Go / No-Go and departure weather on the
@@ -157,11 +204,19 @@ owner, 2026-11-03):
   `?place=`, `?flight=`) opens in the app as a `PendingCommand`, and a GPX
   or KML track from Files or Mail is flown again on the map (the document
   types in project.yml). The sign-in link stays `Session.open`'s.
-- **A Live Activity** (`Wingtip/FlightActivity.swift`, the
-  `WingtipWidgets` extension, `Wingtip/Shared/FlightActivityAttributes`):
+- **A Live Activity** (`Wingtip/Activity/`, `WingtipWidgets/FlightActivityWidget.swift`,
+  `Wingtip/Shared/FlightActivityAttributes` and `FlightActivityLines`):
   a flight in progress on the Lock Screen and in the Dynamic Island with
-  the next checkpoint, the ETA and the fuel, from the dry run or own ship
-  under way with a routed plan.
+  the next fix and the time to it, the ETA, the planned fuel left (only
+  with an airplane picked), the frequency ATC last handed us and the
+  copilot's message, from the app's in-flight models (`InFlight`'s
+  engine answer, `Copilot`, `AtcCopilot`: `FlightActivityContent`). It
+  starts with the dry run or own ship under way with a routed plan, or
+  from the Control Center control (iOS 18's Start Flight toggle,
+  `WingtipWidgets/FlightControl.swift` with `Shared/FlightControlIntent.swift`,
+  a LiveActivityIntent run in the app by `Activity/FlightSwitch.swift`
+  from the route kept on the phone), and ends five minutes after landing.
+  Every word is written by `Format`, compiled into the extension.
 - **In flight** (#218, the owner's option A of 2026-11-08):
   `Wingtip/InFlight.swift` is the view model each fix (own ship's or the
   dry run's) is asked of the engine through once -- `in_flight`,

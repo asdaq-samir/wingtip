@@ -388,30 +388,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class AltitudeBandInput(
-        @SerialName("altitude_ft")
-        val altitudeFt: Double? = null,
-    )
-
-    @Serializable
-    data class AltitudeBlockedInput(
-        @SerialName("altitude_ft")
-        val altitudeFt: Double,
-        val areas: List<EngineContract.AltitudeBlockedInputAreasItem>? = null,
-    )
-
-    @Serializable
-    data class AltitudeBlockedInputAreasItem(
-        val type: String? = null,
-        @SerialName("floor_ft")
-        val floorFt: Double? = null,
-        @SerialName("ceiling_ft")
-        val ceilingFt: Double? = null,
-        @SerialName("ceiling_ref")
-        val ceilingRef: String? = null,
-    )
-
-    @Serializable
     data class AltitudeLimitsAnswer(
         @SerialName("lowest_ft")
         val lowestFt: Double,
@@ -550,11 +526,6 @@ object EngineContract {
         val title: String,
         val lines: List<String>,
         val focus: EngineContract.LessonFocus,
-    )
-
-    @Serializable
-    data class ApproachBriefFrequenciesInput(
-        val frequencies: List<EngineContract.FieldFrequency>? = null,
     )
 
     @Serializable
@@ -779,11 +750,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class ApproachFixNameInput(
-        val ident: String? = null,
-    )
-
-    @Serializable
     data class ApproachGuidanceInput(
         val id: String? = null,
     )
@@ -816,11 +782,6 @@ object EngineContract {
         val minimums: Boolean? = null,
     )
 
-    @Serializable
-    data class ApproachMinimumsKindInput(
-        val name: String? = null,
-    )
-
     /**
      * A missed approach's coded leg (ARINC 424-18 5.21).
      */
@@ -841,11 +802,6 @@ object EngineContract {
         val minFt: Double? = null,
         @SerialName("max_ft")
         val maxFt: Double? = null,
-    )
-
-    @Serializable
-    data class ApproachMissedWordsInput(
-        val legs: List<EngineContract.ApproachMissedLeg>? = null,
     )
 
     @Serializable
@@ -933,11 +889,6 @@ object EngineContract {
         val drawing: EngineContract.ProcedureDrawing,
         @SerialName("gs_kt")
         val gsKt: Double,
-    )
-
-    @Serializable
-    data class ApproachRoundedFpmInput(
-        val fpm: Double,
     )
 
     /**
@@ -1460,27 +1411,6 @@ object EngineContract {
         val traffic: String? = null,
         val lat: Double? = null,
         val lon: Double? = null,
-    )
-
-    @Serializable
-    data class CivilTwilightAnswer(
-        @SerialName("dawn_s")
-        val dawnS: Double? = null,
-        @SerialName("dusk_s")
-        val duskS: Double? = null,
-        @SerialName("night_all_day")
-        val nightAllDay: Boolean? = null,
-    )
-
-    @Serializable
-    data class CivilTwilightInput(
-        val lat: Double,
-        val lon: Double,
-        /**
-         * Any instant of the UTC day, UNIX seconds.
-         */
-        @SerialName("day_s")
-        val dayS: Double,
     )
 
     @Serializable
@@ -2253,22 +2183,6 @@ object EngineContract {
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
     )
-
-    @Serializable
-    data class DescentAltitudeInput(
-        @SerialName("cruise_ft")
-        val cruiseFt: Double,
-        @SerialName("pattern_ft")
-        val patternFt: Double? = null,
-        @SerialName("nm_out")
-        val nmOut: Double,
-    )
-
-    @Serializable
-    class DescentFtPerNmInput {
-        override fun equals(other: Any?): Boolean = other is DescentFtPerNmInput
-        override fun hashCode(): Int = 0
-    }
 
     @Serializable
     data class DiagramFixUsableInput(
@@ -3194,14 +3108,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class GlidepathFtInput(
-        @SerialName("runway_path")
-        val runwayPath: EngineContract.ApproachRunwayPath,
-        @SerialName("nm_out")
-        val nmOut: Double,
-    )
-
-    @Serializable
     data class GlideRangeInput(
         @SerialName("altitude_ft")
         val altitudeFt: Double? = null,
@@ -3330,35 +3236,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class GonogoBestCrosswindAnswer(
-        val end: String? = null,
-        val kt: Double,
-    )
-
-    @Serializable
-    data class GonogoBestCrosswindInput(
-        val runways: List<EngineContract.GonogoBestCrosswindInputRunwaysItem>? = null,
-        val reported: EngineContract.GonogoBestCrosswindInputReported? = null,
-    )
-
-    @Serializable
-    data class GonogoBestCrosswindInputReported(
-        @SerialName("speed_kt")
-        val speedKt: Double? = null,
-        @SerialName("gust_kt")
-        val gustKt: Double? = null,
-    )
-
-    @Serializable
-    data class GonogoBestCrosswindInputRunwaysItem(
-        /**
-         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-         */
-        val closed: Boolean? = null,
-        val wind: EngineContract.GonogoRunwayWind? = null,
-    )
-
-    @Serializable
     data class GonogoDefaultLoadAnswer(
         @SerialName("empty_weight_lb")
         val emptyWeightLb: Double,
@@ -3386,24 +3263,6 @@ object EngineContract {
         val pressureAltFt: Double,
         @SerialName("temp_c")
         val tempC: Double,
-    )
-
-    /**
-     * The POH's short-field distances.
-     */
-    @Serializable
-    data class GonogoDistances(
-        @SerialName("ground_roll_ft")
-        val groundRollFt: Double,
-        /**
-         * Over a 50 ft obstacle.
-         */
-        @SerialName("total_ft")
-        val totalFt: Double,
-        /**
-         * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
-         */
-        val caveats: List<String>,
     )
 
     @Serializable
@@ -3460,24 +3319,6 @@ object EngineContract {
          * Its mark; null for a self check.
          */
         val finding: String? = null,
-    )
-
-    @Serializable
-    data class GonogoFieldAirAnswer(
-        @SerialName("pressure_alt_ft")
-        val pressureAltFt: Double,
-        @SerialName("temp_c")
-        val tempC: Double,
-    )
-
-    @Serializable
-    data class GonogoFieldAirInput(
-        @SerialName("elevation_ft")
-        val elevationFt: Double,
-        @SerialName("altimeter_in_hg")
-        val altimeterInHg: Double? = null,
-        @SerialName("temp_c")
-        val tempC: Double? = null,
     )
 
     @Serializable
@@ -3570,29 +3411,6 @@ object EngineContract {
         @SerialName("at_or_below")
         val atOrBelow: Boolean? = null,
         val reports: Double? = null,
-    )
-
-    @Serializable
-    data class GonogoInEnvelopeInput(
-        /**
-         * [arm in, weight lb] points.
-         */
-        val envelope: List<List<JsonElement>>? = null,
-        val arm: Double,
-        val weight: Double,
-    )
-
-    @Serializable
-    data class GonogoInspectionFactorsInput(
-        val inspections: EngineContract.GonogoInspections? = null,
-        /**
-         * yyyy-mm-dd.
-         */
-        val day: String,
-        /**
-         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-         */
-        val ifr: Boolean? = null,
     )
 
     @Serializable
@@ -4060,52 +3878,8 @@ object EngineContract {
     }
 
     @Serializable
-    data class GonogoShortFieldInput(
-        val table: EngineContract.ShortFieldTable,
-        @SerialName("pressure_alt_ft")
-        val pressureAltFt: Double,
-        @SerialName("temp_c")
-        val tempC: Double,
-        @SerialName("weight_lb")
-        val weightLb: Double,
-        /**
-         * A tailwind negative.
-         */
-        @SerialName("headwind_kt")
-        val headwindKt: Double,
-        /**
-         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-         */
-        val grass: Boolean? = null,
-    )
-
-    @Serializable
     data class GonogoSoftSurfaceInput(
         val surface: String? = null,
-    )
-
-    @Serializable
-    data class GonogoSquawkFactorsInput(
-        val squawks: List<EngineContract.GonogoSquawkFactorsInputSquawksItem>? = null,
-        /**
-         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-         */
-        val night: Boolean? = null,
-        /**
-         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-         */
-        val ifr: Boolean? = null,
-    )
-
-    @Serializable
-    data class GonogoSquawkFactorsInputSquawksItem(
-        val text: String? = null,
-        /**
-         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-         */
-        val inoperative: Boolean? = null,
-        @SerialName("deferred_for")
-        val deferredFor: String? = null,
     )
 
     @Serializable
@@ -4246,7 +4020,7 @@ object EngineContract {
         @SerialName("tas_kt")
         val tasKt: Double,
         /**
-         * The wind correction angle (wind_correction_deg).
+         * The wind correction angle.
          */
         @SerialName("wca_deg")
         val wcaDeg: Double,
@@ -4876,20 +4650,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class IsNightInput(
-        val lat: Double,
-        /**
-         * East positive.
-         */
-        val lon: Double,
-        /**
-         * UNIX seconds, UTC.
-         */
-        @SerialName("at_s")
-        val atS: Double,
-    )
-
-    @Serializable
     data class KneeboardRadioInput(
         val frequencies: List<EngineContract.FieldFrequency>,
     )
@@ -5376,11 +5136,6 @@ object EngineContract {
         val distanceNm: Double,
     )
 
-    @Serializable
-    data class MetarReadInput(
-        val raw: String,
-    )
-
     /**
      * A METAR's wind; null, missing or empty for none.
      */
@@ -5420,12 +5175,6 @@ object EngineContract {
     @Serializable
     data class MorseInput(
         val ident: String? = null,
-    )
-
-    @Serializable
-    data class MountainousAtInput(
-        val lat: Double,
-        val lon: Double,
     )
 
     @Serializable
@@ -5903,25 +5652,6 @@ object EngineContract {
         val pressurized: Boolean? = null,
     )
 
-    @Serializable
-    data class NavlogRacetrackInput(
-        val fix: EngineContract.NavlogRacetrackInputFix,
-        @SerialName("inbound_true_deg")
-        val inboundTrueDeg: Double,
-        val right: Boolean? = null,
-        @SerialName("tas_kt")
-        val tasKt: Double,
-        @SerialName("leg_nm")
-        val legNm: Double,
-        val steps: Double? = null,
-    )
-
-    @Serializable
-    data class NavlogRacetrackInputFix(
-        val lat: Double,
-        val lon: Double,
-    )
-
     /**
      * A nav log row, the web's NavLogRow: its place is the checkpoint's (cp), the top of climb's or descent's (point) or the airport's.
      */
@@ -6155,36 +5885,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class NotamTextAnswerItem(
-        val id: String,
-        @SerialName("icao_id")
-        val icaoId: String? = null,
-        val names: String? = null,
-        val type: String? = null,
-        val location: String? = null,
-        @SerialName("icao_location")
-        val icaoLocation: String? = null,
-        val classification: String? = null,
-        val issued: String? = null,
-        val starts: String? = null,
-        val ends: String? = null,
-        val estimated: Boolean,
-        val schedule: String? = null,
-        val text: String,
-        val raw: String,
-    )
-
-    @Serializable
-    data class NotamTextInput(
-        val text: String,
-    )
-
-    @Serializable
-    data class OperatorOfInput(
-        val callsign: String? = null,
-    )
-
-    @Serializable
     data class OurCallInput(
         val text: String,
         val tail: String,
@@ -6243,13 +5943,6 @@ object EngineContract {
     data class OwnShipHexInput(
         val planes: List<EngineContract.TrafficPlane>,
         val fix: EngineContract.OwnShipFix? = null,
-    )
-
-    @Serializable
-    data class OxygenCautionInput(
-        @SerialName("highest_ft")
-        val highestFt: Double? = null,
-        val profile: Map<String, JsonElement>? = null,
     )
 
     @Serializable
@@ -7415,16 +7108,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class ReportFlightCategoryInput(
-        @SerialName("ceiling_ft")
-        val ceilingFt: Double? = null,
-        @SerialName("ceiling_unknown")
-        val ceilingUnknown: Boolean? = null,
-        @SerialName("visibility_sm")
-        val visibilitySm: Double? = null,
-    )
-
-    @Serializable
     data class ReserveMinInput(
         val ifr: Boolean? = null,
         val night: Boolean? = null,
@@ -7958,15 +7641,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class RunwayFavouredEndInput(
-        val ends: List<List<JsonElement>>?? = null,
-        val metar: EngineContract.MetarWindIn? = null,
-        @SerialName("variation_deg")
-        val variationDeg: Double,
-        val recent: EngineContract.RecentWindIn? = null,
-    )
-
-    @Serializable
     data class RunwayRunwayEndsItem(
         val ident: String,
         @SerialName("heading_true_deg")
@@ -8263,28 +7937,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class SkyCeilingAnswer(
-        @SerialName("ceiling_ft")
-        val ceilingFt: Double? = null,
-        @SerialName("ceiling_unknown")
-        val ceilingUnknown: Boolean,
-    )
-
-    @Serializable
-    data class SkyCeilingInput(
-        val layers: List<EngineContract.SkyCeilingInputLayersItem>? = null,
-        @SerialName("vert_vis_ft")
-        val vertVisFt: Double? = null,
-    )
-
-    @Serializable
-    data class SkyCeilingInputLayersItem(
-        val cover: String? = null,
-        @SerialName("base_ft")
-        val baseFt: Double? = null,
-    )
-
-    @Serializable
     data class SoloStandingAnswer(
         val days: Int? = null,
         val standing: String,
@@ -8382,7 +8034,7 @@ object EngineContract {
     )
 
     /**
-     * One period of a TAF as the weather store keeps it (awc_tafs_read; taf_read's fcsts): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
+     * One period of a TAF as the weather store keeps it (awc_tafs_read): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
      */
     @Serializable
     data class TafPeriod(
@@ -8403,12 +8055,6 @@ object EngineContract {
         @SerialName("ceiling_unknown")
         val ceilingUnknown: Boolean? = null,
         val wx: String? = null,
-    )
-
-    @Serializable
-    data class TafReadInput(
-        val raw: String,
-        val near: Double,
     )
 
     @Serializable
@@ -8541,16 +8187,6 @@ object EngineContract {
     data class ThinTrackInput(
         val points: List<JsonElement>,
         val most: Int? = null,
-    )
-
-    @Serializable
-    data class TightCruisingAltitudeInput(
-        @SerialName("floor_ft")
-        val floorFt: Double,
-        @SerialName("ceiling_ft")
-        val ceilingFt: Double? = null,
-        @SerialName("rule_from_ft")
-        val ruleFromFt: Double? = null,
     )
 
     @Serializable
@@ -9146,18 +8782,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class WindCorrectionDegInput(
-        @SerialName("true_course_deg")
-        val trueCourseDeg: Double,
-        @SerialName("wind_from_deg")
-        val windFromDeg: Double,
-        @SerialName("wind_kt")
-        val windKt: Double,
-        @SerialName("tas_kt")
-        val tasKt: Double,
-    )
-
-    @Serializable
     data class WindPickAnswer(
         /**
          * The end as painted, "" where none is.
@@ -9225,12 +8849,6 @@ object EngineContract {
         val speedKt: Double? = null,
         @SerialName("gust_kt")
         val gustKt: Double? = null,
-    )
-
-    @Serializable
-    data class WindsReadInput(
-        val text: String,
-        val now: Double,
     )
 
     @Serializable

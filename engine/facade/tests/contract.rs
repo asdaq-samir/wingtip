@@ -262,9 +262,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in rules["densityAltitude"].as_array().unwrap() {
         c.ask("gonogo_density_altitude", json!({ "pressure_alt_ft": case["pressureAltitudeFt"], "temp_c": case["oatC"] }));
     }
-    for case in rules["pressureAltitude"].as_array().unwrap() {
-        c.ask("gonogo_field_air", json!({ "elevation_ft": case["elevationFt"], "altimeter_in_hg": case["altimeterInHg"], "temp_c": 15 }));
-    }
     for case in rules["declination"].as_array().unwrap() {
         c.ask("magnetic_variation", json!({ "lat": case["lat"], "lon": case["lon"], "date": "2026-07-01" }));
     }
@@ -298,12 +295,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     }
     for case in planner["ceiling"].as_array().unwrap() {
         c.ask("ceiling_ft", json!({ "layers": case["layers"], "vert_vis_ft": case["vert_vis_ft"] }));
-        c.ask("sky_ceiling", json!({ "layers": case["layers"], "vert_vis_ft": case["vert_vis_ft"] }));
-    }
-    c.ask("sky_ceiling", json!({ "layers": [{ "cover": "OVC", "base_ft": null }], "vert_vis_ft": null }));
-    c.ask("report_flight_category", json!({ "ceiling_ft": null, "ceiling_unknown": true, "visibility_sm": 10 }));
-    for case in planner["reportCategory"].as_array().unwrap() {
-        c.ask("report_flight_category", json!({ "ceiling_ft": case["ceiling_ft"], "visibility_sm": case["visibility_sm"] }));
     }
     for case in planner["words"].as_array().unwrap() {
         let n = &case["n"];
@@ -317,11 +308,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
             c.ask("words_grouped", json!({ "n": n }));
         }
     }
-    c.ask("notam_text", json!({ "text": "!ORD 10/709 ORD RWY 04L/22R CLSD EXC TAX 2610191016-2610201100EST" }));
-    c.ask("notam_text", json!({ "text": "not a notam" }));
-    c.ask("metar_read", json!({ "raw": "METAR KDLH 021355Z 27012G20KT 10SM BKN008 OVC015 M02/M05 A2992" }));
-    c.ask("metar_read", json!({ "raw": "nothing" }));
-    c.ask("taf_read", json!({ "raw": "TAF KDLH 021130Z 0212/0312 27012KT P6SM BKN030", "near": 1_793_000_000 }));
     c.ask("vfr_basic_minimums", json!({}));
     c.ask("reserve_min", json!({ "ifr": false, "night": true }));
     c.ask("isa_temp_c", json!({ "altitude_ft": 4500 }));
@@ -332,15 +318,11 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     c.ask("lowest_vfr_cruising_altitude", json!({ "floor_ft": 3200, "magnetic_course_deg": 270 }));
     c.ask("distance_nm", json!({ "lat1": 46.84, "lon1": -92.19, "lat2": 38.75, "lon2": -90.37 }));
     c.ask("region_of", json!({ "lat": 41.9, "lon": -87.9 }));
-    c.ask("descent_ft_per_nm", json!({}));
     // The altitude rules (crate::altitude), on the shared fixture and a
     // small route of the planner's select_cruise_altitude.
     let altitude = fixture("altitude.json");
     for case in altitude["legal"].as_array().unwrap() {
         c.ask("legal_cruising_altitudes", case["input"].clone());
-    }
-    for case in altitude["tight"].as_array().unwrap() {
-        c.ask("tight_cruising_altitude", case["input"].clone());
     }
     for case in altitude["anyway"].as_array().unwrap() {
         c.ask("altitude_anyway", json!({ "selection": case["selection"] }));
@@ -353,8 +335,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     c.ask("altitude_wheel", json!({ "legal_ft": [4500, 6500], "flown_ft": 3300 }));
     c.ask("ifr_obstacle_radius_nm", json!({}));
     c.ask("airway_floor_ft", json!({ "mea_ft": null, "gnss_mea_ft": 4000 }));
-    c.ask("mountainous_at", json!({ "lat": 39.74, "lon": -105.0 }));
-    c.ask("altitude_blocked", json!({ "altitude_ft": 4500, "areas": [{ "type": "P", "floor_ft": 0, "ceiling_ft": 18000, "ceiling_ref": "MSL" }] }));
     let (dep, mid, dest) = (json!([45.0, -90.0]), json!([45.5, -89.85]), json!([46.0, -90.0]));
     let floors = c.ask("vfr_floors", json!({
         "start": dep, "end": dest, "breaks_nm": [0.0, 30.0, 60.0],
@@ -370,7 +350,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         "min_ceiling_ft": 2200, "special_use": [], "freezing": { "ft": 4000, "at_or_below": false }, "hazards": [], "weather_unavailable": [],
     }));
     // The names that replaced wingtip_native's own functions (#482 phase 0).
-    c.ask("wind_correction_deg", json!({ "true_course_deg": 360, "wind_from_deg": 270, "wind_kt": 20, "tas_kt": 110 }));
     c.ask("groundspeed_kt", json!({ "true_course_deg": 360, "wind_from_deg": 270, "wind_kt": 20, "tas_kt": 110, "wca_deg": -10.5 }));
     c.ask("hold_entry", json!({ "arrival_deg": 150, "inbound_deg": 360 }));
     c.ask("hold_entry", json!({ "arrival_deg": 150, "inbound_deg": 360, "turns": "left" }));
@@ -396,8 +375,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("approach_brief", json!({ "drawing": drawing, "vref_kt": 65, "vso_kt": 48 }));
         c.ask("approach_coaching", json!({ "drawing": drawing, "gs_kt": 90 }));
         c.ask("approach_quiz", json!({ "drawing": drawing, "gs_kt": 90 }));
-        c.ask("approach_missed_words", json!({ "legs": drawing["missed_legs"] }));
-        c.ask("approach_minimums_kind", json!({ "name": drawing["name"] }));
         let path = c.ask("approach_lesson_path", json!({ "drawing": drawing }));
         assert!(path.is_array(), "{id}");
     }
@@ -435,7 +412,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         "altitude_ft": 3500, "profile": profile, "air": null }));
     c.ask("navlog_hold", json!({ "leg": one[0], "before": one[0], "hold": { "fix": "KUGN", "inbound": 90, "right": true, "leg_min": 1, "leg_nm": null, "turns": 2, "minutes": null },
         "fix": fixes[0], "variation_deg": -3.0, "at_end": false }));
-    c.ask("navlog_racetrack", json!({ "fix": fixes[0], "inbound_true_deg": 87, "tas_kt": 110, "leg_nm": 2 }));
     let options: Vec<Value> = made["plans"].as_object().unwrap().iter().map(|(k, p)| { let mut p = p.clone(); p["kind"] = json!(k); p }).collect();
     c.ask("navlog_join_plans", json!({ "by_hop": [options.clone(), options], "lengths": [40, 60] }));
     c.ask("navlog_join_figures", json!({ "by_hop": [made["by_altitude"], []], "lengths": [40, 60] }));
@@ -510,7 +486,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in cautions["floor"].as_array().unwrap() {
         c.ask("floor_caution", json!({ "segment": case["segment"], "altitude_ft": case["altitude_ft"] }));
     }
-    c.ask("oxygen_caution", json!({ "highest_ft": 15500, "profile": null }));
     c.ask("prohibited_caution", json!({ "selection": cautions["prohibited"][0]["selection"] }));
     for case in cautions["alternate_destination"].as_array().unwrap() {
         c.ask("ifr_alternate_destination", json!({ "ident": case["ident"], "approaches": case["approaches"], "forecast": case["forecast"] }));
@@ -574,12 +549,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
 
     // Night, the checkpoints and 91.155's basic minimums (planning.json).
     let planning = fixture("planning.json");
-    for case in planning["twilight"].as_array().unwrap() {
-        c.ask("civil_twilight", json!({ "lat": case["lat"], "lon": case["lon"], "day_s": case["day_s"] }));
-    }
-    for case in planning["night"].as_array().unwrap() {
-        c.ask("is_night", json!({ "lat": case["lat"], "lon": case["lon"], "at_s": case["at_s"] }));
-    }
     for case in planning["on_the_way"].as_array().unwrap() {
         c.ask("night_on_the_way", json!({ "start": case["start"], "end": case["end"], "depart_s": case["depart_s"], "minutes": case["minutes"] }));
     }

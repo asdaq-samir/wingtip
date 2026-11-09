@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TrafficAircraft } from "./api/types";
-import { callEngine } from "./engine/engine";
 import { NO_FILTER, filtering, inEmergency, keptFilter, kindOf, matches, relationTo, sameField } from "./fbo";
-
-// Two of the engine's names the phones' traffic lists ask, through the .wasm.
-const bandOf = (altitudeFt: number | null) => callEngine("altitude_band", { altitude_ft: altitudeFt });
-const operatorOf = (plane: Pick<TrafficAircraft, "callsign">) => callEngine("operator_of", { callsign: plane.callsign ?? null });
 
 const LWM = { lat: 42.7172, lon: -71.1234, elevationFt: 148 };
 
@@ -22,15 +17,12 @@ describe("the Aircraft tab's filters", () => {
     expect(filtering({ ...NO_FILTER, place: "airport" })).toBe(true);
   });
 
-  it("reads what an airplane is, how high, who flies it and an emergency", () => {
+  it("reads what an airplane is and an emergency", () => {
     // The emitter categories by weight (GDL 90 ICD Rev A, Table 11): A1
     // under 15,500 lb, A2 to 75,000, A3 to 300,000, A4 a B757, A5 over
     // 300,000, A6 highly maneuverable, A7 rotorcraft.
     expect(["A1", "A2", "A3", "A4", "A5", "A6", "A7", null].map(category => kindOf({ category })))
       .toEqual(["light", "small", "large", "large", "large", "other", "helicopter", "other"]);
-    // Class A from 18,000 ft MSL (14 CFR 71.33(a)): each side of it.
-    expect([bandOf(2500), bandOf(9500), bandOf(17_999), bandOf(18_000), bandOf(null)]).toEqual(["low", "mid", "high", "flight-levels", null]);
-    expect([operatorOf({ callsign: "UAL2088 " }), operatorOf({ callsign: "N174HA" }), operatorOf({ callsign: null })]).toEqual(["UAL", null, null]);
     // 7700 an emergency (AIM 6-2-2), 7500 unlawful interference (6-3-4),
     // 7600 a radio failed (6-4-2); 1200, VFR, none.
     expect(["7700", "7500", "7600", "1200", "7777"].map(squawk => inEmergency({ squawk, emergency: null })))

@@ -80,23 +80,6 @@ def test_flight_levels_follow_the_same_rule_to_fl410():
     assert cruising(38000, None, 270)[-1] == 40000
 
 
-@pytest.mark.parametrize(("place", "lat", "lon", "expected"), [
-    ("Denver, west of 95.15's line", 39.74, -104.99, True),
-    ("Asheville, in 95.13's area", 35.60, -82.55, True),
-    ("Chicago, in neither", 41.88, -87.63, False),
-    ("Fresno, the Central Valley's exception", 36.74, -119.79, False),
-    ("Seattle, Puget Sound's exception", 47.61, -122.33, False),
-    ("Albany, the Hudson valley's exception", 42.65, -73.75, False),
-    ("Amarillo, east of the line", 35.22, -101.83, False),
-    ("Anchorage, Alaska kept whole", 61.22, -149.90, True),
-    ("Hilo, Hawaii's islands", 19.72, -155.08, True),
-    ("Puerto Rico's mountains", 18.20, -66.50, True),
-    ("San Juan, on Puerto Rico's coast", 18.45, -66.07, False),
-])
-def test_the_designated_mountainous_areas(place, lat, lon, expected):
-    assert engine("mountainous_at", lat=lat, lon=lon) is expected, place
-
-
 def test_the_floor_is_1000_ft_over_the_highest_ground_within_4_nm(land):
     [floor] = ifr.floor_profile([START, END])
     # 984 ft of ground, 50 ft for the tiles' pixels, 1,000 ft: 2,100.
