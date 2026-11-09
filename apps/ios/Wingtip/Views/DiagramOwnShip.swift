@@ -61,12 +61,7 @@ struct DiagramOwnShipView: View {
             }
             .navigationTitle("\(ident) airport diagram")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                        .accessibilityLabel("Close")
-                }
-            }
+            .closeButton { dismiss() }
             .safeAreaInset(edge: .bottom) {
                 if let diagram {
                     Text(note(diagram))

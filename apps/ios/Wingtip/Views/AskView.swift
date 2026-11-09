@@ -48,14 +48,7 @@ struct AskView: View {
             }
             .navigationTitle("Ask")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                    }
-                    .accessibilityLabel("Close")
-                }
-            }
+            .closeButton { dismiss() }
             .sheet(item: $source) { source in SourceSheet(source: source) }
             .onDisappear { client.cancel() }
         }
@@ -239,14 +232,7 @@ private struct SourceSheet: View {
             }
             .navigationTitle(source.label)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                    }
-                    .accessibilityLabel("Close")
-                }
-            }
+            .closeButton { dismiss() }
         }
         .presentationDetents([.medium, .large])
     }

@@ -276,7 +276,7 @@ struct ClearanceSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     // Listening goes on with the sheet put away: the
                     // captions over the map carry it, and Stop ends it.
-                    Button("Close") { dismiss() }
+                    CloseButton { dismiss() }
                 }
                 ToolbarItem(placement: .bottomBar) {
                     Button {

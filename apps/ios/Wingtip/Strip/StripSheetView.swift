@@ -82,17 +82,7 @@ struct StripSheetView: View {
                 .navigationDestination(for: StripPage.self) { page in
                     pageView(page)
                         .navigationTitle(page.title)
-                        .navigationBarTitleDisplayMode(.inline)
-                        .navigationBarBackButtonHidden(true)
-                        .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                // Back one level, where the way back always is.
-                                Button { if !path.isEmpty { path.removeLast() } } label: {
-                                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                                }
-                                .accessibilityLabel("Close")
-                            }
-                        }
+                        .closesBack()
                 }
         }
         .chartInkTheme()

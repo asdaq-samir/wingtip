@@ -119,7 +119,7 @@ struct GoNoGoSection: View {
             } else {
                 ProgressView("Checking the flight…")
             }
-            NavigationLink { MinimumsView() } label: {
+            NavigationLink { MinimumsView().closesBack() } label: {
                 Label("Personal minimums", systemImage: "slider.horizontal.3")
             }
             .task(id: session.signedIn) {
@@ -169,9 +169,9 @@ struct GoNoGoSection: View {
         case .section(let anchor)?:
             Button { open(anchor) } label: { content }.buttonStyle(.plain)
         case .loading?:
-            NavigationLink { LoadingView() } label: { content }
+            NavigationLink { LoadingView().closesBack() } label: { content }
         case .risk?:
-            NavigationLink { RiskView() } label: { content }
+            NavigationLink { RiskView().closesBack() } label: { content }
         case nil:
             content
         }
@@ -218,9 +218,9 @@ struct FindingFold: View {
             case .section(let anchor)?:
                 Button("See the reports") { open(anchor) }
             case .loading?:
-                NavigationLink("See the loading") { LoadingView() }
+                NavigationLink("See the loading") { LoadingView().closesBack() }
             case .risk?:
-                NavigationLink("See the risk assessment") { RiskView() }
+                NavigationLink("See the risk assessment") { RiskView().closesBack() }
             case nil:
                 EmptyView()
             }

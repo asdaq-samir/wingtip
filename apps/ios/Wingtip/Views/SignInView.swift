@@ -53,7 +53,7 @@ struct SignInView: View {
             }
             .navigationTitle("Sign In")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+            .closeButton { dismiss() }
         }
     }
 }

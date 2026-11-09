@@ -29,13 +29,13 @@ struct PilotGuideView: View {
             }
             Section("Practice") {
                 ProblemLine(Drills.decks, "The drills' cards")
-                NavigationLink { DrillView(deck: Drills.lightGun) } label: { row("Light gun signals", "14 CFR 91.125") }
-                NavigationLink { DrillView(deck: Drills.vfrMinimums) } label: { row("VFR weather minimums", "14 CFR 91.155") }
-                NavigationLink { LostCommsView() } label: { row("Lost communications", "14 CFR 91.185: route, altitude, and when to leave") }
-                NavigationLink { HoldingView() } label: { row("Holding entries", "AIM 5-3-8: the entry, and the legs in the wind") }
+                NavigationLink { DrillView(deck: Drills.lightGun).closesBack() } label: { row("Light gun signals", "14 CFR 91.125") }
+                NavigationLink { DrillView(deck: Drills.vfrMinimums).closesBack() } label: { row("VFR weather minimums", "14 CFR 91.155") }
+                NavigationLink { LostCommsView().closesBack() } label: { row("Lost communications", "14 CFR 91.185: route, altitude, and when to leave") }
+                NavigationLink { HoldingView().closesBack() } label: { row("Holding entries", "AIM 5-3-8: the entry, and the legs in the wind") }
             }
             Section("More") {
-                NavigationLink("Your airplane in the day's air") { AirplaneInTheAirView() }
+                NavigationLink("Your airplane in the day's air") { AirplaneInTheAirView().closesBack() }
             }
         }
         .navigationTitle("Guide")

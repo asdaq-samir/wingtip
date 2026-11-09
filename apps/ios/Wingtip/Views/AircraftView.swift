@@ -19,7 +19,7 @@ struct AircraftView: View {
                 // Any airplane in the air, by its callsign, N-number or
                 // address: its card, tracked on the map.
                 Section {
-                    NavigationLink { TrafficFindView() } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
+                    NavigationLink { TrafficFindView().closesBack() } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
                 }
                 Section("Airplane") {
                     HStack {
@@ -35,7 +35,7 @@ struct AircraftView: View {
                         LabeledContent("Flying", value: "\(tail) on \(plan.aircraft.uppercased())\(plan.figures.cruiseTasKt == nil ? "" : ", your figures")")
                         // The figures the planner flies it on, the pilot's to
                         // set from the handbook, or read off a photo of it.
-                        NavigationLink("Planning figures") { AirplaneFiguresView() }
+                        NavigationLink("Planning figures") { AirplaneFiguresView().closesBack() }
                     }
                     // The airplane's checklists, normal and emergency, kept on
                     // this device by its N-number, else by its type.
@@ -62,7 +62,7 @@ struct AircraftView: View {
                         }
                         // Added, edited and deleted on their own page, with
                         // each one's checklist, squawks and inspections.
-                        NavigationLink("Your Airplanes") { OwnAircraftListView() }
+                        NavigationLink("Your Airplanes") { OwnAircraftListView().closesBack() }
                     }
                 }
                 Section("Types the planner has figures for") {

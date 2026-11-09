@@ -104,12 +104,7 @@ struct PictureViewer: View {
             }
             .navigationTitle(picture.title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                        .accessibilityLabel("Close")
-                }
-            }
+            .closeButton { dismiss() }
             .safeAreaInset(edge: .bottom) {
                 if let credit = picture.credit, images != nil {
                     Text(credit).font(.caption2).foregroundStyle(.secondary)

@@ -184,10 +184,10 @@ struct AirplaneCard: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     // The card's own close, whether a sheet (iPhone) or the
                     // inspector (iPad) holds it.
-                    Button { FlightUI.shared.card = nil } label: { Image(systemName: "xmark") }.accessibilityLabel("Close")
+                    CloseButton { FlightUI.shared.card = nil }
                 }
             }
-            .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight) }
+            .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight).closesBack() }
             .task(id: hex) { await load() }
             .task(id: plane?.callsign) {
                 guard let callsign = plane?.callsign?.trimmingCharacters(in: .whitespaces), !callsign.isEmpty else { return }

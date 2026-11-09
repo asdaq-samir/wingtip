@@ -89,7 +89,7 @@ struct AirportSearchView: View {
             }
             .navigationTitle("Airport")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(for: String.self) { text in AirportDestination(route: AirportRoute(text), nearest: nearest) }
+            .navigationDestination(for: String.self) { text in AirportDestination(route: AirportRoute(text), nearest: nearest).closesBack() }
             .searchable(text: Binding(get: { query }, set: { query = $0 }), prompt: AirportQuery.prompt)
             .textInputAutocapitalization(.characters)
             .autocorrectionDisabled()

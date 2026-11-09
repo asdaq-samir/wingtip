@@ -26,7 +26,7 @@ struct DiversionView: View {
             Section(fields.isEmpty ? "" : "Nearest to you") {
                 ForEach(fields) { field in
                     HStack {
-                        NavigationLink { AirportCard(ident: field.ident) } label: { NearestRow(field: field) }
+                        NavigationLink { AirportCard(ident: field.ident).closesBack() } label: { NearestRow(field: field) }
                     }
                     .swipeActions(edge: .leading) {
                         Button("Divert") { divert(field.ident) }.tint(.orange)
@@ -39,7 +39,7 @@ struct DiversionView: View {
             ProblemLine(problem)
             // The checkride's diversion from here, worked by the planner.
             Section {
-                NavigationLink { DiversionDrillView() } label: { Label("Diversion Drill", systemImage: "timer") }
+                NavigationLink { DiversionDrillView().closesBack() } label: { Label("Diversion Drill", systemImage: "timer") }
             }
         }
         .navigationTitle("Nearest")
@@ -345,7 +345,7 @@ struct FlownTrackView: View {
             .toolbar {
                 // The card's own close, whether a sheet (iPhone) or the
                 // inspector (iPad) holds it.
-                ToolbarItem(placement: .topBarTrailing) { Button { FlightUI.shared.card = nil } label: { Image(systemName: "xmark") }.accessibilityLabel("Close") }
+                ToolbarItem(placement: .topBarTrailing) { CloseButton { FlightUI.shared.card = nil } }
             }
             .task {
                 do { track = try await Gateway.track(flight) } catch { problem = error.localizedDescription }

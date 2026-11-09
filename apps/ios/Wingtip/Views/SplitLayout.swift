@@ -233,7 +233,7 @@ struct SplitLayout<Map: View>: View {
 
     private var closeItem: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            Button { close() } label: { Image(systemName: "xmark") }.accessibilityLabel("Close")
+            CloseButton { close() }
         }
     }
 }

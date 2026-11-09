@@ -172,7 +172,7 @@ struct BriefView: View {
                 if plan.routed {
                     Section {
                         NavigationLink {
-                            PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents))
+                            PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents)).closesBack()
                         } label: {
                             Label("Passenger Briefing", systemImage: "person.2")
                         }

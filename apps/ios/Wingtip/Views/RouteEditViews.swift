@@ -401,7 +401,7 @@ struct HoldSheet: View {
             .navigationTitle("Hold at \(fix)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { Button { dismiss() } label: { Image(systemName: "xmark") }.accessibilityLabel("Close") }
+                ToolbarItem(placement: .topBarTrailing) { CloseButton { dismiss() } }
             }
             .onAppear(perform: fill)
         }

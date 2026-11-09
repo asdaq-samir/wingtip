@@ -199,14 +199,17 @@ struct FPLView: View {
                     NavigationLink(value: "flights") { Label("Flights", systemImage: "tray.full") }
                 }
             }
-            .navigationDestination(for: Leg.self) { leg in LegDetailView(leg: leg) }
+            .navigationDestination(for: Leg.self) { leg in LegDetailView(leg: leg).closesBack() }
             .navigationDestination(for: String.self) { page in
-                switch page {
-                case "profile": ProfileCard()
-                case "brief": BriefView()
-                case "flights": FlightsView()
-                default: FlightPage(name: page)
+                Group {
+                    switch page {
+                    case "profile": ProfileCard()
+                    case "brief": BriefView()
+                    case "flights": FlightsView()
+                    default: FlightPage(name: page)
+                    }
                 }
+                .closesBack()
             }
             .toolbar { RouteToolbar(plan: plan) }
             .sheet(isPresented: Binding(get: { ClearanceListener.shared.sheetShown }, set: { ClearanceListener.shared.sheetShown = $0 })) {

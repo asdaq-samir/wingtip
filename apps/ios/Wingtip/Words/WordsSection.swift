@@ -54,9 +54,7 @@ struct WordsSection: View {
                 }
                 .navigationTitle(source.label)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) { Button("Done") { opened = nil } }
-                }
+                .closeButton { opened = nil }
             }
             .presentationDetents([.medium, .large])
         }

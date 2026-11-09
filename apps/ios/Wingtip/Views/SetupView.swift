@@ -25,7 +25,7 @@ struct SetupView: View {
                     if let pilot = session.pilot {
                         LabeledContent("Signed in as", value: pilot.displayName ?? pilot.email ?? "you")
                         LabeledContent("Email", value: pilot.email)
-                        NavigationLink("Contact") { ContactView() }
+                        NavigationLink("Contact") { ContactView().closesBack() }
                         Button("Sign Out", role: .destructive) { Task { await session.signOut(); plan.forgetPilot() } }
                         DeleteAccountButton()
                     } else {
@@ -36,16 +36,16 @@ struct SetupView: View {
                 }
                 if session.signedIn {
                     Section("Pilot") {
-                        NavigationLink("Logbook and currency") { LogbookView() }
-                        NavigationLink("Training") { TrainingView() }
-                        NavigationLink("Instructing") { InstructorView() }
+                        NavigationLink("Logbook and currency") { LogbookView().closesBack() }
+                        NavigationLink("Training") { TrainingView().closesBack() }
+                        NavigationLink("Instructing") { InstructorView().closesBack() }
                     }
                 }
                 // The weather the pilot will not take off or land in, kept
                 // on this phone: the Brief's Go / No-Go holds it to them.
                 Section {
-                    NavigationLink("Personal minimums") { MinimumsView() }
-                    NavigationLink("Guide") { PilotGuideView() }
+                    NavigationLink("Personal minimums") { MinimumsView().closesBack() }
+                    NavigationLink("Guide") { PilotGuideView().closesBack() }
                 }
                 Section("Map") {
                     Toggle("Traffic", isOn: Binding(get: { traffic.on }, set: { traffic.on = $0 }))

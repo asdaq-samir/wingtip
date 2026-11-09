@@ -18,7 +18,7 @@ struct OwnAircraftListView: View {
                 }
                 ForEach(list) { airplane in
                     NavigationLink {
-                        OwnAircraftPage(record: airplane, onChange: { Task { await load() } })
+                        OwnAircraftPage(record: airplane, onChange: { Task { await load() } }).closesBack()
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
@@ -183,14 +183,14 @@ struct OwnAircraftPage: View {
         List {
             Section {
                 NavigationLink {
-                    AircraftFormView(record: record) { saved in record = saved; onChange() }
+                    AircraftFormView(record: record) { saved in record = saved; onChange() }.closesBack()
                 } label: {
                     LabeledContent("Figures", value: Self.figuresLine(record)).lineLimit(2)
                 }
                 // Its checklists, kept on this device (LocalChecklists).
                 ChecklistRows(airplane: record.tailNumber)
                 NavigationLink {
-                    SquawksView(aircraft: record) { Task { await reload() } }
+                    SquawksView(aircraft: record) { Task { await reload() } }.closesBack()
                 } label: {
                     LabeledContent("Squawks", value: record.openSquawks.isEmpty ? "" : "\(record.openSquawks.count) open")
                 }
