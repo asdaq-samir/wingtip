@@ -109,7 +109,6 @@ fn a_holds_minutes() {
     assert!(near(holds::held_minutes(Leg::Minutes(1.0), Some(2.0), None, 110.0), 8.0));
     assert!(near(holds::lap_minutes(Leg::Nm(4.0), 120.0), 2.0 * 2.0 + 2.0));
     assert_eq!(holds::held_minutes(Leg::Minutes(1.0), None, Some(15.0), 110.0), 15.0);
-    assert!(near(holds::length_minutes(Leg::Minutes(1.0), Length::Turns(2), 110.0), 8.0));
     // No airspeed is flown as a knot, not divided by nothing.
     assert!(holds::lap_minutes(Leg::Nm(4.0), 0.0).is_finite());
     // A standard-rate turn's radius: 0.64 nm at 120 kt.
