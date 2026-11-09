@@ -23,21 +23,6 @@ def test_over_the_high_ground_above_the_ceiling_with_its_warning():
     assert with_oxygen["reasons"] == ["Over the aircraft's 10,950 ft service ceiling"]
 
 
-def test_oxygen_by_91_211s_three_heights():
-    from wingtip.engine import ask as engine
-
-    def oxygen_caution(highest_ft, profile):
-        return engine("oxygen_caution", highest_ft=highest_ft, profile=profile)
-    # Each side of 12,500, 14,000 and 15,000 ft MSL (14 CFR 91.211(a)).
-    assert oxygen_caution(12500.0, None) == []
-    assert "(a)(1)" in oxygen_caution(13500.0, None)[0]
-    assert "(a)(1)" in oxygen_caution(14000.0, None)[0]
-    assert oxygen_caution(14500.0, None)[0].endswith("(14 CFR 91.211(a)(2))")
-    assert oxygen_caution(15000.0, None)[0].endswith("(14 CFR 91.211(a)(2))")
-    assert "(3)" in oxygen_caution(15500.0, None)[0]
-    assert oxygen_caution(15500.0, {"pressurized": True}) == []
-
-
 def test_class_a_is_a_warning_too():
     # 14 CFR 71.33(a): from 18,000 ft MSL; 91.135: IFR there.
     flat = {"course_magnetic_deg": 80.0, "segments": [{**ROCKIES, "floor_ft": 3000.0, "service_ceiling_ft": 25000.0}]}

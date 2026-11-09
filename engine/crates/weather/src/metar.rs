@@ -8,7 +8,7 @@
 //! holds the decoder to the AWC's own decoding of every report in its
 //! current cache and lists where they differ.
 
-use crate::json;
+
 
 /// A wind group: "27015G25KT", "VRB03KT", "00000KT", "27015MPS".
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
@@ -423,41 +423,6 @@ pub fn parse(raw: &str) -> Option<Metar> {
     Some(m)
 }
 
-/// The figures the planner keeps of a report, as JSON with
-/// wingtip.weather's names.
-pub fn to_json(m: &Metar) -> String {
-    let mut out = String::from("{\"station\":");
-    json::string(&mut out, &m.station);
-    out.push_str(",\"speci\":");
-    out.push_str(if m.speci { "true" } else { "false" });
-    out.push_str(",\"wind_dir_true_deg\":");
-    json::opt_number(&mut out, m.wind.and_then(|w| w.dir_true_deg));
-    out.push_str(",\"wind_speed_kt\":");
-    json::opt_number(&mut out, m.wind.map(|w| w.speed_kt));
-    out.push_str(",\"wind_gust_kt\":");
-    json::opt_number(&mut out, m.wind.and_then(|w| w.gust_kt));
-    out.push_str(",\"visibility_sm\":");
-    json::opt_number(&mut out, m.visibility_sm);
-    out.push_str(",\"ceiling_ft\":");
-    json::opt_number(&mut out, m.ceiling_ft());
-    out.push_str(",\"ceiling_unknown\":");
-    out.push_str(if m.ceiling_unknown() { "true" } else { "false" });
-    out.push_str(",\"wx\":");
-    json::string(&mut out, &m.weather.join(" "));
-    out.push_str(",\"temp_c\":");
-    json::opt_number(&mut out, m.temp_c);
-    out.push_str(",\"dewpoint_c\":");
-    json::opt_number(&mut out, m.dewpoint_c);
-    out.push_str(",\"altimeter_in_hg\":");
-    json::opt_number(&mut out, m.altimeter_inhg);
-    out.push_str(",\"flight_category\":");
-    // With no sky given the ceiling is not known; flight_category_of says
-    // what the visibility alone settles, and nothing without a visibility.
-    json::opt_string(&mut out, flight_category_of(m.ceiling_ft(), m.ceiling_unknown() || !m.sky_reported, m.visibility_sm));
-    out.push('}');
-    out
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -468,7 +433,6 @@ mod tests {
         let m = parse("METAR KXYZ 021355Z AUTO 27005KT 10SM OVC/// 10/05 A2992 RMK AO2").unwrap();
         assert_eq!((m.ceiling_ft(), m.ceiling_unknown()), (None, true));
         assert_eq!(flight_category_of(m.ceiling_ft(), m.ceiling_unknown(), m.visibility_sm), None);
-        assert!(to_json(&m).contains("\"ceiling_unknown\":true,") && to_json(&m).contains("\"flight_category\":null"));
         for sky in ["BKN///", "VV///"] {
             let m = parse(&format!("METAR KXYZ 021355Z AUTO 27005KT 10SM {sky} 10/05 A2992")).unwrap();
             assert!(m.ceiling_unknown(), "{sky}");

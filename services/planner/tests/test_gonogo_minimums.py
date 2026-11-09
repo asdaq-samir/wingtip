@@ -1,12 +1,5 @@
 """app.gonogo.minimums, with apps/web/src/lib/minimums.test.ts's cases."""
-from app.gonogo import ask
 from app.gonogo.minimums import NO_MINIMUMS, under_minimums
-
-
-def best_crosswind(runways: list[dict], reported: dict | None = None) -> dict | None:
-    """The engine's crosswind on the best open runway, as under_minimums
-    takes it inside the engine."""
-    return ask("gonogo_best_crosswind", runways=runways, reported=reported)
 
 
 BRIEFING = {
@@ -26,22 +19,8 @@ def test_none_set_nothing_is_under_them():
     assert under_minimums(NO_MINIMUMS, BRIEFING, ["C81", "KDLH"], "KDLH") == []
 
 
-def test_the_best_runway_is_the_one_with_the_least_crosswind_gusts_included():
-    assert best_crosswind(BRIEFING["airports"]["C81"]["runways"]) == {"end": "36", "kt": 13}
-
-
-def test_leaves_a_closed_runway_out_whatever_its_wind():
-    runways = [
-        {"ends": "9/27", "closed": True, "wind": {"end": "27", "headwind_kt": 15, "crosswind_kt": 0, "gust_crosswind_kt": None}},
-        {"ends": "18/36", "closed": False, "wind": {"end": "36", "headwind_kt": 0, "crosswind_kt": -15, "gust_crosswind_kt": None}},
-    ]
-    assert best_crosswind(runways) == {"end": "36", "kt": 15}
-
-
 def test_takes_a_variable_wind_which_favours_no_runway_as_all_crosswind_gusts_included():
     runways = [{"ends": "18/36", "closed": False, "wind": None}]
-    assert best_crosswind(runways, {"speed_kt": 15, "gust_kt": 25}) == {"end": None, "kt": 25}
-    assert best_crosswind(runways, {"speed_kt": 0, "gust_kt": None}) is None
     vrb = {**BRIEFING, "metars": {"C81": {"wind_speed_kt": 15, "wind_gust_kt": 25}}, "airports": {"C81": {"runways": runways}}}
     assert under_minimums({**NO_MINIMUMS, "crosswind_kt": 15}, vrb, ["C81"], "KDLH") == [
         "C81 variable wind 25 kt, which may all be crosswind, over your 15 kt",

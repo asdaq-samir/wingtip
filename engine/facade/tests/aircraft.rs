@@ -27,23 +27,6 @@ fn what_an_airplane_is_by_its_emitter_category() {
 }
 
 #[test]
-fn its_heights_band_each_side_of_class_a() {
-    // Class A from 18,000 ft MSL (14 CFR 71.33(a)).
-    let bands: Vec<Value> = [json!(2500), json!(9500), json!(17_999), json!(18_000), Value::Null]
-        .into_iter()
-        .map(|a| ask("altitude_band", json!({"altitude_ft": a})))
-        .collect();
-    assert_eq!(bands, [json!("low"), json!("mid"), json!("high"), json!("flight-levels"), Value::Null]);
-}
-
-#[test]
-fn its_operator_from_an_airlines_callsign() {
-    assert_eq!(ask("operator_of", json!({"callsign": "UAL2088 "})), "UAL");
-    assert_eq!(ask("operator_of", json!({"callsign": "N174HA"})), Value::Null);
-    assert_eq!(ask("operator_of", json!({"callsign": null})), Value::Null);
-}
-
-#[test]
 fn an_emergency_squawked_or_sent() {
     // 7700 an emergency (AIM 6-2-2), 7500 unlawful interference (6-3-4),
     // 7600 a radio failed (6-4-2); 1200, VFR, none.

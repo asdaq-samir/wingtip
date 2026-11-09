@@ -131,7 +131,9 @@ fn gp() -> Value {
 }
 
 fn glidepath_ft(nm_out: f64) -> f64 {
-    ask("glidepath_ft", json!({"runway_path": gp(), "nm_out": nm_out})).as_f64().unwrap()
+    let p = gp();
+    let at = |k: &str| p[k].as_f64().unwrap();
+    wingtip_engine::approach::debrief::glidepath_ft(&wingtip_engine::approach::RunwayPath { lat: at("lat"), lon: at("lon"), ft: at("ft"), deg: at("deg") }, nm_out)
 }
 
 fn gp_ft() -> f64 {
@@ -592,7 +594,6 @@ fn descent_rate_is_the_faas_table() {
     assert!((fpm(100.0, 3.0) / 100.0 - 5.3).abs() < 0.05);
     // Steeper is faster: 3.5° at 90 kt, 557.
     assert!((fpm(90.0, 3.5) - 557.0).abs() < 0.5);
-    assert_eq!(ask("approach_rounded_fpm", json!({"fpm": fpm(90.0, 3.0)})), json!(480.0));
 }
 
 #[test]
@@ -610,51 +611,6 @@ fn approach_category_is_97_3s() {
     assert_eq!(cat(json!(85), json!(70)), json!("A"));
     assert_eq!(cat(Value::Null, Value::Null), Value::Null);
     assert_eq!(cat(json!(0), json!(70)), Value::Null);
-}
-
-#[test]
-fn minimums_kind_is_a_da_an_mda_or_either() {
-    for (name, want) in [
-        ("ILS RWY 09", "DA"),
-        ("RNAV (RNP) Y RWY 08", "DA"),
-        ("RNAV (GPS) Y RWY 26L", "DA or MDA"),
-        ("LOC RWY 09", "MDA"),
-        ("VOR/DME-A", "MDA"),
-        ("GPS-A", "DA or MDA"),
-        ("GPSX", "MDA"),
-        ("ILS", "DA"),
-    ] {
-        assert_eq!(ask("approach_minimums_kind", json!({"name": name})), json!(want), "{name}");
-    }
-}
-
-fn missed_words(legs: Value) -> Value {
-    ask("approach_missed_words", json!({"legs": legs}))
-}
-
-#[test]
-fn the_missed_approach_in_the_plates_words() {
-    assert_eq!(
-        missed_words(kdlh()["missed_legs"].clone()),
-        json!("Climb to 3,000 on course 093°, then left turn to heading 320° to intercept, then on course 017° to CHERL climbing to 4,500, then hold at CHERL, right turns, 197° inbound.")
-    );
-    assert_eq!(
-        missed_words(json!([
-            {"path": "CA", "fix": null, "course_deg": 270, "turn": null, "min_ft": 2000, "max_ft": null},
-            {"path": "RF", "fix": "X", "course_deg": null, "turn": "R", "min_ft": null, "max_ft": null},
-        ])),
-        json!("Climb to 2,000 on course 270°, then as the plate shows.")
-    );
-    assert_eq!(missed_words(json!([{"path": "AF", "fix": "X", "course_deg": null, "turn": "R", "min_ft": null, "max_ft": null}])), Value::Null);
-    assert_eq!(missed_words(json!([])), Value::Null);
-    assert_eq!(ask("approach_missed_words", json!({})), Value::Null);
-    assert_eq!(
-        missed_words(json!([
-            {"path": "VA", "fix": null, "course_deg": 0, "turn": "R", "min_ft": 3000, "max_ft": null},
-            {"path": "DF", "fix": "ABC", "course_deg": null, "turn": null, "min_ft": null, "max_ft": null},
-        ])),
-        json!("Climbing right turn to 3,000 on heading 360°, then direct ABC.")
-    );
 }
 
 fn brief(input: Value) -> Vec<Value> {
@@ -711,15 +667,6 @@ fn the_brief_says_a_procedures_data_are_out_of_date() {
     let mut stale = kdlh();
     stale["stale"] = json!(true);
     assert!(brief(json!({"drawing": stale}))[0]["lines"].as_array().unwrap().contains(&json!("Out of date: these are an older cycle's data")));
-}
-
-#[test]
-fn brief_frequencies_brief_only_what_the_field_lists() {
-    let f = |r: Value| ask("approach_brief_frequencies", json!({"frequencies": r}));
-    assert_eq!(f(json!([{"type": "UNICOM", "description": "UNICOM", "frequency_mhz": 122.8}])), json!(["Approach: see the plate", "CTAF 122.8"]));
-    // ctafOf's MULTICOM 122.9 is a guess, not this field's.
-    assert_eq!(f(json!([{"type": "GND", "description": "GND", "frequency_mhz": 121.7}])), json!(["Approach: see the plate"]));
-    assert_eq!(f(Value::Null), json!(["See the plate"]));
 }
 
 fn coach(d: Value, gs: f64) -> Vec<Value> {
@@ -851,11 +798,3 @@ fn the_side_view_draws_the_path_down_from_the_fafs_altitude() {
     assert!(ask("approach_profile", json!({"drawing": bare()}))["path"].is_null());
 }
 
-#[test]
-fn fix_name_says_a_threshold_by_its_runway() {
-    assert_eq!(ask("approach_fix_name", json!({"ident": "RW09"})), json!("the runway 09 threshold"));
-    assert_eq!(ask("approach_fix_name", json!({"ident": "RW36C"})), json!("the runway 36C threshold"));
-    assert_eq!(ask("approach_fix_name", json!({"ident": "PYKLA"})), json!("PYKLA"));
-    assert_eq!(ask("approach_fix_name", json!({"ident": "RW9"})), json!("RW9"));
-    assert_eq!(wingtip_engine::approach::lesson::stopwatch(125.0), "2:05");
-}

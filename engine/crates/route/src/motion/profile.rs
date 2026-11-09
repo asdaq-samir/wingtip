@@ -259,14 +259,6 @@ pub fn descent_altitude(cruise_ft: f64, pattern_ft: Option<f64>, nm_out: f64) ->
     }
 }
 
-/// `descent_altitude`: feet MSL, from `{"cruise_ft", "pattern_ft"?, "nm_out"}`.
-pub(super) fn descent_altitude_rule(v: &Value) -> Result<String, String> {
-    let n = "descent_altitude";
-    let mut out = String::new();
-    json::number(&mut out, descent_altitude(num(n, v, "cruise_ft")?, opt(n, v, "pattern_ft")?, num(n, v, "nm_out")?));
-    Ok(out)
-}
-
 /// `plan_profile`: {"points": [{along_nm, plan_ft}], "marks": [{kind:
 /// "TOC"|"TOD", along_nm, plan_ft}], "length_nm"}, from `{"rows"}`.
 pub(super) fn profile_rule(v: &Value) -> Result<String, String> {

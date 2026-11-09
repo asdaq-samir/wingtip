@@ -8,7 +8,7 @@
 //! differ.
 
 use crate::metar::{self, Layer, Wind};
-use crate::{json, time};
+use crate::time;
 
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct Period {
@@ -224,39 +224,6 @@ pub fn parse(raw: &str, near: i64) -> Option<Taf> {
     Some(Taf { station: station.to_string(), issued, valid_from, valid_to, periods })
 }
 
-/// The periods as wingtip.weather's `fcsts`, JSON.
-pub fn to_json(t: &Taf) -> String {
-    let mut out = String::from("{\"station\":");
-    json::string(&mut out, &t.station);
-    out.push_str(&format!(",\"issued\":{},\"valid_from\":{},\"valid_to\":{},\"fcsts\":[", t.issued, t.valid_from, t.valid_to));
-    for (k, p) in t.periods.iter().enumerate() {
-        if k > 0 {
-            out.push(',');
-        }
-        out.push_str(&format!("{{\"timeFrom\":{},\"timeTo\":{},\"change\":", p.from, p.to));
-        json::string(&mut out, &p.change);
-        out.push_str(",\"probability\":");
-        json::opt_number(&mut out, p.probability.map(f64::from));
-        out.push_str(",\"wind_dir_true_deg\":");
-        json::opt_number(&mut out, p.wind.and_then(|w| w.dir_true_deg));
-        out.push_str(",\"wind_speed_kt\":");
-        json::opt_number(&mut out, p.wind.map(|w| w.speed_kt));
-        out.push_str(",\"wind_gust_kt\":");
-        json::opt_number(&mut out, p.wind.and_then(|w| w.gust_kt));
-        out.push_str(",\"visibility_sm\":");
-        json::opt_number(&mut out, p.visibility_sm);
-        out.push_str(",\"ceiling_ft\":");
-        json::opt_number(&mut out, p.ceiling_ft());
-        out.push_str(",\"ceiling_unknown\":");
-        out.push_str(if p.ceiling_unknown() { "true" } else { "false" });
-        out.push_str(",\"wx\":");
-        json::string(&mut out, &p.weather.join(" "));
-        out.push('}');
-    }
-    out.push_str("]}");
-    out
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -280,7 +247,6 @@ mod tests {
         let near = time::days_from_civil(2026, 11, 2) * time::DAY_S + 12 * 3600;
         let t = parse("TAF KXYZ 021120Z 0212/0312 27012KT P6SM OVC/// FM021800 30015KT P6SM SCT040 BKN///", near).unwrap();
         assert_eq!((t.periods[0].ceiling_ft(), t.periods[0].ceiling_unknown()), (None, true));
-        assert!(to_json(&t).contains("\"ceiling_unknown\":true"));
         // Above a scattered layer of known height it is still the ceiling, and not known.
         assert_eq!((t.periods[1].ceiling_ft(), t.periods[1].ceiling_unknown()), (None, true));
     }

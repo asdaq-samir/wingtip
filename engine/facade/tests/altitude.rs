@@ -33,20 +33,10 @@ fn the_cruising_altitudes_are_91_159s_and_91_179s() {
 }
 
 #[test]
-fn a_tight_altitude_and_the_distance_under_the_clouds() {
+fn the_distance_under_the_clouds() {
     let f = fixture();
-    for case in f["tight"].as_array().unwrap() {
-        assert_eq!(ask("tight_cruising_altitude", case["input"].clone()).as_f64(), case["answer"].as_f64(), "{}", case["input"]);
-    }
     for case in f["underClouds"].as_array().unwrap() {
         assert_eq!(ask("highest_under_clouds_ft", json!({ "cloud_base_ft": case["cloud_base_ft"] })).as_f64(), case["answer"].as_f64());
-    }
-}
-
-#[test]
-fn the_mountainous_areas_are_part_95s() {
-    for case in fixture()["mountainous"].as_array().unwrap() {
-        assert_eq!(ask("mountainous_at", json!({ "lat": case["lat"], "lon": case["lon"] })), case["answer"], "{}", case["place"]);
     }
 }
 

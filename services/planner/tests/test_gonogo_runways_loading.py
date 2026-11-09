@@ -10,27 +10,14 @@ from app.gonogo.runways import runway_checks
 from app.gonogo.weight_balance import balance, default_load
 
 
-# The engine's names runway_checks and balance ask inside the engine,
+# The engine's names runway_checks asks inside the engine,
 # asked by name as the native app's Go / No-Go would.
-def short_field(table: dict, pressure_alt_ft: float, temp_c: float, weight_lb: float, headwind_kt: float, grass: bool) -> dict:
-    return ask("gonogo_short_field", table=table, pressure_alt_ft=pressure_alt_ft, temp_c=temp_c, weight_lb=weight_lb,
-               headwind_kt=headwind_kt, grass=grass)
-
-
 def soft_surface(runway: dict | None) -> bool:
     return ask("gonogo_soft_surface", surface=(runway or {}).get("surface"))
 
 
-def field_air(elevation_ft: float, altimeter_in_hg: float | None, temp_c: float | None) -> dict:
-    return ask("gonogo_field_air", elevation_ft=elevation_ft, altimeter_in_hg=altimeter_in_hg, temp_c=temp_c)
-
-
 def picked_end(picks: dict | None, ident: str, kind: str, departure: bool) -> str | None:
     return ask("gonogo_picked_end", picks=picks or None, ident=ident, kind=kind, departure=departure)
-
-
-def in_envelope(envelope: list, arm: float, weight: float) -> bool:
-    return ask("gonogo_in_envelope", envelope=envelope, arm=arm, weight=weight)
 
 
 C172 = {"name": "c172", **load_aircraft_profile("c172")}
@@ -52,45 +39,8 @@ def test_over_its_weight_and_the_baggage_over_its_own():
     assert "The baggage, 170 lb in all, is over its 120 lb" in b["problems"]
 
 
-def test_the_envelope_is_the_pohs():
-    envelope = LOADING["envelope"]
-    assert in_envelope(envelope, 36, 1900) is True
-    assert in_envelope(envelope, 36, 2500) is False
-    assert in_envelope(envelope, 47.5, 2000) is False
-
-
 def test_the_default_load_is_the_sample_airplane_and_a_pilot():
     assert default_load(LOADING, 40) == {"empty_weight_lb": 1642, "empty_arm_in": 38.12, "stations_lb": [170, 0, 0, 0], "fuel_gal": 40}
-
-
-TAKEOFF, LANDING = C172["takeoff"], C172["landing"]
-
-
-def test_the_table_at_sea_level_and_15_c_half_way_between_its_10_and_20():
-    assert short_field(TAKEOFF, 0, 15, 2550, 0, False) == {"ground_roll_ft": 960, "total_ft": 1635, "caveats": []}
-
-
-def test_a_headwind_takes_a_tenth_off_every_9_kt_a_tailwind_adds_a_tenth_every_2_grass_the_ground_rolls_15_pct():
-    assert short_field(TAKEOFF, 0, 10, 2550, 9, False)["ground_roll_ft"] == 835      # 925 less 10%
-    assert short_field(TAKEOFF, 0, 10, 2550, -2, False)["ground_roll_ft"] == 1020    # 925 and 10%
-    grass = short_field(TAKEOFF, 0, 10, 2550, 0, True)
-    assert (grass["ground_roll_ft"], grass["total_ft"]) == (1065, 1715)
-
-
-def test_between_its_weights_and_its_one_landing_table_at_any_weight():
-    assert short_field(TAKEOFF, 0, 0, 2475, 0, False)["ground_roll_ft"] == 805       # between 860 and 745
-    landing = short_field(LANDING, 2000, 20, 2200, 0, False)
-    assert (landing["ground_roll_ft"], landing["total_ft"]) == (630, 1420)
-
-
-def test_a_fields_air_off_the_altimeter_and_a_standard_days_temperature_where_none_is_reported():
-    # A thousand feet an inch under 29.92; ISA at 900 ft is 13.2 °C.
-    air = field_air(900, 29.42, 25)
-    assert air["pressure_alt_ft"] == pytest.approx(1400)
-    assert air["temp_c"] == 25
-    standard = field_air(900, None, None)
-    assert standard["pressure_alt_ft"] == 900
-    assert standard["temp_c"] == pytest.approx(13.2, abs=0.05)
 
 
 def test_takes_turf_grass_dirt_and_gravel_as_soft_and_asphalt_not():

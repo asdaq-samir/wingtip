@@ -378,16 +378,13 @@ pub fn rule(name: &str, v: &Value) -> Result<String, String> {
         "weather_expires_at" | "weather_in_force" => weather_validity_rule(&ask),
         "airspace_column" => crate::rules::column_json(ask.v),
         "mode_c_veil" => crate::rules::veil_json(ask.v),
-        "notams_fns" | "notam_text" | "metar_read" | "taf_read" | "winds_read" | "tfr_detail_read" | "ceiling_ft"
-        | "sky_ceiling" | "report_flight_category" | "vfr_basic_minimums" | "vfr_not_recommended_reasons" | "below_vfr_minimums" => {
+        "notams_fns" | "tfr_detail_read" | "ceiling_ft" | "vfr_basic_minimums" | "vfr_not_recommended_reasons" | "below_vfr_minimums" => {
             weather_rule(&ask)
         }
-        "is_night" | "civil_twilight" | "night_on_the_way" | "night_at_either_end" | "passenger_night"
-        | "passenger_night_on_the_way" => sun_rule(&ask),
+        "night_on_the_way" | "night_at_either_end" | "passenger_night" | "passenger_night_on_the_way" => sun_rule(&ask),
         "checkpoints_select" => checkpoints_rule(&ask),
         "reserve_min" | "isa_temp_c" | "density_ratio" | "density_altitude_ft" | "pressure_altitude_ft" | "is_eastbound"
-        | "lowest_vfr_cruising_altitude" | "distance_nm" | "region_of" | "descent_ft_per_nm" | "wind_correction_deg"
-        | "groundspeed_kt" => flight_rule(&ask),
+        | "lowest_vfr_cruising_altitude" | "distance_nm" | "region_of" | "groundspeed_kt" => flight_rule(&ask),
         "words_num" | "words_one" | "words_to_fixed" | "words_grouped" | "words_alt_ft" | "words_flight_level"
         | "words_ceiling_and_visibility" => words_rule(&ask),
         "altitude_limits" | "altitude_allowed" | "vfr_altitudes" | "altitude_said" => limits_rule(&ask),
@@ -523,20 +520,13 @@ fn strip_fuel_rule(ask: &Ask) -> Result<String, String> {
     Ok(out)
 }
 
-/// A report, a NOTAM or a TFR as sent, read (crate::metar, taf, winds,
-/// notam, tfr), each answer the planner's own dicts; and the figures read
-/// off a report: its ceiling, its flight category and the basic VFR
-/// minimums they are held to.
+/// NOTAMs and a TFR as sent, read (crate::notam, tfr), each answer the
+/// planner's own dicts; and the figures read off a report: its ceiling and
+/// the basic VFR minimums it is held to.
 fn weather_rule(ask: &Ask) -> Result<String, String> {
     let read = |found: Option<String>| found.unwrap_or_else(|| "null".to_owned());
-    // Whole seconds, as the reports' own times are.
-    let secs = |key: &str| ask.num(key).map(|s| s.floor() as i64);
     match ask.name {
         "notams_fns" => Ok(crate::notam::to_json(&crate::notam::from_fns(ask.str("text")?))),
-        "notam_text" => Ok(read(crate::notam::from_text(ask.str("text")?).map(|n| crate::notam::to_json(&[n])))),
-        "metar_read" => Ok(read(crate::metar::parse(ask.str("raw")?).map(|m| crate::metar::to_json(&m)))),
-        "taf_read" => Ok(read(crate::taf::parse(ask.str("raw")?, secs("near")?).map(|t| crate::taf::to_json(&t)))),
-        "winds_read" => Ok(read(crate::winds::parse(ask.str("text")?, secs("now")?).map(|p| crate::winds::to_json(&p)))),
         "tfr_detail_read" => {
             let text = ask.str("text")?;
             if let Err(e) = crate::xml::parse(text) {
@@ -544,34 +534,16 @@ fn weather_rule(ask: &Ask) -> Result<String, String> {
             }
             Ok(read(crate::tfr::parse_detail(text).map(|d| crate::tfr::to_json(&d))))
         }
-        "ceiling_ft" | "sky_ceiling" => {
+        "ceiling_ft" => {
             let mut layers = Vec::new();
             if let Some(listed) = ask.v.get("layers").filter(|l| !matches!(l, Value::Null)) {
                 for l in listed.as_array().ok_or_else(|| format!("{}: \"layers\" is not a list", ask.name))? {
                     layers.push((l.get("cover").and_then(Value::as_str).unwrap_or(""), opt_num_in(ask.name, l, "base_ft")?));
                 }
             }
-            let (ceiling, unknown) = crate::metar::sky_ceiling_of(layers, ask.opt_num("vert_vis_ft")?);
+            let (ceiling, _) = crate::metar::sky_ceiling_of(layers, ask.opt_num("vert_vis_ft")?);
             let mut out = String::new();
-            if ask.name == "ceiling_ft" {
-                json::opt_number(&mut out, ceiling);
-            } else {
-                out.push_str("{\"ceiling_ft\":");
-                json::opt_number(&mut out, ceiling);
-                out.push_str(",\"ceiling_unknown\":");
-                out.push_str(if unknown { "true" } else { "false" });
-                out.push('}');
-            }
-            Ok(out)
-        }
-        "report_flight_category" => {
-            let mut out = String::new();
-            let category = crate::metar::flight_category_of(
-                ask.opt_num("ceiling_ft")?,
-                ask.opt_bool("ceiling_unknown")?,
-                ask.opt_num("visibility_sm")?,
-            );
-            json::opt_string(&mut out, category);
+            json::opt_number(&mut out, ceiling);
             Ok(out)
         }
         // Whether a ceiling or a visibility is under 91.155(c), (d)'s basic
@@ -692,9 +664,7 @@ fn flight_rule(ask: &Ask) -> Result<String, String> {
         "pressure_altitude_ft" => flight::pressure_altitude_ft(ask.num("elevation_ft")?, ask.num("altimeter_inhg")?),
         "lowest_vfr_cruising_altitude" => flight::lowest_vfr_cruising_altitude(ask.num("floor_ft")?, ask.num("magnetic_course_deg")?),
         "distance_nm" => crate::geo::distance_nm(ask.num("lat1")?, ask.num("lon1")?, ask.num("lat2")?, ask.num("lon2")?),
-        "descent_ft_per_nm" => crate::motion::profile::DESCENT_FT_PER_NM,
         "is_eastbound" => return Ok(flight::is_eastbound(ask.num("magnetic_course_deg")?).to_string()),
-        "wind_correction_deg" => flight::wind_correction_deg(ask.num("true_course_deg")?, ask.num("wind_from_deg")?, ask.num("wind_kt")?, ask.num("tas_kt")?),
         "groundspeed_kt" => flight::groundspeed_kt(
             ask.num("true_course_deg")?,
             ask.num("wind_from_deg")?,
@@ -722,21 +692,6 @@ fn sun_rule(ask: &Ask) -> Result<String, String> {
     };
     let mut out = String::new();
     match ask.name {
-        "is_night" => out.push_str(if sun::is_night(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?) { "true" } else { "false" }),
-        "civil_twilight" => {
-            let t = sun::civil_twilight(ask.num("lat")?, ask.num("lon")?, ask.num("day_s")?);
-            out.push_str("{\"dawn_s\":");
-            json::opt_number(&mut out, t.dawn_s);
-            out.push_str(",\"dusk_s\":");
-            json::opt_number(&mut out, t.dusk_s);
-            out.push_str(",\"night_all_day\":");
-            out.push_str(match t.night_all_day {
-                Some(true) => "true",
-                Some(false) => "false",
-                None => "null",
-            });
-            out.push('}');
-        }
         "night_on_the_way" => {
             let night = sun::night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?);
             out.push_str(if night { "true" } else { "false" });

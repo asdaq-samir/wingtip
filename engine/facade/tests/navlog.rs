@@ -478,15 +478,6 @@ fn a_hold_adds_its_minutes_and_fuel_to_the_leg() {
     assert_eq!(path.first(), path.last());
 }
 
-#[test]
-fn the_racetrack_turns_to_the_holding_side_and_closes_at_the_fix() {
-    let track = ask("navlog_racetrack", json!({"fix": {"lat": 43.0, "lon": -89.0}, "inbound_true_deg": 270.0, "right": true, "tas_kt": 120.0, "leg_nm": 2.0}));
-    let points: Vec<(f64, f64)> = track.as_array().unwrap().iter().map(|p| (f(&p[0]), f(&p[1]))).collect();
-    assert_eq!(points[0], (43.0, -89.0));
-    assert_eq!(*points.last().unwrap(), (43.0, -89.0));
-    assert!(points.iter().any(|p| p.0 > 43.0) && points.iter().any(|p| p.1 > -89.0 + 0.03));
-}
-
 // --- The recorded routes (services/planner/tests_wingtip/golden) ------------
 
 fn key(parts: &[f64]) -> String {

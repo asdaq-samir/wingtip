@@ -271,21 +271,6 @@ def test_the_book_service_ceiling_where_the_temperatures_are_unknown(sources, mo
 
 
 
-def tight_cruising_altitude(floor_ft, ceiling_ft, rule_from_ft):
-    return engine("tight_cruising_altitude", floor_ft=floor_ft, ceiling_ft=ceiling_ft, rule_from_ft=rule_from_ft)
-
-
-def test_the_highest_whole_hundred_under_the_ceiling_that_clears_the_floor():
-    assert tight_cruising_altitude(1800.0, 1900.0, 3600.0) == 1800.0
-    assert tight_cruising_altitude(1750.0, 1950.0, 3600.0) == 1900.0
-
-
-def test_nothing_tight_where_nothing_fits_or_the_rule_applies():
-    assert tight_cruising_altitude(1850.0, 1900.0, 3600.0) is None   # no hundred between
-    assert tight_cruising_altitude(1800.0, None, 3600.0) is None     # no ceiling to be tight under
-    assert tight_cruising_altitude(3800.0, 4000.0, 3600.0) is None   # 91.159's altitudes up there
-
-
 # --- Under IFR (wingtip.ifr) -------------------------------------------------
 
 @pytest.fixture

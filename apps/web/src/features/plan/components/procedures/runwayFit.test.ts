@@ -6,10 +6,9 @@ import { callEngine } from "../../../../lib/engine/engine";
 
 // The engine's one evaluator of a runway end's distance (runways.rs), the
 // runway check's and FPL's chips', asked by name through the .wasm.
-const fieldAir = (elevationFt: number, altimeterInHg: number, tempC: number) => {
-  const air = callEngine("gonogo_field_air", { elevation_ft: elevationFt, altimeter_in_hg: altimeterInHg, temp_c: tempC });
-  return { pressureAltFt: air.pressure_alt_ft, tempC: air.temp_c };
-};
+// The air a field's distances are worked out in: the pressure altitude off
+// the altimeter (a thousand feet an inch under 29.92) and the temperature.
+const fieldAir = (elevationFt: number, altimeterInHg: number, tempC: number) => ({ pressureAltFt: elevationFt + (29.92 - altimeterInHg) * 1000, tempC });
 const endDistance = (table: ShortField, runway: Runway | undefined, air: { pressureAltFt: number; tempC: number }, weightLb: number, headwindKt: number) => {
   const d = callEngine("gonogo_end_distance", {
     table, runway: runway ?? null, pressure_alt_ft: air.pressureAltFt, temp_c: air.tempC, weight_lb: weightLb, headwind_kt: headwindKt,
