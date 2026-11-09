@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeNavLog, navLogSheet, openMapSettings, openNavLog, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { closeNavLog, navLogSheet, openMapSettings, openNavLog, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
 
 /**
  * What a pilot cannot be without in the air, in one journey (the owner,
@@ -59,7 +59,7 @@ test(
     await openProfile(page);
     const start = sideDrawer(page).getByTestId("dry-run-start");
     await expect(start).toBeVisible({ timeout: slow(60_000) });
-    await start.click();
+    await pressDryRunStart(page, start);
     await expect(page.getByTestId("flying-head")).toBeVisible({ timeout: slow(10_000) });
     await page.getByTestId("flying-emergency").click();
     const sheet = page.getByTestId("emergency-sheet");
