@@ -21,4 +21,22 @@ object RouteEdits {
 
     /** The stops with one taken out. */
     fun without(stops: List<String>, ident: String): List<String> = stops.filterNot { RoutePoints.same(it, ident) }
+
+    /** A stop moved `by` places (-1 up, +1 down), as the iPhone's Edit
+     *  moves one; null where it is not a stop or would leave the stops. */
+    fun moved(stops: List<String>, ident: String, by: Int): List<String>? {
+        val at = stops.indexOfFirst { RoutePoints.same(it, ident) }
+        val to = at + by
+        if (at < 0 || to !in stops.indices) return null
+        return stops.toMutableList().apply { add(to, removeAt(at)) }
+    }
+
+    /** Add a Stop After: `ident` a stop just after `after` -- the
+     *  departure (first among the stops) or a stop; null after the
+     *  destination, or after a point not on the route. */
+    fun insertedAfter(route: Route, after: String, ident: String): List<String>? {
+        val added = ident.trim().uppercase().ifEmpty { return null }
+        val at = if (RoutePoints.same(route.dep, after)) 0 else route.stops.indexOfFirst { RoutePoints.same(it, after) }.takeIf { it >= 0 }?.plus(1)
+        return at?.let { route.stops.toMutableList().apply { add(it, added) } }
+    }
 }

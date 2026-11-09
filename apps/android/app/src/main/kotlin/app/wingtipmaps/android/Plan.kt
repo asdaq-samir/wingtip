@@ -18,6 +18,7 @@ import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.route.RouteEdits
+import app.wingtipmaps.android.route.RouteUndo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -105,6 +106,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val s = _state.value
         val was = s.was ?: RouteEdits.Route(s.dep, s.stops, s.dest)
         val next = RouteEdits.direct(was, ident, at?.let(::positionIdent)) ?: return
+        undoable(RouteUndo.Kind.DIRECT, ident)
         plan(next.dep, next.dest, next.stops)
         _state.update { it.copy(direct = ident, was = was) }
     }
@@ -118,7 +120,43 @@ class Plan(app: Application) : AndroidViewModel(app) {
     /** A Route Leg's Remove: the stop taken out of the route. */
     fun removeStop(ident: String) {
         val s = _state.value
+        undoable(RouteUndo.Kind.REMOVED, ident)
         plan(s.dep, s.dest, RouteEdits.without(s.stops, ident))
+    }
+
+    /** A point's Move Up and Move Down (RouteEdits.moved). */
+    fun moveStop(ident: String, by: Int) {
+        val s = _state.value
+        val stops = RouteEdits.moved(s.stops, ident, by) ?: return
+        undoable(RouteUndo.Kind.MOVED, ident)
+        plan(s.dep, s.dest, stops)
+    }
+
+    /** A point's Add a Stop After (RouteEdits.insertedAfter). */
+    fun addStopAfter(after: String, ident: String) {
+        val s = _state.value
+        val stops = RouteEdits.insertedAfter(RouteEdits.Route(s.dep, s.stops, s.dest), after, ident) ?: return
+        undoable(RouteUndo.Kind.ADDED, ident.trim().uppercase())
+        plan(s.dep, s.dest, stops)
+    }
+
+    /** The last edit that changed the route, for its Undo row. */
+    val undo = RouteUndo()
+
+    private fun undoable(kind: RouteUndo.Kind, ident: String) {
+        val s = _state.value
+        // No route before it: nothing to go back to.
+        if (!s.routed) return
+        undo.took(kind, ident, RouteEdits.Route(s.dep, s.stops, s.dest), s.holds, s.direct, s.was)
+    }
+
+    /** Undo: the route, its holds and its Direct as they were before the
+     *  last edit, planned again. */
+    fun undoEdit() {
+        val n = undo.take() ?: return
+        _state.update { it.copy(holds = n.holds) }
+        plan(n.route.dep, n.route.dest, n.route.stops)
+        _state.update { it.copy(direct = n.direct, was = n.was) }
     }
 
     /** One of the planner's airplane types picked; the route, where there
@@ -187,7 +225,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
 
     /** Fly Here: a new route from `from` (the airplane's position, else the
      *  route's departure) to the field. */
-    fun flyHere(dest: String, from: String) = plan(from, dest, emptyList())
+    fun flyHere(dest: String, from: String) {
+        undoable(RouteUndo.Kind.FLY_HERE, dest)
+        plan(from, dest, emptyList())
+    }
 
     /** Direct To: from where the airplane is to the point, then on along
      *  the route, the point taken out of the stops after it. */

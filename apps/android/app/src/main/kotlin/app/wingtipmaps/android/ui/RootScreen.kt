@@ -40,6 +40,7 @@ import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.route.RouteLegHost
@@ -154,6 +155,10 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         }
     }
     val onNearest = { nearestOpen = true }
+    // A card asked for from a list or an alert opens as a tap on the map
+    // would open it (CardRequests).
+    val card by CardRequests.wanted.collectAsStateWithLifecycle()
+    LaunchedEffect(card) { CardRequests.take()?.let(onPick) }
 
     if (layout == LayoutPreference.STRIP) {
         StripLayout(plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = raised, map = {

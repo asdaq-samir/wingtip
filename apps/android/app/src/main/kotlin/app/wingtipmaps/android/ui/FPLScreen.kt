@@ -51,6 +51,8 @@ import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
 import app.wingtipmaps.android.route.LegWords
+import app.wingtipmaps.android.route.RoutePointMenu
+import app.wingtipmaps.android.route.RouteUndoRow
 
 /**
  * The flight plan: the route typed, planned, and the nav log's legs as
@@ -100,8 +102,10 @@ fun FPLScreen(plan: Plan) {
         FlightRulesRow(onChanged = { if (state.routed) plan.plan() })
         ProblemLine(state.problem)
         LazyColumn(Modifier.weight(1f)) {
+            // The last edit to the route, undone where it was made (RouteUndo).
+            item(key = "undo") { RouteUndoRow(plan) }
             itemsIndexed(state.legs) { i, leg ->
-                LegRow(leg, onOpen = { open = i })
+                LegRow(leg, onOpen = { open = i }) { RoutePointMenu(leg.to, plan) }
                 HorizontalDivider()
             }
             state.totals?.let { totals ->
@@ -144,15 +148,24 @@ internal fun FlightRulesRow(onChanged: () -> Unit) {
 }
 
 /** One leg's row: to where at what cruise altitude, how far, the
- *  magnetic heading, the time; a tap opens the leg. TalkBack reads the
- *  row as one sentence in words (LegWords), so a swipe is a leg. */
+ *  magnetic heading, the time; a tap opens the leg, and its end's menu
+ *  (RoutePointMenu) sits at the row's end. TalkBack reads the row as one
+ *  sentence in words (LegWords), so a swipe is a leg. */
 @Composable
-private fun LegRow(leg: Leg, onOpen: () -> Unit) {
+private fun LegRow(leg: Leg, onOpen: () -> Unit, menu: @Composable () -> Unit) {
     val openLeg = stringResource(R.string.said_open_leg)
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        LegFigures(leg, Modifier.weight(1f).clickable(role = Role.Button, onClickLabel = openLeg, onClick = onOpen))
+        menu()
+    }
+}
+
+/** The leg's figures, read as one sentence; `modifier` makes them the
+ *  row's tap. */
+@Composable
+private fun LegFigures(leg: Leg, modifier: Modifier) {
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = openLeg, onClick = onOpen)
-            .clearAndSetSemantics { contentDescription = LegWords.row(leg) }
-            .padding(vertical = WingtipSpace.Sm),
+        modifier.clearAndSetSemantics { contentDescription = LegWords.row(leg) }.padding(vertical = WingtipSpace.Sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1.4f)) {
