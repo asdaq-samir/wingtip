@@ -756,7 +756,7 @@ extension Engine {
 
     /// A Class B, C or D's entry, equipment and speed rules (14 CFR 91.117, 91.129-91.131, 91.215, 91.225), each with its cite, and whom to call. Any other one-letter class answers no rules.
     static func airspaceEntryRules(`class`: String) throws -> EngineContract.AirspaceEntryRulesAnswer {
-        try rule("airspace_entry_rules", EngineContract.AirspaceEntryRulesInput(`class`: `class`))
+        try rule("airspace_entry_rules", EngineContract.AirspaceEntryRulesInput(class: `class`))
     }
 
     /// A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.
@@ -1291,7 +1291,7 @@ extension Engine {
 
     /// Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, whether Class B is what stops it, and all of it as one message.
     static func noAltitude(selection: [String: JSONValue], between: [String]? = nil, via: EngineContract.NoAltitudeInputVia? = nil, `where`: String? = nil) throws -> EngineContract.NoAltitudeAnswer {
-        try rule("no_altitude", EngineContract.NoAltitudeInput(selection: selection, between: between, via: via, `where`: `where`))
+        try rule("no_altitude", EngineContract.NoAltitudeInput(selection: selection, between: between, via: via, where: `where`))
     }
 
     /// An airplane's cruise at an altitude in air at oat_c (a standard day's where null): its power at the cruise setting or full throttle (Gagg and Ferrar), TAS as the cube root of power over density, burn with power, and the density altitude.
@@ -1426,7 +1426,7 @@ extension Engine {
 
     /// 14 CFR 91.155(a)'s basic VFR weather minimums for a class at an altitude MSL (the height above the ground counts in Class G alone, 1,200 ft its line, and is taken as above it where not given): the day's and the night's, or null in Class A, which is flown under IFR (91.135) and begins at 18,000 ft MSL whatever class is asked (71.33).
     static func vfrMinimums(`class`: String, altitudeFt: Double, aglFt: Double? = nil) throws -> EngineContract.VfrMinimumsAnswer? {
-        try rule("vfr_minimums", EngineContract.VfrMinimumsInput(`class`: `class`, altitudeFt: altitudeFt, aglFt: aglFt))
+        try rule("vfr_minimums", EngineContract.VfrMinimumsInput(class: `class`, altitudeFt: altitudeFt, aglFt: aglFt))
     }
 
     /// The oral's flash cards in the regulation's words: the tower's light signals (14 CFR 91.125) on the ground and in flight, and the basic VFR weather minimums (91.155(a), worded from the airspace column's own table; Class A from 91.135, the night pattern exception 91.155(b)(2)).

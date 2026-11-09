@@ -248,7 +248,8 @@ function writeSwift() {
   for (const r of rules) {
     const s = structs.get(r.inputStruct);
     const params = s.fields.map((f) => `${swiftId(f.name)}: ${swiftField(f)}${f.required ? "" : " = nil"}`);
-    const args = s.fields.map((f) => `${swiftId(f.name)}: ${swiftId(f.name)}`);
+    // An argument's label may be a keyword as it is; its value, a parameter, is escaped.
+    const args = s.fields.map((f) => `${["inout", "var", "let"].includes(f.name) ? swiftId(f.name) : f.name}: ${swiftId(f.name)}`);
     calls.push("");
     calls.push(swiftDoc(r.description, "    ").trimEnd());
     calls.push(`    static func ${swiftId(camel(r.rule))}(${params.join(", ")}) throws -> ${swiftType(r.answerType)} {`);
