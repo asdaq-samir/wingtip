@@ -55,7 +55,7 @@ lock=${ONE_AT_A_TIME_LOCK:-/tmp/flight-plan-heavy.lock}
 # The owner's own settings, read on every call so a change reaches runs
 # already waiting in other worktrees' copies of this script too:
 # ~/.config/wingtip/one-at-a-time, lines like ONE_AT_A_TIME_SLOTS=3.
-conf=${ONE_AT_A_TIME_CONF:-$HOME/.config/wingtip/one-at-a-time}
+conf=${ONE_AT_A_TIME_CONF:-${HOME:-/nonexistent}/.config/wingtip/one-at-a-time}
 # shellcheck disable=SC1090
 [ -f "$conf" ] && . "$conf"
 # Turns at once: three while the owner's live stack (compose project
@@ -65,7 +65,7 @@ conf=${ONE_AT_A_TIME_CONF:-$HOME/.config/wingtip/one-at-a-time}
 # every turn back while memory is short, so a third turn only starts when
 # there is room.
 if [ -z "${ONE_AT_A_TIME_SLOTS:-}" ]; then
-  if PATH="$PATH:$HOME/.docker/bin" docker ps -q -f name=^wingtip-planner-1$ 2>/dev/null | grep -q .; then
+  if PATH="$PATH:${HOME:-/nonexistent}/.docker/bin" docker ps -q -f name=^wingtip-planner-1$ 2>/dev/null | grep -q .; then
     ONE_AT_A_TIME_SLOTS=2
   else
     ONE_AT_A_TIME_SLOTS=3
