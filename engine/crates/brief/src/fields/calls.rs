@@ -52,7 +52,7 @@ fn wind(i: In, v: &Value) -> R<Option<Wind>> {
 
 fn airplane(i: In, a: &Value) -> R<Airplane> {
     let glide = match i.obj(a, "glide")? {
-        Some(g) => Some(Glide { best_glide_kias: i.num(g, "best_glide_kias")?, ratio: i.num(g, "ratio")? }),
+        Some(g) => Some(Glide { best_glide_kias: i.opt_num(g, "best_glide_kias")?, ratio: i.num(g, "ratio")? }),
         None => None,
     };
     Ok(Airplane {
@@ -103,7 +103,7 @@ fn answer_json(a: &Answer) -> String {
             out.push_str(",\"still_air_nm\":");
             json::number(&mut out, round(r.still_air_nm, 10.0));
             out.push_str(",\"tas_kt\":");
-            json::number(&mut out, r.tas_kt.round());
+            json::opt_number(&mut out, r.tas_kt.map(f64::round));
             out.push_str(",\"ring\":[");
             for (n, (lat, lon)) in r.points.iter().enumerate() {
                 if n > 0 {

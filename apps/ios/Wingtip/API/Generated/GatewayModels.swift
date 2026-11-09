@@ -56,6 +56,8 @@ struct GWAircraftDto: Codable, Equatable, Sendable {
     /// Its flight plan's item 10a, its navigation, communication and approach equipment (AIM
     /// Appendix 4, TBL 4-2)
     var equipment: String?
+    /// Its own handbook figures as its pilot gave them; each null where not given
+    var figures: GWOwnFigures
     var fuelBurnGph: Double
     /// Its handbook figures as its pilot confirmed them from a photographed page: the engine
     /// contract's HandbookFigures, in the app's units; null until then
@@ -87,6 +89,25 @@ struct GWDueItemDto: Codable, Equatable, Sendable {
     /// An AD's number and revision date, or the item's own reference
     var reference: String?
     var title: String
+}
+
+/// Its own handbook figures as its pilot gave them; each null where not given
+///
+/// An airplane's own performance figures from its handbook; each null where not given
+// MARK: - GWOwnFigures
+struct GWOwnFigures: Codable, Equatable, Sendable {
+    /// Its best rate of climb at sea level, fpm
+    var climbRateFpm: Double?
+    /// Its basic empty moment, lb-in, from its weight and balance record
+    var emptyMomentLbIn: Double?
+    /// Its basic empty weight, lb, from its weight and balance record
+    var emptyWeightLb: Double?
+    /// Its still-air glide ratio, propeller windmilling, flaps up (its handbook's Section 3)
+    var glideRatio: Double?
+    /// Its service ceiling, ft (the altitude where its best climb is 100 fpm)
+    var serviceCeilingFt: Double?
+    /// Its fuel for engine start, taxi and takeoff, gal
+    var taxiFuelGal: Double?
 }
 
 /// An airplane's handbook figures in the app's units (the engine contract's HandbookFigures)
@@ -471,6 +492,9 @@ struct GWAircraftRequest: Codable, Equatable, Sendable {
     var cruisePowerPct: Double?
     var cruiseTasKt: Double
     var equipment: String?
+    /// Its own handbook figures, all at once (null in it clears one); left out, they stay as
+    /// they were
+    var figures: GWOwnFigures?
     var fuelBurnGph: Double
     var surveillance: String?
     var tailNumber, typeDesignator: String

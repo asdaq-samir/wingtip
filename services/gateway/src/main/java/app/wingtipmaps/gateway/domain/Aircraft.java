@@ -85,6 +85,18 @@ public class Aircraft {
 
     private Double usableFuelGal;
 
+    /** Its own handbook figures (V37): the service ceiling, the sea-level
+     *  best rate of climb, the start and taxi fuel, the still-air glide
+     *  ratio, and the basic empty weight and moment. Each null where its
+     *  pilot has not given it: missing then, never another airplane's. */
+    private Double serviceCeilingFt;
+
+    private Double climbRateFpm;
+    private Double taxiFuelGal;
+    private Double glideRatio;
+    private Double emptyWeightLb;
+    private Double emptyMomentLbIn;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -190,6 +202,23 @@ public class Aircraft {
         this.climbTasKt = climbTasKt;
         this.climbFuelBurnGph = climbFuelBurnGph;
         this.usableFuelGal = usableFuelGal;
+        return this;
+    }
+
+    /** Its own handbook figures, all six at once; null for one not given. */
+    public Aircraft keepFigures(
+            Double serviceCeilingFt,
+            Double climbRateFpm,
+            Double taxiFuelGal,
+            Double glideRatio,
+            Double emptyWeightLb,
+            Double emptyMomentLbIn) {
+        this.serviceCeilingFt = serviceCeilingFt;
+        this.climbRateFpm = climbRateFpm;
+        this.taxiFuelGal = taxiFuelGal;
+        this.glideRatio = glideRatio;
+        this.emptyWeightLb = emptyWeightLb;
+        this.emptyMomentLbIn = emptyMomentLbIn;
         return this;
     }
 

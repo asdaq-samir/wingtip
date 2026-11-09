@@ -56,6 +56,7 @@ struct FPLView: View {
                         let voice = ClearanceListener.shared.canListen
                         Button { focused = nil; ClearanceListener.shared.sheetText = nil; ClearanceListener.shared.sheetShown = true } label: {
                             Image(systemName: !voice ? "text.bubble" : ClearanceListener.shared.listening ? "mic.fill" : "mic")
+                                .symbolListening(ClearanceListener.shared.listening).symbolSwap()
                                 // The 44-point hit area round the glyph, which does not grow.
                                 .contentShape(Rectangle().inset(by: -10))
                         }
@@ -112,18 +113,25 @@ struct FPLView: View {
                 RouteExtrasSection()
                 if let totals = plan.totals {
                     Section {
-                        FigureRow {
-                            stripFigure("TO", plan.dest)
-                            stripFigure("DIST", Format.distance(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
-                            // Time and fuel are an airplane's: none picked,
-                            // none shown (docs/decisions/0011).
-                            if plan.airplaneChosen {
-                                stripFigure("ETE", totals.eteMin.map(Format.duration) ?? Format.none, spoken: totals.eteMin.map(SpokenFigures.minutes))
-                                stripFigure("FUEL", Format.fuel(totals.fuelGal), spoken: totals.fuelGal.map(SpokenFigures.gallons),
-                                            warn: (totals.fuelMarginGal ?? 0) < 0)
+                        // The airplane's time and fuel open its profile,
+                        // where they are set (the owner, 2026-11-09).
+                        AirplaneFiguresLink {
+                            FigureRow {
+                                stripFigure("TO", plan.dest)
+                                stripFigure("DIST", Format.distance(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
+                                // Time and fuel are an airplane's: none picked,
+                                // none shown (docs/decisions/0011).
+                                if plan.airplaneChosen {
+                                    stripFigure("ETE", totals.eteMin.map(Format.duration) ?? Format.none, spoken: totals.eteMin.map(SpokenFigures.minutes))
+                                    stripFigure("FUEL", Format.fuel(totals.fuelGal), spoken: totals.fuelGal.map(SpokenFigures.gallons),
+                                                warn: (totals.fuelMarginGal ?? 0) < 0)
+                                }
                             }
+                            .accessibilityElement(children: .combine)
                         }
-                        .accessibilityElement(children: .combine)
+                        // What the totals and the climbs lack of the airplane,
+                        // asked in place: its start and taxi fuel, its climb.
+                        if plan.airplaneChosen { AskFigureRow(needs: [.fuelTotals, .climb]) }
                     }
                 }
                 if plan.course != nil {
@@ -157,7 +165,7 @@ struct FPLView: View {
             .navigationTitle("Flight Plan")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { FPLToolbar(plan: plan, flights: { open(.flights) }) }
-            .navigationDestination(for: Leg.self) { leg in LegDetailView(leg: leg).closesBack() }
+            .navigationDestination(for: Leg.self) { leg in LegDetailView(leg: leg).closesBack().zoomsFrom(leg.id) }
             .navigationDestination(for: String.self) { page in
                 Group {
                     switch Page(rawValue: page) {
@@ -186,6 +194,8 @@ struct FPLView: View {
                 }
             }
         }
+        // A leg's detail grows out of its nav log row (CardZoom).
+        .cardZoomStack()
     }
 
     private func routeField(_ label: String, text: Binding<String>, field: Field) -> some View {

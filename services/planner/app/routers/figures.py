@@ -17,7 +17,8 @@ from wingtip.weather import WeatherServiceError
 from wingtip.engine import ask as engine
 
 from ..figures.schemas import DebriefAnswer, DebriefAsk, Diversion, Holding, LostComms, LostCommsAsk
-from wingtip.planning import aircraft_profile, forecast_hour_for
+from wingtip.aircraft import aircraft_profile
+from wingtip.planning import forecast_hour_for
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 from ..plan_query import CruisePower, CruiseTas
 

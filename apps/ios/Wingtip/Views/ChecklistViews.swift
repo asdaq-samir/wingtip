@@ -44,7 +44,7 @@ struct ChecklistView: View {
                                 model.toggle(s, i)
                             } label: {
                                 HStack {
-                                    Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Color.accentColor : Color.secondary)
+                                    Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Color.accentColor : Color.secondary).symbolSwap()
                                     Text(item.challenge).foregroundStyle(on ? .secondary : .primary)
                                     Spacer()
                                     if let response = item.response { Text(response).foregroundStyle(.secondary) }

@@ -28,13 +28,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AirportPin
 import app.wingtipmaps.android.atc.AtcCopilotHost
 import app.wingtipmaps.android.copilot.CopilotBanner
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.emergency.EmergencyModel
 import app.wingtipmaps.android.emergency.EmergencyOpen
-import app.wingtipmaps.android.flight.AirplaneGlide
 import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.GlideRing
 import app.wingtipmaps.android.flight.InFlight
@@ -147,8 +147,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val groundFt by ship.groundFt.collectAsStateWithLifecycle()
     val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
     LaunchedEffect(groundFt) { InFlight.shared.terrainFt = groundFt }
-    // The picked airplane's own glide, none with no airplane (AirplaneGlide).
-    LaunchedEffect(state.aircraft) { InFlight.shared.glideRatio = AirplaneGlide.ratio(state.aircraft) }
+    // The airplane's own glide ratio (the pilot's over its book's), none
+    // with no airplane or none given: no other airplane's is taken.
+    val glideRatio = rememberAirplaneNow(plan).glideRatio
+    LaunchedEffect(glideRatio) { InFlight.shared.glideRatio = glideRatio }
     val ringKept by GlideRing.flow(context).collectAsStateWithLifecycle()
     LaunchedEffect(fix, ownShip.on, state.course, state.legs) { InFlight.shared.took(if (ownShip.on) fix else null, state) }
     LaunchedEffect(ahead) { SpokenAlerts.of(context).hear(ahead) }

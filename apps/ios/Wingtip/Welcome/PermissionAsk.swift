@@ -60,9 +60,9 @@ struct PermissionAsk: View {
             EmptyView()
         } actions: {
             Button(action: allow) { Text("Allow").frame(maxWidth: .infinity) }
-                .buttonStyle(.borderedProminent).controlSize(.large)
+                .glassProminentButton().controlSize(.large)
             Button(action: notNow) { Text("Not Now").frame(maxWidth: .infinity) }
-                .buttonStyle(.bordered).controlSize(.large)
+                .glassButton().controlSize(.large)
         }
         .accessibilityIdentifier("permission-\(permission.title.lowercased())")
     }
@@ -93,11 +93,10 @@ struct WelcomePage<Content: View, Actions: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollBounceBehavior(.basedOnSize)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        .glassFoot {
             VStack(spacing: WingtipSpace.sm) { actions }
                 .padding(.horizontal, WingtipSpace.lg)
                 .padding(.vertical, WingtipSpace.md)
-                .background(.regularMaterial)
         }
     }
 }

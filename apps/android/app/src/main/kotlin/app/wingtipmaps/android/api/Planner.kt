@@ -87,12 +87,6 @@ object Planner {
     fun route(dep: String, dest: String, stops: List<String>): Map<String, String?> =
         mapOf("dep" to dep, "dest" to dest, "stops" to stops.joinToString(",").ifEmpty { null })
 
-    /** The airplane as the planner is asked it: the profile's name, null
-     *  with none chosen (an empty name), which it plans with no airplane --
-     *  distances and courses, no times or fuel (decision 0011; the owner,
-     *  2026-11-09: "don't assume"). */
-    fun aircraft(name: String): String? = name.ifEmpty { null }
-
     /** Which chart the map draws and where its tiles are (/api/chart). */
     suspend fun chart(): ChartInfo = Gateway.json.decodeFromString(fetch("/api/chart"))
 
@@ -125,34 +119,37 @@ object Planner {
     /** The nav log for a route, line by line as the planner sends them
      *  (/api/navlog), under the flight rules picked (the planner's
      *  altitudes by 14 CFR 91.159 or 91.179, or the pilot's own
-     *  `altitudeFt` on every leg), leaving at `depart` (ISO 8601) or now;
-     *  a line of a kind the app has no use for is left out. */
+     *  `altitudeFt` on every leg), for the airplane as
+     *  AirplaneNow.plannerQuery asks it (its name and the pilot's own
+     *  figures), leaving at `depart` (ISO 8601) or now; a line of a kind
+     *  the app has no use for is left out. */
     fun navlog(
         dep: String,
         dest: String,
         stops: List<String>,
-        aircraft: String,
+        airplane: Map<String, String?>,
         holds: List<String> = emptyList(),
         rules: String = "vfr",
         altitudeFt: Double? = null,
         depart: String? = null,
     ): Flow<NavLogMessage> =
-        lines("/api/navlog", navlogQuery(dep, dest, stops, aircraft, holds, rules, altitudeFt, depart)).mapNotNull { NavLog.decode(it) }
+        lines("/api/navlog", navlogQuery(dep, dest, stops, airplane, holds, rules, altitudeFt, depart)).mapNotNull { NavLog.decode(it) }
 
-    /** The nav log's question: the route, the airplane, the holds, the
-     *  rules, and the pilot's own altitude and departure time where set
-     *  (left out otherwise, for the planner's pick and its now). */
+    /** The nav log's question: the route, the airplane (as
+     *  AirplaneNow.plannerQuery asks it), the holds, the rules, and the
+     *  pilot's own altitude and departure time where set (left out
+     *  otherwise, for the planner's pick and its now). */
     fun navlogQuery(
         dep: String,
         dest: String,
         stops: List<String>,
-        aircraft: String,
+        airplane: Map<String, String?>,
         holds: List<String> = emptyList(),
         rules: String = "vfr",
         altitudeFt: Double? = null,
         depart: String? = null,
     ): Map<String, String?> =
-        route(dep, dest, stops) + ("aircraft" to aircraft(aircraft)) + ("holds" to holds.joinToString(",").ifEmpty { null }) + ("rules" to rules) +
+        route(dep, dest, stops) + airplane + ("holds" to holds.joinToString(",").ifEmpty { null }) + ("rules" to rules) +
             ("altitude_ft" to altitudeFt?.let { Math.round(it).toString() }) + ("depart" to depart)
 
     /** The Brief's Go / No-Go for the route (POST /api/go-no-go): the

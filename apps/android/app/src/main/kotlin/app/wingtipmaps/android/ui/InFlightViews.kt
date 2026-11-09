@@ -262,7 +262,7 @@ object InstrumentsWords {
  * glide. A tap opens the field's card.
  */
 @Composable
-fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Unit) {
+fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Unit, ask: @Composable () -> Unit = {}) {
     var fields by remember { mutableStateOf<List<NearestAirport>?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(fix == null) {
@@ -284,6 +284,8 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
                 problem != null -> ProblemLine(problem)
                 fields == null -> Text("Fetching the nearest fields…", style = MaterialTheme.typography.bodyMedium)
             }
+            // The airplane's glide ratio asked for where it is missing.
+            ask()
             LazyColumn {
                 items(fields.orEmpty(), key = { it.ident }) { field ->
                     // A glide the engine could not judge says so, never "out of reach".

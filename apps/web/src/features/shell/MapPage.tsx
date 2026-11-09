@@ -24,6 +24,7 @@ import { usePreferences } from "../../lib/preferences";
 import { useWarmAirportIndex } from "../../lib/airportIndex";
 import { LinkSignIn, TvLink } from "../pilot";
 import { EmergencyHost } from "../emergency";
+import { AirplaneProfileHost } from "../airplane";
 import { AutoLogbookHost } from "../logbook-auto";
 import { BootMap, PlanWorkspace } from "../plan";
 import { loadTrainWorkspace } from "../chart-labels";
@@ -307,16 +308,15 @@ export default function MapPage({ mode }: { mode: Mode }) {
               itself, so the browser tab says which page this is
               without an effect writing document.title by hand. */}
                 <title>{title}</title>
-                {/* An emailed sign-in link lands here (#signin=…) and is
-              finished in the app's own dialog. */}
+                {/* An emailed sign-in link lands here (#signin=…), finished in the app's own dialog. */}
                 <LinkSignIn />
                 <TvLink />
-                {/* The emergency assistant, opened from flying mode, the pilot's words or the checklists (features/emergency). */}
+                {/* The emergency assistant (features/emergency); an airplane's profile, from any N-number (features/airplane). */}
                 <EmergencyHost />
+                <AirplaneProfileHost />
                 {/* A flight ended on own ship's GPS, offered for the logbook (features/logbook-auto). */}
                 <AutoLogbookHost />
-                {/* Dev mode's refusal: someone it is not for, on the dev page,
-              is taken to the map (the switch itself is in the settings). */}
+                {/* Dev mode's refusal: someone it is not for, on the dev page, is taken to the map. */}
                 <DevGuard />
                 {/* For a keyboard: past the panel to the map in one press.
               Visible only while it has focus, so at a keyboard's 14

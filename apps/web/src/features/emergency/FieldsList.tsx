@@ -1,3 +1,4 @@
+import { AskFigure } from "../../components/airplane/AskFigure";
 import { useEffect, useRef } from "react";
 import { Navigation2 } from "lucide-react";
 import { cn } from "cn";
@@ -60,64 +61,69 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
   }
   const title = ranked?.glide ? `Best fields · glide about ${Math.round(ranked.glide.still_air_nm)} nm in still air` : "Best fields";
   return (
-    <ListGroup title={title}>
-      {ranked?.needs_airplane && (
-        <ListRow
-          muted
-          title={vm.airplaneName ? "Glide not in this airplane's profile" : "Glide needs an airplane"}
-          description="Nearest first: no glide is worked out without the airplane's own figures"
-          data-testid="emergency-needs-airplane"
-        />
-      )}
-      {ranked && (
-        <ListChoices value={picked?.ident ?? ""} onChange={pick} label="Field to land at">
-          {ranked.fields.map((f) => {
-            const heading = f.heading_mag_deg ?? f.heading_true_deg;
-            return (
-              <ListRow
-                key={f.ident}
-                radio={f.ident}
-                data-testid="emergency-field"
-                title={
-                  <span>
-                    <span className="font-semibold">{f.ident}</span> {f.name}
-                  </span>
-                }
-                value={
-                  <span className="flex items-center gap-1 tabular-nums">
-                    <Navigation2 className="size-4 text-tint" style={{ transform: `rotate(${f.course_deg}deg)` }} aria-hidden />
-                    <span aria-hidden>
-                      {heading != null ? `${threeFigures(heading)}°${f.heading_mag_deg == null ? " T" : ""} · ` : ""}
-                      {f.distance_nm.toFixed(1)} nm
+    <div className="flex flex-col gap-3">
+      <ListGroup title={title}>
+        {ranked?.needs_airplane && (
+          <ListRow
+            muted
+            title={vm.airplaneName ? `No glide ratio for ${vm.airplaneName}` : "Glide needs an airplane"}
+            description="Nearest first: no glide is worked out without the airplane's own figures"
+            data-testid="emergency-needs-airplane"
+          />
+        )}
+        {ranked && (
+          <ListChoices value={picked?.ident ?? ""} onChange={pick} label="Field to land at">
+            {ranked.fields.map((f) => {
+              const heading = f.heading_mag_deg ?? f.heading_true_deg;
+              return (
+                <ListRow
+                  key={f.ident}
+                  radio={f.ident}
+                  data-testid="emergency-field"
+                  title={
+                    <span>
+                      <span className="font-semibold">{f.ident}</span> {f.name}
                     </span>
-                    <span className="sr-only">{wayThere(f)}</span>
-                  </span>
-                }
-                description={
-                  <span className={cn("block", TEXT.detail)}>
-                    {/* The engine's reasons, the reach first where it was
-                        worked out: that line in its tone and bold. */}
-                    {f.reasons.map((r, i) => {
-                      const lead = i === 0 && f.reach !== "unknown";
-                      return (
-                        <span
-                          key={r.text}
-                          className={cn("block", (lead || r.tone !== "ok") && FINDING_TONE[r.tone], lead && "font-semibold")}
-                        >
-                          {r.text}
-                        </span>
-                      );
-                    })}
-                  </span>
-                }
-              />
-            );
-          })}
-        </ListChoices>
-      )}
-      {!ranked && (
-        <QueryState row query={asked} fetching="Fetching the fields round you…" failed="The fields could not be had. Try again." />
-      )}
-    </ListGroup>
+                  }
+                  value={
+                    <span className="flex items-center gap-1 tabular-nums">
+                      <Navigation2 className="size-4 text-tint" style={{ transform: `rotate(${f.course_deg}deg)` }} aria-hidden />
+                      <span aria-hidden>
+                        {heading != null ? `${threeFigures(heading)}°${f.heading_mag_deg == null ? " T" : ""} · ` : ""}
+                        {f.distance_nm.toFixed(1)} nm
+                      </span>
+                      <span className="sr-only">{wayThere(f)}</span>
+                    </span>
+                  }
+                  description={
+                    <span className={cn("block", TEXT.detail)}>
+                      {/* The engine's reasons, the reach first where it was
+                          worked out: that line in its tone and bold. */}
+                      {f.reasons.map((r, i) => {
+                        const lead = i === 0 && f.reach !== "unknown";
+                        return (
+                          <span
+                            key={r.text}
+                            className={cn("block", (lead || r.tone !== "ok") && FINDING_TONE[r.tone], lead && "font-semibold")}
+                          >
+                            {r.text}
+                          </span>
+                        );
+                      })}
+                    </span>
+                  }
+                />
+              );
+            })}
+          </ListChoices>
+        )}
+        {!ranked && (
+          <QueryState row query={asked} fetching="Fetching the fields round you…" failed="The fields could not be had. Try again." />
+        )}
+      </ListGroup>
+      {/* Its glide ratio asked for in place, the fields listed anyway
+          (AskFigure; the owner, 2026-11-09). */}
+      {ranked?.needs_airplane && vm.airplaneName && <AskFigure figure="glide" what="The glide" testId="emergency-glide-ask" />}
+    </div>
   );
 }

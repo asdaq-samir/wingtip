@@ -32,6 +32,9 @@ import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.airplane.AirplaneProfileHost
+import app.wingtipmaps.android.airplane.AskFigures
+import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.design.SharedAxisContent
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -219,6 +222,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         val fix by ownShip.ownShip.fix.collectAsStateWithLifecycle()
         NearestSheet(
             fix = fix,
+            ask = { AskFigures(rememberAirplaneNow(plan), "glide") },
             onOpen = { ident ->
                 airport = ident
                 tab = Tabs.AIRPORT.ordinal
@@ -238,6 +242,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     picked?.let { pick -> MapCardSheet(pick, plan, onClose = { picked = null }) }
     RouteLegHost(plan, ownShipOn = ownShip.on, model = legs)
     EmergencyHost(plan, ownShip)
+    // An airplane's profile, over whatever it was opened from.
+    AirplaneProfileHost(plan, session)
     // Ready to fly once a flight, as own ship comes on on the ground with
     // something to fix; a route is typed in FPL (the strip's field has no
     // tab to open, its Plan the Route is plain text there).

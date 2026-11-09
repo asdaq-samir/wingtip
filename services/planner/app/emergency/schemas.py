@@ -68,11 +68,14 @@ class WindAloft(BaseModel):
 
 
 class GlideFigures(BaseModel):
-    """The POH's best-glide speed and glide ratio (Section 3)."""
+    """The POH's best-glide speed and glide ratio (Section 3). A pilot's
+    own airplane of no stock type has its glide ratio alone, as its pilot
+    gave it: no best-glide speed (none is taken from another airplane) and
+    its source the pilot."""
 
-    best_glide_kias: float
+    best_glide_kias: float | None = None
     ratio: float
-    source: str
+    source: str = "The pilot's own figure, from the airplane's handbook"
 
 
 class EmergencyAirplane(BaseModel):

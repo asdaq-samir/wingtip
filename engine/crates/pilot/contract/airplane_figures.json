@@ -1,0 +1,60 @@
+{
+  "x-call": "wingtip_pilot::aircraft::figures::call",
+  "description": "An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's (\"pilot\"), else its photographed handbook page's (\"handbook\"), else its type's stock profile's (\"book\"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AirplaneFiguresInput",
+      "type": "object",
+      "properties": {
+        "book": {
+          "description": "The type's stock profile (the planner's /api/aircraft-profiles entry); null for a type with none.",
+          "type": ["object", "null"]
+        },
+        "handbook": {
+          "description": "The figures its pilot confirmed off a photographed handbook page (handbook_figures' answer); null for none.",
+          "type": ["object", "null"]
+        },
+        "own": {
+          "description": "The pilot's own figures by key (cruise_tas_kt, glide_ratio ...), a number or null each; null for none.",
+          "type": ["object", "null"]
+        }
+      }
+    },
+    "answer": {
+      "title": "AirplaneFiguresAnswer",
+      "type": "object",
+      "properties": {
+        "figures": {
+          "type": "array",
+          "items": {
+            "title": "AirplaneFigure",
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "The figure's name, the gateway record's and the planner's query's in snake case."
+              },
+              "value": { "type": ["number", "null"] },
+              "source": {
+                "description": "Where the value comes from; null where there is none.",
+                "anyOf": [{ "type": "string", "enum": ["book", "handbook", "pilot"] }, { "type": "null" }]
+              },
+              "book": {
+                "description": "The type's book figure, what \"Reset to book figure\" puts back; null where the book has none.",
+                "type": ["number", "null"]
+              }
+            },
+            "required": ["key", "value", "source", "book"],
+            "additionalProperties": false
+          }
+        },
+        "profile": { "type": ["object", "null"] }
+      },
+      "required": ["figures", "profile"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["input", "answer"],
+  "additionalProperties": false
+}

@@ -39,8 +39,8 @@ struct OnDeviceFacts: Equatable, Sendable {
     var aircraft: String?
     var figures = Figures()
     /// The picked airplane's glide ratio, its profile's (its POH's
-    /// Section 3, as /api/emergency/fields sends it); nil with none, which
-    /// no other airplane's fills.
+    /// Section 3: the pilot's own over its type's book); nil with none,
+    /// which no other airplane's fills.
     var glideRatio: Double?
     var fields: [String: Field] = [:]
     var totals: Totals?
@@ -73,9 +73,9 @@ extension OnDeviceFacts {
         var facts = OnDeviceFacts(dep: plan.dep.uppercased(), dest: plan.dest.uppercased(), stops: plan.stops.map { $0.uppercased() })
         facts.aircraft = plan.airplaneChosen ? plan.aircraft : nil
         facts.figures = plan.figures
-        if let airplane = Emergency.shared.answer?.airplane, plan.airplaneChosen, airplane.name == plan.aircraft {
-            facts.glideRatio = airplane.glide?.ratio
-        }
+        // The airplane's own glide ratio, the pilot's over its type's book
+        // (airplane_figures); none with no airplane.
+        facts.glideRatio = Airplanes.shared.value(.glideRatio, plan: plan)
         facts.totals = plan.totals
         facts.cruiseFt = plan.ownAltitudeFt ?? plan.altitudeFt
         facts.plannedAt = plan.plannedAt

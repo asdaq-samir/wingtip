@@ -62,6 +62,41 @@ enum EngineContract {
         }
     }
 
+    struct AirplaneFiguresAnswer: Codable, Equatable, Sendable {
+        var figures: [EngineContract.AirplaneFiguresAnswerFiguresItem]
+        var profile: [String: JSONValue]?
+    }
+
+    struct AirplaneFiguresAnswerFiguresItem: Codable, Equatable, Sendable {
+        /// The figure's name, the gateway record's and the planner's query's in snake case.
+        var key: String
+        var value: Double?
+        /// Where the value comes from; null where there is none.
+        var source: String?
+        /// The type's book figure, what "Reset to book figure" puts back; null where the book has none.
+        var book: Double?
+    }
+
+    struct AirplaneFiguresInput: Codable, Equatable, Sendable {
+        /// The type's stock profile (the planner's /api/aircraft-profiles entry); null for a type with none.
+        var book: [String: JSONValue]?
+        /// The figures its pilot confirmed off a photographed handbook page (handbook_figures' answer); null for none.
+        var handbook: [String: JSONValue]?
+        /// The pilot's own figures by key (cruise_tas_kt, glide_ratio ...), a number or null each; null for none.
+        var own: [String: JSONValue]?
+    }
+
+    struct AirplaneNeedsAnswer: Codable, Equatable, Sendable {
+        /// The inputs' names in order: a figure's key (taxi_fuel_gal, glide_ratio ...), a table (loading, takeoff, landing), or airplane.
+        var missing: [String]
+    }
+
+    struct AirplaneNeedsInput: Codable, Equatable, Sendable {
+        /// The airplane (airplane_figures' profile); null for no airplane.
+        var profile: [String: JSONValue]?
+        var figure: String
+    }
+
     /// A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
     struct AirspaceBand: Codable, Equatable, Sendable {
         var floorFt: Double
@@ -1218,7 +1253,8 @@ enum EngineContract {
         var nmPer1000Ft: Double
         var aglFt: Double
         var stillAirNm: Double
-        var tasKt: Double
+        /// The true airspeed at best glide; null with no best-glide speed.
+        var tasKt: Double?
         /// The ground the glide reaches every 10 degrees, wind corrected, [lat, lon].
         var ring: [[Double]]
 
@@ -1285,7 +1321,8 @@ enum EngineContract {
 
     /// The POH's best-glide speed and glide ratio (Section 3).
     struct BestFieldsInputAirplaneGlide: Codable, Equatable, Sendable {
-        var bestGlideKias: Double
+        /// The POH's best-glide speed, indicated; null or missing where the profile has none (a pilot's own airplane given its glide ratio alone): the reach is then worked only in still air: with a wind aloft it is not (a headwind's loss cannot be worked without the airspeed), and the fields are ranked as with no glide.
+        var bestGlideKias: Double?
         var ratio: Double
 
         enum CodingKeys: String, CodingKey {

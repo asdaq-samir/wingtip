@@ -3,6 +3,8 @@ package app.wingtipmaps.android.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.airplane.AirplaneNow
+import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.GoNoGo
 import app.wingtipmaps.android.api.generated.GoNoGoAsk
@@ -56,7 +58,8 @@ class BriefModel : ViewModel() {
      *  route not planned, and nothing again for the same route. */
     fun brief(plan: Plan.State) {
         if (!plan.routed || plan.totals == null || plan.planning) return
-        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, plan.holds.joinToString(","), plan.rules).joinToString("|")
+        val g = AirplaneNow.given(plan.own)
+        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, g, plan.holds.joinToString(","), plan.rules).joinToString("|")
         if (route == _state.value.route && (_state.value.verdict != null || _state.value.loading)) return
         asking?.cancel()
         _state.value = State(route = route, loading = true)
@@ -65,8 +68,14 @@ class BriefModel : ViewModel() {
                 val answer = Planner.goNoGo(
                     GoNoGoAsk(
                         dep = plan.dep, dest = plan.dest, stops = plan.stops.joinToString(",").ifEmpty { null },
-                        aircraft = Planner.aircraft(plan.aircraft), holds = plan.holds.joinToString(",").ifEmpty { null },
+                        aircraft = AirplaneNow.plannerName(plan.aircraft, plan.own), holds = plan.holds.joinToString(",").ifEmpty { null },
                         rules = plan.rules,
+                        // The pilot's own figures over the type's book, or the
+                        // whole of an own airplane: never a stock one's.
+                        cruiseTasKt = g[FigureKey.CRUISE.key], fuelBurnGph = g[FigureKey.BURN.key], cruisePowerPct = g[FigureKey.POWER.key],
+                        usableFuelGal = g[FigureKey.USABLE.key], climbTasKt = g[FigureKey.CLIMB_TAS.key], climbFuelBurnGph = g[FigureKey.CLIMB_BURN.key],
+                        climbRateFpm = g[FigureKey.CLIMB_RATE.key], serviceCeilingFt = g[FigureKey.CEILING.key], taxiFuelGal = g[FigureKey.TAXI.key],
+                        glideRatio = g[FigureKey.GLIDE.key],
                     ),
                 )
                 _state.update { it.copy(loading = false) + answer }

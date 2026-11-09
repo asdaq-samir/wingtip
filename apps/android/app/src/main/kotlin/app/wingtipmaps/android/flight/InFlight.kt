@@ -59,7 +59,7 @@ class InFlight private constructor() {
     @Volatile
     var terrainFt: Double? = null
 
-    /** The picked airplane's own glide ratio (AirplaneGlide), the ring's;
+    /** The airplane's own glide ratio (AirplaneNow: the pilot's over its book's), the ring's;
      *  none, no ring. */
     @Volatile
     var glideRatio: Double? = null

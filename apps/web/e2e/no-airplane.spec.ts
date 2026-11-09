@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":6}');
     localStorage.setItem(
       "wingtip.preferences",
-      JSON.stringify({ ...kept, version: 6, state: { ...kept.state, aircraft: { profile: "c172", label: "", none: true } } }),
+      JSON.stringify({ ...kept, version: 6, state: { ...kept.state, aircraft: { profile: "", label: "", none: true } } }),
     );
   });
 });

@@ -56,6 +56,7 @@ fun EmergencySheet(
     model: EmergencyModel,
     onShowPosition: () -> Unit,
     onClose: () -> Unit,
+    askGlide: @Composable () -> Unit = {},
     airplanePicker: @Composable () -> Unit = {},
 ) {
     WingtipSheet(title = stringResource(R.string.emergency), onClose = onClose, full = true) {
@@ -63,7 +64,7 @@ fun EmergencySheet(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
         ) {
-            FieldsList(state, model::pick, onShowPosition)
+            FieldsList(state, model::pick, onShowPosition, askGlide)
             // No airplane: general guidance and the picker, never an
             // airplane's checklist (NoAirplaneGuidance).
             if (state.guidance.isNotEmpty()) NoAirplaneGuidance(state, airplanePicker) else EmergencyChecklist(state, model::pickSection, model::tick)
@@ -80,7 +81,7 @@ fun EmergencySheet(
  * Nothing is hidden for a limitation; it is said.
  */
 @Composable
-private fun FieldsList(state: EmergencyModel.State, onPick: (String) -> Unit, onShowPosition: () -> Unit) {
+private fun FieldsList(state: EmergencyModel.State, onPick: (String) -> Unit, onShowPosition: () -> Unit, askGlide: @Composable () -> Unit) {
     val ranked = state.ranked
     if (state.fix == null) {
         SectionTitle(stringResource(R.string.best_fields))
@@ -96,13 +97,9 @@ private fun FieldsList(state: EmergencyModel.State, onPick: (String) -> Unit, on
     SectionTitle(if (glide != null) stringResource(R.string.best_fields_glide, glide.stillAirNm.toInt()) else stringResource(R.string.best_fields))
     if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
     ProblemLine(state.problem)
-    if (ranked?.needsAirplane == true && state.guidance.isEmpty()) {
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.glide_needs_airplane)) },
-            supportingContent = { Text(stringResource(R.string.glide_needs_airplane_line)) },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        )
-    }
+    // An airplane without its glide ratio: asked for here, nearest first
+    // meanwhile; with none, the guidance below has the picker.
+    if (ranked?.needsAirplane == true && state.guidance.isEmpty()) askGlide()
     val fields = ranked?.fields.orEmpty()
     // The best field said at once, and again only when another becomes
     // the best: the rows' miles change with every fix, so they are not a

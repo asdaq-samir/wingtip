@@ -35,11 +35,15 @@ struct APIAircraftProfileSummary: Codable, Equatable, Sendable {
     var type: String
 }
 
-/// The POH's best-glide speed and glide ratio (Section 3).
+/// The POH's best-glide speed and glide ratio (Section 3). A pilot's
+/// own airplane of no stock type has its glide ratio alone, as its pilot
+/// gave it: no best-glide speed (none is taken from another airplane) and
+/// its source the pilot.
 // MARK: - APIGlideFigures
 struct APIGlideFigures: Codable, Equatable, Sendable {
-    var bestGlideKias, ratio: Double
-    var source: String
+    var bestGlideKias: Double?
+    var ratio: Double
+    var source: String?
 }
 
 // MARK: - APIAirportAtis
@@ -1438,6 +1442,7 @@ struct APIDepartureWindowAsk: Codable, Equatable, Sendable {
     var altitudes: String?
     var checkpoints, classBClearance: Bool?
     var climbFuelBurnGph: Double?
+    var climbRateFpm: Double?
     var climbTasKt: Double?
     var crossings: String?
     var cruisePowerPct: Double?
@@ -1448,6 +1453,7 @@ struct APIDepartureWindowAsk: Codable, Equatable, Sendable {
     var depart: String?
     var dest: String
     var fuelBurnGph: Double?
+    var glideRatio: Double?
     var ground, holds: String?
     var hours: Int?
     var load: APIAirplaneLoad?
@@ -1459,6 +1465,7 @@ struct APIDepartureWindowAsk: Codable, Equatable, Sendable {
     var serviceCeilingFt: Double?
     var start: String?
     var stops: String?
+    var taxiFuelGal: Double?
     var ticked: [String]?
     var usableFuelGal: Double?
 }
@@ -2154,6 +2161,7 @@ struct APIGoNoGoAsk: Codable, Equatable, Sendable {
     var altitudes: String?
     var checkpoints, classBClearance: Bool?
     var climbFuelBurnGph: Double?
+    var climbRateFpm: Double?
     var climbTasKt: Double?
     var crossings: String?
     var cruisePowerPct: Double?
@@ -2164,6 +2172,7 @@ struct APIGoNoGoAsk: Codable, Equatable, Sendable {
     var depart: String?
     var dest: String
     var fuelBurnGph: Double?
+    var glideRatio: Double?
     var ground, holds: String?
     var load: APIAirplaneLoad?
     var minimums: APIPersonalMinimums?
@@ -2173,6 +2182,7 @@ struct APIGoNoGoAsk: Codable, Equatable, Sendable {
     var runways: String?
     var serviceCeilingFt: Double?
     var stops: String?
+    var taxiFuelGal: Double?
     var ticked: [String]?
     var usableFuelGal: Double?
 }
@@ -2640,10 +2650,12 @@ struct APINavLogAltitude: Codable, Equatable, Sendable {
 /// The aircraft's name plus its performance profile -- every field a
 /// data/aircraft/*.json file carries, declared, so a page reads them as
 /// fields rather than guessing at a dict. The three figures after the
-/// name are required when a profile is loaded (REQUIRED_FIELDS in
-/// wingtip.aircraft); the rest fall back to defaults in wingtip.navlog when a
-/// profile leaves them out. `extra="allow"` keeps a field a newer
-/// profile adds on its way through.
+/// name are required when a stock profile is loaded (REQUIRED_FIELDS in
+/// wingtip.aircraft); a pilot's own airplane of no stock type ("own",
+/// wingtip.aircraft.OWN_AIRPLANE) has its record's alone, and no service
+/// ceiling where the record gives none. A figure left out is missing,
+/// and each rule that needs it says so. `extra="allow"` keeps a field a
+/// newer profile adds on its way through.
 // MARK: - APIAircraftProfile
 struct APIAircraftProfile: Codable, Equatable, Sendable {
     var climbFuelBurnGph, climbRateFpmSeaLevel, climbTasKt: Double?
@@ -2656,9 +2668,10 @@ struct APIAircraftProfile: Codable, Equatable, Sendable {
     var loading: APILoading?
     var name: String
     var pressurized: Bool?
-    var serviceCeilingFt: Double
+    var serviceCeilingFt: Double?
     var supplementalOxygen: Bool?
     var takeoff: APIShortField?
+    var taxiFuelGal: Double?
     var type: String?
     var usableFuelGal: Double?
 }

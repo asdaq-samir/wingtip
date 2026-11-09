@@ -12,7 +12,6 @@ from datetime import datetime, timedelta, timezone
 
 from cachetools import TTLCache
 
-from . import aircraft as aircraft_module
 from . import altitude as altitude_module
 from . import airspace, geo, navlog, weather
 from .config import PLAN_LIMIT_S
@@ -59,11 +58,6 @@ class StillComputing(RuntimeError):
         )
         self.elapsed_s = elapsed_s
         self.stages = sorted(stages)
-
-
-class UnknownAircraft(ValueError):
-    """No stock profile goes by the name asked: the planner answers it a
-    422 (app.main), as it did when this was wingtip.planning's HTTPException."""
 
 
 class _Flight:
@@ -206,39 +200,6 @@ class SingleFlightTTLCache:
             if self._inflight.get(key) is flight:
                 del self._inflight[key]
         flight.done.set()
-
-
-def aircraft_profile(
-    name: str,
-    cruise_tas_kt: float | None = None,
-    fuel_burn_gph: float | None = None,
-    usable_fuel_gal: float | None = None,
-    climb_tas_kt: float | None = None,
-    climb_fuel_burn_gph: float | None = None,
-    cruise_power_pct: float | None = None,
-    service_ceiling_ft: float | None = None,
-) -> dict:
-    """One of data/aircraft's profiles, with a pilot's own aeroplane's
-    numbers on top when given: the profile supplies the service ceiling
-    the altitude selection needs unless the pilot set their own, the
-    overrides supply what the legs, their climbs and the fuel check need."""
-    # One of the stock profiles by its bare name, never a path: the name
-    # is the request's, and the loader opens one with a suffix as it is.
-    path = aircraft_module.profile_path(name)
-    if path is None:
-        raise UnknownAircraft(f"No aircraft profile is named {name!r}.")
-    profile = aircraft_module.load_aircraft_profile(path)
-    overrides = {
-        "cruise_tas_kt": cruise_tas_kt,
-        "fuel_burn_gph": fuel_burn_gph,
-        "usable_fuel_gal": usable_fuel_gal,
-        "climb_tas_kt": climb_tas_kt,
-        "climb_fuel_burn_gph": climb_fuel_burn_gph,
-        "cruise_power_pct": cruise_power_pct,
-        "service_ceiling_ft": service_ceiling_ft,
-    }
-    profile.update({k: v for k, v in overrides.items() if v is not None})
-    return profile
 
 
 def now() -> datetime:

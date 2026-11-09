@@ -80,7 +80,7 @@ final class Session {
     /// is gone with the first launch's migration.
     static func forgetPilot(_ defaults: UserDefaults = .standard) {
         for key in defaults.dictionaryRepresentation().keys
-            where key.hasPrefix(TailFigures.prefix) || key.hasPrefix(LocalChecklists.prefix) || key == KeptAirplane.key {
+            where key.hasPrefix(OwnFigureStore.prefix) || key.hasPrefix(LocalChecklists.prefix) || key == KeptAirplane.key {
             defaults.removeObject(forKey: key)
         }
     }

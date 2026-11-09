@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_brief::fields::call",
-  "description": "The best fields to land at from where the airplane is, ranked with their reasons: in \"glide\" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in \"diversion\" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower.",
+  "description": "The best fields to land at from where the airplane is, ranked with their reasons: in \"glide\" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in \"diversion\" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.",
   "type": "object",
   "properties": {
     "input": {
@@ -87,14 +87,17 @@
               "description": "The POH's best-glide speed and glide ratio (Section 3).",
               "properties": {
                 "best_glide_kias": {
-                  "type": "number"
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "The POH's best-glide speed, indicated; null or missing where the profile has none (a pilot's own airplane given its glide ratio alone): the reach is then worked only in still air: with a wind aloft it is not (a headwind's loss cannot be worked without the airspeed), and the fields are ranked as with no glide."
                 },
                 "ratio": {
                   "type": "number"
                 }
               },
               "required": [
-                "best_glide_kias",
                 "ratio"
               ]
             },
@@ -277,7 +280,11 @@
               "type": "number"
             },
             "tas_kt": {
-              "type": "number"
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The true airspeed at best glide; null with no best-glide speed."
             },
             "ring": {
               "type": "array",

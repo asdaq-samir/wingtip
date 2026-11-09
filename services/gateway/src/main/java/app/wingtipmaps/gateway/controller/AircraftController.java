@@ -7,6 +7,7 @@ import app.wingtipmaps.gateway.dto.DueItemDto;
 import app.wingtipmaps.gateway.dto.DueItemRequest;
 import app.wingtipmaps.gateway.dto.HandbookRequest;
 import app.wingtipmaps.gateway.dto.InspectionsRequest;
+import app.wingtipmaps.gateway.dto.OwnFigures;
 import app.wingtipmaps.gateway.dto.SquawkDto;
 import app.wingtipmaps.gateway.dto.SquawkRequest;
 import app.wingtipmaps.gateway.dto.VorCheckRequest;
@@ -90,7 +91,8 @@ public class AircraftController {
                         request.usableFuelGal(),
                         request.equipment(),
                         request.surveillance(),
-                        request.colour()))));
+                        request.colour(),
+                        request.figures()))));
     }
 
     @PutMapping("/{id}")
@@ -113,8 +115,21 @@ public class AircraftController {
                                 request.usableFuelGal(),
                                 request.equipment(),
                                 request.surveillance(),
-                                request.colour())
+                                request.colour(),
+                                request.figures())
                         .map(this::toDto));
+    }
+
+    /** Its own handbook figures, those given added to the rest: what the
+     *  apps' inline ask saves, one figure at a time, where a plan needs it
+     *  (the owner, 2026-11-09: "just ask for it at the time it's needed"). */
+    @PutMapping("/{id}/figures")
+    public ResponseEntity<AircraftDto> figures(
+            Authentication authentication, @PathVariable Long id, @Valid @RequestBody OwnFigures request) {
+        return PilotResponses.found(
+                pilots,
+                authentication,
+                pilot -> aircraftService.addFigures(pilot, id, request).map(this::toDto));
     }
 
     /** The airplane's VOR check for IFR, recorded (14 CFR 91.171(d)). */
@@ -233,7 +248,8 @@ public class AircraftController {
                         : dueItems.of(a.getId()).stream()
                                 .map(DueItemService::toDto)
                                 .toList(),
-                AircraftService.handbookOf(a));
+                AircraftService.handbookOf(a),
+                AircraftService.figuresOf(a));
     }
 
     /** When the airplane's inspections and checks fall due, and its VOR

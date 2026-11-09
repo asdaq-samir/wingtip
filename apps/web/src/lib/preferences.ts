@@ -5,6 +5,7 @@ import { persist } from "zustand/middleware";
 import { DEFAULT_FILTERS, type FilterKey, type Filters } from "./pointFilters";
 import type { AircraftAlert, AircraftAlertKind } from "./aircraftAlerts";
 import type { AircraftChoice } from "./api/types";
+import type { OwnFigureValues } from "./airplane/figures";
 import { NO_MINIMUMS, type Minimums } from "./minimums";
 
 /** What FPL's Routes hold the weather to (Preferences.routeWeather). */
@@ -195,7 +196,7 @@ interface Preferences {
    *  held by the service worker. Off by default, as it downloads. */
   keepOffline: boolean;
   aircraft: AircraftChoice;
-  /** The figures the pilot set for an N-number (AirplaneFigures), by it:
+  /** The figures the pilot set for an N-number (the airplane's profile), by it:
    *  flown on whenever the N-number is, over its type's profile. */
   tailFigures: Record<string, TailFigures>;
   /** The training map's filters: which points are drawn and walked. */
@@ -555,14 +556,10 @@ export const usePreferences = create<Preferences>()(
   ),
 );
 
-/** An airplane's own figures, set by the pilot for its N-number from its
- *  handbook (AirplaneFigures): any of them, the type's profile the rest. */
-export type TailFigures = Partial<
-  Pick<
-    AircraftChoice,
-    "cruiseTasKt" | "cruisePowerPct" | "fuelBurnGph" | "usableFuelGal" | "climbTasKt" | "climbFuelBurnGph" | "serviceCeilingFt"
-  >
->;
+/** An airplane's own figures, set by the pilot for its N-number on this
+ *  device while signed out (the airplane's profile, features/airplane):
+ *  any of them, the type's book the rest; offered to the account at sign-in. */
+type TailFigures = OwnFigureValues;
 
 /** A route planned, as FPL's Recents keep it: its ends, its stops in
  *  order, and when it was planned. */

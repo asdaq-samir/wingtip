@@ -246,9 +246,9 @@ struct ClearanceSheet: View {
                     Section {
                         HStack(spacing: WingtipSpace.md) {
                             Button("Enter the route") { enter() }
-                                .buttonStyle(.borderedProminent)
+                                .glassProminentButton()
                                 .disabled(!ready)
-                            if listener.canListen { Button("Read back again") { readBackAgain() }.buttonStyle(.bordered) }
+                            if listener.canListen { Button("Read back again") { readBackAgain() }.glassButton() }
                         }
                         .controlSize(.large)
                         .frame(maxWidth: .infinity)
@@ -281,7 +281,7 @@ struct ClearanceSheet: View {
                         } label: {
                             Label(listener.listening ? "Stop" : "Listen", systemImage: listener.listening ? "stop.circle.fill" : "mic.fill")
                         }
-                        .buttonStyle(.borderedProminent)
+                        .glassProminentButton()
                     }
                 }
             }

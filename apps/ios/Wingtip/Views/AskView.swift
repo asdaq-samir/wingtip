@@ -147,7 +147,7 @@ struct AskView: View {
                     } label: {
                         Image(systemName: "mic.fill")
                             .foregroundStyle(listener.hearingOnce ? Color.accentColor : .secondary)
-                            .symbolEffect(.pulse, isActive: listener.hearingOnce && !reduceMotion)
+                            .symbolListening(listener.hearingOnce)
                             .frame(width: 28, height: 28)
                     }
                     .contentShape(Rectangle().inset(by: -8))
@@ -231,7 +231,7 @@ private struct TurnBubble: View {
                         HStack(spacing: WingtipSpace.sm) {
                             ForEach(turn.sources) { source in
                                 Button(source.label) { onSource(source) }
-                                    .buttonStyle(.bordered)
+                                    .glassButton()
                                     .controlSize(.small)
                                     .contentShape(Rectangle().inset(by: -8))
                                     .accessibilityLabel("Source: \(source.label)")

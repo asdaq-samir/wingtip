@@ -97,6 +97,11 @@ data class AircraftDto (
      */
     val equipment: String? = null,
 
+    /**
+     * Its own handbook figures as its pilot gave them; each null where not given
+     */
+    val figures: OwnFigures,
+
     val fuelBurnGph: Double,
 
     /**
@@ -159,6 +164,44 @@ data class DueItemDto (
     val reference: String? = null,
 
     val title: String
+)
+
+/**
+ * Its own handbook figures as its pilot gave them; each null where not given
+ *
+ * An airplane's own performance figures from its handbook; each null where not given
+ */
+@Serializable
+data class OwnFigures (
+    /**
+     * Its best rate of climb at sea level, fpm
+     */
+    val climbRateFpm: Double? = null,
+
+    /**
+     * Its basic empty moment, lb-in, from its weight and balance record
+     */
+    val emptyMomentLbIn: Double? = null,
+
+    /**
+     * Its basic empty weight, lb, from its weight and balance record
+     */
+    val emptyWeightLb: Double? = null,
+
+    /**
+     * Its still-air glide ratio, propeller windmilling, flaps up (its handbook's Section 3)
+     */
+    val glideRatio: Double? = null,
+
+    /**
+     * Its service ceiling, ft (the altitude where its best climb is 100 fpm)
+     */
+    val serviceCeilingFt: Double? = null,
+
+    /**
+     * Its fuel for engine start, taxi and takeoff, gal
+     */
+    val taxiFuelGal: Double? = null
 )
 
 /**
@@ -660,6 +703,13 @@ data class AircraftRequest (
     val cruisePowerPct: Double? = null,
     val cruiseTasKt: Double,
     val equipment: String? = null,
+
+    /**
+     * Its own handbook figures, all at once (null in it clears one); left out, they stay as
+     * they were
+     */
+    val figures: OwnFigures? = null,
+
     val fuelBurnGph: Double,
     val surveillance: String? = null,
     val tailNumber: String,

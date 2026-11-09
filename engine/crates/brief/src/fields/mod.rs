@@ -160,7 +160,7 @@ pub struct Ring {
     pub nm_per_1000_ft: f64,
     pub agl_ft: f64,
     pub still_air_nm: f64,
-    pub tas_kt: f64,
+    pub tas_kt: Option<f64>,
     /// The ground reached in each direction, wind corrected, every 10°.
     pub points: Vec<(f64, f64)>,
 }

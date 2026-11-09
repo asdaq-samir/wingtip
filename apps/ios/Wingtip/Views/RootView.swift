@@ -256,6 +256,7 @@ struct RootView: View {
                 await AtcCopilot.shared.follow(flying: InFlight.shared.underway, tail: plan.tail)
             }
             .modifier(AutoLogbookHost()) // The flight logged from its track once landed and at rest.
+            .modifier(AirplaneHost()) // The airplanes' figures in step with the sign-in (Airplane/).
             // Each fix, own ship's or the dry run's airplane, asked of the
             // engine once for the instruments, the strip and the glide ring
             // (InFlight); again when the route changes under it.
@@ -307,6 +308,9 @@ struct SheetView: View {
                 SetupView().clearOfTabBar(!split)
             }
         }
+        // The bar folds to the tab up while the nav log, the Brief or the
+        // logbook scrolls down, and comes back on the way up (iOS 26).
+        .tabBarMinimizesOnScroll()
         // The pill shows the flight's figures where the tab's own content
         // would be out of sight anyway, over the tab bar.
         .overlay(alignment: .top) {

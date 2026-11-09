@@ -119,8 +119,8 @@ struct DrillView: View {
                     .padding(.vertical, WingtipSpace.sm)
                     if revealed {
                         HStack {
-                            Button("Missed It") { answer(card, knew: false) }.buttonStyle(.bordered).frame(maxWidth: .infinity)
-                            Button("Knew It") { answer(card, knew: true) }.buttonStyle(.borderedProminent).frame(maxWidth: .infinity)
+                            Button("Missed It") { answer(card, knew: false) }.glassButton().frame(maxWidth: .infinity)
+                            Button("Knew It") { answer(card, knew: true) }.glassProminentButton().frame(maxWidth: .infinity)
                         }
                     } else {
                         Button("Show the Answer") { revealed = true }

@@ -25,12 +25,18 @@ pub fn best_fields(mode: Mode, own: &Own, airplane: Option<&Airplane>, fields: V
         .min_by(|a, b| distance_nm(own.lat, own.lon, a.lat, a.lon).total_cmp(&distance_nm(own.lat, own.lon, b.lat, b.lon)))
         .and_then(|f| f.elevation_ft);
     let airborne = own.speed_kt.is_none_or(|kt| kt >= AIRBORNE_KT);
+    // A glide with no best-glide speed is worked only in still air: a
+    // headwind's loss needs the glide's airspeed, and the still-air reach
+    // into one would be too far. With a wind aloft it is then no glide, and
+    // the fields are ranked nearest first (needs_airplane), never guessed.
+    let calm = own.wind.is_none_or(|w| w.kt <= 0.0);
+    let glide = glide.filter(|g| g.best_glide_kias.is_some() || calm);
     let ring = match (glide, own.altitude_ft, ground_ft) {
         (Some(g), Some(alt), Some(ground)) if airborne && alt - ground >= AIRBORNE_AGL_FT => Some(ring_of(own, &g, alt, alt - ground)),
         _ => None,
     };
     let tas = match mode {
-        Mode::Glide => glide.zip(own.altitude_ft).map(|(g, alt)| g.tas_kt(alt)),
+        Mode::Glide => glide.zip(own.altitude_ft).and_then(|(g, alt)| g.tas_kt(alt)),
         Mode::Diversion => airplane.and_then(|a| a.cruise_tas_kt),
     };
     let mut ranked: Vec<Ranked> =
@@ -47,9 +53,9 @@ fn ring_of(own: &Own, g: &Glide, altitude_ft: f64, agl_ft: f64) -> Ring {
     let points = (0..360)
         .step_by(RING_STEP_DEG)
         .map(|deg| {
-            let nm = match own.wind {
-                Some(w) => ground_nm(still, tas, deg as f64, w.from_deg, w.kt),
-                None => still,
+            let nm = match (own.wind, tas) {
+                (Some(w), Some(tas)) => ground_nm(still, tas, deg as f64, w.from_deg, w.kt),
+                _ => still,
             };
             destination(own.lat, own.lon, deg as f64, nm)
         })
@@ -101,9 +107,9 @@ fn reach_of(g: &Glide, own: &Own, altitude_ft: f64, agl_ft: f64, distance_nm: f6
     }
     let still = agl_ft / 1000.0 * g.nm_per_1000_ft();
     let tas = g.tas_kt(altitude_ft);
-    let reach = match own.wind {
-        Some(w) => ground_nm(still, tas, course_deg, w.from_deg, w.kt),
-        None => still,
+    let reach = match (own.wind, tas) {
+        (Some(w), Some(tas)) => ground_nm(still, tas, course_deg, w.from_deg, w.kt),
+        _ => still,
     };
     if reach <= 0.0 {
         return (Reach::Beyond, Some(0.0), None);

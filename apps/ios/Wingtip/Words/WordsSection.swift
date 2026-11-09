@@ -74,7 +74,7 @@ struct WordsSection: View {
                         Text(source.label).font(.footnote).lineLimit(1)
                             .contentShape(Rectangle().inset(by: -8))
                     }
-                    .buttonStyle(.bordered)
+                    .glassButton()
                     .controlSize(.small)
                     .accessibilityHint("Shows the report as sent")
                 }

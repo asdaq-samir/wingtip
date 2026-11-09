@@ -34,7 +34,7 @@ enum FlightFigures {
             if let required = totals.fuelRequiredGal {
                 // The start and taxi allowance is the profile's own; with
                 // none it is left out and said so, never a stock figure.
-                said += " and needs \(Format.fuel(required)) with " + (totals.taxiGal == nil ? "reserve (start and taxi not in this airplane's profile)" : "taxi and reserve")
+                said += " and needs \(Format.fuel(required)) with " + (totals.taxiGal == nil ? "reserve (no start and taxi fuel given for this airplane: add it in its profile)" : "taxi and reserve")
             }
             if let reserve = totals.reserveMin { said += " (a \(Format.duration(reserve)) reserve)" }
             if let margin = totals.fuelMarginGal { said += "; \(Format.fuel(margin)) to spare" }
@@ -63,7 +63,7 @@ enum FlightFigures {
     /// airplane or no glide in its profile, never another airplane's.
     static func glide(facts: OnDeviceFacts) throws -> [AskFigure] {
         guard facts.aircraft != nil else { throw AskRefused(why: "Pick an airplane: the glide is its own.") }
-        guard let ratio = facts.glideRatio else { throw AskRefused(why: MissingFigure.line("The glide") + ".") }
+        guard let ratio = facts.glideRatio else { throw AskRefused(why: "The glide needs this airplane's glide ratio: add it in its profile.") }
         guard let own = facts.own, let altitude = own.altitudeFt else { throw AskRefused(why: "This iPhone has no GPS altitude for the airplane.") }
         guard let range = try Engine.glideRange(altitudeFt: altitude, speedKt: own.groundspeedKt, groundFt: own.groundFt, glideRatio: ratio) else {
             throw AskRefused(why: "The engine gives no glide on the ground or with no height over it.")

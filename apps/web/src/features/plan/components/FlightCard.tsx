@@ -32,7 +32,7 @@ import PastFlights from "./PastFlights";
 import { lasted, shortWhen, when } from "./pastFlightFormat";
 import { pastFlightQuery, pastFlightsQuery } from "./pastFlightsQuery";
 import { CardAction } from "../../../components/CardAction";
-import { AirplaneFigures } from "./AirplaneFigures";
+import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { shareOrCopy } from "../../../lib/share";
 import { aircraftKind } from "../../../lib/aircraftKind";
 import { departuresQuery } from "../../../lib/liveReports";
@@ -593,12 +593,16 @@ export default function FlightCard({
           airport={airport}
         />
       )}
-      {/* What it is: who it is registered to, its type and year, its
-          squawk -- the rest of what Info had after. */}
+      {/* What it is: its N-number (which opens its profile, features/airplane), type, year and squawk. */}
       <div className="pt-5">
         <PillSection title="Details" testId="flight-details">
           <ListGroup>
-            <ListRow title="Registration" value={<span className="font-semibold text-foreground">{registration ?? "—"}</span>} />
+            <ListRow
+              title="Registration"
+              value={<span className="font-semibold text-tint">{registration ?? "—"}</span>}
+              onClick={registration ? () => openAirplaneProfile(registration) : undefined}
+              data-testid="flight-registration"
+            />
             <ListRow
               title="Type"
               value={
@@ -659,8 +663,7 @@ export default function FlightCard({
           </ListGroup>
         </PillSection>
       </div>
-      {/* The ones before the flight it is on, each replayed (PastFlights),
-          and a day to look back from. */}
+      {/* The ones before the flight it is on, each replayed (PastFlights), and a day to look back from. */}
       <div className="pt-5">
         <PillSection title="Earlier flights" testId="flight-earlier">
           <PastFlights
@@ -673,9 +676,6 @@ export default function FlightCard({
         </PillSection>
       </div>
       <div className="flex flex-col gap-5 pt-5">
-        {/* The figures the planner flies it on, the pilot's to set, where
-            it is the airplane flown now (AirplaneFigures). */}
-        {registration && <AirplaneFigures tail={registration} />}
         {route && (
           // Its flight number's scheduled route (Virtual Radar Server's
           // route database), not the flight plan filed, which the FAA does

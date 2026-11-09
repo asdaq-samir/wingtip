@@ -86,14 +86,10 @@ struct InstrumentsBar: View {
             .accessibilityIdentifier("instruments-bar")
             .sheet(isPresented: $nearest) {
                 NavigationStack {
-                    DiversionView()
-                        .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button { nearest = false } label: { Image(systemName: "xmark") }
-                                    .accessibilityLabel("Close")
-                            }
-                        }
+                    // The system's own close, in the glass toolbar (CloseButton).
+                    DiversionView().closeButton { nearest = false }
                 }
+                .cardZoomStack()
                 .presentationDetents([.medium, .large])
             }
         } else if flight.fix != nil, let problem = flight.problem {
@@ -112,6 +108,9 @@ struct InstrumentsBar: View {
             Text(name).font(.caption2).foregroundStyle(.secondary)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(value).font(.headline.monospacedDigit())
+                    // Groundspeed, altitude, distance and time roll to
+                    // each new fix rather than blink.
+                    .figureTransition(value)
                 if let unit { Text(unit).font(.caption2).foregroundStyle(.secondary) }
             }
             .lineLimit(1).minimumScaleFactor(0.7)

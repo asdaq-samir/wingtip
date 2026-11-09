@@ -64,10 +64,12 @@ pub fn underway(speed_kt: Option<f64>) -> bool {
 /// An airplane's glide as its handbook gives it: the best-glide speed,
 /// indicated, and the glide ratio there (feet forward for each foot
 /// down), from the POH's Section 3 (Emergency Procedures, "Maximum
-/// glide") under GAMA Specification No. 1.
+/// glide") under GAMA Specification No. 1. The speed is None for a
+/// pilot's own airplane given its ratio alone: none is taken from another
+/// airplane (the owner, 2026-11-09).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Glide {
-    pub best_glide_kias: f64,
+    pub best_glide_kias: Option<f64>,
     pub ratio: f64,
 }
 
@@ -81,10 +83,11 @@ impl Glide {
     /// The true airspeed at best glide at `altitude_ft`, on a standard
     /// day: the indicated speed over the root of the air's density ratio
     /// in the standard atmosphere (flight's, ICAO Doc 7488). The
-    /// calibration error is the handbook's to give and is left out.
-    pub fn tas_kt(&self, altitude_ft: f64) -> f64 {
+    /// calibration error is the handbook's to give and is left out. None
+    /// with no best-glide speed.
+    pub fn tas_kt(&self, altitude_ft: f64) -> Option<f64> {
         let sigma = flight::density_ratio(altitude_ft, flight::isa_temp_c(altitude_ft));
-        self.best_glide_kias / sigma.sqrt()
+        self.best_glide_kias.map(|kias| kias / sigma.sqrt())
     }
 }
 

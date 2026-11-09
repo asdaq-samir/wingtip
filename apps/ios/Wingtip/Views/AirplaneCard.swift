@@ -125,12 +125,12 @@ struct AirplaneCard: View {
                             Toggle("Tell me when it takes off", isOn: watchBinding(.takeoff))
                             Toggle("Tell me when it lands", isOn: watchBinding(.land))
                         } label: {
-                            Label("Alert", systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell")
+                            Label("Alert", systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell").symbolSwap()
                         }
                         ShareLink(item: link, subject: Text(name)) { Label("Share", systemImage: "square.and.arrow.up") }
                     }
                     .labelStyle(.iconOnly)
-                    .buttonStyle(.bordered)
+                    .glassButton()
                     .font(.body)
                 }
                 if let plane {
@@ -146,7 +146,7 @@ struct AirplaneCard: View {
                         Text("Fetching its flights…").foregroundStyle(.secondary)
                     }
                     ForEach(flights.filter { !(plane != nil && $0.inAir) }) { flight in
-                        NavigationLink(value: flight) { PastFlightRow(flight: flight, type: detail?.type ?? plane?.type ?? history?.type) }
+                        NavigationLink(value: flight) { PastFlightRow(flight: flight, type: detail?.type ?? plane?.type ?? history?.type) }.cardSource(flight)
                     }
                     if history != nil, flights.isEmpty {
                         Text("No flights heard in the last six weeks").foregroundStyle(.secondary)
@@ -165,7 +165,7 @@ struct AirplaneCard: View {
                 Section(title: "Airplane") {
                     if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model)) }
                     if let op = detail?.operator { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
-                    LabeledContent("Registration", value: detail?.registration ?? plane?.registration ?? "—")
+                    LabeledContent("Registration") { RegistrationText(detail?.registration ?? plane?.registration) }
                     LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
                     LabeledContent("ICAO address", value: hex.uppercased())
                     LabeledContent("Callsign", value: plane?.callsign ?? "—")
@@ -187,14 +187,11 @@ struct AirplaneCard: View {
             }
             .navigationTitle(name)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    // The card's own close, whether a sheet (iPhone) or the
-                    // inspector (iPad) holds it.
-                    CloseButton { FlightUI.shared.card = nil }
-                }
-            }
-            .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight).closesBack() }
+            // The card's own close, whether a sheet (iPhone) or the
+            // inspector (iPad) holds it.
+            .closeButton { FlightUI.shared.card = nil }
+            // A flown flight's card grows out of its row (CardZoom).
+            .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight).closesBack().zoomsFrom(flight) }
             .task(id: hex) { await load() }
             // Its latest tower departure event, by the ident it files
             // under: its callsign, else its registration (the web's FlightCard).
@@ -208,6 +205,7 @@ struct AirplaneCard: View {
                 route = try? await Planner.flightRoute(callsign: callsign, lat: plane?.lat, lon: plane?.lon)
             }
         }
+        .cardZoomStack()
     }
 
     private func watchBinding(_ kind: AirplaneWatch.Kind) -> Binding<Bool> {

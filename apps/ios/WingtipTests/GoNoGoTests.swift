@@ -122,7 +122,9 @@ struct GoNoGoTests {
     @Test func eachFindingHasItsMarkAndOpensWhereTheBriefSaysIt() throws {
         let answer = try Planner.snakeCase.decode(GoNoGoAnswer.self, from: Data(Self.answer.utf8))
         let targets = answer.items.map { VerdictTarget.of($0) }
-        #expect(targets == [.section(VerdictTarget.weatherAnchor), .section(VerdictTarget.airspaceAnchor), nil, nil, nil, .loading, .risk])
+        // The fuel and the runways are worked from the airplane's figures, and
+        // open its profile (the owner, 2026-11-09).
+        #expect(targets == [.section(VerdictTarget.weatherAnchor), .section(VerdictTarget.airspaceAnchor), nil, .airplane, .airplane, .loading, .risk])
         #expect(FindingStyle.symbol("stop") == "xmark.octagon.fill" && FindingStyle.symbol("ok") == "checkmark.circle.fill")
         #expect(FindingStyle.symbol("pending") != FindingStyle.symbol("unknown"))
     }

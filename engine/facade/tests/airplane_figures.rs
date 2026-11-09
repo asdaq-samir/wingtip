@@ -106,6 +106,25 @@ fn a_profile_with_no_climb_speed_flies_no_climb_rather_than_a_stock_airplanes() 
 }
 
 #[test]
+fn an_own_airplane_with_no_climb_rate_or_ceiling_flies_no_climb() {
+    // A pilot's own airplane of no stock type, whose record has its climb
+    // speed but not its rate or its ceiling: the climb's minutes are the
+    // rate falling to 100 fpm at the ceiling, and neither is guessed, so
+    // the legs fly level -- and no ceiling is asked of it at all.
+    let leg = json!([{"distance_nm": 60.0, "altitude_ft": 3500.0, "groundspeed_kt": 100.0, "ete_min": 36.0,
+        "fuel_gal": 4.8, "wind": null, "tas_kt": 100.0, "fuel_burn_gph": 8.0, "oat_c": null}]);
+    let no_rate = json!({"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_tas_kt": 70.0, "service_ceiling_ft": 14000.0});
+    assert_eq!(ask("navlog_with_climbs", json!({"legs": leg, "start_altitude_ft": 500.0, "profile": no_rate})), leg);
+    let no_ceiling = json!({"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_tas_kt": 70.0, "climb_rate_fpm_sea_level": 700.0});
+    assert_eq!(ask("navlog_with_climbs", json!({"legs": leg, "start_altitude_ft": 500.0, "profile": no_ceiling})), leg);
+    // With all three it climbs.
+    let all = json!({"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_tas_kt": 70.0, "climb_rate_fpm_sea_level": 700.0,
+        "service_ceiling_ft": 14000.0});
+    let climbed = ask("navlog_with_climbs", json!({"legs": leg, "start_altitude_ft": 500.0, "profile": all}));
+    assert!(f(&climbed[0]["climb_min"]) > 0.0);
+}
+
+#[test]
 fn an_estimate_carries_the_taxi_allowance_and_45_minutes() {
     // 120 nm at 120 kt is an hour; at 8 gph, 8 gal; with 1.4 gal to start
     // and taxi and 45 minutes' reserve (14 CFR 91.151(a)(2), 91.167(a)(3)),

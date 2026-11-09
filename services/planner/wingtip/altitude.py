@@ -76,7 +76,9 @@ def _service_ceiling_ft(aircraft_profile: dict | None, a: tuple, b: tuple, fcst_
     (the forecast could not be read), or no station near. None with no
     airplane (`aircraft_profile` None): no ceiling of its own, the band
     then the rules' and the airspace's (the engine's select_cruise_altitude)."""
-    if aircraft_profile is None:
+    # A pilot's own airplane whose record gives no ceiling has none: the
+    # band is then the rules' and the airspace's, as with no airplane.
+    if aircraft_profile is None or aircraft_profile.get("service_ceiling_ft") is None:
         return None
     book_ft = float(aircraft_profile["service_ceiling_ft"])
     if not temperatures:

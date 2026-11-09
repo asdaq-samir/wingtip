@@ -86,9 +86,9 @@ struct LogbookView: View {
                     if let entries = flights.entries {
                         if entries.isEmpty { Text("No flights logged yet: the plus logs one.").foregroundStyle(.secondary) }
                         ForEach(entries) { e in
-                            // Tapped, the flight opens in its row to change (Edit).
-                            Button { if flights.editingID == e.id { flights.cancelEdit() } else { flights.edit(e) } } label: { row(e) }
-                                .foregroundStyle(.primary)
+                            // Tapped, the flight opens in its row to change (Edit);
+                            // its N-number, a tap of its own, opens the airplane's profile.
+                            LogbookRow(entry: e) { if flights.editingID == e.id { flights.cancelEdit() } else { flights.edit(e) } }
                                 .contextMenu {
                                     Button("Edit", systemImage: "pencil") { flights.edit(e) }
                                     Button("Delete", systemImage: "trash", role: .destructive) { delete(e) }
@@ -106,6 +106,7 @@ struct LogbookView: View {
             ProblemLine(problem)
         }
         .navigationTitle("Logbook")
+        .glassScrollEdges()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if session.signedIn {
@@ -175,20 +176,6 @@ struct LogbookView: View {
         Button(sending ? "Importing…" : "Import \(n) Flight\(n == 1 ? "" : "s")") { Task { await send(read) } }
             .disabled(sending || n == 0)
         Button("Cancel", role: .cancel) { preview = nil }
-    }
-
-    private func row(_ e: LogbookEntry) -> some View {
-        let landings = e.dayLandings + e.nightLandings
-        return VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text(Day.said(e.flownOn) + (e.route.map { " · \($0)" } ?? "")).font(.headline)
-                Spacer()
-                Text(Format.hours(e.totalHours)).font(.subheadline.monospacedDigit())
-            }
-            Text(([e.aircraft, e.aircraftType, "\(landings) landing\(landings == 1 ? "" : "s")", e.remarks].compactMap { $0 }.filter { !$0.isEmpty })
-                .joined(separator: " · "))
-                .font(.footnote).foregroundStyle(.secondary)
-        }
     }
 
     // From the logbook and the dates the pilot gives, no one's sign-off:

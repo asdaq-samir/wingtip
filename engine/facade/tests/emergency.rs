@@ -56,6 +56,27 @@ fn with_no_airplane_the_glide_is_not_guessed() {
 }
 
 #[test]
+fn a_glide_ratio_with_no_best_glide_speed_reaches_only_in_still_air() {
+    // A pilot's own airplane given its glide ratio alone: in still air its
+    // reach is the ratio's (3,665 ft at 9 to 1 is 5.4 nm, as with the
+    // book's speed); with a wind aloft a headwind's loss needs the glide's
+    // airspeed, so no reach is worked rather than one too far.
+    let case = &fixture()["lakeGeneva"];
+    let mut calm = case["input"].clone();
+    calm["airplane"]["glide"]["best_glide_kias"] = Value::Null;
+    calm["wind"] = Value::Null;
+    let answer = ask("best_fields", &calm);
+    assert_eq!(answer["glide"]["still_air_nm"], json!(5.4));
+    assert_eq!(answer["glide"]["tas_kt"], Value::Null);
+    assert_eq!(answer["needs_airplane"], json!(false));
+    let mut windy = case["input"].clone();
+    windy["airplane"]["glide"]["best_glide_kias"] = Value::Null;
+    let answer = ask("best_fields", &windy);
+    assert_eq!(answer["glide"], Value::Null);
+    assert!(answer["fields"].as_array().unwrap().iter().all(|f| f["reach"] == json!("unknown")));
+}
+
+#[test]
 fn a_diversion_weighs_the_runway_and_the_weather_not_the_glide() {
     let case = &fixture()["lakeGeneva"];
     let mut input = case["input"].clone();

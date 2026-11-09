@@ -16,6 +16,7 @@
 import type { components } from "./schema";
 import type { components as AssistantComponents } from "./assistant-schema";
 import type { components as GatewayComponents } from "./gateway-schema";
+import type { OwnFigureValues } from "../airplane/figures";
 
 type Schemas = components["schemas"];
 type Assistant = AssistantComponents["schemas"];
@@ -211,23 +212,14 @@ export type VfrMinimums = Schemas["VfrMinimums"];
 export type DevServices = Schemas["DevServices"];
 export type DevServiceStarted = Schemas["DevServiceStarted"];
 
-/** Which airplane the nav log is computed for: a stock profile by
- *  name, optionally with a pilot's own airplane's speeds and fuel
- *  burns, climb and cruise, laid over it (and its id, so a saved
- *  flight records it). */
-export interface AircraftChoice {
+/** Which airplane the nav log is computed for: a stock profile by name
+ *  (or "own", lib/airplane's OWN_AIRPLANE), with a pilot's own airplane's
+ *  figures laid over it -- speeds, burns, fuel, ceiling, climb rate, start
+ *  and taxi fuel, glide ratio, empty weight and moment, each where set
+ *  (OwnFigureValues) -- and its id, so a saved flight records it. */
+export interface AircraftChoice extends OwnFigureValues {
   profile: string;
   label: string;
-  cruiseTasKt?: number;
-  fuelBurnGph?: number;
-  /** The power the cruise figures are at, in percent. */
-  cruisePowerPct?: number;
-  climbTasKt?: number;
-  climbFuelBurnGph?: number;
-  usableFuelGal?: number;
-  /** The airplane's own service ceiling, ft, over its profile's, where the
-   *  pilot has set one for their N-number. */
-  serviceCeilingFt?: number;
   aircraftId?: number;
   /** An airplane picked by its N-number from the FAA's registry, flown on
    *  its type's stock profile: its N-number, for its own place in the
@@ -235,8 +227,6 @@ export interface AircraftChoice {
   tail?: string;
   /** No airplane picked (preferences' NO_AIRPLANE): no profile (""), and no airplane figure. */
   none?: boolean;
-  glideRatio?: number; // its own, from its handbook as its pilot confirmed it
-  unmatched?: boolean; // an own airplane of no stock type: its base profile's POH figures are not its own (aircraftChoice)
 }
 /** One line of the per-checkpoint description stream. */
 export type CheckpointDescriptionMessage = Assistant["CheckpointNoteMessage"];
@@ -335,6 +325,8 @@ export type DeviceCode = Gateway["DeviceCode"];
  *  fuel check. */
 export type Aircraft = Gateway["AircraftDto"];
 export type AircraftRequest = Gateway["AircraftRequest"];
+/** An airplane's own handbook figures on its record, each null where not given. */
+export type OwnFigures = Gateway["OwnFigures"];
 /** An airplane's handbook figures as its pilot confirmed them from a photo. */
 export type HandbookFigures = Gateway["HandbookFigures"];
 /** A VOR check for IFR as the pilot records it (14 CFR 91.171(d)). */

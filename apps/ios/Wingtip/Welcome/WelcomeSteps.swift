@@ -28,17 +28,17 @@ struct WelcomeAirplaneStep: View {
                         .textFieldStyle(.roundedBorder)
                         .onSubmit { Task { await model.fly(model.typedTail, plan: plan) } }
                     Button("Fly") { Task { await model.fly(model.typedTail, plan: plan) } }
-                        .buttonStyle(.bordered)
+                        .glassButton()
                         .disabled((try? Registered.isNNumber(model.typedTail.uppercased())) != true)
                 }
                 if let tail = plan.tail, !model.own.contains(where: { $0.tailNumber == tail }) {
-                    WelcomeChoice(title: tail, detail: plan.airplaneChosen ? plan.aircraft.uppercased() : nil, picked: true) {}
+                    WelcomeChoice(title: tail, detail: plan.stockType, picked: true) {}
                 }
             }
             .padding(.top, WingtipSpace.sm)
         } actions: {
             Button(action: done) { Text("Continue").frame(maxWidth: .infinity) }
-                .buttonStyle(.borderedProminent).controlSize(.large)
+                .glassProminentButton().controlSize(.large)
         }
         .task(id: session.signedIn) { await model.loadOwn(signedIn: session.signedIn) }
     }
@@ -74,7 +74,7 @@ struct WelcomeHomeStep: View {
             .task(id: model.homeQuery) { await model.findHome() }
         } actions: {
             Button(action: done) { Text(model.home == nil ? "Not Now" : "Continue").frame(maxWidth: .infinity) }
-                .buttonStyle(.borderedProminent).controlSize(.large)
+                .glassProminentButton().controlSize(.large)
         }
     }
 }

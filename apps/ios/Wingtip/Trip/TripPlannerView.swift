@@ -39,7 +39,7 @@ struct TripPlannerView: View {
                     ForEach(trip.proposal?.unmet ?? [], id: \.self) { Text($0).font(.footnote).foregroundStyle(WingtipInk.problem) }
                     if !trip.busy {
                         ForEach(trip.sources, id: \.id) { source in
-                            Button(source.label) { onSource(source) }.buttonStyle(.bordered).buttonBorderShape(.capsule)
+                            Button(source.label) { onSource(source) }.glassButton().buttonBorderShape(.capsule)
                         }
                     }
                 }
@@ -97,7 +97,7 @@ private struct TripLegRow: View {
                 Label("Loaded", systemImage: "checkmark").font(.subheadline)
             } else {
                 Button(leg.kind == "return" ? "Use return leg" : "Use this plan", action: onUse)
-                    .buttonStyle(.borderedProminent).buttonBorderShape(.capsule)
+                    .glassProminentButton().buttonBorderShape(.capsule)
             }
         }
     }

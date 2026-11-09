@@ -24,6 +24,7 @@ struct MapButtons: View {
                     // The body style, so the glyph follows Dynamic Type; the
                     // 44-point round button itself does not grow.
                     .font(.body.weight(.medium))
+                    .symbolSwap()
                     .frame(width: WingtipSize.tapTarget, height: WingtipSize.tapTarget)
             }
             .accessibilityLabel(routeAway && !following ? "Show the whole route" : following ? "Stop following my position" : "My position")
@@ -42,6 +43,8 @@ struct MapButtons: View {
                 .foregroundStyle(Color.accentColor)
             }
         }
+        // The two round buttons one piece of glass, as Maps' are.
+        .glassGroup(spacing: WingtipSpace.md)
         .padding(.trailing, WingtipSpace.md)
         .padding(.top, WingtipSpace.md)
     }

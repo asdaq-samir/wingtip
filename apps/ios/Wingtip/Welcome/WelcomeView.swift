@@ -78,17 +78,17 @@ struct WelcomeView: View {
                 EmptyView()
             } actions: {
                 Button { model.openSample(plan); opened() } label: { Text("Open Sample Flight").frame(maxWidth: .infinity) }
-                    .buttonStyle(.borderedProminent).controlSize(.large)
+                    .glassProminentButton().controlSize(.large)
                     .accessibilityIdentifier("welcome-sample")
                 Button { model.finish(); opened() } label: { Text("Plan My Own").frame(maxWidth: .infinity) }
-                    .buttonStyle(.bordered).controlSize(.large)
+                    .glassButton().controlSize(.large)
             }
         }
     }
 
     private var continueButton: some View {
         Button { model.next() } label: { Text("Continue").frame(maxWidth: .infinity) }
-            .buttonStyle(.borderedProminent).controlSize(.large)
+            .glassProminentButton().controlSize(.large)
     }
 }
 

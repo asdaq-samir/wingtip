@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.plan
 
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.api.Planner
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -12,7 +13,7 @@ import org.junit.Test
 class PlanSettersTest {
     @Test
     fun anAltitudeAndATimeGoInTheQuestion() {
-        val q = Planner.navlogQuery("KDPA", "KMSN", listOf("KJVL"), "c172", altitudeFt = 4500.4, depart = "2026-11-14T15:00:00Z")
+        val q = Planner.navlogQuery("KDPA", "KMSN", listOf("KJVL"), mapOf("aircraft" to "c172"), altitudeFt = 4500.4, depart = "2026-11-14T15:00:00Z")
         assertEquals("4500", q["altitude_ft"])
         assertEquals("2026-11-14T15:00:00Z", q["depart"])
         assertEquals("KJVL", q["stops"])
@@ -20,7 +21,7 @@ class PlanSettersTest {
 
     @Test
     fun noneSetLeavesThemOutForThePlannersOwn() {
-        val q = Planner.navlogQuery("KDPA", "KMSN", emptyList(), "")
+        val q = Planner.navlogQuery("KDPA", "KMSN", emptyList(), AirplaneNow.plannerQuery("", null))
         assertNull(q["altitude_ft"])
         assertNull(q["depart"])
         // No airplane is ever assumed: none asked (decision 0011).

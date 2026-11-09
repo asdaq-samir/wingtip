@@ -199,6 +199,8 @@ struct CardActionLabel: View {
     var body: some View {
         VStack(spacing: WingtipSpace.xs) {
             Image(systemName: action.systemImage).font(WingtipType.heading)
+                // Fly Here and Direct To bounce as they are taken.
+                .symbolBounce(on: action == .flyHere || action == .directTo ? Feel.shared.directTo : 0)
             Text(action.title).font(WingtipType.tabBar.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, minHeight: WingtipSize.tapTarget)
@@ -345,10 +347,10 @@ private enum PreviewData {
 
 #Preview("CardActionLabel") {
     HStack(spacing: WingtipSpace.sm) {
-        Button {} label: { CardActionLabel(.flyHere) }.buttonStyle(.borderedProminent)
-        Button {} label: { CardActionLabel(.addStop) }.buttonStyle(.bordered)
-        Button {} label: { CardActionLabel(.call) }.buttonStyle(.bordered)
-        Button {} label: { CardActionLabel(.address) }.buttonStyle(.bordered)
+        Button {} label: { CardActionLabel(.flyHere) }.glassProminentButton()
+        Button {} label: { CardActionLabel(.addStop) }.glassButton()
+        Button {} label: { CardActionLabel(.call) }.glassButton()
+        Button {} label: { CardActionLabel(.address) }.glassButton()
     }
     .padding()
 }

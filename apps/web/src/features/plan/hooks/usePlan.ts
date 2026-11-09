@@ -16,7 +16,7 @@ import type {
   Totals,
 } from "../../../lib/api/types";
 import type { FlightRules } from "../../../lib/preferences";
-import { withOwnFigures } from "../../../lib/aircraftChoice";
+import { ownOf } from "../../../lib/airplane/figures";
 import { useCheckpointNotes } from "./useCheckpointNotes";
 import { useNarrative } from "./useNarrative";
 import { briefingLegs } from "./briefingLegs";
@@ -141,7 +141,7 @@ const BRIEF_SETTLE_MS = 250;
 const NONE: Candidate[] = [];
 
 /** Where the runways left from are in a plan's key (planKeyOf). */
-const PLAN_KEY_RUNWAYS = 21;
+const PLAN_KEY_RUNWAYS = 15;
 
 /** Everything the nav log is computed from -- the narrative is keyed
  *  on the same, so a narrative is always about the log on screen. */
@@ -179,13 +179,8 @@ function planKeyOf({
     altitudes,
     checkpoints,
     aircraft.profile,
-    aircraft.cruiseTasKt ?? null,
-    aircraft.fuelBurnGph ?? null,
-    aircraft.usableFuelGal ?? null,
-    aircraft.climbTasKt ?? null,
-    aircraft.climbFuelBurnGph ?? null,
-    aircraft.cruisePowerPct ?? null,
-    aircraft.serviceCeilingFt ?? null,
+    // Every figure of its own, a new one planned again (lib/airplane).
+    JSON.stringify(ownOf(aircraft)),
     rules,
     rules === "ifr" ? alternate : "",
     procedures,
@@ -398,8 +393,8 @@ export function usePlan({
   const legs = useMemo(() => messages.flatMap((m): Leg[] => (m.type === "leg" ? [stripType(m)] : [])), [messages]);
   const nav = useMemo<NavLogAltitude | null>(() => {
     const altitude = messages.find((m): m is Extract<NavLogMessage, { type: "altitude" }> => m.type === "altitude");
-    return altitude ? withOwnFigures(stripType(altitude), aircraft.unmatched) : null;
-  }, [messages, aircraft.unmatched]);
+    return altitude ? stripType(altitude) : null;
+  }, [messages]);
   const totals = useMemo<Totals | null>(() => {
     const done = messages.find((m) => m.type === "done");
     return done && done.type === "done" ? done.totals : null;

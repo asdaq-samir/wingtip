@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
@@ -45,7 +46,11 @@ fun LogbookEntryRow(e: LogbookEntryDto, state: LogbookModel.State, model: Logboo
         ListItem(
             overlineContent = { Text(e.flownOn) },
             headlineContent = { Text(LogbookModel.line(e)) },
-            supportingContent = e.aircraft?.let { { Text(it) } },
+            // The airplane's N-number, its own tap to the airplane's profile
+            // inside the row's tap to edit.
+            supportingContent = e.aircraft?.let { tail ->
+                { Text(tail, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable(role = Role.Button) { ProfileOpen.open(tail) }) }
+            },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = stringResource(R.string.logbook_edit_entry, e.flownOn)) { model.edit(e.id) },
         )

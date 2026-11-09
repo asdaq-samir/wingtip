@@ -57,9 +57,11 @@ struct FlightsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(model.saving ? "Saving…" : "Save This Plan") {
+                Button {
                     guard let request = plan.saved() else { return }
                     Task { await model.save(request) }
+                } label: {
+                    SaveLabel(title: "Save This Plan", saving: model.saving, saves: model.saves)
                 }
                 .disabled(model.saving || !session.signedIn || plan.totals == nil)
             }

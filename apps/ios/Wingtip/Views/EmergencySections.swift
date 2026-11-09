@@ -17,13 +17,10 @@ struct EmergencyFieldsSection: View {
                         detail: "The fields within a glide are worked out from it")
             } else if let ranked = model.ranked {
                 if ranked.needsAirplane {
-                    // No airplane, or one whose profile has no glide: the
-                    // nearest first, and the glide asked for, never guessed.
-                    if Emergency.shared.answer?.airplane == nil {
-                        PickAirplaneRow(detail: "Its glide ranks the fields within reach; nearest first meanwhile")
-                    } else {
-                        CardRow(title: MissingFigure.line("Glide"), detail: "Nearest first; add its best glide to rank the fields within reach")
-                    }
+                    // No airplane, or one with no glide ratio: the nearest
+                    // first, and the glide ratio asked for in place, never
+                    // guessed (the owner, 2026-11-09).
+                    AskFigureRow(needs: [.glide], pickDetail: "Its glide ranks the fields within reach; nearest first meanwhile")
                 }
                 ForEach(ranked.fields, id: \.ident) { field in
                     Button { model.pickedIdent = field.ident } label: { row(field, picked: field.ident == model.picked?.ident) }
@@ -62,6 +59,7 @@ struct EmergencyFieldsSection: View {
     private func row(_ field: Emergency.Field, picked: Bool) -> some View {
         HStack(alignment: .top, spacing: WingtipSpace.md) {
             Image(systemName: picked ? "checkmark.circle.fill" : "circle")
+                .symbolSwap()
                 .foregroundStyle(picked ? Color.accentColor : Color.secondary)
             VStack(alignment: .leading, spacing: 2) {
                 (Text(field.ident).fontWeight(.semibold) + Text(" \(field.name)")).foregroundStyle(Color.primary)
