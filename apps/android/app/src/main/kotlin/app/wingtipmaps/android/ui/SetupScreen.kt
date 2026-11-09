@@ -112,7 +112,7 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         when {
             !loaded -> CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
             signedIn != null -> {
-                Text(signedIn.email ?: signedIn.displayName ?: stringResource(R.string.signed_in), style = MaterialTheme.typography.bodyLarge)
+                Text(signedIn.email, style = MaterialTheme.typography.bodyLarge)
                 OutlinedButton(onClick = { session.signOut(context) }) { Text(stringResource(R.string.sign_out)) }
                 DeleteAccountButton(session)
             }
@@ -131,7 +131,7 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         ProblemLine(problem)
         // What falls due, the pilot's and their airplanes': under the
         // account it belongs to.
-        signedIn?.let { ComingUpSection(signedInAs = it.email ?: it.displayName ?: "") }
+        signedIn?.let { ComingUpSection(signedInAs = it.email) }
         // The pilot's logbook and its currency, with their account.
         if (signedIn != null) {
             ListItem(

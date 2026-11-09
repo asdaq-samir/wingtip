@@ -94,6 +94,16 @@ android {
         buildConfig = true
     }
 
+    // Every lint warning fails the build, as the Kotlin compiler's do
+    // below: a deprecation or a slip is fixed when it is written.
+    lint {
+        warningsAsErrors = true
+        abortOnError = true
+        // Timber's own check, which comes in with a library's lint rules:
+        // the app logs through android.util.Log (Engine.rule), not Timber.
+        disable += "LogNotTimber"
+    }
+
     // Java 25, the gateway's LTS and the JDK the build runs on
     // (gradle/gradle-daemon-jvm.properties): AGP 9.5's D8 dexes its class
     // files (major version 69) for minSdk 26, records, sealed types and
@@ -124,6 +134,7 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_25)
+        allWarningsAsErrors.set(true)
     }
 }
 

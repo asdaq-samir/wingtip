@@ -61,7 +61,7 @@ object Planner {
         Gateway.client.newCall(get(path, query)).also { call ->
             if (timeoutMs != null) call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS)
         }.await().use { response ->
-            val body = response.body?.string() ?: ""
+            val body = response.body.string()
             if (response.code != 200) throw Failure(response.code, detail(body))
             body
         }
@@ -73,8 +73,8 @@ object Planner {
      *  nav log), each line as sent, the empty ones left out. */
     fun lines(path: String, query: Map<String, String?> = emptyMap()): Flow<String> = flow {
         Gateway.client.newCall(get(path, query)).execute().use { response ->
-            if (response.code != 200) throw Failure(response.code, detail(response.body?.string() ?: ""))
-            val source = response.body?.source() ?: return@use
+            if (response.code != 200) throw Failure(response.code, detail(response.body.string()))
+            val source = response.body.source()
             while (true) {
                 val line = source.readUtf8Line() ?: break
                 if (line.isNotEmpty()) emit(line)

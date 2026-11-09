@@ -1563,7 +1563,7 @@ fun Engine.runwayEndKey(ident: String? = null): Result<String> =
 /**
  * Each end's ident, true heading and traffic (right where its key is in `right`, else left, 14 CFR 91.126(b)(1)).
  */
-fun Engine.runwayEndsTraffic(endHeadings: List<List<JsonElement>>?? = null, variationDeg: Double, right: List<String>? = null): Result<List<EngineContract.RunwayEndsTrafficAnswerItem>> =
+fun Engine.runwayEndsTraffic(endHeadings: List<List<JsonElement>>? = null, variationDeg: Double, right: List<String>? = null): Result<List<EngineContract.RunwayEndsTrafficAnswerItem>> =
     rule("runway_ends_traffic", EngineContract.RunwayEndsTrafficInput(endHeadings = endHeadings, variationDeg = variationDeg, right = right))
 
 /**

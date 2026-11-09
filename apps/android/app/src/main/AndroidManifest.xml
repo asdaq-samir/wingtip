@@ -2,7 +2,8 @@
 <!-- The native Android app (docs/NATIVE-ANDROID.md). The network for the
      planner, the gateway and the chart's tiles; whether there is one, for
      the words shown when there is not; and the position own ship reads. -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -42,7 +43,8 @@
     <!-- Only HTTPS: the gateway and the tiles' CDN are, and a plain-HTTP
          request is refused by the system rather than sent. The session's
          cookies are kept by the app itself (CookieStore), so Android's
-         backup of the app's data is off. Predictive back (Android 14+):
+         backup of the app's data is off (allowBackup and backup_rules below
+         Android 12, data_extraction_rules from it on). Predictive back (Android 14+):
          the system's back animation, with nothing of our own in its way. -->
     <application
         android:name=".WingtipApplication"
@@ -51,9 +53,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.WingtipMaps"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
-        android:enableOnBackInvokedCallback="true">
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="33">
 
         <!-- One task, one instance: a link tapped in Gmail while the app is
              open comes to the running activity as a new intent

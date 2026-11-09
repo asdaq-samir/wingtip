@@ -3,6 +3,7 @@ package app.wingtipmaps.android.map
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.core.content.edit
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
@@ -69,10 +70,10 @@ object CloseMap {
             .build()
         val answer = Gateway.client.newCall(request).await().use { response ->
             if (!response.isSuccessful) return null
-            Gateway.json.decodeFromString<SessionAnswer>(response.body?.string() ?: return null)
+            Gateway.json.decodeFromString<SessionAnswer>(response.body.string())
         }
         val session = Session(answer.session, answer.expiry.toLongOrNull() ?: return null, key)
-        prefs.edit().putString(KEPT, Gateway.json.encodeToString(session)).apply()
+        prefs.edit { putString(KEPT, Gateway.json.encodeToString(session)) }
         return session
     }
 

@@ -57,7 +57,7 @@ class CopilotModelTest {
         assertEquals(40.0, input.fuelGal!!, 0.0)
         // The pilot's minimums and the passengers aboard go to the engine.
         assertEquals(3000.0, input.minimums!!.ceilingFt!!, 0.0)
-        assertEquals(5.0, input.minimums!!.visibilitySm!!, 0.0)
+        assertEquals(5.0, input.minimums.visibilitySm!!, 0.0)
         assertEquals(true, input.passengers)
         // Looked at again soon after: not said again.
         model.look(CopilotMode.SPOKEN, true, fix.copy(atMs = 1_000_000L + 4_000), flight, emptyList(), voice, nowMs = 4_000L)

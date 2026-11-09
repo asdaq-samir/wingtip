@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +33,7 @@ object LayoutPreference {
     }
 
     fun set(context: Context, layout: String) {
-        context.getSharedPreferences("wingtip", Context.MODE_PRIVATE).edit().putString(KEY, layout).apply()
+        context.getSharedPreferences("wingtip", Context.MODE_PRIVATE).edit { putString(KEY, layout) }
         state.value = layout
     }
 }

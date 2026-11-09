@@ -51,6 +51,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.engine.Engine
@@ -151,7 +152,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
 private fun DiagramWithOwnShip(page: DiagramPage, fix: OwnShip.Fix?) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
-    val transform = rememberTransformableState { zoom, pan, _ ->
+    val transform = rememberTransformableState { _, zoom, pan, _ ->
         scale = (scale * zoom).coerceIn(1f, 8f)
         offset += pan
     }
@@ -171,7 +172,7 @@ private fun DiagramWithOwnShip(page: DiagramPage, fix: OwnShip.Fix?) {
         ) {
             Image(page.image.asImageBitmap(), contentDescription = "Airport diagram", modifier = Modifier.fillMaxSize())
             if (at != null) {
-                val track = fix?.trackDeg
+                val track = fix.trackDeg
                 val turn = ((page.graticule?.northDeg ?: 0.0) + (track ?: 0.0)).toFloat()
                 Canvas(Modifier.fillMaxSize().semantics { contentDescription = "You are here" }) {
                     val centre = Offset((at.x * k).toFloat(), (at.y * k).toFloat())
@@ -252,7 +253,7 @@ class DiagramPage(
             if (!file.exists()) {
                 http.newCall(Request.Builder().url(url).build()).execute().use { response ->
                     if (!response.isSuccessful) throw IllegalStateException("The FAA answered ${response.code}.")
-                    file.writeBytes(response.body?.bytes() ?: throw IllegalStateException("The FAA sent nothing."))
+                    file.writeBytes(response.body.bytes())
                 }
             }
             ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
@@ -260,7 +261,7 @@ class DiagramPage(
                     if (renderer.pageCount < 1) return null
                     renderer.openPage(0).use { page ->
                         val (w, h) = page.width.toFloat() to page.height.toFloat()
-                        val bitmap = Bitmap.createBitmap(page.width * 3, page.height * 3, Bitmap.Config.ARGB_8888)
+                        val bitmap = createBitmap(page.width * 3, page.height * 3)
                         bitmap.eraseColor(android.graphics.Color.WHITE)
                         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                         val graticule = if (readsText()) graticuleOf(page) else Result.success(null)

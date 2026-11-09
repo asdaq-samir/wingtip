@@ -2,6 +2,7 @@ package app.wingtipmaps.android
 
 import android.app.Application
 import android.content.Context
+import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Course
@@ -288,7 +289,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val s = _state.value
         if (!s.routed || s.course == null || s.totals == null) return
         val kept = Kept(s.dep, s.dest, s.stops, s.aircraft, s.course, s.legs, s.totals, s.altitudeFt, s.depart)
-        prefs.edit().putString(KEY, Gateway.json.encodeToString(kept)).apply()
+        prefs.edit { putString(KEY, Gateway.json.encodeToString(kept)) }
     }
 
     /** The cycle packs of the regions the route crosses (CyclePacks),
@@ -325,7 +326,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
     fun clear() {
         running?.cancel()
         _state.value = State(aircraft = _state.value.aircraft)
-        prefs.edit().remove(KEY).apply()
+        prefs.edit { remove(KEY) }
     }
 
     companion object {

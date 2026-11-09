@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.api
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -83,7 +84,7 @@ class CookieStore(private val prefs: SharedPreferences) : CookieJar {
 
     private fun persist() {
         val text = Gateway.json.encodeToString(kept.values.map { Kept(it) })
-        prefs.edit().putString(KEY, text).apply()
+        prefs.edit { putString(KEY, text) }
     }
 
     private companion object {

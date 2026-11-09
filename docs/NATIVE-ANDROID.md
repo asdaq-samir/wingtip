@@ -15,7 +15,9 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
   Android plugin), for API 37, on Java 25 (the gateway's LTS): Gradle
   runs on the Temurin 25 that `gradle/gradle-daemon-jvm.properties`
   names, fetched once into `~/.gradle/jdks` by the foojay resolver, and
-  the app compiles to Java 25 bytecode, which AGP 9.5's D8 dexes.
+  the app compiles to Java 25 bytecode, which AGP 9.5's D8 dexes. Every
+  Kotlin and lint warning fails the build, as a Gradle deprecation does
+  (`org.gradle.warning.mode=fail`).
 - `app/src/main/cpp`: the JNI shim round the engine, in C
   (`wingtip_jni.c`), and the CMake file that links the engine's static
   library for each ABI. The engine itself is built by

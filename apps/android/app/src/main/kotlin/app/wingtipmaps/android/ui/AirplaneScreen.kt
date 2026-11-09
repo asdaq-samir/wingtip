@@ -11,12 +11,12 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -150,7 +150,7 @@ internal fun AirplanePicker(profiles: List<AircraftProfileSummary>, selected: St
             readOnly = true,
             label = { Text(stringResource(R.string.tab_airplane)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
@@ -211,9 +211,8 @@ private fun PassengersRow() {
     )
 }
 
-/** "Cessna 172 · C172": the type's name and the planner's key for it. */
-private fun label(profile: AircraftProfileSummary): String =
-    profile.type?.let { "$it · ${profile.name.uppercase()}" } ?: profile.name.uppercase()
+/** "Piper Archer · PA28": the type's name and the planner's key for it. */
+private fun label(profile: AircraftProfileSummary): String = "${profile.type} · ${profile.name.uppercase()}"
 
 /** The handbook figures the planner flies the type on, its own. */
 @Composable

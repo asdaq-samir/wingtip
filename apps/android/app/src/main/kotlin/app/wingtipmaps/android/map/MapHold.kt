@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.map
 
+import android.content.ComponentCallbacks2
+import android.content.res.Configuration
 import android.view.HapticFeedbackConstants
 import androidx.core.view.ViewCompat
 import app.wingtipmaps.android.R
@@ -17,6 +19,20 @@ import org.maplibre.android.maps.MapView
  * gesture has an accessible way to do the same).
  */
 internal object MapHold {
+    /** Memory short with the app behind, which a lifecycle has no event
+     *  for: the map drops what it can (onTrimMemory, as Android 14 calls
+     *  in place of onLowMemory). */
+    fun memory(view: MapView): ComponentCallbacks2 = object : ComponentCallbacks2 {
+        override fun onConfigurationChanged(newConfig: Configuration) {}
+
+        override fun onTrimMemory(level: Int) {
+            if (level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) view.onLowMemory()
+        }
+
+        @Deprecated("Android 14 calls onTrimMemory in its place")
+        override fun onLowMemory() = Unit
+    }
+
     fun attach(view: MapView, map: MapLibreMap, tap: (LatLng) -> Boolean, here: (MapPick) -> Unit) {
         map.addOnMapClickListener { at -> tap(at) }
         map.addOnMapLongClickListener { at ->

@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.flight
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -319,6 +320,8 @@ class OwnShip private constructor(private val context: Context) {
         const val FT_PER_M = 3.28084
         const val KT_PER_MPS = 1.943844
 
+        // The application's context alone (of), which lives as long as the process.
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var shared: OwnShip? = null
 

@@ -19,6 +19,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -73,7 +74,7 @@ fun DownloadsMap(model: DownloadsModel, sheets: List<OfflineRegion>, archives: L
         view.onResume()
         onDispose { view.onPause(); view.onStop(); view.onDestroy() }
     }
-    val tiles = Charts.template(info, context.resources.displayMetrics.density)?.pattern()
+    val tiles = Charts.template(info, LocalDensity.current.density)?.pattern()
     LaunchedEffect(tiles, sheets) { view.getMapAsync { it.setStyle(Style.Builder().fromJson(pickerStyle(tiles, sheets))) } }
     LaunchedEffect(picked) {
         view.getMapAsync { map ->

@@ -46,7 +46,7 @@ class DocumentsTest {
         val handbook = answer("handbook")
         assertEquals("poh-performance", handbook.kind)
         assertEquals(113.0, handbook.handbookCheck!!.profile.cruiseTasKt!!, 0.0)
-        assertEquals("cruise.2", handbook.handbookCheck!!.profile.cruiseFrom)
+        assertEquals("cruise.2", handbook.handbookCheck.profile.cruiseFrom)
         assertTrue(answer("misread").handbookCheck!!.items.any { item -> item.flags.any { it.level == "wrong" } })
         assertEquals(listOf("The bottom row is cut off."), answer("misread").notes)
         // The engine writes counts as 1.0; the decoder takes them as Ints.
@@ -104,7 +104,7 @@ class DocumentsTest {
         model.toggle("fuel")
         model.useConfirmed(tail = "N12345", type = "c172")
         assertEquals(listOf(handbook.handbook!!.cruise!![2]), asked!!.cruise)
-        assertNotNull(asked!!.fuel)
+        assertNotNull(asked.fuel)
         val form = model.state.value.form
         assertEquals("113.0", form.cruiseTasKt)
         assertEquals("8.5", form.fuelBurnGph)
@@ -117,7 +117,7 @@ class DocumentsTest {
         assertEquals("C172", request.typeDesignator)
         assertNull(form.copy(fuelBurnGph = "").request)
         val figures = HandbookReview.forGateway(handbook.handbookCheck!!.handbook)
-        assertEquals(handbook.handbookCheck!!.handbook.cruise!!.size, figures.cruise.size)
+        assertEquals(handbook.handbookCheck.handbook.cruise!!.size, figures.cruise.size)
     }
 
     @Test
