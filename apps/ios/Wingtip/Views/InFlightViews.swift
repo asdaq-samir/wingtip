@@ -26,7 +26,7 @@ struct DiversionView: View {
             Section(fields.isEmpty ? "" : "Nearest to you") {
                 ForEach(fields) { field in
                     HStack {
-                        NavigationLink { AirportCard(ident: field.ident).closesBack() } label: { NearestRow(field: field) }
+                        NavigationLink { AirportCard(ident: field.ident).closesBack().zoomsFrom(field.ident) } label: { NearestRow(field: field).cardSource(field.ident) }
                     }
                     .swipeActions(edge: .leading) {
                         Button("Divert") { divert(field.ident) }.tint(.orange)

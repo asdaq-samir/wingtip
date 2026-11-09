@@ -182,8 +182,8 @@ final class MapExtrasState: NSObject {
     @objc private func held(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began, let map = gesture.view as? MKMapView else { return }
         let at = map.convert(gesture.location(in: map), toCoordinateFrom: map)
-        // Maps' pin-drop tap, none with Reduce Motion on, as Feel's taps.
-        if !UIAccessibility.isReduceMotionEnabled { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
+        // Maps' pin-drop tap, played by Feel's host as every tap is.
+        Feel.tap(.held)
         onHold?(at)
     }
 

@@ -21,7 +21,6 @@ struct AirportSearchView: View {
     @State private var found: [AirportSuggestion] = []
     @State private var places: [PlaceFound] = []
     @State private var searching: Task<Void, Never>?
-    @Namespace private var cards
     private var shelf: AirportShelf { .shared }
 
     var body: some View {
@@ -52,7 +51,7 @@ struct AirportSearchView: View {
                     if shelf.shows != .nearest, !nearest.isEmpty {
                         Section(title: "Nearest") {
                             ForEach(nearest.prefix(5)) { field in
-                                NavigationLink(value: field.ident) { NearestRow(field: field) }.cardSource(field.ident, in: cards)
+                                NavigationLink(value: field.ident) { NearestRow(field: field) }.cardSource(field.ident)
                             }
                         }
                     }
@@ -71,7 +70,7 @@ struct AirportSearchView: View {
                                 }
                                 // The UI tests' handle on a result (WingtipUITests/FlowTests).
                                 .accessibilityIdentifier("airport-result-\(field.ident)")
-                                .cardSource(field.ident, in: cards)
+                                .cardSource(field.ident)
                             }
                         }
                     }
@@ -92,7 +91,7 @@ struct AirportSearchView: View {
             .navigationTitle("Airport")
             .navigationBarTitleDisplayMode(.inline)
             // A card grows out of its row (CardZoom).
-            .navigationDestination(for: String.self) { text in AirportDestination(route: AirportRoute(text), nearest: nearest).closesBack().zoomsFrom(text, in: cards) }
+            .navigationDestination(for: String.self) { text in AirportDestination(route: AirportRoute(text), nearest: nearest).closesBack().zoomsFrom(text) }
             .searchable(text: Binding(get: { query }, set: { query = $0 }), prompt: AirportQuery.prompt)
             .textInputAutocapitalization(.characters)
             .autocorrectionDisabled()
@@ -166,7 +165,10 @@ struct AirportStrip: View {
                 }
                 .padding(.horizontal, WingtipSpace.lg)
                 .padding(.vertical, WingtipSpace.sm)
+                .scrollTargetLayout()
             }
+            // A flick comes to rest on a field's tile, not between two.
+            .scrollTargetBehavior(.viewAligned)
             .listRowInsets(EdgeInsets())
         } header: {
             HStack {
@@ -240,16 +242,16 @@ struct AirportListView: View {
             switch shows {
             case .favorites:
                 if shelf.favorites.isEmpty { Text("No Favorites").foregroundStyle(.secondary) }
-                ForEach(shelf.favorites) { field in NavigationLink(value: field.ident) { keptRow(field) } }
+                ForEach(shelf.favorites) { field in NavigationLink(value: field.ident) { keptRow(field) }.cardSource(field.ident) }
                     .onDelete { shelf.removeFavorites(at: $0) }
                     .onMove { shelf.moveFavorites(from: $0, to: $1) }
             case .recents:
                 if shelf.recents.isEmpty { Text("No Recents").foregroundStyle(.secondary) }
-                ForEach(shelf.recents) { field in NavigationLink(value: field.ident) { keptRow(field) } }
+                ForEach(shelf.recents) { field in NavigationLink(value: field.ident) { keptRow(field) }.cardSource(field.ident) }
                     .onDelete { shelf.removeRecents(at: $0) }
             case .nearest:
                 if nearest.isEmpty { Text("Waiting for the position").foregroundStyle(.secondary) }
-                ForEach(nearest) { field in NavigationLink(value: field.ident) { NearestRow(field: field) } }
+                ForEach(nearest) { field in NavigationLink(value: field.ident) { NearestRow(field: field) }.cardSource(field.ident) }
             }
         }
         .navigationTitle(shows.title)
@@ -281,7 +283,7 @@ struct NearFromView: View {
         List {
             if let fields {
                 Section(title: "Nearest \(label)") {
-                    ForEach(fields) { field in NavigationLink(value: field.ident) { NearestRow(field: field) } }
+                    ForEach(fields) { field in NavigationLink(value: field.ident) { NearestRow(field: field) }.cardSource(field.ident) }
                 }
             } else if let problem {
                 ProblemLine(problem)

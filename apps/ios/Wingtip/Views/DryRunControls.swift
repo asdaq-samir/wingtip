@@ -15,6 +15,7 @@ struct DryRunControls: View {
             }
             .accessibilityLabel(dryRun.running ? "Pause the dry run" : "Play the dry run")
             Text(Format.duration(dryRun.flownS / 60)).font(.subheadline.monospacedDigit())
+                .figureTransition(Format.duration(dryRun.flownS / 60))
                 .accessibilityLabel("Flown \(SpokenFigures.minutes(dryRun.flownS / 60))")
             SpeedPicker(name: "Dry run speed", speed: $dryRun.speed)
             Button { dryRun.stop() } label: {
