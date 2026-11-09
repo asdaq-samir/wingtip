@@ -119,7 +119,7 @@ struct StripProfileMenu: View {
             .frame(width: 44, height: 44)
         }
         .menuOrder(.fixed)
-        .accessibilityLabel(session.pilot?.displayName.map { "\($0): the pilot's menu" } ?? "The pilot's menu")
+        .accessibilityLabel(session.pilot.map { "\($0.displayName): the pilot's menu" } ?? "The pilot's menu")
     }
 }
 

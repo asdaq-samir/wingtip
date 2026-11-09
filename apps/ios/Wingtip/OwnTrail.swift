@@ -42,9 +42,12 @@ final class OwnTrail {
 
     /// Whether the airplane is at flying speed, by the engine's rule
     /// (glide's underway, the same as the web's), and so whether the phone
-    /// keeps its position with the screen locked (OwnShip).
+    /// keeps its position with the screen locked (OwnShip). Where the
+    /// engine cannot say, nothing is kept and the position is not held
+    /// with the screen locked; the instruments bar says why (InFlight,
+    /// from the same fix).
     func took(_ fix: OwnShip.Fix) -> Bool {
-        let flying: Bool = (try? Engine.call("underway", json: ["speed_kt": fix.groundspeedKt])) ?? false
+        let flying = (try? Flight.underway(fix.groundspeedKt)) ?? false
         underway = flying
         guard flying else { return false }
         let point = PathPoint(t: fix.at.timeIntervalSince1970, lat: fix.coordinate.latitude, lon: fix.coordinate.longitude, altFt: fix.altitudeFt)
@@ -68,7 +71,7 @@ final class OwnTrail {
     /// The path as a saved flight's track (Gateway.saveTrack), where the
     /// phone flew it: t in ms since 1970, as the gateway keeps it.
     var asSavedTrack: SavedTrack {
-        SavedTrack(points: points.map { SavedTrackPoint(t: Int64($0.t * 1000), lat: $0.lat, lon: $0.lon, altFt: $0.altFt) }, source: "iphone")
+        SavedTrack(points: points.map { SavedTrackPoint(altFt: $0.altFt, lat: $0.lat, lon: $0.lon, t: Int($0.t * 1000)) }, source: "iphone")
     }
 
     private func write() {

@@ -111,7 +111,12 @@ final class FlightActivity {
             if activity != nil, let last = lastFlying, now.timeIntervalSince(last) >= Self.landedAfter { end() }
             return
         }
-        let flying = Flight.underway(fix.groundspeedKt)
+        let flying: Bool
+        do { flying = try Flight.underway(fix.groundspeedKt) } catch {
+            // Neither started nor ended on a guess; the reason is shown.
+            problem = "Couldn't tell whether you are flying: \(error.localizedDescription)"
+            return
+        }
         if flying {
             lastFlying = now
             if activity == nil { start(plan: plan) }
@@ -130,16 +135,19 @@ final class FlightActivity {
         let plannedMin = plan.totals?.eteMin ?? 0
         // Where the airplane is along the course, and the leg it is on: the
         // engine's route_position, as the strip asks it.
-        let at = fix.flatMap { fix in plan.course.flatMap { Flight.position(fix.coordinate, line: $0.coordinates, legs: plan.legs) } }
+        // A Live Activity has no room for an error: where the engine
+        // refuses (logged by Engine.rule), the Lock Screen shows the plan's
+        // figures from the start, as it does before the first fix.
+        let at = fix.flatMap { fix in plan.course.flatMap { try? Flight.position(fix.coordinate, line: $0.coordinates, legs: plan.legs) } }
         let alongNm = min(totalNm, at?.alongNm ?? 0)
         let toGoNm = max(0, totalNm - alongNm)
         let next = plan.checkpoints.first { $0.alongTrackNm > alongNm + 0.25 }
-        let leg: Leg? = at.flatMap { plan.legs.indices.contains($0.leg) ? plan.legs[$0.leg] : nil } ?? plan.legs.first
+        let leg: Leg? = at.flatMap { plan.legs.indices.contains(Int($0.leg)) ? plan.legs[Int($0.leg)] : nil } ?? plan.legs.first
         let gs = fix?.groundspeedKt
         // Minutes to the destination at the speed being made good; on the
         // ground, or with no fix yet, the plan's time for what is left.
         let etaMinutes: Double = {
-            if let gs, Flight.underway(gs) { return toGoNm / gs * 60 }
+            if let gs, (try? Flight.underway(gs)) == true { return toGoNm / gs * 60 }
             guard totalNm > 0, plannedMin > 0 else { return 0 }
             return plannedMin * (toGoNm / totalNm)
         }()

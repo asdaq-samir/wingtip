@@ -203,6 +203,10 @@ struct RootView: View {
                 if traffic.on, !traffic.planes.isEmpty {
                     Text(Traffic.credit(traffic.source)).font(.caption2).padding(.horizontal, 6).padding(.vertical, 2)
                         .background(.thinMaterial, in: Capsule())
+                    if let problem = traffic.marksProblem {
+                        Text(problem).font(.caption2).foregroundStyle(.orange).padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(.thinMaterial, in: Capsule())
+                    }
                 }
             }
             .padding(.leading, 12).padding(.top, 12)
@@ -297,7 +301,7 @@ struct RootView: View {
             // is left alone; the card's own import says why.
             let reading = url.startAccessingSecurityScopedResource()
             defer { if reading { url.stopAccessingSecurityScopedResource() } }
-            guard let data = try? Data(contentsOf: url), let points = GPXTrack.points(data), !points.isEmpty else { return }
+            guard let data = try? Data(contentsOf: url), let points = try? GPXTrack.points(data), !points.isEmpty else { return }
             Replay.shared.load(Replay.points(points), key: url.lastPathComponent)
             Replay.shared.play()
             if detent != RootView.pill { detent = RootView.pill }

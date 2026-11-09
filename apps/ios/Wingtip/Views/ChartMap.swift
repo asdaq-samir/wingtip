@@ -672,7 +672,10 @@ struct ChartMap: UIViewRepresentable {
             // asked for its one airplane, a screen of traffic a screen of
             // calls at every report (Session2's profile, 2026-11-03).
             let ordered = Array(fresh.values)
-            let drawn = Traffic.marks(ordered, ownFt: ownFt)
+            // Where the engine refuses, the airplanes are drawn with no
+            // tag; Traffic's own check of the same report shows why
+            // (marksProblem, beside the credit).
+            let drawn = (try? Traffic.marks(ordered, ownFt: ownFt)) ?? []
             for (i, plane) in ordered.enumerated() {
                 let its = i < drawn.count ? drawn[i] : nil
                 if let mark = trafficShown[plane.hex] {

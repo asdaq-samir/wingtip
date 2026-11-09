@@ -67,18 +67,18 @@ struct AssistantTests {
         #expect(empty.messages.map(\.content) == ["Brief me"])
     }
 
-    @Test func aPlannerWithoutTheAssistantIsSaidSo() {
+    @Test func aPlannerWithoutTheAssistantIsSaidSo() throws {
         #expect(AssistantClient.words(for: Planner.Failure(status: 404, detail: "Not Found")) == AssistantClient.notHere)
         #expect(AssistantClient.words(for: Planner.Failure(status: 503, detail: "The model is busy.")) == "The model is busy.")
     }
 
     @Test func theContextIsThePlannersSnakeCase() throws {
-        var context = AssistantContext(dep: "C81", dest: "KMSN", stops: [], aircraft: "c172", altitudeFt: 4500)
-        context.ownShip = AssistantContext.OwnShipFix(lat: 42.3, lon: -88.1, altitudeFt: 4480, trackDeg: 300, groundspeedKt: 105)
+        var context = AssistantContext(aircraft: "c172", altitudeFt: 4500, dep: "C81", dest: "KMSN", stops: [])
+        context.ownShip = AssistantContext.OwnShipFix(altitudeFt: 4480, groundspeedKt: 105, lat: 42.3, lon: -88.1, trackDeg: 300)
         var minimums = PersonalMinimums()
         minimums.crosswindKt = 12
-        context.pilot = AssistantContext.PilotRecord(personalMinimums: minimums, currency: ["Day passenger currency (61.57(a)) until 2026-12-01"])
-        let ask = AssistantAsk(messages: [AssistantMessage(role: "user", content: "Brief me")], context: context)
+        context.pilot = try AssistantContext.pilotJSON(AssistantContext.PilotRecord(personalMinimums: minimums, currency: ["Day passenger currency (61.57(a)) until 2026-12-01"]))
+        let ask = AssistantAsk(context: context, messages: [AssistantMessage(content: "Brief me", role: "user")])
         let body = String(decoding: try Planner.snakeEncoder.encode(ask), as: UTF8.self)
         #expect(body.contains(#""altitude_ft":4500"#))
         #expect(body.contains(#""own_ship":{"altitude_ft":4480,"groundspeed_kt":105,"lat":42.3,"lon":-88.1,"track_deg":300}"#))

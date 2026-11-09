@@ -62,11 +62,8 @@ struct OwnAircraftListView: View {
 /// with Save.
 struct AircraftFormView: View {
     /// The altitude the cruise figures are the airplane's at, the engine's.
-    private static let cruiseReferenceFt: Double = {
-        struct Figures: Decodable { let cruise_reference_ft: Double }
-        let figures: Figures? = try? Engine.call("planning_figures", json: [:])
-        return figures?.cruise_reference_ft ?? 0
-    }()
+    /// Nil where the engine cannot say, and the heading leaves it out.
+    private static let cruiseReferenceFt: Double? = try? Engine.planningFigures().cruiseReferenceFt
 
     let record: OwnAircraftRecord?
     var onSaved: (OwnAircraftRecord) -> Void
@@ -95,7 +92,7 @@ struct AircraftFormView: View {
             // The cruise figures are the airplane's at this power at the
             // engine's reference altitude on a standard day, a row of its
             // handbook's cruise table (planning_figures' cruise_reference_ft).
-            Section("Cruise figures at \(AirportWords.feet(Self.cruiseReferenceFt)), standard day") {
+            Section(Self.cruiseReferenceFt.map { "Cruise figures at \(AirportWords.feet($0)), standard day" } ?? "Cruise figures, standard day") {
                 number("Cruise power", unit: "%", text: $form.cruisePowerPct, placeholder: "65", key: "cruisePowerPct", problems: problems)
             }
             // Without usable fuel the nav log makes no fuel check.
@@ -195,7 +192,7 @@ struct OwnAircraftPage: View {
                 NavigationLink {
                     SquawksView(aircraft: record) { Task { await reload() } }
                 } label: {
-                    LabeledContent("Squawks", value: (record.openSquawks?.isEmpty ?? true) ? "" : "\(record.openSquawks!.count) open")
+                    LabeledContent("Squawks", value: record.openSquawks.isEmpty ? "" : "\(record.openSquawks.count) open")
                 }
             }
             InspectionsSection(record: $record, onChange: onChange)
@@ -288,10 +285,10 @@ struct InspectionsSection: View {
     private var dated: [(title: String, rule: String, on: WritableKeyPath<InspectionsRequest, String?>, through: String?)] {
         let i = record.inspections
         return [
-            ("Annual", "12 calendar months, 14 CFR 91.409(a)", \.annualOn, i?.annualGoodThrough),
-            ("Altimeter and static", "24 calendar months, for IFR, 91.411", \.staticCheckOn, i?.staticCheckGoodThrough),
-            ("Transponder", "24 calendar months, 91.413", \.transponderCheckOn, i?.transponderCheckGoodThrough),
-            ("ELT inspection", "12 calendar months, 91.207(d)", \.eltInspectedOn, i?.eltInspectionGoodThrough),
+            ("Annual", "12 calendar months, 14 CFR 91.409(a)", \.annualOn, i.annualGoodThrough),
+            ("Altimeter and static", "24 calendar months, for IFR, 91.411", \.staticCheckOn, i.staticCheckGoodThrough),
+            ("Transponder", "24 calendar months, 91.413", \.transponderCheckOn, i.transponderCheckGoodThrough),
+            ("ELT inspection", "12 calendar months, 91.207(d)", \.eltInspectedOn, i.eltInspectionGoodThrough),
         ]
     }
 
@@ -314,7 +311,7 @@ struct InspectionsSection: View {
                 OptionalDayRow(title: "ELT battery replace by", day: $form.eltBatteryDueOn)
                 HStack(spacing: 4) {
                     Text("As marked on the transmitter, 91.207(c)")
-                    if let due = record.inspections?.eltBatteryDueOn { Text("·"); StandingText(through: due, good: "By", past: "Due since") }
+                    if let due = record.inspections.eltBatteryDueOn { Text("·"); StandingText(through: due, good: "By", past: "Due since") }
                 }
                 .font(.footnote).foregroundStyle(.secondary)
             }
@@ -340,16 +337,16 @@ struct InspectionsSection: View {
             guard !loaded else { return }
             loaded = true
             form = InspectionsRequest(record.inspections)
-            hoursAt = record.inspections?.hundredHourAtHours.map { String($0) } ?? ""
-            hoursNow = record.inspections?.hoursNow.map { String($0) } ?? ""
+            hoursAt = record.inspections.hundredHourAtHours.map { String($0) } ?? ""
+            hoursNow = record.inspections.hoursNow.map { String($0) } ?? ""
         }
     }
 
     /// The gateway's due hours, and how many are left by the hours recorded.
     private var hundredHourLine: String {
-        guard form.forHire == true, let due = record.inspections?.hundredHourDueAtHours else { return "Time in service, at the last annual or 100-hour" }
+        guard form.forHire == true, let due = record.inspections.hundredHourDueAtHours else { return "Time in service, at the last annual or 100-hour" }
         var line = "Due at \(Formats.hours(due))"
-        if let now = record.inspections?.hoursNow { line += now < due ? ", \(Formats.hours(due - now)) to go" : ", due now" }
+        if let now = record.inspections.hoursNow { line += now < due ? ", \(Formats.hours(due - now)) to go" : ", due now" }
         return line
     }
 
@@ -394,7 +391,7 @@ struct VorCheckSection: View {
             }
             DatePicker("Checked on", selection: $checkedOn, in: ...Date(), displayedComponents: .date)
             Picker("How", selection: $kind) {
-                ForEach(VorCheckKind.all, id: \.value) { k in Text("\(k.label) (±\(VorCheckKind.limitDeg(k.value).formatted())°)").tag(k.value) }
+                ForEach(VorCheckKind.all, id: \.value) { k in Text((try? VorCheckKind.limitDeg(k.value)).map { "\(k.label) (±\($0.formatted())°)" } ?? k.label).tag(k.value) }
             }
             LabeledContent("Where") { TextField("KDLH VOT", text: $place).multilineTextAlignment(.trailing) }
             LabeledContent("Bearing error") {
@@ -542,15 +539,7 @@ struct SquawksView: View {
 }
 
 private enum PreviewData {
-    static let airplane = OwnAircraftRecord(
-        id: 4, tailNumber: "N3429J", typeDesignator: "P28A", cruiseTasKt: 112, fuelBurnGph: 8.5, usableFuelGal: 48, cruisePowerPct: 65,
-        climbTasKt: 76, climbFuelBurnGph: 11, equipment: "SDFGRY", surveillance: "B1", colour: "White, blue stripe",
-        inspections: Inspections(annualOn: "2026-06-14", annualGoodThrough: "2027-06-30", staticCheckOn: "2025-03-02", staticCheckGoodThrough: "2027-03-31",
-                                 transponderCheckOn: "2025-03-02", transponderCheckGoodThrough: "2027-03-31", eltInspectedOn: "2026-06-14",
-                                 eltInspectionGoodThrough: "2027-06-30", eltBatteryDueOn: "2028-02-01", hoursNow: 4312.4, hundredHourAtHours: 4280,
-                                 hundredHourDueAtHours: 4380),
-        openSquawks: [Squawk(id: 9, reportedOn: "2026-10-30", text: "Left landing light out", inoperative: true, deferredFor: "VFR_DAY")],
-        vorCheck: VorCheck(checkedOn: "2026-10-25", errorDeg: 2, goodThrough: "2026-11-24", kind: "VOT", limitDeg: 4, place: "KDLH VOT", withinLimit: true))
+    static let airplane = OwnAircraftRecord(climbFuelBurnGph: 11, climbTasKt: 76, colour: "White, blue stripe", createdAt: "2026-06-01", cruisePowerPct: 65, cruiseTasKt: 112, dueItems: [], equipment: "SDFGRY", fuelBurnGph: 8.5, id: 4, inspections: Inspections(annualGoodThrough: "2027-06-30", annualOn: "2026-06-14", eltBatteryDueOn: "2028-02-01", eltInspectedOn: "2026-06-14", eltInspectionGoodThrough: "2027-06-30", forHire: false, hoursNow: 4312.4, hundredHourAtHours: 4280, hundredHourDueAtHours: 4380, staticCheckGoodThrough: "2027-03-31", staticCheckOn: "2025-03-02", transponderCheckGoodThrough: "2027-03-31", transponderCheckOn: "2025-03-02"), openSquawks: [Squawk(deferredFor: "VFR_DAY", id: 9, inoperative: true, reportedOn: "2026-10-30", text: "Left landing light out")], surveillance: "B1", tailNumber: "N3429J", typeDesignator: "P28A", usableFuelGal: 48, vorCheck: VorCheck(checkedOn: "2026-10-25", errorDeg: 2, goodThrough: "2026-11-24", kind: "VOT", limitDeg: 4, place: "KDLH VOT", withinLimit: true))
 }
 
 #Preview("AircraftFormView") {

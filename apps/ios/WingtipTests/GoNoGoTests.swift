@@ -37,10 +37,10 @@ struct GoNoGoTests {
         #expect(answer.line.finding == "stop" && answer.items.count == 7)
         #expect(answer.items.map(\.key) == ["weather", "airspace", "altitude", "fuel", "runways", "balance", "risk"])
         #expect(answer.items[0].section == "Adverse Conditions")
-        #expect(answer.risk?.factors?.count == 2 && answer.risk?.level == "caution")
-        #expect(answer.selfChecks?.last?.value == "No-go" && answer.selfChecks?.first?.value == "+3")
+        #expect(answer.risk?.factors.count == 2 && answer.risk?.level == "caution")
+        #expect(answer.selfChecks.last?.value == "No-go" && answer.selfChecks.first?.value == "+3")
         #expect(answer.loading?.stations[1].maxLb == 120 && answer.loading?.stations[0].maxLb == nil)
-        #expect(answer.balance?.load.stationsLb == [170, 170] && answer.balance?.problems?.count == 1)
+        #expect(answer.balance?.load.stationsLb == [170, 170] && answer.balance?.problems.count == 1)
         #expect(answer.balance?.takeoff.words == "2,296 lb · 41.2 in")
     }
 
@@ -51,16 +51,17 @@ struct GoNoGoTests {
     }
 
     @Test func theQuestionGoesInTheDocumentsSnakeCaseWithOnlyWhatIsSet() throws {
-        var ask = GoNoGoAsk(dep: "C81", dest: "KDLH", stops: "KMSN", aircraft: "c172", day: "2026-10-25")
-        ask.minimums.ceilingFt = 3000
-        ask.load = AirplaneLoad(emptyWeightLb: 1642, emptyArmIn: 38.12, stationsLb: [170, 0, 0, 0], fuelGal: 40)
+        var ask = GoNoGoAsk(aircraft: "c172", day: "2026-10-25", dep: "C81", dest: "KDLH", stops: "KMSN")
+        ask.minimums = PersonalMinimums(ceilingFt: 3000)
+        ask.load = AirplaneLoad(emptyArmIn: 38.12, emptyWeightLb: 1642, fuelGal: 40, stationsLb: [170, 0, 0, 0])
         ask.ticked = ["stress"]
         ask.cruiseTasKt = 118
-        ask.currency = Currency(totalHours: 240, flights: 120, dayPassengersUntil: "2026-12-01")
+        ask.currency = APIPilotCurrency(dayPassengersUntil: "2026-12-01", flights: 120, totalHours: 240)
         let data = try Planner.snakeEncoder.encode(ask)
         let body = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(body["dep"] as? String == "C81" && body["stops"] as? String == "KMSN")
-        #expect(body["altitude_choice"] as? String == "fastest" && body["altitude_nearest"] as? Bool == false)
+        // Left out, the planner's own defaults ("fastest", false) apply.
+        #expect(body["altitude_choice"] == nil && body["altitude_nearest"] == nil)
         #expect(body["cruise_tas_kt"] as? Double == 118 && body["fuel_burn_gph"] == nil)
         let minimums = try #require(body["minimums"] as? [String: Any])
         #expect(minimums["ceiling_ft"] as? Double == 3000 && minimums["visibility_sm"] == nil)
@@ -78,7 +79,7 @@ struct GoNoGoTests {
         #expect(Day.string(at, in: TimeZone(identifier: "UTC")!) == "2026-10-06")
     }
 
-    @Test func theMinimumsMenusAreTheWebAppsChoicesInItsWords() {
+    @Test func theMinimumsMenusAreTheWebAppsChoicesInItsWords() throws {
         #expect(PersonalMinimums.Key.ceilingFt.choices == [1000, 1500, 2000, 2500, 3000, 4000, 5000])
         #expect(PersonalMinimums.Key.ceilingFt.words(1500) == "1,500 ft")
         #expect(PersonalMinimums.Key.visibilitySm.words(5) == "5 sm")
@@ -93,7 +94,7 @@ struct GoNoGoTests {
         store.removePersistentDomain(forName: "GoNoGoTests")
         let verdict = Verdict(store: store)
         verdict.setMinimum(.visibilitySm, 5)
-        verdict.setLoad(AirplaneLoad(emptyWeightLb: 1700, emptyArmIn: 39, stationsLb: [180], fuelGal: 30), for: "c172")
+        verdict.setLoad(AirplaneLoad(emptyArmIn: 39, emptyWeightLb: 1700, fuelGal: 30, stationsLb: [180]), for: "c172")
         verdict.tick("stress", true)
         let again = Verdict(store: store)
         #expect(again.minimums.visibilitySm == 5)
@@ -103,7 +104,7 @@ struct GoNoGoTests {
         store.removePersistentDomain(forName: "GoNoGoTests")
     }
 
-    @MainActor @Test func theQuestionIsThePlanAsTheNavLogWasAskedIt() {
+    @MainActor @Test func theQuestionIsThePlanAsTheNavLogWasAskedIt() throws {
         let store = UserDefaults(suiteName: "GoNoGoTests.plan")!
         store.removePersistentDomain(forName: "GoNoGoTests.plan")
         let plan = Plan()
@@ -111,9 +112,9 @@ struct GoNoGoTests {
         plan.ownAltitudeFt = 5500; plan.ownAltitudeLegal = true; plan.altitudeChoice = nil
         let verdict = Verdict(store: store)
         verdict.setMinimum(.windKt, 20)
-        let ask = verdict.ask(for: plan)
-        #expect(ask.stops == "KMSN" && ask.aircraft == "c172" && ask.altitudeFt == 5500 && ask.altitudeNearest)
-        #expect(ask.altitudeChoice == "fastest" && ask.minimums.windKt == 20 && ask.load == nil)
+        let ask = try verdict.ask(for: plan)
+        #expect(ask.stops == "KMSN" && ask.aircraft == "c172" && ask.altitudeFt == 5500 && ask.altitudeNearest == true)
+        #expect(ask.altitudeChoice == "fastest" && ask.minimums?.windKt == 20 && ask.load == nil)
         store.removePersistentDomain(forName: "GoNoGoTests.plan")
     }
 
@@ -131,7 +132,7 @@ struct OwnAirplaneAskTests {
     /// open squawks only.
     @Test func theRecordsInThePlannersNames() throws {
         let json = """
-        {"id":7,"tailNumber":"N3429J","typeDesignator":"P28A","cruiseTasKt":108,"fuelBurnGph":8.4,
+        {"id":7,"tailNumber":"N3429J","typeDesignator":"P28A","cruiseTasKt":108,"fuelBurnGph":8.4,"createdAt":"2026-10-01T12:00:00Z","dueItems":[],
          "inspections":{"annualOn":"2026-03-02","annualGoodThrough":"2027-03-31","hoursNow":4210.5,"hundredHourDueAtHours":4280,"forHire":true},
          "openSquawks":[{"id":1,"reportedOn":"2026-10-01","text":"Nav light out","inoperative":true,"deferredFor":"91.213(d)"},
                         {"id":2,"reportedOn":"2026-09-01","text":"Door seal","inoperative":false,"fixedOn":"2026-09-20"}],
@@ -147,7 +148,7 @@ struct OwnAirplaneAskTests {
         #expect((body["vor_check"] as! [String: Any])["within_limit"] as? Bool == true)
         // Not flown for hire, the 100-hour is not owed (14 CFR 91.409(b)).
         var notForHire = record
-        notForHire.inspections?.forHire = false
+        notForHire.inspections.forHire = false
         let plain = try JSONSerialization.jsonObject(with: Planner.snakeEncoder.encode(OwnAirplaneAsk(notForHire))) as! [String: Any]
         #expect((plain["inspections"] as! [String: Any])["hundred_hour_due_at_hours"] == nil)
     }

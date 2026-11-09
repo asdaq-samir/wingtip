@@ -362,11 +362,11 @@ struct GWEndorsementKindDto: Codable, Equatable, Sendable {
 // MARK: - GWEndorsementFieldDto
 struct GWEndorsementFieldDto: Codable, Equatable, Sendable {
     var example, key, label: String
-    var endorsementFieldDtoRequired: Bool
+    var required: Bool
 
     enum CodingKeys: String, CodingKey {
         case example, key, label
-        case endorsementFieldDtoRequired = "required"
+        case required = "required"
     }
 }
 
@@ -453,11 +453,11 @@ struct GWQuiz: Codable, Equatable, Sendable {
 struct GWQuizAnswerDto: Codable, Equatable, Sendable {
     var chosen: String
     var question: String
-    var gatewaySwiftRight: Bool
+    var right: Bool
 
     enum CodingKeys: String, CodingKey {
         case chosen, question
-        case gatewaySwiftRight = "right"
+        case right = "right"
     }
 }
 

@@ -22,7 +22,7 @@ struct NightPaletteTests {
         return a
     }
 
-    @Test func thePaletteIsTheOwnersCockpitColours() {
+    @Test func thePaletteIsTheOwnersCockpitColours() throws {
         #expect(hex(NightPalette.ground, day) == 0x0B1422)
         #expect(hex(NightPalette.surface, day) == 0x17283A)
         #expect(hex(NightPalette.route, day) == 0xF277E6)
@@ -31,14 +31,14 @@ struct NightPaletteTests {
         #expect(hex(NightPalette.positive, day) == 0x75D7A3)
     }
 
-    @Test func theCourseIsThePrintedMagentaByDayAndTheNightsOverADimmedChart() {
+    @Test func theCourseIsThePrintedMagentaByDayAndTheNightsOverADimmedChart() throws {
         #expect(hex(NightPalette.course(night: false), day) == 0xE600E6)
         #expect(hex(NightPalette.course(night: true), day) == 0xF277E6)
         #expect(hex(NightPalette.casing(night: false), day) == 0xFFFFFF)
         #expect(hex(NightPalette.casing(night: true), day) == 0x0B1422)
     }
 
-    @Test func theHaloAndTheMarksFillFollowTheAppearance() {
+    @Test func theHaloAndTheMarksFillFollowTheAppearance() throws {
         #expect(hex(NightPalette.halo, day) == 0xFFFFFF)
         #expect(hex(NightPalette.halo, night) == 0x0B1422)
         #expect(hex(NightPalette.markFill, night) == 0x17283A)
@@ -47,7 +47,7 @@ struct NightPaletteTests {
         #expect(hex(NightPalette.trafficNear, night) == 0xF5B85E)
     }
 
-    @Test func theChartIsDimmedOnlyAtNightAndOnlyWhenTheSettingSaysSo() {
+    @Test func theChartIsDimmedOnlyAtNightAndOnlyWhenTheSettingSaysSo() throws {
         #expect(ChartNight.dimmed.shade(dark: true) == 0.5)
         #expect(ChartNight.dimmed.shade(dark: false) == 0)
         #expect(ChartNight.normal.shade(dark: true) == 0)
@@ -56,12 +56,12 @@ struct NightPaletteTests {
         #expect(ChartNight.allCases.map(\.label) == ["Normal", "Dimmed"])
     }
 
-    @Test func contrastIsWCAGsRatio() {
+    @Test func contrastIsWCAGsRatio() throws {
         #expect(abs(NightPalette.contrast(.black, .white) - 21) < 0.001)
         #expect(abs(NightPalette.contrast(UIColor(hex: 0x767676), .white) - 4.54) < 0.01)
     }
 
-    @Test func aMarksWordsReadOnTheirHaloInBothAppearances() {
+    @Test func aMarksWordsReadOnTheirHaloInBothAppearances() throws {
         for traits in [day, night] {
             let words = UIColor.label.resolvedColor(with: traits)
             let halo = UIColor(hex: hex(NightPalette.halo, traits))

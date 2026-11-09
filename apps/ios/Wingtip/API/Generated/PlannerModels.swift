@@ -552,18 +552,9 @@ struct APIDestinationCheck: Codable, Equatable, Sendable {
     var ceilingFt: Double?
     var ident: String
     var reasons: [String]?
-    var destinationCheckRequired: Bool
+    var required: Bool
     var taf: String?
     var visibilitySm: Double?
-
-    enum CodingKeys: String, CodingKey {
-        case approach
-        case ceilingFt
-        case ident, reasons
-        case destinationCheckRequired = "required"
-        case taf
-        case visibilitySm
-    }
 }
 
 /// A briefing read twice, as GET /api/briefing answered it then and
@@ -1565,12 +1556,7 @@ struct APIEndorsementKind: Codable, Equatable, Sendable {
 // MARK: - APIEndorsementField
 struct APIEndorsementField: Codable, Equatable, Sendable {
     var example, key, label: String
-    var endorsementFieldRequired: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case example, key, label
-        case endorsementFieldRequired = "required"
-    }
+    var required: Bool
 }
 
 /// What the endorsements say (the engine's endorsement_records).
@@ -1641,13 +1627,13 @@ struct APIFlightDetail: Codable, Equatable, Sendable {
     var description: String?
     var faa: APIAircraftRegistration?
     var hex: String
-    var flightDetailOperator, registration: String?
+    var `operator`, registration: String?
     var trail: [APITrailPoint]?
     var type, year: String?
 
     enum CodingKeys: String, CodingKey {
         case departed, description, faa, hex
-        case flightDetailOperator = "operator"
+        case `operator` = "operator"
         case registration, trail, type, year
     }
 }
@@ -2612,20 +2598,8 @@ struct APILegHold: Codable, Equatable, Sendable {
     var legMin, legNm: Double?
     var minutes: Double
     var path: [[Double]]
-    var legHoldRight: Bool
+    var right: Bool
     var turns: Int?
-
-    enum CodingKeys: String, CodingKey {
-        case atEnd
-        case entry, fix, gal
-        case inboundDeg
-        case lapMin
-        case legMin
-        case legNm
-        case minutes, path
-        case legHoldRight = "right"
-        case turns
-    }
 }
 
 /// A leg flown by the procedures picked -- out by a departure, in by an

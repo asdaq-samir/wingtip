@@ -6,55 +6,23 @@ import Foundation
 /// tests/atis.rs and SharedFixturesTests). AIM 4-1-13 orders what a
 /// broadcast says: the letter, the time, wind, visibility, sky,
 /// temperature and dew point, altimeter, the approaches and runways in
-/// use. A figure not said is nil; the phone computes none of them.
-struct Atis: Codable, Equatable, Sendable {
-    struct Wind: Codable, Equatable, Sendable {
-        var fromDeg: Int?
-        var kt: Int?
-        var gustKt: Int?
-        var variable: Bool
-    }
+/// use. A figure not said is nil; the phone computes none of them. The
+/// engine's answer, its type generated from its contract.
+typealias Atis = EngineContract.ReadAtisAnswer
 
-    struct Layer: Codable, Equatable, Sendable {
-        /// clear, few, scattered, broken, overcast, obscured.
-        var cover: String
-        var baseFt: Int?
-    }
+extension Atis {
+    typealias Wind = EngineContract.ReadAtisAnswerWind
+    /// A layer: clear, few, scattered, broken, overcast, obscured.
+    typealias Layer = EngineContract.ReadAtisAnswerSkyItem
 
-    struct Runways: Codable, Equatable, Sendable {
-        var landing: [String]
-        var departing: [String]
-    }
+    /// The rule answers in snake_case, as the fixture is written; the
+    /// contract's types carry each key, so no strategy is applied.
+    static let decoder = JSONDecoder()
 
-    /// The information letter, "C".
-    var information: String?
-    /// "1852Z".
-    var timeZ: String?
-    var wind: Wind?
-    var visibilitySm: Double?
-    var sky: [Layer]
-    var tempC: Int?
-    var dewpointC: Int?
-    var altimeterInhg: Double?
-    /// "ILS runway 19R", "visual".
-    var approach: String?
-    var runways: Runways
-    /// What else was said, a clause each.
-    var remarks: [String]
-    /// The transcript as heard.
-    var raw: String
-
-    /// The rule answers in snake_case, as the fixture is written.
-    static let decoder: JSONDecoder = {
-        let d = JSONDecoder()
-        d.keyDecodingStrategy = .convertFromSnakeCase
-        return d
-    }()
-
-    /// The broadcast in what was heard, read by the engine; nil where the
-    /// engine cannot answer.
-    static func read(_ text: String) -> Atis? {
-        try? Engine.call("read_atis", ["text": text], decoder: decoder)
+    /// The broadcast in what was heard, read by the engine; thrown where
+    /// the engine cannot answer, which the card says.
+    static func read(_ text: String) throws -> Atis {
+        try Engine.readAtis(text: text)
     }
 
     /// Whether anything of a broadcast was heard at all.
@@ -132,16 +100,14 @@ struct Atis: Codable, Equatable, Sendable {
     /// The ATIS's covers as a METAR codes them, for the engine's ceiling.
     private static let metarCover = ["clear": "CLR", "few": "FEW", "scattered": "SCT", "broken": "BKN", "overcast": "OVC", "obscured": "VV"]
 
-    /// The engine's answer to ceiling_visibility.
-    private struct CeilingVisibility: Decodable { let ceilingFt: Double? }
-
     /// The layers as said, the ceiling marked: the engine's ceiling
     /// (ceiling_visibility, 14 CFR 1.1's definition: the lowest broken or
-    /// overcast layer, or an obscuration), as the web's.
+    /// overcast layer, or an obscuration), as the web's. Where the engine
+    /// cannot say (logged by Engine.rule), the layers are said with no
+    /// ceiling marked: the words stay what was heard.
     static func skyWords(_ sky: [Layer]) -> String {
         if sky.isEmpty { return "—" }
-        let layers: [[String: Any?]] = sky.map { ["cover": metarCover[$0.cover] ?? $0.cover, "base_ft": $0.baseFt] }
-        let found: CeilingVisibility? = try? Engine.call("ceiling_visibility", json: ["layers": layers], decoder: Planner.snakeCase)
+        let found = try? Engine.ceilingVisibility(layers: sky.map { .init(cover: metarCover[$0.cover] ?? $0.cover, baseFt: $0.baseFt.map(Double.init)) })
         let ceiling = found?.ceilingFt.flatMap { ft in sky.lastIndex { $0.baseFt.map(Double.init) == ft } }
         return sky.enumerated().map { k, l in
             let cover = l.cover.prefix(1).uppercased() + l.cover.dropFirst()

@@ -51,18 +51,26 @@ final class Verdict {
 
     /// The question for the plan on the page: the route as its nav log
     /// was asked, and the pilot's own.
-    func ask(for plan: Plan, today: Date = Date()) -> GoNoGoAsk {
+    func ask(for plan: Plan, today: Date = Date()) throws -> GoNoGoAsk {
         let figures = plan.figures
-        return GoNoGoAsk(
-            dep: plan.dep, dest: plan.dest, stops: plan.stops.joined(separator: ","), aircraft: plan.aircraft,
-            altitudeFt: plan.ownAltitudeFt, altitudeNearest: plan.ownAltitudeFt != nil && plan.ownAltitudeLegal,
-            altitudeChoice: plan.altitudeChoice ?? "fastest",
-            procedures: ProcedurePick.text(plan.procedures.filter { plan.idents.contains($0.ident) }),
-            cruiseTasKt: figures.cruiseTasKt, fuelBurnGph: figures.fuelBurnGph, usableFuelGal: figures.usableFuelGal,
-            cruisePowerPct: figures.cruisePowerPct, climbTasKt: figures.climbTasKt, climbFuelBurnGph: figures.climbFuelBurnGph,
-            serviceCeilingFt: figures.serviceCeilingFt,
-            day: Day.string(today), minimums: minimums, load: loads[plan.aircraft], ticked: ticked.sorted(), currency: currency,
-            ownAirplane: records.first { $0.tailNumber == plan.tail }.map(OwnAirplaneAsk.init))
+        var ask = GoNoGoAsk(dep: plan.dep, dest: plan.dest)
+        ask.stops = plan.stops.joined(separator: ",")
+        ask.aircraft = plan.aircraft
+        ask.altitudeFt = plan.ownAltitudeFt
+        ask.altitudeNearest = plan.ownAltitudeFt != nil && plan.ownAltitudeLegal
+        ask.altitudeChoice = plan.altitudeChoice ?? "fastest"
+        ask.procedures = try ProcedurePick.text(plan.procedures.filter { plan.idents.contains($0.ident) })
+        ask.cruiseTasKt = figures.cruiseTasKt; ask.fuelBurnGph = figures.fuelBurnGph; ask.usableFuelGal = figures.usableFuelGal
+        ask.cruisePowerPct = figures.cruisePowerPct; ask.climbTasKt = figures.climbTasKt; ask.climbFuelBurnGph = figures.climbFuelBurnGph
+        ask.serviceCeilingFt = figures.serviceCeilingFt
+        ask.day = Day.string(today)
+        ask.minimums = minimums
+        ask.load = loads[plan.aircraft]
+        ask.ticked = ticked.sorted()
+        // The gateway's currency is the planner's PilotCurrency by name.
+        ask.currency = try currency.map { try Engine.recoded($0) }
+        ask.ownAirplane = records.first { $0.tailNumber == plan.tail }.map(OwnAirplaneAsk.init)
+        return ask
     }
 
     /// Asks the planner again, once the nav log has come to an end, and
@@ -80,7 +88,7 @@ final class Verdict {
         asking = true
         defer { asking = false }
         do {
-            let answer = try await Planner.goNoGo(ask(for: plan))
+            let answer = try await Planner.goNoGo(try ask(for: plan))
             guard !Task.isCancelled else { return }
             self.answer = answer
             problem = nil
@@ -93,8 +101,10 @@ final class Verdict {
     /// What a new ask turns on: the plan's route and times, and every
     /// input of the pilot's.
     func key(for plan: Plan) -> String {
-        let ask = ask(for: plan)
-        let body = (try? Planner.snakeEncoder.encode(ask)).map { String(decoding: $0, as: UTF8.self) } ?? ""
+        // An ask the engine could not write keys on its reason, which the
+        // refresh then shows as the problem.
+        let body: String
+        do { body = String(decoding: try Planner.snakeEncoder.encode(try ask(for: plan)), as: UTF8.self) } catch { body = "\(error)" }
         return "\(body)|\(plan.plannedAt?.timeIntervalSince1970 ?? 0)|\(plan.problem?.detail ?? "")"
     }
 }

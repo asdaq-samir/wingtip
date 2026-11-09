@@ -50,7 +50,7 @@ struct LogbookView: View {
 
     /// The flight in the form: a new one, or one logged.
     struct Editing: Identifiable {
-        var id: Int64? = nil
+        var id: Int? = nil
         var entry: LogbookEntryRequest
     }
 
@@ -279,15 +279,19 @@ struct LogbookView: View {
             reminders = try? await Gateway.reminders()
             paperwork = try? await Gateway.paperwork()
             problem = nil
-            exportFile = Self.write(list)
+            do { exportFile = try Self.write(list) } catch {
+                exportFile = nil
+                problem = "Your logbook's CSV could not be written: \(error.localizedDescription)"
+            }
         } catch { problem = "Your logbook could not be fetched: \(error.localizedDescription)" }
     }
 
     /// The logbook as a file to share, named for today.
-    private static func write(_ entries: [LogbookEntry]) -> URL? {
+    private static func write(_ entries: [LogbookEntry]) throws -> URL? {
         guard !entries.isEmpty else { return nil }
         let url = FileManager.default.temporaryDirectory.appending(path: "logbook-\(Day.today()).csv")
-        do { try LogbookCSV.csv(entries).write(to: url, atomically: true, encoding: .utf8); return url } catch { return nil }
+        try LogbookCSV.csv(entries).write(to: url, atomically: true, encoding: .utf8)
+        return url
     }
 
     /// A CSV picked in Files: read on the phone (LogbookCSV) and shown
@@ -299,7 +303,7 @@ struct LogbookView: View {
             defer { if opened { url.stopAccessingSecurityScopedResource() } }
             let text = try String(contentsOf: url, encoding: .utf8)
             imported = nil
-            preview = (url.lastPathComponent, LogbookCSV.read(text))
+            preview = (url.lastPathComponent, try LogbookCSV.read(text))
         } catch {
             problem = "Could not import the logbook: \(error.localizedDescription)"
         }
@@ -438,8 +442,7 @@ struct LogbookEntryForm: View {
 
 #Preview("LogbookEntryForm") {
     NavigationStack {
-        LogbookEntryForm(entry: LogbookEntryRequest(flownOn: "2026-10-28", aircraft: "N3429J", aircraftType: "P28A", route: "KDLH KHIB",
-                                                    totalHours: 1.2, crossCountryHours: 1.2, dayLandings: 2, distanceNm: 62.4, longestLegNm: 62.4),
+        LogbookEntryForm(entry: LogbookEntryRequest(flownOn: "2026-10-28", aircraft: "N3429J", aircraftType: "P28A", route: "KDLH KHIB", totalHours: 1.2, crossCountryHours: 1.2, dayLandings: 2, distanceNm: 62.4, longestLegNm: 62.4),
                          isNew: false) { _ in }
     }
 }

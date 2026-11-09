@@ -20,8 +20,7 @@ enum MapExtras {
     /// A Class B field as the map's airport mark takes it: its ring in
     /// the colour of what it reports now.
     static func pin(_ field: ClassBAirport) -> AirportPin {
-        AirportPin(ident: field.ident, name: field.name, lat: field.lat, lon: field.lon, kind: "large",
-                   flightCategory: field.flightCategory, airspaceClass: "B", military: nil, isPrivate: false)
+        AirportPin(airspaceClass: "B", flightCategory: field.flightCategory, ident: field.ident, kind: "large", lat: field.lat, lon: field.lon, military: nil, name: field.name, isPrivate: false)
     }
 }
 

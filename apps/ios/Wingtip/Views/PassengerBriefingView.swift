@@ -22,6 +22,7 @@ struct PassengerBriefingView: View {
     var body: some View {
         List {
             Section {
+                ProblemLine(PassengerBriefing.asked, "The briefing's items")
                 ForEach(PassengerBriefing.items) { item in
                     let on = model.isTicked(item.key)
                     Button {

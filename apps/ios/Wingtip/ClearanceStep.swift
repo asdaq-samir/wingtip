@@ -11,22 +11,21 @@ import Foundation
 /// `readback_check`, the web's lib/readback, both held to the shared
 /// fixture (readbacks.json): what was missed or said differently, and
 /// the engine's line for it.
-struct ReadbackCheck: Decodable, Equatable, Sendable {
-    struct Item: Decodable, Equatable, Sendable, Identifiable {
-        /// "limit", "route", "altitude", "expect", "frequency" or "squawk".
-        let item: String
-        let cleared: String
-        /// What the read back had for it; nil where it was not read back.
-        let said: String?
-        var id: String { item + cleared }
-    }
-    var items: [Item] = []
-    var words = ""
+typealias ReadbackCheck = EngineContract.ReadbackCheckAnswer
+
+extension EngineContract.ReadbackCheckAnswerItemsItem: Identifiable {
+    var id: String { item + cleared }
+}
+
+extension ReadbackCheck {
+    /// One part checked: "limit", "route", "altitude", "expect", "frequency"
+    /// or "squawk", as cleared, and what the read back had (nil, not read back).
+    typealias Item = EngineContract.ReadbackCheckAnswerItemsItem
 
     /// The read back `said` against the clearance `cleared`, both as
-    /// heard; nil where the engine cannot answer.
-    static func check(cleared: String, said: String) -> ReadbackCheck? {
-        try? Engine.call("readback_check", ["cleared": cleared, "said": said])
+    /// heard; thrown where the engine cannot answer, which the sheet says.
+    static func check(cleared: String, said: String) throws -> ReadbackCheck {
+        try Engine.readbackCheck(cleared: cleared, said: said)
     }
 
     /// The parts of a clearance in the order they are read back, with each

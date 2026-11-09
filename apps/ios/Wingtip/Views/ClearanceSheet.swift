@@ -48,11 +48,13 @@ struct ClearanceSheet: View {
         nearPoints.map { String(format: "%.4f,%.4f", $0.0, $0.1) }.joined(separator: ";")
     }
 
-    private var clearance: Clearance { Clearance.read(text) }
+    /// The clearance as read; a refusal is said under the steps.
+    private var reading: Result<Clearance, any Error> { Result { try Clearance.read(text) } }
+    private var clearance: Clearance { (try? reading.get()) ?? Clearance() }
 
     private var wantsPlaces: Bool {
         let asked = clearance.asked(near: "", dep: "", dest: "")
-        return asked.limit != nil || !asked.route.isEmpty || asked.departure != nil || asked.arrival != nil
+        return asked.limit != nil || !(asked.route ?? []).isEmpty || asked.departure != nil || asked.arrival != nil
     }
 
     private var ready: Bool {
@@ -61,12 +63,29 @@ struct ClearanceSheet: View {
 
     /// The route the clearance gives from the one planned, once its
     /// places are found.
+    /// The route as planned where the engine cannot answer, and why in
+    /// `engineProblem`.
+    private var clearing: Result<(dep: String, stops: [String], dest: String, typed: [Clearance.Typed]), any Error> {
+        Result { try Clearance.clearedRoute(text, found ?? ClearancePlaces(), dep: plan.dep, stops: plan.stops, dest: plan.dest) }
+    }
     private var cleared: (dep: String, stops: [String], dest: String, typed: [Clearance.Typed]) {
-        Clearance.clearedRoute(text, found ?? ClearancePlaces(), dep: plan.dep, stops: plan.stops, dest: plan.dest)
+        (try? clearing.get()) ?? (plan.dep, plan.stops, plan.dest, [])
     }
 
-    private var check: ReadbackCheck? {
-        readback.isEmpty ? nil : ReadbackCheck.check(cleared: text, said: readback)
+    private var checking: Result<ReadbackCheck, any Error>? {
+        readback.isEmpty ? nil : Result { try ReadbackCheck.check(cleared: text, said: readback) }
+    }
+    private var check: ReadbackCheck? { try? checking?.get() }
+
+    /// What the engine could not read of the clearance, the route it gives
+    /// or the read back, said beside the listener's own problems.
+    private var engineProblem: String? {
+        let failures: [(String, (any Error)?)] = [
+            ("The clearance", { if case .failure(let e) = reading { e } else { nil } }()),
+            ("The route it gives", { if case .failure(let e) = clearing { e } else { nil } }()),
+            ("The read back", { if case .failure(let e)? = checking { e } else { nil } }()),
+        ]
+        return failures.compactMap { what, e in e.map { "\(what) couldn't be read: \($0.localizedDescription)" } }.first
     }
 
     private static func altitude(_ ft: Int) -> String {
@@ -153,7 +172,7 @@ struct ClearanceSheet: View {
                     if !clearance.heardAny {
                         heardField
                     }
-                    if let problem = listener.problem ?? lookupProblem {
+                    if let problem = listener.problem ?? lookupProblem ?? engineProblem {
                         Text(problem).font(.footnote).foregroundStyle(.red)
                     }
                 } header: {
@@ -288,7 +307,7 @@ struct ClearanceSheet: View {
                 try? await Task.sleep(for: .milliseconds(400))
                 guard !Task.isCancelled else { return }
                 do {
-                    found = try await Planner.clearancePlaces(Clearance.read(heard).asked(near: near, dep: plan.dep, dest: plan.dest))
+                    found = try await Planner.clearancePlaces(try Clearance.read(heard).asked(near: near, dep: plan.dep, dest: plan.dest))
                     foundFor = heard
                     lookupProblem = nil
                 } catch {

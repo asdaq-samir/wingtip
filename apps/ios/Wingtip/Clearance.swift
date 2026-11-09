@@ -52,42 +52,38 @@ struct ClearedItem: Codable, Equatable, Sendable {
 extension Clearance {
     /// The clearance in what was heard, read by the engine
     /// (`read_clearance`, the web's lib/clearance), with no signal
-    /// needed; nothing heard where the engine cannot answer.
-    static func read(_ text: String) -> Clearance {
-        let read: Clearance? = try? Engine.call("read_clearance", ["text": text])
-        return read ?? Clearance()
+    /// needed; thrown where the engine cannot answer. The contract leaves
+    /// the route's items open, so the answer is read again as the app's
+    /// Clearance, the same members by name.
+    static func read(_ text: String) throws -> Clearance {
+        try Engine.recoded(try Engine.readClearance(text: text))
     }
 }
 
-/// What the planner found of a clearance's places (ClearancePlaces).
-struct ClearancePlaces: Codable, Equatable, Sendable {
-    struct Place: Codable, Equatable, Sendable {
-        var said: String
-        var ident: String?
-        var name: String?
-        var kind: String?
-        var sure: Bool?
-    }
-    struct Procedure: Codable, Equatable, Sendable {
-        var id: String
-        var transition: String?
-    }
-    var limit: Place?
-    var route: [[Place]]?
-    var departure: Procedure?
-    var arrival: Procedure?
+/// What the planner found of a clearance's places (ClearancePlaces, generated).
+typealias ClearancePlaces = APIClearancePlaces
+
+extension ClearancePlaces {
+    typealias Place = APISpokenPlace
+    typealias Procedure = APISpokenProcedure
 }
 
-/// What the planner is asked to find (ClearanceAsk).
-struct ClearanceAsk: Encodable, Sendable {
-    struct Procedure: Encodable, Sendable { let name: String; let number: String; let transition: String? }
-    var near = ""
-    var dep: String?
-    var dest: String?
-    var limit: String?
-    var route: [String] = []
-    var departure: Procedure?
-    var arrival: Procedure?
+extension ClearancePlaces.Place {
+    init(said: String, ident: String?, sure: Bool?) {
+        self.init(ident: ident, kind: nil, lat: nil, lon: nil, name: nil, said: said, sure: sure)
+    }
+}
+
+/// What the planner is asked to find (ClearanceAsk, generated).
+typealias ClearanceAsk = APIClearanceAsk
+
+extension ClearanceAsk {
+    typealias Procedure = APISpokenProcedureAsk
+
+    init(near: String, dep: String? = nil, dest: String? = nil, limit: String? = nil, route: [String] = [],
+         departure: Procedure? = nil, arrival: Procedure? = nil) {
+        self.init(arrival: arrival, dep: dep, departure: departure, dest: dest, limit: limit, near: near, route: route)
+    }
 }
 
 extension Clearance {
@@ -103,11 +99,7 @@ extension Clearance {
 
     /// A procedure to pick, as the web's typed one: its name and the
     /// points either side of it.
-    struct Typed: Codable, Equatable, Sendable {
-        let name: String
-        let before: String?
-        let after: String?
-    }
+    typealias Typed = EngineContract.ClearedRouteAnswerTypedItem
 
     /// The route a clearance heard gives, from the one planned: its
     /// destination the limit where that is an airport; its stops the
@@ -116,15 +108,13 @@ extension Clearance {
     /// filed" the filed stops after the last one said that is among them,
     /// or all of them where none is (AIM 5-2-6). The engine's
     /// `cleared_route`, the web's clearedRoute, from the words heard and
-    /// the places found for them; the route as planned where the engine
-    /// cannot answer.
+    /// the places found for them; thrown where the engine cannot answer,
+    /// which the sheet says. The planner's places are the contract's found
+    /// ones by name.
     static func clearedRoute(_ heard: String, _ found: ClearancePlaces, dep: String, stops planned: [String],
-                             dest plannedDest: String) -> (dep: String, stops: [String], dest: String, typed: [Typed]) {
-        struct Planned: Codable { let dep: String; let stops: [String]; let dest: String }
-        struct Ask: Encodable { let text: String; let found: ClearancePlaces; let planned: Planned }
-        struct Answer: Decodable { let route: Planned; let typed: [Typed] }
-        let ask = Ask(text: heard, found: found, planned: Planned(dep: dep, stops: planned, dest: plannedDest))
-        guard let answer: Answer = try? Engine.call("cleared_route", ask) else { return (dep, planned, plannedDest, []) }
+                             dest plannedDest: String) throws -> (dep: String, stops: [String], dest: String, typed: [Typed]) {
+        let answer = try Engine.clearedRoute(text: heard, found: try Engine.recoded(found),
+                                             planned: .init(dep: dep, stops: planned, dest: plannedDest))
         return (answer.route.dep, answer.route.stops, answer.route.dest, answer.typed)
     }
 }

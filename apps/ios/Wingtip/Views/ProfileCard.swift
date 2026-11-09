@@ -14,16 +14,22 @@ struct ProfileCard: View {
     /// The wheel's rows, highest first: the planner's legal altitudes, the
     /// one flown and every 500 ft from 1,000 ft under Class A (14 CFR
     /// 71.33) -- the engine's `altitude_wheel`, as the web's wheel asks it.
-    private var altitudes: [Double] {
-        let legal = plan.altitude?.altitudeFigures.map(\.altitudeFt) ?? []
-        let rows: [Double]? = try? Engine.call("altitude_wheel", json: ["legal_ft": legal, "flown_ft": plan.altitudeFt])
-        return rows ?? Set(legal + [plan.altitudeFt].compactMap { $0 }).sorted(by: >)
+    private var wheel: Result<[Double], any Error> {
+        let legal = plan.altitude?.altitudeFigures?.map(\.altitudeFt) ?? []
+        return Result { try Engine.altitudeWheel(legalFt: legal, flownFt: plan.altitudeFt) }
     }
 
-    private var legal: Set<Double> { Set(plan.altitude?.altitudeFigures.map(\.altitudeFt) ?? []) }
+    /// Where the engine cannot give the wheel (said under it), the
+    /// planner's legal altitudes and the one flown alone.
+    private var altitudes: [Double] {
+        let legal = plan.altitude?.altitudeFigures?.map(\.altitudeFt) ?? []
+        return (try? wheel.get()) ?? Set(legal + [plan.altitudeFt].compactMap { $0 }).sorted(by: >)
+    }
+
+    private var legal: Set<Double> { Set(plan.altitude?.altitudeFigures?.map(\.altitudeFt) ?? []) }
 
     private func name(of altitude: Double) -> String? {
-        if let option = plan.altitude?.options.first(where: { $0.altitudeFt == altitude && !$0.steps.isEmpty }) {
+        if let option = plan.altitude?.options?.first(where: { $0.altitudeFt == altitude && !$0.steps.isEmpty }) {
             return option.kind.prefix(1).uppercased() + option.kind.dropFirst()
         }
         if !legal.contains(altitude) { return "Outside the limits" }
@@ -36,11 +42,13 @@ struct ProfileCard: View {
                 ProfileChart(profile: plan.profile, legs: plan.legs, altitudeFt: picked ?? plan.altitudeFt, selection: plan.altitude?.altitudeSelection)
                     .frame(height: 200)
                     .listRowInsets(EdgeInsets())
+                // A dry run the engine could not fly (the toolbar's Dry run).
+                ProblemLine(dryRun.problem)
             }
             Section("Altitude") {
                 Picker("Cruise altitude", selection: Binding(get: { picked ?? plan.altitudeFt ?? altitudes.last ?? 0 }, set: { fly($0) })) {
                     ForEach(altitudes, id: \.self) { altitude in
-                        let ete = plan.altitude?.altitudeFigures.first(where: { $0.altitudeFt == altitude })?.eteMin
+                        let ete = plan.altitude?.altitudeFigures?.first(where: { $0.altitudeFt == altitude })?.eteMin
                         HStack {
                             Text(flightLevel(altitude)).monospacedDigit().bold()
                             if let name = name(of: altitude) {
@@ -59,6 +67,7 @@ struct ProfileCard: View {
                 }
                 .pickerStyle(.wheel)
                 .frame(height: 160)
+                ProblemLine(wheel, "The wheel's altitudes")
                 if let options = plan.altitude?.options, !options.isEmpty {
                     Picker("Plan", selection: Binding(get: { plan.altitudeChoice ?? (plan.ownAltitudeFt == nil ? "fastest" : "") }, set: { choose($0) })) {
                         ForEach(options.filter { !$0.steps.isEmpty }) { option in
@@ -83,12 +92,12 @@ struct ProfileCard: View {
             }
             if let selection = plan.altitude?.altitudeSelection {
                 Section("How the altitude was chosen") {
-                    if let floor = selection.floorFt { LabeledContent("Floor", value: "\(Int(floor).formatted()) ft, the terrain and obstacles (14 CFR 91.119)") }
+                    LabeledContent("Floor", value: "\(Int(selection.floorFt).formatted()) ft, the terrain and obstacles (14 CFR 91.119)")
                     if let ceiling = selection.serviceCeilingFt { LabeledContent("Ceiling", value: "\(Int(ceiling).formatted()) ft, the airplane's") }
                     if let clouds = selection.cloudBaseFt { LabeledContent("Clouds", value: "base \(Int(clouds).formatted()) ft (14 CFR 91.155)") }
                     if let shelf = selection.airspaceCeilingFt { LabeledContent("Class B", value: "from \(Int(shelf).formatted()) ft (14 CFR 91.131)") }
-                    if !selection.candidatesFt.isEmpty {
-                        LabeledContent("Legal", value: selection.candidatesFt.map(flightLevel).joined(separator: " "))
+                    if let candidates = selection.candidatesFt, !candidates.isEmpty {
+                        LabeledContent("Legal", value: candidates.map(flightLevel).joined(separator: " "))
                     }
                 }
             }
@@ -112,7 +121,7 @@ struct ProfileCard: View {
     /// legal and as it stands where it is not.
     private func fly(_ altitude: Double) {
         picked = altitude
-        if let option = plan.altitude?.options.first(where: { $0.altitudeFt == altitude && !$0.steps.isEmpty }) {
+        if let option = plan.altitude?.options?.first(where: { $0.altitudeFt == altitude && !$0.steps.isEmpty }) {
             plan.ownAltitudeFt = nil
             plan.altitudeChoice = option.kind
         } else {
@@ -204,10 +213,8 @@ private enum PreviewData {
         ]
     )
     static let legs = [
-        Leg(from: "KPAO", to: "KLVK", distanceNm: 28, altitudeFt: 4500, trueCourseDeg: 62, magneticHeadingDeg: 51,
-            groundspeedKt: 108, eteMin: 16, fuelGal: 2.3, tasKt: 112),
-        Leg(from: "KLVK", to: "KMOD", distanceNm: 34, altitudeFt: 4500, trueCourseDeg: 105, magneticHeadingDeg: 94,
-            groundspeedKt: 118, eteMin: 17, fuelGal: 2.4, tasKt: 112),
+        Leg.preview(from: "KPAO", to: "KLVK", distanceNm: 28, altitudeFt: 4500, trueCourseDeg: 62, magneticHeadingDeg: 51, groundspeedKt: 108, eteMin: 16, fuelGal: 2.3, tasKt: 112),
+        Leg.preview(from: "KLVK", to: "KMOD", distanceNm: 34, altitudeFt: 4500, trueCourseDeg: 105, magneticHeadingDeg: 94, groundspeedKt: 118, eteMin: 17, fuelGal: 2.4, tasKt: 112),
     ]
 }
 
@@ -219,7 +226,7 @@ private enum PreviewData {
 
 #Preview("ProfileChart") {
     ProfileChart(profile: PreviewData.profile, legs: PreviewData.legs, altitudeFt: 4500,
-                 selection: AltitudeSelection(recommendedFt: 4500, candidatesFt: [3500, 4500, 5500]))
+                 selection: AltitudeSelection(airspaceTransits: [], candidatesFt: [3500, 4500, 5500], courseMagneticDeg: 62, eastbound: true, floorFt: 1500, hazards: [], recommendedFt: 4500))
         .frame(height: 200)
         .padding()
 }

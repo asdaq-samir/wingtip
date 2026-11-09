@@ -389,8 +389,9 @@ struct AirportWeatherTab: View {
                             problem = "Nothing was heard. Tune the ATIS, hold the phone to the speaker and tap again."
                             return
                         }
-                        guard let read = Atis.read(text) else {
-                            problem = "The broadcast could not be read."
+                        let read: Atis
+                        do { read = try Atis.read(text) } catch {
+                            problem = "The broadcast could not be read: \(error.localizedDescription)"
                             return
                         }
                         reading = read

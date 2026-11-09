@@ -29,7 +29,7 @@ struct AircraftView: View {
                             .onSubmit(fly)
                         Button("Fly") { fly() }
                             .buttonStyle(.borderedProminent)
-                            .disabled(!Registered.isNNumber(typed.uppercased()))
+                            .disabled((try? Registered.isNNumber(typed.uppercased())) != true)
                     }
                     if let tail = plan.tail {
                         LabeledContent("Flying", value: "\(tail) on \(plan.aircraft.uppercased())\(plan.figures.cruiseTasKt == nil ? "" : ", your figures")")
@@ -99,7 +99,8 @@ struct AircraftView: View {
 
     private func fly() {
         let tail = typed.uppercased().trimmingCharacters(in: .whitespaces)
-        guard Registered.isNNumber(tail) else { return }
+        // Fly is only enabled for an N-number the engine has read as one.
+        guard (try? Registered.isNNumber(tail)) == true else { return }
         Task { await plan.fly(tail: tail, own: own, profiles: profiles) }
     }
 }

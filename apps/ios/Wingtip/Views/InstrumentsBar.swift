@@ -49,6 +49,9 @@ struct InstrumentsBar: View {
                         Text(Self.arrival(dest, eta: eta)).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
                     }
                 }
+                if let problem = flight.problem {
+                    Text(problem).font(.footnote).foregroundStyle(.orange).lineLimit(3)
+                }
                 HStack(alignment: .center, spacing: 8) {
                     Button { nearest = true } label: {
                         Label("Nearest", systemImage: "airplane.arrival")
@@ -84,6 +87,14 @@ struct InstrumentsBar: View {
                 }
                 .presentationDetents([.medium, .large])
             }
+        } else if flight.fix != nil, let problem = flight.problem {
+            // The engine could not say whether the airplane is flying: said
+            // where the bar would be, not hidden as if on the ground.
+            Label(problem, systemImage: "exclamationmark.triangle")
+                .font(.footnote).foregroundStyle(.orange)
+                .padding(10)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 12)
         }
     }
 

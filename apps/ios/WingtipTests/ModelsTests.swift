@@ -35,7 +35,7 @@ struct ModelsTests {
 
 /// The checkpoint's colour steps, as the web app's scoreColor bands them.
 struct CheckpointColourTests {
-    @Test func theScoreBandsAreTheWebAppsFiveSteps() {
+    @Test func theScoreBandsAreTheWebAppsFiveSteps() throws {
         let steps = [2.9, 3.0, 3.5, 4.0, 4.5].map { CheckpointAnnotation.colour(for: $0) }
         #expect(Set(steps.map { $0.description }).count == 5)
         #expect(CheckpointAnnotation.colour(for: 4.49) == CheckpointAnnotation.colour(for: 4.0))
@@ -73,23 +73,23 @@ struct RoutesTests {
 /// pins it: the N-number's shape, and the type's profile by the
 /// registry's make, model and year.
 struct RegisteredTests {
-    @Test func anNNumberIsToldFromOtherWordsByItsShape() {
-        #expect(["N3429J", "N1", "N12345", "N172SP"].allSatisfy { Registered.isNNumber($0) })
-        #expect(!["N0123", "N123456", "C172", "KDLH"].contains { Registered.isNNumber($0) })
+    @Test func anNNumberIsToldFromOtherWordsByItsShape() throws {
+        #expect(try ["N3429J", "N1", "N12345", "N172SP"].allSatisfy { try Registered.isNNumber($0) })
+        #expect(try !["N0123", "N123456", "C172", "KDLH"].contains { try Registered.isNNumber($0) })
     }
 
-    @Test func aRegisteredTypeFliesOnItsProfile() {
-        #expect(Registered.profile(manufacturer: "Cessna", model: "172S", year: nil) == "c172")
-        #expect(Registered.profile(manufacturer: "Piper", model: "PA-28-181", year: nil) == "pa28")
-        #expect(Registered.profile(manufacturer: "Piper", model: "PA-28-140", year: 1971) == "pa28140")
-        #expect(Registered.profile(manufacturer: "Piper", model: "PA-28-140", year: 1975) == "pa28140cruiser")
-        #expect(Registered.profile(manufacturer: "Piper", model: "PA-28-140", year: nil) == "pa28140cruiser")
-        #expect(Registered.profile(manufacturer: "Cirrus Design Corp", model: "SR22", year: nil) == "sr22")
-        #expect(Registered.profile(manufacturer: "Beech", model: "A36", year: nil) == nil)
-        #expect(Registered.profile(manufacturer: "Cessna", model: "T182T", year: nil) == nil)
+    @Test func aRegisteredTypeFliesOnItsProfile() throws {
+        #expect(try Registered.profile(manufacturer: "Cessna", model: "172S", year: nil) == "c172")
+        #expect(try Registered.profile(manufacturer: "Piper", model: "PA-28-181", year: nil) == "pa28")
+        #expect(try Registered.profile(manufacturer: "Piper", model: "PA-28-140", year: 1971) == "pa28140")
+        #expect(try Registered.profile(manufacturer: "Piper", model: "PA-28-140", year: 1975) == "pa28140cruiser")
+        #expect(try Registered.profile(manufacturer: "Piper", model: "PA-28-140", year: nil) == "pa28140cruiser")
+        #expect(try Registered.profile(manufacturer: "Cirrus Design Corp", model: "SR22", year: nil) == "sr22")
+        #expect(try Registered.profile(manufacturer: "Beech", model: "A36", year: nil) == nil)
+        #expect(try Registered.profile(manufacturer: "Cessna", model: "T182T", year: nil) == nil)
     }
 
-    @Test func theFiguresQueryCarriesOnlyWhatIsSet() {
+    @Test func theFiguresQueryCarriesOnlyWhatIsSet() throws {
         let q = Figures(cruiseTasKt: 115, usableFuelGal: 36).query.compactMapValues { $0 }
         #expect(q == ["cruise_tas_kt": "115.0", "usable_fuel_gal": "36.0"])
     }
@@ -105,7 +105,7 @@ struct PilotTests {
         #expect(currency.dayPassengersUntil == "2026-12-01" && currency.nightPassengersUntil == nil && currency.flightReviewUntil == "2027-06-30")
     }
 
-    @MainActor @Test func thePlanSavesItsRouteAndLegs() {
+    @MainActor @Test func thePlanSavesItsRouteAndLegs() throws {
         let plan = Plan()
         plan.dep = "C81"; plan.dest = "KDLH"
         #expect(plan.saved() == nil)
@@ -115,7 +115,7 @@ struct PilotTests {
 /// The handbook page's figures, as the web app's handbookText.test.ts
 /// pins them, the parser kept the same.
 struct HandbookTests {
-    @Test func aPipersFiguresInKnotsWhereItPrintsMph() {
+    @Test func aPipersFiguresInKnotsWhereItPrintsMph() throws {
         let page = """
         CHEROKEE 140 "D" SECTION I
         SPECIFICATIONS
@@ -134,12 +134,12 @@ struct HandbookTests {
         Fuel Consumption (gal per hr 75%) 8.4
         Fuel Consumption (gal per hr 50%) 5.6
         """
-        let f = Handbook.figures(of: page)
+        let f = try Handbook.figures(of: page)
         #expect(f.serviceCeilingFt?.value == 14300 && f.climbTasKt?.value == 74 && f.cruiseTasKt?.value == 115 && f.cruisePowerPct?.value == 75 && f.fuelBurnGph?.value == 8.4)
         #expect(f.serviceCeilingFt?.words == "Service Ceiling (ft) 14,300")
     }
 
-    @Test func aCessnasWithTheUsableFuelAndNoVno() {
+    @Test func aCessnasWithTheUsableFuelAndNoVno() throws {
         let page = """
         Maximum Structural Cruising Speed (Vno) 129 KTS
         Cruise, 75% Power at 8000 Ft ........ 122 KTS (140 MPH)
@@ -147,9 +147,9 @@ struct HandbookTests {
         FUEL CAPACITY: Total 56 GAL. Usable 53 GAL.
         Fuel flow 75% 8.4 gph 65% 7.0 gph
         """
-        let f = Handbook.figures(of: page)
+        let f = try Handbook.figures(of: page)
         #expect(f.cruiseTasKt?.value == 122 && f.cruisePowerPct?.value == 75 && f.serviceCeilingFt?.value == 13500 && f.usableFuelGal?.value == 53 && f.fuelBurnGph?.value == 8.4)
-        #expect(Handbook.figures(of: "NORMAL PROCEDURES\nBefore starting engine, check fuel selector.").isEmpty)
+        #expect(try Handbook.figures(of: "NORMAL PROCEDURES\nBefore starting engine, check fuel selector.").isEmpty)
     }
 }
 
@@ -157,11 +157,11 @@ struct TrainingTests {
     /// The gateway's TrainingDto, with the fields the page does not show.
     @Test func theTrainingReadsAsTheGatewaySendsIt() throws {
         let json = """
-        {"fullName":"Sam Pilot","kinds":[],"knowledgeTestCodes":[],"endorsements":[],
+        {"fullName":"Sam Pilot","lessons":[],"kinds":[],"knowledgeTestCodes":[],"endorsements":[],
          "instructors":[{"id":3,"email":"cfi@example.com","name":"Ann CFI","certificate":"1234567CFI","accepted":true,"askedAt":"2026-10-13T10:00:00Z"}],
          "signed":[{"id":9,"code":"A.6","text":"I certify that…","signedOn":"2026-10-14","until":"2026-11-13","voided":false,"digest":"x","signature":"y","studentName":"Sam Pilot","fields":{}}],
          "reviews":[{"id":1,"flightOn":"2026-10-20","makeModel":"PA-28-140","checks":[{"label":"Route","detail":"KRZL to KLAF","rule":"61.93(c)(3)","met":true}],
-                     "answeredAt":null,"askedAt":"2026-10-19T10:00:00Z","declinedNote":null,"instructorName":"Ann CFI","note":null,"studentId":null,"studentName":"Sam Pilot","endorsement":null,"flight":null}],
+                     "answeredAt":null,"askedAt":"2026-10-19T10:00:00Z","declinedNote":null,"instructorName":"Ann CFI","note":null,"studentId":null,"studentName":"Sam Pilot","endorsement":null,"flight":{"id":40,"departureIdent":"KRZL","destinationIdent":"KLAF","stops":[],"createdAt":"2026-10-19T09:00:00Z"}}],
          "experience":[{"key":"xc","label":"Cross-country solo","rule":"61.109(a)(5)","unit":"h","have":2.5,"need":5,"met":false}]}
         """
         let training = try JSONDecoder().decode(Training.self, from: Data(json.utf8))
@@ -180,21 +180,21 @@ struct TrafficTests {
 
     /// TCAS's way of writing a height against own ship's, in hundreds of
     /// feet, the web app's trafficLabel cases.
-    @Test func theHeightAsTcasWritesIt() {
-        #expect(Traffic.label(plane(5000), ownFt: 4500) == "+05")
-        #expect(Traffic.label(plane(3300, fpm: -700), ownFt: 4500) == "-12↓")
-        #expect(Traffic.label(plane(4500, fpm: 500), ownFt: nil) == "4,500↑")
-        #expect(Traffic.label(plane(nil), ownFt: 4500) == "")
+    @Test func theHeightAsTcasWritesIt() throws {
+        #expect(try Traffic.label(plane(5000), ownFt: 4500) == "+05")
+        #expect(try Traffic.label(plane(3300, fpm: -700), ownFt: 4500) == "-12↓")
+        #expect(try Traffic.label(plane(4500, fpm: 500), ownFt: nil) == "4,500↑")
+        #expect(try Traffic.label(plane(nil), ownFt: 4500) == "")
     }
 
     /// Amber within 1,000 ft of own ship's height, both sides of the line.
-    @Test func nearWithinAThousandFeet() {
-        #expect(Traffic.near(plane(5500), ownFt: 4500))
-        #expect(!Traffic.near(plane(5600), ownFt: 4500))
-        #expect(!Traffic.near(plane(4500), ownFt: nil))
+    @Test func nearWithinAThousandFeet() throws {
+        #expect(try Traffic.near(plane(5500), ownFt: 4500))
+        #expect(try !Traffic.near(plane(5600), ownFt: 4500))
+        #expect(try !Traffic.near(plane(4500), ownFt: nil))
     }
 
-    @Test func theLicencesCredit() {
+    @Test func theLicencesCredit() throws {
         #expect(Traffic.credit(nil) == "Traffic adsb.lol, ODbL")
         #expect(Traffic.credit("adsb.lol and adsb.fi") == "Traffic adsb.lol, ODbL · adsb.fi")
         #expect(Traffic.credit("ADS-B Exchange") == "Traffic ADS-B Exchange")
@@ -208,9 +208,9 @@ struct TrafficTests {
     }
 }
 
-@Test func theMapDrawsMilitaryFieldsWhenAskedAndPrivateOnesUnlessPutAway() {
+@Test func theMapDrawsMilitaryFieldsWhenAskedAndPrivateOnesUnlessPutAway() throws {
     func pin(_ ident: String, military: String? = nil, isPrivate: Bool? = false) -> AirportPin {
-        AirportPin(ident: ident, name: ident, lat: 42, lon: -88, kind: "small", military: military, isPrivate: isPrivate)
+        AirportPin(ident: ident, kind: "small", lat: 42, lon: -88, military: military, name: ident, isPrivate: isPrivate)
     }
     let pins = [pin("KPUB"), pin("KMIL", military: "military"), pin("KJNT", military: "joint"), pin("KPVT", isPrivate: true), pin("KNIL", isPrivate: nil)]
     let idents = { (m: Bool, p: Bool) in AirportPin.shown(pins, military: m, privateFields: p).map(\.ident) }

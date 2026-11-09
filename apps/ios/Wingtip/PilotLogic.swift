@@ -10,16 +10,14 @@ import Foundation
 /// response. The app writes none of its own: the flight manual's is the
 /// airplane's.
 enum ChecklistText {
-    /// Nothing read where the engine cannot answer, which is never for
-    /// text.
-    static func parse(_ text: String) -> Checklist {
-        let read: Checklist? = try? Engine.call("checklist_read", ["text": text])
-        return read ?? Checklist(sections: [])
+    /// Thrown where the engine cannot answer, which the checklist's screen
+    /// says (ChecklistModel.problem).
+    static func parse(_ text: String) throws -> Checklist {
+        Checklist(try Engine.checklistRead(text: text))
     }
 
-    static func text(of checklist: Checklist) -> String {
-        let written: String? = try? Engine.call("checklist_write", ["checklist": checklist])
-        return written ?? ""
+    static func text(of checklist: Checklist) throws -> String {
+        try Engine.checklistWrite(checklist: checklist)
     }
 }
 
@@ -34,28 +32,27 @@ enum ChecklistText {
 /// are the gateway's, camel case, as the engine reads and writes them.
 enum LogbookCSV {
     /// RFC 4180's rows of fields (the engine's `csv_rows`).
-    static func rows(_ text: String) -> [[String]] {
-        let rows: [[String]]? = try? Engine.call("csv_rows", ["text": text])
-        return rows ?? []
+    static func rows(_ text: String) throws -> [[String]] {
+        try Engine.csvRows(text: text)
     }
 
-    /// The logbook as a CSV file, oldest flight first.
-    static func csv(_ entries: [LogbookEntry]) -> String {
-        let written: String? = try? Engine.call("logbook_csv_write", ["entries": entries])
-        return written ?? ""
+    /// The logbook as a CSV file, oldest flight first; thrown where the
+    /// engine cannot write it. The contract takes each entry as the
+    /// gateway's JSON object, which the record is.
+    static func csv(_ entries: [LogbookEntry]) throws -> String {
+        try Engine.logbookCsvWrite(entries: entries.map { try Engine.recoded($0) })
     }
 
-    struct Skipped: Equatable, Decodable { let line: Int; let reason: String }
-    struct Imported: Equatable, Decodable { var entries: [LogbookEntryRequest]; var skipped: [Skipped] }
+    typealias Skipped = EngineContract.LogbookCsvReadAnswerSkippedItem
+    struct Imported: Equatable { var entries: [LogbookEntryRequest]; var skipped: [Skipped] }
 
-    /// A logbook CSV read: ForeFlight's, or this logbook's own. A file the
-    /// engine could not answer for is one row left out, said so.
-    static func read(_ text: String) -> Imported {
-        do {
-            return try Engine.call("logbook_csv_read", ["text": text])
-        } catch {
-            return Imported(entries: [], skipped: [Skipped(line: 1, reason: error.localizedDescription)])
-        }
+    /// A logbook CSV read: ForeFlight's, or this logbook's own; thrown
+    /// where the engine cannot read it, which the logbook says.
+    static func read(_ text: String) throws -> Imported {
+        let read = try Engine.logbookCsvRead(text: text)
+        // The engine's entries are the gateway's LogbookEntryRequest by
+        // name, so each is read again as the request sent.
+        return Imported(entries: try read.entries.map { try Engine.recoded($0) }, skipped: read.skipped)
     }
 
     /// What an import brought in, in a line.
@@ -76,10 +73,10 @@ enum LogbookCSV {
 enum Endorsing {
     /// The template's {blanks} filled: {student} with the name as on the
     /// student's certificate, the rest from the form; runs of space made
-    /// one (the engine's `endorsement_render`).
-    static func render(_ template: String, student: String, fields: [String: String]) -> String {
-        let words: String? = try? Engine.call("endorsement_render", json: ["template": template, "student": student, "fields": fields])
-        return words ?? template
+    /// one (the engine's `endorsement_render`); thrown where it cannot, and
+    /// nothing is signed then.
+    static func render(_ template: String, student: String, fields: [String: String]) throws -> String {
+        try Engine.endorsementRender(template: template, student: student, fields: fields)
     }
 
     /// "/s/ 10-13-2026 J. J. Jones 987654321CFI RE 12-31-2027": the date,
@@ -100,33 +97,29 @@ enum Endorsing {
     /// one expires 24 calendar months from issue, renewal or reinstatement
     /// (61.19(d)(2)), and its privileges then wait for reinstatement under
     /// 61.199 (61.197(e)).
-    static func lapseWarning(_ instructor: Instructor, signedOn: String) -> String? {
-        do {
-            return try Engine.call("endorsement_lapse", json: [
-                "until": instructor.until, "until_kind": instructor.untilKind, "signed_on": signedOn,
-            ])
-        } catch {
-            return nil
-        }
+    /// Thrown where the engine cannot say, which the signing screen shows.
+    static func lapseWarning(_ instructor: Instructor, signedOn: String) throws -> String? {
+        try Engine.endorsementLapse(until: instructor.until, untilKind: instructor.untilKind, signedOn: signedOn)
     }
 
     /// The latest of each kind signed in the app and not voided; the
     /// record comes newest first (the engine's `endorsements_in_force`,
-    /// which answers each code with its index into the record).
-    static func inForce(_ signed: [SignedEndorsement]) -> [String: SignedEndorsement] {
-        let asked: [[String: Any]] = signed.map { ["code": $0.code, "voided": $0.voided] }
-        guard let pairs = (try? Engine.callJSON("endorsements_in_force", ["signed": asked])) as? [[Any]] else { return [:] }
+    /// which answers each code with its index into the record, a pair the
+    /// contract leaves untyped).
+    static func inForce(_ signed: [SignedEndorsement]) throws -> [String: SignedEndorsement] {
+        let pairs = try Engine.endorsementsInForce(signed: signed.map { .init(code: $0.code, voided: $0.voided) })
         var out: [String: SignedEndorsement] = [:]
         for pair in pairs {
-            guard pair.count == 2, let code = pair[0] as? String, let at = pair[1] as? Int, signed.indices.contains(at) else { continue }
-            out[code] = signed[at]
+            guard pair.count == 2, case .string(let code) = pair[0], case .number(let at) = pair[1],
+                  signed.indices.contains(Int(at)) else { continue }
+            out[code] = signed[Int(at)]
         }
         return out
     }
 
     /// A solo cross-country's airports in order: "KUGN KRFD KUGN".
     static func route(_ r: CrossCountryReview) -> String {
-        guard let f = r.flight else { return r.makeModel }
+        let f = r.flight
         return ([f.departureIdent] + f.stops + [f.destinationIdent]).joined(separator: " ")
     }
 
@@ -138,21 +131,19 @@ enum Endorsing {
     }
 
     /// One of 61.93(d)'s determinations: the rule and what it asks.
-    struct Determination: Decodable, Sendable {
-        let rule: String
-        let label: String
-    }
+    typealias Determination = EngineContract.SoloXcDeterminationsAnswerItem
 
     /// 14 CFR 61.93(d)(1)-(3): what an instructor must determine of a solo
     /// cross-country themselves before endorsing it, the engine's
     /// (`solo_xc_determinations`); (4) and (5), the student's
-    /// endorsements, the record answers.
-    static let determinations: [Determination] = (try? Engine.call("solo_xc_determinations", json: [:])) ?? []
+    /// endorsements, the record answers. Asked once; a refusal is said on
+    /// the signing screen, which then signs no cross-country.
+    static let determinations = Result { try Engine.soloXcDeterminations() }
 
     /// The airports' blanks of a solo cross-country's endorsement, filled
     /// from the flight put to the instructor, as the web app fills them.
     static func reviewFields(_ r: CrossCountryReview) -> [String: String] {
-        guard let f = r.flight else { return ["mm": r.makeModel, "date": Day.acDay(r.flightOn)] }
+        let f = r.flight
         return [
             "from": f.departureIdent, "to": f.destinationIdent, "via": f.stops.isEmpty ? "direct" : f.stops.joined(separator: ", "),
             "landings": (f.stops + [f.destinationIdent]).joined(separator: ", "), "mm": r.makeModel, "date": Day.acDay(r.flightOn),
@@ -162,9 +153,8 @@ enum Endorsing {
     /// The ACS codes in what was pasted -- a report's text, a list, codes in
     /// lower case -- each once, in the order given; a sub-element's letter
     /// lower case, as the ACS writes it (K1a). The engine's `acs_codes`.
-    static func acsCodes(in text: String) -> [String] {
-        let codes: [String]? = try? Engine.call("acs_codes", ["text": text])
-        return codes ?? []
+    static func acsCodes(in text: String) throws -> [String] {
+        try Engine.acsCodes(text: text)
     }
 }
 
@@ -275,6 +265,8 @@ struct AircraftForm: Equatable {
 enum Drills {
     enum Light: String, Sendable, Decodable { case green, red, white }
 
+    /// The engine's card (EngineContract.DrillCard) with its lamp's colours
+    /// as the app draws them.
     struct Card: Equatable, Sendable, Identifiable, Decodable {
         let id: String
         let prompt: String
@@ -294,11 +286,21 @@ enum Drills {
 
     /// Both decks, the engine's (`drill_decks`): 14 CFR 91.125's table and
     /// 91.155(a)'s, worded there once from the rules the airspace column
-    /// gives each band.
-    private static let decks: [Deck] = (try? Engine.call("drill_decks", json: [:])) ?? []
+    /// gives each band. Asked once; a refusal is said where the drills are
+    /// listed (PilotGuideView), and each deck is then empty.
+    static let decks = Result {
+        try Engine.drillDecks().map { d in
+            Deck(key: d.key, title: d.title, source: d.source, url: URL(string: d.url) ?? URL(string: "https://www.ecfr.gov")!,
+                 cards: d.cards.map {
+                     Card(id: $0.id, prompt: $0.prompt, answer: $0.answer, detail: $0.detail,
+                          colours: $0.colours.compactMap(Light.init(rawValue:)), flashing: $0.flashing)
+                 })
+        }
+    }
 
     private static func deck(_ key: String) -> Deck {
-        decks.first { $0.key == key } ?? Deck(key: key, title: "", source: "", url: URL(string: "https://www.ecfr.gov")!, cards: [])
+        ((try? decks.get()) ?? []).first { $0.key == key }
+            ?? Deck(key: key, title: "", source: "", url: URL(string: "https://www.ecfr.gov")!, cards: [])
     }
 
     static var lightGun: Deck { deck("light-gun") }
@@ -350,23 +352,19 @@ enum Drills {
 /// and the planner's own; the altitude on each segment the engine's too
 /// (LostCommsSegmentsSections).
 enum LostComms {
-    /// The engine's answer with no segments: its words alone.
-    static func words(approachFix: Bool = false, efc: String = "", eta: String = "") -> LostCommsAnswer? {
-        try? Engine.lostComms(LostCommsAsk(segments: [], assignedFt: nil, expectedFt: nil, expectedFrom: 0,
-                                           approachFix: approachFix, efc: efc, eta: eta))
+    /// The engine's answer with no segments: its words alone; thrown where
+    /// it cannot answer, which the page says (LostCommsView).
+    static func words(approachFix: Bool = false, efc: String = "", eta: String = "") throws -> LostCommsAnswer {
+        try Engine.lostComms(segments: [], expectedFrom: 0, approachFix: approachFix, efc: efc, eta: eta)
     }
 
-    /// 91.185(c)(1): the route, in the rule's order -- the first that applies.
-    static var routes: [LostCommsRoute] { words()?.routes ?? [] }
-
-    /// 91.185(b): what VFR conditions call for, as the page opens.
-    static var vfr: String { words()?.vfr ?? "" }
-
-    /// 91.185(c)(2): the altitude rule, in words.
-    static var altitude: String { words()?.altitude ?? "" }
+    /// The rule's words as the page opens: 91.185(c)(1)'s routes in the
+    /// rule's order (the first that applies), (b)'s VFR words and (c)(2)'s
+    /// altitude rule.
+    static let opening = Result { try words() }
 
     /// 91.185(c)(3): when to leave the clearance limit, in words.
-    static func leaveLimit(approachFix: Bool, efc: String, eta: String) -> String {
-        words(approachFix: approachFix, efc: efc, eta: eta)?.leave ?? ""
+    static func leaveLimit(approachFix: Bool, efc: String, eta: String) throws -> String {
+        try words(approachFix: approachFix, efc: efc, eta: eta).leave
     }
 }

@@ -12,7 +12,7 @@ final class FlightUI {
     enum Card: Identifiable, Equatable {
         case airplane(String)
         case hold(String)
-        case flown(Int64, String)
+        case flown(Int, String)
 
         var id: String {
             switch self {
@@ -30,6 +30,9 @@ final class FlightUI {
     var fixFrom: String?
     /// A procedure's fix whose crossing altitude is asked for.
     var crossAt: String?
+    /// What the engine refused of a figure typed into one of the alerts,
+    /// said in an alert of its own rather than the figure dropped unsaid.
+    var problem: String?
 }
 
 /// The sheets over the tabs, as Maps stacks a place's card over its
@@ -74,7 +77,9 @@ struct PointAlerts: ViewModifier {
             .alert(ui.altitudeAt.map { "Altitude at \($0)" } ?? "Altitude", isPresented: shown(\.altitudeAt), presenting: ui.altitudeAt) { ident in
                 TextField(PointAltitude.isWaypoint(ident, course: plan.course) ? "FL-045 as 045" : "Feet", text: $typed).keyboardType(.numberPad)
                 Button("Set") {
-                    if let feet = PointAltitude.feet(typed, waypoint: PointAltitude.isWaypoint(ident, course: plan.course)) { plan.setAltitude(at: ident, feet: feet) }
+                    if let feet = refused({ try PointAltitude.feet(typed, waypoint: PointAltitude.isWaypoint(ident, course: plan.course)) }) {
+                        plan.setAltitude(at: ident, feet: feet)
+                    }
                     typed = ""
                 }
                 if plan.extras.altitudes[ident.uppercased()] != nil {
@@ -88,7 +93,7 @@ struct PointAlerts: ViewModifier {
                 TextField("Course, as 090", text: $course).keyboardType(.numberPad)
                 TextField("Distance, nm", text: $distance).keyboardType(.decimalPad)
                 Button("Add") {
-                    if let ident = PointAltitude.frd(from: from, course: course, distance: distance) { plan.insertFix(ident, after: from) }
+                    if let ident = refused({ try PointAltitude.frd(from: from, course: course, distance: distance) }) { plan.insertFix(ident, after: from) }
                     course = ""; distance = ""
                 }
                 Button("Cancel", role: .cancel) { course = ""; distance = "" }
@@ -98,7 +103,7 @@ struct PointAlerts: ViewModifier {
             .alert(ui.crossAt.map { "Cross \($0) at" } ?? "Cross at", isPresented: shown(\.crossAt), presenting: ui.crossAt) { fix in
                 TextField("Feet", text: $typed).keyboardType(.numberPad)
                 Button("Set") {
-                    if let feet = PointAltitude.feet(typed, waypoint: false) { plan.setCrossing(at: fix, feet: feet) }
+                    if let feet = refused({ try PointAltitude.feet(typed, waypoint: false) }) { plan.setCrossing(at: fix, feet: feet) }
                     typed = ""
                 }
                 if plan.extras.crossings[fix.uppercased()] != nil {
@@ -108,6 +113,20 @@ struct PointAlerts: ViewModifier {
             } message: { _ in
                 Text("The altitude ATC gave you to cross it at, in feet above sea level.")
             }
+            .alert("Couldn't Read That", isPresented: shown(\.problem), presenting: ui.problem) { _ in
+                Button("OK", role: .cancel) {}
+            } message: { problem in
+                Text(problem)
+            }
+    }
+
+    /// What was typed, read; where the engine refused, nil and the reason
+    /// in FlightUI.problem.
+    private func refused<T>(_ body: () throws -> T?) -> T? {
+        do { return try body() } catch {
+            FlightUI.shared.problem = error.localizedDescription
+            return nil
+        }
     }
 
     /// Whether one of the alerts is up, its subject set; put away, cleared.
@@ -118,7 +137,7 @@ struct PointAlerts: ViewModifier {
     /// A waypoint's is flown to it; an airport's is what a flight landing
     /// there comes down to; with the planner's cautions on the pilot's own.
     private func altitudeMessage(_ ident: String) -> String {
-        let cautions = plan.altitude?.cautions.filter { $0.toIdent.uppercased() == ident.uppercased() }.flatMap(\.reasons) ?? []
+        let cautions = plan.altitude?.cautions?.filter { $0.toIdent.uppercased() == ident.uppercased() }.flatMap(\.reasons) ?? []
         let base = PointAltitude.isWaypoint(ident, course: plan.course) ? "Flown to it at this altitude; the rest of the route as planned."
             : "Where a flight landing here comes down to, in feet above sea level."
         return ([base] + cautions).joined(separator: "\n")
@@ -131,29 +150,23 @@ enum PointAltitude {
     /// feet (045 for 4,500), an airport's in feet. A VFR altitude, under
     /// Class A's floor at 18,000 ft MSL (14 CFR 71.33, 91.135), as the
     /// planner takes one (PlanQuery.own_altitudes).
-    static func feet(_ typed: String, waypoint: Bool) -> Int? {
+    /// Nil for what is not an altitude; thrown where the engine refuses.
+    static func feet(_ typed: String, waypoint: Bool) throws -> Int? {
         let digits = typed.filter(\.isNumber)
         guard !digits.isEmpty, digits.count <= (waypoint ? 3 : 5), let figure = Int(digits) else { return nil }
         let feet = waypoint ? figure * 100 : figure
-        return Altitudes.allowed(Double(feet)) ? feet : nil
+        return try Altitudes.allowed(Double(feet)) ? feet : nil
     }
 
     /// A course of 000 to 360, out to 999 nm, as the planner takes a
     /// fix/radial/distance (wingtip.fixes.parse_frd): what is typed read as
     /// the engine's `frd_read` reads one, and written again as its
-    /// `frd_write` writes it.
-    struct Frd: Decodable {
-        let base: String
-        let course: Double
-        let distanceNm: Double
-    }
-
-    static func frd(from: String, course: String, distance: String) -> String? {
+    /// `frd_write` writes it. Nil for what is not one; thrown where the
+    /// engine refuses.
+    static func frd(from: String, course: String, distance: String) throws -> String? {
         let typed = "\(from)/\(course.filter(\.isNumber))/\(distance.trimmingCharacters(in: .whitespaces))"
-        let read: Frd?
-        do { read = try Engine.call("frd_read", json: ["text": typed], decoder: Planner.snakeCase) } catch { read = nil }
-        guard let read else { return nil }
-        return RouteExtras.frd(read.base, courseDeg: Int(read.course), nm: read.distanceNm)
+        guard let read = try Engine.frdRead(text: typed) else { return nil }
+        return try RouteExtras.frd(read.base, courseDeg: Int(read.course), nm: read.distanceNm)
     }
 
     /// Whether a point of the route is a waypoint rather than a field: a
@@ -318,6 +331,7 @@ struct HoldSheet: View {
     @State private var legMin = 1.0
     @State private var legNm = 4.0
     @State private var length = "2T"
+    @State private var problem: String?
 
     static let legMinutes = [1.0, 1.5, 2, 3]
     static let legMiles = [2.0, 3, 4, 5, 10]
@@ -372,6 +386,9 @@ struct HoldSheet: View {
                     Picker("Hold for", selection: $length) {
                         ForEach(Self.lengths, id: \.self) { Text(Self.lengthWords($0)).tag($0) }
                     }
+                    if let problem {
+                        Text("The leg time for this altitude couldn't be worked out: \(problem)").foregroundStyle(.orange)
+                    }
                 }
                 Section {
                     Button(was == nil ? "Add Hold" : "Change Hold") { set() }
@@ -413,7 +430,9 @@ struct HoldSheet: View {
             let magnetic = ((leg.trueCourseDeg - leg.magneticVariationDeg).truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
             let rounded = Int(magnetic.rounded()) % 360
             course = String(format: "%03d", rounded == 0 ? 360 : rounded)
-            legMin = Hold.legMinutes(altitudeFt: leg.altitudeFt)
+            // Where the engine refuses, the minute the form starts on
+            // stands and the reason shows under it.
+            do { legMin = try Hold.legMinutes(altitudeFt: leg.altitudeFt); problem = nil } catch { problem = error.localizedDescription }
         }
     }
 
@@ -446,16 +465,20 @@ struct ProcedureFixesView: View {
             if let drawing, let pick {
                 let direct = plan.extras.procedureDirect["\(ident):\(id)"]
                 Section {
-                    ForEach(drawing.fixes.filter { $0.missed != true }) { fix in
+                    ForEach(drawing.fixes.filter { !$0.missed }) { fix in
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
                                 Text(fix.ident).font(.headline.monospaced())
-                                if let roles = fix.roles, !roles.isEmpty { Text(roles.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary) }
+                                if !fix.roles.isEmpty { Text(fix.roles.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary) }
                                 Spacer()
                                 if let own = plan.extras.crossings[fix.ident.uppercased()] {
                                     Text("\(own.formatted()) ft").font(.subheadline.monospacedDigit()).foregroundStyle(.tint)
-                                } else if let charted = fix.charted {
-                                    Text(charted).font(.subheadline).foregroundStyle(.secondary)
+                                } else {
+                                    switch Result(catching: { try fix.charted() }) {
+                                    case .success(let charted?): Text(charted).font(.subheadline).foregroundStyle(.secondary)
+                                    case .success(nil): EmptyView()
+                                    case .failure: Text("Altitude not read").font(.subheadline).foregroundStyle(.orange)
+                                    }
                                 }
                             }
                             HStack {

@@ -35,24 +35,25 @@ struct ChecklistsTests {
         #expect(d.string(forKey: "unrelated") == "kept")
     }
 
-    @Test func theAirplaneIsItsNNumberElseItsType() {
+    @Test func theAirplaneIsItsNNumberElseItsType() throws {
         let plan = Plan()
         #expect(LocalChecklists.airplane(of: plan) == "C172")
         plan.tail = "N3429J"
         #expect(LocalChecklists.airplane(of: plan) == "N3429J")
     }
 
-    @Test func thePhasesAreHeadingsOnlyInTheHandbooksOrder() {
-        #expect(ChecklistPhases.normal.first == "Preflight inspection" && ChecklistPhases.normal.last == "Securing the airplane")
-        #expect(ChecklistPhases.normal.count == 13 && ChecklistPhases.emergency.count == 12)
-        #expect(ChecklistPhases.emergency.first == "Engine failure on the takeoff roll" && ChecklistPhases.emergency.last == "Inadvertent icing")
-        let text = ChecklistPhases.text(.emergency)
+    @Test func thePhasesAreHeadingsOnlyInTheHandbooksOrder() throws {
+        let normal = try ChecklistPhases.normal.get(), emergency = try ChecklistPhases.emergency.get()
+        #expect(normal.first == "Preflight inspection" && normal.last == "Securing the airplane")
+        #expect(normal.count == 13 && emergency.count == 12)
+        #expect(emergency.first == "Engine failure on the takeoff roll" && emergency.last == "Inadvertent icing")
+        let text = try ChecklistPhases.text(.emergency)
         let lines = text.split(separator: "\n").map(String.init)
         // Every line a heading: no item, no manufacturer's words.
         #expect(lines.allSatisfy { $0.hasPrefix("# ") })
-        #expect(lines.map { String($0.dropFirst(2)) } == ChecklistPhases.emergency)
+        #expect(lines.map { String($0.dropFirst(2)) } == emergency)
         // A heading with nothing under it is no section when read.
-        #expect(ChecklistText.parse(text).sections.isEmpty)
+        #expect(try ChecklistText.parse(text).sections.isEmpty)
     }
 
     @Test func theModelWritesRunsAndStartsOver() throws {
@@ -61,7 +62,7 @@ struct ChecklistsTests {
         #expect(model.text.isEmpty && model.checklist.sections.isEmpty && model.title == "N3429J Checklist")
         model.edit()
         model.startFromPhases()
-        #expect(model.writing == ChecklistPhases.text(.normal))
+        #expect(model.writing == (try ChecklistPhases.text(.normal)))
         // Not over what is written.
         model.writing = "# Before takeoff\nFuel selector -- Both\nDoors -- Closed\n"
         model.startFromPhases()

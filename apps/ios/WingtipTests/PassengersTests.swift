@@ -6,7 +6,7 @@ import Testing
 /// it sends (PassengerBriefing), and its ticks (PassengerBriefingModel).
 @MainActor
 struct PassengersTests {
-    @Test func theItemsInTheSafetyOrderWithTheirSources() {
+    @Test func theItemsInTheSafetyOrderWithTheirSources() throws {
         #expect(PassengerBriefing.items.map(\.key) == ["pax-belts", "pax-fastened", "pax-air", "pax-fire", "pax-exits", "pax-traffic", "pax-questions"])
         #expect(PassengerBriefing.items[0].source == "14 CFR 91.107(a)(1)")
         #expect(PassengerBriefing.items[1].source == "14 CFR 91.107(a)(2), (3)")
@@ -30,7 +30,7 @@ struct PassengersTests {
                 == "KDLH to KHIB\nAbout 40m in the air.")
     }
 
-    @Test func theDestinationsWeatherInWords() {
+    @Test func theDestinationsWeatherInWords() throws {
         #expect(PassengerBriefing.weather(nil) == nil)
         let metar = Metar(ceilingFt: 2500, flightCategory: "MVFR", visibilitySm: 5)
         #expect(PassengerBriefing.weather(metar) == "MVFR, ceiling 2,500 ft, 5 sm")

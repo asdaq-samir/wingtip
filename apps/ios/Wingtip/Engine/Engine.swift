@@ -120,6 +120,14 @@ enum Engine {
         }
     }
 
+    /// One type read as another of the same members by name, through the
+    /// JSON both write: for a rule whose contract types a member the app
+    /// already has a model of (the gateway's logbook entry) only loosely.
+    static func recoded<Out: Decodable>(_ value: some Encodable, encoder: JSONEncoder = Engine.encoder,
+                                        decoder: JSONDecoder = Engine.decoder) throws -> Out {
+        try decoder.decode(Out.self, from: encoder.encode(value))
+    }
+
     /// The same with the input as a JSON object written out in place, for
     /// an input with members of several types; nil is JSON's null, which
     /// the engine reads as a member left out.

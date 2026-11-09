@@ -9,12 +9,12 @@ import UIKit
 /// them: a CDN edition by path, the planner's by query, the revision on
 /// both.
 struct TilesTests {
-    @Test func cdnTilesCarryTheCycleAsAPathSegment() {
+    @Test func cdnTilesCarryTheCycleAsAPathSegment() throws {
         let t = TileTemplate(cycle: "09-03-2026", revision: 2, tilesBase: "https://tiles.example.com/tiles", kind: "sec")
         #expect(t.url(z: 8, x: 62, y: 93).absoluteString == "https://tiles.example.com/tiles/09-03-2026/sec/8/62/93.png?r=2")
     }
 
-    @Test func plannerTilesGoThroughTheGatewayWithTheCycleAsAQuery() {
+    @Test func plannerTilesGoThroughTheGatewayWithTheCycleAsAQuery() throws {
         let t = TileTemplate(cycle: "09-03-2026", revision: 0, tilesBase: nil, kind: "sec")
         let url = t.url(z: 8, x: 62, y: 93)
         #expect(url.host() == Config.host)
@@ -22,7 +22,7 @@ struct TilesTests {
         #expect(url.query() == "c=09-03-2026&r=0")
     }
 
-    @Test func theSharpTilesAreTheSameAddressWithAt2x() {
+    @Test func theSharpTilesAreTheSameAddressWithAt2x() throws {
         let cdn = TileTemplate(cycle: "09-03-2026", revision: 2, tilesBase: "https://tiles.example.com/tiles", kind: "sec", scale: 2)
         #expect(cdn.url(z: 8, x: 62, y: 93).absoluteString == "https://tiles.example.com/tiles/09-03-2026/sec/8/62/93@2x.png?r=2")
         let planner = TileTemplate(cycle: "09-03-2026", revision: 0, tilesBase: nil, kind: "sec", scale: 2)
@@ -39,7 +39,7 @@ struct TilesTests {
         try? FileManager.default.removeItem(at: root)
     }
 
-    @Test func plannerPathsAreRewrittenUnderTheGatewaysProxy() {
+    @Test func plannerPathsAreRewrittenUnderTheGatewaysProxy() throws {
         #expect(Config.plannerPath("/api/chart") == "/api/planner/chart")
         #expect(Config.plannerPath("/api/airport/KDLH") == "/api/planner/airport/KDLH")
         #expect(Config.plannerPath("/logout") == "/logout")
@@ -61,13 +61,13 @@ struct TilesTests {
 
 /// The tiles a route's corridor needs, the web map's own arithmetic.
 struct KeepRouteTests {
-    @Test func aPointFallsInTheTileTheWebMapAsksFor() {
+    @Test func aPointFallsInTheTileTheWebMapAsksFor() throws {
         // Campbell (C81) at zoom 8: x 65, y 94, as the web map addresses it.
         let t = KeepRoute.tile(lat: 42.3246, lon: -88.0741, zoom: 8)
         #expect(t.x == 65 && t.y == 94)
     }
 
-    @Test func aShortRouteWantsAFewTilesAtEachZoomAndMoreAtTheFiner() {
+    @Test func aShortRouteWantsAFewTilesAtEachZoomAndMoreAtTheFiner() throws {
         let line = [CLLocationCoordinate2D(latitude: 42.32, longitude: -88.07), CLLocationCoordinate2D(latitude: 42.42, longitude: -87.87)]
         let coarse = KeepRoute.tiles(along: line, minZoom: 7, maxZoom: 7)
         let fine = KeepRoute.tiles(along: line, minZoom: 10, maxZoom: 10)
@@ -81,13 +81,13 @@ struct KeepRouteTests {
 /// (ChartTileRenderer): which level it draws at a zoom, where each tile
 /// lies, and the memory it keeps the decoded tiles in.
 struct ChartTileMathTests {
-    @Test func aTilesSquareIsTheWorldCutTwoToTheZTimes() {
+    @Test func aTilesSquareIsTheWorldCutTwoToTheZTimes() throws {
         let rect = ChartTileMath.mapRect(ChartTile(z: 10, x: 262, y: 380))
         #expect(rect.width == MKMapSize.world.width / 1024)
         #expect(rect.minX == 262 * rect.width && rect.minY == 380 * rect.height)
     }
 
-    @Test func OHaresTileIsTheOneTheWebMapAsksFor() {
+    @Test func OHaresTileIsTheOneTheWebMapAsksFor() throws {
         // The position dot's map point falls in the tile the web map
         // addresses for the same place at every level: the chart and the
         // dot are on one grid.
@@ -100,7 +100,7 @@ struct ChartTileMathTests {
         }
     }
 
-    @Test func aRectWantsTheTilesItTouchesAndNoMore() {
+    @Test func aRectWantsTheTilesItTouchesAndNoMore() throws {
         let one = ChartTileMath.mapRect(ChartTile(z: 8, x: 65, y: 94))
         #expect(ChartTileMath.tiles(in: one, z: 8) == [ChartTile(z: 8, x: 65, y: 94)])
         let four = ChartTileMath.tiles(in: one.offsetBy(dx: one.width / 2, dy: one.height / 2), z: 8)
@@ -112,7 +112,7 @@ struct ChartTileMathTests {
     /// The zoom scale at which the pyramid's level z is 256 points a tile.
     private static func scale(level z: Double) -> Double { 256 * pow(2, z) / MKMapSize.world.width }
 
-    @Test func aThreeXScreenDrawsTheSharpTilesNeverEnlargedMoreThanHalfAgain() {
+    @Test func aThreeXScreenDrawsTheSharpTilesNeverEnlargedMoreThanHalfAgain() throws {
         // At a whole level the 512-pixel tile covers 768 pixels: 1.5, so
         // that level; a little past it a level finer.
         #expect(ChartTileMath.level(zoomScale: Self.scale(level: 8), screenScale: 3, tileScale: 2, minZoom: 3, maxZoom: 12) == 8)
@@ -124,7 +124,7 @@ struct ChartTileMathTests {
         #expect(ChartTileMath.level(zoomScale: Self.scale(level: 8), screenScale: 3, tileScale: 1, minZoom: 3, maxZoom: 12) == 9)
     }
 
-    @Test func theLevelStaysInsideThePyramid() {
+    @Test func theLevelStaysInsideThePyramid() throws {
         // Past the last level, the last enlarged; under the first, the
         // first to a level above it, then no chart.
         #expect(ChartTileMath.level(zoomScale: Self.scale(level: 15), screenScale: 3, tileScale: 2, minZoom: 3, maxZoom: 12) == 12)

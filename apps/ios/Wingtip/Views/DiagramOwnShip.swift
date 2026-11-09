@@ -32,7 +32,9 @@ struct DiagramOwnShipView: View {
     /// 11.17.2.4, 30 m).
     static func usable(_ fix: OwnShip.Fix?, now: Date) -> OwnShip.Fix? {
         guard let fix else { return nil }
-        let drawn: Bool? = try? Engine.call("diagram_fix_usable", json: ["age_s": now.timeIntervalSince(fix.at), "accuracy_m": fix.accuracyM])
+        // Where the engine cannot say, the airplane is not drawn: a fix
+        // shown that should not be is the danger here (logged by Engine.rule).
+        let drawn = try? Engine.diagramFixUsable(ageS: now.timeIntervalSince(fix.at), accuracyM: fix.accuracyM)
         return drawn == true ? fix : nil
     }
 
@@ -153,16 +155,8 @@ struct DiagramOwnShipView: View {
 /// A diagram's first page as a picture, with its graticule from its labels
 /// (nil where it has none the engine can fit).
 struct DiagramPage {
-    struct Graticule: Decodable, Equatable {
-        let latOnX: Bool
-        let a, b, c, d: Double
-        let northDeg: Double
-    }
-
-    struct Placed: Decodable, Equatable {
-        let x, y: Double
-        let onPage: Bool
-    }
+    typealias Graticule = EngineContract.DiagramGraticuleAnswer
+    typealias Placed = EngineContract.DiagramPointAnswer
 
     let image: UIImage
     /// The page in points.
@@ -172,11 +166,11 @@ struct DiagramPage {
     /// Where the fix is on the page, in points from its top left.
     func place(_ fix: OwnShip.Fix) -> Placed? {
         guard let g = graticule else { return nil }
-        return try? Engine.call("diagram_point", json: [
-            "graticule": ["lat_on_x": g.latOnX, "a": g.a, "b": g.b, "c": g.c, "d": g.d, "north_deg": g.northDeg] as [String: Any],
-            "lat": fix.coordinate.latitude, "lon": fix.coordinate.longitude,
-            "width": Double(size.width), "height": Double(size.height),
-        ], decoder: Planner.snakeCase)
+        // Not placed where the engine refuses: the sheet then says the
+        // airplane is off the diagram rather than drawing it anywhere.
+        return try? Engine.diagramPoint(graticule: .init(latOnX: g.latOnX, a: g.a, b: g.b, c: g.c, d: g.d, northDeg: g.northDeg),
+                                        lat: fix.coordinate.latitude, lon: fix.coordinate.longitude,
+                                        width: Double(size.width), height: Double(size.height))
     }
 
     /// The PDF's first page drawn three times its size, and its labels
@@ -190,17 +184,19 @@ struct DiagramPage {
         // the d-TPP's are all upright (0), and another is drawn without
         // the airplane.
         guard page.rotation == 0, let text = page.string else { return DiagramPage(image: image, size: box.size, graticule: nil) }
-        let words: [String] = (try? Engine.call("diagram_labels", json: ["text": text])) ?? []
-        var placed: [[String: Any]] = []
+        // A page whose labels the engine cannot read is drawn without the
+        // airplane, as a page with none is (logged by Engine.rule).
+        let words: [String] = (try? Engine.diagramLabels(text: text)) ?? []
+        var placed: [EngineContract.DiagramGraticuleInputLabelsItem] = []
         for word in words {
             for found in document.findString(word, withOptions: .literal) where found.pages.first == page {
                 let at = found.bounds(for: page)
                 // PDFKit's points are from the page's foot; the engine's
                 // from its top left.
-                placed.append(["text": word, "x": Double(at.midX - box.minX), "y": Double(box.maxY - at.midY)])
+                placed.append(.init(text: word, x: Double(at.midX - box.minX), y: Double(box.maxY - at.midY)))
             }
         }
-        let graticule: Graticule? = try? Engine.call("diagram_graticule", json: ["labels": placed], decoder: Planner.snakeCase)
+        let graticule = (try? Engine.diagramGraticule(labels: placed)) ?? nil
         return DiagramPage(image: image, size: box.size, graticule: graticule)
     }
 }

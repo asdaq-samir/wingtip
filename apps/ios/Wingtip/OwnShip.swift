@@ -106,7 +106,9 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     /// not answer. The asking is a task of its own, so the next question
     /// cancels one still unanswered.
     private func askAhead() {
-        guard let fix, let track = fix.trackDeg, let gs = fix.groundspeedKt, Flight.underway(gs) else { return }
+        // A refusal asks nothing ahead; the instruments bar says why
+        // (InFlight.problem, from the same fix).
+        guard let fix, let track = fix.trackDeg, let gs = fix.groundspeedKt, (try? Flight.underway(gs)) == true else { return }
         asking?.cancel()
         asking = Task { [weak self] in
             let (lat, lon) = (fix.coordinate.latitude, fix.coordinate.longitude)

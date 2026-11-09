@@ -14,7 +14,8 @@ struct LegDetailView: View {
             Section("Course and heading") {
                 LabeledContent("True course", value: AirportWords.degrees(leg.trueCourseDeg))
                     .accessibilityValue(SpokenFigures.degrees(leg.trueCourseDeg))
-                if let wind = leg.wind, let dir = wind.directionDeg, let kt = wind.speedKt {
+                if let wind = leg.wind {
+                    let (dir, kt) = (wind.windDirTrueDeg, wind.windSpeedKt)
                     LabeledContent("Wind", value: "\(Formats.degrees(dir)) at \(Formats.kt(kt))")
                         .accessibilityValue("\(SpokenFigures.degrees(dir)) at \(SpokenFigures.knots(kt))")
                 }
@@ -41,8 +42,8 @@ struct LegDetailView: View {
             }
             if leg.toc != nil || leg.tod != nil {
                 Section("Climb and descent") {
-                    if let toc = leg.toc, let along = toc.alongNm { LabeledContent("Top of climb", value: "\(Formats.nm(along)) along") }
-                    if let tod = leg.tod, let along = tod.alongNm { LabeledContent("Top of descent", value: "\(Formats.nm(along)) along") }
+                    if let along = leg.toc?.alongNm { LabeledContent("Top of climb", value: "\(Formats.nm(along)) along") }
+                    if let along = leg.tod?.alongNm { LabeledContent("Top of descent", value: "\(Formats.nm(along)) along") }
                 }
             }
         }
@@ -53,9 +54,6 @@ struct LegDetailView: View {
 
 #Preview("LegDetailView") {
     NavigationStack {
-        LegDetailView(leg: Leg(from: "KDLH", to: "KHIB", distanceNm: 62.4, altitudeFt: 4500, trueCourseDeg: 318, magneticHeadingDeg: 315,
-                               wcaDeg: -4, trueHeadingDeg: 314, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 104, eteMin: 36,
-                               fuelGal: 5.1, tasKt: 112, wind: Leg.Wind(directionDeg: 270, speedKt: 12),
-                               toc: Leg.TopOfClimb(alongNm: 9.2), tod: Leg.TopOfDescent(alongNm: 50.1)))
+        LegDetailView(leg: Leg.preview(from: "KDLH", to: "KHIB", distanceNm: 62.4, altitudeFt: 4500, trueCourseDeg: 318, magneticHeadingDeg: 315, wcaDeg: -4, trueHeadingDeg: 314, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 104, eteMin: 36, fuelGal: 5.1, tasKt: 112, wind: APIWind(windDirTrueDeg: 270, windSpeedKt: 12)))
     }
 }
