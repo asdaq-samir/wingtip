@@ -54,6 +54,7 @@ import app.wingtipmaps.android.plan.FlightRules
 import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.route.RoutePointMenu
 import app.wingtipmaps.android.route.RouteUndoRow
+import app.wingtipmaps.android.share.ShareRouteButton
 
 /**
  * The flight plan: the route typed, planned, and the nav log's legs as
@@ -97,6 +98,8 @@ fun FPLScreen(plan: Plan) {
             // The route's Brief beside its Plan, where the pilot looks for it
             // once the route is in (OpenScreen's sheet, as the strip has it).
             if (state.routed && !state.planning) TextButton(onClick = { ScreenRequests.ask(Screen.BRIEF) }) { Text(stringResource(R.string.brief)) }
+            // And its Share: the plan as a link another pilot opens (share/).
+            if (state.routed && !state.planning) ShareRouteButton(state)
             if (state.planning) Loading(Modifier.size(WingtipSpace.Xl))
             state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
