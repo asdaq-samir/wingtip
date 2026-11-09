@@ -138,7 +138,7 @@ fn cruise(v: &Value, u: &Units, items: &mut Vec<Item>) -> R<Vec<(usize, Cruise)>
 fn distances(v: &Value, key: &'static str, title: &str, u: &Units, items: &mut Vec<Item>) -> R<Vec<Distance>> {
     let mut kept = Vec::new();
     for (i, r) in rows(v, key)?.iter().enumerate() {
-        let (alt, temp, roll, over) = (num(r, "pressure_altitude_ft")?, num(r, "temp_c")?, num(r, "ground_roll")?, num(r, "over_50ft")?);
+        let (alt, temp, roll, over) = (num(r, "pressure_altitude_ft")?, num(r, "temp_c")?, num(r, "ground_roll")?, num(r, "over_obstacle")?);
         let p = |k: &str| format!("{key}.{i}.{k}");
         let mut item = Item { key: format!("{key}.{i}"), group: key, figures: Vec::new(), flags: Vec::new(), title: match (alt, temp) {
             (Some(a), Some(t)) => format!("{title} at {} ft, {} °C", figure(a), figure(t)),
@@ -147,10 +147,10 @@ fn distances(v: &Value, key: &'static str, title: &str, u: &Units, items: &mut V
         if let Some(a) = alt { item.figures.push(fig(p("pressure_altitude_ft"), "Pressure altitude", a, "ft", a, "ft")); }
         if let Some(t) = temp { item.figures.push(fig(p("temp_c"), "Temperature", t, "°C", t, "°C")); }
         if let Some(x) = roll { item.figures.push(fig(p("ground_roll"), "Ground roll", x, u.distance, u.ft(x), "ft")); }
-        if let Some(x) = over { item.figures.push(fig(p("over_50ft"), "Over a 50 ft obstacle", x, u.distance, u.ft(x), "ft")); }
+        if let Some(x) = over { item.figures.push(fig(p("over_obstacle"), "Over a 50 ft obstacle", x, u.distance, u.ft(x), "ft")); }
         match (alt, temp, roll, over) {
             (Some(a), Some(t), Some(g), Some(o)) => {
-                kept.push((items.len(), Distance { pressure_altitude_ft: a, temp_c: t, ground_roll_ft: u.ft(g), over_50ft_ft: u.ft(o) }));
+                kept.push((items.len(), Distance { pressure_altitude_ft: a, temp_c: t, ground_roll_ft: u.ft(g), over_obstacle_ft: u.ft(o) }));
             }
             _ => missing(&mut item, "altitude, temperature, ground roll or distance over 50 ft"),
         }
@@ -255,7 +255,7 @@ pub fn check(v: &Value) -> R<String> {
     let row = |c: &Cruise| Obj::new().num("altitude_ft", c.altitude_ft).opt("power_pct", c.power_pct).opt("rpm", c.rpm)
         .num("tas_kt", c.tas_kt).num("burn_gph", c.burn_gph).done();
     let dist = |d: &Distance| Obj::new().num("pressure_altitude_ft", d.pressure_altitude_ft).num("temp_c", d.temp_c)
-        .num("ground_roll_ft", d.ground_roll_ft).num("over_50ft_ft", d.over_50ft_ft).done();
+        .num("ground_roll_ft", d.ground_roll_ft).num("over_obstacle_ft", d.over_obstacle_ft).done();
     let handbook = Obj::new()
         .raw("cruise", &array(cruise.iter().map(|(_, c)| row(c))))
         .opt("climb_speed_kias", vy).opt("climb_rate_fpm", rate).opt("climb_burn_gph", cburn)

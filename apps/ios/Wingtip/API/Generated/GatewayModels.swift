@@ -110,10 +110,11 @@ struct GWCorner: Codable, Equatable, Sendable {
 /// A takeoff or landing distance table's row: ground roll and total over a 50 ft obstacle
 // MARK: - GWDistance
 struct GWDistance: Codable, Equatable, Sendable {
-    var groundRollFt, pressureAltitudeFt, tempC: Double
+    var groundRollFt, overObstacleFt, pressureAltitudeFt, tempC: Double
 
     enum CodingKeys: String, CodingKey {
         case groundRollFt = "ground_roll_ft"
+        case overObstacleFt = "over_obstacle_ft"
         case pressureAltitudeFt = "pressure_altitude_ft"
         case tempC = "temp_c"
     }

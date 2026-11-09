@@ -16,13 +16,13 @@
         "climb": {"speed": 74, "rate_fpm": 700, "burn": 11},
         "glide": {"speed": 68, "ratio": 9},
         "takeoff": [
-          {"pressure_altitude_ft": 0, "temp_c": 0, "ground_roll": 845, "over_50ft": 1510},
-          {"pressure_altitude_ft": 0, "temp_c": 20, "ground_roll": 935, "over_50ft": 1665},
-          {"pressure_altitude_ft": 2000, "temp_c": 0, "ground_roll": 1010, "over_50ft": 1805}
+          {"pressure_altitude_ft": 0, "temp_c": 0, "ground_roll": 845, "over_obstacle": 1510},
+          {"pressure_altitude_ft": 0, "temp_c": 20, "ground_roll": 935, "over_obstacle": 1665},
+          {"pressure_altitude_ft": 2000, "temp_c": 0, "ground_roll": 1010, "over_obstacle": 1805}
         ],
         "landing": [
-          {"pressure_altitude_ft": 0, "temp_c": 0, "ground_roll": 545, "over_50ft": 1290},
-          {"pressure_altitude_ft": 0, "temp_c": 20, "ground_roll": 585, "over_50ft": 1335}
+          {"pressure_altitude_ft": 0, "temp_c": 0, "ground_roll": 545, "over_obstacle": 1290},
+          {"pressure_altitude_ft": 0, "temp_c": 20, "ground_roll": 585, "over_obstacle": 1335}
         ],
         "empty": {"weight": 1680, "arm": 39.5, "moment": 66.36, "moment_divisor": 1000},
         "max_takeoff_weight": 2450,
@@ -60,7 +60,7 @@
           {"altitude_ft": 8000, "power_pct": 65}
         ],
         "glide": {"speed": 68, "ratio": 0.9},
-        "takeoff": [{"pressure_altitude_ft": 0, "temp_c": 15, "ground_roll": 1665, "over_50ft": 935}],
+        "takeoff": [{"pressure_altitude_ft": 0, "temp_c": 15, "ground_roll": 1665, "over_obstacle": 935}],
         "empty": {"weight": 1680, "arm": 39.5, "moment": 63.36, "moment_divisor": 1000},
         "max_takeoff_weight": 2450,
         "envelope": [{"arm": 35, "weight": 1500}, {"arm": 35, "weight": 1950}, {"arm": 47.3, "weight": 2450}, {"arm": 41, "weight": 2450}, {"arm": 47.3, "weight": 1500}],

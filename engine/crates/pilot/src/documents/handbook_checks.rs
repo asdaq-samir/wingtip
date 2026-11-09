@@ -109,7 +109,7 @@ pub struct Distance {
     pub pressure_altitude_ft: f64,
     pub temp_c: f64,
     pub ground_roll_ft: f64,
-    pub over_50ft_ft: f64,
+    pub over_obstacle_ft: f64,
 }
 
 /// Each row's flags. The distance over a 50 ft obstacle includes the
@@ -122,15 +122,15 @@ pub fn distances(rows: &[Distance]) -> Vec<Vec<Flag>> {
         band(&mut f, "The pressure altitude", r.pressure_altitude_ft, "ft", 0.0, 12_000.0, false);
         band(&mut f, "The temperature", r.temp_c, "°C", -40.0, 50.0, false);
         band(&mut f, "The ground roll", r.ground_roll_ft, "ft", 100.0, 6_000.0, true);
-        band(&mut f, "The distance over 50 ft", r.over_50ft_ft, "ft", 200.0, 10_000.0, true);
-        if r.over_50ft_ft < r.ground_roll_ft {
+        band(&mut f, "The distance over 50 ft", r.over_obstacle_ft, "ft", 200.0, 10_000.0, true);
+        if r.over_obstacle_ft < r.ground_roll_ft {
             f.push(wrong(format!("The distance over 50 ft ({} ft) reads shorter than the ground roll ({} ft) it includes.",
-                figure(r.over_50ft_ft), figure(r.ground_roll_ft))));
+                figure(r.over_obstacle_ft), figure(r.ground_roll_ft))));
         }
         let thinner = rows.iter().any(|o| {
             let higher = o.temp_c == r.temp_c && o.pressure_altitude_ft < r.pressure_altitude_ft;
             let cooler = o.pressure_altitude_ft == r.pressure_altitude_ft && o.temp_c < r.temp_c;
-            (higher || cooler) && (o.ground_roll_ft > r.ground_roll_ft || o.over_50ft_ft > r.over_50ft_ft)
+            (higher || cooler) && (o.ground_roll_ft > r.ground_roll_ft || o.over_obstacle_ft > r.over_obstacle_ft)
         });
         if thinner {
             f.push(check("A lower or cooler row reads longer than this one: thinner air takes more distance.".into()));

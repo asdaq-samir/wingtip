@@ -183,8 +183,8 @@ data class Distance (
     @SerialName("ground_roll_ft")
     val groundRollFt: Double,
 
-    @SerialName("over_50ft_ft")
-    val over50FtFt: Double,
+    @SerialName("over_obstacle_ft")
+    val overObstacleFt: Double,
 
     @SerialName("pressure_altitude_ft")
     val pressureAltitudeFt: Double,

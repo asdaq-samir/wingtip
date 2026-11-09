@@ -210,6 +210,8 @@ struct ASGlide: Codable, Equatable, Sendable {
 struct ASDistanceRow: Codable, Equatable, Sendable {
     /// In distance_unit.
     var groundRoll: Double?
+    /// Total distance to clear a 50 ft obstacle, in distance_unit.
+    var overObstacle: Double?
     var pressureAltitudeFt: Double?
     /// Outside air temperature, degrees Celsius.
     var tempC: Double?
@@ -253,7 +255,7 @@ struct ASHandbookCorner: Codable, Equatable, Sendable {
 
 // MARK: - ASHandbookDistance
 struct ASHandbookDistance: Codable, Equatable, Sendable {
-    var groundRollFt, pressureAltitudeFt, tempC: Double
+    var groundRollFt, overObstacleFt, pressureAltitudeFt, tempC: Double
 }
 
 // MARK: - ASHandbookItem

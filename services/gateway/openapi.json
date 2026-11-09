@@ -655,7 +655,7 @@
             "format" : "double",
             "type" : "number"
           },
-          "over_50ft_ft" : {
+          "over_obstacle_ft" : {
             "format" : "double",
             "type" : "number"
           },
@@ -668,7 +668,7 @@
             "type" : "number"
           }
         },
-        "required" : [ "ground_roll_ft", "over_50ft_ft", "pressure_altitude_ft", "temp_c" ],
+        "required" : [ "ground_roll_ft", "over_obstacle_ft", "pressure_altitude_ft", "temp_c" ],
         "type" : "object"
       },
       "DueDto" : {

@@ -407,7 +407,7 @@
             "description": "In distance_unit.",
             "title": "Ground Roll"
           },
-          "over_50ft": {
+          "over_obstacle": {
             "anyOf": [
               {
                 "type": "number"
@@ -417,7 +417,7 @@
               }
             ],
             "description": "Total distance to clear a 50 ft obstacle, in distance_unit.",
-            "title": "Over 50Ft"
+            "title": "Over Obstacle"
           },
           "pressure_altitude_ft": {
             "anyOf": [
@@ -820,8 +820,8 @@
             "title": "Ground Roll Ft",
             "type": "number"
           },
-          "over_50ft_ft": {
-            "title": "Over 50Ft Ft",
+          "over_obstacle_ft": {
+            "title": "Over Obstacle Ft",
             "type": "number"
           },
           "pressure_altitude_ft": {
@@ -837,7 +837,7 @@
           "pressure_altitude_ft",
           "temp_c",
           "ground_roll_ft",
-          "over_50ft_ft"
+          "over_obstacle_ft"
         ],
         "title": "HandbookDistance",
         "type": "object"

@@ -25619,7 +25619,7 @@
         "ground_roll_ft": {
           "type": "number"
         },
-        "over_50ft_ft": {
+        "over_obstacle_ft": {
           "type": "number"
         }
       },
@@ -25627,7 +25627,7 @@
         "pressure_altitude_ft",
         "temp_c",
         "ground_roll_ft",
-        "over_50ft_ft"
+        "over_obstacle_ft"
       ]
     },
     "HandbookDistanceRead": {
@@ -25653,7 +25653,7 @@
           ],
           "description": "In distance_unit."
         },
-        "over_50ft": {
+        "over_obstacle": {
           "type": [
             "number",
             "null"

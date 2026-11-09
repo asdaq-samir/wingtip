@@ -4050,8 +4050,8 @@ object EngineContract {
         val tempC: Double,
         @SerialName("ground_roll_ft")
         val groundRollFt: Double,
-        @SerialName("over_50ft_ft")
-        val over50ftFt: Double,
+        @SerialName("over_obstacle_ft")
+        val overObstacleFt: Double,
     )
 
     @Serializable
@@ -4068,8 +4068,8 @@ object EngineContract {
         /**
          * Total over a 50 ft obstacle, in distance_unit.
          */
-        @SerialName("over_50ft")
-        val over50ft: Double? = null,
+        @SerialName("over_obstacle")
+        val overObstacle: Double? = null,
     )
 
     @Serializable

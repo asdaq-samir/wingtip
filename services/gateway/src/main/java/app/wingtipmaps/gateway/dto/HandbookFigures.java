@@ -35,7 +35,7 @@ public record HandbookFigures(
     }
 
     @Schema(description = "A takeoff or landing distance table's row: ground roll and total over a 50 ft obstacle")
-    public record Distance(double pressure_altitude_ft, double temp_c, double ground_roll_ft, double over_50ft_ft) {
+    public record Distance(double pressure_altitude_ft, double temp_c, double ground_roll_ft, double over_obstacle_ft) {
     }
 
     @Schema(description = "A corner of the CG envelope: arm aft of the datum and weight")

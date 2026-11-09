@@ -4169,13 +4169,13 @@ enum EngineContract {
         var pressureAltitudeFt: Double
         var tempC: Double
         var groundRollFt: Double
-        var over50ftFt: Double
+        var overObstacleFt: Double
 
         enum CodingKeys: String, CodingKey {
             case pressureAltitudeFt = "pressure_altitude_ft"
             case tempC = "temp_c"
             case groundRollFt = "ground_roll_ft"
-            case over50ftFt = "over_50ft_ft"
+            case overObstacleFt = "over_obstacle_ft"
         }
     }
 
@@ -4185,13 +4185,13 @@ enum EngineContract {
         /// In distance_unit.
         var groundRoll: Double?
         /// Total over a 50 ft obstacle, in distance_unit.
-        var over50ft: Double?
+        var overObstacle: Double?
 
         enum CodingKeys: String, CodingKey {
             case pressureAltitudeFt = "pressure_altitude_ft"
             case tempC = "temp_c"
             case groundRoll = "ground_roll"
-            case over50ft = "over_50ft"
+            case overObstacle = "over_obstacle"
         }
     }
 

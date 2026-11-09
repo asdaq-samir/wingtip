@@ -21,7 +21,7 @@
       ],
       "description": "In distance_unit."
     },
-    "over_50ft": {
+    "over_obstacle": {
       "type": [
         "number",
         "null"

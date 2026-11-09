@@ -55,7 +55,7 @@ class DistanceRow(BaseModel):
     pressure_altitude_ft: float | None = None
     temp_c: float | None = Field(None, description="Outside air temperature, degrees Celsius.")
     ground_roll: float | None = Field(None, description="In distance_unit.")
-    over_50ft: float | None = Field(None, description="Total distance to clear a 50 ft obstacle, in distance_unit.")
+    over_obstacle: float | None = Field(None, description="Total distance to clear a 50 ft obstacle, in distance_unit.")
 
 
 class Empty(BaseModel):
@@ -220,7 +220,7 @@ class HandbookDistance(BaseModel):
     pressure_altitude_ft: float
     temp_c: float
     ground_roll_ft: float
-    over_50ft_ft: float
+    over_obstacle_ft: float
 
 
 class HandbookCorner(BaseModel):

@@ -362,8 +362,8 @@ data class DistanceRow (
     /**
      * Total distance to clear a 50 ft obstacle, in distance_unit.
      */
-    @SerialName("over_50ft")
-    val over50Ft: Double? = null,
+    @SerialName("over_obstacle")
+    val overObstacle: Double? = null,
 
     @SerialName("pressure_altitude_ft")
     val pressureAltitudeFt: Double? = null,
@@ -462,8 +462,8 @@ data class HandbookDistance (
     @SerialName("ground_roll_ft")
     val groundRollFt: Double,
 
-    @SerialName("over_50ft_ft")
-    val over50FtFt: Double,
+    @SerialName("over_obstacle_ft")
+    val overObstacleFt: Double,
 
     @SerialName("pressure_altitude_ft")
     val pressureAltitudeFt: Double,
