@@ -39,14 +39,33 @@ class UpstreamRoutesTest {
             "GET /api/cycle-pack/{cycle}/{file}", "the planner answers /api/cycle-pack/{cycle}/{region}.pack alone",
             "POST /api/words/{kind}", "the assistant answers notams, weather, risk, debrief and changes alone");
 
+    /**
+     * Routes marked since the hand list was recorded, with no row there to
+     * be held to: each new one's rules are its own test's.
+     */
+    static final Map<String, String> ADDED = Map.of(
+            "GET /api/emergency/fields", "the emergency assistant's fields: public, no sign-in in an emergency");
+
+    @Test
+    void theEmergencyFieldsArePublicFromThePlanner() {
+        var route = UpstreamRoutes.shipped().find("GET", "/api/emergency/fields").orElseThrow();
+        assertThat(route.upstream()).isEqualTo(Upstream.PLANNER);
+        assertThat(route.access()).isEqualTo(UpstreamRoutes.Access.PUBLIC);
+        assertThat(route.cache()).isFalse();
+    }
+
     @Test
     void everyRouteTheDocumentsMarkIsOneTheHandListForwardedWithTheSameRules() {
-        assertThat(routes).hasSize(89);
+        assertThat(routes).hasSize(89 + ADDED.size());
         List<String> differences = new ArrayList<>();
         for (Route route : routes) {
             String sample = RoutesBefore.sample(route.pattern().getPatternString());
             RoutesBefore old = before.stream().filter(b -> b.matches(route.method(), sample)).findFirst().orElse(null);
             String name = route.method() + " " + route.pattern().getPatternString();
+            if (ADDED.containsKey(name)) {
+                assertThat(old).as(name + " is listed as added, but the hand list had it").isNull();
+                continue;
+            }
             if (old == null) {
                 differences.add(name + ": not forwarded before");
                 continue;

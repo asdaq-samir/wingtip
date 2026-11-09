@@ -12,6 +12,11 @@
     "demonstrated_kt": 15,
     "source": "Cessna 172S POH (1998), section 4: maximum demonstrated crosswind velocity, takeoff or landing"
   },
+  "glide": {
+    "best_glide_kias": 68,
+    "ratio": 9,
+    "source": "Cessna 172S POH (1998), section 3: best glide 68 KIAS; figure 3-1, maximum glide, about 1.5 nm for every 1,000 ft (9 to 1), propeller windmilling, flaps up, zero wind"
+  },
   "taxi_fuel_gal": 1.4,
   "loading": {
     "source": "Cessna 172S POH (1998), sections 2 and 6: the normal category",

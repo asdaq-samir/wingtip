@@ -198,3 +198,46 @@ pub fn write(sections: &[Section]) -> String {
         .collect::<Vec<_>>()
         .join("\n\n")
 }
+/// Words that say nothing of which emergency a heading is.
+const FILLER: [&str; 9] = ["in", "the", "on", "a", "an", "of", "with", "without", "after"];
+
+/// The words of a heading as compared: lowercase, the filler left out,
+/// each cut to its first four letters so "failure" meets "fail" and
+/// "fires" "fire".
+fn keys(title: &str) -> Vec<String> {
+    title
+        .to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty() && !FILLER.contains(w))
+        .map(|w| w.chars().take(4).collect::<String>())
+        .collect()
+}
+
+/// Which of a checklist's section `titles` is the one for `want` (one of
+/// EMERGENCY_PHASES, say, "Engine failure in flight"), as the pilot may
+/// have written it ("ENGINE FAILURE DURING FLIGHT", "Engine fail -
+/// in flight"): one with the phase's first two words, what the emergency
+/// is ("engine failure", not "engine fire"), and of those the one sharing
+/// the most of the rest, the first of equals; None where none has them. A
+/// heading is the pilot's own, from their airplane's handbook, so it is
+/// matched, not required.
+pub fn section_for(titles: &[String], want: &str) -> Option<usize> {
+    let wanted = keys(want);
+    let head = &wanted[..wanted.len().min(2)];
+    if head.is_empty() {
+        return None;
+    }
+    let mut best: Option<(usize, usize)> = None;
+    for (index, title) in titles.iter().enumerate() {
+        let have = keys(title);
+        if !head.iter().all(|w| have.contains(w)) {
+            continue;
+        }
+        let shared = wanted.iter().filter(|w| have.contains(w)).count();
+        if best.is_none_or(|(_, b)| shared > b) {
+            best = Some((index, shared));
+        }
+    }
+    best.map(|(index, _)| index)
+}
+

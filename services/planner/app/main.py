@@ -52,6 +52,7 @@ from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
 from .planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan
+from .routers import emergency
 from .routers import clearance, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, traffic, weather_map, words
 from .schemas import STREAM_MESSAGES, Index
 from .settings import get_settings
@@ -384,7 +385,7 @@ def index() -> Index:
 
 
 for module in (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, traffic, basemaps,
-               route_options, gonogo, figures, clearance, packs, words, weather_map, pilot, live, feeds, terrain):
+               route_options, gonogo, figures, clearance, packs, words, weather_map, pilot, live, feeds, terrain, emergency):
     app.include_router(module.router)
 
 

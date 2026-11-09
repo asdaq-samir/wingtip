@@ -20742,6 +20742,538 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "best_fields": {
+      "description": "The best fields to land at from where the airplane is, ranked with their reasons: in \"glide\" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in \"diversion\" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "BestFieldsInput",
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "glide",
+                "diversion",
+                null
+              ]
+            },
+            "at": {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "GPS altitude, feet MSL."
+            },
+            "speed_kt": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Groundspeed; under 40 kt the airplane is taken to be on the ground."
+            },
+            "wind": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "The wind at the airplane's altitude, true.",
+              "properties": {
+                "from_deg": {
+                  "type": "number"
+                },
+                "kt": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "from_deg",
+                "kt"
+              ]
+            },
+            "variation_deg": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Magnetic variation, east positive."
+            },
+            "airplane": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "glide": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "description": "The POH's best-glide speed and glide ratio (Section 3).",
+                  "properties": {
+                    "best_glide_kias": {
+                      "type": "number"
+                    },
+                    "ratio": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "best_glide_kias",
+                    "ratio"
+                  ]
+                },
+                "landing": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/ShortFieldTable"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "crosswind": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "demonstrated_kt": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "cruise_tas_kt": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "elevation_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "runways": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/Runway"
+                    }
+                  },
+                  "metar": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "dir_true_deg": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "speed_kt": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "gust_kt": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "altimeter_in_hg": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "temp_c": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "flight_category": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  },
+                  "towered": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "private": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "military": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "ident",
+                  "lat",
+                  "lon",
+                  "runways"
+                ]
+              }
+            },
+            "limit": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "At most this many; 10 where not given."
+            }
+          },
+          "required": [
+            "at",
+            "fields"
+          ]
+        },
+        "answer": {
+          "title": "BestFieldsAnswer",
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "glide",
+                "diversion"
+              ]
+            },
+            "needs_airplane": {
+              "type": "boolean",
+              "description": "Glide mode with no best-glide figures: ranked by distance alone."
+            },
+            "glide": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "nm_per_1000_ft": {
+                  "type": "number"
+                },
+                "agl_ft": {
+                  "type": "number"
+                },
+                "still_air_nm": {
+                  "type": "number"
+                },
+                "tas_kt": {
+                  "type": "number"
+                },
+                "ring": {
+                  "type": "array",
+                  "description": "The ground the glide reaches every 10 degrees, wind corrected, [lat, lon].",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                }
+              },
+              "required": [
+                "nm_per_1000_ft",
+                "agl_ft",
+                "still_air_nm",
+                "tas_kt",
+                "ring"
+              ]
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/BestField"
+              }
+            }
+          },
+          "required": [
+            "mode",
+            "needs_airplane",
+            "glide",
+            "fields"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "mayday_call": {
+      "description": "The distress call in AIM 6-3-2(a)(3)'s order, filled from what the app knows, each part it does not know a blank in brackets and listed in missing; the code (7700, AIM 6-2-2; an assigned code kept while talking to ATC, 6-3-2(a)(2)); and the frequencies to call on: the one in use, the nearest approach or departure control and tower the app lists, then 121.5 MHz.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "MaydayCallInput",
+          "type": "object",
+          "properties": {
+            "station": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "callsign": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "airplane_type": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "nature": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "weather": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "intentions": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "position": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "As a controller gives it: \"BAE 245° 12 nm\"."
+            },
+            "heading_mag_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "fuel_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "souls": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "frequencies": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string"
+                  },
+                  "mhz": {
+                    "type": "number"
+                  },
+                  "distance_nm": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "ident",
+                  "kind",
+                  "mhz",
+                  "distance_nm"
+                ]
+              }
+            }
+          }
+        },
+        "answer": {
+          "title": "MaydayCallAnswer",
+          "type": "object",
+          "properties": {
+            "lines": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "words": {
+              "type": "string"
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "squawk": {
+              "type": "string"
+            },
+            "squawk_words": {
+              "type": "string"
+            },
+            "channels": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "mhz": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "why": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "label",
+                  "mhz",
+                  "why"
+                ]
+              }
+            }
+          },
+          "required": [
+            "lines",
+            "words",
+            "missing",
+            "squawk",
+            "squawk_words",
+            "channels"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "checklist_section": {
+      "description": "Which of a checklist's section titles is the emergency `want` (\"Engine failure in flight\" where not given, one of the emergency phases, GAMA Specification No. 1, Section 3), as the pilot wrote it: the one sharing the most of its words, at least two; null where none does.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ChecklistSectionInput",
+          "type": "object",
+          "properties": {
+            "titles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "want": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "titles"
+          ]
+        },
+        "answer": {
+          "title": "ChecklistSectionAnswer",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -21072,7 +21604,10 @@
     "passenger_night",
     "passenger_night_on_the_way",
     "checkpoints_select",
-    "below_vfr_minimums"
+    "below_vfr_minimums",
+    "best_fields",
+    "mayday_call",
+    "checklist_section"
   ],
   "additionalProperties": false,
   "definitions": {
@@ -26214,6 +26749,215 @@
           }
         }
       }
+    },
+    "BestField": {
+      "title": "BestField",
+      "type": "object",
+      "description": "One field ranked by best_fields, with its reasons.",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "distance_nm": {
+          "type": "number"
+        },
+        "course_deg": {
+          "type": "number",
+          "description": "The true course to it."
+        },
+        "heading_true_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The heading to fly there, wind corrected; null where the airspeed is not known."
+        },
+        "heading_mag_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The same, magnetic; null without variation_deg."
+        },
+        "groundspeed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ete_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "reach": {
+          "type": "string",
+          "enum": [
+            "within",
+            "low",
+            "unknown",
+            "beyond"
+          ],
+          "description": "within: over the field at pattern height (1,000 ft, AC 90-66C) or more; low: there, under it; unknown: no glide figures, altitude or elevation, or a diversion."
+        },
+        "reach_nm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "How far the glide goes over the ground along the course, wind corrected."
+        },
+        "arrive_agl_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Height over the field on arrival."
+        },
+        "towered": {
+          "type": "boolean"
+        },
+        "private": {
+          "type": "boolean"
+        },
+        "military": {
+          "type": "boolean"
+        },
+        "flight_category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runway": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The end to land on: the POH's distance fits, the crosswind within the demonstrated, the most headwind, the most nearly straight in, the longest.",
+          "properties": {
+            "end": {
+              "type": "string"
+            },
+            "heading_true_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "surface": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "length_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "headwind_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "crosswind_kt": {
+              "type": "number"
+            },
+            "needed_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The POH's short-field landing over 50 ft in the field's air."
+            },
+            "short": {
+              "type": "boolean"
+            },
+            "close": {
+              "type": "boolean"
+            },
+            "crosswind_over": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "end",
+            "heading_true_deg",
+            "surface",
+            "length_ft",
+            "headwind_kt",
+            "crosswind_kt",
+            "needed_ft",
+            "short",
+            "close",
+            "crosswind_over"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tone": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "caution",
+                  "stop"
+                ]
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "tone",
+              "text"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ident",
+        "name",
+        "lat",
+        "lon",
+        "elevation_ft",
+        "distance_nm",
+        "course_deg",
+        "heading_true_deg",
+        "heading_mag_deg",
+        "groundspeed_kt",
+        "ete_min",
+        "reach",
+        "reach_nm",
+        "arrive_agl_ft",
+        "towered",
+        "private",
+        "military",
+        "flight_category",
+        "runway",
+        "reasons"
+      ]
     }
   }
 }

@@ -1,0 +1,65 @@
+{
+  "about": "The emergency assistant's rules: best_fields (the fields within a glide, or for a diversion), mayday_call (AIM 6-3-2(a)(3)'s order, 6-2-2's code, 6-3-1(d)'s frequencies) and checklist_section. The fields are OurAirports' around Lake Geneva, Wisconsin (positions, elevations, runways as its tables give them); WI89's private flag and Burlington's METAR are made up for the test. The airplane is the Cessna 172S profile (data/aircraft/c172.json): 68 KIAS, 9 to 1. engine/facade/tests/emergency.rs and the web's lib/emergency.test.ts hold the engine to it.",
+  "lakeGeneva": {
+    "input": {
+      "mode": "glide",
+      "at": { "lat": 42.5917, "lon": -88.4334 },
+      "altitude_ft": 4500,
+      "speed_kt": 95,
+      "wind": { "from_deg": 270, "kt": 20 },
+      "variation_deg": -3.5,
+      "airplane": {
+        "glide": { "best_glide_kias": 68, "ratio": 9 },
+        "crosswind": { "demonstrated_kt": 15 }
+      },
+      "fields": [
+        {
+          "ident": "C02", "name": "Grand Geneva Resort", "lat": 42.614899, "lon": -88.389603, "elevation_ft": 835,
+          "runways": [{ "surface": "ASP", "length_ft": 4100, "runway_ends": [{ "ident": "05", "heading_true_deg": 53.1 }, { "ident": "23", "heading_true_deg": 233.1 }] }],
+          "metar": null
+        },
+        {
+          "ident": "WI89", "name": "Lake Geneva Aire Estates", "lat": 42.572053, "lon": -88.367183, "elevation_ft": 880, "private": true,
+          "runways": [{ "surface": "ASPH", "length_ft": 2300, "runway_ends": [{ "ident": "04", "heading_true_deg": null }, { "ident": "22", "heading_true_deg": null }] }]
+        },
+        {
+          "ident": "C59", "name": "Lake Lawn", "lat": 42.634102, "lon": -88.601097, "elevation_ft": 981,
+          "runways": [{ "surface": "ASPH-L", "length_ft": 4423, "runway_ends": [{ "ident": "18", "heading_true_deg": 185 }, { "ident": "36", "heading_true_deg": 5 }] }]
+        },
+        {
+          "ident": "BUU", "name": "Burlington Municipal", "lat": 42.6907, "lon": -88.3046, "elevation_ft": 779,
+          "runways": [
+            { "surface": "GRS", "length_ft": 2410, "runway_ends": [{ "ident": "01", "heading_true_deg": 12 }, { "ident": "19", "heading_true_deg": 192 }] },
+            { "surface": "ASP", "length_ft": 4300, "runway_ends": [{ "ident": "11", "heading_true_deg": 109 }, { "ident": "29", "heading_true_deg": 289 }] }
+          ],
+          "metar": { "dir_true_deg": 250, "speed_kt": 10, "gust_kt": null, "altimeter_in_hg": 30.01, "temp_c": 8, "flight_category": "VFR" }
+        }
+      ]
+    },
+    "order": ["C02", "WI89", "BUU", "C59"],
+    "reach": ["within", "within", "beyond", "beyond"],
+    "noAirplane": ["C02", "WI89", "C59", "BUU"]
+  },
+  "mayday": {
+    "input": {
+      "station": "Chicago Center", "callsign": "N12345", "airplane_type": "Cessna 172", "nature": "Engine failure",
+      "intentions": "Landing at Grand Geneva, C02", "position": "BAE 238° 18 nm", "heading_mag_deg": 52, "altitude_ft": 4500,
+      "frequencies": [
+        { "ident": "JVL", "kind": "TWR", "mhz": 118.8, "distance_nm": 22 },
+        { "ident": "RFD", "kind": "APP", "mhz": 118.6, "distance_nm": 35 }
+      ]
+    },
+    "lines": [
+      "MAYDAY, MAYDAY, MAYDAY", "Chicago Center", "N12345, Cessna 172", "Engine failure", "Landing at Grand Geneva, C02",
+      "BAE 238° 18 nm, heading 052", "4,500 ft", "[fuel in minutes]", "[people on board]"
+    ],
+    "missing": ["fuel in minutes", "people on board"],
+    "mhz": [null, 118.6, 118.8, 121.5]
+  },
+  "sections": [
+    { "titles": ["Engine fire during start", "ENGINE FAILURE DURING TAKEOFF RUN", "Engine failure during flight", "Forced landing"], "want": null, "index": 2 },
+    { "titles": ["Engine fire in flight", "Electrical fire"], "want": null, "index": null },
+    { "titles": ["Engine fire in flight", "Electrical fire in flight"], "want": "Electrical fire in flight", "index": 1 },
+    { "titles": [], "want": null, "index": null }
+  ]
+}

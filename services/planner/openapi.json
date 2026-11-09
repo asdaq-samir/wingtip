@@ -5822,6 +5822,391 @@
         "title": "DiversionSolved",
         "type": "object"
       },
+      "EmergencyAirplane": {
+        "description": "The stock profile's figures the ranking uses (data/aircraft); each\nNone where the profile has none: no glide, and the glide is not\nguessed.",
+        "properties": {
+          "crosswind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DemonstratedCrosswind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cruise_tas_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cruise Tas Kt"
+          },
+          "glide": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GlideFigures"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "landing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShortField"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "EmergencyAirplane",
+        "type": "object"
+      },
+      "EmergencyField": {
+        "properties": {
+          "bearing_deg": {
+            "title": "Bearing Deg",
+            "type": "number"
+          },
+          "distance_nm": {
+            "title": "Distance Nm",
+            "type": "number"
+          },
+          "elevation_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elevation Ft"
+          },
+          "frequencies": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EmergencyFrequency"
+            },
+            "title": "Frequencies",
+            "type": "array"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "metar": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmergencyMetar"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "military": {
+            "default": false,
+            "title": "Military",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "private": {
+            "default": false,
+            "title": "Private",
+            "type": "boolean"
+          },
+          "runways": {
+            "items": {
+              "$ref": "#/components/schemas/EmergencyRunway"
+            },
+            "title": "Runways",
+            "type": "array"
+          },
+          "towered": {
+            "default": false,
+            "title": "Towered",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ident",
+          "name",
+          "lat",
+          "lon",
+          "distance_nm",
+          "bearing_deg",
+          "runways"
+        ],
+        "title": "EmergencyField",
+        "type": "object"
+      },
+      "EmergencyFields": {
+        "properties": {
+          "airplane": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmergencyAirplane"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/EmergencyField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "wind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WindAloft"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "fields"
+        ],
+        "title": "EmergencyFields",
+        "type": "object"
+      },
+      "EmergencyFrequency": {
+        "description": "An approach, departure, tower, CTAF or UNICOM frequency, as the\nFAA (else OurAirports) lists it for the field.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "mhz": {
+            "title": "Mhz",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "mhz"
+        ],
+        "title": "EmergencyFrequency",
+        "type": "object"
+      },
+      "EmergencyMetar": {
+        "description": "What the ranking reads of a field's METAR, and the report as sent.",
+        "properties": {
+          "altimeter_in_hg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altimeter In Hg"
+          },
+          "dir_true_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dir True Deg"
+          },
+          "flight_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flight Category"
+          },
+          "gust_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gust Kt"
+          },
+          "raw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw"
+          },
+          "speed_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed Kt"
+          },
+          "temp_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temp C"
+          }
+        },
+        "title": "EmergencyMetar",
+        "type": "object"
+      },
+      "EmergencyRunway": {
+        "description": "An open runway (OurAirports' runways.csv).",
+        "properties": {
+          "closed": {
+            "default": false,
+            "title": "Closed",
+            "type": "boolean"
+          },
+          "length_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Ft"
+          },
+          "runway_ends": {
+            "items": {
+              "$ref": "#/components/schemas/EmergencyRunwayEnd"
+            },
+            "title": "Runway Ends",
+            "type": "array"
+          },
+          "surface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surface"
+          }
+        },
+        "required": [
+          "runway_ends"
+        ],
+        "title": "EmergencyRunway",
+        "type": "object"
+      },
+      "EmergencyRunwayEnd": {
+        "properties": {
+          "heading_true_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading True Deg"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ident"
+        ],
+        "title": "EmergencyRunwayEnd",
+        "type": "object"
+      },
       "EndorsementField": {
         "description": "A blank in an endorsement's words, as the instructor's sheet asks for it.",
         "properties": {
@@ -7399,6 +7784,30 @@
           "destination_ident"
         ],
         "title": "GenerateNotesRequest",
+        "type": "object"
+      },
+      "GlideFigures": {
+        "description": "The POH's best-glide speed and glide ratio (Section 3).",
+        "properties": {
+          "best_glide_kias": {
+            "title": "Best Glide Kias",
+            "type": "number"
+          },
+          "ratio": {
+            "title": "Ratio",
+            "type": "number"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "best_glide_kias",
+          "ratio",
+          "source"
+        ],
+        "title": "GlideFigures",
         "type": "object"
       },
       "GoNoGo": {
@@ -17417,6 +17826,25 @@
         "title": "Wind",
         "type": "object"
       },
+      "WindAloft": {
+        "description": "The modelled wind (GFS) at the altitude asked, true.",
+        "properties": {
+          "from_deg": {
+            "title": "From Deg",
+            "type": "number"
+          },
+          "kt": {
+            "title": "Kt",
+            "type": "number"
+          }
+        },
+        "required": [
+          "from_deg",
+          "kt"
+        ],
+        "title": "WindAloft",
+        "type": "object"
+      },
       "WindsPeriod": {
         "description": "The period of the winds and temperatures aloft a plan flies: the\nGFS model's (fetched by services/weather, read from wingtip.weather_store), since the FB ended with the NAM (NWS\nService Change Notice 26-47). Valid at `valid_at`, for use from\n`use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round\nthe forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the\nhour of it read; `modelled` always true now.",
         "properties": {
@@ -20067,6 +20495,113 @@
           }
         },
         "summary": "Diversion",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/emergency/fields": {
+      "get": {
+        "description": "The fields nearest a position with their runways, METARs,\nfrequencies and phone; the modelled wind at `altitude_ft`; and the\nairplane's glide and landing figures. Public: an emergency asks no\nsign-in.",
+        "operationId": "emergency_fields_api_emergency_fields_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "lat",
+            "required": true,
+            "schema": {
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Lat",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lon",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "Lon",
+              "type": "number"
+            }
+          },
+          {
+            "description": "GPS altitude, ft MSL: the wind there.",
+            "in": "query",
+            "name": "altitude_ft",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 60000,
+                  "minimum": -2000,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "GPS altitude, ft MSL: the wind there.",
+              "title": "Altitude Ft"
+            }
+          },
+          {
+            "description": "A stock profile's name (c172).",
+            "in": "query",
+            "name": "aircraft",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A stock profile's name (c172).",
+              "title": "Aircraft"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 12,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyFields"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Emergency Fields",
         "x-gateway": {
           "access": "public"
         }

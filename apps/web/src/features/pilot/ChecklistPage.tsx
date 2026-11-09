@@ -6,6 +6,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { checklistOf } from "../../lib/checklist";
 import { checklistText, phasesText, saveChecklist, useChecklists, type ChecklistKind } from "../../lib/checklists";
 import { TEXT } from "../../lib/text";
+import { openEmergency } from "../emergency/emergencyStore";
 
 const KINDS = [
   { value: "normal", label: "Normal" },
@@ -105,6 +106,13 @@ export default function ChecklistPage({ airplane, name, kind: opening = "normal"
           </ListGroup>
         );
       })}
+      {/* From the emergency list, the assistant: the best fields within a
+          glide, this list opened at the emergency, the MAYDAY. */}
+      {kind === "emergency" && (
+        <ListGroup>
+          <ListRow title={<span className="font-medium text-tint">Emergency assistant</span>} description="Best fields within a glide, the checklist and the MAYDAY" onClick={() => openEmergency("checklist")} data-testid="checklist-emergency" />
+        </ListGroup>
+      )}
       <ListGroup>
         {!empty && <ListRow title="Start over" onClick={() => setTicked({})} disabled={!Object.values(ticked).some(Boolean)} data-testid="checklist-reset" />}
         <ListRow title={empty ? "Write the checklist" : "Edit the checklist"} onClick={() => setWriting(text)} data-testid="checklist-edit" />

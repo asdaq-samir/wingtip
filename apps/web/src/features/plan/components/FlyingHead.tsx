@@ -1,5 +1,7 @@
 import { cn } from "cn";
 import { GLASS } from "../../../components/mapChrome";
+import { Button } from "../../../components/ui/button";
+import { openEmergency } from "../../emergency/emergencyStore";
 import { clockTime, duration } from "../../../lib/clock";
 import { distanceNm } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/ownShip";
@@ -95,6 +97,22 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
           <div className={cn(TEXT.card, "font-semibold tabular-nums")} data-testid="flying-next-eta">{clockTime(new Date(next.at * 1000))}</div>
         </div>
       )}
+      {/* The emergency assistant's way in from flying mode, inside its own
+          head rather than a map button (the owner removed EMER, 2026-11-08). */}
+      <EmergencyEntry />
     </div>
+  );
+}
+
+/** "Emergency", labelled in the system red, a 44-point target. */
+function EmergencyEntry() {
+  return (
+    <Button
+      type="button" variant="ghost" size="sm" data-testid="flying-emergency"
+      className="pointer-events-auto relative -mr-2 font-semibold text-destructive after:absolute after:-inset-1.5"
+      onClick={() => openEmergency("flying")}
+    >
+      Emergency
+    </Button>
   );
 }

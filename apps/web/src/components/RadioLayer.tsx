@@ -16,6 +16,7 @@ import { altitudeWords, readbackCheck } from "../lib/readback";
 import { say } from "../lib/speech";
 import { TEXT } from "../lib/text";
 import { useAsk } from "../features/plan/components/ask/useAsk";
+import { openEmergency } from "../features/emergency/emergencyStore";
 
 const capital = (words: string) => words.replace(/\b[a-z]/g, ch => ch.toUpperCase());
 /** A place's words as a chip says them: spelled idents as they are. */
@@ -74,6 +75,12 @@ function CallActions({ text, done, own = false }: {
   const timer = commands.find(c => c.kind === "timer");
   const destination = commands.find(c => c.kind === "destination");
   const routed = !!(clearance.limit || clearance.route.length || clearance.asFiled);
+  // The pilot's own "mayday", "engine failure", "emergency": the emergency
+  // assistant at once, no chip to find first; heard on the radio, a chip.
+  const emergency = commands.some(c => c.kind === "emergency");
+  useEffect(() => {
+    if (own && emergency) openEmergency("voice");
+  }, [own, emergency]);
   const run = async (what: string, act: () => Promise<string | null>) => {
     setBusy(what);
     setProblem(null);
@@ -123,6 +130,11 @@ function CallActions({ text, done, own = false }: {
         {heard.direct && directTo && (
           <Button size="sm" variant="secondary" className={CHIP} disabled={!!busy} data-testid="radio-direct" onClick={() => void run("direct", () => directTo(heard.direct!))}>
             Direct To {named(heard.direct)}
+          </Button>
+        )}
+        {emergency && (
+          <Button size="sm" variant="secondary" className={cn(CHIP, "text-destructive")} data-testid="radio-emergency" onClick={() => { openEmergency("voice"); done(); }}>
+            Emergency
           </Button>
         )}
         {commands.some(c => c.kind === "nearest") && nearest && (

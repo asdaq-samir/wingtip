@@ -69,7 +69,7 @@ pub mod call;
 
 pub use wingtip_airspace::{ahead, airspace, drills, pack, pack_query, rules, spoken, view};
 pub use wingtip_altitude::altitude;
-pub use wingtip_brief::{alternates, gonogo, passengers, runway};
+pub use wingtip_brief::{alternates, fields, gonogo, passengers, runway};
 // Forecast icing along an IFR route (#216).
 pub use wingtip_brief::icing_forecast;
 pub use wingtip_procedures::figures;
@@ -78,7 +78,7 @@ pub use wingtip_procedures::paths;
 pub use wingtip_core::{geo, grid, sums, time, wmm, xml};
 pub use wingtip_flight::{filing, flight, limits, performance, sun};
 pub use wingtip_pilot::{aircraft, pilot};
-pub use wingtip_radio::{atis, clearance, datis, readback};
+pub use wingtip_radio::{atis, clearance, datis, mayday, readback};
 pub use wingtip_route::{approach, motion, navlog, route};
 pub use wingtip_weather::{cycles, forecast, metar, notam, rvr, taf, tfr, validity, winds};
 pub use wingtip_wording::wording;

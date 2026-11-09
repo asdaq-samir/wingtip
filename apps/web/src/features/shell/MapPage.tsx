@@ -13,6 +13,7 @@ import { usePreferences } from "../../lib/preferences";
 import { useWarmAirportIndex } from "../../lib/airportIndex";
 import LinkSignIn from "../pilot/LinkSignIn";
 import TvLink from "../pilot/TvLink";
+import EmergencyHost from "../emergency/EmergencyHost";
 import PlanWorkspace from "../plan/PlanWorkspace";
 import { BootMap } from "../plan/routeMapChunk";
 import type { WorkspacePieces } from "./workspace";
@@ -263,6 +264,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
               finished in the app's own dialog. */}
           <LinkSignIn />
           <TvLink />
+          {/* The emergency assistant, opened from flying mode, the pilot's words or the checklists (features/emergency). */}
+          <EmergencyHost />
           {/* Dev mode's refusal: someone it is not for, on the dev page,
               is taken to the map (the switch itself is in the settings). */}
           <DevGuard />

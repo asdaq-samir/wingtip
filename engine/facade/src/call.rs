@@ -190,6 +190,9 @@
 //!   `procedure_climb_nm`, `procedure_hold_leg_nm`: a published
 //!   procedure's RF/AF arc, CIFP hold, 45°/180° procedure turn (AIM
 //!   5-3-8, 5-4-9) and open legs' lengths (paths.rs lists the inputs);
+//! - `checklist_section`: the index of the section of `titles` that is
+//!   the emergency `want` (default "Engine failure in flight", one of the
+//!   emergency phases) or null, from `{"titles", "want"?}`;
 //! - `checklist_phases`: the headings a checklist starts from, a
 //!   handbook's Normal or Emergency Procedures (GAMA Specification No. 1,
 //!   Sections 4 and 3), from `{"kind": "normal"|"emergency"}`;
@@ -460,6 +463,27 @@
 //!   "altitude_ft"}`; `oxygen_caution` (91.211(a)) and
 //!   `prohibited_caution` (73.83) lists of sentences from
 //!   `{"highest_ft"?, "profile"?}` and `{"selection"}`;
+//! - the best fields to land at (crate::fields): `best_fields`, `{"mode",
+//!   "needs_airplane", "glide": {"nm_per_1000_ft", "agl_ft",
+//!   "still_air_nm", "tas_kt", "ring": [[lat, lon]]}|null, "fields":
+//!   [{"ident", "name", "lat", "lon", "elevation_ft", "distance_nm",
+//!   "course_deg", "heading_true_deg", "heading_mag_deg", "groundspeed_kt",
+//!   "ete_min", "reach", "reach_nm", "arrive_agl_ft", "towered", "private",
+//!   "military", "flight_category", "runway": {...}|null, "reasons":
+//!   [{"tone", "text"}]}]}`, from `{"mode"?: "glide"|"diversion", "at":
+//!   {"lat", "lon"}, "altitude_ft"?, "speed_kt"?, "wind"?: {"from_deg",
+//!   "kt"}, "variation_deg"?, "airplane"?: {"glide"?: {"best_glide_kias",
+//!   "ratio"}, "landing"?, "crosswind"?, "cruise_tas_kt"?}, "fields":
+//!   [{"ident", "name"?, "lat", "lon", "elevation_ft"?, "runways",
+//!   "metar"?: {"dir_true_deg"?, "speed_kt"?, "gust_kt"?,
+//!   "altimeter_in_hg"?, "temp_c"?, "flight_category"?}, "towered"?,
+//!   "private"?, "military"?}], "limit"?}`;
+//! - the distress call (crate::mayday, AIM 6-3-2, 6-3-1, 6-2-2): `mayday_call`,
+//!   `{"lines", "words", "missing", "squawk", "squawk_words", "channels":
+//!   [{"label", "mhz", "why"}]}`, from `{"station"?, "callsign"?,
+//!   "airplane_type"?, "nature"?, "weather"?, "intentions"?, "position"?,
+//!   "heading_mag_deg"?, "altitude_ft"?, "fuel_min"?, "souls"?,
+//!   "frequencies"?: [{"ident", "kind", "mhz", "distance_nm"}]}`;
 //! - the IFR alternate (crate::alternates, 14 CFR 91.169):
 //!   `ifr_alternate_destination` and `ifr_alternate_check` from
 //!   `{"ident", "approaches": {"any", "precision",
@@ -843,6 +867,19 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             out.push(']');
             Ok(out)
         }
+        "checklist_section" => {
+            let titles = ask
+                .list("titles")?
+                .iter()
+                .map(|t| t.as_str().map(str::to_owned).ok_or("checklist_section: a title is not a string".to_owned()))
+                .collect::<Result<Vec<_>, _>>()?;
+            let want = match ask.v.get("want") {
+                None | Some(Value::Null) => checklist::EMERGENCY_PHASES[2].to_owned(),
+                Some(Value::String(w)) => w.clone(),
+                Some(_) => return Err("checklist_section: \"want\" is not a string".to_owned()),
+            };
+            Ok(checklist::section_for(&titles, &want).map_or("null".to_owned(), |i| i.to_string()))
+        }
         "checklist_read" => Ok(checklist::to_json(&checklist::read(ask.str("text")?))),
         "checklist_write" => {
             let sections = checklist_sections(&ask)?;
@@ -1112,6 +1149,10 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         _ if crate::aircraft::calls::NAMES.contains(&name) => crate::aircraft::calls::call(name, ask.v),
         // Instrument approaches taught and debriefed (approach::calls).
         _ if crate::approach::calls::NAMES.contains(&name) => crate::approach::calls::call(name, ask.v),
+        // The distress call, its code and frequencies (radio's mayday).
+        _ if crate::mayday::NAMES.contains(&name) => crate::mayday::call(name, ask.v),
+        // The best fields to land at, in a glide or a diversion (brief's fields).
+        _ if crate::fields::NAMES.contains(&name) => crate::fields::call(name, ask.v),
         // The IFR alternate, 14 CFR 91.169 (alternates).
         _ if crate::alternates::NAMES.contains(&name) => crate::alternates::call(name, ask.v),
         // Forecast icing on an IFR route's legs (icing_forecast, #216).

@@ -788,6 +788,7 @@ export type PassengerNightAnswer = boolean;
 export type PassengerNightOnTheWayAnswer = boolean;
 export type CheckpointsSelectAnswer = number[];
 export type BelowVfrMinimumsAnswer = boolean;
+export type ChecklistSectionAnswer = number | null;
 
 /**
  * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. The one source of their shapes: apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
@@ -3088,6 +3089,27 @@ export interface EngineContract {
   below_vfr_minimums: {
     input: BelowVfrMinimumsInput;
     answer: BelowVfrMinimumsAnswer;
+  };
+  /**
+   * The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower.
+   */
+  best_fields: {
+    input: BestFieldsInput;
+    answer: BestFieldsAnswer;
+  };
+  /**
+   * The distress call in AIM 6-3-2(a)(3)'s order, filled from what the app knows, each part it does not know a blank in brackets and listed in missing; the code (7700, AIM 6-2-2; an assigned code kept while talking to ATC, 6-3-2(a)(2)); and the frequencies to call on: the one in use, the nearest approach or departure control and tower the app lists, then 121.5 MHz.
+   */
+  mayday_call: {
+    input: MaydayCallInput;
+    answer: MaydayCallAnswer;
+  };
+  /**
+   * Which of a checklist's section titles is the emergency `want` ("Engine failure in flight" where not given, one of the emergency phases, GAMA Specification No. 1, Section 3), as the pilot wrote it: the one sharing the most of its words, at least two; null where none does.
+   */
+  checklist_section: {
+    input: ChecklistSectionInput;
+    answer: ChecklistSectionAnswer;
   };
 }
 export interface HoldingInput {
@@ -8408,6 +8430,193 @@ export interface CheckpointsSelectInput {
 export interface BelowVfrMinimumsInput {
   ceiling_ft?: number | null;
   visibility_sm?: number | null;
+}
+export interface BestFieldsInput {
+  mode?: "glide" | "diversion" | null;
+  at: {
+    lat: number;
+    lon: number;
+  };
+  /**
+   * GPS altitude, feet MSL.
+   */
+  altitude_ft?: number | null;
+  /**
+   * Groundspeed; under 40 kt the airplane is taken to be on the ground.
+   */
+  speed_kt?: number | null;
+  /**
+   * The wind at the airplane's altitude, true.
+   */
+  wind?: {
+    from_deg: number;
+    kt: number;
+  } | null;
+  /**
+   * Magnetic variation, east positive.
+   */
+  variation_deg?: number | null;
+  airplane?: {
+    /**
+     * The POH's best-glide speed and glide ratio (Section 3).
+     */
+    glide?: {
+      best_glide_kias: number;
+      ratio: number;
+    } | null;
+    landing?: ShortFieldTable | null;
+    crosswind?: {
+      demonstrated_kt?: number | null;
+    } | null;
+    cruise_tas_kt?: number | null;
+  } | null;
+  fields: {
+    ident: string;
+    name?: string | null;
+    lat: number;
+    lon: number;
+    elevation_ft?: number | null;
+    runways: Runway[];
+    metar?: {
+      dir_true_deg?: number | null;
+      speed_kt?: number | null;
+      gust_kt?: number | null;
+      altimeter_in_hg?: number | null;
+      temp_c?: number | null;
+      flight_category?: string | null;
+    } | null;
+    towered?: boolean | null;
+    private?: boolean | null;
+    military?: boolean | null;
+  }[];
+  /**
+   * At most this many; 10 where not given.
+   */
+  limit?: number | null;
+}
+export interface BestFieldsAnswer {
+  mode: "glide" | "diversion";
+  /**
+   * Glide mode with no best-glide figures: ranked by distance alone.
+   */
+  needs_airplane: boolean;
+  glide: {
+    nm_per_1000_ft: number;
+    agl_ft: number;
+    still_air_nm: number;
+    tas_kt: number;
+    /**
+     * The ground the glide reaches every 10 degrees, wind corrected, [lat, lon].
+     */
+    ring: number[][];
+  } | null;
+  fields: BestField[];
+}
+/**
+ * One field ranked by best_fields, with its reasons.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "BestField".
+ */
+export interface BestField {
+  ident: string;
+  name: string;
+  lat: number;
+  lon: number;
+  elevation_ft: number | null;
+  distance_nm: number;
+  /**
+   * The true course to it.
+   */
+  course_deg: number;
+  /**
+   * The heading to fly there, wind corrected; null where the airspeed is not known.
+   */
+  heading_true_deg: number | null;
+  /**
+   * The same, magnetic; null without variation_deg.
+   */
+  heading_mag_deg: number | null;
+  groundspeed_kt: number | null;
+  ete_min: number | null;
+  /**
+   * within: over the field at pattern height (1,000 ft, AC 90-66C) or more; low: there, under it; unknown: no glide figures, altitude or elevation, or a diversion.
+   */
+  reach: "within" | "low" | "unknown" | "beyond";
+  /**
+   * How far the glide goes over the ground along the course, wind corrected.
+   */
+  reach_nm: number | null;
+  /**
+   * Height over the field on arrival.
+   */
+  arrive_agl_ft: number | null;
+  towered: boolean;
+  private: boolean;
+  military: boolean;
+  flight_category: string | null;
+  /**
+   * The end to land on: the POH's distance fits, the crosswind within the demonstrated, the most headwind, the most nearly straight in, the longest.
+   */
+  runway: {
+    end: string;
+    heading_true_deg: number | null;
+    surface: string | null;
+    length_ft: number | null;
+    headwind_kt: number | null;
+    crosswind_kt: number;
+    /**
+     * The POH's short-field landing over 50 ft in the field's air.
+     */
+    needed_ft: number | null;
+    short: boolean;
+    close: boolean;
+    crosswind_over: boolean;
+  } | null;
+  reasons: {
+    tone: "ok" | "caution" | "stop";
+    text: string;
+  }[];
+}
+export interface MaydayCallInput {
+  station?: string | null;
+  callsign?: string | null;
+  airplane_type?: string | null;
+  nature?: string | null;
+  weather?: string | null;
+  intentions?: string | null;
+  /**
+   * As a controller gives it: "BAE 245° 12 nm".
+   */
+  position?: string | null;
+  heading_mag_deg?: number | null;
+  altitude_ft?: number | null;
+  fuel_min?: number | null;
+  souls?: number | null;
+  frequencies?:
+    | {
+        ident: string;
+        kind: string;
+        mhz: number;
+        distance_nm: number;
+      }[]
+    | null;
+}
+export interface MaydayCallAnswer {
+  lines: string[];
+  words: string;
+  missing: string[];
+  squawk: string;
+  squawk_words: string;
+  channels: {
+    label: string;
+    mhz: number | null;
+    why: string;
+  }[];
+}
+export interface ChecklistSectionInput {
+  titles: string[];
+  want?: string | null;
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema

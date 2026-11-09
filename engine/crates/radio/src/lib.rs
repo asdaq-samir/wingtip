@@ -7,11 +7,14 @@
 //! - atis: an ATIS or AWOS/ASOS broadcast as the phone heard it, read
 //!   into its figures;
 //! - datis: a digital ATIS as the tower's data link sends it, read into
-//!   the same figures (its weather by wingtip-weather's METAR reader).
+//!   the same figures (its weather by wingtip-weather's METAR reader);
+//! - mayday: the distress call in AIM 6-3-2's order, the code (6-2-2) and
+//!   the frequencies to call on.
 
 pub mod atis;
 pub mod clearance;
 pub mod datis;
+pub mod mayday;
 pub mod readback;
 
 // The modules below this crate by the names they had when the engine was

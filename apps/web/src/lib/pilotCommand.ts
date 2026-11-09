@@ -29,6 +29,9 @@ export type PilotCommand =
   /** The weather at a field, said and shown; none, the destination's. */
   | { kind: "weather"; field: string | null }
   | { kind: "timer"; start: boolean }
+  /** "Mayday", "emergency", "engine failure": the emergency assistant
+   *  (features/emergency), opened at once from the pilot's own words. */
+  | { kind: "emergency" }
   /** "Plan a trip to Las Vegas", "fly to Duluth", "take me to kilo lima
    *  alpha sierra": a route to the place, from the route's departure or
    *  from where the airplane is (PlanWorkspace's planTo). */
@@ -91,6 +94,10 @@ function altitudeOf(toks: Token[]): number | null {
 export function commandsOf(text: string): PilotCommand[] {
   const toks = tokens(text);
   const out: PilotCommand[] = [];
+  // First, before all else: the words of a pilot in trouble.
+  if (toks.some((t, i) => t.word === "mayday" || t.word === "emergency" || (t.word === "engine" && /^fail/.test(toks[i + 1]?.word ?? "")))) {
+    out.push({ kind: "emergency" });
+  }
   const direct = directOf(text);
   if (direct) out.push({ kind: "direct", place: direct });
   if (toks.some(t => t.word === "nearest")) out.push({ kind: "nearest" });
