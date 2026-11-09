@@ -22,6 +22,9 @@ import app.wingtipmaps.gateway.service.FlightService;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.LessonService;
 import app.wingtipmaps.gateway.service.Mailer;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsements;
+import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
+import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.dto.ReviewCheckDto;
 import app.wingtipmaps.gateway.service.TrainingService;
@@ -98,11 +101,12 @@ class LessonFlowTest {
     @org.junit.jupiter.api.BeforeEach
     void theEnginesAnswer() {
         org.mockito.BDDMockito.given(planner.endorsements(any(), any())).willAnswer(ask -> {
-            List<PlannerClient.Held> held = ask.getArgument(0);
+            List<PlannerHeldEndorsement> held = ask.getArgument(0);
             LocalDate flightOn = ask.getArgument(1);
-            return new PlannerClient.Endorsements(java.util.Collections.nCopies(held.size(), (LocalDate) null),
-                    held.stream().anyMatch(h -> List.of("solo-first", "solo-90").contains(h.code())) ? SOLO_UNTIL : null,
-                    flightOn == null ? List.of() : CHECKS);
+            return new PlannerEndorsements().until(java.util.Collections.nCopies(held.size(), (LocalDate) null))
+                    .soloUntil(held.stream().anyMatch(h -> List.of("solo-first", "solo-90").contains(h.getCode())) ? SOLO_UNTIL : null)
+                    .checks(flightOn == null ? List.of() : CHECKS.stream().map(c -> new PlannerReviewCheck()
+                            .rule(c.rule()).label(c.label()).met(c.met()).detail(c.detail())).toList());
         });
     }
 

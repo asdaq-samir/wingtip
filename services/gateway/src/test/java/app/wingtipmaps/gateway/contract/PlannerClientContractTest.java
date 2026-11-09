@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -35,18 +34,18 @@ import org.springframework.transaction.support.TransactionTemplate;
  * Every call the gateway makes to the planner by hand -- PlannerClient's
  * rules and the briefing, and AccountService's forgetting of a pilot's
  * notes -- held to services/planner/openapi.json, the planner's own
- * document as this jar was built with it. Each call is made for real
- * against a stub that answers with every field the document says the
- * operation answers; what the client sent is then checked against the
- * operation (the path and method exist, every required field or query
- * parameter is sent, nothing is sent the operation does not take, each
- * value is of its type and null only where the planner takes null), and
- * the type the client reads the answer into against the answer (each
- * record component is a field the planner sends, of a type that holds
- * it, and a primitive only where the planner always sends a value).
- * Jackson reads a field the planner renamed as null or 0 without a word,
- * and the planner ignores a field it does not know, so a rename on either
- * side shows nowhere else before a pilot's currency reads 0 hours.
+ * document as this jar was built with it. The asks and answers' fields
+ * are the planner's own types, generated from that document as the jar
+ * builds, so a field renamed fails the build; what is still written by
+ * hand is checked here. Each call is made for real against a stub that
+ * answers with every field the document says the operation answers (so
+ * each answer is read, and made into the gateway's own, as it would be);
+ * what the client sent is then checked against the operation: the path
+ * and method exist, every required field or query parameter is sent
+ * (the generated types let one be left null), nothing is sent the
+ * operation does not take, and each value is null only where the planner
+ * takes null. The briefing's query and the changes' body, for the
+ * assistant, are written by hand and checked the same way.
  */
 class PlannerClientContractTest {
 
@@ -71,8 +70,8 @@ class PlannerClientContractTest {
             new Call("currency", c -> c.planner().currency(logbook(), DAY.minusYears(1), DAY.plusYears(2), DAY.minusMonths(3), DAY)),
             new Call("currency (no dates)", c -> c.planner().currency(logbook(), null, null, null, DAY)),
             new Call("experience", c -> c.planner().experience(logbook(), DAY)),
-            new Call("endorsements", c -> c.planner().endorsements(List.of(new PlannerClient.Held("solo", DAY, "C172"),
-                    new PlannerClient.Held("solo-xc", DAY, null)), DAY.plusDays(3))),
+            new Call("endorsements", c -> c.planner().endorsements(List.of(PlannerClient.held("solo", DAY, "C172"),
+                    PlannerClient.held("solo-xc", DAY, null)), DAY.plusDays(3))),
             new Call("endorsements (no flight)", c -> c.planner().endorsements(List.of(), null)),
             new Call("endorsementKinds", c -> c.planner().endorsementKinds()),
             new Call("fill", c -> c.planner().fill("solo", "A. Pilot", Map.of("makeModel", "C172"))),
@@ -88,12 +87,6 @@ class PlannerClientContractTest {
      *  which hands the body whole to the planner's words sources: the body
      *  is the planner's ChangesAsk, though the assistant is who is asked. */
     private static final Map<String, String> BODY_FOR = Map.of("changes", "/api/words/changes/sources");
-
-    /** Read whole into a type the answer is not checked against: the
-     *  briefing is carried as text and never read (PlannerClient says so),
-     *  and the changes' words are the assistant's, a model generated from
-     *  its own document as the gateway builds. */
-    private static final Set<String> NOT_READ = Set.of("briefing", "changes", "AccountService.delete");
 
     @Test
     void everyCallFitsThePlannersDocument() {
@@ -118,15 +111,6 @@ class PlannerClientContractTest {
     // a rename in the planner would change it, is caught and named.
 
     @Test
-    void anAnswerFieldRenamedIsNamed() {
-        JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
-        rename(planner, "Currency", "totalHours", "totalHoursFlown");
-        assertThat(problems(planner, OpenApiContract.shipped("assistant")))
-                .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.currency:").contains("answer.totalHours (CurrencyDto) is read")
-                        .contains("totalHoursFlown"));
-    }
-
-    @Test
     void aBodyFieldRenamedIsNamed() {
         JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
         rename(planner, "CurrencyAsk", "today", "asOf");
@@ -145,19 +129,6 @@ class PlannerClientContractTest {
         }
         assertThat(problems(planner, OpenApiContract.shipped("assistant")))
                 .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.briefing:").contains("query parameter 'ete_min' is sent"));
-    }
-
-    @Test
-    void anAnswerFieldMadeNullableIsNamed() {
-        JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
-        ObjectNode have = (ObjectNode) planner.at("/components/schemas/ExperienceItem/properties/have");
-        JsonNode was = have.deepCopy();
-        have.removeAll();
-        ArrayNode anyOf = have.putArray("anyOf");
-        anyOf.add(was);
-        anyOf.addObject().put("type", "null");
-        assertThat(problems(planner, OpenApiContract.shipped("assistant")))
-                .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.experience:").contains("answer[].have may be null"));
     }
 
     @Test
@@ -197,7 +168,12 @@ class PlannerClientContractTest {
                 try {
                     call.make().accept(clients);
                 } catch (PlannerClient.Unavailable | AccountService.AccountNotDeletedException refused) {
-                    // What it asked is checked below: a refusal is the stub's 404.
+                    // What it asked is checked below: a refusal is the stub's
+                    // 404. An answer of every field it may have that cannot
+                    // be read is the client's fault, though.
+                    if (String.valueOf(refused.getMessage()).contains("was not its answer")) {
+                        problems.add(who + ": " + refused.getMessage() + " (" + refused.getCause() + ")");
+                    }
                 }
                 asked.addAll(plannerStub.asked);
                 asked.addAll(assistantStub.asked);
@@ -239,13 +215,6 @@ class PlannerClientContractTest {
             } else if (schema != null) {
                 problems.addAll(against.check(Stub.parse(asked.body()), schema, "body"));
             }
-        }
-        if (!NOT_READ.contains(call.method())) {
-            Type reads = Arrays.stream(PlannerClient.class.getMethods()).filter(m -> m.getName().equals(call.method()))
-                    .findFirst().orElseThrow().getGenericReturnType();
-            OpenApiContract.answerSchema(operation).ifPresentOrElse(
-                    schema -> problems.addAll(new AnswerContract(document).checkRead(reads, schema, "answer")),
-                    () -> problems.add(asked.method() + " " + asked.path() + " answers no JSON, but its answer is read"));
         }
         return problems;
     }

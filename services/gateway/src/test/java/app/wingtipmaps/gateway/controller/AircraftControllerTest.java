@@ -22,7 +22,10 @@ import app.wingtipmaps.gateway.service.AircraftService;
 import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.SquawkService;
 import app.wingtipmaps.gateway.service.PilotService;
+import app.wingtipmaps.gateway.planner.model.PlannerInspections;
+import app.wingtipmaps.gateway.planner.model.PlannerVorCheckOutput;
 import app.wingtipmaps.gateway.service.PlannerClient;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +67,7 @@ class AircraftControllerTest {
     @MockitoBean
     private PlannerClient planner;
 
-    private static final PlannerClient.Inspections NOTHING_DUE = new PlannerClient.Inspections(null, null, null, null, null, null);
+    private static final PlannerInspections NOTHING_DUE = new PlannerInspections();
 
     @BeforeEach
     void nothingDue() {
@@ -256,8 +259,8 @@ class AircraftControllerTest {
     void aVorCheckIsRecordedAndSaysHowLongItIsGoodFor() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
         given(planner.inspections(any(), any(), any(), any(), any(), eq(java.time.LocalDate.of(2026, 10, 1)), eq("VOT"), eq(-5.0)))
-                .willReturn(new PlannerClient.Inspections(null, null, null, null, null,
-                        new PlannerClient.VorCheckDue(4.0, false, java.time.LocalDate.of(2026, 10, 31))));
+                .willReturn(new PlannerInspections().vorCheck(new PlannerVorCheckOutput()
+                        .limitDeg(new BigDecimal("4.0")).within(false).until(java.time.LocalDate.of(2026, 10, 31))));
         given(aircraftService.recordVorCheck(any(), eq(7L), any(), any(), any(), anyDouble())).willReturn(Optional.of(
                 sampleAircraft().recordVorCheck(java.time.LocalDate.of(2026, 10, 1), app.wingtipmaps.gateway.domain.VorCheck.VOT,
                         "KDLH VOT", -5.0)));
@@ -293,8 +296,9 @@ class AircraftControllerTest {
         // its answer for the airplane's own dates, which the gateway sends.
         given(planner.inspections(eq(java.time.LocalDate.of(2025, 10, 5)), eq(java.time.LocalDate.of(2026, 1, 31)),
                 eq(java.time.LocalDate.of(2024, 11, 30)), eq(java.time.LocalDate.of(2025, 2, 1)), eq(1200.5), any(), any(), any()))
-                .willReturn(new PlannerClient.Inspections(java.time.LocalDate.of(2026, 10, 31), java.time.LocalDate.of(2027, 1, 31),
-                        java.time.LocalDate.of(2026, 11, 30), java.time.LocalDate.of(2027, 2, 28), 1300.5, null));
+                .willReturn(new PlannerInspections().annualUntil(java.time.LocalDate.of(2026, 10, 31))
+                        .eltUntil(java.time.LocalDate.of(2027, 1, 31)).staticCheckUntil(java.time.LocalDate.of(2026, 11, 30))
+                        .transponderCheckUntil(java.time.LocalDate.of(2027, 2, 28)).hundredHourDueAtHours(new BigDecimal("1300.5")));
 
         mockMvc.perform(put("/api/aircraft/7/inspections").with(oidcLogin()).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
