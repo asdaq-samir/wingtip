@@ -43,7 +43,7 @@ areas:
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated/**
   py:
     ci: test-root
-    check: ruff check wingtip tests_wingtip && pytest tests_wingtip/ (services/planner)
+    check: ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/ (services/planner)
     paths:
       - services/planner/wingtip/**
       - engine/**
@@ -71,9 +71,11 @@ areas:
       - scripts/areas.yml
       - scripts/areas.py
       - scripts/dev/check.sh
+      # the planner's import contracts (lint-imports), which hold wingtip too
+      - services/planner/.importlinter
   planner:
     ci: test-planner
-    check: ruff check app tests && pytest tests/ (services/planner)
+    check: ruff check app tests && lint-imports && pytest tests/ (services/planner)
     paths:
       - services/planner/**
       - engine/**

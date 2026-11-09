@@ -1,5 +1,5 @@
 """Each departure hour's Go / No-Go input, gathered as POST /api/go-no-go
-gathers it for one (app.routers.gonogo), and the engine's
+gathers it for one (app.gonogo.flight), and the engine's
 departure_window over them all, asked once.
 
 For each hour the route is planned for that departure -- its winds aloft
@@ -19,7 +19,7 @@ from wingtip import departure_window as forecast, runway_wind, weather
 from wingtip import planning as planning_module
 from ..gonogo import ask as engine
 from ..router_basics import load_route
-from ..routers.gonogo import (
+from ..gonogo.flight import (
     ROUTE_FIELDS, PlanQuery, Planned, alternate_for, briefing_or_failure, findings_for, plan_for,
 )
 from .schemas import DepartureWindowAsk
@@ -31,7 +31,7 @@ from .schemas import DepartureWindowAsk
 LIVE_WITHIN_S = 3600
 
 #: Hours briefed at once: each briefing reads the weather store with its
-#: own few threads (app.routers.briefing).
+#: own few threads (app.route_briefing).
 WORKERS = 4
 
 

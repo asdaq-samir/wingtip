@@ -148,6 +148,11 @@ jobs:
             || echo "::warning title=No tippecanoe::the overlay tiles' archive tests are skipped"
       - run: ruff check wingtip tests_wingtip
         working-directory: services/planner
+      # The planner's import contracts (services/planner/.importlinter):
+      # wingtip never imports app, no router imports another, only
+      # app.main imports the routers.
+      - run: lint-imports
+        working-directory: services/planner
       - run: pytest tests_wingtip/ -v
         working-directory: services/planner
       # The jobs' own suite (services/jobs): the charts job's commands and
@@ -320,6 +325,8 @@ jobs:
       # The planner imports wingtip's Rust extension (engine/), as in the test job.
       - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
       - run: ruff check app tests
+      # The planner's import contracts (.importlinter), as in the test job.
+      - run: lint-imports
       - run: pytest tests/ -v
 
   # ingest's suite (services/ingest, the live feeds split from the planner,
@@ -586,6 +593,7 @@ jobs:
                 - scripts/areas.yml
                 - scripts/areas.py
                 - scripts/dev/check.sh
+                - services/planner/.importlinter
                 - services/jobs/**
                 - services/planner/requirements-wingtip*.txt
                 - services/planner/tests_wingtip/fixtures/native/**

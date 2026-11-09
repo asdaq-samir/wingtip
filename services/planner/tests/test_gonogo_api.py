@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from wingtip.aircraft import load_aircraft_profile
 
 from app.main import app
+from app.gonogo import flight
 from app.routers import gonogo
 
 client = TestClient(app)
@@ -51,10 +52,10 @@ def briefing(**over) -> dict:
 @pytest.fixture
 def stubbed(monkeypatch):
     """The route, its plan and its briefing, each replaceable by a test."""
-    world = {"planned": gonogo.Planned(nav=nav(), legs=legs(), totals=totals()), "briefing": briefing(), "asked": {}}
+    world = {"planned": flight.Planned(nav=nav(), legs=legs(), totals=totals()), "briefing": briefing(), "asked": {}}
     route = SimpleNamespace(idents=["C81", "KDLH"], airports=[{"elevation_ft": 900.0}, {"elevation_ft": 1400.0}])
     monkeypatch.setattr(gonogo, "load_route", lambda dep, dest, stops: route)
-    monkeypatch.setattr(gonogo, "plan_for", lambda q, r: world["planned"])
+    monkeypatch.setattr(flight, "plan_for", lambda q, r: world["planned"])
 
     def brief(q, ete_min):
         world["asked"]["ete_min"] = ete_min
@@ -62,7 +63,7 @@ def stubbed(monkeypatch):
             raise world["briefing"]
         return world["briefing"]
 
-    monkeypatch.setattr(gonogo, "brief_for", brief)
+    monkeypatch.setattr(flight, "brief_for", brief)
     return world
 
 
@@ -126,7 +127,7 @@ def test_a_tfr_crossed_while_in_force_and_one_passed_before_it_starts(stubbed):
 
 
 def test_a_route_with_no_legal_altitude_is_no_go_and_the_rest_waits_as_on_the_web(stubbed):
-    stubbed["planned"] = gonogo.Planned(nav=None, legs=[], totals=None, problem="No legal altitude past KDLH")
+    stubbed["planned"] = flight.Planned(nav=None, legs=[], totals=None, problem="No legal altitude past KDLH")
     body = client.post("/api/go-no-go", json=ask()).json()
     items = by_key(body)
     assert (items["altitude"]["finding"], items["altitude"]["detail"]) == ("stop", "No legal altitude past KDLH")
@@ -151,7 +152,7 @@ def test_under_ifr_the_alternate_speaks_for_the_weather(stubbed, monkeypatch):
         asked.update(dest=dest, eta=eta, tas=tas, filed=filed)
         return {"destination": {"required": True}, "alternate": None}
 
-    monkeypatch.setattr(gonogo, "alternate_for", alternate)
+    monkeypatch.setattr(flight, "alternate_for", alternate)
     body = client.post("/api/go-no-go", json=ask(rules="ifr")).json()
     weather = by_key(body)["weather"]
     assert weather["detail"] == "An alternate is required (14 CFR 91.169): file one in Weather"
@@ -182,7 +183,7 @@ def test_a_briefing_that_failed_with_nothing_to_say_is_said_as_the_web_says_it(s
 
 
 def test_a_pilots_own_altitude_is_written_as_the_owner_asked_and_a_ticked_check_keeps_its_group(stubbed):
-    stubbed["planned"] = gonogo.Planned(nav=nav(flown="custom", altitude_ft=4500.0), legs=legs(), totals=totals())
+    stubbed["planned"] = flight.Planned(nav=nav(flown="custom", altitude_ft=4500.0), legs=legs(), totals=totals())
     body = client.post("/api/go-no-go", json=ask(ticked=["pressure"])).json()
     assert by_key(body)["altitude"]["detail"] == "FL-045, your own"
     pressure = next(f for f in body["risk"]["factors"] if f["key"] == "pressure")
@@ -216,7 +217,7 @@ def test_what_swim_says_now_at_the_routes_airports_is_said_as_on_the_web(stubbed
         items = by_key(client.post("/api/go-no-go", json=ask()).json())
         assert items["weather"]["finding"] == "ok"
         # No alternate needed, so the weather's own finding stands.
-        monkeypatch.setattr(gonogo, "alternate_for", lambda dest, eta, tas, filed: {"destination": {"required": False}, "alternate": None})
+        monkeypatch.setattr(flight, "alternate_for", lambda dest, eta, tas, filed: {"destination": {"required": False}, "alternate": None})
         items = by_key(client.post("/api/go-no-go", json=ask(rules="ifr")).json())
         assert (items["weather"]["finding"], items["weather"]["detail"]) == ("caution", "Ground stop at DLH (FAA Command Center)")
         alert = {"alert": "wind shear", "words": "Runway 27 arrival wind shear alert 25 kt, runway"}
@@ -225,7 +226,7 @@ def test_what_swim_says_now_at_the_routes_airports_is_said_as_on_the_web(stubbed
         items = by_key(client.post("/api/go-no-go", json=ask()).json())
         assert items["weather"] == {**items["weather"], "finding": "caution",
                                     "detail": "DLH: Runway 27 arrival wind shear alert 25 kt, runway (FAA ITWS, now)"}
-        stubbed["planned"] = gonogo.Planned(nav=nav(selection={"special_use": [
+        stubbed["planned"] = flight.Planned(nav=nav(selection={"special_use": [
             {"name": "R-4401A", "along_track_nm": 100.0, "times_of_use": None, "time_zone": None}]}), legs=legs(), totals=totals())
         live_reports.put("saa", "R4401A", {"designator": "R4401A", "activations": [
             {"status": "ACTIVE", "active": True, "starts": None, "ends": None}]}, place="R4401A", ends=now + 3600)

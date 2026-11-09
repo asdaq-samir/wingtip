@@ -16,7 +16,7 @@ import logging
 from wingtip import chart_next, charts
 
 from .. import chart_refresh
-from ..routers import devservices
+from .. import dev_services
 from ..settings import CHARTS_REFRESH_WINDOW, get_settings
 
 log = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def maybe_stage_next() -> str | None:
         last = chart_next.read_status() or {}
         if last.get("state") == chart_next.FAILED and last.get("cycle") == plan.next_name:
             log.warning("next chart cycle %s failed last time (%s); trying again", plan.next_name, last.get("detail"))
-        if devservices.start(SERVICE):
+        if dev_services.start(SERVICE):
             log.info("next chart cycle %s: the charts job's next run started (%s, takes effect %s)",
                      plan.next_name, what, plan.next.isoformat())
             return what

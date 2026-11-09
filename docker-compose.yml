@@ -275,7 +275,7 @@ services:
       REPORTS_STORE: /live/reports.sqlite
       PYTHONPATH: /workspace/services/planner
       # Not the host's Docker socket -- the dev-services sidecar above,
-      # which routers/devservices.py asks which services are up and to
+      # which app/dev_services.py asks which services are up and to
       # start one, the jobs (retrain, charts) among them.
       DEV_SERVICES_URL: http://dev-services:8000
       # The clock the charts job's night-time window (see
