@@ -158,7 +158,12 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                         Tabs.FPL -> FPLScreen(plan)
                         Tabs.AIRPORT -> AirportScreen(airport, plan = plan, model = airports)
                         Tabs.AIRPLANE -> AirplaneScreen(plan)
-                        Tabs.SETUP -> SetupScreen(session)
+                        Tabs.SETUP -> SetupScreen(session, onToMap = {
+                            // The demo flight's route in sight: the FPL tab, the
+                            // sheet lowered to its pill over the map.
+                            tab = Tabs.FPL.ordinal
+                            scope.launch { sheet.moveTo(SheetStop.PILL) }
+                        })
                     }
                 }
             }

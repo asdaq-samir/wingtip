@@ -28,6 +28,7 @@ struct SetupView: View {
                         LabeledContent("Signed in as", value: pilot.displayName ?? pilot.email ?? "you")
                         LabeledContent("Email", value: pilot.email)
                         NavigationLink("Contact") { ContactView().closesBack() }
+                        ExportDataButton()
                         Button("Sign Out", role: .destructive) { Task { await session.signOut(); plan.forgetPilot() } }
                         DeleteAccountButton()
                     } else {
@@ -117,6 +118,10 @@ struct SetupView: View {
                 Section {
                     LabeledContent("Server", value: Config.host)
                     LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+                    // The build, the data's cycles, the planning aid's words,
+                    // the credits, the legal pages and the demo flight, as
+                    // Settings > General > About has them.
+                    NavigationLink("About") { AboutView().closesBack() }
                 }
             }
             .navigationTitle("Setup")

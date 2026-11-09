@@ -1,6 +1,49 @@
 {
   "components" : {
     "schemas" : {
+      "AccountExport" : {
+        "properties" : {
+          "account" : {
+            "$ref" : "#/components/schemas/PilotDto"
+          },
+          "airplanes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ExportedAirplane"
+            },
+            "type" : "array"
+          },
+          "currency" : {
+            "$ref" : "#/components/schemas/CurrencyDto"
+          },
+          "exportedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "flights" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ExportedFlight"
+            },
+            "type" : "array"
+          },
+          "format" : {
+            "type" : "string"
+          },
+          "instructing" : {
+            "$ref" : "#/components/schemas/InstructorDto"
+          },
+          "logbook" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LogbookEntryDto"
+            },
+            "type" : "array"
+          },
+          "training" : {
+            "$ref" : "#/components/schemas/TrainingDto"
+          }
+        },
+        "required" : [ "account", "airplanes", "currency", "exportedAt", "flights", "format", "instructing", "logbook", "training" ],
+        "type" : "object"
+      },
       "AircraftDto" : {
         "properties" : {
           "climbFuelBurnGph" : {
@@ -379,37 +422,6 @@
         "required" : [ "access", "claudeFeatures", "providers", "subscriptions" ],
         "type" : "object"
       },
-      "ClientError" : {
-        "properties" : {
-          "kind" : {
-            "maxLength" : 40,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "message" : {
-            "maxLength" : 500,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "page" : {
-            "maxLength" : 300,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "stack" : {
-            "maxLength" : 4000,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "userAgent" : {
-            "maxLength" : 300,
-            "minLength" : 0,
-            "type" : "string"
-          }
-        },
-        "required" : [ "kind", "message", "page", "stack", "userAgent" ],
-        "type" : "object"
-      },
       "CrossCountryReviewDto" : {
         "properties" : {
           "answeredAt" : {
@@ -596,6 +608,83 @@
           }
         },
         "required" : [ "deviceCode", "expiresIn", "interval", "userCode", "verificationPath" ],
+        "type" : "object"
+      },
+      "DiagnosticDto" : {
+        "properties" : {
+          "detail" : {
+            "type" : "string"
+          },
+          "device" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "os" : {
+            "type" : "string"
+          },
+          "platform" : {
+            "type" : "string"
+          },
+          "receivedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "signature" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "detail", "device", "kind", "occurredAt", "os", "platform", "receivedAt", "signature", "version" ],
+        "type" : "object"
+      },
+      "DiagnosticsReport" : {
+        "properties" : {
+          "device" : {
+            "pattern" : "phone|tablet|desktop",
+            "type" : "string"
+          },
+          "faults" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FaultReport"
+            },
+            "maxItems" : 20,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "metrics" : {
+            "additionalProperties" : {
+              "format" : "double",
+              "type" : "number"
+            },
+            "type" : "object"
+          },
+          "os" : {
+            "maxLength" : 40,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "page" : {
+            "pattern" : "[a-z][a-z0-9-]{0,39}",
+            "type" : "string"
+          },
+          "platform" : {
+            "pattern" : "web|ios|android",
+            "type" : "string"
+          },
+          "version" : {
+            "pattern" : "[A-Za-z0-9._ ()+-]{1,40}",
+            "type" : "string"
+          }
+        },
+        "required" : [ "device", "faults", "metrics", "os", "page", "platform", "version" ],
         "type" : "object"
       },
       "DueDto" : {
@@ -820,6 +909,57 @@
           }
         },
         "required" : [ "have", "key", "label", "met", "need", "rule", "unit" ],
+        "type" : "object"
+      },
+      "ExportedAirplane" : {
+        "properties" : {
+          "airplane" : {
+            "$ref" : "#/components/schemas/AircraftDto"
+          },
+          "squawks" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SquawkDto"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "airplane", "squawks" ],
+        "type" : "object"
+      },
+      "ExportedFlight" : {
+        "properties" : {
+          "flight" : {
+            "$ref" : "#/components/schemas/FlightDto"
+          },
+          "track" : {
+            "$ref" : "#/components/schemas/TrackDto"
+          }
+        },
+        "required" : [ "flight", "track" ],
+        "type" : "object"
+      },
+      "FaultReport" : {
+        "properties" : {
+          "at" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "detail" : {
+            "maxLength" : 64000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "kind" : {
+            "pattern" : "crash|hang|exit|error|exception|cpu|disk",
+            "type" : "string"
+          },
+          "signature" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "at", "detail", "kind", "signature" ],
         "type" : "object"
       },
       "FeatureUse" : {
@@ -3169,15 +3309,46 @@
         "tags" : [ "magic-link-controller" ]
       }
     },
-    "/api/client-errors" : {
+    "/api/diagnostics" : {
+      "get" : {
+        "description" : "At most 200, newest first, from the last few days; the developer's.",
+        "operationId" : "recent",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "days",
+          "required" : false,
+          "schema" : {
+            "default" : 7,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/DiagnosticDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "The newest faults from pilots' devices",
+        "tags" : [ "Diagnostics" ]
+      },
       "post" : {
-        "description" : "Logged for the owner, without the page's query string; 30 an hour per caller, the rest dropped.",
+        "description" : "Kept without the pilot's session, address or anything they typed; 30 an hour per caller, the rest dropped.",
         "operationId" : "report",
         "requestBody" : {
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/ClientError"
+                "$ref" : "#/components/schemas/DiagnosticsReport"
               }
             }
           },
@@ -3185,14 +3356,14 @@
         },
         "responses" : {
           "204" : {
-            "description" : "Logged, or dropped past the hour's allowance"
+            "description" : "Kept, or dropped past the hour's allowance"
           },
           "400" : {
-            "description" : "Not an error report"
+            "description" : "Not a diagnostics report"
           }
         },
-        "summary" : "Report an error on a pilot's device",
-        "tags" : [ "Client errors" ]
+        "summary" : "Report faults and speed from a pilot's device",
+        "tags" : [ "Diagnostics" ]
       }
     },
     "/api/flight-service" : {
@@ -4199,6 +4370,36 @@
         "tags" : [ "pilot-controller" ]
       }
     },
+    "/api/me/export" : {
+      "get" : {
+        "description" : "The account, airplanes and squawks, flights with nav logs and tracks, logbook, currency, training and instructing, each as its own endpoint answers it; sent as a download.",
+        "operationId" : "export",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountExport"
+                }
+              }
+            },
+            "description" : "The file"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountExport"
+                }
+              }
+            },
+            "description" : "No session"
+          }
+        },
+        "summary" : "Everything kept for the signed-in pilot, as one JSON file",
+        "tags" : [ "Pilot" ]
+      }
+    },
     "/api/paperwork" : {
       "get" : {
         "operationId" : "due",
@@ -4704,11 +4905,11 @@
     "url" : "/"
   } ],
   "tags" : [ {
+    "description" : "Faults and speed from pilots' devices, kept without anything of the pilot's",
+    "name" : "Diagnostics"
+  }, {
     "description" : "What signing in can do in this deployment",
     "name" : "Auth"
-  }, {
-    "description" : "Errors on pilots' devices, logged for the owner",
-    "name" : "Client errors"
   }, {
     "description" : "The web app's speed over time, from pilots' browsers and the nightly lab run",
     "name" : "Speed"
@@ -4718,5 +4919,8 @@
   }, {
     "description" : "The paid features: the free month, and what is paid for",
     "name" : "Subscription"
+  }, {
+    "description" : "The signed-in pilot",
+    "name" : "Pilot"
   } ]
 }

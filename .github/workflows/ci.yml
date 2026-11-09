@@ -1736,6 +1736,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
       - name: No aviation rule outside the engine
         run: python3 scripts/ci/rules_boundary.py
+      # The privacy policy, terms and support page the site serves are
+      # written from docs/legal; one edited without the other is stale.
+      - name: The legal pages match docs/legal
+        run: python3 scripts/build/legal_pages.py --check
 
   # No source file new or grown past 400 lines (scripts/ci/file_sizes.py),
   # past what scripts/ci/file_sizes_allow.txt lists of the files over it

@@ -191,7 +191,10 @@ struct RootView: View {
             ),
             hazardLegs: plan.hazardLegs,
             bottomInset: mapInset,
-            onReveal: { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { mapShown = true } }
+            onReveal: {
+                Metrics.shared.mapShown() // Instruments' launch-to-map interval ends.
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { mapShown = true }
+            }
         )
         .ignoresSafeArea()
         // Over the map, under its buttons, until it shows: Wingtip's mark

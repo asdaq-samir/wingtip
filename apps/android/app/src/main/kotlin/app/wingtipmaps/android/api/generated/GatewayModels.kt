@@ -10,6 +10,68 @@ import kotlinx.serialization.encoding.*
 typealias StreamingResponseBody = HashMap<String, JsonElement?>
 
 @Serializable
+data class AccountExport (
+    val account: PilotDto,
+    val airplanes: List<ExportedAirplane>,
+    val currency: CurrencyDto,
+    val exportedAt: String,
+    val flights: List<ExportedFlight>,
+    val format: String,
+    val instructing: InstructorDto,
+    val logbook: List<LogbookEntryDto>,
+    val training: TrainingDto
+)
+
+/**
+ * The signed-in pilot
+ */
+@Serializable
+data class PilotDto (
+    /**
+     * Whether this pilot also does development work here: the training workspace and the
+     * developer console are theirs, a plain pilot's are not.
+     */
+    val developer: Boolean,
+
+    /**
+     * Display name
+     */
+    val displayName: String,
+
+    /**
+     * Email address from the identity provider
+     */
+    val email: String,
+
+    /**
+     * Their name as their certificate gives it: the pilot in command a flight plan names (item
+     * 19 C/) and an endorsement names them by
+     */
+    val fullName: String? = null,
+
+    /**
+     * Their airplane's home base, an airport identifier
+     */
+    val homeBase: String? = null,
+
+    /**
+     * Internal id
+     */
+    val id: Long,
+
+    /**
+     * Their telephone number, the contact a flight plan's item 19 C/ asks for
+     */
+    val phone: String? = null
+)
+
+@Serializable
+data class ExportedAirplane (
+    val airplane: AircraftDto,
+    val squawks: List<SquawkDto>
+)
+
+@Serializable
 data class AircraftDto (
     val climbFuelBurnGph: Double? = null,
     val climbTasKt: Double? = null,
@@ -169,98 +231,6 @@ data class VorCheckDto (
 )
 
 @Serializable
-data class AircraftRequest (
-    val climbFuelBurnGph: Double? = null,
-    val climbTasKt: Double? = null,
-    val colour: String? = null,
-    val cruisePowerPct: Double? = null,
-    val cruiseTasKt: Double,
-    val equipment: String? = null,
-    val fuelBurnGph: Double,
-    val surveillance: String? = null,
-    val tailNumber: String,
-    val typeDesignator: String,
-    val usableFuelGal: Double? = null
-)
-
-@Serializable
-data class AppleToken (
-    val identityToken: String
-)
-
-@Serializable
-data class Approval (
-    val userCode: String
-)
-
-@Serializable
-data class AskInstructorRequest (
-    val email: String
-)
-
-@Serializable
-data class AskReviewRequest (
-    val flightId: Long,
-    val flightOn: String,
-    val instructorId: Long,
-    val makeModel: String,
-    val note: String? = null
-)
-
-@Serializable
-data class AssignLessonRequest (
-    val airportIdent: String,
-    val cycle: String? = null,
-    val dueOn: String? = null,
-    val fixNotes: Map<String, String>,
-    val procedureId: String,
-    val procedureName: String
-)
-
-@Serializable
-data class Capabilities (
-    /**
-     * SIGN_IN: a session can be had, and the developer's workspace needs the role. OPEN: nobody
-     * can sign in and everything is open (the local stack). CLOSED: nobody can sign in, and
-     * writes and the developer's workspace are refused.
-     */
-    val access: String,
-
-    /**
-     * Where no subscription is sold, who has the features Claude writes: OFF, DEVELOPERS, or
-     * EVERYONE signed in.
-     */
-    val claudeFeatures: String,
-
-    /**
-     * The OIDC providers with real credentials, by registration id: the sign-in buttons to
-     * offer. Empty where only the emailed link signs in (the local stack).
-     */
-    val providers: List<String>,
-
-    /**
-     * Whether this deployment sells the subscription; where not, the page says nothing of one.
-     */
-    val subscriptions: Boolean
-)
-
-@Serializable
-data class ClientError (
-    val kind: String,
-    val message: String,
-    val page: String,
-    val stack: String,
-    val userAgent: String
-)
-
-@Serializable
-data class CurrencyDatesRequest (
-    val flightReviewOn: String? = null,
-    val ipcOn: String? = null,
-    val medicalExpiresOn: String? = null
-)
-
-@Serializable
 data class CurrencyDto (
     /**
      * Approaches logged in the 6 calendar months before this one
@@ -314,40 +284,9 @@ data class CurrencyDto (
 )
 
 @Serializable
-data class DeclineRequest (
-    val note: String
-)
-
-@Serializable
-data class DeviceCode (
-    val deviceCode: String,
-    val expiresIn: Int,
-    val interval: Int,
-    val userCode: String,
-    val verificationPath: String
-)
-
-@Serializable
-data class DueItemRequest (
-    val dueAtHours: Double? = null,
-    val dueOn: String? = null,
-    val kind: String,
-    val method: String? = null,
-    val reference: String? = null,
-    val title: String
-)
-
-@Serializable
-data class EndorsementRequest (
-    val endorsedOn: String
-)
-
-@Serializable
-data class FieldReport (
-    val device: String,
-    val metrics: Map<String, Double>,
-    val page: String,
-    val version: String
+data class ExportedFlight (
+    val flight: FlightDto,
+    val track: TrackDto
 )
 
 @Serializable
@@ -394,80 +333,17 @@ data class RiskAssessmentDto (
 )
 
 @Serializable
-data class FlightPlanFiled (
-    val reference: String
-)
-
-/**
- * A flight plan, FAA Form 7233-4's items
- */
-@Serializable
-data class FlightPlanFilingRequest (
-    val aircraftId: String,
-    val aircraftType: String,
-    val alternate: String? = null,
-    val cruisingLevel: String,
-    val cruisingSpeed: String,
-    val departure: String,
-
-    /**
-     * The departure time, an instant (item 13, UTC)
-     */
-    val departureTime: String,
-
-    val destination: String,
-    val eetMinutes: Int,
-    val enduranceMinutes: Int,
-    val otherInformation: String? = null,
-    val personsOnBoard: Int? = null,
-    val route: String,
-    val rules: String
+data class TrackDto (
+    val points: List<TrackPointDto>,
+    val source: String
 )
 
 @Serializable
-data class FlightServiceStatus (
-    val connected: Boolean,
-    val provider: String
-)
-
-@Serializable
-data class FlightWatchDto (
-    val changedAt: String? = null,
-    val changes: List<BriefingChangeDto>,
-    val checkedAt: String? = null,
-    val departAt: String,
-    val flightId: Long,
-    val sources: List<BriefingSourceDto>
-)
-
-@Serializable
-data class BriefingChangeDto (
-    val sources: List<String>,
-    val text: String
-)
-
-@Serializable
-data class BriefingSourceDto (
-    val id: String,
-    val label: String,
-    val text: String
-)
-
-@Serializable
-data class FullNameRequest (
-    val fullName: String
-)
-
-@Serializable
-data class InspectionsRequest (
-    val annualOn: String? = null,
-    val eltBatteryDueOn: String? = null,
-    val eltInspectedOn: String? = null,
-    val forHire: Boolean? = null,
-    val hoursNow: Double? = null,
-    val hundredHourAtHours: Double? = null,
-    val staticCheckOn: String? = null,
-    val transponderCheckOn: String? = null
+data class TrackPointDto (
+    val altFt: Double? = null,
+    val lat: Double,
+    val lon: Double,
+    val t: Long
 )
 
 @Serializable
@@ -573,6 +449,334 @@ data class FlightSummaryDto (
 )
 
 @Serializable
+data class LogbookEntryDto (
+    val aircraft: String? = null,
+    val aircraftType: String? = null,
+    val airHours: Double,
+    val approaches: Int,
+    val crossCountryHours: Double,
+    val dayLandings: Int,
+    val distanceNm: Double,
+    val dualHours: Double,
+    val flightId: Long? = null,
+    val flownOn: String,
+    val fromTrack: Boolean,
+    val holding: Boolean,
+    val id: Long,
+    val instrumentHours: Double,
+    val longestLegNm: Double,
+    val nightHours: Double,
+    val nightLandings: Int,
+    val remarks: String? = null,
+    val route: String? = null,
+    val soloHours: Double,
+    val totalHours: Double,
+    val touchAndGoes: Int,
+    val toweredLandings: Int,
+    val tracking: Boolean
+)
+
+@Serializable
+data class TrainingDto (
+    val endorsements: List<EndorsementDto>,
+    val experience: List<ExperienceItemDto>,
+    val fullName: String? = null,
+    val instructors: List<InstructorLinkDto>,
+    val kinds: List<EndorsementKindDto>,
+    val knowledgeTestCodes: List<String>,
+    val lessons: List<ApproachLessonDto>,
+    val reviews: List<CrossCountryReviewDto>,
+    val signed: List<SignedEndorsementDto>
+)
+
+@Serializable
+data class EndorsementDto (
+    val code: String,
+    val endorsedOn: String,
+    val until: String? = null
+)
+
+@Serializable
+data class ExperienceItemDto (
+    val have: Double,
+    val key: String,
+    val label: String,
+    val met: Boolean,
+    val need: Double,
+    val rule: String,
+    val unit: String
+)
+
+@Serializable
+data class InstructorLinkDto (
+    val accepted: Boolean,
+    val askedAt: String,
+    val certificate: String? = null,
+    val email: String,
+    val id: Long,
+    val name: String? = null
+)
+
+@Serializable
+data class ApproachLessonDto (
+    val airportIdent: String,
+    val briefedAt: String? = null,
+    val createdAt: String,
+    val cycle: String? = null,
+    val dueOn: String? = null,
+    val fixNotes: Map<String, String>,
+    val flights: List<FlightSummaryDto>,
+    val flownAt: String? = null,
+    val id: Long,
+    val instructorName: String,
+    val procedureId: String,
+    val procedureName: String,
+    val quizAnswers: List<QuizAnswerDto>,
+    val quizAt: String? = null,
+    val quizOf: Int? = null,
+    val status: String,
+    val studentId: Long,
+    val studentName: String,
+    val updatedAt: String
+)
+
+@Serializable
+data class QuizAnswerDto (
+    val chosen: String,
+    val question: String,
+    val right: Boolean
+)
+
+@Serializable
+data class AircraftRequest (
+    val climbFuelBurnGph: Double? = null,
+    val climbTasKt: Double? = null,
+    val colour: String? = null,
+    val cruisePowerPct: Double? = null,
+    val cruiseTasKt: Double,
+    val equipment: String? = null,
+    val fuelBurnGph: Double,
+    val surveillance: String? = null,
+    val tailNumber: String,
+    val typeDesignator: String,
+    val usableFuelGal: Double? = null
+)
+
+@Serializable
+data class AppleToken (
+    val identityToken: String
+)
+
+@Serializable
+data class Approval (
+    val userCode: String
+)
+
+@Serializable
+data class AskInstructorRequest (
+    val email: String
+)
+
+@Serializable
+data class AskReviewRequest (
+    val flightId: Long,
+    val flightOn: String,
+    val instructorId: Long,
+    val makeModel: String,
+    val note: String? = null
+)
+
+@Serializable
+data class AssignLessonRequest (
+    val airportIdent: String,
+    val cycle: String? = null,
+    val dueOn: String? = null,
+    val fixNotes: Map<String, String>,
+    val procedureId: String,
+    val procedureName: String
+)
+
+@Serializable
+data class Capabilities (
+    /**
+     * SIGN_IN: a session can be had, and the developer's workspace needs the role. OPEN: nobody
+     * can sign in and everything is open (the local stack). CLOSED: nobody can sign in, and
+     * writes and the developer's workspace are refused.
+     */
+    val access: String,
+
+    /**
+     * Where no subscription is sold, who has the features Claude writes: OFF, DEVELOPERS, or
+     * EVERYONE signed in.
+     */
+    val claudeFeatures: String,
+
+    /**
+     * The OIDC providers with real credentials, by registration id: the sign-in buttons to
+     * offer. Empty where only the emailed link signs in (the local stack).
+     */
+    val providers: List<String>,
+
+    /**
+     * Whether this deployment sells the subscription; where not, the page says nothing of one.
+     */
+    val subscriptions: Boolean
+)
+
+@Serializable
+data class CurrencyDatesRequest (
+    val flightReviewOn: String? = null,
+    val ipcOn: String? = null,
+    val medicalExpiresOn: String? = null
+)
+
+@Serializable
+data class DeclineRequest (
+    val note: String
+)
+
+@Serializable
+data class DeviceCode (
+    val deviceCode: String,
+    val expiresIn: Int,
+    val interval: Int,
+    val userCode: String,
+    val verificationPath: String
+)
+
+@Serializable
+data class DiagnosticDto (
+    val detail: String,
+    val device: String,
+    val kind: String,
+    val occurredAt: String,
+    val os: String,
+    val platform: String,
+    val receivedAt: String,
+    val signature: String,
+    val version: String
+)
+
+@Serializable
+data class DiagnosticsReport (
+    val device: String,
+    val faults: List<FaultReport>,
+    val metrics: Map<String, Double>,
+    val os: String,
+    val page: String,
+    val platform: String,
+    val version: String
+)
+
+@Serializable
+data class FaultReport (
+    val at: String,
+    val detail: String,
+    val kind: String,
+    val signature: String
+)
+
+@Serializable
+data class DueItemRequest (
+    val dueAtHours: Double? = null,
+    val dueOn: String? = null,
+    val kind: String,
+    val method: String? = null,
+    val reference: String? = null,
+    val title: String
+)
+
+@Serializable
+data class EndorsementRequest (
+    val endorsedOn: String
+)
+
+@Serializable
+data class FieldReport (
+    val device: String,
+    val metrics: Map<String, Double>,
+    val page: String,
+    val version: String
+)
+
+@Serializable
+data class FlightPlanFiled (
+    val reference: String
+)
+
+/**
+ * A flight plan, FAA Form 7233-4's items
+ */
+@Serializable
+data class FlightPlanFilingRequest (
+    val aircraftId: String,
+    val aircraftType: String,
+    val alternate: String? = null,
+    val cruisingLevel: String,
+    val cruisingSpeed: String,
+    val departure: String,
+
+    /**
+     * The departure time, an instant (item 13, UTC)
+     */
+    val departureTime: String,
+
+    val destination: String,
+    val eetMinutes: Int,
+    val enduranceMinutes: Int,
+    val otherInformation: String? = null,
+    val personsOnBoard: Int? = null,
+    val route: String,
+    val rules: String
+)
+
+@Serializable
+data class FlightServiceStatus (
+    val connected: Boolean,
+    val provider: String
+)
+
+@Serializable
+data class FlightWatchDto (
+    val changedAt: String? = null,
+    val changes: List<BriefingChangeDto>,
+    val checkedAt: String? = null,
+    val departAt: String,
+    val flightId: Long,
+    val sources: List<BriefingSourceDto>
+)
+
+@Serializable
+data class BriefingChangeDto (
+    val sources: List<String>,
+    val text: String
+)
+
+@Serializable
+data class BriefingSourceDto (
+    val id: String,
+    val label: String,
+    val text: String
+)
+
+@Serializable
+data class FullNameRequest (
+    val fullName: String
+)
+
+@Serializable
+data class InspectionsRequest (
+    val annualOn: String? = null,
+    val eltBatteryDueOn: String? = null,
+    val eltInspectedOn: String? = null,
+    val forHire: Boolean? = null,
+    val hoursNow: Double? = null,
+    val hundredHourAtHours: Double? = null,
+    val staticCheckOn: String? = null,
+    val transponderCheckOn: String? = null
+)
+
+@Serializable
 data class InstructorRequest (
     val certificate: String,
     val fullName: String,
@@ -604,41 +808,6 @@ data class LessonProgressRequest (
 data class Quiz (
     val answers: List<QuizAnswerDto>,
     val of: Int
-)
-
-@Serializable
-data class QuizAnswerDto (
-    val chosen: String,
-    val question: String,
-    val right: Boolean
-)
-
-@Serializable
-data class LogbookEntryDto (
-    val aircraft: String? = null,
-    val aircraftType: String? = null,
-    val airHours: Double,
-    val approaches: Int,
-    val crossCountryHours: Double,
-    val dayLandings: Int,
-    val distanceNm: Double,
-    val dualHours: Double,
-    val flightId: Long? = null,
-    val flownOn: String,
-    val fromTrack: Boolean,
-    val holding: Boolean,
-    val id: Long,
-    val instrumentHours: Double,
-    val longestLegNm: Double,
-    val nightHours: Double,
-    val nightLandings: Int,
-    val remarks: String? = null,
-    val route: String? = null,
-    val soloHours: Double,
-    val totalHours: Double,
-    val touchAndGoes: Int,
-    val toweredLandings: Int,
-    val tracking: Boolean
 )
 
 @Serializable
@@ -748,49 +917,6 @@ data class DueDto (
 @Serializable
 data class PilotContactRequest (
     val homeBase: String? = null,
-    val phone: String? = null
-)
-
-/**
- * The signed-in pilot
- */
-@Serializable
-data class PilotDto (
-    /**
-     * Whether this pilot also does development work here: the training workspace and the
-     * developer console are theirs, a plain pilot's are not.
-     */
-    val developer: Boolean,
-
-    /**
-     * Display name
-     */
-    val displayName: String,
-
-    /**
-     * Email address from the identity provider
-     */
-    val email: String,
-
-    /**
-     * Their name as their certificate gives it: the pilot in command a flight plan names (item
-     * 19 C/) and an endorsement names them by
-     */
-    val fullName: String? = null,
-
-    /**
-     * Their airplane's home base, an airport identifier
-     */
-    val homeBase: String? = null,
-
-    /**
-     * Internal id
-     */
-    val id: Long,
-
-    /**
-     * Their telephone number, the contact a flight plan's item 19 C/ asks for
-     */
     val phone: String? = null
 )
 
@@ -933,84 +1059,6 @@ data class FeatureUse (
 @Serializable
 data class TokenRequest (
     val deviceCode: String
-)
-
-@Serializable
-data class TrackDto (
-    val points: List<TrackPointDto>,
-    val source: String
-)
-
-@Serializable
-data class TrackPointDto (
-    val altFt: Double? = null,
-    val lat: Double,
-    val lon: Double,
-    val t: Long
-)
-
-@Serializable
-data class TrainingDto (
-    val endorsements: List<EndorsementDto>,
-    val experience: List<ExperienceItemDto>,
-    val fullName: String? = null,
-    val instructors: List<InstructorLinkDto>,
-    val kinds: List<EndorsementKindDto>,
-    val knowledgeTestCodes: List<String>,
-    val lessons: List<ApproachLessonDto>,
-    val reviews: List<CrossCountryReviewDto>,
-    val signed: List<SignedEndorsementDto>
-)
-
-@Serializable
-data class EndorsementDto (
-    val code: String,
-    val endorsedOn: String,
-    val until: String? = null
-)
-
-@Serializable
-data class ExperienceItemDto (
-    val have: Double,
-    val key: String,
-    val label: String,
-    val met: Boolean,
-    val need: Double,
-    val rule: String,
-    val unit: String
-)
-
-@Serializable
-data class InstructorLinkDto (
-    val accepted: Boolean,
-    val askedAt: String,
-    val certificate: String? = null,
-    val email: String,
-    val id: Long,
-    val name: String? = null
-)
-
-@Serializable
-data class ApproachLessonDto (
-    val airportIdent: String,
-    val briefedAt: String? = null,
-    val createdAt: String,
-    val cycle: String? = null,
-    val dueOn: String? = null,
-    val fixNotes: Map<String, String>,
-    val flights: List<FlightSummaryDto>,
-    val flownAt: String? = null,
-    val id: Long,
-    val instructorName: String,
-    val procedureId: String,
-    val procedureName: String,
-    val quizAnswers: List<QuizAnswerDto>,
-    val quizAt: String? = null,
-    val quizOf: Int? = null,
-    val status: String,
-    val studentId: Long,
-    val studentName: String,
-    val updatedAt: String
 )
 
 @Serializable

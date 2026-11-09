@@ -43,6 +43,9 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.about.AboutScreen
+import app.wingtipmaps.android.account.DeleteAccountButton
+import app.wingtipmaps.android.account.ExportRow
 import app.wingtipmaps.android.atc.AtcSettingRow
 import app.wingtipmaps.android.briefing.PassengerScreen
 import app.wingtipmaps.android.copilot.CopilotMode
@@ -64,15 +67,20 @@ import app.wingtipmaps.android.welcome.WelcomeMemory
  * address and the emailed link, which opens the app and signs it in
  * (Session.open) -- what falls due, what the map draws, and the flight's
  * passenger briefing. The server the build talks to is shown, for a
- * tester with more than one. Each section under one SectionTitle.
+ * tester with more than one, and About under it. Each section under one
+ * SectionTitle.
+ *
+ * @param onToMap the sheets closed back to the map: after About's demo
+ *   flight, so the route it planned is in sight.
  */
 @Composable
-fun SetupScreen(session: Session) {
+fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
     // The plan the root holds (the activity's one Plan), for the
     // passenger briefing's flight.
     val plan: Plan = viewModel()
     var briefing by rememberSaveable { mutableStateOf(false) }
     var logbook by rememberSaveable { mutableStateOf(false) }
+    var about by rememberSaveable { mutableStateOf(false) }
     var downloads by rememberSaveable { mutableStateOf(false) }
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val loaded by session.loaded.collectAsStateWithLifecycle()
@@ -105,6 +113,7 @@ fun SetupScreen(session: Session) {
             signedIn != null -> {
                 Text(signedIn.email ?: signedIn.displayName ?: stringResource(R.string.signed_in), style = MaterialTheme.typography.bodyLarge)
                 OutlinedButton(onClick = { session.signOut(context) }) { Text(stringResource(R.string.sign_out)) }
+                DeleteAccountButton(session)
             }
             else -> {
                 OutlinedTextField(
@@ -130,6 +139,8 @@ fun SetupScreen(session: Session) {
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { logbook = true },
             )
+            // Everything the account holds, as a file the pilot keeps.
+            ExportRow()
         }
         // The pilot's own minimums, kept on this phone (no sign-in), as
         // the web keeps them with the pilot's own things.
@@ -187,6 +198,20 @@ fun SetupScreen(session: Session) {
         Row(Modifier.fillMaxWidth().padding(top = WingtipSpace.Lg), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(stringResource(R.string.server), style = MaterialTheme.typography.bodyMedium)
             Text(Config.host, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.about)) },
+            supportingContent = { Text(stringResource(R.string.about_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { about = true },
+        )
+    }
+    if (about) {
+        WingtipSheet(title = stringResource(R.string.about), onClose = { about = false }, full = true) {
+            AboutScreen(onDemo = {
+                about = false
+                onToMap()
+            })
         }
     }
     if (logbook) {

@@ -14,8 +14,9 @@ makes good today; keep it so.
 | Secondary category | Weather |
 | Age rating | 4+ (no objectionable content, no user-to-user content) |
 | Price | Free |
-| Support URL | `https://<domain>/app/support.html` |
-| Privacy policy URL | `https://<domain>/app/privacy.html` |
+| Support URL | `https://<domain>/support` |
+| Privacy policy URL | `https://<domain>/privacy` (written from `docs/legal/privacy.md`, a draft for the owner to review) |
+| Terms of use (EULA) | `https://<domain>/terms` (from `docs/legal/terms.md`, a draft) |
 | Copyright | 2026 Wingtip Maps |
 
 **Promotional text (170):** Plan a VFR or IFR flight on the FAA's charts:
@@ -58,8 +59,8 @@ Answer from `docs/privacy-inventory.md`, the one source:
   Identifiers (user ID), User Content (other: airplanes, flights,
   logbook, notes), Location (precise: a flight's saved track). All for
   App Functionality.
-- **Data not linked to you:** Diagnostics (crash data). App
-  Functionality.
+- **Data not linked to you:** Diagnostics (crash data, performance
+  data). App Functionality.
 
 ## App Review information
 
@@ -68,10 +69,11 @@ charts need no account.
 
 **Notes for review:**
 
-> No account is needed to plan a flight: type two airports (for
-> example KMSN and KDLH) in the search bar at the bottom. To try the
-> account features -- saving an airplane, and Delete account, in the
-> console's menu under Sign out -- use Sign in with Apple. Location is
+> No account is needed to plan a flight: Setup, About, Demo Flight
+> opens a sample flight (KMSN to KOSH in a Cessna 172), or type two
+> airports in the search bar at the bottom. To try the account
+> features -- saving an airplane, Export My Data and Delete Account, in
+> Setup under the account -- use Sign in with Apple. Location is
 > asked for when the map first opens, to open the chart on where you
 > are, as Maps does, and to draw the airplane on it; declined, the map
 > opens on the country and the location arrow asks again. The first

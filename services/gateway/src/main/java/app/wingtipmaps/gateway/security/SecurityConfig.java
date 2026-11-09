@@ -163,8 +163,8 @@ public class SecurityConfig {
                     UpstreamRoutes upstream = UpstreamRoutes.shipped();
                     auth
                             .requestMatchers(upstream.matcher(UpstreamRoutes.Access.DEVELOPER)).access(developer)
-                            // The web app's speed over time (SpeedController).
-                            .requestMatchers(HttpMethod.GET, "/api/speed").access(developer);
+                            // The apps' speed over time and faults (SpeedController, DiagnosticsController).
+                            .requestMatchers(HttpMethod.GET, "/api/speed", "/api/diagnostics").access(developer);
                     // Reading from the planner: planning a route needs no
                     // account. The Go / No-Go, the debrief, lost comms and a
                     // clearance's places are reads too, though POSTs: the
@@ -222,9 +222,10 @@ public class SecurityConfig {
                             // whether a sign-in button is worth showing
                             // at all (SignInCapabilitiesController).
                             .requestMatchers(HttpMethod.GET, "/api/auth/capabilities").permitAll()
-                            // An error on a pilot's phone, before sign-in as
-                            // much as after (ClientErrorController).
-                            .requestMatchers(HttpMethod.POST, "/api/client-errors").permitAll()
+                            // A device's faults, before sign-in as after (DiagnosticsController);
+                            // the legal pages, read before any account exists (WebMvcConfig).
+                            .requestMatchers(HttpMethod.POST, "/api/diagnostics").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/privacy", "/terms", "/support").permitAll()
                             // A page's speed from a pilot's browser, signed in
                             // or not, and the nightly lab run's, which carries
                             // its own token (SpeedController).
@@ -247,16 +248,15 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        // sendBeacon carries no header, and a forged report
-                        // can only add a line to the log (ClientErrorController)
-                        // or a sample to the speed trend; the lab run has no
-                        // session to forge, only its token (SpeedController).
+                        // sendBeacon carries no header, and a forged report only adds a row the
+                        // owner reads (DiagnosticsController) or a sample to the speed trend; the
+                        // lab run has no session to forge, only its token (SpeedController).
                         // The Go / No-Go changes nothing, so a forged one
                         // gains nothing; the native app holds no cookie to
                         // echo. The debrief, lost comms and a clearance's
                         // places change nothing either: each route the
                         // planner marks so (x-gateway's csrf: false).
-                        .ignoringRequestMatchers("/api/client-errors", "/api/speed/field", "/api/speed/lab")
+                        .ignoringRequestMatchers("/api/diagnostics", "/api/speed/field", "/api/speed/lab")
                         .ignoringRequestMatchers(UpstreamRoutes.shipped().csrfExempt()))
                 // The handler above resolves the token lazily and nothing
                 // server-rendered ever forces it, so without this filter

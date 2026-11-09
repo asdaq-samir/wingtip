@@ -54,6 +54,16 @@ extension Plan {
     /// DEFAULT_AIRCRAFT): never flown with no airplane picked.
     nonisolated static let stockProfile = "c172"
 
+    /// A type flown on the planner's profile for it, with no N-number and
+    /// no figures of the pilot's: picked by the pilot by name (the demo
+    /// flight), so it is their choice, not one assumed (decision 0011).
+    /// Not planned here: the caller sets the route and plans it once.
+    func flyType(_ profile: String) {
+        tail = nil
+        aircraft = profile
+        figures = Figures()
+    }
+
     /// No airplane: the route's own figures alone, planned again.
     func flyNoAirplane() {
         tail = nil

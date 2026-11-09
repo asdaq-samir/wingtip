@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
+import app.wingtipmaps.android.api.deleteAccount
 import app.wingtipmaps.android.checklist.ChecklistStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -97,9 +98,39 @@ class Session : ViewModel() {
         val checklists = ChecklistStore.of(context.applicationContext)
         viewModelScope.launch {
             runCatching { Gateway.signOut() }
-            _pilot.value = null
-            _linkSent.value = false
-            checklists.forgetAll()
+            forget(checklists)
         }
+    }
+
+    /** The account being deleted: the button waits while it is. */
+    private val _deleting = MutableStateFlow(false)
+    val deleting: StateFlow<Boolean> = _deleting.asStateFlow()
+
+    /** The account deleted on the gateway, which signs out every device,
+     *  then this phone forgets the pilot as signing out does. Where the
+     *  gateway refuses (nothing deleted), the pilot stays signed in and
+     *  its words are the problem shown under the account. */
+    fun deleteAccount(context: Context) {
+        val checklists = ChecklistStore.of(context.applicationContext)
+        viewModelScope.launch {
+            _deleting.value = true
+            try {
+                Gateway.deleteAccount()
+                _problem.value = null
+                forget(checklists)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _problem.value = "The account could not be deleted: ${e.message}"
+            } finally {
+                _deleting.value = false
+            }
+        }
+    }
+
+    private fun forget(checklists: ChecklistStore) {
+        _pilot.value = null
+        _linkSent.value = false
+        checklists.forgetAll()
     }
 }

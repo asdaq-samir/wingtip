@@ -27,7 +27,9 @@ public class SpeedSample {
     @Column(nullable = false)
     private Instant recordedAt;
 
-    @Column(nullable = false, length = 5)
+    /** "field" or "lab" (SpeedController), or the platform whose app
+     *  measured it -- "web", "ios", "android" (DiagnosticsController). */
+    @Column(nullable = false, length = 10)
     private String source;
 
     @Column(nullable = false, length = 40)

@@ -1,11 +1,12 @@
 # What Wingtip Maps collects
 
 This list is read from the code and is the one source for the privacy
-policy (`apps/web/src/lib/legal`), App Store Connect's App Privacy answers,
+policy (`docs/legal/privacy.md`, which `scripts/build/legal_pages.py` writes
+to the site), App Store Connect's App Privacy answers,
 Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
-Last checked against the code on 2026-10-11.
+Last checked against the code on 2026-11-09.
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -21,8 +22,8 @@ longer than it takes to answer the request.
 | Location, Precise | A flight's track, when a pilot saves it to a flight | Yes | App Functionality | `flight_tracks` |
 | Purchases, Purchase History | The subscription: when the free month started and ends, and a paid plan's term, its store and the store's own id for it | Yes | App Functionality (the paid features) | `subscriptions` |
 | Usage Data, Product Interaction | How many of each Claude-written feature (the written briefing, checkpoint descriptions, the mock oral) a pilot used this month, a count, for its monthly cap | Yes | App Functionality (the cap) | `paid_feature_uses` |
-| Diagnostics, Crash Data | An uncaught error on the device: its message, stack, the page's path, the browser's name (`lib/errorReports`) | No | App Functionality (finding faults) | The server's log in CloudWatch, 30 days |
-| Diagnostics, Performance Data | How fast a page was on the device: Core Web Vitals (LCP, INP, CLS, FCP, TTFB), the page's name, phone, tablet or desktop, and the app's build; nothing of the pilot's (`lib/speed`, SpeedController) | No | App Functionality (keeping the app fast) | `speed_samples` (Postgres), 400 days |
+| Diagnostics, Crash Data | A fault on the device: the web's uncaught errors (message, stack, page path, browser; `lib/errorReports`), the iPhone's MetricKit crash, hang, CPU and disk-write diagnostics (`Diagnostics/`), Android's exit reasons, ANR traces and uncaught exceptions (`diagnostics/`); each with the app's version, the OS version and phone/tablet/desktop, scrubbed of queries, emails, home folders and UUIDs (`DiagnosticText`) | No | App Functionality (finding faults) | `diagnostics` (Postgres), 90 days; a line in the server's log |
+| Diagnostics, Performance Data | How fast the app was on the device: the web's Core Web Vitals (LCP, INP, CLS, FCP, TTFB) and long tasks, the iPhone's launch, resume, hang and scroll-hitch figures (MetricKit), Android's launch time and janky frames (JankStats); the page's name, phone, tablet or desktop, and the app's build; nothing of the pilot's (`lib/speed`, `lib/longTasks`, SpeedController, DiagnosticsController) | No | App Functionality (keeping the app fast) | `speed_samples` (Postgres), 400 days |
 
 ## Data that leaves the device but is not collected
 
@@ -35,6 +36,16 @@ longer than it takes to answer the request.
   apps, with ADS-B Receiver on Auto): heard on the cockpit's Wi-Fi, read
   by the engine on the device and shown there; nothing of it is sent
   anywhere or kept past a few hours.
+- **The radio, with the ATC copilot on.** No audio is recorded or sent
+  to us. The device's speech recognizer turns it into text: Apple's on the
+  iPhone (on the device where it can, `requiresOnDeviceRecognition`,
+  else Apple's servers), the system's on Android (usually Google's, which
+  may use its servers; `atc/RadioListener.kt`), the browser's on the web
+  (Safari to Apple, Chrome to Google). Of the text, only a clearance's
+  place words go to the planner (`/api/clearance/places`).
+- **iCloud (iPhone).** Kept and watched airplanes and planned routes are
+  in the pilot's own iCloud through SwiftData's CloudKit sync
+  (`Records/Records.swift`); Apple's, not ours.
 - **A route's airports and stops**, to plan it. Kept only as a pilot's
   saved flight (above).
 
@@ -42,7 +53,7 @@ longer than it takes to answer the request.
 
 | Recipient | What | Personal |
 |---|---|---|
-| Anthropic (Claude) | For a briefing: the route, the nav log, the weather on it and the aircraft's stock profile and figures. For a checkpoint note: the checkpoint and the route around it | No name, address, account or tail number |
+| Anthropic (Claude) | Ask: the conversation (typed or spoken), the route, stops, airplane, altitude, departure time, the pilot's minimums, currency lines and home base, and the live position (3 decimals), altitude, track and groundspeed where known (`services/assistant/app/assistant.py`). The briefing and the Brief's words: the route, the nav log, the weather and NOTAM text on it, the airplane's type, and for the risk words the pilot's minimums and currency. A checkpoint note: the checkpoint and the route around it. The mock oral: the plan as text and the typed answers. Flight watch: what changed on the route. Nothing kept: the conversation is the client's | No name, address, account; a tail number only where the pilot typed it into a question |
 | Amazon SES | The address a sign-in link is sent to, and the link; an instructor's address a student asks in, with the student's name and address; the endorsements and reviews between the two, to each | Yes, to deliver it |
 | The student's instructor | Once they take the student on: the student's name and address, 61.109 experience from their logbook, knowledge test codes, endorsements, and the saved flights the student puts to them | Yes: the student asks them in, and either ends it |
 | Google, Apple | Their own sign-in, when a pilot uses it | Their own |

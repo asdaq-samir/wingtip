@@ -147,6 +147,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.process)
+    // The frames drawn and the janky ones, for the diagnostics (diagnostics/).
+    implementation(libs.androidx.metrics.performance)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)

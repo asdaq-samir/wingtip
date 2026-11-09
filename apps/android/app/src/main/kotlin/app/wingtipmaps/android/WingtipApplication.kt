@@ -2,6 +2,7 @@ package app.wingtipmaps.android
 
 import android.app.Application
 import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.diagnostics.Diagnostics
 import org.maplibre.android.MapLibre
 import org.maplibre.android.module.http.HttpRequestUtil
 
@@ -16,6 +17,9 @@ class WingtipApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Gateway.attach(this)
+        // First after the gateway, so a crash in anything after is caught;
+        // its own work is off the main thread.
+        Diagnostics.start(this)
         MapLibre.getInstance(this)
         HttpRequestUtil.setOkHttpClient(Gateway.client)
     }

@@ -20,6 +20,7 @@ import { prepareAnnouncer } from "./lib/announce";
 import { keepAddressThroughReload, startFresh } from "./features/shell/freshLoad";
 import { installErrorReports, reportOf, sendReport } from "./lib/errorReports";
 import { startSpeedReports } from "./lib/speed";
+import { startLongTaskReports } from "./lib/longTasks";
 import { startLoadLog } from "./lib/loadLog";
 import MapPage from "./features/shell/MapPage";
 import { prefetchRouteMap } from "./features/plan/routeMapChunk";
@@ -64,13 +65,15 @@ if (tv) startTv(tv);
 prefetchRouteMap();
 prefetchRouteBox();
 
-// What goes wrong on the pilot's device, to the owner's log
+// What goes wrong on the pilot's device, to the gateway's diagnostics
 // (lib/errorReports): before anything else can throw.
 installErrorReports();
 
 // How fast the page is on this device, for the speed trend (lib/speed):
 // Core Web Vitals, nothing of the pilot's, once the page is idle.
 startSpeedReports();
+// How long the main thread was busy, beside them (lib/longTasks).
+startLongTaskReports();
 // When the map's layers show at each load, for Setup's Log.
 startLoadLog();
 
