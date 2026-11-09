@@ -40,7 +40,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
@@ -172,8 +171,9 @@ private fun Steps(steps: List<Pair<String, ClearanceModel.Step>>) {
                 ClearanceModel.Step.LATER -> "to come"
             }
             Text(
-                "${i + 1} $name", style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (step == ClearanceModel.Step.LATER) FontWeight.Normal else FontWeight.SemiBold,
+                "${i + 1} $name",
+                // The steps done and the one now in the brand's semibold label, those to come in its plain one.
+                style = if (step == ClearanceModel.Step.LATER) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
                 color = when (step) {
                     ClearanceModel.Step.DONE -> ink.goInk
                     ClearanceModel.Step.NOW -> MaterialTheme.colorScheme.primary
@@ -216,7 +216,7 @@ private fun Craft(c: Clearance, state: ClearanceModel.State) {
 private fun CraftRow(name: String, value: String, spoken: String? = null) {
     ListItem(
         headlineContent = { Text(name) },
-        trailingContent = { Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold) },
+        trailingContent = { Text(value, style = MaterialTheme.typography.titleMedium) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clearAndSetSemantics { contentDescription = "$name, ${spoken ?: value}" },
     )
