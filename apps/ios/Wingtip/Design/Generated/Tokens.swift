@@ -56,6 +56,8 @@ enum WingtipColor {
         static let trafficFar = rgb(0x06B6D4)
         /// A temporary flight restriction's red (14 CFR 91.137 to 91.145).
         static let tfr = rgb(0xDC2626)
+        /// The emergency assistant's line to the field picked: the system red a pilot reads as now.
+        static let emergency = rgb(0xFF3B30)
     }
     enum Category {
         static let vfr = rgb(0x1A7F37)

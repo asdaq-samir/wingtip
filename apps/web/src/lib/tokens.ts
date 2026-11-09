@@ -24,6 +24,7 @@ export const CHART = {
   trafficNearText: "#fcd34d",
   trafficFar: "#06b6d4",
   tfr: "#dc2626",
+  emergency: "#ff3b30",
 };
 
 /** The FAA's flight categories (AIM 7-1-7). */

@@ -76,6 +76,8 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param glide the still-air glide ring about own ship (InFlight, the
  *   engine's glide_ring), its outline as latitude and longitude pairs,
  *   drawn dashed; empty for none.
+ * @param emergency the emergency assistant's line to the field picked
+ *   (EmergencyLayer); null while it is shut.
  * @param follow whether the map keeps the airplane in the middle; a
  *   drag of the map ends it (`onDragged`), as Apple Maps lets go.
  * @param overlays the cycle's overlay tiles, in the first style with
@@ -120,6 +122,7 @@ fun ChartMap(
     ownShip: OwnShip.Fix? = null,
     trail: List<PathPoint> = emptyList(),
     glide: List<List<Double>> = emptyList(),
+    emergency: EmergencyLine? = null,
     follow: Boolean = false,
     onDragged: () -> Unit = {},
     onRevealed: () -> Unit = {},
@@ -167,6 +170,7 @@ fun ChartMap(
     LaunchedEffect(holder, closeTiles) { holder.close(closeTiles) }
     LaunchedEffect(holder, traffic, tracked) { holder.traffic(traffic, tracked) }
     LaunchedEffect(holder, glide) { holder.glide(glide) }
+    LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
 
     AndroidView(factory = { holder.view }, modifier = modifier)
 }
@@ -209,6 +213,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var lastClose: String? = null
     private var lastTraffic: List<TrafficDrawing.Target> = emptyList()
     private var lastTracked: String? = null
+    private var lastEmergency: EmergencyLine? = null
     /** The chart's own furthest zoom, MapLibre's; the street map lets the
      *  map go further while it is there. */
     private var chartMaxZoom = 22.0
@@ -274,6 +279,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 trail(style, lastTrail)
                 glide(style, lastGlide)
                 ownShip(map, style, lastFix, lastFollow)
+                EmergencyLayer.draw(style, lastEmergency, below = OWN_SHIP)
                 drawTraffic()
             }
         }
@@ -473,6 +479,12 @@ private class MapHolder(val view: MapView, private val density: Float) {
         lastTrail = points
         if (destroyed) return
         view.getMapAsync { map -> map.getStyle { style -> trail(style, points) } }
+    }
+
+    fun emergency(line: EmergencyLine?) {
+        lastEmergency = line
+        if (destroyed) return
+        view.getMapAsync { map -> map.getStyle { style -> EmergencyLayer.draw(style, line, below = OWN_SHIP) } }
     }
 
     fun glide(ring: List<List<Double>>) {

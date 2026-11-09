@@ -20,6 +20,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.copilot.CopilotBanner
+import app.wingtipmaps.android.emergency.EmergencyModel
+import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnTrail
@@ -27,6 +29,7 @@ import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Tracking
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.ChartMap
+import app.wingtipmaps.android.map.EmergencyLine
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.MapLoading
 import app.wingtipmaps.android.map.MapPick
@@ -115,6 +118,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     LaunchedEffect(groundFt) { InFlight.shared.terrainFt = groundFt }
     LaunchedEffect(fix, ownShip.on, state.course, state.legs) { InFlight.shared.took(if (ownShip.on) fix else null, state) }
     LaunchedEffect(ahead) { SpokenAlerts.of(context).hear(ahead) }
+    // While the emergency assistant is open, the line from the airplane
+    // to the field it picked (the same model EmergencyHost holds).
+    val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
+    val emergency by viewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize()) {
         ChartMap(
@@ -140,6 +147,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             ownShip = if (ownShip.on) fix else null,
             trail = flown,
             glide = if (ownShip.on) inFlight.glide?.ring.orEmpty() else emptyList(),
+            emergency = if (emergencyFrom != null && ownShip.on) EmergencyLine.of(emergency) else null,
             follow = ownShip.following,
             onDragged = { ownShip.following = false },
             onRevealed = { revealed = true },
