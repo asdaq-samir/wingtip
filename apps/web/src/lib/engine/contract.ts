@@ -554,6 +554,13 @@ export type InFlightAnswer = {
 } | null;
 export type IsEastboundAnswer = boolean;
 export type IsaTempCAnswer = number;
+/**
+ * A kind of answer the apps keep for the air: the briefing, the route's METARs and TAFs, the ranked NOTAMs, the route's airport cards, the destination's and alternate's plates, the plan with its nav log, the Go / No-Go and the weather loop's frame list.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "KeptKind".
+ */
+export type KeptKind = "briefing" | "weather" | "notams" | "airports" | "plates" | "plan" | "go_no_go" | "weather_loop";
 export type KneeboardRadioAnswer = [string, number][];
 export type LegalCruisingAltitudesAnswer = number[];
 export type LogbookCsvWriteAnswer = string;
@@ -2086,6 +2093,13 @@ export interface EngineContract {
     answer: IsaTempCAnswer;
   };
   /**
+   * A kept answer's age, as the apps show it with no signal ("Fetched 42 min ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
+   */
+  kept_age: {
+    input: KeptAgeInput;
+    answer: KeptAgeAnswer;
+  };
+  /**
    * A field's radio as the kneeboard lists it, [short name, MHz] in its order (the tower's before the CTAF's).
    */
   kneeboard_radio: {
@@ -2618,7 +2632,7 @@ export interface EngineContract {
     answer: ReadbackCheckAnswer;
   };
   /**
-   * Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
+   * Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), what Keep for the Air holds for the route (its ages are kept_age's), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
    */
   ready_to_fly: {
     input: ReadyToFlyInput;
@@ -6798,6 +6812,35 @@ export interface IsEastboundInput {
 export interface IsaTempCInput {
   altitude_ft: number;
 }
+export interface KeptAgeInput {
+  /**
+   * Unix seconds, UTC: the engine has no clock.
+   */
+  now: number;
+  /**
+   * When the network gave the kept answer, Unix seconds.
+   */
+  fetched_at: number;
+  kind: KeptKind;
+}
+export interface KeptAgeAnswer {
+  kind: KeptKind;
+  age_min: number;
+  /**
+   * "Fetched 42 min ago".
+   */
+  line: string;
+  /**
+   * Caution once past its freshness: the line drawn in the caution colour.
+   */
+  finding: "ok" | "caution";
+  /**
+   * How long it is fresh, minutes; null for the kinds kept for their AIRAC cycle.
+   */
+  fresh_min: number | null;
+  detail: string;
+  source: string;
+}
 export interface KneeboardRadioInput {
   frequencies: FieldFrequency[];
 }
@@ -8753,6 +8796,23 @@ export interface ReadyToFlyInput {
     fetched_at?: number | null;
   } | null;
   /**
+   * What Keep for the Air holds for the route beside its charts. Null leaves the item out.
+   */
+  kept?: {
+    /**
+     * The kinds kept on the device for this route.
+     */
+    on_board?: KeptKind[];
+    /**
+     * The kinds the route has and the device does not yet.
+     */
+    missing?: KeptKind[];
+    /**
+     * What Keep for the Air downloads or holds for them, megabytes.
+     */
+    size_mb?: number | null;
+  } | null;
+  /**
    * What the platform tells: a member null or missing leaves its item out.
    */
   device?: {
@@ -8820,6 +8880,7 @@ export interface ReadyItem {
     | "save_plan"
     | "allow_location"
     | "connect_receiver"
+    | "keep_for_air"
     | null;
 }
 export interface ReceiverNexradInput {

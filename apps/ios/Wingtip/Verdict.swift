@@ -92,7 +92,10 @@ final class Verdict {
         asking = true
         defer { asking = false }
         do {
-            let answer = try await Planner.goNoGo(try ask(for: plan))
+            // The last good answer for the route kept on this phone, and
+            // given back with its age when there is no signal (KeptForAir).
+            let asked = try ask(for: plan)
+            let answer = try await KeptForAir.answer(.goNoGo, key: ReadyToFly.flightKey(plan)) { try await Planner.goNoGo(asked) }.value
             guard !Task.isCancelled else { return }
             self.answer = Self.shown(answer, airplane: plan.airplaneChosen)
             problem = nil

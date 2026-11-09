@@ -6,6 +6,7 @@ import { Slider } from "../../components/ui/slider";
 import { GLASS } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
 import { frameTime } from "./loopFrames";
+import KeptAge from "../../components/KeptAge";
 import { useWeatherLoop } from "./useWeatherLoop";
 
 /** What each loop is called on the bar. */
@@ -86,6 +87,15 @@ export function LoopBar() {
                 </span>
               </span>
             )}
+            {/* The frame list kept on this device, with its age, where no
+                signal asked it again (lib/kept). */}
+            <KeptAge
+              kind="weather_loop"
+              path="/api/planner/weather/loop"
+              atMs={loop.fetchedAt}
+              failed={loop.refreshFailed}
+              className="truncate"
+            />
           </>
         )}
       </div>

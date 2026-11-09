@@ -1,6 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { PillSection } from "../../components/Favorites";
+import KeptAge from "../../components/KeptAge";
 import SourceChips from "../../components/SourceChips";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
@@ -31,7 +32,7 @@ function Line({ notam, testId }: { notam: RankedNotam; testId: string }) {
  * own reasons stand and a sentence says so, in place (lib/problems).
  */
 export default function NotamRankingSection() {
-  const { shown, top, rest, answer, error, pending } = useNotamRanking();
+  const { shown, top, rest, answer, error, pending, fetchedAt, failed } = useNotamRanking();
   if (!shown) return null;
   const since = answer?.coverage_since;
   return (
@@ -41,12 +42,15 @@ export default function NotamRankingSection() {
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-2/3" />
         </div>
-      ) : error ? (
+      ) : error && !answer ? (
         <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-unavailable">
           {describeError(error, "The NOTAMs could not be ranked")}
         </p>
       ) : (
         <>
+          {/* The ranking kept on this device, with its age, where it could
+              not be asked again (no signal). */}
+          <KeptAge kind="notams" atMs={fetchedAt} failed={failed} />
           {top.length === 0 && rest.length === 0 && (
             <p className={cn("text-muted-foreground", TEXT.prose)} data-testid="brief-notams-empty">
               {notamNone(since)}

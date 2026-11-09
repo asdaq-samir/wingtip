@@ -48,6 +48,8 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.offline.KeptAgeLine
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import kotlinx.coroutines.delay
 import java.time.Duration
@@ -145,6 +147,9 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
                                 )
                             }
                         }
+                        // The frames kept for the air, shown with no signal: how
+                        // old the list is (each frame's own age is above).
+                        KeptAgeLine(KeptForAir.WEATHER_LOOP, state.keptAtMs)
                     }
                 }
             }

@@ -97,6 +97,17 @@ enum KeepRoute {
         return out
     }
 
+    /// The bytes the route's kept tiles, and the levels above them, take on
+    /// the phone: Keep for the Air's size. Read off the main thread, as it
+    /// looks at a few thousand files.
+    static func bytes(_ tiles: Set<Tile>, template: TileTemplate, store: TileStore = .shared) async -> Int {
+        await Task.detached(priority: .utility) {
+            tiles.union(parents(of: tiles)).reduce(0) { sum, t in
+                sum + KeptForAir.size(of: store.path(cycle: template.cycle, kind: template.kind, z: t.z, x: t.x, y: t.y, scale: template.scale))
+            }
+        }.value
+    }
+
     /// Fetches every tile not yet in the store, a few at a time, with
     /// the levels above the coarsest (parents), and reports how many are
     /// kept as it goes.

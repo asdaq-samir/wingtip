@@ -66,7 +66,7 @@ pub(super) fn weather_items(v: &Value, now: i64, out: &mut Vec<Item>) -> Option<
 }
 
 /// "a, b and c".
-fn list(items: &[String]) -> String {
+pub(super) fn list(items: &[String]) -> String {
     match items {
         [] => String::new(),
         [one] => one.clone(),
