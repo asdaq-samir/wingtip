@@ -32,9 +32,17 @@ public record FlightSummaryDto(
         /* The pilot's own name for it; null where it is shown by its route. */
         @Nullable String name,
         /* The pilot's notes on it; null for none. */
-        @Nullable String notes) {
+        @Nullable String notes,
+        /* Its link, where the pilot shares it (POST /api/flights/{id}/share);
+         *  null where it is not shared, and always for anyone but its pilot. */
+        @Nullable FlightShareDto share) {
 
     public static FlightSummaryDto of(Flight f) {
+        return of(f, null);
+    }
+
+    /** The row with its share, as its own pilot's list has it. */
+    public static FlightSummaryDto of(Flight f, @Nullable FlightShareDto share) {
         return new FlightSummaryDto(
                 f.getId(),
                 f.getDepartureIdent(),
@@ -53,6 +61,7 @@ public record FlightSummaryDto(
                 f.getOwnAltitudes(),
                 f.getPicks(),
                 f.getName(),
-                f.getNotes());
+                f.getNotes(),
+                share);
     }
 }

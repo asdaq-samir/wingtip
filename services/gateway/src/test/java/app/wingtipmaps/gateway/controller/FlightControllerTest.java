@@ -18,6 +18,7 @@ import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrackPointDto;
 import app.wingtipmaps.gateway.service.FlightService;
+import app.wingtipmaps.gateway.service.FlightShareService;
 import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.SubscriptionService;
 import java.util.List;
@@ -45,6 +46,10 @@ class FlightControllerTest {
 
     @MockitoBean
     private PilotService pilotService;
+
+    /** No flight shared unless a test says so: a mock's map is empty. */
+    @MockitoBean
+    private FlightShareService shares;
 
     /** Lets everything through unless a test says otherwise: a mock's
      *  refusal is an empty Optional. */

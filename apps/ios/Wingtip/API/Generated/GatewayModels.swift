@@ -392,8 +392,15 @@ struct GWFlightSummaryDto: Codable, Equatable, Sendable {
     var id: Int
     var name, notes, picks, plannedFor: String?
     var risk: GWRiskAssessmentDto?
+    var share: GWFlightShareDto?
     var stops: [String]
     var totalDistanceNm, totalEteMin, totalFuelGal: Double?
+}
+
+// MARK: - GWFlightShareDto
+struct GWFlightShareDto: Codable, Equatable, Sendable {
+    var includeTail: Bool
+    var sharedAt, token, url: String
 }
 
 // MARK: - GWLogbookEntryDto
@@ -825,6 +832,23 @@ struct GWSaveFlightCheckpointRequest: Codable, Equatable, Sendable {
     var name: String
     var sequenceNo: Int
     var trueCourseDeg: Double?
+}
+
+// MARK: - GWShareFlightRequest
+struct GWShareFlightRequest: Codable, Equatable, Sendable {
+    var includeTail: Bool
+}
+
+// MARK: - GWSharedFlightDto
+struct GWSharedFlightDto: Codable, Equatable, Sendable {
+    var aircraftTailNumber, aircraftType, altitudes: String?
+    var checkpoints: [GWFlightCheckpointDto]
+    var cruiseAltitudeFt: Int?
+    var departureIdent, destinationIdent: String
+    var picks, plannedFor: String?
+    var sharedAt: String
+    var stops: [String]
+    var totalDistanceNm, totalEteMin, totalFuelGal: Double?
 }
 
 // MARK: - GWSignRequest

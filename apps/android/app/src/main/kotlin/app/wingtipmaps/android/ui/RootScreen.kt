@@ -50,6 +50,8 @@ import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ready.ReadyToFlyHost
 import app.wingtipmaps.android.route.RouteLegHost
 import app.wingtipmaps.android.route.RouteLegModel
+import app.wingtipmaps.android.share.SharedFlightHost
+import app.wingtipmaps.android.share.SharedFlightModel
 import app.wingtipmaps.android.strip.StripLayout
 import app.wingtipmaps.android.strip.StripModel
 import app.wingtipmaps.android.ui.sheet.DockedSheet
@@ -103,6 +105,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val layout by rememberLayout()
 
     val link by pending.collectAsStateWithLifecycle()
+    val shared: SharedFlightModel = viewModel()
     LaunchedEffect(link) {
         when (val opened = link) {
             null -> return@LaunchedEffect
@@ -116,6 +119,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                 opened.then?.let(ScreenRequests::ask)
             }
             is Links.Open -> ScreenRequests.ask(opened.screen)
+            // Previewed first: the receiver's plan stays until Use This Plan.
+            is Links.Shared -> shared.open(opened)
             is Links.SignIn -> {}
         }
         onHandled()
@@ -245,6 +250,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     picked?.let { pick -> MapCardSheet(pick, plan, onClose = { picked = null }) }
     RouteLegHost(plan, ownShipOn = ownShip.on, model = legs)
     EmergencyHost(plan, ownShip)
+    // A flight another pilot sent, previewed over the map (a link).
+    SharedFlightHost(shared, plan)
     // An airplane's profile, over whatever it was opened from.
     AirplaneProfileHost(plan, session)
     // Ready to fly once a flight, as own ship comes on on the ground with

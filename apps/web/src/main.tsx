@@ -40,6 +40,7 @@ import { startTv, tvPlatform } from "./lib/tv";
 import { loadEngine } from "./lib/engine/engine";
 import { preconnectTiles, preloadFirstLoad } from "./lib/preloads";
 import { usePreferences } from "./lib/preferences";
+import { takeSharedLinkFromAddress } from "./features/shared-flight";
 
 // The shared Rust engine (lib/engine), asked for first: the rules it
 // works out (the hold's entry, lost comms, the diversion, the debrief)
@@ -188,6 +189,9 @@ void queryClient
     /* no archive yet: the map adds the overlays once there is one */
   });
 
+// A shared flight's link is a preview first: its route taken off the
+// address before anything plans it (features/shared-flight).
+takeSharedLinkFromAddress();
 const opening = new URLSearchParams(window.location.search);
 const openingDep = opening.get("dep")?.trim().toUpperCase();
 const openingDest = opening.get("dest")?.trim().toUpperCase();

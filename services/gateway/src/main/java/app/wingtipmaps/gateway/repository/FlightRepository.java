@@ -24,4 +24,10 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
      *  makes lazy whatever it leaves out, the eager checkpoints included. */
     @EntityGraph(attributePaths = {"aircraft", "checkpoints"})
     Optional<Flight> findByIdAndPilotId(Long id, Long pilotId);
+
+    /** Any pilot's flight, its airplane and nav log with it: a flight
+     *  shared by link, read by whoever has the link (FlightShareService),
+     *  after the share has been found. */
+    @EntityGraph(attributePaths = {"aircraft", "checkpoints"})
+    Optional<Flight> findWithNavLogById(Long id);
 }

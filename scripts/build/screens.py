@@ -55,6 +55,11 @@ def quoted(text):
     return json.dumps(text, ensure_ascii=False)
 
 
+def camel(key):
+    head, *rest = key.split("_")
+    return head + "".join(part.capitalize() for part in rest)
+
+
 def web(spec):
     link = spec["link"]
     screens = on(spec, "web")
@@ -75,6 +80,11 @@ export const SCREENS = {{
 
 export type ScreenId = keyof typeof SCREENS;
 
+/** The plan's own keys a link carries beside `{link['key']}` (a shared flight's among them). */
+export const LINK_KEYS = [{", ".join(quoted(p["key"]) for p in spec["params"])}] as const;
+
+export type LinkKey = (typeof LINK_KEYS)[number];
+
 /** The screen a link's value names, or null for none the web has. */
 export function screenOf(value: string | null | undefined): ScreenId | null {{
   return value && Object.hasOwn(SCREENS, value) ? (value as ScreenId) : null;
@@ -92,6 +102,9 @@ def ios(spec):
     screens = on(spec, "ios")
     cases = "\n".join(f"    case {s['id']}" for s in screens)
     titles = "\n".join(f"        case .{s['id']}: {quoted(s['title'])}" for s in screens)
+    keys = "\n".join(
+        f"    case {camel(p['key'])}" + ("" if camel(p["key"]) == p["key"] else f" = {quoted(p['key'])}") for p in spec["params"]
+    )
     return f"""// {BANNER}
 
 /// The screens a link opens on the iPhone and iPad, by the id the link
@@ -111,6 +124,11 @@ enum Screen: String, CaseIterable, Sendable {{
     static let scheme = {quoted(link['scheme'])}
     static let schemeHost = {quoted(link['schemeHost'])}
 }}
+
+/// The plan's own keys a link carries beside `{link['key']}` (a shared flight's among them).
+enum LinkKey: String, CaseIterable, Sendable {{
+{keys}
+}}
 """
 
 
@@ -118,6 +136,7 @@ def android(spec):
     link = spec["link"]
     screens = on(spec, "android")
     entries = ",\n".join(f"    {s['id'].upper()}({quoted(s['id'])}, {quoted(s['title'])})" for s in screens)
+    keys = ",\n".join(f"    {p['key'].upper()}({quoted(p['key'])})" for p in spec["params"])
     return f"""// {BANNER}
 package app.wingtipmaps.android.navigation.generated
 
@@ -141,6 +160,13 @@ enum class Screen(
         /** The screen a link's value names, or null for none Android has. */
         fun of(id: String?): Screen? = entries.firstOrNull {{ it.id == id }}
     }}
+}}
+
+/** The plan's own keys a link carries beside `{link['key']}` (a shared flight's among them). */
+enum class LinkKey(
+    val key: String,
+) {{
+{keys},
 }}
 """
 

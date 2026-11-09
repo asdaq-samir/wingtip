@@ -22,10 +22,16 @@ export const SCREENS = {
   coach: { title: "Coach" },
   minimums: { title: "Personal Minimums" },
   guide: { title: "Guide" },
+  shared: { title: "Shared Flight" },
   about: { title: "About" },
 } as const;
 
 export type ScreenId = keyof typeof SCREENS;
+
+/** The plan's own keys a link carries beside `open` (a shared flight's among them). */
+export const LINK_KEYS = ["dep", "dest", "stops", "place", "flight", "altitude_ft", "depart", "type", "rules", "tail", "share"] as const;
+
+export type LinkKey = (typeof LINK_KEYS)[number];
 
 /** The screen a link's value names, or null for none the web has. */
 export function screenOf(value: string | null | undefined): ScreenId | null {

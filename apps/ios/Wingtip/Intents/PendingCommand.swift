@@ -34,6 +34,9 @@ final class PendingCommand {
         /// One of the app's screens by its name (design/screens.json), as a
         /// link's `open=` names it.
         case open(Screen)
+        /// A flight another pilot sent, previewed before anything is
+        /// planned (SharedFlightModel).
+        case sharedFlight(SharedFlightLink)
     }
 
     var command: Command?
