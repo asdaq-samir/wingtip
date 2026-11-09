@@ -125,23 +125,38 @@ struct MapLookTests {
                        ceilingExcluded: excluded, hoursCode: nil, hoursRemark: nil, labelLat: 0, labelLon: 0, lines: lines)
     }
 
-    @Test func aTabSaysTheAltitudesAsTheSectionalPrintsThem() {
-        #expect(AirspaceTab.text(volume("B", floor: 3000, sfc: false, ceiling: 10000)) == "B: 100–30")
-        #expect(AirspaceTab.text(volume("C", floor: 0, sfc: true, ceiling: 4800)) == "C: 48–SFC")
-        #expect(AirspaceTab.text(volume("D", floor: 0, sfc: true, ceiling: 2500)) == "D: 25")
+    @Test func aTabSaysTheFloorAndCeilingInFeetAsForeFlightWritesThem() {
+        #expect(AirspaceTab.text(volume("B", floor: 3000, sfc: false, ceiling: 10000)) == "B: 3000–10000")
+        // Madison's Class C shelf (the owner's ForeFlight screenshot).
+        #expect(AirspaceTab.text(volume("C", floor: 2300, sfc: false, ceiling: 4900)) == "C: 2300–4900")
+        #expect(AirspaceTab.text(volume("D", floor: 0, sfc: true, ceiling: 2500)) == "D: SFC–2500")
         // Up to but not including the Class B over it (TNI).
-        #expect(AirspaceTab.text(volume("D", floor: 0, sfc: true, ceiling: 3000, excluded: true)) == "D: -30")
+        #expect(AirspaceTab.text(volume("D", floor: 0, sfc: true, ceiling: 3000, excluded: true)) == "D: SFC–<3000")
         #expect(AirspaceTab.text(volume("C", floor: 0, sfc: true, ceiling: nil)) == nil)
     }
 
-    @Test func aTabSitsOnTheRingAtItsNorthernmostPointInSight() {
-        let lines: [[[Double]]] = [[[41.0, -88.0], [42.0, -88.0], [43.0, -88.0], [41.5, -87.5]]]
-        let inSight = MKMapRect(origin: MKMapPoint(CLLocationCoordinate2D(latitude: 42.5, longitude: -88.5)), size: MKMapSize(width: 0, height: 0))
-            .union(MKMapRect(origin: MKMapPoint(CLLocationCoordinate2D(latitude: 40.5, longitude: -87.0)), size: MKMapSize(width: 0, height: 0)))
-        let at = AirspaceTab.point(lines, in: inSight)
-        #expect(at?.latitude == 42.0)
+    @Test func aRoundRingsTabIsNorthNorthWestAlongTheRing() throws {
+        // A ring round Madison, a point every 5 degrees.
+        let lat0 = 43.14, lon0 = -89.35, k = cos(lat0 * .pi / 180)
+        let ring: [[Double]] = stride(from: 0.0, through: 360.0, by: 5).map {
+            [lat0 + 0.07 * cos($0 * .pi / 180), lon0 + 0.07 * sin($0 * .pi / 180) / k]
+        }
+        let centre = CLLocationCoordinate2D(latitude: lat0, longitude: lon0)
+        let world = MKMapRect.world
+        let place = try #require(AirspaceTab.place([ring], centre: centre, in: world))
+        let azimuth = atan2((place.at.longitude - lon0) * k, place.at.latitude - lat0) * 180 / .pi
+        #expect(abs((azimuth + 360).truncatingRemainder(dividingBy: 360) - 330) <= 3)
+        #expect(abs(place.angle + 30) <= 3)
+        // None in sight: no tab.
         let away = MKMapRect(origin: MKMapPoint(CLLocationCoordinate2D(latitude: 30, longitude: -100)), size: MKMapSize(width: 10, height: 10))
-        #expect(AirspaceTab.point(lines, in: away) == nil)
+        #expect(AirspaceTab.place([ring], centre: centre, in: away) == nil)
+    }
+
+    @Test func theBandWidensAsTheMapComesIn() {
+        #expect(AirspaceVignetteRenderer.width(zoom: 5) == 3)
+        #expect(AirspaceVignetteRenderer.width(zoom: 9) == 6)
+        #expect(AirspaceVignetteRenderer.width(zoom: 12) == 13)
+        #expect(AirspaceVignetteRenderer.width(zoom: 15) == 16)
     }
 
     // MARK: Asking during a pinch

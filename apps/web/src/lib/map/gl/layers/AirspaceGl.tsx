@@ -6,9 +6,11 @@ import { useGlProbe } from "../useGlProbe";
 import { TAP } from "./common";
 
 /**
- * The Class B, C and D over the chart, each volume's lines and its
- * altitudes along them in a dark tab -- MapLibre's line layers and
- * line-placed labels, kept off each other by its collision. A tap on a
+ * The Class B, C and D over the chart, each volume's line with a
+ * translucent band along its inside and its altitudes in a dark tab on
+ * its ring, one a shelf -- MapLibre's line layers and a symbol layer,
+ * kept off each other by its collision; and the special-use areas'
+ * lines and hatched bands (glStyle's specialUseLayers). A tap on a
  * line opens the volume's card. The settings' Airspace turns them off
  * (applyOverlayFilters).
  *
@@ -26,7 +28,7 @@ function TileAirspace() {
   const { openCard } = useGlMap();
   useGlProbe("airspace-lines", AIRSPACE_LINE_LAYERS, f => ({ id: `tile-${f.properties.number}`, cls: f.properties.class }));
   useGlProbe("airspace-edge-labels", ["airspace-labels"], f => ({
-    id: `tile-${f.properties.number}`, text: airspaceText(volumeOfTile(f, { lat: 0, lon: 0 })),
+    id: `tile-${f.properties.number}`, text: airspaceText(volumeOfTile(f, { lat: 0, lon: 0 })), angle: Number(f.properties.angle ?? 0),
   }));
   useGlTap(AIRSPACE_LINE_LAYERS, TAP.line, TAP.rank.line, (feature, event) => {
     const volume = volumeOfTile(feature, { lat: event.lngLat.lat, lon: event.lngLat.lng });

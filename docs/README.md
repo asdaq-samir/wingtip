@@ -270,6 +270,7 @@ gateway reaches the planner by its Compose name (`http://planner:8000`).
   | Layer | From | Fields | First zoom |
   |---|---|---|---|
   | `airspace` | NASR Class_Airspace.shp, Class B–E | `class`, `local_type`, `name`, `ident`, `floor_ft`, `floor_ref` (SFC/AGL/MSL), `ceiling_ft` (MSL), `ceiling_excluded`, `number`, `hours_code`, `hours_remark` | B 4, C 5, D 6, E2–E4 7, E5–E7 8 |
+  | `airspace_labels` | the same file, Class B–D: one point a volume on its ring's outer edge, where the map writes its altitudes | `class`, `floor_ft`, `ceiling_ft`, `ceiling_excluded`, `number`, `angle` (the text's clockwise turn along the ring, −90 to 90) | B 4, C 5, D 6 |
   | `special_use` | FAA special use airspace (ADDS) | `type` (P/R/MOA/W/A/D), `kind`, `name`, `floor_ft`, `floor_ref`, `ceiling_ft`, `ceiling_ref`, `times_of_use`, `time_zone`, `controlling_agency` | 5 |
   | `airports` | NASR APT_BASE, APT_RWY, APT_RWY_END (operational only) | `ident`, `faa_id`, `name`, `type`, `use`, `military`, `towered`, `elevation_ft`, `longest_ft`, `hard_ft`, `runway_true`, `fuel`, `rank` (0 towered … 4 heliport) | by rank: 5, 6, 7, 9, 10 |
   | `navaids` | NASR NAV_BASE (in service) | `ident`, `name`, `kind`, `freq`, `channel`, `service_volume`, `mag_var`, `elevation_ft`, `hours`, `restricted` | VORs 5, others 7 |

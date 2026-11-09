@@ -3,7 +3,7 @@ import type { OverlayTiles } from "../api/types";
 
 /**
  * The map's FAA overlays as vector tiles, for a MapLibre map: the cycle's
- * airspace, special-use areas, airports, navaids, fixes and runways in
+ * airspace and its labels, special-use areas, airports, navaids, fixes and runways in
  * one PMTiles archive the planner builds once a cycle
  * (wingtip.vector_tiles) and serves in byte ranges
  * (/api/overlay-tiles/{name}.pmtiles), read here by protomaps' own
@@ -16,7 +16,7 @@ import type { OverlayTiles } from "../api/types";
  */
 
 /** The archive's source layers (wingtip.vector_tiles.LAYERS). */
-export const OVERLAY_LAYERS = ["airspace", "special_use", "airports", "navaids", "fixes", "runways"] as const;
+export const OVERLAY_LAYERS = ["airspace", "airspace_labels", "special_use", "airports", "navaids", "fixes", "runways"] as const;
 export type OverlayLayer = (typeof OVERLAY_LAYERS)[number];
 
 /** MapLibre's addProtocol, as much of it as this needs: maplibre-gl itself

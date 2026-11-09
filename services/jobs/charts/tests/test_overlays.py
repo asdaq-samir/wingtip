@@ -168,6 +168,49 @@ def test_the_airspace_carries_the_shapefiles_fields_and_its_shape_unchanged(sour
                      ("E", "CLASS_E5"): 8}
 
 
+def test_each_class_b_c_and_d_shelf_has_one_label_on_its_ring(sources):
+    """One label a shelf (the owner, 2026-11-08: Madison's Class C wore
+    three), on the shelf's own ring, its outer edge, turned along it and
+    upright."""
+    pack, _ = sources
+    labels = _lines(overlays.airspace_label_features(pack))
+    shapes = {n: g for a, n, g in zip(pack.attrs("airspace"), cycle_pack._controlled_numbers(pack), pack.geometries("airspace"))
+              if a["CLASS"] in "BCD"}
+    assert sorted(f["properties"]["number"] for f in labels) == sorted(shapes)
+    for f in labels:
+        p = f["properties"]
+        assert -90 < p["angle"] <= 90
+        assert f["tippecanoe"]["minzoom"] == overlays.AIRSPACE_MIN_ZOOM[p["class"]]
+        ring = shapes[p["number"]]
+        rings = [q.exterior for q in getattr(ring, "geoms", [ring])]
+        assert min(r.distance(shapely.Point(f["geometry"]["coordinates"])) for r in rings) < 1e-6
+    # The figures the map writes the label from: O'Hare's surface area's.
+    surface = next(f for f in labels if f["properties"]["class"] == "B" and f["properties"]["floor_ft"] == 0)
+    assert {"ceiling_ft": 10000.0, "ceiling_excluded": False}.items() <= surface["properties"].items()
+
+
+def test_a_round_rings_label_is_north_north_west_along_the_ring():
+    """A ring all the way round (a Class D's) wears its label at
+    LABEL_AZIMUTH, 330 degrees from its centre, its text turned 30
+    degrees anticlockwise, along the ring there; a shelf's outer arc wears
+    it in the arc's middle, along it."""
+    lat0 = 43.14
+    k = math.cos(math.radians(lat0))
+    circle = Polygon([(-89.35 + 0.07 * math.sin(math.radians(a)) / k, lat0 + 0.07 * math.cos(math.radians(a)))
+                      for a in range(0, 360, 5)])
+    (lon, lat), angle = overlays._label_place(circle, (-89.35, lat0))
+    azimuth = math.degrees(math.atan2((lon + 89.35) * k, lat - lat0)) % 360
+    assert azimuth == pytest.approx(330, abs=3)
+    assert angle == pytest.approx(-30, abs=3)
+    # A shelf south of its centre, between 150 and 210 degrees: its
+    # outer arc's middle, due south, the text level.
+    arc = [(-89.35 + r * math.sin(math.radians(a)) / k, lat0 + r * math.cos(math.radians(a)))
+           for r, angles in ((0.14, range(150, 211, 5)), (0.07, range(210, 149, -5))) for a in angles]
+    (lon, lat), angle = overlays._label_place(Polygon(arc), (-89.35, lat0))
+    assert lon == pytest.approx(-89.35, abs=1e-6) and lat == pytest.approx(lat0 - 0.14, abs=1e-6)
+    assert angle == pytest.approx(0, abs=1)
+
+
 def test_the_special_use_area_keeps_its_hole_and_fields(sources):
     pack, _ = sources
     [area] = _lines(overlays.special_use_features(pack))
@@ -311,6 +354,7 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     layers = {layer["id"]: layer for layer in meta["vector_layers"]}
     assert set(layers) == set(vector_tiles.LAYERS)
     assert {"class", "local_type", "floor_ft", "floor_ref", "ceiling_ft", "name", "ident"} <= set(layers["airspace"]["fields"])
+    assert {"class", "floor_ft", "ceiling_ft", "angle", "number"} <= set(layers["airspace_labels"]["fields"])
     assert {"type", "name", "floor_ft", "ceiling_ft", "times_of_use"} <= set(layers["special_use"]["fields"])
     assert {"ident", "name", "towered", "hard_ft", "longest_ft", "use", "rank"} <= set(layers["airports"]["fields"])
     assert {"ident", "kind", "freq"} <= set(layers["navaids"]["fields"])
@@ -320,7 +364,8 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     # Every feature that meets the box, and nothing else.
     pack, nasr = sources
     assert {layer["name"]: layer["features"] for layer in index["layers"]} == {
-        "airspace": len(list(overlays.airspace_features(pack, BBOX))), "special_use": 1, "airports": 4,
+        "airspace": len(list(overlays.airspace_features(pack, BBOX))),
+        "airspace_labels": len(list(overlays.airspace_label_features(pack, BBOX))), "special_use": 1, "airports": 4,
         "navaids": 2, "fixes": 4, "runways": 4}
 
 
