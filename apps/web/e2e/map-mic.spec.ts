@@ -9,6 +9,27 @@ import { settle, sideDrawer, slow } from "./helpers";
  */
 test("the map's microphone is at the left over the sheet, and its pill widens to the right", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's sheet across the screen's foot");
+  // Playwright's headless shell has no on-device recognizer behind
+  // `available`, and asking it there ends the page (lib/speechLocal): a
+  // Safari-like recognizer, which hears nothing, stands in for the tap.
+  await page.addInitScript(() => {
+    class Quiet {
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult: unknown = null;
+      onerror: unknown = null;
+      onend: (() => void) | null = null;
+      start() {}
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
+      abort() {
+        this.stop();
+      }
+    }
+    Object.assign(window, { SpeechRecognition: Quiet, webkitSpeechRecognition: Quiet });
+  });
   await page.goto("/app/plan?layout=tabs");
   await settle(page);
   const mic = page.getByTestId("mic-circle");
