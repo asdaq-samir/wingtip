@@ -63,6 +63,15 @@
 //!   "visibility_sm", "sky": [{"cover", "base_ft"}], "temp_c",
 //!   "dewpoint_c", "altimeter_inhg", "approach", "runways": {"landing",
 //!   "departing"}, "remarks", "raw"}`;
+//! - `rvr_check`: each runway end's lowest RVR reading against a minimum,
+//!   an RVR or a visibility by 91.175(h)(2)'s table (rvr.rs), from
+//!   `{"runways": [{"runway", "touchdown_ft", "midpoint_ft",
+//!   "rollout_ft"}], "minimum_rvr_ft"?, "minimum_sm"?}`: `{"minimum_ft",
+//!   "judged", "runways": [{"runway", "reading_ft", "at_most", "under",
+//!   "comparable_sm"}]}`;
+//! - `read_datis`: a digital ATIS as the tower's data link writes it
+//!   ("MSP ARR INFO I 0353Z. VRB03KT 10SM SCT250 07/03 A3006 ..."), read
+//!   into `read_atis`'s figures (datis.rs), from `{"text"}`;
 //! - `cleared_route`: the route a clearance gives, `{"route": {"dep",
 //!   "stops", "dest"}, "typed": [{"name", "before", "after"}]}`, from
 //!   `{"text", "found"?: {"limit"?, "route"?, "departure"?, "arrival"?}
@@ -949,6 +958,9 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         // The ATIS reader (atis.rs), the web's lib/atis and the phone's
         // Atis: held to the same fixture (atis.json) as the web's tests.
         "read_atis" => Ok(crate::atis::read(ask.str("text")?).to_json()),
+        // A D-ATIS as the tower's data link writes it (datis.rs): the
+        // same figures, its weather read from its METAR groups.
+        "read_datis" => Ok(crate::datis::read_datis(ask.str("text")?).to_json()),
         "cleared_route" => cleared_route_rule(&ask),
         "our_call" => Ok(if crate::clearance::our_call(ask.str("text")?, ask.str("tail")?) { "true" } else { "false" }.to_owned()),
         "direct_of" => {
@@ -1091,6 +1103,8 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         // A field's weather (forecast::calls), the traffic list's filters and
         // the registry's airplanes (aircraft::calls).
         _ if crate::forecast::calls::NAMES.contains(&name) => crate::forecast::calls::call(name, ask.v),
+        // RVR against a minimum, 91.175(h)'s table (rvr.rs).
+        _ if crate::rvr::NAMES.contains(&name) => crate::rvr::call(name, ask.v),
         _ if crate::altitude::calls::NAMES.contains(&name) => crate::altitude::calls::call(name, ask.v),
         _ if crate::aircraft::calls::NAMES.contains(&name) => crate::aircraft::calls::call(name, ask.v),
         // Instrument approaches taught and debriefed (approach::calls).

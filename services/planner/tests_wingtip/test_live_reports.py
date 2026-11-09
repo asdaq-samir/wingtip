@@ -6,7 +6,7 @@ import pathlib
 
 import pytest
 
-from wingtip import itws, live_reports, saa
+from wingtip import datis, departures, flow, itws, live_reports, rvr, saa
 
 SWIM = pathlib.Path(__file__).parent / "fixtures" / "swim"
 #: Just before the captured ITWS messages expire (05:07Z on 2026-11-09).
@@ -119,3 +119,75 @@ def test_an_area_released_cold_says_so_with_its_times():
     saa.heard(cold, now=NOW)
     found = saa.status(["W136C"], now=NOW)["W136C"]
     assert (found["active"], found["status"], found["until"]) == (False, "INACTIVE", 1794207600.0)
+
+
+def test_each_runway_ends_rvr_is_kept_in_feet_and_six_thousand_is_the_most():
+    airport, ends = rvr.runways(fixture("stdds_rvr.xml"))
+    assert airport == "KDFW" and [e["runway"] for e in ends][:2] == ["13R", "31L"]
+    # 13R: "60" at touchdown and rollout (6,000 ft, the system's most:
+    # AIM 7-1-13), its midpoint sent blank (not reported).
+    first = ends[0]
+    assert (first["touchdown_ft"], first["touchdown_more"], first["midpoint_ft"]) == (6000, True, None)
+    assert rvr.heard(fixture("stdds_rvr.xml"), now=NOW) == len(ends)
+    assert {e["runway"] for e in rvr.at_airport("DFW", now=NOW)} == {e["runway"] for e in ends}
+    # Ten minutes on it is no longer RVR now.
+    assert rvr.at_airport("KDFW", now=NOW + rvr.RVR_FRESH_S + 1) == []
+
+
+def test_a_reading_of_00_or_ff_is_no_reading_never_zero():
+    # Readings in hundreds of feet.
+    assert [rvr.reading_ft(t) for t in ("60", "35", "05", "10")] == [6000, 3500, 500, 1000]
+    # KDFW 17R's "00" on every reading, KOMA's "FF", a blank: not reported.
+    assert [rvr.reading_ft(t) for t in ("00", "FF", "  ", "", "6")] == [None, None, None, None, None]
+
+
+def test_a_d_atis_is_kept_by_its_airport_and_broadcast_and_read_by_the_engine():
+    found = datis.broadcast(fixture("stdds_datis.xml"))
+    assert (found["airport"], found["which"], found["letter"], found["issued"]) == ("KMSP", "arrival", "I", "090357")
+    assert datis.heard(fixture("stdds_datis.xml"), now=NOW) == 1
+    [kept] = datis.at_airport("MSP", now=NOW)
+    reading = kept["reading"]
+    # The engine's read_datis: its METAR groups "VRB03KT 10SM SCT250 07/03 A3006".
+    assert (reading["information"], reading["time_z"], reading["altimeter_inhg"]) == ("I", "0353Z", 30.06)
+    assert reading["wind"] == {"from_deg": None, "kt": 3, "gust_kt": None, "variable": True}
+    assert (reading["visibility_sm"], reading["temp_c"], reading["dewpoint_c"]) == (10, 7, 3)
+    assert datis.at_airport("KMSP", now=NOW + datis.KEEP_S + 1) == []
+
+
+def test_a_departure_event_is_kept_under_its_ident_with_the_times_it_gives():
+    event = departures.event(fixture("stdds_departure_event.xml"))
+    assert (event["ident"], event["departure"], event["destination"], event["gate"]) == ("SWA1097", "KIND", "KRSW", "B20")
+    # The clearance's delivery: the only time the feed was seen to give.
+    assert event["times"] == {"clearance_delivery": 1794200271.0}
+    departures.heard(fixture("stdds_departure_event.xml"), now=NOW)
+    assert [e["flight_id"] for e in departures.of("swa1097", now=NOW)] == ["KI075012bR"]
+
+
+def test_a_ground_delay_program_is_kept_until_its_cancellation():
+    cancelled = fixture("tfms_flow_gdp_cancelled.xml")
+    issued = cancelled.replace(" CDM GROUND DELAY PROGRAM CNX", " CDM GROUND DELAY PROGRAM").replace(
+        "GDP CNX PERIOD: 09/0038Z - 09/0428Z", "AVERAGE DELAY: 45 MINUTES\nMAXIMUM DELAY: 120 MINUTES\n"
+        "IMPACTING CONDITION: LOW CEILINGS")
+    assert flow.heard(issued, now=1794190000.0) == 1
+    [program] = flow.at_airports(["KAUS"], now=1794190000.0)
+    assert (program["program"], program["airport"], program["cancelled"]) == ("ground delay program", "AUS", False)
+    assert (program["average_delay_min"], program["maximum_delay_min"], program["condition"]) == (45, 120, "LOW CEILINGS")
+    # Its effective period's end, 05:28Z.
+    assert program["ends"] == 1794202080.0
+    # The Command Center's cancellation, as the feed sent it, ends it.
+    assert flow.advisory(flow.ET.fromstring(cancelled))["cancelled"] is True
+    flow.heard(cancelled, now=1794190100.0)
+    assert flow.at_airports(["AUS"], now=1794190100.0) == []
+
+
+def test_a_restriction_is_kept_at_its_airport_until_its_stop_time():
+    restriction = fixture("tfms_flow_restriction.xml")
+    [found] = flow.restriction(flow.ET.fromstring(restriction))
+    assert (found["airport"], found["kind"], found["category"], found["value"], found["reason"]) == (
+        "IAD", "ARRIVAL", "MIT", "15", "RWY:Construction")
+    # 2026-11-08 20:30Z to 21:12Z.
+    flow.heard(restriction, now=1794172000.0)
+    assert [r["category"] for r in flow.at_airports(["KIAD"], now=1794172000.0)] == ["MIT"]
+    assert flow.at_airports(["KIAD"], now=1794172400.0) == []
+    # Neither a volcanic ash bulletin nor any other advisory is a program.
+    assert flow.heard(restriction.replace("restrictionMessage", "somethingElse"), now=NOW) == 0

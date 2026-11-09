@@ -181,6 +181,27 @@ def test_a_messages_kind_is_read_from_its_topic():
     assert kind("FNS", "anything") is None and kind("STDDS", None) is None
 
 
+def test_stdds_rvr_datis_and_departures_and_tfms_programs_have_their_readers():
+    assert swim.handler_for("STDDS", "RVRDataUpdateMessage") is swim.rvr.heard
+    assert swim.handler_for("STDDS", "DATISData") is swim.datis.heard
+    assert swim.handler_for("STDDS", "TowerDepartureEventMessage") is swim.departures.heard
+    assert swim.handler_for("STDDS", "TDLSCSPMessage") is None
+    assert swim.handler_for("TFMS", "flow GADV") is swim.flow.heard
+    assert swim.handler_for("TFMS", "flow RSTR") is swim.flow.heard
+    assert swim.handler_for("TFMS", "flow FXA") is None
+
+
+def test_an_rvr_message_reaches_the_planners_store(monkeypatch):
+    monkeypatch.setitem(swim.STATE, "STDDS", {"connected": True, "messages": 0, "items": 0, "last_at": None, "error": None})
+    message = ('<ns2:RVRDataUpdateMessage xmlns:ns2="x"><airport>KACY</airport><runwayData><runwayID><numericRunwayID>13'
+               '</numericRunwayID><runwaySubID> </runwaySubID></runwayID><touchdownVisualRange>24</touchdownVisualRange>'
+               '<rolloutVisualRange>60</rolloutVisualRange></runwayData></ns2:RVRDataUpdateMessage>')
+    swim.handle("STDDS", _Routed("APDS/all/false/RR/KACY/N90", raw=message.encode()))
+    assert swim.STATE["STDDS"]["items"] == 1
+    [end] = swim.rvr.at_airport("KACY")
+    assert (end["runway"], end["touchdown_ft"], end["rollout_ft"]) == ("13", 2400, 6000)
+
+
 def test_itws_alerts_are_read_and_its_maps_are_not():
     assert swim.handler_for("ITWS", "product 9840") is swim.itws.heard
     assert swim.handler_for("ITWS", "product 9893") is swim.itws.heard

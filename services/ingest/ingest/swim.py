@@ -15,7 +15,10 @@
   two fields.
 - ITWS's alerts for an airport (microburst, wind shear, gust front,
   tornado, storm cells) to wingtip.itws, and SFDPS's special activity
-  airspace status to wingtip.saa, both in wingtip.live_reports' store.
+  airspace status to wingtip.saa, both in wingtip.live_reports' store,
+  as are STDDS's runway visual range (wingtip.rvr), D-ATIS
+  (wingtip.datis) and tower departure events (wingtip.departures), and
+  TFMS's ground stops, delay programs and restrictions (wingtip.flow).
 
 One connection a feed to its subscription's durable queue, on a thread of
 its own: each message read, handed on, then acknowledged. The radar's
@@ -39,7 +42,7 @@ import time
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
-from wingtip import filed_routes, itws, notams, saa, traffic
+from wingtip import datis, departures, filed_routes, flow, itws, notams, rvr, saa, traffic
 
 from .settings import get_settings
 
@@ -274,11 +277,21 @@ def text(handler):
 #: it kept. A kind with no handler is counted and acknowledged unread: its
 #: payload is never fetched from the client, let alone decoded.
 HANDLERS: dict[str, dict] = {
-    "STDDS": {"TATrackAndFlightPlan": _radar},
+    # The radar's tracks; each runway's RVR, the D-ATIS and the tower's
+    # departure events. TAIS's status and TDLS's clearances are not read.
+    "STDDS": {
+        "TATrackAndFlightPlan": _radar,
+        "RVRDataUpdateMessage": rvr.heard,
+        "DATISData": datis.heard,
+        "TowerDepartureEventMessage": departures.heard,
+    },
     "FNS": {"*": text(notams.heard)},
     # TFMS's flight data, by its topic's kind or, where a message comes
     # with no topic, its root element.
-    "TFMS": {"flightData": filed_routes.heard, "tfmDataService": filed_routes.heard},
+    "TFMS": {"flightData": filed_routes.heard, "tfmDataService": filed_routes.heard,
+             # Its flow information's programs and restrictions, not its
+             # flight lists or flow constrained areas (wingtip.flow).
+             "flow GADV": flow.heard, "flow RSTR": flow.heard},
     # ITWS's alert products for an airport, not its maps (wingtip.itws.KEPT),
     # by the product number its topic gives, or its root with no topic.
     "ITWS": {**{f"product {number}": itws.heard for number in itws.KEPT}, "itws_msg": itws.heard},

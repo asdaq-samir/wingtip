@@ -817,6 +817,27 @@
         "title": "AirplaneLoad",
         "type": "object"
       },
+      "AirportAtis": {
+        "properties": {
+          "airport": {
+            "title": "Airport",
+            "type": "string"
+          },
+          "broadcasts": {
+            "items": {
+              "$ref": "#/components/schemas/DigitalAtis"
+            },
+            "title": "Broadcasts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "airport",
+          "broadcasts"
+        ],
+        "title": "AirportAtis",
+        "type": "object"
+      },
       "AirportEnd": {
         "description": "A point of the route: an airport, or -- a stop only -- a named fix\nflown through (`kind` \"fix\": a VFR or GPS waypoint, its `name` the\nkind of fix it is, no elevation).",
         "properties": {
@@ -1406,6 +1427,28 @@
           "frequencies"
         ],
         "title": "AirportPlace",
+        "type": "object"
+      },
+      "AirportRvr": {
+        "description": "An airport's runway ends' RVR heard in the last ten minutes; none\nwhere it has no RVR system on SWIM, or none was heard.",
+        "properties": {
+          "airport": {
+            "title": "Airport",
+            "type": "string"
+          },
+          "runways": {
+            "items": {
+              "$ref": "#/components/schemas/RunwayRvr"
+            },
+            "title": "Runways",
+            "type": "array"
+          }
+        },
+        "required": [
+          "airport",
+          "runways"
+        ],
+        "title": "AirportRvr",
         "type": "object"
       },
       "AirportSearch": {
@@ -4952,6 +4995,126 @@
         "title": "DemonstratedCrosswind",
         "type": "object"
       },
+      "DepartureEvent": {
+        "description": "A tower departure event (wingtip.departures): the flight, its\nairports and gate, and the event's times by name (`times`, UNIX s:\nclearance_delivery, the departure clearance's delivery, is what the\nfeed has been seen to send).",
+        "properties": {
+          "beacon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Beacon"
+          },
+          "departure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destination"
+          },
+          "event_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event At"
+          },
+          "flight_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flight Id"
+          },
+          "gate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate"
+          },
+          "heard": {
+            "title": "Heard",
+            "type": "number"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "times": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "default": {},
+            "title": "Times",
+            "type": "object"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          }
+        },
+        "required": [
+          "ident",
+          "heard"
+        ],
+        "title": "DepartureEvent",
+        "type": "object"
+      },
+      "DepartureEvents": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/DepartureEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "DepartureEvents",
+        "type": "object"
+      },
       "DestinationCheck": {
         "description": "The destination against 14 CFR 91.169(b)'s \"1-2-3\": an instrument\napproach published, and its TAF an hour either side of the ETA a\nceiling of 2,000 ft or more and 3 sm or more -- else an alternate is\n`required`, `reasons` saying why (wingtip.alternates).",
         "properties": {
@@ -5369,6 +5532,69 @@
           "services"
         ],
         "title": "DevServices",
+        "type": "object"
+      },
+      "DigitalAtis": {
+        "description": "One D-ATIS broadcast (wingtip.datis): `which` arrival, departure or\nNone for the airport's one broadcast; its letter, issue time (ddhhmm\nZ), its words as sent, and the engine's reading of them (read_datis,\nread_atis's figures).",
+        "properties": {
+          "airport": {
+            "title": "Airport",
+            "type": "string"
+          },
+          "heard": {
+            "title": "Heard",
+            "type": "number"
+          },
+          "issued": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issued"
+          },
+          "letter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Letter"
+          },
+          "reading": {
+            "additionalProperties": true,
+            "title": "Reading",
+            "type": "object"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "which": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Which"
+          }
+        },
+        "required": [
+          "airport",
+          "text",
+          "reading",
+          "heard"
+        ],
+        "title": "DigitalAtis",
         "type": "object"
       },
       "DisplacedPick": {
@@ -6256,6 +6482,212 @@
           "hex"
         ],
         "title": "FlightStatus",
+        "type": "object"
+      },
+      "FlowAtAirports": {
+        "description": "The programs and restrictions in force or to come at the airports\nasked for.",
+        "properties": {
+          "programs": {
+            "items": {
+              "$ref": "#/components/schemas/FlowProgram"
+            },
+            "title": "Programs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "programs"
+        ],
+        "title": "FlowAtAirports",
+        "type": "object"
+      },
+      "FlowProgram": {
+        "description": "A traffic management program or restriction at an airport\n(wingtip.flow): a program (`program`: ground stop, ground delay program,\nairspace flow program) from a Command Center advisory, with its delays\nin minutes and its words as sent; or a restriction (`restriction`\ntrue: miles or minutes in trail, `kind` ARRIVAL or DEPARTURE). Times\nare UNIX s.",
+        "properties": {
+          "airport": {
+            "title": "Airport",
+            "type": "string"
+          },
+          "average_delay_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Delay Min"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition"
+          },
+          "element": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Element"
+          },
+          "ends": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends"
+          },
+          "facility": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Facility"
+          },
+          "heard": {
+            "title": "Heard",
+            "type": "number"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "maximum_delay_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Delay Min"
+          },
+          "number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number"
+          },
+          "program": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "restriction": {
+            "default": false,
+            "title": "Restriction",
+            "type": "boolean"
+          },
+          "starts": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "airport",
+          "heard"
+        ],
+        "title": "FlowProgram",
         "type": "object"
       },
       "FlownSegment": {
@@ -13978,6 +14410,122 @@
         "title": "RunwayPicks",
         "type": "object"
       },
+      "RunwayRvr": {
+        "description": "A runway end's RVR now (wingtip.rvr), ft: each reading None where it\nis not reported, `*_more` where it is the system's most (6,000 ft or\nmore, AIM 7-1-13); heard at `heard` (UNIX s).",
+        "properties": {
+          "airport": {
+            "title": "Airport",
+            "type": "string"
+          },
+          "edge_lights": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edge Lights"
+          },
+          "heard": {
+            "title": "Heard",
+            "type": "number"
+          },
+          "midpoint_ft": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Midpoint Ft"
+          },
+          "midpoint_more": {
+            "default": false,
+            "title": "Midpoint More",
+            "type": "boolean"
+          },
+          "midpoint_trend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Midpoint Trend"
+          },
+          "rollout_ft": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rollout Ft"
+          },
+          "rollout_more": {
+            "default": false,
+            "title": "Rollout More",
+            "type": "boolean"
+          },
+          "rollout_trend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rollout Trend"
+          },
+          "runway": {
+            "title": "Runway",
+            "type": "string"
+          },
+          "touchdown_ft": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Touchdown Ft"
+          },
+          "touchdown_more": {
+            "default": false,
+            "title": "Touchdown More",
+            "type": "boolean"
+          },
+          "touchdown_trend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Touchdown Trend"
+          }
+        },
+        "required": [
+          "airport",
+          "runway",
+          "heard"
+        ],
+        "title": "RunwayRvr",
+        "type": "object"
+      },
       "RunwayTurf": {
         "description": "A length of a runway of two surfaces that is turf, where the FAA's\nremarks say which (wingtip.remarks.runway_turf): from `from_ft` to `to_ft`\nfeet along it from its `end`, `to_ft` None for the rest of it.",
         "properties": {
@@ -19529,6 +20077,135 @@
         "summary": "Icing On The Route"
       }
     },
+    "/api/live/atis": {
+      "get": {
+        "description": "An airport's D-ATIS as the tower's data link sends it, with the\nengine's reading of it (wingtip.datis).",
+        "operationId": "digital_atis_api_live_atis_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "airport",
+            "required": true,
+            "schema": {
+              "maxLength": 4,
+              "minLength": 3,
+              "title": "Airport",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirportAtis"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Digital Atis"
+      }
+    },
+    "/api/live/departures": {
+      "get": {
+        "description": "A flight's tower departure events by its ident, latest first\n(wingtip.departures): when its departure clearance was delivered, from\nwhich gate, to where.",
+        "operationId": "departure_events_api_live_departures_get",
+        "parameters": [
+          {
+            "description": "A registration or call sign",
+            "in": "query",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "description": "A registration or call sign",
+              "maxLength": 10,
+              "minLength": 2,
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartureEvents"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Departure Events"
+      }
+    },
+    "/api/live/flow": {
+      "get": {
+        "description": "The ground stops, ground delay programs and restrictions in force\nor to come at these airports, from the Command Center's advisories\nand TFMS's restrictions (wingtip.flow).",
+        "operationId": "flow_programs_api_live_flow_get",
+        "parameters": [
+          {
+            "description": "Airports, comma separated: KEWR,KLGA",
+            "in": "query",
+            "name": "airports",
+            "required": true,
+            "schema": {
+              "description": "Airports, comma separated: KEWR,KLGA",
+              "minLength": 3,
+              "title": "Airports",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlowAtAirports"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Flow Programs"
+      }
+    },
     "/api/live/itws": {
       "get": {
         "description": "The ITWS alerts in force at these airports (a route's departure,\ndestination and alternates): microbursts, wind shear, gust fronts,\ntornadoes and storm cells near the field, as the tower's ITWS gives\nthem its controllers (AIM 4-3-7).",
@@ -19570,6 +20247,48 @@
           }
         },
         "summary": "Itws Alerts"
+      }
+    },
+    "/api/live/rvr": {
+      "get": {
+        "description": "An airport's runway visual range, runway end by runway end, as its\nRVR system reports it now (wingtip.rvr).",
+        "operationId": "runway_rvr_api_live_rvr_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "airport",
+            "required": true,
+            "schema": {
+              "maxLength": 4,
+              "minLength": 3,
+              "title": "Airport",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirportRvr"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runway Rvr"
       }
     },
     "/api/live/saa": {

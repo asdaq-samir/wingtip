@@ -80,6 +80,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/brief/src/passengers.rs"),
         include_str!("../../crates/procedures/src/paths.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
+        include_str!("../../crates/weather/src/rvr.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
         include_str!("../../crates/brief/src/alternates.rs"),
         include_str!("../../crates/brief/src/icing_forecast.rs"),

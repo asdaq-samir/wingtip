@@ -13,3 +13,5 @@ name = "wingtip_radio"
 [dependencies]
 wingtip-core = { path = "../core" }
 wingtip-flight = { path = "../flight" }
+# The METAR reader, for a digital ATIS's weather groups (datis).
+wingtip-weather = { path = "../weather" }
