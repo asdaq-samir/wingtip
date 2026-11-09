@@ -440,6 +440,13 @@
 //!   "alternate_minimums_url"?}, "forecast": {"ceiling_ft"?,
 //!   "ceiling_unknown"?, "visibility_sm"?, "raw"?} | null}`,
 //!   `ifr_alternates_ranked` from `{"checks", "limit"}`;
+//! - forecast icing on an IFR route (crate::icing_forecast, AIM 7-1-4,
+//!   7-1-19): `icing_forecast_route`, `{"legs": [{"index", "altitude_ft",
+//!   "severity", "share", "layer": {"bottom_ft", "top_ft"}|null,
+//!   "valid_s"}], "worst": {"severity", "altitudes_ft", "legs"}|null,
+//!   "unchecked", "line"}`, from `{"levels_ft", "legs": [{"altitude_ft",
+//!   "section": {"width", "data_levels", "values", "sfc_hgt"?}|null,
+//!   "valid_s"?}]}`, each section the AWC's along that leg;
 //!   `is_eastbound` and `lowest_vfr_cruising_altitude` (91.159(a)) from
 //!   `{"magnetic_course_deg", "floor_ft"}`, `distance_nm` from `{"lat1",
 //!   "lon1", "lat2", "lon2"}`, `region_of` from `{"lat", "lon"}`,
@@ -1058,6 +1065,8 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         _ if crate::approach::calls::NAMES.contains(&name) => crate::approach::calls::call(name, ask.v),
         // The IFR alternate, 14 CFR 91.169 (alternates).
         _ if crate::alternates::NAMES.contains(&name) => crate::alternates::call(name, ask.v),
+        // Forecast icing on an IFR route's legs (icing_forecast, #216).
+        _ if crate::icing_forecast::NAMES.contains(&name) => crate::icing_forecast::call(name, ask.v),
         _ if crate::route::answers::NAMES.contains(&name) => crate::route::answers::answer(name, ask.v),
         _ if crate::navlog::calls::NAMES.contains(&name) => crate::navlog::calls::call(name, ask.v),
         // Route options, the way round high ground and a point named off a

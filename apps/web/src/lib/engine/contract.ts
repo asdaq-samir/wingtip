@@ -2845,6 +2845,13 @@ export interface EngineContract {
     answer: IfrAlternatesRankedAnswer;
   };
   /**
+   * Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the AWC's icing cross-section along each leg (its GFA's, from CIP and FIP), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked.
+   */
+  icing_forecast_route: {
+    input: IcingForecastRouteInput;
+    answer: IcingForecastRouteAnswer;
+  };
+  /**
    * Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.
    */
   ahead_frame: {
@@ -7647,6 +7654,51 @@ export interface IfrAlternateCheckAnswer {
 export interface IfrAlternatesRankedInput {
   checks: {}[];
   limit?: number;
+}
+export interface IcingForecastRouteInput {
+  /**
+   * The sections' levels, ft MSL, climbing.
+   */
+  levels_ft: number[];
+  legs: {
+    altitude_ft: number;
+    /**
+     * The AWC's cross-section along the leg, null where it could not be had.
+     */
+    section?: {
+      width: number;
+      data_levels: number;
+      /**
+       * The AWC's severity, 0 none to 4 heavy, negative none forecast, level-fastest.
+       */
+      values: number[];
+      /**
+       * The ground under each column, m.
+       */
+      sfc_hgt?: number[];
+    } | null;
+    valid_s?: number | null;
+  }[];
+}
+export interface IcingForecastRouteAnswer {
+  legs: {
+    index: number;
+    altitude_ft: number;
+    severity: "none" | "trace" | "light" | "moderate" | "heavy" | null;
+    share: number | null;
+    layer: {
+      bottom_ft: number;
+      top_ft: number;
+    } | null;
+    valid_s: number | null;
+  }[];
+  worst: {
+    severity: "trace" | "light" | "moderate" | "heavy";
+    altitudes_ft: number[];
+    legs: number[];
+  } | null;
+  unchecked: number[];
+  line: string | null;
 }
 export interface AheadFrameInput {
   lat: number;

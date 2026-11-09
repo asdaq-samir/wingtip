@@ -18433,6 +18433,217 @@
       ],
       "additionalProperties": false
     },
+    "icing_forecast_route": {
+      "description": "Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the AWC's icing cross-section along each leg (its GFA's, from CIP and FIP), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IcingForecastRouteInput",
+          "type": "object",
+          "properties": {
+            "levels_ft": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "description": "The sections' levels, ft MSL, climbing."
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "altitude_ft": {
+                    "type": "number"
+                  },
+                  "section": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "width": {
+                        "type": "number"
+                      },
+                      "data_levels": {
+                        "type": "number"
+                      },
+                      "values": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "description": "The AWC's severity, 0 none to 4 heavy, negative none forecast, level-fastest."
+                      },
+                      "sfc_hgt": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "description": "The ground under each column, m."
+                      }
+                    },
+                    "required": [
+                      "width",
+                      "data_levels",
+                      "values"
+                    ],
+                    "description": "The AWC's cross-section along the leg, null where it could not be had."
+                  },
+                  "valid_s": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "altitude_ft"
+                ]
+              }
+            }
+          },
+          "required": [
+            "levels_ft",
+            "legs"
+          ],
+          "additionalProperties": false
+        },
+        "answer": {
+          "title": "IcingForecastRouteAnswer",
+          "type": "object",
+          "properties": {
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "index": {
+                    "type": "number"
+                  },
+                  "altitude_ft": {
+                    "type": "number"
+                  },
+                  "severity": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "none",
+                      "trace",
+                      "light",
+                      "moderate",
+                      "heavy",
+                      null
+                    ]
+                  },
+                  "share": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "layer": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "bottom_ft": {
+                        "type": "number"
+                      },
+                      "top_ft": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "bottom_ft",
+                      "top_ft"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "valid_s": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "index",
+                  "altitude_ft",
+                  "severity",
+                  "share",
+                  "layer",
+                  "valid_s"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "worst": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "trace",
+                    "light",
+                    "moderate",
+                    "heavy"
+                  ]
+                },
+                "altitudes_ft": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "legs": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "severity",
+                "altitudes_ft",
+                "legs"
+              ],
+              "additionalProperties": false
+            },
+            "unchecked": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "line": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "legs",
+            "worst",
+            "unchecked",
+            "line"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "ahead_frame": {
       "description": "Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.",
       "type": "object",
@@ -20088,6 +20299,7 @@
     "ifr_alternate_destination",
     "ifr_alternate_check",
     "ifr_alternates_ranked",
+    "icing_forecast_route",
     "ahead_frame",
     "alerts_ahead",
     "congested_points",

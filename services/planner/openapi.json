@@ -7490,6 +7490,186 @@
         "title": "HopTotals",
         "type": "object"
       },
+      "IcingForecast": {
+        "description": "GET /api/icing/route: the AWC's forecast icing (its GFA's, from CIP\nand FIP; AIM 7-1-4) on each leg at the altitude flown, the worst of it\nand the Go / No-Go's line (the engine's icing_forecast_route); the\nlegs it had no forecast for; the hour the forecast was issued.",
+        "properties": {
+          "issued": {
+            "title": "Issued",
+            "type": "string"
+          },
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/IcingForecastLeg"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "unchecked": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Unchecked",
+            "type": "array"
+          },
+          "worst": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IcingForecastWorst"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "legs",
+          "worst",
+          "unchecked",
+          "line",
+          "issued"
+        ],
+        "title": "IcingForecast",
+        "type": "object"
+      },
+      "IcingForecastLeg": {
+        "description": "One leg's forecast icing (wingtip.icing_forecast): the worst\nseverity at the altitude flown, null where the AWC had no forecast for\nit; the share of the leg in icing there; the layer icing is in over\nthe leg at any level; and the time it was read for, the leg's middle.",
+        "properties": {
+          "altitude_ft": {
+            "title": "Altitude Ft",
+            "type": "number"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "layer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IcingLayer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "none",
+                  "trace",
+                  "light",
+                  "moderate",
+                  "heavy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          },
+          "share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share"
+          },
+          "valid_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid S"
+          }
+        },
+        "required": [
+          "index",
+          "altitude_ft",
+          "severity",
+          "share",
+          "layer",
+          "valid_s"
+        ],
+        "title": "IcingForecastLeg",
+        "type": "object"
+      },
+      "IcingForecastWorst": {
+        "properties": {
+          "altitudes_ft": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Altitudes Ft",
+            "type": "array"
+          },
+          "legs": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
+          "severity": {
+            "enum": [
+              "trace",
+              "light",
+              "moderate",
+              "heavy"
+            ],
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "severity",
+          "altitudes_ft",
+          "legs"
+        ],
+        "title": "IcingForecastWorst",
+        "type": "object"
+      },
+      "IcingLayer": {
+        "description": "The levels icing is forecast between over a leg, ft MSL.",
+        "properties": {
+          "bottom_ft": {
+            "title": "Bottom Ft",
+            "type": "number"
+          },
+          "top_ft": {
+            "title": "Top Ft",
+            "type": "number"
+          }
+        },
+        "required": [
+          "bottom_ft",
+          "top_ft"
+        ],
+        "title": "IcingLayer",
+        "type": "object"
+      },
       "InboundRadio": {
         "description": "The frequency a pilot calls a field on, inbound: `kind` \"TWR\",\n\"CTAF\" or \"UNICOM\", and the frequency in MHz.",
         "properties": {
@@ -18966,6 +19146,91 @@
           }
         },
         "summary": "Holding"
+      }
+    },
+    "/api/icing/route": {
+      "get": {
+        "description": "Under IFR, the AWC's forecast icing on each leg at the altitude it\nis flown (wingtip.icing_forecast; AIM 7-1-4, 7-1-19): the nav log's\n`fixes` (\"lat,lon;lat,lon\", one more than its legs), each leg's\naltitude `alt_ft` and ETE `leg_min`, and its minutes on the ground\nafter it `ground_min`, the flight leaving at `depart` (now when not\ngiven; UTC when naive). Each leg is read for the hour of its middle.",
+        "operationId": "icing_on_the_route_api_icing_route_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fixes",
+            "required": true,
+            "schema": {
+              "title": "Fixes",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "alt_ft",
+            "required": true,
+            "schema": {
+              "title": "Alt Ft",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "leg_min",
+            "required": true,
+            "schema": {
+              "title": "Leg Min",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ground_min",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Ground Min",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "depart",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Depart"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IcingForecast"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Icing On The Route"
       }
     },
     "/api/local-flight": {

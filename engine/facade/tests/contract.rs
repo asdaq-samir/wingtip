@@ -81,6 +81,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
         include_str!("../../crates/brief/src/alternates.rs"),
+        include_str!("../../crates/brief/src/icing_forecast.rs"),
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
         include_str!("../../crates/route/src/approach/calls.rs"),
         include_str!("../../crates/route/src/route/answers.rs"),
@@ -612,6 +613,12 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         "min_spacing_nm": 10, "min_score": null, "length_nm": 40 }));
     c.ask("below_vfr_minimums", json!({ "ceiling_ft": 900, "visibility_sm": null }));
     c.ask("service_ceiling_on_the_day", json!({ "book_ft": 13500, "profile": [[3000, 10], [6000, 4]] }));
+
+    // Forecast icing on an IFR route (icingForecast.json, #216).
+    let icing = fixture("icingForecast.json");
+    for case in icing["routes"].as_array().unwrap() {
+        c.ask("icing_forecast_route", json!({ "levels_ft": icing["levels_ft"], "legs": case["legs"] }));
+    }
 
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.

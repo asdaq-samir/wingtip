@@ -6,6 +6,8 @@
 //!
 //! - alternates: the IFR alternate, 14 CFR 91.169 -- whether the
 //!   destination needs one and whether a field will do as one;
+//! - icing_forecast: the icing the AWC forecasts on each leg of an IFR
+//!   route at the altitude flown (#216);
 //! - gonogo: the Brief's Go / No-Go -- its seven findings and the line
 //!   over them, the pilot's minimums, icing under IFR, the risk
 //!   assessment, the runway check, the weight and balance and the pass
@@ -16,6 +18,7 @@
 
 pub mod alternates;
 pub mod gonogo;
+pub mod icing_forecast;
 pub mod passengers;
 pub mod runway;
 

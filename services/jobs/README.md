@@ -22,7 +22,7 @@ job of its own only if it ever needs a GPU.
 Each runs this checkout's code, the project mounted at `/workspace`.
 
 ```bash
-docker compose build retrain charts charts-overlays
+docker compose build retrain charts charts-overlays   # once; `run` reuses the image
 
 # The training run, as the developer console's Retrain starts it.
 docker compose run --rm retrain                    # every stage, in order
@@ -35,6 +35,12 @@ docker compose run --rm charts refresh --workers 2 # the chart cycle alone
 docker compose run --rm charts pack                # loose tiles of finished kinds into archives
 docker compose run --rm charts pyramid --kind sec  # prepare, pyramid, check, unmask, publish: as before
 ```
+
+`docker compose run` builds an image only when it has none, so leave out
+`--build`: the code is the mounted checkout, read afresh each run, and a
+rebuild is needed only after the Dockerfile or the requirements change (or
+wingtip's Rust extension, which the base image holds). Each compose project
+(a worktree of another name) builds its own images once.
 
 The planner starts them by itself through the dev-services sidecar,
 which can start a container but never create one, so make them once:
