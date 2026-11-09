@@ -4,12 +4,12 @@ import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import { GLASS } from "../lib/mapChrome";
 import Waveform from "./Waveform";
+import { Timer } from "./RadioTimer";
 import { Button } from "./ui/button";
 import { api } from "../lib/api/client";
 import { useAtcListen } from "../lib/atc/listenSetting";
 import { callToUs, chosenOutside, heardThrough, lostWords, useAtcRadio, useRadioActions, type Transmission } from "../lib/atcRadio";
 import { clearedRoute, heardAny, placesAsked, readClearance, type Found } from "../lib/clearance";
-import { stopwatch } from "../lib/diversion";
 import { callOf } from "../lib/heardCall";
 import { metarWords } from "./metarWords";
 import { commandsOf } from "./pilotCommand";
@@ -247,23 +247,6 @@ function ReadbackLine({ cleared, said }: { cleared: string; said: string }) {
   );
 }
 
-/** The timer a pilot started by voice, counting in the pill until stopped. */
-function Timer({ from, onStop }: { from: number; onStop: () => void }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const tick = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(tick);
-  }, []);
-  return (
-    <div className="flex items-center gap-2 pt-1 pr-2">
-      <span className={cn("font-semibold tabular-nums", TEXT.detail)} data-testid="radio-timer-time">Timer {stopwatch(Math.max(0, now - from))}</span>
-      <Button size="sm" variant="secondary" className={CHIP} onClick={onStop} data-testid="radio-timer-stop">Stop</Button>
-    </div>
-  );
-}
-
-/** Bars rising and falling while the microphone listens, as Siri's
- *  waveform; still under Reduce Motion. */
 /**
  * The map's microphone grown into a pill, as Siri listens (the owner's
  * pick A, 2026-11-02), in the mic's own circle, which widens into it
