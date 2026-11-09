@@ -6,29 +6,35 @@ import Foundation
 /// (ActivityKit's Live Activity, Apple's recommendation for anything
 /// ongoing): the route, and what changes as it is flown. Compiled into
 /// the app, which starts and updates the activity (FlightActivity), and
-/// into the widget extension, which draws it (WingtipWidgets): both must
-/// see one and the same type.
+/// into the widget extension, which draws it (FlightActivityWidget): both
+/// must see one and the same type. The figures are the engine's
+/// `in_flight` answers (InFlight), carried as numbers and written on the
+/// screen by Format, as every figure is (FlightActivityLines).
 struct FlightActivityAttributes: ActivityAttributes {
-    /// What the activity shows as the flight goes on: the planner's own
-    /// figures counted down from the airplane's fix, not a gauge.
     struct ContentState: Codable, Hashable, Sendable {
-        /// The next checkpoint's name; nil past the last one.
-        var nextCheckpoint: String?
-        /// Miles of the course still to fly.
+        /// The next point of the route ahead and the minutes to it at the
+        /// speed being made good; nil past the last one or before a fix.
+        var nextFix: String?
+        var nextEteMin: Double?
+        /// The miles still to fly to the destination.
         var toGoNm: Double
-        /// Minutes to the destination at the speed being made good.
-        var etaMinutes: Double
-        /// Gallons the plan expects to be left, from the planned burn.
-        var fuelRemainingGal: Double?
-        var groundSpeedKt: Double?
-        var altitudeFt: Double?
-        /// The leg being flown, by its ends.
-        var legFrom: String?
-        var legTo: String?
+        /// The minutes to the destination and the clock time of arrival
+        /// they point at; nil where the engine has no speed to work them.
+        var destEteMin: Double?
+        var eta: Date?
+        /// Gallons the plan expects left at this point (the planned burn
+        /// counted down, never the airplane's gauge); nil with no airplane
+        /// picked, since an assumed airplane's fuel is no figure at all
+        /// (docs/decisions/0011).
+        var fuelLeftGal: Double?
+        /// The frequency ATC last handed us, as heard ("Chicago Approach
+        /// 124.35"); nil where none has been heard.
+        var frequency: String?
+        /// The in-flight copilot's one message now, its banner line, and
+        /// whether it is a warning rather than a note.
+        var copilot: String?
+        var copilotWarns: Bool = false
         var updatedAt: Date
-
-        /// The clock time of arrival the figures point at.
-        var eta: Date { updatedAt.addingTimeInterval(etaMinutes * 60) }
     }
 
     /// The route's ends, as the plan names them (C81, KDLH).
