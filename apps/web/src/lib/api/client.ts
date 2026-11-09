@@ -1175,9 +1175,10 @@ export const api = {
   flights: {
     list: () => gateway.GET("/api/flights").then(data<FlightSummary[]>),
     save: (request: SaveFlightRequest) => gateway.POST("/api/flights", { body: request }).then(data<Flight>),
-    remove: async (id: number): Promise<void> => {
-      await gateway.DELETE("/api/flights/{id}", { params: { path: { id } } });
-    },
+    remove: (id: number): Promise<void> => gateway.DELETE("/api/flights/{id}", { params: { path: { id } } }).then(() => undefined),
+    /** Its name and notes changed: null keeps one, blank clears it. */
+    update: (id: number, body: { name: string | null; notes: string | null }) =>
+      gateway.PATCH("/api/flights/{id}", { params: { path: { id } }, body }).then(data<FlightSummary>),
     /** One flight with its nav log, for its debrief. */
     get: (id: number) => gateway.GET("/api/flights/{id}", { params: { path: { id } } }).then(data<Flight>),
     /** Its track as saved to the account, or null where none is. */
@@ -1192,8 +1193,7 @@ export const api = {
     saveTrack: async (id: number, track: SavedTrack): Promise<void> => {
       await gateway.PUT("/api/flights/{id}/track", { params: { path: { id } }, body: track });
     },
-    deleteTrack: async (id: number): Promise<void> => {
-      await gateway.DELETE("/api/flights/{id}/track", { params: { path: { id } } });
-    },
+    deleteTrack: (id: number): Promise<void> =>
+      gateway.DELETE("/api/flights/{id}/track", { params: { path: { id } } }).then(() => undefined),
   },
 };

@@ -30,6 +30,8 @@ const review = (id: number, studentId: number, flightOn: string, level: "low" | 
   flight: {
     id,
     departureIdent: "C81",
+    name: null,
+    notes: null,
     destinationIdent: "KMSN",
     stops: [],
     cruiseAltitudeFt: 4500,

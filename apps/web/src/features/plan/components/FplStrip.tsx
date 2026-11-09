@@ -91,7 +91,9 @@ function SavedTiles({ signedIn }: { signedIn: boolean }) {
         // reader, at the owner's pick ("Coordinates, cut short").
         const dep = placeOfPoint(f.departureIdent),
           dest = placeOfPoint(f.destinationIdent);
-        const name = `${dep}→${dest}`;
+        // The pilot's own name for it where it has one (Setup's Flights).
+        const named = f.name?.trim();
+        const name = named || `${dep}→${dest}`;
         return (
           <SmallTile
             key={f.id}
@@ -100,7 +102,7 @@ function SavedTiles({ signedIn }: { signedIn: boolean }) {
             title={name}
             detail={day}
             wide
-            label={`${dep} to ${dest}${f.stops.length ? ` by ${f.stops.join(", ")}` : ""}, saved ${day}`}
+            label={`${named ? `${named}, ` : ""}${dep} to ${dest}${f.stops.length ? ` by ${f.stops.join(", ")}` : ""}, saved ${day}`}
             mark={<SmallMark icon={<Route />} className="bg-foreground/8 text-tint" />}
           />
         );
