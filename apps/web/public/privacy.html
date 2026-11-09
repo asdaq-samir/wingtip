@@ -26,11 +26,11 @@
 </style>
 </head>
 <body>
-<h1>Privacy policy</h1>
+<h1 id="privacy-policy">Privacy policy</h1>
 <p><em>Draft for the owner to review. Checked against the code on 9 November 2026; not yet in effect.</em></p>
 <p>Wingtip Maps is a flight planner for VFR and IFR flight, on the web, the iPhone and Android. This page says what the app keeps about you, where it keeps it, what leaves your device and who receives it. It describes what the app does today; where it says "we", it means the people who run Wingtip Maps.</p>
 <p>You can use the map and plan a route without an account. Most of what follows is about the account you may make, and about the features that send something off your device to work.</p>
-<h2>What we keep for your account</h2>
+<h2 id="what-we-keep-for-your-account">What we keep for your account</h2>
 <p>When you sign in, our server keeps, in its database:</p>
 <ul>
 <li><strong>Who you are:</strong> your email address and the name you sign in with; if you sign in with Google or Apple, the identifier that provider gives us for you, and for Apple the token that lets us end that sign-in when you delete your account. We hold no password: there is none.</li>
@@ -45,11 +45,11 @@
 <li><strong>The features Claude writes:</strong> a count, each month, of how many times you used each of them, for its monthly allowance.</li>
 </ul>
 <p>We keep these until you delete them or delete your account. We do not sell them, share them for advertising, or use them to track you across other companies' apps or sites.</p>
-<h2>What stays on your device</h2>
+<h2 id="what-stays-on-your-device">What stays on your device</h2>
 <p>The app keeps your settings, personal minimums, checklists, the charts and data you keep for flying without a connection, your recent flown tracks and your last known position on your device. The web app keeps them in your browser's storage; the iPhone and Android apps in their own storage. None of it is sent to us unless this page says so.</p>
 <p>If you connect the iPhone or Android app to an ADS-B receiver in the cockpit, the traffic and weather it hears over the cockpit's Wi-Fi are read and shown on your device only; nothing of it is sent anywhere, and it is not kept past a few hours.</p>
 <p>On the iPhone, the airplanes you keep or watch on the map and your planned routes are also kept in your own iCloud account, if iCloud is on for the app, so your other Apple devices have them. They go to Apple, not to us; we cannot read them. An Apple Watch paired with your iPhone receives the airplane, checklist and position the watch app shows.</p>
-<h2>Your location</h2>
+<h2 id="your-location">Your location</h2>
 <p>The app asks your device for your position only after you turn on the location arrow (or start flying, on a phone) and your device allows it. On the iPhone it keeps reading your position while the app is in the background only while you are flying, so the flight can be followed; on Android a notification shows while it does.</p>
 <p>Your position is used on your device to draw your airplane and measure from it. It leaves your device when a feature needs it to answer:</p>
 <ul>
@@ -57,13 +57,13 @@
 <li><strong>to Claude,</strong> when you use Ask while your position is known (see below).</li>
 </ul>
 <p>Your position is stored with your account only as a track you choose to save to a flight.</p>
-<h2>Listening to the radio</h2>
+<h2 id="listening-to-the-radio">Listening to the radio</h2>
 <p>When you turn on the ATC copilot, or speak to the app, it listens through your device's microphone and turns the speech into text, to show the calls addressed to you. The app records no audio, saves none to a file, and sends none to us.</p>
 <ul>
 <li><strong>In the iPhone and Android apps, speech is recognised on your phone and never leaves it.</strong> They use only the recognizer that runs on the phone itself: Apple's on-device speech recognition on the iPhone, and the phone's on-device speech recognizer on Android (Android 12 and later). Where a phone cannot do that, the app does not offer voice, and you type instead; it never falls back to a recognizer on someone's servers.</li>
 <li><strong>In a web browser, the app uses the browser's own speech recognition.</strong> Where the browser can promise that the audio stays on your computer or phone (Chrome, which may first download its English language pack), the app asks it to. Other browsers, such as Safari, may send the audio to their maker (Apple, for Safari) to be recognised, under that company's privacy policy. A browser with no speech recognition (Firefox) is not offered voice. Of the text, only the place names in a clearance you heard (a clearance limit, a route, a departure) go to our planner, to find them on the map; a question you ask aloud goes to Claude as any typed question does.</li>
 </ul>
-<h2>Features Claude writes</h2>
+<h2 id="features-claude-writes">Features Claude writes</h2>
 <p>Some features are written by Claude, an AI model made by Anthropic: Ask, the written briefing, the words beside the Brief's figures, checkpoint descriptions, the mock oral and the debrief's words. To write them, our server sends Anthropic:</p>
 <ul>
 <li><strong>Ask:</strong> your conversation (what you typed or said and the answers so far), the route and stops, the airplane, the cruising altitude and departure time, your personal minimums, your currency and your home base, and, when the app knows it, your airplane's position (to about 100 metres), altitude, track and groundspeed; and the answers our planner gives it as it works.</li>
@@ -74,7 +74,7 @@
 </ul>
 <p>We do not send your name, email address or account to Anthropic. We do not keep your Ask conversations: each one stays on your device. Anthropic receives this as our service provider and handles it under its commercial terms. What Claude writes can be wrong; the app says so where it shows it.</p>
 <p>Some phones write a few of these on the device instead, with Apple's own on-device model, where the iPhone has one; nothing is sent for those.</p>
-<h2>Faults and speed</h2>
+<h2 id="faults-and-speed">Faults and speed</h2>
 <p>So we hear when the app breaks without you having to write in, each app sends us a report when something goes wrong:</p>
 <ul>
 <li><strong>the web app:</strong> an error nobody caught, with its message and where in the app's code it happened;</li>
@@ -84,7 +84,7 @@
 <p>Each report carries the app's version, the system's version and whether the device is a phone, tablet or computer. It carries nothing of yours: no account, no address, no route, no position. Our server takes out any web address's query, any email address, any user name in a folder's path and any per-install identifier before keeping it. Faults are kept 30 days.</p>
 <p>The web app also sends, when you leave a page, how fast it was on your device (Google's Core Web Vitals and how long the browser was busy), with the page's name, the kind of device and the app's version, nothing else. Speed figures from all three apps are kept 400 days, to see whether the app is getting faster or slower.</p>
 <p>There is no analytics or advertising kit in any of the apps, and no third party receives these reports.</p>
-<h2>Who else receives anything</h2>
+<h2 id="who-else-receives-anything">Who else receives anything</h2>
 <ul>
 <li><strong>Anthropic,</strong> for the features Claude writes, as above.</li>
 <li><strong>Our email sender</strong> (Amazon SES), which delivers the email we send: your sign-in link, the reminders you turn on, flight watch's changes, and the email between you and an instructor you ask in.</li>
@@ -97,15 +97,15 @@
 <li><strong>Our hosting provider</strong> (Amazon Web Services, in the United States), which runs our servers and stores what is above.</li>
 </ul>
 <p>Links to ForeFlight, 1800wxbrief.com, the FAA and others open their own sites or apps, under their own policies.</p>
-<h2>Your copy and deleting it</h2>
+<h2 id="your-copy-and-deleting-it">Your copy and deleting it</h2>
 <ul>
 <li><strong>A copy:</strong> <em>Export My Data</em>, in Setup, under your account, downloads everything we keep for your account as one file. Your logbook can also be exported on its own as a CSV file from the Logbook.</li>
 <li><strong>Deleting:</strong> you can delete an airplane, a flight, a logbook entry or a saved track at any time. <em>Delete Account</em>, in Setup, under your account, removes your account and everything above that we keep for it, ends your sign-in on every device and clears the app's settings on the device you use. It cannot be undone.</li>
 <li><strong>What stays after you delete your account:</strong> an endorsement an instructor signed in the app stays with the other of you two, without your account, because the instructor must keep a record of it for three years (14 CFR 61.189). Fault reports and speed figures carry no account, so they cannot be found to delete; they expire on their own, as above. Copies in your iCloud are deleted from your iCloud settings.</li>
 </ul>
-<h2>Children</h2>
+<h2 id="children">Children</h2>
 <p>Wingtip Maps is made for pilots and student pilots, and is not directed to children under 13.</p>
-<h2>Changes and contact</h2>
+<h2 id="changes-and-contact">Changes and contact</h2>
 <p>When this page changes in a way that matters, the date at the top changes. Questions about your data: the <a href="/support">Support page</a>.</p>
 <nav>
 <a href="/privacy">Privacy policy</a>
