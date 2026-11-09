@@ -20,6 +20,9 @@ struct AskView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var client = AssistantClient()
+    /// "Plan a trip…": the trip planner in the conversation's place until
+    /// closed, as the web's Ask has it.
+    @State private var trip: TripPlanner?
     @State private var question = ""
     /// The chip tapped, its raw text on a sheet.
     @State private var source: AssistantSource?
@@ -59,7 +62,9 @@ struct AskView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: WingtipSpace.md) {
-                    if client.turns.isEmpty {
+                    if let trip {
+                        TripPlannerView(trip: trip, context: { context }, onUse: use, onSource: { source = $0 }, onClose: { self.trip = nil })
+                    } else if client.turns.isEmpty {
                         suggestionsList
                     }
                     ForEach(client.turns) { turn in
@@ -97,6 +102,17 @@ struct AskView: View {
                 .font(.title3.weight(.semibold))
             Text("The figures are the planner's; the assistant puts them in words and shows what it read.")
                 .font(.footnote).foregroundStyle(.secondary)
+            // The first chip, as on the web: the trip planner.
+            Button { trip = TripPlanner() } label: {
+                HStack {
+                    Text("Plan a trip…")
+                    Spacer()
+                    Image(systemName: "map").accessibilityHidden(true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, WingtipSpace.sm)
+            }
+            .contentShape(Rectangle().inset(by: -6))
             ForEach(Self.suggestions, id: \.self) { words in
                 Button { send(words) } label: {
                     HStack {
@@ -148,6 +164,14 @@ struct AskView: View {
         }
         .padding(.horizontal, WingtipSpace.lg)
         .padding(.vertical, WingtipSpace.sm)
+    }
+
+    /// A trip's leg loaded as the route, as the web's applyChange takes the
+    /// assistant's change: its ends, stops and altitude, then planned.
+    private func use(_ leg: TripLeg) {
+        plan.dep = leg.change.dep; plan.dest = leg.change.dest; plan.stops = leg.change.stops
+        plan.ownAltitudeFt = leg.change.altitudeFt
+        plan.plan()
     }
 
     private func send(_ words: String) {
