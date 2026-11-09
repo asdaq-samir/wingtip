@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -20,24 +18,30 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.generated.WingtipSize
 
 /**
- * How the location button reads: off (the arrow grey, as the web app's is
- * with own ship off), reading but the map let go of it (black), or
- * following the airplane (the blue tint). Denied is drawn as off; the
- * tap asks the system again where it can.
+ * How the position button reads: off, reading but the map let go of it,
+ * or following the airplane. Denied is drawn as off; the tap asks the
+ * system again where it can.
  */
 enum class OwnShipMode { OFF, READING, FOLLOWING }
 
 /**
- * The buttons over the map, under the status bar at the right, as the
- * iOS app's MapButtons: the location arrow, and under it the sparkle
- * that opens Ask (AskScreen), a question about the flight put to the
- * assistant. A tonal icon button is Material's own
- * 40-dp control with its 48-dp touch target, so nothing is grown to be
- * tappable.
+ * The buttons over the map, under the status bar at the right: the
+ * position button and under it the sparkle that opens Ask. Each state of
+ * the position button has its own shape as well as its colour, never the
+ * colour alone (the UI audit's #12): off is the outlined arrow on the
+ * tonal button; reading is the filled arrow there; following is the
+ * filled arrow on the filled, checked toggle in the tint -- the
+ * concept table's `near_me` (docs/design/icons.md), and TalkBack says
+ * which state it is in. Material's own 40-dp buttons with their 48-dp
+ * touch targets, nothing grown.
  */
 @Composable
 fun MapButtons(
@@ -47,32 +51,32 @@ fun MapButtons(
     modifier: Modifier = Modifier,
 ) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    Column(modifier.padding(top = top + 8.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        val tint = when (ownShip) {
-            OwnShipMode.OFF -> Color.Gray
-            OwnShipMode.READING -> MaterialTheme.colorScheme.onSurface
-            OwnShipMode.FOLLOWING -> MaterialTheme.colorScheme.primary
-        }
-        FilledTonalIconButton(
-            onClick = onOwnShip,
-            colors = IconButtonDefaults.filledTonalIconButtonColors(contentColor = tint),
+    Column(modifier.padding(top = top + WingtipSpace.Sm, end = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        val state = stringResource(
+            when (ownShip) {
+                OwnShipMode.OFF -> R.string.own_ship_off
+                OwnShipMode.READING -> R.string.own_ship_shown
+                OwnShipMode.FOLLOWING -> R.string.own_ship_following
+            },
+        )
+        FilledIconToggleButton(
+            checked = ownShip == OwnShipMode.FOLLOWING,
+            onCheckedChange = { onOwnShip() },
+            colors = IconButtonDefaults.filledIconToggleButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+            modifier = Modifier.semantics { stateDescription = state },
         ) {
             Icon(
-                Icons.Filled.LocationOn,
-                contentDescription = when (ownShip) {
-                    OwnShipMode.OFF -> "Show my airplane"
-                    OwnShipMode.READING -> "Follow my airplane"
-                    OwnShipMode.FOLLOWING -> "Stop following"
-                },
+                if (ownShip == OwnShipMode.OFF) WingtipIcons.myLocationOff else WingtipIcons.myLocation,
+                contentDescription = stringResource(R.string.own_ship_button),
             )
         }
         // In the strip the field is the way to the assistant, so no sparkle.
         if (onAsk != null) {
-            FilledTonalIconButton(
-                onClick = onAsk,
-                colors = IconButtonDefaults.filledTonalIconButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-            ) {
-                Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask about this flight")
+            FilledTonalIconButton(onClick = onAsk) {
+                Icon(WingtipIcons.brief, contentDescription = stringResource(R.string.ask_about_flight), tint = MaterialTheme.colorScheme.primary)
             }
         }
     }
@@ -91,24 +95,19 @@ fun MapButtons(
 fun OwnShipNote(approximate: Boolean, onAskAgain: () -> Unit, onClose: () -> Unit, modifier: Modifier = Modifier) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Surface(
-        modifier = modifier.padding(top = top + 8.dp, start = 8.dp, end = 64.dp),
+        modifier = modifier.padding(top = top + WingtipSpace.Sm, start = WingtipSpace.Sm, end = WingtipSize.TapTarget + WingtipSpace.Lg),
         shape = MaterialTheme.shapes.medium,
-        tonalElevation = 3.dp,
-        shadowElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
-        Column(Modifier.padding(start = 12.dp, top = 10.dp, end = 4.dp)) {
+        Column(Modifier.padding(start = WingtipSpace.Md, top = WingtipSpace.Md, end = WingtipSpace.Xs)) {
             Text(
-                if (approximate) {
-                    "Your airplane is not shown: location is allowed only approximately, which can be off by a mile or more. Allow precise location here or in Settings."
-                } else {
-                    "Your airplane is not shown: location is off for Wingtip Maps. Allow it here or in Settings."
-                },
+                stringResource(if (approximate) R.string.own_ship_approximate else R.string.own_ship_denied),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(end = 8.dp),
+                modifier = Modifier.padding(end = WingtipSpace.Sm),
             )
             Row(Modifier.align(Alignment.End)) {
-                TextButton(onClick = onClose) { Text("Not now") }
-                TextButton(onClick = onAskAgain) { Text(if (approximate) "Allow precise" else "Allow") }
+                TextButton(onClick = onClose) { Text(stringResource(R.string.not_now)) }
+                TextButton(onClick = onAskAgain) { Text(stringResource(if (approximate) R.string.allow_precise else R.string.allow)) }
             }
         }
     }
