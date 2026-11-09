@@ -94,6 +94,17 @@ export interface Assessment {
   factors: RiskFactor[];
 }
 
+/** The logbook's currency as the engine and the planner read it (snake
+ *  case): the risk assessment here, and the departure window's ask. */
+export function currencyInput(c: Currency) {
+  return {
+    flights: c.flights, total_hours: c.totalHours, day_passengers_until: c.dayPassengersUntil ?? null,
+    night_passengers_until: c.nightPassengersUntil ?? null, instrument_current_until: c.instrumentCurrentUntil ?? null,
+    instrument_current_from: c.instrumentCurrentFrom ?? null,
+    ipc_needed_after: c.ipcNeededAfter ?? null, flight_review_until: c.flightReviewUntil ?? null, medical_expires_on: c.medicalExpiresOn ?? null,
+  };
+}
+
 /** The whole assessment: the factors found and the ones ticked, their
  *  points, and the level they make. */
 export function assess(input: FratInput): Assessment {
@@ -107,12 +118,7 @@ export function assess(input: FratInput): Assessment {
       ? { vor_check: input.vorCheck && { good_through: input.vorCheck.goodThrough, within_limit: input.vorCheck.withinLimit } } : {}),
     inspections: input.inspections ? inspectionsInput(input.inspections) : null,
     squawks: input.squawks ? squawksInput(input.squawks) : null,
-    currency: c && {
-      flights: c.flights, total_hours: c.totalHours, day_passengers_until: c.dayPassengersUntil ?? null,
-      night_passengers_until: c.nightPassengersUntil ?? null, instrument_current_until: c.instrumentCurrentUntil ?? null,
-      instrument_current_from: c.instrumentCurrentFrom ?? null,
-      ipc_needed_after: c.ipcNeededAfter ?? null, flight_review_until: c.flightReviewUntil ?? null, medical_expires_on: c.medicalExpiresOn ?? null,
-    },
+    currency: c && currencyInput(c),
     day: input.day, ticked: input.ticked,
   });
   return { score: a.score, level: a.level, words: a.words, factors: a.factors.map(riskFactor) };

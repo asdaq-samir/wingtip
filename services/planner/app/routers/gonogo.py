@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from .. import planning as planning_module
 from ..router_basics import load_route
-from ..gonogo import live
+from ..gonogo import live as live_reports
 from ..gonogo.frat import assessment as risk_assessment, self_checks
 from ..gonogo.icing import icing_at_altitude, icing_line
 from ..gonogo.minimums import ceiling_unknown_at, under_minimums
@@ -116,32 +116,42 @@ def _flown_words(nav: dict) -> str:
     return f"{_altitude_range(nav)}{plan}"
 
 
-@router.post("/api/go-no-go", openapi_extra=PUBLIC_READ_BY_POST)
-def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
-    """The Go / No-Go for a route: each finding -- the weather, the TFRs and
-    special-use airspace, the altitude, the fuel, the runways, the weight
-    and balance and the risk -- with where it is said in full, and the
-    line over them; the risk assessment and the weight and balance it
-    counted, for the Brief's own pages. The rules are apps/web/src/lib/verdict's
-    and the modules it is fed from, the engine's in app.gonogo; the pilot's
-    minimums, loading, ticks, currency and own airplane's records come in
-    the ask."""
-    q = PlanQuery(**{k: getattr(ask, k) for k in ROUTE_FIELDS})
-    r = load_route(q.dep, q.dest, q.stops)
-    planned = plan_for(q, r)
-    nav, legs, totals = planned.nav, planned.legs, planned.totals
-    failed = None
+def briefing_or_failure(q: PlanQuery, ete_min: float | None) -> tuple[dict | None, str | None]:
+    """The route's briefing for the flight's hours, or None and why it
+    failed in a line, as the web's useBrief says it."""
     try:
-        briefing = brief_for(q, (totals or {}).get("ete_min"))
+        return brief_for(q, ete_min), None
     except HTTPException as err:
         # The error's first line, as the web's describeError says it.
-        briefing, failed = None, str(err.detail).split("\n")[0] or BRIEFING_FAILED
+        return None, str(err.detail).split("\n")[0] or BRIEFING_FAILED
     except Exception:   # noqa: BLE001 -- the web says a briefing that failed, whatever failed it
         log.exception("briefing for the Go / No-Go")
-        briefing, failed = None, BRIEFING_FAILED
+        return None, BRIEFING_FAILED
 
-    depart = q.depart if q.depart is None or q.depart.tzinfo else q.depart.replace(tzinfo=timezone.utc)
-    depart = depart or planning_module.now()
+
+@dataclass
+class Findings:
+    """What the Go / No-Go is worked out from, before the engine says what
+    it comes to: the web's VerdictInput without its risk (`verdict`), the
+    risk assessment's input (`risk_in`, None with no briefing, as the web
+    makes none), and the loading the weight and balance counted."""
+
+    verdict: dict
+    risk_in: dict | None
+    loading: dict | None
+    load: dict | None
+    loaded: dict | None
+
+
+def findings_for(ask: GoNoGoAsk, q: PlanQuery, r, planned: Planned, briefing: dict | None, failed: str | None,
+                 depart: datetime, live: bool = True) -> Findings:
+    """Each tab's say about the flight leaving at `depart`, from the plan,
+    the briefing for that flight and what only the pilot knows -- as the
+    web's FlightBriefingView feeds lib/verdict. `live`: what SWIM says now
+    (ITWS alerts, the Command Center's programs, SFDPS's status of an
+    area) counts; False for a departure hours off, when what holds now
+    will not (app.routers.window)."""
+    nav, legs, totals = planned.nav, planned.legs, planned.totals
     # The pilot's own day is the client's to send: the planner has no
     # device and so no time zone of its own, and takes the departure's UTC
     # day, where the web takes the device's local one -- a date that
@@ -185,11 +195,12 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
     special_use = []
     areas = selection.get("special_use") or []
     # SFDPS's word where it holds at the pass, as the web's Brief says it.
-    status_now = live.area_status([area["name"] for area in areas], now=datetime.now(timezone.utc).timestamp())
+    status_now = (live_reports.area_status([area["name"] for area in areas], now=datetime.now(timezone.utc).timestamp())
+                  if live else {})
     for area in areas:
         at = pass_at(area["along_track_nm"])
         scheduled = sua_when(area.get("times_of_use"), at, area.get("time_zone")) if at else "unknown"
-        special_use.append({"name": area["name"], "when": live.live_when(scheduled, status_now.get(area["name"]), at)})
+        special_use.append({"name": area["name"], "when": live_reports.live_when(scheduled, status_now.get(area["name"]), at)})
 
     hops = (totals or {}).get("hops") or []
     margins = [m for m in [(totals or {}).get("fuel_margin_gal"), *(h["totals"].get("fuel_margin_gal") for h in hops)] if m is not None]
@@ -197,8 +208,7 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
              if ifr and nav and briefing else None)
     hazard_names = ([sigmet_hazard(h.get("hazard"), h.get("type") or "SIGMET") for h in briefing.get("hazards") or []]
                     + [gairmet_title(g) for g in briefing.get("gairmets") or []]) if briefing else []
-
-    assessment = None
+    risk_in = None
     if briefing:
         risk_in = {
             "vfr_not_recommended": bool(vnr), "under_minimums": under_mine, "tfr_on_route": bool(tfrs_crossed),
@@ -214,7 +224,6 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
             risk_in["vor_check"] = own.vor_check.model_dump() if own.vor_check else None
             risk_in["inspections"] = own.inspections.model_dump() if own.inspections else None
             risk_in["squawks"] = [s.model_dump() for s in own.squawks]
-        assessment = risk_assessment(risk_in)
 
     # The loading (lib/weightBalance): the pilot's, else the POH's sample
     # airplane with the usable fuel aboard.
@@ -231,7 +240,7 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
                            nav_loaded["landing"]["weight_lb"] if nav_loaded else None,
                            ask.runway_picks.model_dump() if ask.runway_picks else None)
 
-    items = verdict_items({
+    verdict = {
         "weather": {
             "pending": not briefing and not failed, "failed": failed,
             "vfr_not_recommended": vnr, "under_minimums": under_mine, "icing": icing and icing_line(icing),
@@ -245,8 +254,8 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
             if briefing and (briefing["forecast"].get("min_ceiling_ft") is not None
                              or briefing["forecast"].get("min_visibility_sm") is not None) else None,
             # What SWIM says now at the route's airports (app.gonogo.live).
-            "terminal_alerts": live.itws_lines(landings),
-            "flow_programs": live.program_lines(landings) if ifr else [],
+            "terminal_alerts": live_reports.itws_lines(landings) if live else [],
+            "flow_programs": live_reports.program_lines(landings) if ifr and live else [],
             "ifr": ifr,
         },
         "airspace": {
@@ -284,20 +293,49 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
             "takeoff": f"{grouped(nav_loaded['takeoff']['weight_lb'])} lb at {to_fixed(nav_loaded['takeoff']['arm_in'])} in"
             if nav_loaded else None,
         },
+    }
+    return Findings(verdict=verdict, risk_in=risk_in, loading=loading, load=load, loaded=loaded)
+
+
+def departure_of(q: PlanQuery) -> datetime:
+    """When the flight leaves: the ask's (UTC when naive), else now."""
+    depart = q.depart if q.depart is None or q.depart.tzinfo else q.depart.replace(tzinfo=timezone.utc)
+    return depart or planning_module.now()
+
+
+@router.post("/api/go-no-go", openapi_extra=PUBLIC_READ_BY_POST)
+def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
+    """The Go / No-Go for a route: each finding -- the weather, the TFRs and
+    special-use airspace, the altitude, the fuel, the runways, the weight
+    and balance and the risk -- with where it is said in full, and the
+    line over them; the risk assessment and the weight and balance it
+    counted, for the Brief's own pages. The rules are apps/web/src/lib/verdict's
+    and the modules it is fed from, the engine's in app.gonogo; the pilot's
+    minimums, loading, ticks, currency and own airplane's records come in
+    the ask."""
+    q = PlanQuery(**{k: getattr(ask, k) for k in ROUTE_FIELDS})
+    r = load_route(q.dep, q.dest, q.stops)
+    planned = plan_for(q, r)
+    nav, totals = planned.nav, planned.totals
+    briefing, failed = briefing_or_failure(q, (totals or {}).get("ete_min"))
+    depart = departure_of(q)
+    found = findings_for(ask, q, r, planned, briefing, failed, depart)
+    assessment = risk_assessment(found.risk_in) if found.risk_in else None
+    items = verdict_items({
+        **found.verdict,
         "risk": {"level": assessment["level"], "line": assessment["line"]} if assessment else None,
     })
     # Under IFR, the alternate (14 CFR 91.169), its ETA the nav log's.
-    if ifr and totals and totals.get("ete_min") is not None:
+    if q.rules == "ifr" and totals and totals.get("ete_min") is not None:
         eta = depart + timedelta(minutes=totals["ete_min"])
         tas = (nav or {}).get("aircraft", {}).get("cruise_tas_kt") or 110
-        items = with_alternate(items, alternate_finding(alternate_for(dest, eta, tas, q.alternate)))
+        items = with_alternate(items, alternate_finding(alternate_for(r.idents[-1], eta, tas, q.alternate)))
 
     return GoNoGo(
         line=verdict_line(items),
         items=items,
         risk=assessment,
         self_checks=self_checks(),
-        loading=loading,
-        balance={**loaded, "load": load} if loaded else None,
+        loading=found.loading,
+        balance={**found.loaded, "load": found.load} if found.loaded else None,
     )
-
