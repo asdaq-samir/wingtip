@@ -41,6 +41,7 @@ struct SetupView: View {
                         NavigationLink("Logbook and Currency") { LogbookView().closesBack() }
                         NavigationLink("Training") { TrainingView().closesBack() }
                         NavigationLink("Instructing") { InstructorView().closesBack() }
+                        NavigationLink("Coach") { CoachView().closesBack() }
                     }
                 }
                 // The weather the pilot will not take off or land in, kept
