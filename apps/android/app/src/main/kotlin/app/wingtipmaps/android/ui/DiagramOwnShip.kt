@@ -225,17 +225,21 @@ class DiagramPage(val image: Bitmap, val width: Float, val height: Float, val gr
     @Serializable
     private class LabelsAsk(val labels: List<Label>)
 
+    @Serializable
+    class FixAsk(@SerialName("age_s") val ageS: Double, @SerialName("accuracy_m") val accuracyM: Double)
+
     companion object {
         private val http = OkHttpClient()
 
-        /** AC 120-76D 11.17.2.3: own ship removed within three seconds of
-         *  its position going; 11.17.2.4: nothing shown past 30 m. */
-        const val STALE_MS = 3_000L
-        const val WORST_M = 30.0
-
-        /** The fix to draw now, null where it is stale or too coarse. */
+        /** The fix to draw now, null where it is stale or too coarse: the
+         *  engine's `diagram_fix_usable` (AC 120-76D 11.17.2.3, three
+         *  seconds; 11.17.2.4, 30 m). */
         fun usable(fix: OwnShip.Fix?, nowMs: Long): OwnShip.Fix? =
-            fix?.takeIf { nowMs - it.atMs <= STALE_MS && it.accuracyM >= 0 && it.accuracyM <= WORST_M }
+            fix?.takeIf {
+                runCatching {
+                    Engine.call<FixAsk, Boolean>("diagram_fix_usable", FixAsk((nowMs - it.atMs) / 1000.0, it.accuracyM))
+                }.getOrDefault(false)
+            }
 
         /** The line under the page: where the airplane is not drawn, why;
          *  and the planning aid's words with the FAA's credit. */

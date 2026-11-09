@@ -1662,6 +1662,20 @@ jobs:
   # The API reference docs, built to prove they build: every night and by
   # hand, not on each pull request (the owner, 2026-11-06: lighter CI). A
   # docstring that breaks them is found by the next morning.
+  # No new aviation rule outside the engine (CLAUDE.md, #482): a constant
+  # with a regulatory source cited beside it, or an engine rule's name
+  # defined again, in the apps, the gateway or the planner's app, past what
+  # scripts/ci/rules_boundary_allow.txt lists with why. Seconds, on every
+  # run: a rule written in the wrong place is cheaper to move before it
+  # merges.
+  rules-boundary:
+    name: Rules boundary
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - name: No aviation rule outside the engine
+        run: python3 scripts/ci/rules_boundary.py
+
   docs:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -2061,7 +2075,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat]
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary]
     if: always()
     steps:
       - name: Every job passed or was not needed

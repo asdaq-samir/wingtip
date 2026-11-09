@@ -2,7 +2,7 @@
 //! lib/endorsements and lib/checkride): which signed endorsements are in
 //! force, the warning an instructor sees once their own date has passed,
 //! an endorsement's words as they will be signed (AC 61-65K's samples,
-//! the gateway's EndorsementKind.render), and the ACS codes in a
+//! kinds.rs's catalogue), and the ACS codes in a
 //! knowledge test report the student pastes in.
 //!
 //! The days are the gateway's, "YYYY-MM-DD" on the pilot's own calendar,
@@ -94,7 +94,7 @@ pub fn in_force(signed: &[(String, bool)]) -> Vec<(String, usize)> {
 }
 
 /// An endorsement's words with the student's name and the fields filled
-/// in, as the gateway's EndorsementKind.render fills them: each {blank}
+/// in, as kinds::fill fills them to sign: each {blank}
 /// ({letters}) the student's name for {student}, else its field, a blank
 /// with no field left empty; every run of space then one space, and none
 /// at the ends. What the sheet shows is what is signed: the gateway

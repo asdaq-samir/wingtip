@@ -25,21 +25,13 @@ enum ChecklistKind: String, CaseIterable, Sendable {
 enum ChecklistPhases {
     /// The order of a pilot's operating handbook's Normal Procedures
     /// (GAMA Specification No. 1, Section 4), each phase a checklist is
-    /// run at; how a checklist is used is the FAA's Airplane Flying
-    /// Handbook (FAA-H-8083-3C), chapter 2.
-    static let normal = [
-        "Preflight inspection", "Before starting engine", "Starting engine", "Before takeoff", "Takeoff", "Climb",
-        "Cruise", "Descent", "Before landing", "Landing", "After landing", "Shutdown", "Securing the airplane",
-    ]
+    /// run at, the engine's (`checklist_phases`); how a checklist is used
+    /// is the FAA's Airplane Flying Handbook (FAA-H-8083-3C), chapter 2.
+    static let normal: [String] = (try? Engine.call("checklist_phases", json: ["kind": "normal"])) ?? []
 
     /// The emergencies a handbook's Emergency Procedures cover (GAMA
-    /// Specification No. 1, Section 3), in its order.
-    static let emergency = [
-        "Engine failure on the takeoff roll", "Engine failure right after takeoff", "Engine failure in flight",
-        "Emergency landing without engine power", "Precautionary landing with engine power", "Ditching",
-        "Engine fire during start", "Engine fire in flight", "Electrical fire in flight", "Cabin fire",
-        "Electrical power failure", "Inadvertent icing",
-    ]
+    /// Specification No. 1, Section 3), in its order, the engine's.
+    static let emergency: [String] = (try? Engine.call("checklist_phases", json: ["kind": "emergency"])) ?? []
 
     static func headings(_ kind: ChecklistKind) -> [String] {
         switch kind {

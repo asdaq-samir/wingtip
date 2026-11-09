@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.checklist
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -65,22 +64,6 @@ class ChecklistsTest {
         store.save("c172", ChecklistKind.NORMAL, "  \n")
         assertEquals("", store.text("c172", ChecklistKind.NORMAL))
         assertTrue(memory.kept.isEmpty())
-    }
-
-    @Test
-    fun thePhasesAreHeadingsAloneInTheHandbooksOrder() {
-        assertEquals(13, ChecklistPhases.NORMAL.size)
-        assertEquals("Preflight inspection", ChecklistPhases.NORMAL.first())
-        assertEquals("Securing the airplane", ChecklistPhases.NORMAL.last())
-        assertEquals(12, ChecklistPhases.EMERGENCY.size)
-        assertEquals("Engine failure on the takeoff roll", ChecklistPhases.EMERGENCY.first())
-        assertEquals("Inadvertent icing", ChecklistPhases.EMERGENCY.last())
-        val text = ChecklistPhases.template(ChecklistKind.EMERGENCY)
-        val lines = text.lines().filter { it.isNotBlank() }
-        // Every line a heading: no item, so nothing of a manufacturer's.
-        assertTrue(lines.all { it.startsWith("# ") })
-        assertEquals(ChecklistPhases.EMERGENCY, lines.map { it.removePrefix("# ") })
-        assertFalse(ChecklistPhases.template(ChecklistKind.NORMAL).contains("--"))
     }
 
     @Test

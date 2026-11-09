@@ -35,7 +35,7 @@ test("experience item by item, a report's codes looked up, and an endorsement da
       text: "I certify that Avery B. Student has satisfactorily completed the pre-solo knowledge test of 14 CFR § 61.87(b) for the Cessna 172 aircraft.",
       signature: "/s/ 09-01-2026 J. J. Jones 987654321CFI RE 12-31-2027", signedOn: "2026-09-01", until: null, voided: false, digest: "0".repeat(64),
     }],
-    // The gateway's own list (EndorsementKind), the first three.
+    // The engine's list (endorsement_kinds, through the gateway), the first three.
     kinds: [
       { code: "pre-solo-knowledge", paragraph: "A.3", rule: "61.87(b)", label: "Pre-solo aeronautical knowledge", validDays: null, template: "", fields: [] },
       { code: "pre-solo-flight", paragraph: "A.4", rule: "61.87(c)(1) and (2)", label: "Pre-solo flight training", validDays: null, template: "", fields: [] },

@@ -82,8 +82,6 @@ export interface FormInput {
   arrivalProcedure?: FiledProcedure | null;
 }
 
-const pad = (n: number, width: number) => String(n).padStart(width, "0");
-
 /** Item 15's cruising speed, "N0450" (AIM Appendix 4): the engine's
  *  `filed_speed`, as the iPhone's form writes it. */
 export const cruisingSpeed = (tasKt: number): string => callEngine("filed_speed", { tas_kt: tasKt });
@@ -182,9 +180,10 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     add("15", "level", "Cruising level", first ? cruisingLevel(first.altitude_ft) : null,
       step ? `Then ${feet(step.altitude_ft)} from ${step.from}${ifr ? ", asked of ATC on the way" : ""}.` : undefined);
 
-    // A T route, or a Q route, asks for GNSS and RNAV 2 (AIM Appendix 4,
-    // TBL 4-13): filed only where the airplane is equipped and approved.
-    const rnav = hop.via.some(stop => input.isAirway(stop) && /^[TQ]/.test(stop));
+    // A T route, or a Q route, asks for GNSS and RNAV 2 (the engine's
+    // `filed_rnav`, AIM Appendix 4 TBL 4-13): filed only where the airplane
+    // is equipped and approved.
+    const rnav = callEngine("filed_rnav", { airways: hop.via.filter(input.isAirway) });
     const departure = ifr && i === 0 ? input.departureProcedure ?? null : null;
     const arrival = ifr && last ? input.arrivalProcedure ?? null : null;
     const procedures = [departure?.id, arrival?.id].filter(Boolean);
@@ -198,17 +197,17 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     const alternate = ifr && last ? input.alternate : null;
     if (alternate) add("16", "alternate", "Alternate", alternate, zzzz(alternate, "ALTN"));
 
-    // Item 18's date of flight, where it is not today (AIM Appendix 4,
-    // TBL 4-1): the UTC date, YYMMDD.
-    if (depart && depart.toISOString().slice(0, 10) !== input.now.toISOString().slice(0, 10)) {
-      add("18", "other", "Other information", `DOF/${pad(depart.getUTCFullYear() % 100, 2)}${pad(depart.getUTCMonth() + 1, 2)}${pad(depart.getUTCDate(), 2)}`);
-    }
+    // Item 18's date of flight, where it is not today: the engine's
+    // `filed_dof` (AIM Appendix 4, TBL 4-1, the UTC date).
+    const dof = depart ? callEngine("filed_dof", { depart: depart.toISOString(), today: input.now.toISOString() }) : null;
+    if (dof) add("18", "other", "Other information", dof);
 
     // Item 19's endurance: the fuel aboard at the cruise burn, to the
-    // minute below.
+    // minute below (the engine's `filed_endurance`).
     const fuel = i === 0 ? input.fuelGal ?? totals?.usable_fuel_gal ?? null : totals?.usable_fuel_gal ?? null;
     const burn = first?.fuel_burn_gph;
-    add("19", "endurance", "Endurance", fuel != null && burn ? hhmmForm(Math.floor((fuel / burn) * 60)) : null,
+    const enduranceMinutes = fuel != null && burn ? callEngine("filed_endurance", { fuel_gal: fuel, burn_gph: burn }) : null;
+    add("19", "endurance", "Endurance", enduranceMinutes != null ? hhmmForm(enduranceMinutes) : null,
       fuel != null && burn ? `${Math.round(fuel * 10) / 10} gal at ${Math.round(burn * 10) / 10} gph.` : undefined);
 
     // Item 19's persons on board (P/), the pilot's to type in the Brief
@@ -228,7 +227,6 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     const value = (key: string) => items.find(f => f.key === key)?.value ?? null;
     const needed = ["ident", "type", "speed", "level", "route"].map(value);
     const eetMinutes = totals?.ete_min != null ? Math.ceil(totals.ete_min) : null;
-    const enduranceMinutes = fuel != null && burn ? Math.floor((fuel / burn) * 60) : null;
     const filing: FlightPlanFilingRequest | null = depart && eetMinutes && enduranceMinutes && needed.every(Boolean) ? {
       rules: ifr ? "IFR" : "VFR", aircraftId: value("ident")!, aircraftType: value("type")!,
       departure: hop.departure, departureTime: depart.toISOString(),

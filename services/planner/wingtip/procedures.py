@@ -19,7 +19,6 @@ from its own run of records when asked for.
 from __future__ import annotations
 
 import logging
-import math
 import os
 import re
 import shutil
@@ -29,6 +28,7 @@ from datetime import date
 from pathlib import Path
 
 from . import data_cycles, geo
+from .engine import ask as engine
 from .config import DATA_DIR
 from .faa_data import download_and_extract
 from .single_flight import once
@@ -66,25 +66,14 @@ HOLDS = {"HA", "HF", "HM"}
 FROM_FIX = {"FA", "FC", "FD", "FM"}
 OPEN = {"CA", "CD", "CI", "CR", "VA", "VD", "VI", "VM", "VR"}
 
-#: How long a leg with no end is drawn: about a turn's worth at a light
-#: airplane's speed, enough to show which way it goes.
+#: How a leg is drawn -- an RF or AF leg's arc, a hold's racetrack at a
+#: light airplane's 120 kt (AIM 5-3-8), a procedure turn (AIM 5-4-9), an
+#: open leg's length and a climb's at 200 ft a nm (FAA Order 8260.3) -- is
+#: the engine's (engine/crates/procedures/src/paths.rs: procedure_arc,
+#: procedure_hold, procedure_turn, procedure_climb_nm,
+#: procedure_hold_leg_nm, #482 phase 4b); this reads the CIFP and walks
+#: its legs.
 OPEN_LEG_NM = 2.0
-#: The climb a leg flown to an altitude (CA, VA, FA) is drawn at, ft a nm:
-#: the standard 200 a departure and a missed approach are designed for
-#: (FAA Order 8260.3), so the turn after it comes where an airplane
-#: climbing at that gradient reaches the altitude -- a missed approach's
-#: "climb to 3,000 then turn" turned two miles out, a third of the way
-#: (the audit of 2026-10-21, Duluth's ILS 09). Kept within these.
-CLIMB_FT_PER_NM = 200.0
-CLIMB_LEG_NM = (1.0, 15.0)
-#: A hold drawn at a light airplane's speed: a one-minute leg (AIM 5-3-8,
-#: at or below 14,000 ft MSL) and standard-rate turns (3° a second) at
-#: 120 knots -- two miles on each leg, and turns 0.64 nm round. Charts
-#: draw holds to no scale; this is one a light airplane would fly, not a
-#: jet's at the 200 KIAS a hold below 6,000 ft MSL may be flown at (AIM
-#: 5-3-8, table 5-3-1).
-HOLD_SPEED_KT = 120.0
-HOLD_TURN_NM = HOLD_SPEED_KT * (120 / 3600) / (2 * math.pi)
 
 _LOCK = threading.Lock()
 
@@ -496,66 +485,27 @@ def airport_place(ident: str, on: date | None = None) -> tuple[float, float] | N
 
 # --- drawing it -------------------------------------------------------------
 
+def _points(answer: list) -> list:
+    return [(float(lat), float(lon)) for lat, lon in answer]
+
+
 def _arc(center: tuple[float, float], start: tuple[float, float], end: tuple[float, float], turn: str) -> list:
     """Points along an arc round `center` from `start` to `end`, turning
-    right (clockwise) or left, a point every five degrees."""
-    radius = geo.distance_nm(*center, *end)
-    a = geo.bearing_deg(*center, *start)
-    b = geo.bearing_deg(*center, *end)
-    sweep = (b - a) % 360 if turn == "R" else -((a - b) % 360)
-    steps = max(2, int(abs(sweep) / 5) + 1)
-    return [geo.destination_point(*center, (a + sweep * i / steps) % 360, radius) for i in range(1, steps + 1)]
+    right (clockwise) or left: the engine's procedure_arc."""
+    return _points(engine("procedure_arc", center=list(center), start=list(start), end=list(end), turn="R" if turn == "R" else "L"))
 
 
 def _hold(fix: tuple[float, float], inbound: float, turn: str, leg_nm: float) -> list:
-    """A holding pattern's racetrack at `fix`, its inbound leg on the
-    true course `inbound` ending at the fix and its turns to the right or
-    the left (AIM 5-3-8): the fix, the turn out, the outbound leg, the
-    turn in, and back to the fix."""
-    side = 90 if turn != "L" else -90
-    sweep = 180 if side > 0 else -180
-    r = HOLD_TURN_NM
-    entry = geo.destination_point(*fix, (inbound + 180) % 360, leg_nm)
-    first = geo.destination_point(*fix, (inbound + side) % 360, r)
-    second = geo.destination_point(*entry, (inbound + side) % 360, r)
-    out_start = geo.destination_point(*fix, (inbound + side) % 360, 2 * r)
-    out_end = geo.destination_point(*out_start, (inbound + 180) % 360, leg_nm)
-    turn_out = [geo.destination_point(*first, (inbound - side + sweep * i / 36) % 360, r) for i in range(37)]
-    turn_in = [geo.destination_point(*second, (inbound + side + sweep * i / 36) % 360, r) for i in range(37)]
-    return [fix, *turn_out, out_start, out_end, *turn_in, entry, fix]
-
-
-#: A procedure turn as a light airplane flies it, nm: outbound from the fix
-#: on the final's reciprocal, about where a plate draws its barb (El
-#: Dorado's ILS 22, some four miles out from LADOS), then a minute on the
-#: turn's 45° course before the 180° turn back, inside the 10 NM a
-#: procedure turn is kept within unless the chart says otherwise (AIM 5-4-9).
-PT_OUTBOUND_NM = 4.0
-PT_LEG_NM = 2.0
+    """A holding pattern's racetrack at `fix` (AIM 5-3-8): the engine's
+    procedure_hold."""
+    return _points(engine("procedure_hold", fix=list(fix), inbound_deg=float(inbound), turn="L" if turn == "L" else "R",
+                          leg_nm=float(leg_nm)))
 
 
 def _procedure_turn(fix: tuple[float, float], inbound: float, pt_course: float) -> list:
-    """A 45°/180° procedure turn at `fix` (AIM 5-4-9): out from the fix on
-    the reciprocal of the final's true course `inbound`, onto the turn's
-    true course `pt_course` (the chart's barb), a 180° turn toward the
-    final's side, and back on the reciprocal of `pt_course` to meet the
-    final's course, and in to the fix."""
-    out = (inbound + 180) % 360
-    barb = ((pt_course - out + 540) % 360) - 180
-    sign = -1 if barb > 0 else 1
-    r = HOLD_TURN_NM
-    a = geo.destination_point(*fix, out, PT_OUTBOUND_NM)
-    b = geo.destination_point(*a, pt_course, PT_LEG_NM)
-    center = geo.destination_point(*b, (pt_course + 90 * sign) % 360, r)
-    arc = [geo.destination_point(*center, (pt_course - 90 * sign + sign * 180 * i / 18) % 360, r) for i in range(19)]
-    back = (pt_course + 180) % 360
-    end = arc[-1]
-
-    def off(s: float) -> float:
-        to = geo.destination_point(*fix, out, s)
-        return geo.angle_between(geo.bearing_deg(*end, *to), back)
-    meet = min((s / 20 for s in range(10, 200)), key=off)
-    return [fix, a, b, *arc, geo.destination_point(*fix, out, meet), fix]
+    """A 45°/180° procedure turn at `fix` (AIM 5-4-9): the engine's
+    procedure_turn."""
+    return _points(engine("procedure_turn", fix=list(fix), inbound_deg=float(inbound), pt_course_deg=float(pt_course)))
 
 
 def _inbound_at(lines: list, place: tuple[float, float]) -> float | None:
@@ -642,12 +592,9 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
             pos = airport.runways.get(_opposite_end(key[1])) or airport.runways.get(key[1]) or airport.place
 
         def climb_nm(leg: Leg) -> float:
-            """How far a leg flown to its altitude goes: from the altitude
-            known at its start, at CLIMB_FT_PER_NM; OPEN_LEG_NM where either
-            is not known."""
-            if leg.altitude1 is None or known_ft is None or leg.altitude1 <= known_ft:
-                return OPEN_LEG_NM
-            return min(CLIMB_LEG_NM[1], max(CLIMB_LEG_NM[0], (leg.altitude1 - known_ft) / CLIMB_FT_PER_NM))
+            """How far a leg flown to its altitude goes, from the altitude
+            known at its start: the engine's procedure_climb_nm."""
+            return float(engine("procedure_climb_nm", altitude_ft=leg.altitude1, known_ft=known_ft))
 
         for leg in runs[key]:
             place = _fix_place(airport, leg.fix, leg.fix_icao, leg.fix_section, index)
@@ -677,7 +624,7 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
                     points.append(place)
             elif leg.path in HOLDS and place and course is not None:
                 minutes = leg.minutes if leg.minutes is not None else (None if leg.distance_nm else 1.0)
-                leg_nm = HOLD_SPEED_KT * minutes / 60 if minutes is not None else leg.distance_nm
+                leg_nm = engine("procedure_hold_leg_nm", minutes=minutes, distance_nm=leg.distance_nm)
                 holds.append({
                     "fix": leg.fix, "turn": leg.turn or "R", "inbound_deg": round(course), "missed": missed, "leg_nm": round(leg_nm, 2),
                     "points": _hold(place, course, leg.turn, leg_nm),

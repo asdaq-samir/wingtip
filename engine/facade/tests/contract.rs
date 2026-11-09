@@ -76,6 +76,9 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/airspace/src/drills.rs"),
         include_str!("../../crates/airspace/src/ahead.rs"),
         include_str!("../../crates/pilot/src/pilot/records.rs"),
+        include_str!("../../crates/pilot/src/pilot/kinds.rs"),
+        include_str!("../../crates/brief/src/passengers.rs"),
+        include_str!("../../crates/procedures/src/paths.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
         include_str!("../../crates/brief/src/alternates.rs"),
@@ -225,6 +228,15 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("filed_route", json!({ "stops": case["stops"], "airways": case["airways"] }));
     }
     c.ask("filed_zzzz", json!({ "ident": "C81" }));
+    for case in filing["endurance"].as_array().unwrap() {
+        c.ask("filed_endurance", json!({ "fuel_gal": case["fuelGal"], "burn_gph": case["burnGph"] }));
+    }
+    for case in filing["dateOfFlight"].as_array().unwrap() {
+        c.ask("filed_dof", json!({ "depart": case["depart"], "today": case["today"] }));
+    }
+    for case in filing["rnav"].as_array().unwrap() {
+        c.ask("filed_rnav", json!({ "airways": case["airways"] }));
+    }
     let records = fixture("records.json");
     for case in records["endorsements"].as_array().unwrap() {
         c.ask("endorsement_records", case["input"].clone());
@@ -239,6 +251,10 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in records["workings"].as_array().unwrap() {
         c.ask("workings_right", json!({ "key": case["key"], "typed": case["typed"], "answer": case["answer"] }));
     }
+    for case in records["fills"].as_array().unwrap() {
+        c.ask("endorsement_fill", case["input"].clone());
+    }
+    c.ask("endorsement_kinds", json!({}));
     for case in fixture("routePosition.json")["cases"].as_array().unwrap() {
         c.ask("route_position", case["input"].clone());
     }
@@ -575,6 +591,20 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in web["soloStanding"].as_array().unwrap() {
         c.ask("solo_standing", json!({ "until": case["until"], "today": case["today"] }));
     }
+    c.ask("passenger_briefing", json!({}));
+    c.ask("solo_xc_determinations", json!({}));
+    for case in web["diagramFix"].as_array().unwrap() {
+        c.ask("diagram_fix_usable", json!({ "age_s": case["age_s"], "accuracy_m": case["accuracy_m"] }));
+    }
+    c.ask("traffic_reach", json!({}));
+    c.ask("checklist_phases", json!({ "kind": "normal" }));
+    c.ask("checklist_phases", json!({ "kind": "emergency" }));
+    // A procedure's legs drawn (paths.rs), as the planner asks them.
+    c.ask("procedure_arc", json!({ "center": [34.0, -118.0], "start": [34.08, -118.0], "end": [34.0, -117.9], "turn": "R" }));
+    c.ask("procedure_hold", json!({ "fix": [34.2, -118.36], "inbound_deg": 80, "turn": "L", "leg_nm": 2 }));
+    c.ask("procedure_turn", json!({ "fix": [33.2, -92.8], "inbound_deg": 220, "pt_course_deg": 355 }));
+    c.ask("procedure_climb_nm", json!({ "altitude_ft": 3000, "known_ft": 2600 }));
+    c.ask("procedure_hold_leg_nm", json!({ "minutes": null, "distance_nm": 4 }));
 
     // Night, the checkpoints and 91.155's basic minimums (planning.json).
     let planning = fixture("planning.json");

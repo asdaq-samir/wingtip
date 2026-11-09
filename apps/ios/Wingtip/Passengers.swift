@@ -3,11 +3,16 @@ import Observation
 
 /// One thing to tell the passengers before the flight, with where it
 /// comes from, shown under it.
-struct PassengerItem: Equatable, Identifiable, Sendable {
+struct PassengerItem: Equatable, Identifiable, Sendable, Decodable {
     let key: String
     let title: String
     let source: String
     var id: String { key }
+
+    enum CodingKeys: String, CodingKey {
+        case key, title
+        case source = "rule"
+    }
 }
 
 /// The passengers' briefing (#220's sibling, #223), ticked off before
@@ -24,18 +29,9 @@ struct PassengerItem: Equatable, Identifiable, Sendable {
 /// harness, and (a)(2) and (3) that they are told to fasten them, and
 /// have them fastened, for taxi, takeoff and landing.
 enum PassengerBriefing {
-    static let safety = "FAA Safety Briefing, \"Passenger SAFETY briefing\""
-
-    static let items: [PassengerItem] = [
-        PassengerItem(key: "pax-belts", title: "How to fasten and unfasten their seat belts and shoulder harnesses", source: "14 CFR 91.107(a)(1)"),
-        PassengerItem(key: "pax-fastened", title: "Belts fastened to taxi, take off and land, seats locked", source: "14 CFR 91.107(a)(2), (3)"),
-        PassengerItem(key: "pax-air", title: "Air vents and heat, and to say if they feel unwell", source: safety),
-        PassengerItem(key: "pax-fire", title: "The fire extinguisher: where it is and how it works", source: safety),
-        PassengerItem(key: "pax-exits", title: "The doors, how to get out, the survival kit, and clear of the propeller",
-                      source: "\(safety); Private Pilot ACS PA.II.B.S2"),
-        PassengerItem(key: "pax-traffic", title: "Point out traffic; quiet while the pilot is on the radio and close to the ground", source: safety),
-        PassengerItem(key: "pax-questions", title: "Their questions", source: safety),
-    ]
+    /// The items and their sources, the engine's (`passenger_briefing`),
+    /// as the web and Android list them.
+    static let items: [PassengerItem] = (try? Engine.call("passenger_briefing", json: [:])) ?? []
 
     /// A field as the passengers would know it: its name with its ident,
     /// or the ident alone where the name is not known.

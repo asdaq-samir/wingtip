@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PASSENGER_ITEMS, passengerMessage } from "./passengers";
+import { passengerItems, passengerMessage } from "./passengers";
 
 describe("the passengers' briefing", () => {
   it("cites 91.107 for what it asks, and the FAA's SAFETY briefing for the rest", () => {
+    const PASSENGER_ITEMS = passengerItems();
     expect(PASSENGER_ITEMS.filter(i => i.rule.startsWith("14 CFR 91.107")).map(i => i.key)).toEqual(["pax-belts", "pax-fastened"]);
     const rest = PASSENGER_ITEMS.filter(i => !i.rule.startsWith("14 CFR"));
     expect(rest.map(i => i.key)).toEqual(["pax-air", "pax-fire", "pax-exits", "pax-traffic", "pax-questions"]);

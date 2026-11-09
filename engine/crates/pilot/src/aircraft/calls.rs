@@ -6,7 +6,7 @@ use super::registry;
 use crate::json::{self, Value};
 
 /// The names this module answers.
-pub const NAMES: [&str; 10] = [
+pub const NAMES: [&str; 11] = [
     "traffic_kind",
     "emitter_category",
     "altitude_band",
@@ -17,6 +17,7 @@ pub const NAMES: [&str; 10] = [
     "traffic_matches",
     "n_number",
     "registered_profile",
+    "traffic_reach",
 ];
 
 type R<T> = Result<T, String>;
@@ -72,6 +73,15 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "emitter_category" => json::opt_string(&mut out, filters::emitter(opt_str(name, v, "category")?)),
         "in_emergency" => flag(&mut out, filters::in_emergency(opt_str(name, v, "squawk")?, emergency_sent(v))),
         "squawk_meaning" => json::opt_string(&mut out, filters::squawk_meaning(opt_str(name, v, "squawk")?)),
+        // How far round an airport its traffic is asked for: AROUND_NM and
+        // RELATION_NM, which field_relation judges by.
+        "traffic_reach" => {
+            out.push_str("{\"around_nm\":");
+            json::number(&mut out, filters::AROUND_NM);
+            out.push_str(",\"relation_nm\":");
+            json::number(&mut out, filters::RELATION_NM);
+            out.push('}');
+        }
         "field_relation" => {
             let p = object(name, v, "plane")?;
             let f = object(name, v, "field")?;

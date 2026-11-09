@@ -94,6 +94,31 @@ pub fn needs_zzzz(ident: &str) -> bool {
     ident.chars().any(|c| c.is_ascii_digit())
 }
 
+/// Item 19's endurance in whole minutes: the fuel aboard at the cruise
+/// burn, to the minute below (the safe side, as `duration` says); None
+/// where the burn is not a positive figure.
+pub fn endurance_minutes(fuel_gal: f64, burn_gph: f64) -> Option<i64> {
+    (burn_gph > 0.0 && fuel_gal >= 0.0 && fuel_gal.is_finite()).then(|| (fuel_gal / burn_gph * 60.0).floor() as i64)
+}
+
+/// Item 18's date of flight, "DOF/YYMMDD", where the flight is not on the
+/// day it is filed (AIM Appendix 4, TBL 4-1); None on the same day, or for
+/// a day not written "YYYY-MM-DD". Both days are UTC's.
+pub fn date_of_flight(depart: &str, today: &str) -> Option<String> {
+    fn day(d: &str) -> Option<&str> {
+        d.get(..10).filter(|d| d.as_bytes()[4] == b'-' && d.as_bytes()[7] == b'-')
+    }
+    let (d, t) = (day(depart)?, day(today)?);
+    (d != t).then(|| format!("DOF/{}{}{}", &d[2..4], &d[5..7], &d[8..10]))
+}
+
+/// Whether item 15's route takes a T or a Q route, the RNAV routes (AIM
+/// 5-3-4), which ask for G and R in item 10a and PBN/C2 in item 18 where
+/// the airplane has them (AIM Appendix 4, TBL 4-13).
+pub fn rnav_route(airways: &[&str]) -> bool {
+    airways.iter().any(|w| w.starts_with('T') || w.starts_with('Q'))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,5 +140,15 @@ mod tests {
         assert_eq!(route(&["EIC", "V18", "MEI", "LGC"], |w| w == "V18", Some(&dall3), Some(&lgc4)), "DALL3 EIC V18 MEI DCT LGC LGC4");
         assert_eq!(wake(Some(15_500.0)), Some("L"));
         assert_eq!(wake(Some(15_501.0)), None);
+    }
+
+    #[test]
+    fn endurance_date_of_flight_and_rnav_routes() {
+        assert_eq!(endurance_minutes(40.0, 9.0), Some(266));
+        assert_eq!(endurance_minutes(40.0, 0.0), None);
+        assert_eq!(date_of_flight("2026-11-09T14:00:00.000Z", "2026-11-08T22:00:00.000Z").as_deref(), Some("DOF/261109"));
+        assert_eq!(date_of_flight("2026-11-08T14:00:00Z", "2026-11-08T01:00:00Z"), None);
+        assert!(rnav_route(&["V191", "T263"]));
+        assert!(!rnav_route(&["V191", "J34"]));
     }
 }

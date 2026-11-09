@@ -105,6 +105,7 @@ pub fn call(name: &str, v: &Value) -> Option<Result<String, String>> {
         "diagram_labels" => diagram::labels_rule(v),
         "diagram_graticule" => diagram::graticule_rule(v),
         "diagram_point" => diagram::point_rule(v),
+        "diagram_fix_usable" => diagram::fix_usable_rule(v),
         _ => return None,
     })
 }

@@ -118,6 +118,33 @@ class EngineTest {
     }
 
     @Test
+    fun thePhasesAreHeadingsAloneInTheHandbooksOrder() {
+        assertEquals(13, app.wingtipmaps.android.checklist.ChecklistPhases.NORMAL.size)
+        assertEquals("Preflight inspection", app.wingtipmaps.android.checklist.ChecklistPhases.NORMAL.first())
+        assertEquals("Securing the airplane", app.wingtipmaps.android.checklist.ChecklistPhases.NORMAL.last())
+        assertEquals(12, app.wingtipmaps.android.checklist.ChecklistPhases.EMERGENCY.size)
+        assertEquals("Engine failure on the takeoff roll", app.wingtipmaps.android.checklist.ChecklistPhases.EMERGENCY.first())
+        assertEquals("Inadvertent icing", app.wingtipmaps.android.checklist.ChecklistPhases.EMERGENCY.last())
+        val text = app.wingtipmaps.android.checklist.ChecklistPhases.template(app.wingtipmaps.android.checklist.ChecklistKind.EMERGENCY)
+        val lines = text.lines().filter { it.isNotBlank() }
+        // Every line a heading: no item, so nothing of a manufacturer's.
+        assertTrue(lines.all { it.startsWith("# ") })
+        assertEquals(app.wingtipmaps.android.checklist.ChecklistPhases.EMERGENCY, lines.map { it.removePrefix("# ") })
+        assertFalse(app.wingtipmaps.android.checklist.ChecklistPhases.template(app.wingtipmaps.android.checklist.ChecklistKind.NORMAL).contains("--"))
+    }
+
+    /** The passengers' briefing, the engine's (passenger_briefing):
+     *  14 CFR 91.107(a)'s two first, each with its source. */
+    @Test
+    fun thePassengerBriefingIsTheEnginesEachWithItsSource() {
+        val items = app.wingtipmaps.android.briefing.PassengerBriefing.ITEMS
+        assertEquals(listOf("pax-belts", "pax-fastened", "pax-air", "pax-fire", "pax-exits", "pax-traffic", "pax-questions"), items.map { it.key })
+        assertEquals("14 CFR 91.107(a)(1)", items[0].source)
+        assertEquals("14 CFR 91.107(a)(2), (3)", items[1].source)
+        assertTrue(items.first { it.key == "pax-exits" }.source.contains("PA.II.B.S2"))
+    }
+
+    @Test
     fun aNameTheEngineHasNoRuleForIsRefusedInItsOwnWords() {
         try {
             Engine.call<TextAsk, JsonObject>("no_such_rule", TextAsk(""))

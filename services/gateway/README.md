@@ -25,9 +25,10 @@ endorsements say (how long each is good for, the day the solo
 endorsement runs out, 61.93(d)'s checks of a solo cross-country: POST
 /api/pilot/endorsements) and when an airplane's inspections and VOR check
 fall due (91.409, 91.207, 91.411, 91.413, 91.171: POST
-/api/aircraft/inspections). AC 61-65K's endorsement texts
-(`EndorsementKind`) are still here, and issue #482 moves them; add no new
-rule here.
+/api/aircraft/inspections), and AC 61-65K's endorsements, their words and
+the fields they take (GET /api/pilot/endorsement-kinds, POST
+/api/pilot/endorsement-fill: the engine's endorsement_kinds and
+endorsement_fill). Add no rule here.
 
 ## Contents
 

@@ -27,15 +27,13 @@ struct DiagramOwnShipView: View {
     @State private var offset: CGSize = .zero
     @State private var settledOffset: CGSize = .zero
 
-    /// AC 120-76D 11.17.2.3: own ship removed within three seconds of its
-    /// position going; 11.17.2.4: nothing shown past 30 m.
-    static let staleS: TimeInterval = 3
-    static let worstM: Double = 30
-
-    /// The fix to draw now, nil where it is stale or too coarse.
+    /// The fix to draw now, nil where it is stale or too coarse: the
+    /// engine's `diagram_fix_usable` (AC 120-76D 11.17.2.3, three seconds;
+    /// 11.17.2.4, 30 m).
     static func usable(_ fix: OwnShip.Fix?, now: Date) -> OwnShip.Fix? {
-        guard let fix, now.timeIntervalSince(fix.at) <= staleS, fix.accuracyM >= 0, fix.accuracyM <= worstM else { return nil }
-        return fix
+        guard let fix else { return nil }
+        let drawn: Bool? = try? Engine.call("diagram_fix_usable", json: ["age_s": now.timeIntervalSince(fix.at), "accuracy_m": fix.accuracyM])
+        return drawn == true ? fix : nil
     }
 
     var body: some View {

@@ -8,6 +8,7 @@ import { Input } from "../../components/ui/input";
 import { api } from "../../lib/api/client";
 import type { EndorsementKind, Instructor, SignedEndorsement } from "../../lib/api/types";
 import { renderEndorsement } from "../../lib/checkride";
+import { callEngine } from "../../lib/engine/engine";
 import { lapseWarning, said, signatureLine } from "../../lib/endorsements";
 import { localDay } from "../../lib/clock";
 import { FINDING_TONE } from "../../lib/findings";
@@ -72,13 +73,12 @@ export function SignedRow({ kind, e, who, onVoid, voiding }: {
 }
 
 /** 14 CFR 61.93(d)(1)-(3): what an instructor must determine of a solo
- *  cross-country themselves, before endorsing it; (4) and (5), the
- *  student's endorsements, the record answers. */
-const DETERMINATIONS = [
-  { rule: "61.93(d)(1)", label: "The student's cross-country planning is correct for the flight" },
-  { rule: "61.93(d)(2)", label: "The current and forecast weather allow it to be completed under VFR" },
-  { rule: "61.93(d)(3)", label: "The student is proficient to conduct it safely" },
-];
+ *  cross-country themselves, before endorsing it, the engine's
+ *  (`solo_xc_determinations`); (4) and (5), the student's endorsements,
+ *  the record answers. */
+function determinations() {
+  return callEngine("solo_xc_determinations", {});
+}
 
 /**
  * An endorsement signed for a student, as AC 120-78B has an electronic
@@ -103,7 +103,8 @@ export function SignForm({ kind, studentId, studentName, instructor, initial, re
     () => Object.fromEntries(kind.fields.map(f => [f.key, initial?.[f.key] ?? ""])),
   );
   const crossCountry = kind.code === "solo-xc-flight";
-  const [determined, setDetermined] = useState(DETERMINATIONS.map(() => false));
+  const DETERMINATIONS = determinations();
+  const [determined, setDetermined] = useState(() => DETERMINATIONS.map(() => false));
   const signedOn = localDay();
   const text = renderEndorsement(kind.template, studentName, fields);
   const missing = kind.fields.filter(f => f.required && !fields[f.key]?.trim());
