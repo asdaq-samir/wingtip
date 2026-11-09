@@ -89,7 +89,10 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
   const stops = (totals?.hops.length ?? 0) > 0;
   const input = { totals, estimate, local, destination, depart, arrival, toDestination: stops && toDestination, flown };
   const exact = tripFigures(input, false);
-  const rounded = tripFigures(input, true);
+  // A dry run's figures keep the strip's own format, set smaller to fit
+  // rather than rounded ("1.2h", "102 nm" in the run against "1h 14m",
+  // "105.1 nm" in the plan, the FPL audit's A20; the owner's one strip).
+  const rounded = tripFigures(input, !flown);
   // The fuel required tapped, what it is made of (FuelBreakdown), at the
   // owner's ask ("fuel is the fuel required which gives a breakdown when
   // tapped"): once the nav log's figures are in.
