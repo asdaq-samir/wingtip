@@ -16,21 +16,13 @@ pub mod route;
 
 use crate::metar;
 
-/// The category a ceiling and a visibility fall in, by AIM 7-1-7's bounds
-/// ("Categorical Outlooks"; the worse of the two decides): LIFR "ceiling
-/// less than 500 feet and/or visibility less than 1 mile", IFR 500 to less
-/// than 1,000 ft or 1 to less than 3, MVFR "1,000 to 3,000 feet and/or
-/// visibility 3 to 5 miles inclusive", VFR above both -- statute miles, as
-/// US reports give visibility. The bounds are metar::flight_category's, the
-/// AWC's (AC 00-45H), which this reuses. No ceiling is no limit. With no
-/// visibility only a ceiling under 500 ft decides it, LIFR whatever the
-/// visibility is: over that the visibility could still make it worse, and
-/// a category said then would be a guess.
+/// The category a ceiling and a visibility fall in (AIM 7-1-7's bounds,
+/// statute miles as US reports give visibility): metar::flight_category_of,
+/// the one rule for reports, forecasts and route options alike, a missing
+/// visibility settling only a ceiling under 500 ft. Kept by this name for
+/// the forecast's callers.
 pub fn category_of(ceiling_ft: Option<f64>, visibility_sm: Option<f64>) -> Option<&'static str> {
-    match visibility_sm {
-        None => (ceiling_ft.unwrap_or(f64::INFINITY) < 500.0).then_some("LIFR"),
-        Some(_) => metar::flight_category(ceiling_ft, visibility_sm),
-    }
+    metar::flight_category_of(ceiling_ft, false, visibility_sm)
 }
 
 /// A category's place from best to worst, VFR 0 to LIFR 3; -1 for none or

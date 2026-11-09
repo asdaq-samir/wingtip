@@ -29,12 +29,15 @@ import { SwipeToDelete } from "../../components/SwipeToDelete";
 
 const today = () => localDay();
 
-/** "To 19 Dec 2026" in the tint's green, or "Not current" in red. */
-function Until({ date, what }: { date: string | null | undefined; what: string }) {
+/** "To 19 Dec 2026" in the tint's green, or "Not current" in red; with a
+ *  `from` still to come (instrument currency from approaches flown this
+ *  month, 61.57(c)(1)), "From 1 Nov 2026" in amber, as not current yet. */
+function Until({ date, from, what }: { date: string | null | undefined; from?: string | null; what: string }) {
   const current = !!date && date >= today();
+  const notYet = current && from && from > today() ? from : null;
   return (
-    <span className={cn("tabular-nums", current ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid={`currency-${what}`}>
-      {!date ? "Not current" : current ? `To ${said(date)}` : `Ended ${said(date)}`}
+    <span className={cn("tabular-nums", notYet ? FINDING_TONE.caution : current ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid={`currency-${what}`}>
+      {!date ? "Not current" : notYet ? `From ${said(notYet)}` : current ? `To ${said(date)}` : `Ended ${said(date)}`}
     </span>
   );
 }
@@ -230,7 +233,7 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
           description={`${currency?.approachesInWindow ?? 0} of 6 approaches${currency?.holdingInWindow ? ", holding" : ""}${currency?.trackingInWindow ? ", tracking" : ""} in the window`}
         >
           {ipcNeeded ? <span className={FINDING_TONE.stop} data-testid="currency-instrument">IPC needed</span>
-            : <Until date={currency?.instrumentCurrentUntil} what="instrument" />}
+            : <Until date={currency?.instrumentCurrentUntil} from={currency?.instrumentCurrentFrom} what="instrument" />}
         </ListRow>
         <ListRow title="Proficiency check" description={ipcOn ? `On ${said(ipcOn)}` : "The day of your last IPC"}>
           <DateField value={ipcOn} label="Instrument proficiency check date" testId="ipc-date" onChange={v => setDates({ ipcOn: v })} />

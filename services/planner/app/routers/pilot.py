@@ -68,6 +68,9 @@ class Currency(BaseModel):
     flights: int
     instrumentCurrentUntil: date | None = Field(
         description="The last day of instrument currency (61.57(c)(1), or 61.57(d)'s check); in the past where it has lapsed.")
+    instrumentCurrentFrom: date | None = Field(
+        description="The first day of an instrument currency not begun yet: approaches flown this month count from "
+                    "the first of next month (61.57(c)(1)), and until then the pilot is not current. Null when current now.")
     ipcOn: date | None
     ipcNeededAfter: date | None = Field(description="The day after which only an instrument proficiency check restores it (61.57(d)).")
     approachesInWindow: int = Field(description="Approaches logged in the 6 calendar months before this one (61.57(c)(1)(i)).")

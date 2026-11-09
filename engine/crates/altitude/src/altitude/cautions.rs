@@ -149,7 +149,7 @@ pub struct Caution {
 /// ceiling, inside the cloud clearance under a forecast base (91.155), in
 /// Class A (71.33(a), 91.135) or past 91.211(a)'s oxygen heights. Under
 /// IFR (the selection's `rules`): under the minimum IFR altitude
-/// (91.177(a)), off the thousands the direction of flight takes
+/// (91.177(a)(1), the MEA on an airway; (a)(2) off one), off the thousands the direction of flight takes
 /// (91.179(b)(1)), over the ceiling and past 91.211. The pilot may have
 /// reasons the planner cannot see -- ATC may assign otherwise -- so it
 /// says why rather than stopping them. None when nothing is.
@@ -165,15 +165,31 @@ pub fn own_altitude(selection: &Value, legs: &[Value], profile: Option<&Value>) 
         let mut found = Vec::new();
         if ifr {
             if let Some(floor) = num(segment, "floor_ft").filter(|f| alt < *f) {
-                // 91.177(a)(2): 1,000 ft over the highest obstacle within
-                // 4 nm (2,000 over Part 95's mountainous areas, which the
-                // selection's own clearance carries).
-                let clearance = num(segment, "obstacle_clearance_ft").unwrap_or(1000.0);
-                found.push(format!(
-                    "Under the {} ft minimum IFR altitude: {} ft over the highest obstacle within 4 nm (14 CFR 91.177(a))",
-                    grouped(floor),
-                    grouped(clearance)
-                ));
+                let airway = segment.get("airway").filter(|a| matches!(a, Value::Object(_)));
+                if let Some(airway) = airway {
+                    // 91.177(a)(1): on an airway the minimum is the one
+                    // Part 95 publishes for it, the MEA (or, where it has
+                    // only that, the GNSS MEA), which the selection puts
+                    // in `floor_ft`; the 4 nm rule of (a)(2) applies only
+                    // "if no applicable minimum altitude is prescribed".
+                    let kind = if num(airway, "mea_ft").is_some_and(|m| m != 0.0) { "MEA" } else { "GNSS MEA" };
+                    let id = airway.get("id").and_then(Value::as_str).filter(|s| !s.is_empty());
+                    found.push(match id {
+                        Some(id) => format!("Under the {} ft {kind} of {id} (14 CFR 91.177(a)(1))", grouped(floor)),
+                        None => format!("Under the {} ft {kind} of the airway (14 CFR 91.177(a)(1))", grouped(floor)),
+                    });
+                } else {
+                    // 91.177(a)(2): off an airway, 1,000 ft over the
+                    // highest obstacle within 4 nm (2,000 over Part 95's
+                    // mountainous areas, which the selection's own
+                    // clearance carries).
+                    let clearance = num(segment, "obstacle_clearance_ft").unwrap_or(1000.0);
+                    found.push(format!(
+                        "Under the {} ft minimum IFR altitude: {} ft over the highest obstacle within 4 nm (14 CFR 91.177(a)(2))",
+                        grouped(floor),
+                        grouped(clearance)
+                    ));
+                }
             }
             if let Some(east) = east {
                 // 91.179(b)(1): odd thousands eastbound (0-179 magnetic),

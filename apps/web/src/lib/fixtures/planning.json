@@ -16,6 +16,16 @@
     { "why": "polar night", "lat": 78.2, "lon": 15.6, "at_s": 1768478400, "night": true },
     { "why": "polar day", "lat": 78.2, "lon": 15.6, "at_s": 1784073600, "night": false }
   ],
+  "passenger_night": [
+    { "why": "Anchorage, 02:00 AKDT on the night of the June solstice: no 1.1 night (civil twilight all night), but inside 61.57(b)'s period", "lat": 61.22, "lon": -149.9, "at_s": 1782122400, "night": false, "passenger_night": true },
+    { "why": "Anchorage, half an hour after sunset (about 23:42 AKDT): not yet 61.57(b)'s period", "lat": 61.22, "lon": -149.9, "at_s": 1782116100, "night": false, "passenger_night": false },
+    { "why": "Anchorage, half an hour before sunrise (about 04:21 AKDT): no longer in it", "lat": 61.22, "lon": -149.9, "at_s": 1782129000, "night": false, "passenger_night": false },
+    { "why": "Anchorage at midday", "lat": 61.22, "lon": -149.9, "at_s": 1782079200, "night": false, "passenger_night": false },
+    { "why": "Chicago, 47 minutes after sunset on the equinox: 1.1's night, not yet 61.57(b)'s period", "lat": 41.88, "lon": -87.63, "at_s": 1774054200, "night": true, "passenger_night": false },
+    { "why": "Chicago, 72 minutes after sunset: both", "lat": 41.88, "lon": -87.63, "at_s": 1774055700, "night": true, "passenger_night": true },
+    { "why": "polar night", "lat": 78.2, "lon": 15.6, "at_s": 1768478400, "night": true, "passenger_night": true },
+    { "why": "polar day", "lat": 78.2, "lon": 15.6, "at_s": 1784073600, "night": false, "passenger_night": false }
+  ],
   "on_the_way": [
     { "why": "Chicago to Denver leaving 20:00 UTC, ten hours with stops", "start": [41.88, -87.63], "end": [39.74, -104.99], "depart_s": 1774036800, "minutes": 600, "night": true },
     { "why": "the same in two hours", "start": [41.88, -87.63], "end": [39.74, -104.99], "depart_s": 1774036800, "minutes": 120, "night": false }

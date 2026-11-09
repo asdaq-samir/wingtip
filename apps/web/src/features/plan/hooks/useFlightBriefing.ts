@@ -197,6 +197,7 @@ export function useFlightBriefing({
     tfrOnRoute: tfrsCrossed.length > 0,
     hazards: unchecked("hazards") && unchecked("gairmets") ? 0 : hazardNames.length,
     night: totals?.night === true,
+    nightPassengers: totals?.night_passengers,
     fuelMarginGal: leastMarginGal,
     ifr,
     vorCheck: flownOwn === undefined ? undefined : flownOwn.vorCheck

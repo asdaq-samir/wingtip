@@ -203,6 +203,9 @@ pub struct Currency {
     pub day_passengers_until: Option<String>,
     pub night_passengers_until: Option<String>,
     pub instrument_current_until: Option<String>,
+    /// The first day of an instrument currency not begun yet (approaches
+    /// flown this month count from next month, 61.57(c)(1)).
+    pub instrument_current_from: Option<String>,
     pub ipc_needed_after: Option<String>,
     pub flight_review_until: Option<String>,
     pub medical_expires_on: Option<String>,
@@ -229,6 +232,11 @@ pub struct Input {
     /// SIGMETs and G-AIRMETs along the route during the flight.
     pub hazards: i64,
     pub night: bool,
+    /// Whether any of the flight is in 61.57(b)'s night-passenger period,
+    /// an hour after sunset to an hour before sunrise (flight::sun's
+    /// passenger_night_on_the_way); None where the caller did not work it
+    /// out, when `night` stands for it.
+    pub night_passengers: Option<bool>,
     /// The nav log's fuel margin, gallons; below zero the tanks do not
     /// hold the fuel and its reserve.
     pub fuel_margin_gal: Option<f64>,
@@ -296,7 +304,9 @@ fn found(f: &Input) -> Vec<Factor> {
         }
         // Under IFR: instrument currency (61.57(c)), or after six months
         // more lapsed only a proficiency check (61.57(d)).
-        if f.ifr && lapsed(&c.instrument_current_until) {
+        // Not current yet where the currency begins after the flight's day.
+        let not_yet = given(&c.instrument_current_from).is_some_and(|d| d > day);
+        if f.ifr && (lapsed(&c.instrument_current_until) || not_yet) {
             let ipc = before(&c.ipc_needed_after);
             factors.push(if ipc {
                 factor("instrument", "Instrument currency lapsed: a proficiency check is needed", "61.57(d)", 0, true)
@@ -308,11 +318,12 @@ fn found(f: &Input) -> Vec<Factor> {
             factors.push(factor("recent", "Not three takeoffs and landings in the last 90 days",
                                 "61.57(a)(1): same category and class; no passengers, and rusty", 3, false));
         }
-        if f.night && lapsed(&c.night_passengers_until) {
-            // `night` is 14 CFR 1.1's, from the end of civil twilight;
+        if f.night_passengers.unwrap_or(f.night) && lapsed(&c.night_passengers_until) {
             // 61.57(b) binds from an hour after sunset to an hour before
-            // sunrise, a little later, so this errs toward the caution and
-            // says the window.
+            // sunrise, its own window (`night_passengers`), not 14 CFR
+            // 1.1's night: where civil twilight lasts all night (Alaska in
+            // summer) there is no 1.1 night but there is this period.
+            // Without the window worked out, 1.1's night stands for it.
             factors.push(factor("recent-night", "Not three night takeoffs and landings to a full stop in the last 90 days",
                                 "61.57(b): needed from 1 h after sunset to 1 h before sunrise", 3, false));
         }

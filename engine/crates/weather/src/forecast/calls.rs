@@ -1,7 +1,7 @@
 //! The forecast's rules as crate::call answers them, JSON in and out; the
 //! names and their inputs are listed in call.rs with the others.
 
-use super::{awc, category_of, field, hours, route};
+use super::{awc, field, hours, route};
 use crate::json::{self, Value};
 use crate::{metar, winds};
 
@@ -172,11 +172,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             let (ceiling, visibility) = (opt_num(name, v, "ceiling_ft")?, opt_num(name, v, "visibility_sm")?);
             // A ceiling sent with no height ("OVC///") is one not known, not
             // none (14 CFR 1.1): only what the visibility settles is said.
-            let category = if opt_bool(name, v, "ceiling_unknown")? {
-                metar::flight_category_of(None, true, visibility)
-            } else {
-                category_of(ceiling, visibility)
-            };
+            let category = metar::flight_category_of(ceiling, opt_bool(name, v, "ceiling_unknown")?, visibility);
             json::opt_string(&mut out, category);
         }
         "field_hours" => {

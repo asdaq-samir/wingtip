@@ -242,7 +242,80 @@
         "to_ident": "KDLH",
         "altitude_ft": 3000,
         "reasons": [
-          "Under the 4,100 ft minimum IFR altitude: 2,000 ft over the highest obstacle within 4 nm (14 CFR 91.177(a))"
+          "Under the 4,100 ft minimum IFR altitude: 2,000 ft over the highest obstacle within 4 nm (14 CFR 91.177(a)(2))"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "rules": "ifr",
+        "segments": [
+          {
+            "floor_ft": 5500,
+            "eastbound": true,
+            "service_ceiling_ft": 13000,
+            "airway": {
+              "id": "V100",
+              "mea_ft": 5500,
+              "gnss_mea_ft": null,
+              "moca_ft": 2600,
+              "maa_ft": 9000
+            }
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 5000
+        }
+      ],
+      "between": [
+        "KJVL",
+        "KPIA"
+      ],
+      "answer": {
+        "from_ident": "KJVL",
+        "to_ident": "KPIA",
+        "altitude_ft": 5000,
+        "reasons": [
+          "Under the 5,500 ft MEA of V100 (14 CFR 91.177(a)(1))"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "rules": "ifr",
+        "segments": [
+          {
+            "floor_ft": 4000,
+            "eastbound": false,
+            "service_ceiling_ft": 13000,
+            "airway": {
+              "id": "T270",
+              "mea_ft": null,
+              "gnss_mea_ft": 4000,
+              "moca_ft": null,
+              "maa_ft": 17500
+            }
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 3000
+        }
+      ],
+      "between": [
+        "KJVL",
+        "KPIA"
+      ],
+      "answer": {
+        "from_ident": "KJVL",
+        "to_ident": "KPIA",
+        "altitude_ft": 3000,
+        "reasons": [
+          "Under the 4,000 ft GNSS MEA of T270 (14 CFR 91.177(a)(1))",
+          "Westbound under IFR flies even thousands, unless ATC assigns otherwise (14 CFR 91.179)"
         ]
       }
     },

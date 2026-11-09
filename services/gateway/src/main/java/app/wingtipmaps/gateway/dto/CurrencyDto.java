@@ -26,6 +26,9 @@ public record CurrencyDto(
         @Schema(description = "The last day of instrument currency (14 CFR 61.57(c)(1), or 61.57(d)'s check); in the "
                 + "past where it has lapsed, null where none is logged")
         @Nullable LocalDate instrumentCurrentUntil,
+        @Schema(description = "The first day of an instrument currency not begun yet: approaches flown this month count from the first of "
+                + "next month (14 CFR 61.57(c)(1)), and until then the pilot is not current; null when current now")
+        @Nullable LocalDate instrumentCurrentFrom,
         @Schema(description = "The last instrument proficiency check, as the pilot gives it")
         @Nullable LocalDate ipcOn,
         @Schema(description = "The day after which only an instrument proficiency check restores it (61.57(d))")

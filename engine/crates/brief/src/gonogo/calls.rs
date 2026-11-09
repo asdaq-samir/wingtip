@@ -547,6 +547,7 @@ fn frat_input(i: In, v: &Value) -> R<frat::Input> {
             day_passengers_until: i.opt_str(c, "day_passengers_until")?,
             night_passengers_until: i.opt_str(c, "night_passengers_until")?,
             instrument_current_until: i.opt_str(c, "instrument_current_until")?,
+            instrument_current_from: i.opt_str(c, "instrument_current_from")?,
             ipc_needed_after: i.opt_str(c, "ipc_needed_after")?,
             flight_review_until: i.opt_str(c, "flight_review_until")?,
             medical_expires_on: i.opt_str(c, "medical_expires_on")?,
@@ -559,6 +560,10 @@ fn frat_input(i: In, v: &Value) -> R<frat::Input> {
         tfr_on_route: truth(v, "tfr_on_route"),
         hazards: i.opt_num(v, "hazards")?.unwrap_or(0.0) as i64,
         night: truth(v, "night"),
+        night_passengers: match v.get("night_passengers") {
+            None | Some(Value::Null) => None,
+            Some(_) => Some(truth(v, "night_passengers")),
+        },
         fuel_margin_gal: i.opt_num(v, "fuel_margin_gal")?,
         ifr: truth(v, "ifr"),
         vor_check,

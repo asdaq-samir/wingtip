@@ -12,3 +12,4 @@ name = "wingtip_radio"
 # plain Rust, so the phones carry it as it is.
 [dependencies]
 wingtip-core = { path = "../core" }
+wingtip-flight = { path = "../flight" }

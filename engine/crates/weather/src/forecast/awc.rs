@@ -24,7 +24,7 @@ pub const PIREP_MAX_AGE_S: i64 = 90 * 60;
 /// The highest a PIREP is told for: a light airplane's sky under Class A
 /// (18,000 ft MSL, 14 CFR 71.33), not the airliners' reports from the
 /// flight levels.
-pub const PIREP_MAX_ALT_FT: f64 = 18000.0;
+pub const PIREP_MAX_ALT_FT: f64 = wingtip_flight::limits::CLASS_A_FLOOR_FT;
 /// How far either side of the route a PIREP is told (a design choice).
 pub const PIREP_CORRIDOR_NM: f64 = 30.0;
 

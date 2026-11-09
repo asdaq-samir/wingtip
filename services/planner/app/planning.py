@@ -257,6 +257,13 @@ def flight_totals(leg_list: list, profile: dict, r, depart: datetime | None, rul
                    arrive_s=arrival.timestamp())
     t.update(engine("navlog_fuel_plan", total_fuel_gal=t["fuel_gal"], profile=profile, night=bool(night), rules=rules,
                     alternate_gal=(alternate or {}).get("fuel_gal") or 0.0))
+    # 14 CFR 61.57(b)'s night-passenger period, an hour after sunset to an
+    # hour before sunrise, anywhere on the way: its own window, not 1.1's
+    # night (the engine's passenger_night_on_the_way, sun.rs), so a summer
+    # night in Alaska with no 1.1 night still raises the risk assessment's
+    # night-currency caution.
+    t["night_passengers"] = engine("passenger_night_on_the_way", start=list(r.start), end=list(end),
+                                   depart_s=depart.timestamp(), minutes=t["ete_min"] or 0.0)
     t["alternate"] = alternate
     return t
 
@@ -659,6 +666,7 @@ def route_totals(per_hop: list[dict], hops: list) -> dict:
         "unflyable_legs": sum(t["unflyable_legs"] for t in per_hop),
         "legs_without_wind": sum(t["legs_without_wind"] for t in per_hop),
         "night": _either(t.get("night") for t in per_hop),
+        "night_passengers": _either(t.get("night_passengers") for t in per_hop),
         "rules": per_hop[0].get("rules", "vfr"),
         "alternate": per_hop[-1].get("alternate"),
         "planned_at": per_hop[0].get("planned_at"),

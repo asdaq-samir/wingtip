@@ -81,8 +81,9 @@ CLIMB_LEG_NM = (1.0, 15.0)
 #: at or below 14,000 ft MSL) and standard-rate turns (3° a second) at
 #: 120 knots -- two miles on each leg, and turns 0.64 nm round. Charts
 #: draw holds to no scale; this is one a light airplane would fly, not a
-#: jet's at the 200 KIAS a hold below 6,000 ft MSL may be flown at (AIM
-#: 5-3-8, table 5-3-1).
+#: jet's at the 200 KIAS a hold from the minimum holding altitude to
+#: 6,000 ft MSL may be flown at (AIM 5-3-8, Holding, its Airspeeds: 200
+#: KIAS to 6,000 ft, 230 from 6,001 to 14,000 and 265 from 14,001).
 HOLD_SPEED_KT = 120.0
 HOLD_TURN_NM = HOLD_SPEED_KT * (120 / 3600) / (2 * math.pi)
 

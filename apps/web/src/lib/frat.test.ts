@@ -10,7 +10,7 @@ const QUIET: FratInput = {
 const CURRENT: Currency = {
   dayPassengersUntil: "2026-12-01", nightPassengersUntil: null, flightReviewOn: "2025-06-01", flightReviewUntil: "2027-06-30",
   medicalExpiresOn: "2028-01-31", totalHours: 240, nightHours: 6, crossCountryHours: 40, landings: 300, flights: 120,
-  instrumentCurrentUntil: null, ipcOn: null, ipcNeededAfter: null, approachesInWindow: 0, holdingInWindow: false, trackingInWindow: false,
+  instrumentCurrentUntil: null, instrumentCurrentFrom: null, ipcOn: null, ipcNeededAfter: null, approachesInWindow: 0, holdingInWindow: false, trackingInWindow: false,
 };
 
 describe("the risk assessment", () => {
@@ -35,6 +35,11 @@ describe("the risk assessment", () => {
     // Under IFR, instrument currency too (61.57(c)); a VFR flight does not ask it.
     expect(assess({ ...QUIET, currency: CURRENT, ifr: true }).factors.map(f => f.key)).toEqual(["instrument"]);
     expect(assess({ ...QUIET, currency: { ...CURRENT, instrumentCurrentUntil: "2026-10-31" }, ifr: true }).factors).toEqual([]);
+    // Approaches flown this month count from next month (61.57(c)(1)): not current yet.
+    const soon = { ...CURRENT, instrumentCurrentFrom: "2026-11-01", instrumentCurrentUntil: "2027-04-30" };
+    expect(assess({ ...QUIET, currency: soon, ifr: true }).factors.map(f => f.key)).toEqual(["instrument"]);
+    // 61.57(b)'s own window: no 1.1 night (an Alaskan summer) but in the period.
+    expect(assess({ ...QUIET, night: false, nightPassengers: true, currency: CURRENT }).factors.map(f => f.key)).toEqual(["recent-night"]);
     expect(assess({ ...QUIET, currency: CURRENT }).factors).toEqual([]);
     // Under IFR in one's own airplane, a VOR check within 30 days (91.171):
     // a caution without one; nothing asked of a stock profile.

@@ -11,8 +11,10 @@ import { capitalised, faaWords, suaAltitudes } from "../../../lib/advisories";
 import { altFt, bearing, cruiseByAltitude, describeFuel, describeSteps, describeTime, feetBelowClouds, PLAN_NAME } from "../format";
 import { callEngine } from "../../../lib/engine/engine";
 
-/** The least VFR minimums come to, "1,000 ft, 3 sm" (14 CFR 91.155(c),
- *  (d)), the engine's (`vfr_basic_minimums`). */
+/** The surface-area minimums, "1,000 ft, 3 sm" (14 CFR 91.155(c), (d)),
+ *  which the planner holds every route to, the engine's
+ *  (`vfr_basic_minimums`). Not the least VFR ever asks: Class G low down
+ *  by day asks 1 sm and clear of clouds (91.155(a)). */
 function basicMinimums(): string {
   const m = callEngine("vfr_basic_minimums", {});
   return `${altFt(m.ceiling_ft)} ft, ${m.visibility_sm} sm`;
@@ -408,7 +410,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
             ? `The forecast ceiling and visibility could not be checked${ifr ? ". " : ", so no altitude is kept under the clouds. "}`
             : `Forecast for the flight, its temporary changes included: ceiling ${
               s.min_ceiling_ft === null ? "none" : `${altFt(s.min_ceiling_ft)} ft`}, visibility ${s.min_visibility_sm ?? "—"} sm${
-              s.low_ceiling_or_visibility && !ifr ? `, below VFR minimums (${basicMinimums()}) somewhere on the way` : ""
+              s.low_ceiling_or_visibility && !ifr ? `, below the surface-area VFR minimums (${basicMinimums()}) somewhere on the way` : ""
             }. `}
           {capitalised(hazards)}. {freezing}
         </>

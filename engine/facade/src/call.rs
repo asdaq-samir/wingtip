@@ -114,6 +114,7 @@
 //! - `gonogo_risk`: the risk assessment, its line, what to do and every
 //!   factor marked, from a FratInput, `{"vfr_not_recommended",
 //!   "under_minimums", "tfr_on_route", "hazards", "night",
+//!   "night_passengers"? (61.57(b)'s own window; `night` without it),
 //!   "fuel_margin_gal"?, "ifr"?, "vor_check"? (left out for a stock
 //!   profile, null for none recorded), "inspections"?, "squawks"?,
 //!   "currency"?, "day", "ticked": {key: true}}`;
@@ -378,9 +379,11 @@
 //!   "vert_vis_ft"?}`, null where there is none or it is not known;
 //!   `sky_ceiling` from the same, `{"ceiling_ft", "ceiling_unknown"}`,
 //!   which tells those apart (a lowest layer sent with no height,
-//!   "OVC///"); `report_flight_category` (AC 00-45H, a missing figure no
-//!   limit) from `{"ceiling_ft"?, "ceiling_unknown"?, "visibility_sm"?}`,
-//!   with an unknown ceiling only what the visibility settles;
+//!   "OVC///"); `report_flight_category` (AC 00-45H, AIM 7-1-7; no ceiling
+//!   no limit, a missing visibility settling only a ceiling under 500 ft,
+//!   as `flight_category`) from `{"ceiling_ft"?, "ceiling_unknown"?,
+//!   "visibility_sm"?}`, with an unknown ceiling only what the visibility
+//!   settles;
 //!   `vfr_basic_minimums` (91.155(c), (d)) `{"ceiling_ft", "visibility_sm"}`
 //!   from `{}`;
 //! - `is_night` (14 CFR 1.1: outside civil twilight, the sun six degrees
@@ -391,6 +394,10 @@
 //!   `night_on_the_way` (91.151(a)(2) on a trip with stops) from
 //!   `{"start": [lat, lon], "end", "depart_s", "minutes"}`;
 //!   `night_at_either_end` from `{"start", "depart_s", "end", "arrive_s"}`;
+//!   `passenger_night` (14 CFR 61.57(b): 1 h after sunset to 1 h before
+//!   sunrise, its own window, not 1.1's night) from `{"lat", "lon",
+//!   "at_s"}`, and `passenger_night_on_the_way` from `{"start", "end",
+//!   "depart_s", "minutes"}`;
 //! - `checkpoints_select` (the chart model's candidates to the nav log's
 //!   checkpoints): their indices in route order from `{"candidates":
 //!   [{"along_track_nm", "predicted_score"}], "min_spacing_nm"?,
@@ -979,7 +986,8 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         | "sky_ceiling" | "report_flight_category" | "vfr_basic_minimums" | "vfr_not_recommended_reasons" | "below_vfr_minimums" => {
             weather_rule(&ask)
         }
-        "is_night" | "civil_twilight" | "night_on_the_way" | "night_at_either_end" => sun_rule(&ask),
+        "is_night" | "civil_twilight" | "night_on_the_way" | "night_at_either_end" | "passenger_night"
+        | "passenger_night_on_the_way" => sun_rule(&ask),
         "checkpoints_select" => checkpoints_rule(&ask),
         "reserve_min" | "isa_temp_c" | "density_ratio" | "density_altitude_ft" | "pressure_altitude_ft" | "is_eastbound"
         | "lowest_vfr_cruising_altitude" | "distance_nm" | "region_of" | "descent_ft_per_nm" | "wind_correction_deg"
@@ -1344,6 +1352,13 @@ fn sun_rule(ask: &Ask) -> Result<String, String> {
         }
         "night_on_the_way" => {
             let night = sun::night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?);
+            out.push_str(if night { "true" } else { "false" });
+        }
+        "passenger_night" => {
+            out.push_str(if sun::passenger_night(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?) { "true" } else { "false" })
+        }
+        "passenger_night_on_the_way" => {
+            let night = sun::passenger_night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?);
             out.push_str(if night { "true" } else { "false" });
         }
         _ => {

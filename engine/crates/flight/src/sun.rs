@@ -17,15 +17,31 @@
 //! of a degree is minutes (scratch comparison, 2026-11-08).
 //!
 //! The rule's own text says "converted to local time"; the planner works
-//! in UTC throughout, so the instants here are UNIX seconds, UTC. 61.57(b)'s
-//! night currency counts from "1 hour after sunset to 1 hour before
-//! sunrise", a different window, which pilot::currency takes as given by
-//! the logbook rather than working it out.
+//! in UTC throughout, so the instants here are UNIX seconds, UTC.
+//!
+//! 61.57(b)'s night currency binds in a different window, "the period
+//! beginning 1 hour after sunset and ending 1 hour before sunrise", from
+//! sunset and sunrise rather than civil twilight (`passenger_night`). In
+//! the lower 48 that window lies inside 1.1's night, but where civil
+//! twilight lasts all night -- Anchorage (61.2 N) at the June solstice,
+//! the sun no lower than about 5.4 degrees down -- there is no 1.1 night
+//! at all while 61.57(b)'s window still runs from about 00:40 to 03:20
+//! local, so the two are worked out apart.
 
 /// Civil twilight: the sun's centre six degrees below the horizon (14 CFR
 /// 1.1's "civil twilight", as the Air Almanac publishes it), a zenith
 /// distance of 96 degrees.
 pub const CIVIL_DEPRESSION_DEG: f64 = 6.0;
+
+/// Sunrise and sunset: the sun's upper limb on the horizon, its centre
+/// 0.833 degrees down (34 minutes of refraction and 16 of semi-diameter;
+/// NOAA's Solar Calculator, the Naval Observatory's definition), a zenith
+/// distance of 90.833 degrees.
+pub const SUNRISE_DEPRESSION_DEG: f64 = 0.833;
+
+/// 14 CFR 61.57(b): the night-passenger period begins 1 hour after sunset
+/// and ends 1 hour before sunrise, s.
+pub const PASSENGER_NIGHT_MARGIN_S: f64 = 3600.0;
 
 const DAY_S: f64 = 86_400.0;
 
@@ -56,14 +72,13 @@ fn sun_at(unix_s: f64) -> (f64, f64) {
     (declination, eq_time_min)
 }
 
-/// The sun's hour angle at civil twilight, degrees, at a latitude on a
-/// declination; Err(true) where the sun stays more than six degrees below
-/// the horizon all day (a polar night: no civil twilight, night all day),
-/// Err(false) where it never goes that far down (a polar summer's day: no
-/// night).
-fn twilight_hour_angle(lat: f64, declination: f64) -> Result<f64, bool> {
+/// The sun's hour angle when its centre is `depression` degrees below the
+/// horizon, degrees, at a latitude on a declination; Err(true) where the
+/// sun stays further down all day (a polar night), Err(false) where it
+/// never goes that far down (a polar summer's day).
+fn twilight_hour_angle(lat: f64, declination: f64, depression: f64) -> Result<f64, bool> {
     let lat = lat.to_radians();
-    let zenith = (90.0 + CIVIL_DEPRESSION_DEG).to_radians();
+    let zenith = (90.0 + depression).to_radians();
     let cos_ha = zenith.cos() / (lat.cos() * declination.cos()) - lat.tan() * declination.tan();
     if cos_ha > 1.0 {
         Err(true)
@@ -93,13 +108,20 @@ fn solar_noon(lon: f64, near_s: f64) -> f64 {
 /// for a polar day, whether it is night all day (`Err(true)`) or day all
 /// day (`Err(false)`).
 fn civil_day(lat: f64, lon: f64, noon_s: f64) -> Result<(f64, f64), bool> {
+    sun_day(lat, lon, noon_s, CIVIL_DEPRESSION_DEG)
+}
+
+/// The two instants round the solar noon `noon_s` when the sun's centre is
+/// `depression` degrees below the horizon (civil twilight's ends at six,
+/// sunrise and sunset at 0.833), or Err as twilight_hour_angle says.
+fn sun_day(lat: f64, lon: f64, noon_s: f64, depression: f64) -> Result<(f64, f64), bool> {
     // Each end worked out at the sun's place at that end, twice over: the
     // declination moves up to a third of a degree in the half day.
     let end = |sign: f64| -> Result<f64, bool> {
         let mut at = noon_s;
         for _ in 0..3 {
             let (decl, eq) = sun_at(at);
-            let ha = twilight_hour_angle(lat, decl)?;
+            let ha = twilight_hour_angle(lat, decl, depression)?;
             let noon = (noon_s / DAY_S).floor() * DAY_S + (720.0 - 4.0 * lon - eq) * 60.0;
             // A noon that the floor put on the day before or after: the
             // nearest to the one asked for.
@@ -139,6 +161,21 @@ pub fn is_night(lat: f64, lon: f64, at_s: f64) -> bool {
     }
 }
 
+/// Whether an instant is in 14 CFR 61.57(b)'s night-passenger period at a
+/// point: "beginning 1 hour after sunset and ending 1 hour before
+/// sunrise", read on the day whose solar noon is nearest (so after local
+/// midnight it is the next sunrise that counts). Its own window, not 1.1's
+/// night (the module's note): true at Anchorage at 02:00 local on the June
+/// solstice, where is_night is false. Where the sun does not set at all it
+/// is never in it; where it does not rise, always.
+pub fn passenger_night(lat: f64, lon: f64, at_s: f64) -> bool {
+    let noon = solar_noon(lon, at_s);
+    match sun_day(lat, lon, noon, SUNRISE_DEPRESSION_DEG) {
+        Ok((sunrise, sunset)) => at_s < sunrise - PASSENGER_NIGHT_MARGIN_S || at_s > sunset + PASSENGER_NIGHT_MARGIN_S,
+        Err(night_all_day) => night_all_day,
+    }
+}
+
 /// How often a flight's way is looked at for the night: every half hour,
 /// the planner's own figure (the sun's twilight moves no faster along a
 /// light airplane's track than its own few minutes an hour).
@@ -151,11 +188,24 @@ pub const NIGHT_STEP_MIN: f64 = 30.0;
 /// CFR 91.151(a)(2)'s 45 minutes, which the one long flight, day at both
 /// its ends, was not.
 pub fn night_on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64) -> bool {
+    on_the_way(start, end, depart_s, minutes, is_night)
+}
+
+/// Whether any of a flight from `start` to `end` of `minutes`, leaving at
+/// `depart_s`, falls in 61.57(b)'s night-passenger period (passenger_night),
+/// judged as night_on_the_way judges the night: the rule binds the pilot
+/// in command carrying passengers in any of that period, not only at its
+/// takeoffs and landings.
+pub fn passenger_night_on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64) -> bool {
+    on_the_way(start, end, depart_s, minutes, passenger_night)
+}
+
+fn on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64, test: fn(f64, f64, f64) -> bool) -> bool {
     let steps = ((minutes / NIGHT_STEP_MIN).floor() as i64 + 1).max(1);
     (0..=steps).any(|k| {
         let at = if minutes > 0.0 { (k as f64 * NIGHT_STEP_MIN).min(minutes) / minutes } else { 0.0 };
         let (lat, lon) = (start.0 + (end.0 - start.0) * at, start.1 + (end.1 - start.1) * at);
-        is_night(lat, lon, depart_s + at * minutes * 60.0)
+        test(lat, lon, depart_s + at * minutes * 60.0)
     })
 }
 
@@ -208,6 +258,37 @@ mod tests {
         assert!(is_night(85.0, 0.0, utc(2026, 12, 21, 12, 0)));
         assert!(!is_night(85.0, 0.0, utc(2026, 6, 21, 0, 0)));
         assert_eq!(civil_twilight(85.0, 0.0, utc(2026, 12, 21, 0, 0)).night_all_day, Some(true));
+    }
+
+    #[test]
+    fn anchorage_at_the_june_solstice_has_no_civil_night_but_a_61_57_b_one() {
+        // Anchorage, 61.22 N 149.90 W, the night of 21-22 June 2026: the
+        // sun's lowest is about 61.2 + 23.4 - 90 = -5.4 degrees, inside
+        // civil twilight, so no 14 CFR 1.1 night; sunset is about 23:42
+        // AKDT (07:42 UTC on the 22nd) and sunrise about 04:21 AKDT (12:21
+        // UTC), so 61.57(b)'s period runs from about 08:42 to 11:21 UTC.
+        let (lat, lon) = (61.22, -149.90);
+        let at = utc(2026, 6, 22, 10, 0);
+        assert!(!is_night(lat, lon, at));
+        assert!(passenger_night(lat, lon, at));
+        // Half an hour after sunset, and half an hour before sunrise: not yet, and no longer.
+        assert!(!passenger_night(lat, lon, utc(2026, 6, 22, 8, 15)));
+        assert!(!passenger_night(lat, lon, utc(2026, 6, 22, 11, 50)));
+        // Midday is day by either rule.
+        assert!(!passenger_night(lat, lon, utc(2026, 6, 21, 22, 0)));
+    }
+
+    #[test]
+    fn chicago_61_57_b_starts_an_hour_after_sunset() {
+        // Chicago on the March equinox: sunset about 00:03 UTC on the 21st
+        // (astral, as the civil-twilight test above), so 1.1's night has
+        // begun by 00:40 while 61.57(b)'s period begins only about 01:03.
+        let (lat, lon) = (41.88, -87.63);
+        assert!(is_night(lat, lon, utc(2026, 3, 21, 0, 40)));
+        assert!(!passenger_night(lat, lon, utc(2026, 3, 21, 0, 50)));
+        assert!(passenger_night(lat, lon, utc(2026, 3, 21, 1, 15)));
+        assert!(passenger_night(lat, lon, utc(2026, 3, 21, 6, 0)));
+        assert!(!passenger_night(lat, lon, utc(2026, 3, 20, 18, 0)));
     }
 
     #[test]

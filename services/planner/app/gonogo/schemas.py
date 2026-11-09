@@ -50,6 +50,7 @@ class PilotCurrency(BaseModel):
     day_passengers_until: str | None = None
     night_passengers_until: str | None = None
     instrument_current_until: str | None = None
+    instrument_current_from: str | None = None
     ipc_needed_after: str | None = None
     flight_review_until: str | None = None
     medical_expires_on: str | None = None

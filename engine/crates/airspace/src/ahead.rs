@@ -59,11 +59,11 @@ pub const SWATH_NM: f64 = 0.25;
 /// about 950 ft above the field at 3 nm.
 pub const NEAR_FIELD_NM: f64 = 3.0;
 pub const NEAR_FIELD_AGL_FT: f64 = 1000.0;
-/// Under flying speed nothing is said: the motion crate's `underway`
-/// (glide.rs AIRBORNE_KT), a crate above this one.
-pub const AIRBORNE_KT: f64 = 40.0;
+/// Under flying speed nothing is said: the one figure the debrief and the
+/// motion crate's `underway` (glide.rs) use too.
+pub use crate::figures::debrief::AIRBORNE_KT;
 /// Class A from here (14 CFR 71.33): a volume with no ceiling reaches it.
-const CLASS_A_FT: f64 = 18000.0;
+use wingtip_flight::limits::CLASS_A_FLOOR_FT as CLASS_A_FT;
 /// wingtip.ground_grid's RESAMPLED_MARGIN_FT, added to every cell it reads.
 pub const GROUND_MARGIN_FT: f64 = 150.0;
 const GROUND_NONE: i16 = i16::MIN;

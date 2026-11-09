@@ -14,8 +14,10 @@ one job (the owner kept both server languages on this split, 2026-11-06):
   eleven domain crates in `engine/crates`, layered as engine/README.md
   says). Every aviation rule or figure lives there once: altitudes,
   winds, runways, fuel, weather limits, Go / No-Go, altitude selection, holds, procedures,
-  the clearance reader, the debrief, a pilot's currency and a student's
-  61.109 experience, endorsements and inspections, the altitude limits,
+  the clearance reader, the debrief, a pilot's currency (14 CFR 61.56,
+  61.57: `engine/crates/pilot`, pilot/currency.rs, served by the
+  planner's /api/pilot/currency; the gateway's CurrencyService is gone)
+  and a student's 61.109 experience, endorsements and inspections, the altitude limits,
   91.155's minimums, the filing form's items, night (14 CFR 1.1), the
   planning cautions, the IFR alternate (91.169), congested areas, what is
   ahead, the checkpoint pick and the radio calls' words. No network, no screen, no clock of its own. Each rule is a name in `engine/facade/src/call.rs`,

@@ -70,7 +70,7 @@ fn with_a_visibility_it_is_the_metar_readers_category() {
     // visibility is known.
     for c in [None, Some(0.0), Some(499.0), Some(500.0), Some(999.0), Some(1000.0), Some(3000.0), Some(3001.0)] {
         for v in [0.0, 0.5, 1.0, 2.9, 3.0, 5.0, 5.1, 10.0] {
-            assert_eq!(forecast::category_of(c, Some(v)), metar::flight_category(c, Some(v)));
+            assert_eq!(forecast::category_of(c, Some(v)), metar::flight_category_of(c, false, Some(v)));
         }
     }
 }

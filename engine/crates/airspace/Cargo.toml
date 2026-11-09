@@ -12,5 +12,6 @@ name = "wingtip_airspace"
 # plain Rust, so the phones carry it as it is.
 [dependencies]
 wingtip-core = { path = "../core" }
+wingtip-flight = { path = "../flight" }
 wingtip-procedures = { path = "../procedures" }
 wingtip-radio = { path = "../radio" }

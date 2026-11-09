@@ -581,7 +581,7 @@ def test_an_altitude_the_pilot_set_under_ifr_is_checked_against_ifr_rules():
         "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)",
     ]
     assert planning.own_altitude_caution(selection, at(3000.0), ("C81", "KDLH"))["reasons"] == [
-        "Under the 4,100 ft minimum IFR altitude: 2,000 ft over the highest obstacle within 4 nm (14 CFR 91.177(a))",
+        "Under the 4,100 ft minimum IFR altitude: 2,000 ft over the highest obstacle within 4 nm (14 CFR 91.177(a)(2))",
     ]
     assert planning.own_altitude_caution(selection, at(5500.0), ("C81", "KDLH"))["reasons"] == [
         "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)",
@@ -601,7 +601,7 @@ def test_no_ifr_altitude_says_the_minimum_ifr_altitude_and_the_service_ceiling()
     assert why["brief"] == "Ceiling 11,800 ft: the minimum IFR altitude 45 nm past KBJC is 16,300"
     assert why["reasons"] == [
         "The minimum IFR altitude there is 16,300 ft: 2,000 ft over the highest obstacle within 4 nm"
-        " over a mountainous area (14 CFR 91.177(a)).",
+        " over a mountainous area (14 CFR 91.177(a)(2)).",
         "The first westbound IFR altitude above that is 18,000 ft.",
         "The aircraft's service ceiling stops at 11,800 ft.",
     ]

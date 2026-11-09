@@ -55,6 +55,12 @@ fn month_index(y: i64, m: u32) -> i64 {
     y * 12 + i64::from(m) - 1
 }
 
+/// The first day of a month counted by `month_index`, as "YYYY-MM-DD".
+fn start_of_month(index: i64) -> String {
+    let (y, m) = (index.div_euclid(12), index.rem_euclid(12) + 1);
+    format!("{y:04}-{m:02}-01")
+}
+
 /// The last day of a month counted by `month_index`, as "YYYY-MM-DD".
 fn end_of_month(index: i64) -> String {
     let (y, m) = (index.div_euclid(12), (index.rem_euclid(12) + 1) as u32);
@@ -203,6 +209,28 @@ fn instrument_until(entries: &[Entry], ipc: Option<i64>) -> Option<i64> {
     best
 }
 
+/// Whether the pilot is instrument current in `month` (61.57(c)(1), (d)):
+/// its six preceding months hold all three, or a proficiency check in
+/// `ipc` falls in it or the six months before it.
+fn instrument_current_on(entries: &[Entry], ipc: Option<i64>, month: i64) -> bool {
+    instrument_current_in(entries, month) || ipc.is_some_and(|i| i <= month && month <= i + INSTRUMENT_MONTHS)
+}
+
+/// The first month of instrument currency still to come, by `month_index`:
+/// where the pilot is not current in `month` but will be by `until` (the
+/// approaches, holding and tracking were flown this month, and under the
+/// stricter reading of 61.57(c)(1) count only from next month), the first
+/// month after it that is current; None where they are current now or
+/// nothing is to come. The answer gives it so no app says "current until"
+/// of a pilot the rule counts as not current yet.
+fn instrument_from(entries: &[Entry], ipc: Option<i64>, until: Option<i64>, month: i64) -> Option<i64> {
+    let until = until.filter(|&u| u > month)?;
+    if instrument_current_on(entries, ipc, month) {
+        return None;
+    }
+    (month + 1..=until).find(|&m| instrument_current_on(entries, ipc, m))
+}
+
 /// The dates the pilot gives, each "YYYY-MM-DD" or none.
 pub struct Dates<'a> {
     pub flight_review_on: Option<&'a str>,
@@ -224,7 +252,9 @@ fn member(out: &mut String, key: &str) {
 /// `flightReviewOn` and `flightReviewUntil` (61.56(c)), `medicalExpiresOn`
 /// (as the pilot gives it: when it falls depends on its class and the
 /// pilot's age, 61.23(d)), the logbook's totals, and instrument currency
-/// -- `instrumentCurrentUntil` (61.57(c)(1), (d)), `ipcOn`,
+/// -- `instrumentCurrentUntil` (61.57(c)(1), (d)), `instrumentCurrentFrom`
+/// (the first day of a currency not begun yet, the month after
+/// approaches flown this month; null when current now), `ipcOn`,
 /// `ipcNeededAfter` (61.57(d)), and what the 6 calendar months before
 /// this one hold (`approachesInWindow`, `holdingInWindow`,
 /// `trackingInWindow`). Each date null where it cannot be had.
@@ -235,8 +265,10 @@ pub fn currency_json(name: &str, entries: &[Entry], dates: &Dates) -> Result<Str
         day(name, m)?;
     }
     let ipc = dates.ipc_on.map(|d| day(name, d)).transpose()?;
-    let instrument = instrument_until(entries, ipc.map(|(y, m, _)| month_index(y, m)));
+    let ipc_month = ipc.map(|(y, m, _)| month_index(y, m));
+    let instrument = instrument_until(entries, ipc_month);
     let month = month_index(today.0, today.1);
+    let from = instrument_from(entries, ipc_month, instrument, month);
     let mut out = String::from("{");
     let opt = |out: &mut String, key: &str, v: Option<String>| {
         member(out, key);
@@ -265,6 +297,7 @@ pub fn currency_json(name: &str, entries: &[Entry], dates: &Dates) -> Result<Str
     int(&mut out, "landings", entries.iter().map(Entry::landings).sum());
     int(&mut out, "flights", entries.len() as f64);
     opt(&mut out, "instrumentCurrentUntil", instrument.map(end_of_month));
+    opt(&mut out, "instrumentCurrentFrom", from.map(start_of_month));
     opt(&mut out, "ipcOn", dates.ipc_on.map(str::to_owned));
     opt(&mut out, "ipcNeededAfter", instrument.map(|m| end_of_month(m + INSTRUMENT_MONTHS)));
     int(&mut out, "approachesInWindow", in_window(entries, month).map(|e| e.approaches).sum());

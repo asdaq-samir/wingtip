@@ -15,7 +15,7 @@ class ReminderDueTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 11);
 
     private static CurrencyDto currency(LocalDate review, LocalDate medical, LocalDate day, LocalDate night, LocalDate instrument) {
-        return new CurrencyDto(day, night, null, review, medical, 100, 5, 20, 50, 30, instrument, null, null, 0, false, false);
+        return new CurrencyDto(day, night, null, review, medical, 100, 5, 20, 50, 30, instrument, null, null, null, 0, false, false);
     }
 
     @Test

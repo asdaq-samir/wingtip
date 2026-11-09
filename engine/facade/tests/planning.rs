@@ -52,6 +52,27 @@ fn night_and_night_on_the_way() {
     assert_eq!(either(1790064000 + 86400), json!(true));
 }
 
+/// 14 CFR 61.57(b)'s night-passenger period, an hour after sunset to an
+/// hour before sunrise, against 1.1's night at the same instants: at
+/// Anchorage on the June solstice there is no 1.1 night but there is the
+/// period; at Chicago 1.1's night begins first.
+#[test]
+fn the_61_57_b_period_is_its_own_window() {
+    for case in fixture()["passenger_night"].as_array().unwrap() {
+        let at = json!({ "lat": case["lat"], "lon": case["lon"], "at_s": case["at_s"] });
+        assert_eq!(ask("passenger_night", at.clone()), case["passenger_night"], "{}", case["why"]);
+        assert_eq!(ask("is_night", at), case["night"], "{}", case["why"]);
+    }
+    // A flight out of Anchorage to Kenai at 01:00 AKDT on 22 June (09:00
+    // UTC), 40 minutes long, is in the period; one leaving at 20:00 AKDT
+    // on the 21st is not.
+    let flight = |depart_s: i64| {
+        ask("passenger_night_on_the_way", json!({ "start": [61.22, -149.9], "end": [60.57, -151.25], "depart_s": depart_s, "minutes": 40 }))
+    };
+    assert_eq!(flight(1782118800), json!(true));
+    assert_eq!(flight(1782100800), json!(false));
+}
+
 #[test]
 fn the_checkpoints_picked() {
     for case in fixture()["checkpoints"].as_array().unwrap() {

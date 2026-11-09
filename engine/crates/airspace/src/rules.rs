@@ -5,29 +5,35 @@
 //! the same answer at every tap it asks.
 
 use crate::json;
+use wingtip_flight::vfr;
 
-/// Class A, from here to FL600 (14 CFR 71.33): IFR only.
-pub const CLASS_A_FLOOR_FT: f64 = 18000.0;
+/// Class A, from here to FL600 (14 CFR 71.33): IFR only; the one copy in
+/// wingtip_flight::limits.
+pub use wingtip_flight::limits::CLASS_A_FLOOR_FT;
 /// Class E from here up wherever nothing lower is designated, but not
 /// within 1,500 ft of the surface (71.71(b)).
 pub const CLASS_E_EVERYWHERE_FT: f64 = 14500.0;
-/// Where 91.155's minimums, 91.117's speed and 91.215's transponder rule change.
+/// Where 91.117's speed and 91.215's transponder rule change; 91.155's
+/// minimums change there too (wingtip_flight::vfr::HIGH_FROM_MSL_FT).
 pub const TEN_THOUSAND_FT: f64 = 10000.0;
 /// Class G's minimums differ at and below this height (91.155(a)).
-pub const G_LOW_AGL_FT: f64 = 1200.0;
+pub const G_LOW_AGL_FT: f64 = vfr::CLASS_G_LOW_AGL_FT;
 /// Above 10,000 ft MSL a transponder and ADS-B Out are asked for, but
 /// not at or below this height above the ground (91.215(b)(5), 91.225(d)(4)).
 pub const TRANSPONDER_EXEMPT_AGL_FT: f64 = 2500.0;
+/// 91.117(b): no more than 200 kt "at or below 2,500 feet above the
+/// surface within 4 nautical miles of the primary airport of a Class C
+/// or Class D airspace area". The same figure as the transponder's today,
+/// but its own rule, so an amendment to one cannot move the other.
+pub const SPEED_200_KT_AGL_FT: f64 = 2500.0;
 /// The Mode C veil's radius round each airport of part 91 appendix D
 /// section 1 (91.215(b)(2), 91.225(d)(2)), surface to 10,000 ft MSL.
 pub const MODE_C_VEIL_NM: f64 = 30.0;
-/// 14 CFR 91.155(c): no VFR beneath a ceiling lower than 1,000 ft within
-/// the lateral boundaries of a surface area of controlled airspace ...
-pub const SURFACE_AREA_CEILING_FT: f64 = 1000.0;
-/// ... and 91.155(d): nor there with a ground visibility under 3 statute
-/// miles (without a special VFR clearance) -- the least any VFR minimums
-/// come to, and the planner's "VFR flight not recommended" line (AIM 7-1-5).
-pub const SURFACE_AREA_VISIBILITY_SM: f64 = 3.0;
+/// 14 CFR 91.155(c) and (d): 1,000 ft and 3 sm within a surface area of
+/// controlled airspace -- the surface-area minimums, which the planner
+/// holds every route to, and its "VFR flight not recommended" line (AIM
+/// 7-1-5); not the least VFR ever asks (wingtip_flight::vfr).
+pub use wingtip_flight::vfr::{SURFACE_AREA_CEILING_FT, SURFACE_AREA_VISIBILITY_SM};
 /// The top of the column: FL600, where Class A ends (71.33).
 const TOP_FT: f64 = 60000.0;
 
@@ -90,18 +96,19 @@ fn rule(visibility_sm: f64, clouds: Option<(f64, f64, f64)>) -> Rule {
 /// 91.155(a)'s basic VFR weather minimums for a band of `class` whose
 /// bottom is `floor_msl`, `agl` above the ground there. None in Class A.
 pub fn minimums(class: char, floor_msl: f64, agl: f64) -> Option<Minimums> {
-    let standard = rule(3.0, Some((500.0, 1000.0, 2000.0)));
-    let high = rule(5.0, Some((1000.0, 1000.0, 5280.0)));
+    let clouds = Some((vfr::CLOUD_BELOW_FT, vfr::CLOUD_ABOVE_FT, vfr::CLOUD_HORIZONTAL_FT));
+    let standard = rule(vfr::VISIBILITY_SM, clouds);
+    let high = rule(vfr::HIGH_VISIBILITY_SM, Some((vfr::HIGH_CLOUD_BELOW_FT, vfr::HIGH_CLOUD_ABOVE_FT, vfr::HIGH_CLOUD_HORIZONTAL_FT)));
     let same = |r: Rule| Some(Minimums { day: r, night: r });
     match class {
         'A' => None,
-        'B' => same(rule(3.0, None)),
+        'B' => same(rule(vfr::VISIBILITY_SM, None)),
         'C' | 'D' => same(standard),
-        'E' => same(if floor_msl >= TEN_THOUSAND_FT { high } else { standard }),
+        'E' => same(if floor_msl >= vfr::HIGH_FROM_MSL_FT { high } else { standard }),
         // Class G.
-        _ if agl < G_LOW_AGL_FT => Some(Minimums { day: rule(1.0, None), night: standard }),
-        _ if floor_msl >= TEN_THOUSAND_FT => same(high),
-        _ => Some(Minimums { day: rule(1.0, Some((500.0, 1000.0, 2000.0))), night: standard }),
+        _ if agl < G_LOW_AGL_FT => Some(Minimums { day: rule(vfr::CLASS_G_DAY_VISIBILITY_SM, None), night: standard }),
+        _ if floor_msl >= vfr::HIGH_FROM_MSL_FT => same(high),
+        _ => Some(Minimums { day: rule(vfr::CLASS_G_DAY_VISIBILITY_SM, clouds), night: standard }),
     }
 }
 
@@ -130,7 +137,7 @@ pub fn entry_rules(class: char) -> Vec<(String, &'static str)> {
     let ten = grouped(TEN_THOUSAND_FT);
     // 91.117(b): at or below 2,500 ft above the surface within 4 nm of the
     // primary airport of a Class C or D.
-    let near_field = format!("200 kt at or below {} ft above the surface within 4 nm of its primary airport", grouped(TRANSPONDER_EXEMPT_AGL_FT));
+    let near_field = format!("200 kt at or below {} ft above the surface within 4 nm of its primary airport", grouped(SPEED_200_KT_AGL_FT));
     match class {
         'B' => vec![
             ("An ATC clearance before you enter".to_owned(), "14 CFR 91.131(a)(1)"),
@@ -212,7 +219,7 @@ pub fn speed_kt(class: char, floor_msl: f64, under_b: bool, agl: f64) -> Option<
     if class == 'A' || floor_msl >= TEN_THOUSAND_FT {
         return None;
     }
-    if under_b || (matches!(class, 'C' | 'D') && agl < TRANSPONDER_EXEMPT_AGL_FT) {
+    if under_b || (matches!(class, 'C' | 'D') && agl < SPEED_200_KT_AGL_FT) {
         return Some(200);
     }
     Some(250)
@@ -255,7 +262,9 @@ pub fn column(ground_ft: f64, volumes: &[Volume], in_veil: bool) -> Vec<Band> {
         ground_ft,
         ground_ft + G_LOW_AGL_FT,
         ground_ft + TRANSPONDER_EXEMPT_AGL_FT,
+        ground_ft + SPEED_200_KT_AGL_FT,
         TEN_THOUSAND_FT,
+        vfr::HIGH_FROM_MSL_FT,
         CLASS_E_EVERYWHERE_FT,
         CLASS_A_FLOOR_FT,
     ];

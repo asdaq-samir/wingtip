@@ -382,7 +382,7 @@ def _debrief_sources(d: Debrief, t: DebriefTolerances) -> list[Source]:
 
 def _category(ceiling_ft: float | None, visibility_sm: float | None, ceiling_unknown: bool = False) -> str | None:
     """The flight category of a ceiling and visibility, as the engine sets
-    it from the AWC's lines (wingtip_engine::metar::flight_category, the
+    it from the AWC's lines (wingtip_engine::metar::flight_category_of, the
     one copy the web and the phones share); None with neither, or with a
     ceiling forecast with no height ("OVC///") the visibility does not
     settle (14 CFR 1.1: not known, not none)."""

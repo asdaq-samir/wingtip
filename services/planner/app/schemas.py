@@ -361,6 +361,10 @@ class Totals(BaseModel):
     usable_fuel_gal: float | None = None
     fuel_margin_gal: float | None = None
     night: bool | None = None
+    #: Whether any of the flight is in 14 CFR 61.57(b)'s night-passenger
+    #: period (1 hour after sunset to 1 hour before sunrise), its own
+    #: window rather than 1.1's night, for the night-currency caution.
+    night_passengers: bool | None = None
     #: The rules the reserve is under: IFR's 45 minutes day or night
     #: (14 CFR 91.167(a)(3)), VFR's 30 by day and 45 at night (91.151).
     rules: FlightRules = "vfr"

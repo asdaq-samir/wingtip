@@ -516,6 +516,11 @@
             "description" : "Holding logged in them",
             "type" : "boolean"
           },
+          "instrumentCurrentFrom" : {
+            "description" : "The first day of an instrument currency not begun yet: approaches flown this month count from the first of next month (14 CFR 61.57(c)(1)), and until then the pilot is not current; null when current now",
+            "format" : "date",
+            "type" : [ "string", "null" ]
+          },
           "instrumentCurrentUntil" : {
             "description" : "The last day of instrument currency (14 CFR 61.57(c)(1), or 61.57(d)'s check); in the past where it has lapsed, null where none is logged",
             "format" : "date",
@@ -556,7 +561,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "approachesInWindow", "crossCountryHours", "dayPassengersUntil", "flightReviewOn", "flightReviewUntil", "flights", "holdingInWindow", "instrumentCurrentUntil", "ipcNeededAfter", "ipcOn", "landings", "medicalExpiresOn", "nightHours", "nightPassengersUntil", "totalHours", "trackingInWindow" ],
+        "required" : [ "approachesInWindow", "crossCountryHours", "dayPassengersUntil", "flightReviewOn", "flightReviewUntil", "flights", "holdingInWindow", "instrumentCurrentFrom", "instrumentCurrentUntil", "ipcNeededAfter", "ipcOn", "landings", "medicalExpiresOn", "nightHours", "nightPassengersUntil", "totalHours", "trackingInWindow" ],
         "type" : "object"
       },
       "DeclineRequest" : {

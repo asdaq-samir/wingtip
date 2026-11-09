@@ -12,7 +12,7 @@ import { library, openConsole, showTabs } from "./helpers";
 const CURRENCY = {
   dayPassengersUntil: null, nightPassengersUntil: null, flightReviewOn: null, flightReviewUntil: null, medicalExpiresOn: null,
   totalHours: 12, nightHours: 0, crossCountryHours: 4, landings: 6, flights: 3,
-  instrumentCurrentUntil: "2099-07-31", ipcOn: null, ipcNeededAfter: "2100-01-31",
+  instrumentCurrentUntil: "2099-07-31", instrumentCurrentFrom: null, ipcOn: null, ipcNeededAfter: "2100-01-31",
   approachesInWindow: 4, holdingInWindow: true, trackingInWindow: false,
 };
 

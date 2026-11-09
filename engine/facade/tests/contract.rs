@@ -587,6 +587,10 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in planning["on_the_way"].as_array().unwrap() {
         c.ask("night_on_the_way", json!({ "start": case["start"], "end": case["end"], "depart_s": case["depart_s"], "minutes": case["minutes"] }));
     }
+    for case in planning["passenger_night"].as_array().unwrap() {
+        c.ask("passenger_night", json!({ "lat": case["lat"], "lon": case["lon"], "at_s": case["at_s"] }));
+    }
+    c.ask("passenger_night_on_the_way", json!({ "start": [61.22, -149.9], "end": [60.57, -151.25], "depart_s": 1782118800, "minutes": 40 }));
     c.ask("night_at_either_end", json!({ "start": [41.88, -87.63], "depart_s": 1790096400, "end": [41.88, -87.63], "arrive_s": 1790100000 }));
     c.ask("checkpoints_select", json!({ "candidates": [{ "along_track_nm": 0, "predicted_score": 3.0 }, { "along_track_nm": 30, "predicted_score": null }],
         "min_spacing_nm": 10, "min_score": null, "length_nm": 40 }));

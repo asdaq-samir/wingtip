@@ -5,7 +5,8 @@ use super::ask::{Advisory, Airspace, Report, Station};
 use super::grid::{Grid, PER_CELL};
 use super::words::g;
 use crate::geo;
-use wingtip_flight::flight;
+use wingtip_flight::{flight, limits, vfr};
+use wingtip_weather::forecast::field::TAF_VICINITY_NM;
 use wingtip_weather::metar;
 
 /// The planner's 1,000 ft over the ground (wingtip.terrain), at or above
@@ -20,25 +21,29 @@ pub const COARSE_MARGIN_FT: f64 = 1000.0;
 /// kept for every one forecast or reported, as a light airplane has no
 /// radar to tell which.
 pub const STORM_NM: f64 = 20.0;
-/// How far round a field its report or forecast is taken to hold: a TAF
-/// is for 5 sm round the field (AC 00-45H), twice that here.
-pub const FIELD_WX_NM: f64 = 10.0;
+/// How far round a field under minimums its report or forecast closes the
+/// grid: a TAF is for 5 sm of the airport (AC 00-45H, NWSI 10-813), and
+/// route options keep out to its vicinity, 10 sm (8.7 nm), twice that --
+/// the planner's choice, narrower than the 25 nm a field's brief reads a
+/// TAF from (TAF_REACH_NM), as closing cells that far round every low
+/// field would leave no way through a front.
+pub const FIELD_WX_NM: f64 = TAF_VICINITY_NM;
 /// And how far round a field in MVFR the cells are marginal: the
 /// planner's own figure, not a rule's -- a reporting field is some 30 nm
 /// from the next in most of the country, so a marginal report colours the
 /// way to it.
 pub const MARGINAL_NM: f64 = 30.0;
 /// 14 CFR 91.155(c) and (d): no VFR under a ceiling below 1,000 ft or in
-/// under 3 sm in a surface area -- the least any minimums here come to,
-/// whatever the pilot's own.
-pub const LEGAL_CEILING_FT: f64 = 1000.0;
-pub const LEGAL_VISIBILITY_SM: f64 = 3.0;
+/// under 3 sm in a surface area -- the surface-area minimums, which the
+/// planner holds every route to, whatever the pilot's own (wingtip_flight::vfr).
+pub const LEGAL_CEILING_FT: f64 = vfr::SURFACE_AREA_CEILING_FT;
+pub const LEGAL_VISIBILITY_SM: f64 = vfr::SURFACE_AREA_VISIBILITY_SM;
 /// A METAR is read for a flight leaving within this long, s; later, the
 /// TAFs alone, as a report is of now.
 pub const METAR_AHEAD_S: f64 = 2.0 * 3600.0;
 /// SIGMETs reaching below this, ft, are a light airplane's (Class A from
 /// 18,000 ft, 14 CFR 71.33).
-pub const SIGMET_BELOW_FT: f64 = 18000.0;
+pub const SIGMET_BELOW_FT: f64 = limits::CLASS_A_FLOOR_FT;
 /// A G-AIRMET is a snapshot valid at its time, three hours apart (the
 /// AWC's product, wingtip.weather's GAIRMET_SNAPSHOT_S): one valid within
 /// half that gap of some time of the flight stands for it.
@@ -70,10 +75,21 @@ pub fn step_index(dr: i64, dc: i64) -> usize {
 /// ceiling and under 18,000 ft (Class A, 71.33) -- the lower of the two,
 /// so a way works whichever way its legs go.
 pub fn highest_cruise_ft(ceiling_ft: f64) -> f64 {
-    let top = ceiling_ft.min(17_999.0);
-    let east = (3500..18_000).step_by(2000).filter(|&a| a as f64 <= top).max().unwrap_or(0);
-    let west = (4500..18_000).step_by(2000).filter(|&a| a as f64 <= top).max().unwrap_or(0);
-    east.min(west) as f64
+    let top = ceiling_ft.min(limits::VFR_HIGHEST_FT);
+    // From the first of each direction's altitudes over 3,000 ft (3,500
+    // eastbound, 4,500 westbound: flight's lowest_vfr_cruising_altitude),
+    // up by its 2,000 ft steps (odd or even thousands plus 500) to the top.
+    let highest = |course_deg: f64| {
+        let mut a = flight::lowest_vfr_cruising_altitude(3000.0, course_deg);
+        if a > top {
+            return 0.0;
+        }
+        while a + 2000.0 <= top {
+            a += 2000.0;
+        }
+        a
+    };
+    highest(90.0).min(highest(270.0))
 }
 
 /// Every VFR cruising altitude to the airplane's top (91.159: odd
@@ -225,7 +241,12 @@ fn field_weather(grid: &mut Grid, r: &Report, min_ceiling_ft: f64, min_visibilit
     // miles, inclusive; metar.rs). A ceiling of unknown height could be
     // any: marked, as a pilot is warned and never stopped by the planner,
     // not passed as VFR.
-    let category = metar::flight_category_of(r.ceiling_ft, false, r.visibility_sm);
+    // With no visibility the category is not settled (flight_category_of),
+    // but a ceiling of 3,000 ft or under is no better than MVFR whatever
+    // the visibility: the ceiling's own category, the visibility taken as
+    // unlimited, is the best it can be, and marks the field.
+    let category = metar::flight_category_of(r.ceiling_ft, false, r.visibility_sm)
+        .or_else(|| metar::flight_category_of(r.ceiling_ft, false, Some(f64::INFINITY)));
     if r.ceiling_unknown || !matches!(category, None | Some("VFR")) {
         let at = grid.near(r.lat, r.lon, MARGINAL_NM);
         grid.mark(&at, "marginal", &format!("{} {how} marginal ({words})", r.ident));

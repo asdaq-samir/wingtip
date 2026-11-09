@@ -32,8 +32,9 @@ from . import cycle_pack
 from .single_flight import once
 
 #: The shapefile's "up to but not including Class A" ceiling, and one that
-#: is not a number, read as Class A's floor (14 CFR 71.33).
-CLASS_A_FLOOR_FT = 18000.0
+#: is not a number, read as Class A's floor (14 CFR 71.33): the engine's
+#: one copy (wingtip_flight::limits::CLASS_A_FLOOR_FT), asked once.
+CLASS_A_FLOOR_FT = float(json.loads(wingtip_native.call("altitude_limits", "{}"))["class_a_floor_ft"])
 #: Those airports (14 CFR part 91, appendix D, section 1). Not the Class B
 #: shapefile's primary airports: it names 30, and BWI, Andrews, Dulles,
 #: Hobby, LaGuardia, Newark and Miramar have veils of their own beyond

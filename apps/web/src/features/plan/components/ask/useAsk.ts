@@ -101,7 +101,13 @@ export function currencyWords(c: Currency, today: string): string[] {
   if (c.dayPassengersUntil !== null) out.push(current(c.dayPassengersUntil) ? `Day passengers current through ${c.dayPassengersUntil}` : "Day passengers not current");
   if (c.nightPassengersUntil !== null) out.push(current(c.nightPassengersUntil) ? `Night passengers current through ${c.nightPassengersUntil}` : "Night passengers not current");
   if (c.flightReviewUntil !== null) out.push(current(c.flightReviewUntil) ? `Flight review current through ${c.flightReviewUntil}` : "Flight review lapsed");
-  if (c.instrumentCurrentUntil !== null) out.push(current(c.instrumentCurrentUntil) ? `Instrument current through ${c.instrumentCurrentUntil}` : "Instrument currency lapsed");
+  // Approaches flown this month count from next month (61.57(c)(1)): not
+  // current until `instrumentCurrentFrom`.
+  if (c.instrumentCurrentUntil !== null) {
+    out.push(!current(c.instrumentCurrentUntil) ? "Instrument currency lapsed"
+      : c.instrumentCurrentFrom && c.instrumentCurrentFrom > today ? `Instrument not current until ${c.instrumentCurrentFrom}`
+      : `Instrument current through ${c.instrumentCurrentUntil}`);
+  }
   if (c.medicalExpiresOn !== null) out.push(current(c.medicalExpiresOn) ? `Medical good through ${c.medicalExpiresOn}` : "Medical expired");
   return out;
 }

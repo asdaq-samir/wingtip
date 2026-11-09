@@ -103,7 +103,14 @@ struct AssistantContext: Encodable, Equatable, Sendable {
         var lines: [String] = []
         if let until = currency.dayPassengersUntil { lines.append("Day passenger currency (61.57(a)) until \(until)") }
         if let until = currency.nightPassengersUntil { lines.append("Night passenger currency (61.57(b)) until \(until)") }
-        if let until = currency.instrumentCurrentUntil { lines.append("Instrument current (61.57(c)) until \(until)") }
+        if let until = currency.instrumentCurrentUntil {
+            // Approaches flown this month count from next month (61.57(c)(1)).
+            if let from = currency.instrumentCurrentFrom {
+                lines.append("Instrument not current until \(from) (61.57(c)), then through \(until)")
+            } else {
+                lines.append("Instrument current (61.57(c)) until \(until)")
+            }
+        }
         if let on = currency.flightReviewOn { lines.append("Flight review (61.56) on \(on)" + (currency.flightReviewUntil.map { ", good until \($0)" } ?? "")) }
         if let on = currency.medicalExpiresOn { lines.append("Medical expires \(on)") }
         lines.append("\(currency.totalHours.formatted()) hours total, \(currency.nightHours.formatted()) at night, \(currency.crossCountryHours.formatted()) cross-country")

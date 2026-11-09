@@ -99,6 +99,13 @@ fn a_ceiling_sent_with_no_height() {
     assert_eq!(category(10.0), Value::Null);
     assert_eq!(category(0.5), json!("LIFR"));
     assert_eq!(ask("report_flight_category", json!({ "ceiling_ft": null, "visibility_sm": 10 })), json!("VFR"));
+    // A missing visibility settles only a ceiling under 500 ft (AIM 7-1-7),
+    // as the forecast's flight_category says: one rule.
+    for (ceiling, want) in [(json!(5000), Value::Null), (json!(2000), Value::Null), (json!(400), json!("LIFR"))] {
+        let input = json!({ "ceiling_ft": ceiling, "visibility_sm": null });
+        assert_eq!(ask("report_flight_category", input.clone()), want);
+        assert_eq!(ask("flight_category", input), want);
+    }
 }
 
 #[test]

@@ -54,7 +54,7 @@ pub fn band_of(altitude_ft: Option<f64>) -> Option<&'static str> {
         "low"
     } else if a < 10_000.0 {
         "mid"
-    } else if a < 18_000.0 {
+    } else if a < wingtip_flight::limits::FLIGHT_LEVELS_FROM_FT {
         "high"
     } else {
         "flight-levels"

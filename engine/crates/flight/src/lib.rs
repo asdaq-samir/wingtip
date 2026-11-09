@@ -13,10 +13,13 @@
 //! - limits: the altitudes a flight may be planned at (71.33, 91.119(c),
 //!   91.121, 91.159, 91.179);
 //! - filing: FAA Form 7233-4's items as AIM Appendix 4 writes them;
-//! - sun: night and civil twilight (14 CFR 1.1), NOAA's solar calculation.
+//! - sun: night and civil twilight (14 CFR 1.1), NOAA's solar calculation,
+//!   and 61.57(b)'s night-passenger period;
+//! - vfr: 91.155's basic VFR weather minimums.
 
 pub mod filing;
 pub mod flight;
 pub mod limits;
 pub mod performance;
 pub mod sun;
+pub mod vfr;

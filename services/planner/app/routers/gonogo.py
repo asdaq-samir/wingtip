@@ -199,6 +199,7 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
             "vfr_not_recommended": bool(vnr), "under_minimums": under_mine, "tfr_on_route": bool(tfrs_crossed),
             "hazards": 0 if unchecked("hazards") and unchecked("gairmets") else len(hazard_names),
             "night": (totals or {}).get("night") is True,
+            "night_passengers": (totals or {}).get("night_passengers"),
             "fuel_margin_gal": min(margins) if margins else None,
             "ifr": ifr, "currency": ask.currency.model_dump() if ask.currency else None,
             "day": day, "ticked": {key: True for key in ask.ticked},

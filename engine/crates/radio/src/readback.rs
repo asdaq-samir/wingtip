@@ -45,7 +45,7 @@ pub fn grouped(n: i64) -> String {
 /// An altitude as ATC says it (AIM 4-2-9): feet below 18,000, a flight
 /// level from there up.
 pub fn altitude_words(ft: i64) -> String {
-    if ft >= 18000 {
+    if ft as f64 >= wingtip_flight::limits::FLIGHT_LEVELS_FROM_FT {
         format!("FL{}", (ft as f64 / 100.0).round() as i64)
     } else {
         format!("{} ft", grouped(ft))

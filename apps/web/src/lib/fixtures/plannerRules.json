@@ -1,5 +1,5 @@
 {
- "_note": "The planner's rules moved into the engine (#482 phase 0): each case's answer is the one the planner's own Python gave before the move (wingtip.airspace_at, wingtip.notams, app.exposure, wingtip.weather, app.gonogo.words), written by it. engine/facade/tests/planner_rules.rs asks the engine each by name.",
+ "_note": "The planner's rules moved into the engine (#482 phase 0): each case's answer is the one the planner's own Python gave before the move (wingtip.airspace_at, wingtip.notams, app.exposure, wingtip.weather, app.gonogo.words), written by it. engine/facade/tests/planner_rules.rs asks the engine each by name. reportCategory's ceilings of 500 ft and over are asked with 10 sm since 2026-11-08: with the visibility missing they are no category (AIM 7-1-7, one rule with flight_category), as its last case says.",
  "airspaceColumn": [
   {
    "ground_ft": 780.0,
@@ -12368,7 +12368,7 @@
   },
   {
    "ceiling_ft": 500,
-   "visibility_sm": null,
+   "visibility_sm": 10,
    "category": "IFR"
   },
   {
@@ -12378,17 +12378,17 @@
   },
   {
    "ceiling_ft": 1000,
-   "visibility_sm": null,
+   "visibility_sm": 10,
    "category": "MVFR"
   },
   {
    "ceiling_ft": 3000,
-   "visibility_sm": null,
+   "visibility_sm": 10,
    "category": "MVFR"
   },
   {
    "ceiling_ft": 3001,
-   "visibility_sm": null,
+   "visibility_sm": 10,
    "category": "VFR"
   },
   {
@@ -12435,6 +12435,11 @@
    "ceiling_ft": 800,
    "visibility_sm": 6,
    "category": "IFR"
+  },
+  {
+   "ceiling_ft": 5000,
+   "visibility_sm": null,
+   "category": null
   }
  ],
  "words": [
@@ -12446,7 +12451,7 @@
    "to_fixed0": null,
    "to_fixed2": null,
    "grouped": null,
-   "alt_ft": "—",
+   "alt_ft": "\u2014",
    "flight_level": "FL----"
   },
   {

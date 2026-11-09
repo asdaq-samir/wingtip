@@ -84,6 +84,9 @@ struct Currency: Codable, Equatable, Sendable {
     var dayPassengersUntil: String?
     var nightPassengersUntil: String?
     var instrumentCurrentUntil: String?
+    /// The first day of an instrument currency not begun yet: approaches
+    /// flown this month count from next month (14 CFR 61.57(c)(1)).
+    var instrumentCurrentFrom: String?
     var ipcNeededAfter: String?
     var ipcOn: String?
     var flightReviewOn: String?

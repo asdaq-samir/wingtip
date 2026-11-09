@@ -5,7 +5,7 @@
 //! they make of the hour by `super::hour` (AC 00-45H's change groups).
 //! Times in and out are milliseconds, as the web's.
 
-use super::{category_of, hour, Figures, Group};
+use super::{hour, Figures, Group};
 use crate::json::{self, Value};
 use crate::metar::{self, Layer, Wind};
 use crate::taf::{self, Period, Taf};
@@ -76,7 +76,7 @@ fn figures(p: &Period, under: Option<&Period>) -> Hour {
     let (ceiling, unknown) = metar::sky_ceiling(layers);
     // A ceiling of no height ("OVC///") is not known: only what the
     // visibility settles is said (metar::flight_category_of).
-    let category = if unknown { metar::flight_category_of(None, true, visibility) } else { category_of(ceiling, visibility) };
+    let category = metar::flight_category_of(ceiling, unknown, visibility);
     Hour {
         category: category.map(str::to_owned),
         ceiling_ft: ceiling,

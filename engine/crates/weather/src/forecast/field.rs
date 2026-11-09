@@ -6,12 +6,25 @@
 
 use crate::geo;
 
+/// Nautical miles in a statute mile (1,609.344 m and 1,852 m).
+pub const NM_PER_SM: f64 = 1609.344 / 1852.0;
+
+/// A TAF is the forecast for the area within 5 statute miles of the
+/// airport's centre (AC 00-45H, Terminal Aerodrome Forecast; NWSI 10-813),
+/// its "vicinity" (VC) the ring from 5 to 10 sm. The one figure each
+/// reach below starts from.
+pub const TAF_AREA_SM: f64 = 5.0;
+/// The same, nm (4.3).
+pub const TAF_AREA_NM: f64 = TAF_AREA_SM * NM_PER_SM;
+/// Its vicinity's outer edge, 10 sm (8.7 nm): twice the area.
+pub const TAF_VICINITY_NM: f64 = 2.0 * TAF_AREA_NM;
+
 /// How far a TAF is taken to speak for a field without one of its own,
-/// nm. A TAF is the forecast for 5 sm round the runways, with the
-/// vicinity out to 10 sm (AC 00-45H, the NWS's terminal forecast area;
-/// NWSI 10-813); 25 nm is the planner's own choice, wider than either, so
-/// a field near a TAF is not left with no forecast at all, and the row
-/// says how far away the one it reads is.
+/// and for the clouds over a leg (wingtip_altitude's
+/// CLOUD_STATION_RADIUS_NM), nm: the planner's own choice, beyond the
+/// TAF's 5 sm area and its 10 sm vicinity, so a field near a TAF is not
+/// left with no forecast at all; the row says how far away the one it
+/// reads is, so the pilot can weigh it.
 pub const TAF_REACH_NM: f64 = 25.0;
 
 /// A TAF station as the briefing lists it.

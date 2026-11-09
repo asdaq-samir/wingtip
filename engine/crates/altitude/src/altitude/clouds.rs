@@ -4,22 +4,22 @@ use super::track::{track_nm, Point};
 use crate::geo::distance_nm;
 
 /// 14 CFR 91.155(a), VFR under a cloud layer: 500 ft below it under
-/// 10,000 ft MSL ...
-pub const CLOUD_CLEARANCE_FT: f64 = 500.0;
+/// 10,000 ft MSL (wingtip_flight::vfr, the one copy) ...
+pub const CLOUD_CLEARANCE_FT: f64 = wingtip_flight::vfr::CLOUD_BELOW_FT;
 /// ... and 1,000 ft below it at and above 10,000 ft MSL -- in Class E by
 /// day and by night, and in Class G more than 1,200 ft above the surface.
 /// Class G within 1,200 ft of the surface asks only "clear of clouds" by
 /// day; the planner cannot tell Class G from Class E there, so it keeps
 /// the 500 ft day and night, which is legal in both (the safer reading).
-pub const CLOUD_CLEARANCE_HIGH_FT: f64 = 1000.0;
-pub const CLOUD_CLEARANCE_HIGH_FROM_FT: f64 = 10000.0;
+pub const CLOUD_CLEARANCE_HIGH_FT: f64 = wingtip_flight::vfr::HIGH_CLOUD_BELOW_FT;
+pub const CLOUD_CLEARANCE_HIGH_FROM_FT: f64 = wingtip_flight::vfr::HIGH_FROM_MSL_FT;
 
-/// A TAF speaks for the field it is issued for and a few miles around
-/// (the NWS's terminal forecast area, 5 sm of the runways, with the
-/// vicinity out to 10): a leg takes the forecasts of the stations this
-/// close to its own line, a planning choice wider than either -- the same
-/// reach a field without a TAF of its own is briefed from
-/// (wingtip_weather::forecast::field::TAF_REACH_NM).
+/// A TAF speaks for 5 sm of the airport's centre (TAF_AREA_SM, AC 00-45H
+/// and NWSI 10-813): a leg takes the forecasts of the stations this close
+/// to its own line, the planner's own reach beyond that area, the same
+/// one a field without a TAF of its own is briefed from
+/// (wingtip_weather::forecast::field::TAF_REACH_NM, where the choice is
+/// said).
 pub const CLOUD_STATION_RADIUS_NM: f64 = wingtip_weather::forecast::field::TAF_REACH_NM;
 
 /// The highest altitude that keeps 91.155's distance below a cloud base

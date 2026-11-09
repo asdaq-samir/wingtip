@@ -59,7 +59,7 @@ class ReminderSendTest {
     @BeforeEach
     void plannerGivesTheMedical() {
         given(planner.currency(any(), any(), any(), any(), any())).willAnswer(ask -> new CurrencyDto(
-                null, null, null, null, ask.getArgument(2), 0, 0, 0, 0, 0, null, null, null, 0, false, false));
+                null, null, null, null, ask.getArgument(2), 0, 0, 0, 0, 0, null, null, null, null, 0, false, false));
     }
 
     private Pilot pilotWithMedicalEnding(LocalDate on, boolean asked) {

@@ -172,17 +172,30 @@ pub fn no_altitude(selection: &Value, between: Option<(&str, &str)>, via: Option
         // first IFR altitude over it by the direction of flight
         // (91.179(b)), against the aircraft's service ceiling.
         let first = cruising::legal_ifr(floor, None, course).first().copied().unwrap_or(floor);
-        let clearance = num(stuck, "obstacle_clearance_ft").filter(|&c| c != 0.0).unwrap_or(IFR_CLEARANCE_FT);
-        let over = if matches!(stuck.get("mountainous"), Some(Value::Bool(true))) { " over a mountainous area" } else { "" };
+        let minimum = match stuck.get("airway").filter(|a| matches!(a, Value::Object(_))) {
+            // On an airway the minimum is its published MEA (91.177(a)(1)),
+            // not (a)(2)'s 4 nm rule, which applies only where Part 95 and
+            // 97 prescribe none.
+            Some(airway) => {
+                let kind = if num(airway, "mea_ft").is_some_and(|m| m != 0.0) { "MEA" } else { "GNSS MEA" };
+                let of = airway.get("id").and_then(Value::as_str).filter(|s| !s.is_empty()).map_or("the airway".to_owned(), str::to_owned);
+                format!("The {kind} of {of} there is {} ft (14 CFR 91.177(a)(1)).", grouped(floor))
+            }
+            None => {
+                let clearance = num(stuck, "obstacle_clearance_ft").filter(|&c| c != 0.0).unwrap_or(IFR_CLEARANCE_FT);
+                let over = if matches!(stuck.get("mountainous"), Some(Value::Bool(true))) { " over a mountainous area" } else { "" };
+                format!(
+                    "The minimum IFR altitude there is {} ft: {} ft over the highest obstacle within 4 nm{over} (14 CFR 91.177(a)(2)).",
+                    grouped(floor),
+                    grouped(clearance)
+                )
+            }
+        };
         return NoAltitude {
             title,
             brief: format!("Ceiling {} ft: the minimum IFR altitude {place} is {}", grouped(top), grouped(floor)),
             reasons: vec![
-                format!(
-                    "The minimum IFR altitude there is {} ft: {} ft over the highest obstacle within 4 nm{over} (14 CFR 91.177(a)).",
-                    grouped(floor),
-                    grouped(clearance)
-                ),
+                minimum,
                 format!("The first {heading} IFR altitude above that is {} ft.", grouped(first)),
                 format!("The aircraft's service ceiling stops at {} ft.", grouped(top)),
             ],

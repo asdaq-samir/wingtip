@@ -357,6 +357,33 @@ fn the_logbook_counts_only_where_the_pilot_keeps_one_and_night_landings_only_at_
     assert_eq!(keys(&frat::assess(&frat::Input { night: true, currency: Some(current()), ..quiet_risk() })), ["night", "recent-night"]);
 }
 
+/// 61.57(b)'s night-passenger caution follows its own window, an hour
+/// after sunset to an hour before sunrise, not 1.1's night: out of
+/// Anchorage at 02:00 on the June solstice there is no 1.1 night (civil
+/// twilight all night) but the caution is raised; at Chicago 45 minutes
+/// after sunset it is 1.1's night but not yet the period.
+#[test]
+fn the_night_passenger_caution_follows_61_57_bs_own_window() {
+    let anchorage = frat::Input { night: false, night_passengers: Some(true), currency: Some(current()), ..quiet_risk() };
+    assert_eq!(keys(&frat::assess(&anchorage)), ["recent-night"]);
+    let dusk = frat::Input { night: true, night_passengers: Some(false), currency: Some(current()), ..quiet_risk() };
+    assert_eq!(keys(&frat::assess(&dusk)), ["night"]);
+    let risk = call("gonogo_risk", r#"{"day": "2026-06-21", "night": false, "night_passengers": true, "currency": {"flights": 10, "total_hours": 200,
+        "day_passengers_until": "2026-12-01", "flight_review_until": "2027-06-30", "medical_expires_on": "2028-01-31"}}"#);
+    assert_eq!(risk["factors"][0]["key"], "recent-night");
+}
+
+/// Approaches flown this month count from next month (61.57(c)(1)): with
+/// the currency's first day after the flight's, the pilot is not
+/// instrument current yet, whatever its last day.
+#[test]
+fn an_instrument_currency_not_begun_yet_is_not_current() {
+    let soon = Currency { instrument_current_from: Some(s("2026-11-01")), instrument_current_until: Some(s("2027-04-30")), ..current() };
+    assert_eq!(keys(&frat::assess(&frat::Input { currency: Some(soon.clone()), ifr: true, ..quiet_risk() })), ["instrument"]);
+    let november = frat::Input { currency: Some(soon), ifr: true, day: s("2026-11-01"), ..quiet_risk() };
+    assert!(frat::assess(&november).factors.is_empty());
+}
+
 fn good() -> Inspections {
     Inspections {
         annual_good_through: Some(s("2026-10-31")), hours_now: Some(1250.0), hundred_hour_due_at_hours: Some(1300.5),

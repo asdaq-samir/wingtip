@@ -137,7 +137,8 @@
     "ipcNeededAfter": "2027-01-31",
     "approachesInWindow": 6,
     "holdingInWindow": true,
-    "trackingInWindow": true
+    "trackingInWindow": true,
+    "instrumentCurrentFrom": null
    }
   },
   {
@@ -168,11 +169,12 @@
     }
    ],
    "expected": {
-    "instrumentCurrentUntil": "2026-07-31"
+    "instrumentCurrentUntil": "2026-07-31",
+    "instrumentCurrentFrom": null
    }
   },
   {
-   "name": "Approaches flown this month count from next month on (61.57(c)(1): the 6 calendar months preceding the month of the flight)",
+   "name": "Approaches flown this month count from next month on, and the answer says it starts then rather than calling the pilot current now (61.57(c)(1): the 6 calendar months preceding the month of the flight)",
    "today": "2026-10-11",
    "entries": [
     {
@@ -189,6 +191,7 @@
    ],
    "expected": {
     "approachesInWindow": 0,
+    "instrumentCurrentFrom": "2026-11-01",
     "instrumentCurrentUntil": "2027-04-30"
    }
   },
@@ -240,7 +243,8 @@
    "expected": {
     "instrumentCurrentUntil": "2027-03-31",
     "ipcOn": "2026-09-18",
-    "ipcNeededAfter": "2027-09-30"
+    "ipcNeededAfter": "2027-09-30",
+    "instrumentCurrentFrom": null
    }
   }
  ],

@@ -5,12 +5,22 @@ import UniformTypeIdentifiers
 /// the gateway worked out, against today.
 struct UntilText: View {
     let date: String?
+    /// A currency still to come (instrument currency from approaches flown
+    /// this month, 14 CFR 61.57(c)(1)): "From 1 Nov 2026" in orange, as the
+    /// pilot is not current yet.
+    var from: String? = nil
 
     var body: some View {
         let current = Day.current(date)
-        Text(date.map { current ? "To \(Day.said($0))" : "Ended \(Day.said($0))" } ?? "Not current")
-            .monospacedDigit()
-            .foregroundStyle(current ? Color.green : Color.red)
+        if current, let from, from > Day.today() {
+            Text("From \(Day.said(from))")
+                .monospacedDigit()
+                .foregroundStyle(Color.orange)
+        } else {
+            Text(date.map { current ? "To \(Day.said($0))" : "Ended \(Day.said($0))" } ?? "Not current")
+                .monospacedDigit()
+                .foregroundStyle(current ? Color.green : Color.red)
+        }
     }
 }
 
@@ -233,7 +243,7 @@ struct LogbookView: View {
                 if let after = currency?.ipcNeededAfter, after < Day.today() {
                     Text("IPC needed").foregroundStyle(.red)
                 } else {
-                    UntilText(date: currency?.instrumentCurrentUntil)
+                    UntilText(date: currency?.instrumentCurrentUntil, from: currency?.instrumentCurrentFrom)
                 }
             } label: {
                 Text("Instrument currency")

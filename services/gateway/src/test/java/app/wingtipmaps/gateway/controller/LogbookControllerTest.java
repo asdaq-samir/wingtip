@@ -102,7 +102,7 @@ class LogbookControllerTest {
         given(logbook.list(any())).willReturn(List.of());
         given(planner.currency(any(), any(), any(), any(), any())).willReturn(new CurrencyDto(
                 LocalDate.of(2026, 12, 19), null, LocalDate.of(2025, 6, 14), LocalDate.of(2027, 6, 30), null, 4.0, 0, 3.4, 9, 4,
-                LocalDate.of(2027, 3, 31), null, LocalDate.of(2027, 9, 30), 6, true, true));
+                LocalDate.of(2027, 3, 31), null, null, LocalDate.of(2027, 9, 30), 6, true, true));
 
         mockMvc.perform(get("/api/logbook/currency").with(oidcLogin()))
                 .andExpect(status().isOk())

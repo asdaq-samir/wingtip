@@ -60,6 +60,10 @@ export interface FratInput {
   /** SIGMETs and G-AIRMETs along the route during the flight. */
   hazards: number;
   night: boolean;
+  /** Whether any of the flight is in 14 CFR 61.57(b)'s night-passenger
+   *  period (an hour after sunset to an hour before sunrise), the nav log's
+   *  `night_passengers`; left out, `night` stands for it. */
+  nightPassengers?: boolean | null;
   /** The nav log's fuel margin, gallons; below zero the tanks do not
    *  hold the fuel and its reserve. */
   fuelMarginGal: number | null;
@@ -96,7 +100,7 @@ export function assess(input: FratInput): Assessment {
   const c = input.currency;
   const a = callEngine("gonogo_risk", {
     vfr_not_recommended: input.vfrNotRecommended, under_minimums: input.underMinimums, tfr_on_route: input.tfrOnRoute,
-    hazards: input.hazards, night: input.night, fuel_margin_gal: input.fuelMarginGal, ifr: input.ifr ?? false,
+    hazards: input.hazards, night: input.night, night_passengers: input.nightPassengers ?? null, fuel_margin_gal: input.fuelMarginGal, ifr: input.ifr ?? false,
     // Left out for a stock profile, which has none; null for the pilot's
     // own airplane with none recorded.
     ...(input.vorCheck !== undefined
@@ -106,6 +110,7 @@ export function assess(input: FratInput): Assessment {
     currency: c && {
       flights: c.flights, total_hours: c.totalHours, day_passengers_until: c.dayPassengersUntil ?? null,
       night_passengers_until: c.nightPassengersUntil ?? null, instrument_current_until: c.instrumentCurrentUntil ?? null,
+      instrument_current_from: c.instrumentCurrentFrom ?? null,
       ipc_needed_after: c.ipcNeededAfter ?? null, flight_review_until: c.flightReviewUntil ?? null, medical_expires_on: c.medicalExpiresOn ?? null,
     },
     day: input.day, ticked: input.ticked,
