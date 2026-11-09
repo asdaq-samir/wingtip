@@ -9,6 +9,8 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.GoNoGo
 import app.wingtipmaps.android.api.generated.GoNoGoAsk
 import app.wingtipmaps.android.api.generated.VerdictItem
+import app.wingtipmaps.android.offline.KeptForAir
+import app.wingtipmaps.android.ready.ReadyFacts
 import app.wingtipmaps.android.strip.Finding
 import app.wingtipmaps.android.strip.GlanceAction
 import app.wingtipmaps.android.strip.Verdict
@@ -40,6 +42,10 @@ class BriefModel : ViewModel() {
         /** When this brief came in, for Ready to fly's weather age
          *  (ready_to_fly's briefing); null before one has. */
         val fetchedAtMs: Long? = null,
+        /** When the brief shown was fetched, where it is the one kept for
+         *  the air because the network failed; null when it is the
+         *  network's own (KeptAgeLine). */
+        val keptAtMs: Long? = null,
     ) {
         /** The findings to act on, worst first, at most three. */
         val actions: List<GlanceAction>
@@ -58,27 +64,16 @@ class BriefModel : ViewModel() {
      *  route not planned, and nothing again for the same route. */
     fun brief(plan: Plan.State) {
         if (!plan.routed || plan.totals == null || plan.planning) return
-        val g = AirplaneNow.given(plan.own)
-        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, g, plan.holds.joinToString(","), plan.rules).joinToString("|")
+        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, AirplaneNow.given(plan.own), plan.holds.joinToString(","), plan.rules).joinToString("|")
         if (route == _state.value.route && (_state.value.verdict != null || _state.value.loading)) return
         asking?.cancel()
         _state.value = State(route = route, loading = true)
         asking = viewModelScope.launch {
             try {
-                val answer = Planner.goNoGo(
-                    GoNoGoAsk(
-                        dep = plan.dep, dest = plan.dest, stops = plan.stops.joinToString(",").ifEmpty { null },
-                        aircraft = AirplaneNow.plannerName(plan.aircraft, plan.own), holds = plan.holds.joinToString(",").ifEmpty { null },
-                        rules = plan.rules,
-                        // The pilot's own figures over the type's book, or the
-                        // whole of an own airplane: never a stock one's.
-                        cruiseTasKt = g[FigureKey.CRUISE.key], fuelBurnGph = g[FigureKey.BURN.key], cruisePowerPct = g[FigureKey.POWER.key],
-                        usableFuelGal = g[FigureKey.USABLE.key], climbTasKt = g[FigureKey.CLIMB_TAS.key], climbFuelBurnGph = g[FigureKey.CLIMB_BURN.key],
-                        climbRateFpm = g[FigureKey.CLIMB_RATE.key], serviceCeilingFt = g[FigureKey.CEILING.key], taxiFuelGal = g[FigureKey.TAXI.key],
-                        glideRatio = g[FigureKey.GLIDE.key],
-                    ),
-                )
-                _state.update { it.copy(loading = false) + answer }
+                // The last good one kept for the air, and given back with its
+                // time where the network fails (KeptForAir).
+                val had = KeptForAir.had(KeptForAir.GO_NO_GO, ReadyFacts.flightKey(plan), GoNoGo.serializer()) { Planner.goNoGo(ask(plan)) }
+                _state.update { (it.copy(loading = false) + had.value).copy(fetchedAtMs = had.fetchedAtMs, keptAtMs = had.fetchedAtMs.takeIf { had.kept }) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -103,6 +98,22 @@ class BriefModel : ViewModel() {
     )
 
     companion object {
+        /** The Go / No-Go's question for the route: the pilot's own figures
+         *  over the type's book, or the whole of an own airplane, never a
+         *  stock one's. Keep for the Air asks the same (KeepForAir). */
+        fun ask(plan: Plan.State): GoNoGoAsk {
+            val g = AirplaneNow.given(plan.own)
+            return GoNoGoAsk(
+                dep = plan.dep, dest = plan.dest, stops = plan.stops.joinToString(",").ifEmpty { null },
+                aircraft = AirplaneNow.plannerName(plan.aircraft, plan.own), holds = plan.holds.joinToString(",").ifEmpty { null },
+                rules = plan.rules,
+                cruiseTasKt = g[FigureKey.CRUISE.key], fuelBurnGph = g[FigureKey.BURN.key], cruisePowerPct = g[FigureKey.POWER.key],
+                usableFuelGal = g[FigureKey.USABLE.key], climbTasKt = g[FigureKey.CLIMB_TAS.key], climbFuelBurnGph = g[FigureKey.CLIMB_BURN.key],
+                climbRateFpm = g[FigureKey.CLIMB_RATE.key], serviceCeilingFt = g[FigureKey.CEILING.key], taxiFuelGal = g[FigureKey.TAXI.key],
+                glideRatio = g[FigureKey.GLIDE.key],
+            )
+        }
+
         /** The planner's finding by name (lib/findings). */
         fun finding(name: String): Finding = when (name) {
             "ok" -> Finding.OK

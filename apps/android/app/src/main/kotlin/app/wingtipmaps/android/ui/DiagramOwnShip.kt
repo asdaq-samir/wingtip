@@ -64,6 +64,7 @@ import app.wingtipmaps.android.engine.generated.diagramLabels
 import app.wingtipmaps.android.engine.generated.diagramPoint
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.offline.KeptForAir
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -254,13 +255,10 @@ class DiagramPage(
          *  their words by the engine, where each is drawn by Android's
          *  PDF text, the fit by the engine. */
         fun read(url: String, cache: File): DiagramPage? {
-            val file = File(cache, "diagram-${url.hashCode()}.pdf")
-            if (!file.exists()) {
-                http.newCall(Request.Builder().url(url).build()).execute().use { response ->
-                    if (!response.isSuccessful) throw IllegalStateException("The FAA answered ${response.code}.")
-                    file.writeBytes(response.body.bytes())
-                }
-            }
+            // The one Keep for the Air kept (KeptForAir) first, so it opens
+            // with no signal; else the cache's, fetched where it is not.
+            val file = KeptForAir.current?.pdf(KeptForAir.AIRPORTS, url)?.takeIf { it.isFile } ?: File(cache, "diagram-${url.hashCode()}.pdf")
+            if (!file.exists()) download(url, file)
             ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
                 PdfRenderer(fd).use { renderer ->
                     if (renderer.pageCount < 1) return null
@@ -273,6 +271,17 @@ class DiagramPage(
                         return DiagramPage(bitmap, w, h, graticule.getOrNull(), graticule.exceptionOrNull()?.message)
                     }
                 }
+            }
+        }
+
+        /** The diagram's PDF from the FAA into `file`, whole or not at all. */
+        fun download(url: String, file: File) {
+            http.newCall(Request.Builder().url(url).build()).execute().use { response ->
+                if (!response.isSuccessful) throw IllegalStateException("The FAA answered ${response.code}.")
+                file.parentFile?.mkdirs()
+                val part = File(file.path + ".part")
+                part.writeBytes(response.body.bytes())
+                if (!part.renameTo(file)) part.delete()
             }
         }
 

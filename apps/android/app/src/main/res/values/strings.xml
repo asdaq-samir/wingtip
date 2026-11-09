@@ -455,5 +455,9 @@
     <string name="ready_fewer">Fewer</string>
     <string name="ready_next_cycle">Next FAA data cycle %1$s begins %2$s</string>
     <string name="ready_fly_anyway">Fly Anyway</string>
+    <!-- Keep for the Air on the flight plan (KeepForAirModel): the route's answers, plan, packs and charts in one tap. -->
+    <string name="keep_for_air">Keep for the Air</string>
+    <string name="keeping_for_air">Keeping for the Air…</string>
+    <string name="kept_for_air">Kept for the Air: %1$s MB</string>
     <string name="ready_airplane_line">Its fuel, performance and loading come from its own figures; none is assumed.</string>
 </resources>
