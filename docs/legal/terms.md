@@ -4,7 +4,7 @@
 
 By using Wingtip Maps ("the app", on the web, the iPhone and Android) you agree to these terms.
 
-## A planning aid, not for navigation
+## A planning aid, not for navigation {#planning-aid}
 
 Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1-800-WX-BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).
 
@@ -19,7 +19,7 @@ The pilot in command is directly responsible for, and is the final authority as 
 - **Not an official briefing, and it files no flight plan.**
 - **Not a logbook of record.** Keep your own, and a copy of your data (Setup, Export My Data).
 
-## Features Claude writes
+## Features Claude writes {#ai-features}
 
 Planning and flying with the app are free: the charts, the route, checkpoints, the nav log, altitudes, fuel, weather, airspace and the Go / No-Go. With an account you also have the features Claude, an AI model made by Anthropic, writes: Ask, the written briefing, checkpoint descriptions, the mock oral and the debrief's words. They are free while the app is in early use. Each has a monthly allowance, which the app shows where the feature is, and which starts again on the 1st of each month (UTC). What Claude writes can be wrong: check it as you would any briefing. What is sent to Claude to write them is in the [Privacy policy](/privacy).
 
