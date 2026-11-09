@@ -1,27 +1,15 @@
-import { lazy, Suspense, useId, useState } from "react";
+import { lazy, Suspense, useId } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, Mail, MailX, Plus, Target, Users } from "lucide-react";
-import { done } from "../../lib/doneNote";
+import { GraduationCap, Mail, MailX, Target, Users } from "lucide-react";
 import FieldHit from "../../components/FieldHit";
 import { cn } from "cn";
 import { ConsolePages, PageRow } from "../../components/ConsolePages";
-import IconButton from "../../components/IconButton";
 import { ListGroup, ListRow } from "../../components/GroupedList";
-import {
-  ResponsivePopover,
-  ResponsivePopoverAnchor,
-  ResponsivePopoverContent,
-  ResponsivePopoverTrigger,
-} from "../../components/ResponsivePopover";
-import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { useConfirm } from "../../components/useConfirm";
 import TogglePill from "../../components/TogglePill";
 import { api } from "../../lib/api/client";
-import type { Currency, LogbookEntry, LogbookEntryRequest } from "../../lib/api/types";
-import { TEXT } from "../../lib/text";
+import type { Currency } from "../../lib/api/types";
 import CheckridePage from "./CheckridePage";
-import QueryState from "../../components/QueryState";
 import InstructorPage from "./InstructorPage";
 import ComingUp from "./ComingUp";
 import LogbookFile from "./LogbookFile";
@@ -30,8 +18,8 @@ import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
 import { currencyQuery, trainingQuery } from "../../lib/queryClient";
-import { EditToggle, RemoveMinus } from "../../components/Favorites";
-import { SwipeToDelete } from "../../components/SwipeToDelete";
+import LogbookFlights from "./logbook/LogbookFlights";
+import { refreshLogbook } from "./logbook/logbookEntry";
 
 const today = () => localDay();
 // Its own chunk: it reads the saved flights' debriefs only when opened.
@@ -82,159 +70,21 @@ function DateField({
   );
 }
 
-const BLANK: LogbookEntryRequest = {
-  flownOn: today(),
-  aircraft: "",
-  aircraftType: "",
-  route: "",
-  totalHours: 0,
-  nightHours: 0,
-  crossCountryHours: 0,
-  dayLandings: 1,
-  nightLandings: 0,
-  remarks: "",
-  dualHours: 0,
-  soloHours: 0,
-  instrumentHours: 0,
-  toweredLandings: 0,
-  distanceNm: 0,
-  longestLegNm: 0,
-  approaches: 0,
-  holding: false,
-  tracking: false,
-  // Typed in, not drawn from a track (features/logbook-auto).
-  airHours: 0,
-  touchAndGoes: 0,
-  fromTrack: false,
-  flightId: null,
-};
-
-/** One entry's form: a paper logbook's columns. */
-function EntryForm({
-  initial,
-  onSave,
-  saving,
-}: {
-  initial: LogbookEntryRequest;
-  onSave: (r: LogbookEntryRequest) => void;
-  saving: boolean;
-}) {
-  const [entry, setEntry] = useState(initial);
-  const field = (key: keyof LogbookEntryRequest, label: string, type: "text" | "number" | "date" = "text") => (
-    <label className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
-      <span>{label}</span>
-      <Input
-        type={type}
-        inputMode={type === "number" ? "decimal" : undefined}
-        step={type === "number" ? "any" : undefined}
-        min={type === "number" ? 0 : undefined}
-        className="h-8"
-        data-testid={`logbook-${key}`}
-        value={(entry[key] as string | number | null | undefined) ?? ""}
-        onChange={(e) => setEntry({ ...entry, [key]: type === "number" ? Number(e.target.value || 0) : e.target.value })}
-      />
-    </label>
-  );
-  return (
-    <form
-      className="space-y-2.5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSave(entry);
-      }}
-    >
-      {field("flownOn", "Date", "date")}
-      {field("route", "Route")}
-      {field("aircraft", "Airplane")}
-      {field("aircraftType", "Type")}
-      {field("totalHours", "Total hours", "number")}
-      {field("nightHours", "Night hours", "number")}
-      {field("crossCountryHours", "Cross-country", "number")}
-      {field("dayLandings", "Day landings", "number")}
-      {field("nightLandings", "Night landings", "number")}
-      {/* What a student's 61.109 experience is counted from: the
-          Checkride page. */}
-      {field("dualHours", "Dual received", "number")}
-      {field("soloHours", "Solo", "number")}
-      {field("instrumentHours", "Sim. instrument", "number")}
-      {field("toweredLandings", "Towered landings", "number")}
-      {field("distanceNm", "Distance (nm)", "number")}
-      {field("longestLegNm", "Longest leg (nm)", "number")}
-      {/* What instrument currency is counted from (14 CFR 61.57(c)): the
-          approaches, holding and tracking courses, actual or simulated. */}
-      {field("approaches", "Approaches", "number")}
-      <div className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
-        <span>Also flew</span>
-        <span className="flex gap-2">
-          <TogglePill
-            pressed={entry.holding}
-            onPressedChange={(holding) => setEntry({ ...entry, holding })}
-            label="Holding"
-            testId="logbook-holding"
-          />
-          <TogglePill
-            pressed={entry.tracking}
-            onPressedChange={(tracking) => setEntry({ ...entry, tracking })}
-            label="Tracking"
-            testId="logbook-tracking"
-          />
-        </span>
-      </div>
-      {field("remarks", "Remarks")}
-      <div className="flex justify-end pt-1">
-        <Button type="submit" size="sm" disabled={saving || !entry.flownOn} data-testid="logbook-save">
-          Save
-        </Button>
-      </div>
-    </form>
-  );
-}
-
 /**
  * The pilot's logbook and their currency, the Library's Logbook:
  * where they stand first -- passengers by day and at night (14 CFR
  * 61.57), the flight review (61.56) and the medical, with the two dates
  * they give, and instrument currency (61.57(c)) with the last proficiency
- * check -- then the totals and the flights, newest first. Add opens
- * the entry's form,
- * filled in with the airplane picked for planning; a row opens it to
- * change; Edit takes one out.
+ * check -- then the totals and the flights, newest first
+ * (logbook/LogbookFlights: each changed in its own row).
  */
 export function LogbookPanel({ aircraft }: { aircraft?: string }) {
   const queryClient = useQueryClient();
-  const [adding, setAdding] = useState(false);
-  const [changing, setChanging] = useState<LogbookEntry | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [toDelete, setToDelete] = useState<LogbookEntry | null>(null);
-  // Quiet: the list says in place what it could not fetch (QueryState),
-  // where a failure read "No flights logged yet".
-  const entriesAsked = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, meta: { silent: true } });
-  const entries = entriesAsked.data;
+  // The file's export reads the flights too (LogbookFlights' own query).
+  const { data: entries } = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, meta: { silent: true } });
   const { data: currency } = useQuery(currencyQuery);
   const { data: training } = useQuery(trainingQuery);
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["logbook"] });
-    void queryClient.invalidateQueries({ queryKey: ["currency"] });
-    void queryClient.invalidateQueries({ queryKey: ["training"] });
-    void queryClient.invalidateQueries({ queryKey: ["paperwork"] });
-  };
-  const save = useMutation({
-    mutationFn: ({ id, entry }: { id?: number; entry: LogbookEntryRequest }) =>
-      id ? api.logbook.update(id, entry) : api.logbook.add(entry),
-    onSuccess: () => {
-      done("Flight Logged");
-      setAdding(false);
-      setChanging(null);
-      refresh();
-    },
-  });
-  const remove = useMutation({
-    mutationFn: (id: number) => api.logbook.remove(id),
-    onSuccess: () => {
-      setToDelete(null);
-      refresh();
-    },
-  });
+  const refresh = () => refreshLogbook(queryClient);
   const dates = useMutation({
     mutationFn: (next: { flightReviewOn: string | null; medicalExpiresOn: string | null; ipcOn: string | null }) =>
       api.logbook.setCurrencyDates(next),
@@ -243,16 +93,6 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
       void queryClient.invalidateQueries({ queryKey: ["paperwork"] });
     },
   });
-  const [askDelete, deleteDialog] = useConfirm({
-    title: "Take this flight out of the logbook?",
-    description: "It goes from your logbook and your currency. This can't be undone.",
-    confirmLabel: "Delete",
-    destructive: true,
-    onConfirm: () => {
-      if (toDelete) remove.mutate(toDelete.id);
-    },
-  });
-
   // Emailed 30 and 7 days before each of these runs out (ReminderService),
   // at the pilot's ask.
   const { data: reminders } = useQuery({ queryKey: ["reminders"], queryFn: api.logbook.reminders });
@@ -401,95 +241,7 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
           <LogbookPhotoRow />
         </ListGroup>
 
-        {/* A row opens its flight's form, placed by the list. */}
-        <ResponsivePopover
-          open={!!changing}
-          onOpenChange={(open) => {
-            if (!open) setChanging(null);
-          }}
-        >
-          <ResponsivePopoverAnchor asChild>
-            <div>
-              <ListGroup
-                title="Flights"
-                action={
-                  <span className="flex items-center gap-1">
-                    {/* Every list's Edit (EditToggle), where this was a copy of it. */}
-                    {(entries?.length ?? 0) > 0 && (
-                      <EditToggle editing={editing} onToggle={() => setEditing((e) => !e)} testId="logbook-edit" />
-                    )}
-                    <ResponsivePopover open={adding} onOpenChange={setAdding}>
-                      <ResponsivePopoverTrigger asChild>
-                        <IconButton label="Log a flight" className="text-tint" data-testid="logbook-add">
-                          <Plus />
-                        </IconButton>
-                      </ResponsivePopoverTrigger>
-                      <ResponsivePopoverContent title="Log a flight" className="w-80 p-3" align="end">
-                        <EntryForm
-                          initial={{ ...BLANK, aircraft: aircraft ?? "" }}
-                          saving={save.isPending}
-                          onSave={(entry) => save.mutate({ entry })}
-                        />
-                      </ResponsivePopoverContent>
-                    </ResponsivePopover>
-                  </span>
-                }
-              >
-                {!entries ? (
-                  <QueryState row query={entriesAsked} fetching="Fetching your logbook…" failed="Your logbook could not be fetched." />
-                ) : !entries.length ? (
-                  <ListRow muted title="No flights logged yet: the plus logs one." />
-                ) : (
-                  entries.map((e) => (
-                    // Taken off as every kept list's rows are -- a swipe to
-                    // the left, or Edit's minus bringing out the Delete --
-                    // asked first, the entry being the server's.
-                    <SwipeToDelete
-                      key={e.id}
-                      label={`Delete the flight of ${said(e.flownOn)}`}
-                      onDelete={() => {
-                        setToDelete(e);
-                        askDelete();
-                      }}
-                    >
-                      <ListRow
-                        media={editing ? <RemoveMinus label={`Delete the flight of ${said(e.flownOn)}…`} /> : undefined}
-                        title={`${said(e.flownOn)}${e.route ? ` · ${e.route}` : ""}`}
-                        description={[
-                          e.aircraft,
-                          e.aircraftType,
-                          `${e.dayLandings + e.nightLandings} landing${e.dayLandings + e.nightLandings === 1 ? "" : "s"}`,
-                          e.remarks,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                        value={`${e.totalHours.toFixed(1)} h`}
-                        onClick={editing ? undefined : () => setChanging(e)}
-                        data-testid="logbook-entry"
-                      />
-                    </SwipeToDelete>
-                  ))
-                )}
-              </ListGroup>
-            </div>
-          </ResponsivePopoverAnchor>
-          <ResponsivePopoverContent title="The flight" className="w-80 p-3" align="end">
-            {changing && (
-              <EntryForm
-                initial={{
-                  ...changing,
-                  aircraft: changing.aircraft ?? "",
-                  aircraftType: changing.aircraftType ?? "",
-                  route: changing.route ?? "",
-                  remarks: changing.remarks ?? "",
-                }}
-                saving={save.isPending}
-                onSave={(entry) => save.mutate({ id: changing.id, entry })}
-              />
-            )}
-          </ResponsivePopoverContent>
-        </ResponsivePopover>
-        {deleteDialog}
+        <LogbookFlights aircraft={aircraft} />
       </section>
     </ConsolePages>
   );
