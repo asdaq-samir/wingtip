@@ -166,13 +166,23 @@ describe("the briefing", () => {
   const briefingFixture = { metars: {}, weather_unavailable: [], vfr_not_recommended: [] } as never;
 
   test("with no course to brief, it is waiting, not loading for ever", async () => {
-    vi.mocked(api.course).mockRejectedValue(new ApiError("unknown airport K", 404));
+    vi.mocked(api.course).mockRejectedValue(new ApiError("planner service unreachable", 502));
     const { result } = renderHook(() => usePlan(params), { wrapper });
 
     // Said as a system problem, the line by the map's buttons.
-    await waitFor(() => expect(useSystemProblems.getState().problems).toContainEqual(expect.objectContaining({ title: "unknown airport K" })));
+    await waitFor(() => expect(useSystemProblems.getState().problems).toContainEqual(expect.objectContaining({ title: "planner service unreachable" })));
     expect(result.current.briefing).toEqual({ state: "waiting" });
     expect(api.briefing).not.toHaveBeenCalled();
+  });
+
+  test("a place the planner does not know is the route box's, on its pill, not a system problem", async () => {
+    // The FPL audit's A2 (2026-11-08): KZZZ's 404 was the map's line.
+    vi.mocked(api.course).mockRejectedValue(new ApiError("No airport goes by 'KZZZ'.", 404));
+    const { result } = renderHook(() => usePlan(params), { wrapper });
+
+    await waitFor(() => expect(result.current.unknownPlace).toEqual({ ident: "KZZZ" }));
+    expect(useSystemProblems.getState().problems.filter(p => p.title.includes("KZZZ"))).toEqual([]);
+    expect(result.current.briefing).toEqual({ state: "waiting" });
   });
 
   test("a refresh that fails keeps the last briefing up, and says the refresh failed", async () => {
