@@ -3,7 +3,7 @@
 //! off and on, the touch-and-goes out of its landings.
 //!
 //! Air time (takeoff roll to landing roll) is no part of 14 CFR 61.51's
-//! logbook: 61.51(b)(2) asks the flight time, which 14 CFR 1.1 starts when
+//! logbook: 61.51(b)(1)(ii) asks the total flight time, which 14 CFR 1.1 starts when
 //! the airplane first moves under its own power to fly and ends when it
 //! comes to rest after landing. So a file that gives no air time is read
 //! as none known (0), never as the flight time, which would claim more

@@ -244,14 +244,12 @@ struct RootView: View {
         }
         .onChange(of: traffic.planes) { _, planes in Tracking.shared.heard(planes) }
         .onChange(of: ownShip.ahead) { _, alerts in SpokenAlerts.shared.hear(alerts) }
-        // The ATC copilot: each settled transmission read, and the radio
-        // listened to while flying where the pilot turned it on.
+        // The ATC copilot: each settled transmission read, the radio listened to while flying where turned on.
         .onChange(of: ClearanceListener.shared.heard) { _, heard in AtcCopilot.shared.observe(heard, tail: plan.tail) }
         .task(id: "\(InFlight.shared.underway)|\(plan.tail ?? "")|\(AtcCopilot.shared.mode.rawValue)") {
             await AtcCopilot.shared.follow(flying: InFlight.shared.underway, tail: plan.tail)
         }
-        // The flight logged from its track once it has landed and come to rest.
-        .modifier(AutoLogbookHost())
+        .modifier(AutoLogbookHost()) // The flight logged from its track once landed and at rest.
         // Each fix, own ship's or the dry run's airplane, asked of the
         // engine once for the instruments, the strip and the glide ring
         // (InFlight); again when the route changes under it.
