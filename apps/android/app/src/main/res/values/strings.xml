@@ -170,4 +170,8 @@
     <string name="special_use">Special Use</string>
     <string name="special_use_none">None here</string>
     <string name="special_use_unavailable">The FAA\'s special-use airspace did not answer. Check the chart.</string>
+
+    <!-- The Brief's forecast icing (brief/). -->
+    <string name="icing_forecast">Forecast Icing</string>
+    <string name="icing_unchecked">The forecast icing could not be checked: aviationweather.gov didn\'t respond. Verify separately before flight.</string>
 </resources>

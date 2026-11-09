@@ -202,7 +202,7 @@ fun StripLayout(
     }
 
     strip.over?.let { over -> StripOver(over = over, plan = plan, session = session, ownShip = ownShip, assistant = assistant, onClose = { model.open(null) }) }
-    if (briefOpen) BriefSheet(brief, onClose = { briefOpen = false })
+    if (briefOpen) BriefSheet(brief, state, onClose = { briefOpen = false })
     leg?.let { row -> LegSheet(number = row.number, leg = row.leg, onClose = { leg = null }) }
     source?.let { shown -> SourceSheet(shown, onClose = { source = null }) }
 }
