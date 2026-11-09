@@ -103,6 +103,23 @@ enum Engine {
         return try decoder.decode(Out.self, from: Data(called(name, asked).utf8))
     }
 
+    /// The way in for the generated functions (Engine/Generated/EngineCalls.swift,
+    /// one per rule of engine/contract/engine.schema.json): the input and
+    /// answer are the contract's types, so their keys are the rule's own
+    /// and no strategy is applied. A refusal is logged by `called`; an
+    /// answer that is not the contract's shape is logged here, so neither
+    /// reaches a screen as a default value unseen.
+    static func rule<In: Encodable, Out: Decodable>(_ name: String, _ input: In) throws -> Out {
+        let asked = try String(decoding: encoder.encode(input), as: UTF8.self)
+        let text = try called(name, asked)
+        do {
+            return try decoder.decode(Out.self, from: Data(text.utf8))
+        } catch {
+            Log.engine.error("\(name, privacy: .public) answered outside its contract: \(String(describing: error), privacy: .public)")
+            throw error
+        }
+    }
+
     /// The same with the input as a JSON object written out in place, for
     /// an input with members of several types; nil is JSON's null, which
     /// the engine reads as a member left out.

@@ -50,6 +50,22 @@ object Engine {
      *  decoded as written. */
     inline fun <reified In, reified Out> call(name: String, input: In): Out =
         json.decodeFromString<Out>(callNative(name, json.encodeToString<In>(input)))
+
+    /** The way in for the generated functions (engine/generated/EngineCalls.kt,
+     *  one per rule of engine/contract/engine.schema.json): the rule's answer,
+     *  or its failure -- the engine's refusal or an answer outside the
+     *  contract -- logged and held in the Result, so a caller shows it
+     *  rather than reading a default value. */
+    inline fun <reified In, reified Out> rule(name: String, input: In): Result<Out> =
+        runCatching { call<In, Out>(name, input) }.onFailure { failed(name, it) }
+
+    /** A failed rule in the log, by its name and the engine's words; the
+     *  input may hold a position, so it is not written. android.util.Log is
+     *  absent from the JVM's unit tests, where nothing is logged. */
+    @PublishedApi
+    internal fun failed(name: String, error: Throwable) {
+        runCatching { android.util.Log.w("engine", "$name failed: ${error.message}") }
+    }
 }
 
 /** What the engine said was wrong with a call: a name it has no rule for,

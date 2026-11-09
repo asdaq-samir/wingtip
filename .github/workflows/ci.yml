@@ -198,18 +198,21 @@ jobs:
       # test-planner proves that file matches the running app.
       - run: npm run types
       # The phones' models of the same two documents (quicktype, in
-      # scripts/build/api-models-apps.sh), committed because neither app's build
-      # has Node: generated again here, they must be the committed files
-      # byte for byte, or a field a server renamed reaches a phone at
-      # runtime instead of failing its build.
-      - name: The phones' API models are the committed ones
+      # scripts/build/api-models-apps.sh) and their typed calls into the
+      # engine (scripts/build/engine-contract-apps.sh, from
+      # engine/contract/engine.schema.json), committed because neither
+      # app's build has Node: generated again here, they must be the
+      # committed files byte for byte, or a field a server or the engine
+      # renamed reaches a phone at runtime instead of failing its build.
+      - name: The phones' generated models and engine calls are the committed ones
         working-directory: .
         run: |
           scripts/build/api-models-apps.sh
-          generated="apps/ios/Wingtip/API/Generated apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated"
+          scripts/build/engine-contract-apps.sh
+          generated="apps/ios/Wingtip/API/Generated apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated apps/ios/Wingtip/Engine/Generated apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated"
           if [ -n "$(git status --porcelain -- $generated)" ]; then
             git status --short -- $generated
-            echo "::error title=Phone API models out of date::the phones' generated API models are not what the OpenAPI documents give: run scripts/build/api-models-apps.sh and commit the files."
+            echo "::error title=Phone generated code out of date::the phones' generated API models or engine calls are not what the OpenAPI documents and the engine's contract give: run scripts/build/api-models-apps.sh and scripts/build/engine-contract-apps.sh and commit the files."
             exit 1
           fi
       - run: npx tsc --noEmit
@@ -496,10 +499,14 @@ jobs:
               - services/assistant/openapi.json
               - services/gateway/openapi.json
               - engine/contract/**
-              # The phones' models of the two documents, checked there.
+              # The phones' models of the two documents and their engine
+              # calls, checked there.
               - scripts/build/api-models-apps.*
+              - scripts/build/engine-contract-apps.*
               - apps/ios/Wingtip/API/Generated/**
               - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
+              - apps/ios/Wingtip/Engine/Generated/**
+              - apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated/**
             test-gateway:
               - services/gateway/**
               # the assistant's answers PlannerClient reads are generated from it,
@@ -547,6 +554,7 @@ jobs:
               - engine/**
               - apps/web/src/lib/fixtures/**
               - scripts/build/api-models-apps.*
+              - scripts/build/engine-contract-apps.*
               - .github/workflows/native-android-build.yml
             # And the web's files apps/ios/project.yml bundles.
             ios:
@@ -556,6 +564,7 @@ jobs:
               - apps/web/src/lib/acs.json
               - services/planner/tests_wingtip/fixtures/native/**
               - scripts/build/api-models-apps.*
+              - scripts/build/engine-contract-apps.*
               - .github/workflows/native-ios-test.yml
             # Javadoc; each Python suite's job makes its pdoc.
             docs:

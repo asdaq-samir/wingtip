@@ -98,7 +98,12 @@ function swift(file, keys) {
     // synthesized one does not.
     text = text.replace(/\n\n    enum CodingKeys: String, CodingKey \{\n((?:        case [^=\n]*\n)+)    \}\n/g, "\n");
   }
-  if (/JSONAny|JSONNull/.test(text)) throw new Error(`${file}: a property quicktype could not type (JSONAny)`);
+  // A member the document leaves untyped is the app's own JSONValue
+  // (API/JSONValue.swift), not quicktype's JSONAny class written into
+  // each file, which is neither Equatable nor Sendable.
+  text = text.replace(/\n\/\/ MARK: - Encode\/decode helpers[\s\S]*$/, "\n");
+  text = text.replace(/\bJSONAny\b/g, "JSONValue");
+  if (/JSONNull/.test(text)) throw new Error(`${file}: a null-only property quicktype could not type (JSONNull)`);
   fs.writeFileSync(file, header("//") + text.replace(/\n{3,}/g, "\n\n"));
 }
 
@@ -113,7 +118,10 @@ function kotlin(file, docPath) {
   // "data/aircraft/*.json") opens a comment the KDoc's "*/" never closes
   // and the file stops compiling; KDoc's Markdown reads "\*" as "*".
   text = text.replace(/^(\s*\*(?!\/).*)$/gm, (line) => line.replaceAll("/*", "/\\*"));
-  if (/JsonArray|JsonElement|JsonObject/.test(text)) throw new Error(`${file}: a property quicktype could not type`);
+  // A member the document leaves untyped stays kotlinx's JsonElement or
+  // JsonObject, which serialize as they are; a bare JsonArray typealias
+  // takes no type argument and would not compile.
+  if (/= JsonArray</.test(text)) throw new Error(`${file}: a list quicktype could not type`);
   fs.writeFileSync(file, header("//") + text);
 }
 
@@ -133,6 +141,8 @@ if (mode === "prep") {
   const doc = plain(JSON.parse(fs.readFileSync(a, "utf8")));
   fs.writeFileSync(b, JSON.stringify(c === "swift" ? withoutDigitWords(doc) : doc));
 }
+// Every schema's name, for the shell script's quicktype sources.
+else if (mode === "names") console.log(Object.keys(JSON.parse(fs.readFileSync(a, "utf8")).components.schemas).join(" "));
 else if (mode === "swift") swift(a, b);
 else if (mode === "kotlin") kotlin(a, b);
 else throw new Error(`no step "${mode}"`);

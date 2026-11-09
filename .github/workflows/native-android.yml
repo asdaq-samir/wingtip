@@ -23,6 +23,7 @@ on:
       - engine/**
       - apps/web/src/lib/fixtures/**
       - scripts/build/api-models-apps.*
+      - scripts/build/engine-contract-apps.*
       - .github/workflows/native-android.yml
       - .github/workflows/native-android-build.yml
   workflow_dispatch:
