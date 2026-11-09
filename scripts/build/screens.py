@@ -59,10 +59,14 @@ def web(spec):
     link = spec["link"]
     screens = on(spec, "web")
     rows = "\n".join(f"  {s['id']}: {{ title: {quoted(s['title'])} }}," for s in screens)
+    fields = ", ".join(
+        f"{name}: {quoted(link[key])}"
+        for name, key in (("path", "path"), ("key", "key"), ("scheme", "scheme"), ("schemeHost", "schemeHost"))
+    )
     return f"""// {BANNER}
 
 /** The link that opens a screen: the app's address with `{link['key']}` naming it. */
-export const SCREEN_LINK = {{ path: {quoted(link['path'])}, key: {quoted(link['key'])}, scheme: {quoted(link['scheme'])}, schemeHost: {quoted(link['schemeHost'])} }} as const;
+export const SCREEN_LINK = {{ {fields} }} as const;
 
 /** The screens a link opens on the web, by the id the link names. */
 export const SCREENS = {{
