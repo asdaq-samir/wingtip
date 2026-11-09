@@ -116,7 +116,13 @@ struct ProfileCard: View {
             // The dry run from the profile's corner, as the web app has it.
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    if let course = plan.course { dryRun.start(course: course, checkpoints: plan.checkpoints, legs: plan.legs) }
+                    // Ready to fly over the start, once per flight, where
+                    // something is missing; "Fly anyway" goes on with it.
+                    Task {
+                        await ReadyToFly.shared.beforeStart {
+                            if let course = plan.course { dryRun.start(course: course, checkpoints: plan.checkpoints, legs: plan.legs) }
+                        }
+                    }
                 } label: { Label("Dry run", systemImage: "play.fill") }
                     .disabled(plan.legs.isEmpty || plan.course == nil)
             }

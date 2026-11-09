@@ -41,6 +41,9 @@ struct BriefView: View {
     var body: some View {
         ScrollViewReader { reader in
             List {
+                // What the phone holds for the flight before the signal
+                // goes, first (the engine's ready_to_fly).
+                ReadyToFlySection()
                 if plan.routed {
                     // A finding scrolls the Brief to its part; a jump, not
                     // a scroll, with Reduce Motion on.
@@ -173,6 +176,8 @@ struct BriefView: View {
                 } else {
                     Section { Skeleton(rows: 4, label: "Fetching the briefing") }
                 }
+                // The route's NOTAMs, fetched for Ready to fly (91.103, AIM 5-1-3).
+                if plan.routed { NotamsSection() }
                 // The passengers' briefing (91.107, the SAFETY briefing) and
                 // the flight to send them, after the weather.
                 if plan.routed {
