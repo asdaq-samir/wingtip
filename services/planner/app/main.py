@@ -52,7 +52,8 @@ from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
 from .planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan
-from .routers import clearance, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, traffic, weather_map, window, words
+from .routers import clearance, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, traffic, weather_map
+from .routers import window, words
 from .schemas import STREAM_MESSAGES, Index
 from .settings import get_settings
 
