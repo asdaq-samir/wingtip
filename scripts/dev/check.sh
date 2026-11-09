@@ -66,7 +66,12 @@ areas_for() {
     esac
     case "$path" in
       services/ingest/*|services/planner/wingtip/*|engine/*) found+="ingest " ;;
-      services/assistant/*) found+="assistant " ;;
+    esac
+    # The assistant's generated client and tools come from these
+    # (scripts/build/assistant_client.py), checked in its suite.
+    case "$path" in
+      services/assistant/*|services/planner/openapi.json|services/planner/app/generated/*|engine/contract/*|scripts/build/assistant*)
+        found+="assistant " ;;
     esac
     case "$path" in
       services/jobs/*|services/planner/wingtip/*|services/planner/requirements-wingtip*.txt|services/planner/pytest_guards.py|engine/*)

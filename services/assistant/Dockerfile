@@ -3,7 +3,7 @@
 # wingtip's base (services/Dockerfile.base): Python and the appuser, as
 # every Python image here is built. The assistant imports nothing of
 # wingtip itself -- every figure it states is the planner's, over HTTP
-# (app.planner) -- so its own few packages go on top and its code beside
+# (app.generated.planner_client) -- so its own few packages go on top and its code beside
 # them. The build context `wingtip-base` names the base.
 FROM wingtip-base
 

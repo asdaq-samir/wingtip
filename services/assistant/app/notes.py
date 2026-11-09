@@ -13,7 +13,8 @@ from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from . import planner
+from .generated import planner_client as planner
+from .generated.planner_models import NoteToWrite
 from .gateway import gateway
 from .schemas import NoteCheckpoint, NoteDone, NoteError, NoteStart
 from .settings import get_settings
@@ -61,7 +62,7 @@ class GenerateNotesRequest(BaseModel):
 
 
 def _describe_checkpoint(
-    checkpoint: dict, dep_ident: str, prev_name: str | None, next_name: str | None,
+    checkpoint: NoteToWrite, dep_ident: str, prev_name: str | None, next_name: str | None,
 ) -> str:
     """One Claude call, one checkpoint. The prompt is deliberately
     told not to invent geographic specifics it cannot know: the
@@ -70,14 +71,14 @@ def _describe_checkpoint(
     survives the pipeline this far, so a claim like "the east shore"
     would be a guess dressed as a fact.
     """
-    name = checkpoint.get("name") or checkpoint["category"]
+    name = checkpoint.name or checkpoint.category
     prompt = (
         "In one short sentence (under 20 words), describe exactly where a "
         "VFR pilot should look to positively identify this checkpoint from "
         "the air, so they know they're at the right spot and not somewhere "
         "similar-looking nearby.\n\n"
-        f"Checkpoint: {name}, category \"{checkpoint['category']}\".\n"
-        f"{checkpoint['along_track_nm']:.1f} nm along the route from {dep_ident}.\n"
+        f"Checkpoint: {name}, category \"{checkpoint.category}\".\n"
+        f"{checkpoint.along_track_nm or 0:.1f} nm along the route from {dep_ident}.\n"
         f"Previous checkpoint: {prev_name or 'none (departure)'}\n"
         f"Next checkpoint: {next_name or 'none (destination)'}\n\n"
         "If you don't have specific knowledge of this named feature's "
@@ -106,8 +107,8 @@ def _line(message: BaseModel) -> str:
     return message.model_dump_json(by_alias=True) + "\n"
 
 
-def _name(cp: dict | None) -> str | None:
-    return (cp.get("name") or cp["category"]) if cp else None
+def _name(cp: NoteToWrite | None) -> str | None:
+    return (cp.name or cp.category) if cp else None
 
 
 @router.post("/api/checkpoint-notes/generate", responses={200: {"content": {"application/x-ndjson": {}}}},
@@ -143,23 +144,22 @@ def describe_checkpoints(
     stream opens, so an ident that is not one is the planner's 404 here.
     """
     try:
-        pending = planner.post("/api/checkpoint-notes/pending", request.model_dump(),
-                               headers={PILOT_HEADER: x_pilot_id} if x_pilot_id else None)
+        pending = planner.notes_to_write(body=request.model_dump(), x_pilot_id=x_pilot_id)
     except planner.PlannerError as err:
         raise HTTPException(err.status, err.detail) from err
-    selected = pending["checkpoints"]
-    dep_ident = pending["departure_ident"]
+    selected = pending.checkpoints or []
+    dep_ident = pending.departure_ident or request.departure_ident
 
-    def checkpoint_line(cp: dict, description: str | None, source: str, detail: str | None = None) -> str:
-        return _line(NoteCheckpoint(lat=cp["lat"], lon=cp["lon"], id=cp["id"], description=description, source=source,
+    def checkpoint_line(cp: NoteToWrite, description: str | None, source: str, detail: str | None = None) -> str:
+        return _line(NoteCheckpoint(lat=cp.lat, lon=cp.lon, id=cp.id, description=description, source=source,
                                     detail=detail))
 
     def lines():
         yield _line(NoteStart(count=len(selected)))
         global_error: str | None = None
         for i, cp in enumerate(selected):
-            if cp.get("saved") is not None:
-                yield checkpoint_line(cp, cp["saved"], "saved")
+            if cp.saved is not None:
+                yield checkpoint_line(cp, cp.saved, "saved")
                 continue
             if global_error is not None:
                 yield checkpoint_line(cp, None, "error", global_error)
@@ -167,8 +167,8 @@ def describe_checkpoints(
             try:
                 description = _describe_checkpoint(cp, dep_ident, _name(selected[i - 1] if i > 0 else None),
                                                    _name(selected[i + 1] if i + 1 < len(selected) else None))
-                held = planner.post("/api/checkpoint-notes/seed", {
-                    "hop_key": cp["hop_key"], "lat": cp["lat"], "lon": cp["lon"], "description": description})
+                held = planner.seed_note(body={"hop_key": cp.hop_key, "lat": cp.lat, "lon": cp.lon,
+                                               "description": description})
             except GLOBAL_ANTHROPIC_ERRORS as err:
                 global_error = str(err)
                 yield _line(NoteError(detail=global_error))
@@ -178,9 +178,9 @@ def describe_checkpoints(
                 log.warning("checkpoint note failed: %s", err)
                 yield checkpoint_line(cp, None, "error", str(err))
                 continue
-            if not held["written"]:
+            if not held.written:
                 # A shared note saved while this stream ran: it stays.
-                yield checkpoint_line(cp, held["description"], "saved")
+                yield checkpoint_line(cp, held.description, "saved")
                 continue
             yield checkpoint_line(cp, description, "generated")
         yield _line(NoteDone())

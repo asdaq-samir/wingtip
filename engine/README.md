@@ -143,6 +143,12 @@ A rule goes in this way, each step in the same pull request:
    web, the phones and the planner are held to the same examples.
 6. `scripts/build/build-engine-wasm.sh`, and the `.wasm` committed; the
    planner's image rebuilt for the Python side.
+7. Where it is a figure a pilot asks about (an altitude, a wind, a
+   reserve, minimums, currency), `"x-tool": true` on its entry, and
+   `scripts/build/assistant-client.sh`: the assistant then has it as a tool,
+   asked through the planner's `POST /api/engine/{name}` (#569), with
+   no other code. Its description is what the model reads, so it names
+   its CFR, AIM or handbook source.
 
 Then the callers switch to the name and the old copy is deleted.
 

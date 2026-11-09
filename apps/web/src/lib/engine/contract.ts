@@ -878,7 +878,7 @@ export interface EngineContract {
     answer: DiversionAnswer;
   };
   /**
-   * The wind triangle for a true course: the correction (+ right), the true heading and the ground speed; null where no heading holds the course.
+   * The wind triangle for a true course: the correction (+ right), the true heading and the ground speed; null where no heading holds the course (the wind triangle, FAA-H-8083-25C ch. 16).
    */
   wind_triangle: {
     input: WindTriangleInput;
@@ -1564,7 +1564,7 @@ export interface EngineContract {
     answer: GonogoSuaWhenAnswer;
   };
   /**
-   * A wind's head- and crosswind on a heading: a tailwind negative, a crosswind from the right positive.
+   * A wind's head- and crosswind on a heading: a tailwind negative, a crosswind from the right positive (the crosswind component chart's figures, FAA-H-8083-25C ch. 11).
    */
   wind_components: {
     input: WindComponentsInput;
@@ -2488,7 +2488,7 @@ export interface EngineContract {
     answer: TemperatureAtAnswer;
   };
   /**
-   * The service ceiling on the day: the book's service ceiling, a density altitude, found as an altitude in the forecast's temperatures (wingtip_flight::performance::altitude_at_density_altitude) to the nearest 100 ft; the book figure where the profile is empty.
+   * The service ceiling on the day: the book's service ceiling, a density altitude (where the best climb has fallen to 100 fpm, FAA-H-8083-25C ch. 11), found as an altitude in the forecast's temperatures (wingtip_flight::performance::altitude_at_density_altitude) to the nearest 100 ft; the book figure where the profile is empty.
    */
   service_ceiling_on_the_day: {
     input: ServiceCeilingOnTheDayInput;

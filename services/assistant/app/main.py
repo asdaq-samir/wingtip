@@ -2,10 +2,12 @@
 planner (issue #535, the owner's split of 2026-11-08). It holds the
 Anthropic key and the model settings (app.settings) and computes no
 figure: what each answer rests on comes from the planner's HTTP API
-(app.planner), which asks the engine every rule.
+(app.generated.planner_client, generated from its OpenAPI document), which
+asks the engine every rule.
 
 - POST /api/assistant: the pilot's assistant, Claude's tool runner over
-  the planner's endpoints, streamed (app.assistant).
+  the planner's endpoints and the engine's tagged rules, streamed
+  (app.assistant, app.toolbox, app.rule_tools).
 - POST /api/briefing/narrative: the Brief's narrative of the nav log on
   screen, streamed (app.narrative).
 - POST /api/words/{notams,weather,risk,debrief,changes}: a few sentences
