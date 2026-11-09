@@ -43,6 +43,7 @@ import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.ready.ReadyToFlyHost
 import app.wingtipmaps.android.route.RouteLegHost
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.strip.StripLayout
@@ -237,6 +238,13 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     picked?.let { pick -> MapCardSheet(pick, plan, onClose = { picked = null }) }
     RouteLegHost(plan, ownShipOn = ownShip.on, model = legs)
     EmergencyHost(plan, ownShip)
+    // Ready to fly once a flight, as own ship comes on on the ground with
+    // something to fix; a route is typed in FPL (the strip's field has no
+    // tab to open, its Plan the Route is plain text there).
+    ReadyToFlyHost(
+        plan, ownShipOn = ownShip.on, underway = inFlight.underway,
+        onSetRoute = if (layout == LayoutPreference.STRIP) null else ({ tab = Tabs.FPL.ordinal }),
+    )
     // A flight recorded and ended, offered for the logbook.
     AutoLogbookHost(plan, session)
     // The welcome, once per install: at its end the sheet comes up a stop

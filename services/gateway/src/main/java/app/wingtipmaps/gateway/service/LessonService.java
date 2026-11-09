@@ -21,8 +21,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,7 +83,7 @@ public class LessonService {
                                 && l.getProcedureId().equals(procedure)
                                 && l.getQuizAt() == null);
         if (open) {
-            throw new InstructorService.Refused(HttpStatus.CONFLICT, "You have set them this approach already.");
+            throw new InstructorRefusedException(HttpStatus.CONFLICT, "You have set them this approach already.");
         }
         String name = request.procedureName().strip().replaceAll("\\s+", " ");
         ApproachLesson lesson = lessons.save(new ApproachLesson(
@@ -155,7 +155,8 @@ public class LessonService {
                     LessonProgressRequest.Quiz quiz = request.quiz();
                     if (quiz != null) {
                         if (quiz.answers().size() > quiz.of()) {
-                            throw new InstructorService.Refused(HttpStatus.BAD_REQUEST, "More answers than questions.");
+                            throw new InstructorRefusedException(
+                                    HttpStatus.BAD_REQUEST, "More answers than questions.");
                         }
                         l.quizzed(
                                 quiz.answers().stream()

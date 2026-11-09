@@ -134,13 +134,6 @@ public class PilotService {
         return pilots.save(apple ? new Pilot(email, name, null, subject) : new Pilot(email, name, subject));
     }
 
-    /**
-     * The signed-in pilot for a verified email address (the magic-link
-     * flow), created on first sign-in if they are new. No subject to
-     * match or write -- proving control of the address is the whole of
-     * what a magic link asserts, and email is already {@link Pilot}'s
-     * own stable identity column.
-     */
     /** Google sends `email_verified` as a boolean, Apple as the string
      *  "true"; anything else, or nothing, is unverified. */
     private static boolean emailVerified(OAuth2User user) {
@@ -148,6 +141,13 @@ public class PilotService {
         return Boolean.TRUE.equals(verified) || "true".equalsIgnoreCase(String.valueOf(verified));
     }
 
+    /**
+     * The signed-in pilot for a verified email address (the magic-link
+     * flow), created on first sign-in if they are new. No subject to
+     * match or write -- proving control of the address is the whole of
+     * what a magic link asserts, and email is already {@link Pilot}'s
+     * own stable identity column.
+     */
     @Transactional
     public Pilot fromVerifiedEmail(String email) {
         return withListedRole(pilots.findByEmail(email).orElseGet(() -> pilots.save(new Pilot(email, email, null))));

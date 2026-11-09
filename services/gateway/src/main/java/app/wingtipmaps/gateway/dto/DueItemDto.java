@@ -3,7 +3,7 @@ package app.wingtipmaps.gateway.dto;
 import app.wingtipmaps.gateway.domain.DueItemKind;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Something due on an airplane, as its owner keeps it: an AD's status
  *  (14 CFR 91.417(a)(2)(v)) or another item. */

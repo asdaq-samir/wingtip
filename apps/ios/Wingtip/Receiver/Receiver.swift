@@ -38,6 +38,11 @@ final class Receiver {
 
     /// A receiver heard in the last few seconds.
     var live: Bool { picture?.receiver.live ?? false }
+    /// Kept once a receiver has been heard on this phone: the pilot flies
+    /// with one, so Ready to fly asks for it to be connected
+    /// (ReadyToFly); a pilot who has never had one is not asked.
+    static let usedKey = "receiver.used"
+    static var used: Bool { UserDefaults.standard.bool(forKey: usedKey) }
     /// "Stratux · 12 targets · GPS", while one has been heard.
     var summary: String? { picture?.receiver.heartbeatAt == nil ? nil : picture?.receiver.summary }
 
@@ -61,6 +66,7 @@ final class Receiver {
             let before = picture?.nexrad
             picture = try Engine.receiverRead(data: bytes.base64EncodedString(), at: now.timeIntervalSince1970, picture: picture)
             problem = nil
+            if live, !Self.used { UserDefaults.standard.set(true, forKey: Self.usedKey) }
             if picture?.nexrad != before { nexrad = try? Engine.receiverNexrad(picture: picture) }
         } catch {
             problem = error.localizedDescription

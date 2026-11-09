@@ -1,14 +1,21 @@
 import js from "@eslint/js";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
-import jsxA11y from "eslint-plugin-jsx-a11y";
+// The maintained fork of eslint-plugin-jsx-a11y (the same rules, as
+// jsx-a11y-x/...), which runs on ESLint 10; the original stops at 9.
+import jsxA11y from "eslint-plugin-jsx-a11y-x";
 import vitest from "@vitest/eslint-plugin";
 import testingLibrary from "eslint-plugin-testing-library";
+import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import boundaries from "./eslint/boundaries.js";
 
-export default tseslint.config(
+export default defineConfig(
+  // No warnings (the owner's rule): a disable comment that disables
+  // nothing is an error, and the lint runs with --max-warnings 0, so a
+  // rule a plugin's preset sets to "warn" fails it too.
+  { linterOptions: { reportUnusedDisableDirectives: "error" } },
   {
     ignores: [
       "dist",
@@ -26,12 +33,12 @@ export default tseslint.config(
       js.configs.recommended,
       ...tseslint.configs.recommended,
       reactHooks.configs.flat["recommended-latest"],
-      jsxA11y.flatConfigs.recommended,
+      jsxA11y.configs.recommended,
     ],
     languageOptions: { ecmaVersion: 2022, globals: globals.browser },
     plugins: { "react-refresh": reactRefresh },
     rules: {
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
       // Test/setup files intentionally export non-component helpers
       // alongside components; the rule above is for app source only.
 

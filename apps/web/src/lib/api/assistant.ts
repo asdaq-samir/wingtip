@@ -30,7 +30,7 @@ interface AssistantPlan {
 }
 
 /** Where the airplane is (lib/map/position/ownShip's fix), where the phone has one. */
-export interface AssistantOwnShip {
+interface AssistantOwnShip {
   lat: number;
   lon: number;
   altitude_ft: number | null;
@@ -40,7 +40,7 @@ export interface AssistantOwnShip {
 
 /** The pilot's own minimums (lib/minimums) and currency, in words
  *  (useAsk's currencyWords); null where the app knows neither. */
-export interface AssistantPilot {
+interface AssistantPilot {
   personal_minimums: {
     ceiling_ft: number | null;
     visibility_sm: number | null;

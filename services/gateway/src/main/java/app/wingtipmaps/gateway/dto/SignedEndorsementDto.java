@@ -2,7 +2,7 @@ package app.wingtipmaps.gateway.dto;
 
 import java.time.LocalDate;
 import java.util.Map;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An endorsement signed in the app: the words and the signature line as
  *  signed, the day, the day it runs out where it does, and whether a
@@ -13,10 +13,10 @@ public record SignedEndorsementDto(
         String studentName,
         Map<String, String> fields,
         String text,
-        /** "/s/ 10-13-2026 J. J. Jones 987654321CFI RE 12-31-2026". */
+        /* "/s/ 10-13-2026 J. J. Jones 987654321CFI RE 12-31-2026". */
         String signature,
         LocalDate signedOn,
         @Nullable LocalDate until,
         boolean voided,
-        /** SHA-256 of the words, the signature line and the moment signed. */
+        /* SHA-256 of the words, the signature line and the moment signed. */
         String digest) {}

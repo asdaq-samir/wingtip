@@ -11,7 +11,7 @@ import app.wingtipmaps.gateway.dto.SquawkDto;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrainingDto;
 import app.wingtipmaps.gateway.service.PilotService;
-import app.wingtipmaps.gateway.service.PlannerClient;
+import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -135,7 +135,7 @@ public class ExportController {
     private static <T> T worked(Supplier<T> part) {
         try {
             return part.get();
-        } catch (PlannerClient.Unavailable down) {
+        } catch (PlannerUnavailableException down) {
             return null;
         }
     }

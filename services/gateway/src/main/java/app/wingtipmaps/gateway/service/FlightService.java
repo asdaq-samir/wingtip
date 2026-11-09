@@ -13,13 +13,13 @@ import app.wingtipmaps.gateway.dto.UpdateFlightRequest;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.FlightTrackRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /** A pilot's own flights -- their use of a route, the aircraft they
  *  flew it in, and the nav log they filed. Scoped by pilot the same
@@ -123,7 +123,7 @@ public class FlightService {
         return tracks.findById(flightId).map(t -> {
             try {
                 return new TrackDto(t.getSource(), JSON.readValue(t.getPoints(), POINTS));
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new IllegalStateException("Flight " + flightId + "'s saved track is not JSON", e);
             }
         });
@@ -143,7 +143,7 @@ public class FlightService {
                     String points;
                     try {
                         points = JSON.writeValueAsString(track.points());
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                         throw new IllegalStateException("A track's points would not write as JSON", e);
                     }
                     tracks.findById(f.getId())

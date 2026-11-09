@@ -11,12 +11,12 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -39,6 +39,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.aircraft.YourAirplanesRow
+import app.wingtipmaps.android.aircraft.YourAirplanesSheet
 import app.wingtipmaps.android.api.AircraftProfileSummary
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.checklist.ChecklistKind
@@ -84,8 +86,8 @@ class AirplaneModel : ViewModel() {
  * The Airplane tab (decision 0020: "airplane", the FAA's word): one of
  * the planner's airplane types picked from a menu (a discrete setting is
  * a menu, not a slider), the handbook figures the planner flies it on,
- * and its checklists. The airplane by N-number, with the pilot's own
- * figures, is a later phase.
+ * and its checklists; the pilot's own airplanes, with their figures,
+ * in Your Airplanes.
  */
 @Composable
 fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
@@ -94,6 +96,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     val state by plan.state.collectAsStateWithLifecycle()
     var checklist by remember { mutableStateOf<ChecklistKind?>(null) }
     var photo by remember { mutableStateOf(false) }
+    var mine by remember { mutableStateOf(false) }
     // The checklist asked for by its name (OpenScreen); with no airplane
     // picked there is none, and the tab says to pick one.
     val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
@@ -109,6 +112,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         RegistrationField()
         PassengersRow()
         AddFromPhotoRow(stringResource(R.string.photo_line_airplane)) { photo = true }
+        YourAirplanesRow { mine = true }
         if (!state.airplane) {
             Text(stringResource(R.string.no_airplane_line), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             // The emergency assistant needs no airplane picked.
@@ -133,6 +137,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         EmergencyAssistantRow()
     }
     if (photo) HandbookPhotoSheet(type = state.aircraft, onClose = { photo = false })
+    if (mine) YourAirplanesSheet(onClose = { mine = false })
     checklist?.let { kind ->
         val title = stringResource(R.string.checklists_of, state.aircraft.uppercase())
         WingtipSheet(title = title, onClose = { checklist = null }, full = true) {
@@ -158,7 +163,7 @@ internal fun AirplanePicker(profiles: List<AircraftProfileSummary>, selected: St
             readOnly = true,
             label = { Text(stringResource(R.string.tab_airplane)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
@@ -219,9 +224,8 @@ private fun PassengersRow() {
     )
 }
 
-/** "Cessna 172 · C172": the type's name and the planner's key for it. */
-private fun label(profile: AircraftProfileSummary): String =
-    profile.type?.let { "$it · ${profile.name.uppercase()}" } ?: profile.name.uppercase()
+/** "Piper Archer · PA28": the type's name and the planner's key for it. */
+private fun label(profile: AircraftProfileSummary): String = "${profile.type} · ${profile.name.uppercase()}"
 
 /** The handbook figures the planner flies the type on, its own. */
 @Composable

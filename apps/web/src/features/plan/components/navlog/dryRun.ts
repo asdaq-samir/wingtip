@@ -125,7 +125,7 @@ export function dryRunAt(run: DryRun, t: number): { leftNm: number; leftS: numbe
 
 /** The distance and time still to fly to a landing, nm and min, and when
  *  the run is in there, s since 1970. */
-export interface LeftTo {
+interface LeftTo {
   nm: number;
   min: number;
   at: number;

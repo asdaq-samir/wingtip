@@ -184,7 +184,7 @@ certificate accepted (`ignoreHTTPSErrors`):
 ```bash
 docker run --rm --network wingtip-prod_default -v "$PWD/apps/web:/w" -w /w \
   -e BASE_URL=https://cdn:9443 -e MAILPIT_URL=http://mailpit:8025 \
-  mcr.microsoft.com/playwright:v1.55.1-noble \
+  mcr.microsoft.com/playwright:v1.65.0-noble \
   npx playwright test --config playwright.rehearsal.config.ts --workers=2
 ```
 

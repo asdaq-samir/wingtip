@@ -46,7 +46,7 @@ type Reported = ReportedWind;
 
 /** The route changed in FPL's list rather than its box (lib/preferences
  *  RouteEdit), by the points' places in `routePoints`. */
-export interface RouteListEdit {
+interface RouteListEdit {
   /** A point dragged by its grip onto another's place. */
   onMove: (from: number, to: number) => void;
   /** The route's box opened to type a stop in at this place. */

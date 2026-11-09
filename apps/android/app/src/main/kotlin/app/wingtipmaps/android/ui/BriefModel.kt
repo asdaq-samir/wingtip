@@ -35,6 +35,9 @@ class BriefModel : ViewModel() {
         val risk: String? = null,
         val loading: Boolean = false,
         val problem: String? = null,
+        /** When this brief came in, for Ready to fly's weather age
+         *  (ready_to_fly's briefing); null before one has. */
+        val fetchedAtMs: Long? = null,
     ) {
         /** The findings to act on, worst first, at most three. */
         val actions: List<GlanceAction>
@@ -87,6 +90,7 @@ class BriefModel : ViewModel() {
         items = answer.items,
         risk = answer.risk?.line,
         problem = null,
+        fetchedAtMs = System.currentTimeMillis(),
     )
 
     companion object {

@@ -53,19 +53,25 @@ public class FlightWatch {
         this.flightId = flightId;
         this.pilotId = pilotId;
         this.createdAt = now;
-        rewatch(departAt, briefingJson);
+        watch(departAt, briefingJson);
     }
 
     /** Watched again, from now: a new departure time and a new baseline.
      *  What changed before is cleared, since "what changed since" starts
      *  over at this briefing. */
     public FlightWatch rewatch(Instant departAt, String briefingJson) {
+        watch(departAt, briefingJson);
+        return this;
+    }
+
+    /** Private, so the constructor's call cannot reach an override
+     *  (Hibernate's proxies subclass an entity). */
+    private void watch(Instant departAt, String briefingJson) {
         this.departAt = departAt;
         this.briefingJson = briefingJson;
         this.checkedAt = null;
         this.changedAt = null;
         this.changesJson = null;
-        return this;
     }
 
     /** Checked, and nothing had changed. */

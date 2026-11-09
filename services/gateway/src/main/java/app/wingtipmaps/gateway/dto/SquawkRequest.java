@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A squawk as its form sends it -- POST and PUT
  *  /api/aircraft/{id}/squawks. `deferredFor` is an inoperative item's

@@ -11,7 +11,6 @@ import app.wingtipmaps.gateway.dto.FlightWatchDto;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.FlightWatchRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -28,6 +27,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
 
 /**
  * The flight watch: a pilot watches a saved flight, and up to its
@@ -97,7 +97,7 @@ public class FlightWatchService {
      * something to diff against. A flight watched already is watched
      * again from now. Empty where the flight is not theirs.
      *
-     * @throws PlannerClient.Unavailable when the planner cannot brief it;
+     * @throws PlannerUnavailableException when the planner cannot brief it;
      *     nothing is kept then
      */
     public Optional<FlightWatchDto> watch(Pilot pilot, Long flightId, Instant departAt) {
@@ -296,7 +296,7 @@ public class FlightWatchService {
     private static String write(AssistantChangesWords answer) {
         try {
             return PlannerClient.JSON.writeValueAsString(answer);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("The planner's changes would not write as JSON", e);
         }
     }
@@ -309,7 +309,7 @@ public class FlightWatchService {
             // Kept as the planner wrote it, so read as the planner's: the
             // rows written before these were generated have the same fields.
             return PlannerClient.JSON.readValue(watch.getChangesJson(), AssistantChangesWords.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Flight " + watch.getFlightId() + "'s kept changes are not JSON", e);
         }
     }

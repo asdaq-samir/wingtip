@@ -430,7 +430,7 @@ export function PerformancePanel() {
     // A tab stop of its own: while the status is still coming the region
     // scrolls but holds nothing to focus, and a keyboard could not scroll
     // it (WCAG 2.1.1; axe's scrollable-region-focusable).
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scroller is what a keyboard needs to reach
+    // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- a scroller is what a keyboard needs to reach
     <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-6" data-testid="perf-panel" tabIndex={0}>
       <PerformanceTab status={status} failed={isError} />
     </div>

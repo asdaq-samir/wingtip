@@ -209,7 +209,7 @@ run_area() {
       # container's own, links to the image's /node_modules, where knip
       # looks for the packages package.json names (it reads no further up).
       docker run --rm -v "$here:/repo" --tmpfs /repo/apps/web/node_modules -w /repo/apps/web "$tag" \
-        sh -c 'ln -s /node_modules/* /node_modules/.bin node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . && npx knip --no-progress && npx vitest run'
+        sh -c 'ln -s /node_modules/* /node_modules/.bin node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip --no-progress && npx vitest run'
       ;;
     py) run_py services/planner requirements-dev-wingtip.txt 3.15 wingtip tests_wingtip ;;
     planner) run_py services/planner requirements-dev.txt 3.15 app tests ;;
@@ -261,7 +261,9 @@ run_area() {
       ;;
     android)
       local sdk=$HOME/Library/Android/sdk
-      export JAVA_HOME=${JAVA_HOME:-$(ls -d "$HOME"/Library/Java/JavaVirtualMachines/jbr-21*/Contents/Home | tail -1)}
+      # Java 25, the build's (gradle-daemon-jvm.properties): one installed,
+      # else the Temurin 25 Gradle fetched into ~/.gradle/jdks.
+      export JAVA_HOME=${JAVA_HOME:-$(ls -d /Library/Java/JavaVirtualMachines/*25*/Contents/Home "$HOME"/Library/Java/JavaVirtualMachines/*25*/Contents/Home "$HOME"/.gradle/jdks/*25*/*/Contents/Home 2>/dev/null | tail -1)}
       export ANDROID_HOME=${ANDROID_HOME:-$sdk}
       export ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)}
       phone_engine android apps/android/app/engine engine/bindings/ffi/build-android.sh

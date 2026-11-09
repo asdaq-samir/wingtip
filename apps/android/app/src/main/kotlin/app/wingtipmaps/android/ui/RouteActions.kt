@@ -82,6 +82,7 @@ class RouteActions(
             is MapPick.Vor -> Plan.ChartPoint(pick.ident, pick.lat, pick.lon)
             is MapPick.Point -> Plan.ChartPoint(pick.ident, pick.lat, pick.lon)
             is MapPick.Airspace -> Plan.ChartPoint(String.format(java.util.Locale.US, "@%.4f,%.4f", pick.lat, pick.lon), pick.lat, pick.lon)
+            is MapPick.Here -> Plan.ChartPoint(String.format(java.util.Locale.US, "@%.4f,%.4f", pick.lat, pick.lon), pick.lat, pick.lon)
             else -> null
         }
 

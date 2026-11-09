@@ -112,12 +112,14 @@ logging:
 
 management:
   # Traces (Micrometer's OpenTelemetry bridge) only where they are asked
-  # for: docker-compose sets MANAGEMENT_TRACING_ENABLED from TRACING and
-  # the OTLP endpoint (Jaeger's). On, each request is a span, and the
-  # planner's and the assistant's spans go under it (TraceHeaders passes
-  # the context on); off, no span is made and nothing is sent.
+  # for: docker-compose sets MANAGEMENT_TRACING_EXPORT_ENABLED from
+  # TRACING and the OTLP endpoint (Jaeger's). On, each request is a span
+  # sent to it, and the planner's and the assistant's spans go under it
+  # (TraceHeaders passes the context on); off, nothing is sent.
+  # (management.tracing.enabled until Spring Boot 4 renamed it.)
   tracing:
-    enabled: false
+    export:
+      enabled: false
   opentelemetry:
     resource-attributes:
       service.name: gateway

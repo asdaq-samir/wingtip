@@ -7,7 +7,6 @@ import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.ExperienceItemDto;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -18,6 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
 
 /** The gateway asks the planner for a pilot's currency and a student's
  *  61.109 experience (the engine works them out, tested there): the
@@ -78,7 +78,7 @@ class PlannerClientPilotTest {
         assertThat(asked).hasSize(2);
         dropped = 2;
         assertThatThrownBy(() -> client().experience(logbook(), LocalDate.of(2026, 10, 11)))
-                .isInstanceOf(PlannerClient.Unavailable.class)
+                .isInstanceOf(PlannerUnavailableException.class)
                 .hasMessageContaining("could not be reached");
     }
 
@@ -97,11 +97,11 @@ class PlannerClientPilotTest {
         assertThat(c.holdingInWindow()).isTrue();
 
         JsonNode sent = asked.get(0);
-        assertThat(sent.get("today").asText()).isEqualTo("2026-10-11");
-        assertThat(sent.get("flightReviewOn").asText()).isEqualTo("2025-06-14");
+        assertThat(sent.get("today").asString()).isEqualTo("2026-10-11");
+        assertThat(sent.get("flightReviewOn").asString()).isEqualTo("2025-06-14");
         assertThat(sent.get("medicalExpiresOn").isNull()).isTrue();
         JsonNode entry = sent.get("entries").get(0);
-        assertThat(entry.get("flownOn").asText()).isEqualTo("2026-09-20");
+        assertThat(entry.get("flownOn").asString()).isEqualTo("2026-09-20");
         assertThat(entry.get("dayLandings").asInt()).isEqualTo(3);
         assertThat(entry.get("nightLandings").asInt()).isEqualTo(1);
         assertThat(entry.get("approaches").asInt()).isEqualTo(6);
@@ -119,7 +119,7 @@ class PlannerClientPilotTest {
             assertThat(i.have()).isEqualTo(1.5);
             assertThat(i.met()).isFalse();
         });
-        assertThat(asked.get(0).get("today").asText()).isEqualTo("2026-10-15");
+        assertThat(asked.get(0).get("today").asString()).isEqualTo("2026-10-15");
     }
 
     /** The generated types read a field left out as null; one the planner
@@ -130,7 +130,7 @@ class PlannerClientPilotTest {
                 [{"key": "total", "rule": "61.109(a)", "label": "Flight time", "need": 40.0, "unit": "h", "met": false}]
                 """;
         assertThatThrownBy(() -> client().experience(logbook(), LocalDate.of(2026, 10, 15)))
-                .isInstanceOf(PlannerClient.Unavailable.class)
+                .isInstanceOf(PlannerUnavailableException.class)
                 .hasMessageContaining("was not its answer");
     }
 
@@ -138,6 +138,6 @@ class PlannerClientPilotTest {
     void aPlannerThatRefusesIsUnavailable() {
         status = 422;
         assertThatThrownBy(() -> client().experience(logbook(), LocalDate.of(2026, 10, 15)))
-                .isInstanceOf(PlannerClient.Unavailable.class);
+                .isInstanceOf(PlannerUnavailableException.class);
     }
 }

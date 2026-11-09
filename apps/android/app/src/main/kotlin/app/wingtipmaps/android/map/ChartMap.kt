@@ -1,7 +1,5 @@
 package app.wingtipmaps.android.map
 
-import android.content.ComponentCallbacks
-import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.RectF
 import android.os.Handler
@@ -12,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -124,7 +123,7 @@ fun ChartMap(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val holder = remember { MapHolder(MapView(context).also(NexradLayer::follow), context.resources.displayMetrics.density) }
+    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow), density) } }
     holder.onDragged = onDragged
     holder.onRevealed = onRevealed
     holder.onPick = onPick
@@ -135,12 +134,7 @@ fun ChartMap(
     DisposableEffect(lifecycle, holder) {
         val observer = LifecycleEventObserver { _, event -> holder.on(event) }
         lifecycle.addObserver(observer)
-        // The system's low-memory call, which the map view answers by
-        // dropping what it can; a lifecycle has no event for it.
-        val memory = object : ComponentCallbacks {
-            override fun onConfigurationChanged(newConfig: Configuration) {}
-            override fun onLowMemory() = holder.view.onLowMemory()
-        }
+        val memory = MapHold.memory(holder.view)
         val app = context.applicationContext
         app.registerComponentCallbacks(memory)
         onDispose {
@@ -168,8 +162,7 @@ fun ChartMap(
     AndroidView(factory = { holder.view }, modifier = modifier)
 }
 
-/** The map view with its lifecycle forwarded, each call made at most
- *  once however the composition and the activity end. */
+/** The map view with its lifecycle forwarded, each call made at most once however the composition and the activity end. */
 private class MapHolder(val view: MapView, private val density: Float) {
     private var created = false
     private var destroyed = false
@@ -194,9 +187,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var revealed = false
     private val handler = Handler(Looper.getMainLooper())
     private val latest = Runnable { reveal() }
-    /** What the map last drew over the chart, drawn again when the style
-     *  is set anew (a cycle change), which drops every source and layer
-     *  added since. */
+    /** What the map last drew over the chart, drawn again when the style is set anew (a cycle
+     *  change), which drops every source and layer added since. */
     private var lastFix: OwnShip.Fix? = null
     private var lastFollow = false
     private var lastTrail: List<PathPoint> = emptyList()
@@ -538,7 +530,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             val box = map.projection.visibleRegion.latLngBounds
             onView(MapRest(box.latitudeSouth, box.longitudeWest, box.latitudeNorth, box.longitudeEast, map.cameraPosition.zoom))
         }
-        map.addOnMapClickListener { at -> pick(map, at) }
+        MapHold.attach(view, map, tap = { at -> pick(map, at) }, here = { onPick(it) })
         view.addOnDidBecomeIdleListener { if (styled) reveal() }
     }
 

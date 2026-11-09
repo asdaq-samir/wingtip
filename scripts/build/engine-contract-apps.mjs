@@ -347,7 +347,10 @@ function kotlinType(t) {
       base = aliases.has(t.name) ? kotlinType(aliases.get(t.name)) : `EngineContract.${t.name}`;
       break;
   }
-  return t.optional ? `${base}?` : base;
+  // An alias that is itself nullable (EndHeadings) is not made nullable
+  // twice: Kotlin warns of the redundant "?", and the app's build fails
+  // on a warning.
+  return t.optional && !base.endsWith("?") ? `${base}?` : base;
 }
 const kotlinField = (f) => (f.required ? kotlinType(f.type) : kotlinType({ ...f.type, optional: true }));
 

@@ -42,8 +42,10 @@ class OfflineWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             Gateway.client.newCall(request).execute().use { response ->
                 val append = from > 0 && response.code == 206
                 if (response.code != 200 && !append) error("the planner answered ${response.code}")
-                val total = if (append) from + (response.body?.contentLength() ?: 0) else response.body?.contentLength() ?: expected
-                val body = response.body ?: error("no body")
+                val body = response.body
+                // -1 where the server gave no length: the size asked for then.
+                val length = body.contentLength().takeIf { it >= 0 }
+                val total = if (append) from + (length ?: 0) else length ?: expected
                 FileOutputStream(part, append).use { out ->
                     val input = body.byteStream()
                     val buffer = ByteArray(1 shl 16)

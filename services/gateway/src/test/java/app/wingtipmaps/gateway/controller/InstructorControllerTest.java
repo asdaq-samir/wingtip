@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.service.InstructorRefusedException;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.LessonService;
 import app.wingtipmaps.gateway.service.LogbookService;
@@ -23,7 +24,7 @@ import app.wingtipmaps.gateway.service.TrainingService;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -87,7 +88,7 @@ class InstructorControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(CFI));
         given(instructors.student(CFI, 8L)).willReturn(Optional.of(STUDENT));
         given(instructors.sign(eq(CFI), eq(STUDENT), any(), any()))
-                .willThrow(new InstructorService.Refused(
+                .willThrow(new InstructorRefusedException(
                         HttpStatus.CONFLICT, "The words have changed since you read them."));
         mockMvc.perform(post("/api/instructor/students/8/endorsements")
                         .with(oidcLogin())

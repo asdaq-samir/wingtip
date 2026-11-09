@@ -1,7 +1,7 @@
 package app.wingtipmaps.gateway.dto;
 
 import java.util.List;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A student's way to the checkride, beside the logbook: 61.109's

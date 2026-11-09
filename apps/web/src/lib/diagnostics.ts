@@ -10,7 +10,7 @@ import { deviceOf, versionOf } from "./speed";
  * Sent with sendBeacon, which outlives the page and carries no
  * credentials, so no session rides with a report.
  */
-export interface Fault {
+interface Fault {
   kind: "error";
   signature: string;
   detail?: string;

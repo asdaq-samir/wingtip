@@ -2,6 +2,7 @@ package app.wingtipmaps.android
 
 import android.app.Application
 import android.content.Context
+import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Course
@@ -67,6 +68,13 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val was: RouteEdits.Route? = null,
         /** The flight rules it was planned under (FlightChoices), "vfr" or "ifr". */
         val rules: String = "vfr",
+        /** An altitude of the pilot's own, feet MSL, flown on every leg
+         *  (the planner's `altitude_ft`, iOS's ownAltitudeFt); null for the
+         *  planner's pick by 14 CFR 91.159 or 91.179. */
+        val altitudeFt: Double? = null,
+        /** When the flight leaves, an ISO 8601 instant (the planner's
+         *  `depart`, the web's plan.depart); null for the planner's now. */
+        val depart: String? = null,
     ) {
         val routed: Boolean get() = dep.isNotEmpty() && dest.isNotEmpty()
 
@@ -166,6 +174,28 @@ class Plan(app: Application) : AndroidViewModel(app) {
         if (_state.value.routed) plan()
     }
 
+    /** The pilot's own altitude, feet MSL, or null for the planner's;
+     *  the route, where there is one, planned again at it. */
+    fun setAltitude(ft: Double?) {
+        _state.update { it.copy(altitudeFt = ft) }
+        if (_state.value.routed) plan()
+    }
+
+    /** When the flight leaves (an ISO 8601 instant), or null for now;
+     *  the winds, the night and the times are the planner's for it. */
+    fun setDepart(iso: String?) {
+        _state.update { it.copy(depart = iso) }
+        if (_state.value.routed) plan()
+    }
+
+    /** A trip planner's leg used (the iPhone's AskView.use, the web's
+     *  changeOf): its route, its altitude where the planner chose one and
+     *  its departure time, planned once. */
+    fun useLeg(dep: String, dest: String, stops: List<String>, altitudeFt: Double?, depart: String?) {
+        _state.update { it.copy(altitudeFt = altitudeFt, depart = depart) }
+        plan(dep, dest, stops)
+    }
+
     /** A route and its airplane picked together (About's Demo Flight), so
      *  the route is planned once, on that airplane's figures. */
     fun planIn(aircraft: String, dep: String, dest: String, stops: List<String>) {
@@ -186,7 +216,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, asked.aircraft, asked.holds, asked.rules).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, asked.aircraft, asked.holds, asked.rules, asked.altitudeFt, asked.depart).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
                         is NavLogMessage.Altitude -> {}
@@ -292,13 +322,27 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val course: Course? = null,
         val legs: List<Leg> = emptyList(),
         val totals: NavLogTotals? = null,
+        val altitudeFt: Double? = null,
+        val depart: String? = null,
     )
 
     private fun keep() {
         val s = _state.value
         if (!s.routed || s.course == null || s.totals == null) return
-        val kept = Kept(s.dep, s.dest, s.stops, s.aircraft, s.course, s.legs, s.totals)
-        prefs.edit().putString(KEY, Gateway.json.encodeToString(kept)).apply()
+        val kept = Kept(s.dep, s.dest, s.stops, s.aircraft, s.course, s.legs, s.totals, s.altitudeFt, s.depart)
+        prefs.edit { putString(KEY, Gateway.json.encodeToString(kept)) }
+    }
+
+    /** The plan on the page kept now, whole, for the next launch with no
+     *  signal (Ready to fly's Save). */
+    fun save() = keep()
+
+    /** Whether the plan on the page is the one kept, nav log and all, so
+     *  it opens with no signal (ready_to_fly's plan_saved). */
+    fun saved(): Boolean {
+        val s = _state.value
+        val kept = prefs.getString(KEY, null)?.let { runCatching { Gateway.json.decodeFromString<Kept>(it) }.getOrNull() } ?: return false
+        return kept.dep == s.dep && kept.dest == s.dest && kept.stops == s.stops && kept.aircraft == s.aircraft && kept.totals != null
     }
 
     /** The cycle packs of the regions the route crosses (CyclePacks),
@@ -326,7 +370,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
         } ?: return
         _state.update {
             it.copy(dep = kept.dep, dest = kept.dest, stops = kept.stops, aircraft = kept.aircraft,
-                course = kept.course, legs = kept.legs, totals = kept.totals)
+                course = kept.course, legs = kept.legs, totals = kept.totals, altitudeFt = kept.altitudeFt, depart = kept.depart)
         }
         plan()
     }
@@ -335,11 +379,16 @@ class Plan(app: Application) : AndroidViewModel(app) {
     fun clear() {
         running?.cancel()
         _state.value = State(aircraft = _state.value.aircraft)
-        prefs.edit().remove(KEY).apply()
+        prefs.edit { remove(KEY) }
     }
 
     companion object {
         private const val KEY = "kept"
+
+        /** A departure time as written (ISO 8601, with its offset or Z),
+         *  in epoch milliseconds; null where there is none or it is not one. */
+        fun departMs(iso: String?): Long? =
+            iso?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull() }
         /** A hold's length where the pilot sets none: two turns, as the
          *  web's and the iPhone's hold sheets begin. */
         private const val HOLD_TURNS = 2.0

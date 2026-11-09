@@ -33,16 +33,14 @@ import type { ApproachDebrief as Debriefed, ApproachFinding } from "../lib/engin
 import { callEngine, type EngineAnswer } from "../lib/engine/engine";
 import type { TrackPoint } from "../lib/track";
 
-export type { ApproachFinding };
-
 /** How the course is flown, by the approach's coded identifier (ARINC
  *  424-18 5.10): a localizer's, a GPS's, or another (VOR, NDB, LDA, back
  *  course), whose course is measured and marked nowhere. */
-export type Guidance = EngineAnswer<"approach_guidance">;
+type Guidance = EngineAnswer<"approach_guidance">;
 
 export type Tone = ApproachFinding["tone"];
 
-export interface FixCrossing {
+interface FixCrossing {
   ident: string;
   roles: string[];
   minFt: number | null;

@@ -56,7 +56,7 @@ function InputGroupAddon({
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- a mouse-only convenience (clicking an addon's own padding, not a button inside it, focuses the real input next to it), not a control of its own: every actual interactive element in an addon (a button, the input itself) stays independently focusable and keyboard-operable regardless of this.
+    // eslint-disable-next-line jsx-a11y-x/no-noninteractive-element-interactions, jsx-a11y-x/click-events-have-key-events -- a mouse-only convenience (clicking an addon's own padding, not a button inside it, focuses the real input next to it), not a control of its own: every actual interactive element in an addon (a button, the input itself) stays independently focusable and keyboard-operable regardless of this.
     <div
       role="group"
       data-slot="input-group-addon"

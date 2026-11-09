@@ -3,7 +3,7 @@ package app.wingtipmaps.gateway.dto;
 import app.wingtipmaps.gateway.domain.InstructorUntil;
 import java.time.LocalDate;
 import java.util.List;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A pilot as a flight instructor: their certificate as endorsements
  *  carry it, their students, the students asking, the reviews waiting,

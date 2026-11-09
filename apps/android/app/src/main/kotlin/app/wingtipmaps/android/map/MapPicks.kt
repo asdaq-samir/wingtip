@@ -60,6 +60,10 @@ sealed interface MapPick {
     /** An airplane of the traffic, by its ICAO address. */
     data class Plane(val hex: String) : MapPick
 
+    /** A point a finger was held on, or the map's centre asked of by
+     *  TalkBack: What's Here, the airspace over it from the ground up. */
+    data class Here(val lat: Double, val lon: Double) : MapPick
+
     /** A leg of the route's line, by its number from the departure. */
     data class RouteLeg(val index: Int) : MapPick
 

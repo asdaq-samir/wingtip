@@ -213,7 +213,7 @@ class FlightWatchServiceTest {
         given(flights.findById(8L)).willReturn(Optional.of(flightWithId(8L, pilot)));
         // The same route twice: the planner is down for the first ask and back for the second.
         given(planner.briefing("C81", "KDLH", List.of("KJVL"), DEPART, 205.0))
-                .willThrow(new PlannerClient.Unavailable("the planner could not be reached for the briefing"))
+                .willThrow(new PlannerUnavailableException("the planner could not be reached for the briefing"))
                 .willReturn(LATER);
         given(planner.changes("C81", "KDLH", List.of("KJVL"), THEN, LATER)).willReturn(unchanged());
         given(watches.save(any(FlightWatch.class))).willAnswer(call -> call.getArgument(0));

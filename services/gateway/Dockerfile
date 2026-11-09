@@ -40,6 +40,9 @@ RUN npm run types && npx vite build --outDir /web/dist --emptyOutDir
 FROM maven:3.9-eclipse-temurin-25@sha256:93b8a14ea2f412782e4e842651273b4d903e35cc496284f178fbbe2d67d00976 AS build
 WORKDIR /build
 COPY services/gateway/pom.xml .
+# Maven's JVM options: Lombok, run inside javac, still reads fields
+# through sun.misc.Unsafe, which JDK 24 on warns about unless allowed.
+COPY services/gateway/.mvn ./.mvn
 # The dependencies into the layer itself (/build/m2), not only into the
 # cache mount. A cache mount belongs to the machine that built it and is
 # not exported with the layer cache: on a CI runner restoring the layers

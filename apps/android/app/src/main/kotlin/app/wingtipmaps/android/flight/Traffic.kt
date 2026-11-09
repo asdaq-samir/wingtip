@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.flight
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -242,6 +243,8 @@ class Traffic private constructor(private val context: Context, private val tick
          *  quiet. */
         const val TELL_WITHIN_NM = 5.0
 
+        // The application's context alone (of), which lives as long as the process.
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var shared: Traffic? = null
 

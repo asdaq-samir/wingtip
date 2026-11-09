@@ -89,7 +89,7 @@ afterEach(() => {
 describe("useSheetMotion", () => {
   it("rests at the page's size, slid off its edge by what is past it", () => {
     const { getByTestId } = render(<Sheet pageState="peek" tellPage={vi.fn()} tellInsets={vi.fn()} />);
-    expect(getByTestId("sheet").style.transform).toBe("translate3d(0, 546px, 0)");
+    expect(getByTestId("sheet").style.transform).toBe("translate3d(0px, 546px, 0px)");
   });
 
   it("eases to a size asked for in 0.3 s with no spring, and tells the page once it has landed", () => {
@@ -101,7 +101,7 @@ describe("useSheetMotion", () => {
     act(() => {
       getByTestId("grabber").click();
     });
-    expect(sheet.style.transform).toBe("translate3d(0, 273px, 0)");
+    expect(sheet.style.transform).toBe("translate3d(0px, 273px, 0px)");
     expect(sheet.style.transition).toBe(`transform 0.3s ${EASE}`);
     act(() => {
       vi.advanceTimersByTime(16);
@@ -139,7 +139,7 @@ describe("useSheetMotion", () => {
     act(() => {
       vi.advanceTimersByTime(400);
     });
-    expect(getByTestId("sheet").style.transform).toBe("translate3d(0, 0px, 0)");
+    expect(getByTestId("sheet").style.transform).toBe("translate3d(0px, 0px, 0px)");
     expect(tellPage).not.toHaveBeenCalled();
   });
 
@@ -163,7 +163,7 @@ describe("useSheetMotion", () => {
     act(() => {
       vi.advanceTimersByTime(16);
     });
-    expect(sheet.style.transform).toBe("translate3d(0, 506px, 0)");
+    expect(sheet.style.transform).toBe("translate3d(0px, 506px, 0px)");
     expect(sheet.dataset.moving).toBe("true");
     // Thrown up at 2 pt/ms: far enough for full, but a throw goes one size.
     pointer(window, "pointerup", 560, 21);
@@ -171,7 +171,7 @@ describe("useSheetMotion", () => {
       vi.advanceTimersByTime(400);
     });
     expect(tellPage).toHaveBeenCalledExactlyOnceWith("half");
-    expect(sheet.style.transform).toBe("translate3d(0, 273px, 0)");
+    expect(sheet.style.transform).toBe("translate3d(0px, 273px, 0px)");
   });
 
   it("moves the map's buttons with a phone's bottom sheet, on its curve", () => {

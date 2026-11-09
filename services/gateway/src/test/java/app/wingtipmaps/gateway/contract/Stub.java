@@ -1,7 +1,5 @@
 package app.wingtipmaps.gateway.contract;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -13,6 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * A service as its OpenAPI document says it is: every operation the
@@ -95,8 +96,8 @@ final class Stub implements AutoCloseable {
     static JsonNode parse(String body) {
         try {
             return JSON.readTree(body);
-        } catch (IOException e) {
-            throw new UncheckedIOException("the body sent is not JSON: " + body, e);
+        } catch (JacksonException e) {
+            throw new IllegalArgumentException("the body sent is not JSON: " + body, e);
         }
     }
 

@@ -41,7 +41,8 @@ public class OpenApiConfig {
                     // $ref, so the reference or null.
                     Schema<?> record = new Schema<>().$ref(property.get$ref());
                     property.set$ref(null);
-                    property.setAnyOf(List.of(record, new Schema<>().types(Set.of("null"))));
+                    property.addAnyOfItem(record);
+                    property.addAnyOfItem(new Schema<>().types(Set.of("null")));
                 } else if (property.getTypes() != null && !property.getTypes().isEmpty()) {
                     property.addType("null");
                 } else {
@@ -61,7 +62,10 @@ public class OpenApiConfig {
             if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
                 return;
             }
-            openApi.getComponents().getSchemas().values().forEach(schema -> {
+            openApi.getComponents().getSchemas().values().forEach(raw -> {
+                // swagger-models hands its schemas over raw; typed here so
+                // the calls below are checked.
+                Schema<?> schema = raw;
                 if (schema.getProperties() != null && !schema.getProperties().isEmpty()) {
                     schema.setRequired(
                             new ArrayList<>(new TreeSet<>(schema.getProperties().keySet())));

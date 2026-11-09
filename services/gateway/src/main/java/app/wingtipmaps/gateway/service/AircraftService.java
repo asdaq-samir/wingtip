@@ -6,13 +6,13 @@ import app.wingtipmaps.gateway.domain.VorCheck;
 import app.wingtipmaps.gateway.dto.HandbookFigures;
 import app.wingtipmaps.gateway.dto.InspectionsRequest;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /** A pilot's own aeroplanes -- CRUD, all of it scoped by pilot id at
  *  the repository layer ({@link AircraftRepository#findByIdAndPilotId})

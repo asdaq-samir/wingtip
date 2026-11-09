@@ -119,8 +119,7 @@ class OverlayStore(private val dir: File, private val limitBytes: Long = LIMIT_B
         client.newCall(request).execute().use { response ->
             val append = response.code == 206 && from > 0
             if (response.code != 200 && !append) return@withContext false
-            val body = response.body ?: return@withContext false
-            java.io.FileOutputStream(part, append).use { out -> body.byteStream().copyTo(out) }
+            java.io.FileOutputStream(part, append).use { out -> response.body.byteStream().copyTo(out) }
         }
         if (part.length() != bytes) return@withContext false
         if (!part.renameTo(whole(name))) return@withContext false
@@ -177,7 +176,7 @@ class OverlayCache(private val store: OverlayStore) : Interceptor {
         }
         val response = chain.proceed(request)
         if (response.code != 206) return response
-        val body = response.body ?: return response
+        val body = response.body
         val type = body.contentType() ?: OCTETS
         val bytes = body.bytes()
         runCatching { store.store(name, start, end, bytes) }

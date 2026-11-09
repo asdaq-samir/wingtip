@@ -30,12 +30,14 @@ export function splitRanking(answer: RankedNotams | undefined): { top: RankedNot
   return { top: notams.filter((n) => n.top), rest: notams.filter((n) => !n.top) };
 }
 
-export function useNotamRanking() {
-  const plan = useBriefPlan();
+/** The ranked NOTAMs' query for the plan on screen: the Brief's section
+ *  asks it, and Ready to fly (features/readyToFly) reads when it was
+ *  fetched and asks it again as its fix. */
+export function notamRankingQuery(plan: ReturnType<typeof useBriefPlan.getState>) {
   const runways = runwaysOfPicks(plan.flight?.picks);
-  const query = useQuery({
+  return {
     queryKey: ["notams", "ranked", routeKeyOf(plan), plan.eteMin, plan.altitudeFt, runways],
-    queryFn: ({ signal }) =>
+    queryFn: ({ signal }: { signal: AbortSignal }) =>
       postJson<RankedNotams>(
         "/api/planner/words/notams/ranked",
         {
@@ -52,6 +54,11 @@ export function useNotamRanking() {
     enabled: plan.routed && !!plan.dep && !!plan.dest,
     staleTime: KEPT_MS,
     meta: { silent: true },
-  });
+  };
+}
+
+export function useNotamRanking() {
+  const plan = useBriefPlan();
+  const query = useQuery(notamRankingQuery(plan));
   return { shown: plan.routed, ...splitRanking(query.data), answer: query.data, error: query.error, pending: !query.data && !query.error };
 }

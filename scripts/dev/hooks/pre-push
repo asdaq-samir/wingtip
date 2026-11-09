@@ -100,7 +100,7 @@ if has_area web; then
   while IFS= read -r f; do [ -n "$f" ] && lint+=("${f#apps/web/}"); done <<<"$web_files"
   # The API and engine types are generated, not committed: tsc needs them.
   # The files are the script's own arguments ("$@"), after `--`, not text.
-  web_cmd='npm run -s types >/dev/null && npx tsc --noEmit && { [ "$#" -eq 0 ] || npx eslint --no-warn-ignored -- "$@"; }'
+  web_cmd='npm run -s types >/dev/null && npx tsc --noEmit && { [ "$#" -eq 0 ] || npx eslint --max-warnings 0 --no-warn-ignored -- "$@"; }'
   if command -v npx >/dev/null && [ -d "$here/apps/web/node_modules" ]; then
     note "web: tsc${lint[0]:+, eslint}"
     (cd "$here/apps/web" && sh -c "$web_cmd" sh "${lint[@]+"${lint[@]}"}") || fail "web"

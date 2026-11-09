@@ -5,7 +5,7 @@ import app.wingtipmaps.gateway.domain.Subscription;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A pilot's subscription as the app shows it: whether the paid features
@@ -32,11 +32,11 @@ public record SubscriptionDto(
         @Schema(description = "The free month's length, days", example = "30")
         int trialDays,
 
-        @Schema(description = "MONTHLY or YEARLY, when paid for") @Nullable
-        Subscription.Plan plan,
+        @Schema(description = "MONTHLY or YEARLY, when paid for")
+        Subscription.@Nullable Plan plan,
 
-        @Schema(description = "Where it was bought, when paid for") @Nullable
-        Subscription.Store store,
+        @Schema(description = "Where it was bought, when paid for")
+        Subscription.@Nullable Store store,
 
         @Schema(description = "This month's uses of each paid feature Claude writes, against its cap")
         List<FeatureUse> uses) {

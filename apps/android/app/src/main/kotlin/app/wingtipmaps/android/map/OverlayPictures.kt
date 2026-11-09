@@ -7,6 +7,8 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.toColorInt
 import org.maplibre.android.maps.ImageContent
 import org.maplibre.android.maps.ImageStretches
 import org.maplibre.android.maps.Style
@@ -110,14 +112,14 @@ object OverlayPictures {
         builder.withImage(id, bitmap, listOf(ImageStretches(i, w - i)), listOf(ImageStretches(i, h - i)), ImageContent(i, i, w - i, h - i))
     }
 
-    private fun ink(hex: String): Int = Color.parseColor(hex)
+    private fun ink(hex: String): Int = hex.toColorInt()
 
     /** A canvas of `size` dp square at the screen's density, its origin
      *  moved to `origin` dp, as the web's SVG's viewBox. The bitmap says
      *  its density, which MapLibre reads as the picture's pixel ratio. */
     private fun picture(size: Float, density: Float, origin: Float = 0f, draw: Canvas.() -> Unit): Bitmap {
         val px = Math.round(size * density).coerceAtLeast(1)
-        val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(px, px)
         bitmap.density = Math.round(density * 160)
         val canvas = Canvas(bitmap)
         canvas.scale(density, density)
@@ -288,7 +290,7 @@ object OverlayPictures {
      *  short diagonal stroke in the area's ink on a faint wash of it, 7 by
      *  10 dp, repeated along the band by its line-pattern. */
     private fun hatch(colour: Int, density: Float): Bitmap {
-        val bitmap = Bitmap.createBitmap(Math.round(7 * density), Math.round(10 * density), Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(Math.round(7 * density), Math.round(10 * density))
         bitmap.density = Math.round(density * 160)
         Canvas(bitmap).apply {
             scale(density, density)

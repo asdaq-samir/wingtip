@@ -79,7 +79,7 @@ apps/web/src/lib/map/gl/glStyle.ts 577
 apps/web/src/lib/map/gl/layers/RouteExtrasGl.tsx 495
 apps/web/src/lib/preferences.ts 629
 apps/web/src/lib/queryClient.ts 469
-apps/web/vite.config.ts 484
+apps/web/vite.config.ts 473
 engine/crates/airspace/src/ahead.rs 1073
 engine/crates/airspace/src/rules.rs 558
 engine/crates/airspace/src/spoken.rs 560
@@ -121,8 +121,8 @@ scripts/build/assistant_client.py 426
 scripts/build/design_tokens.py 675
 services/assistant/app/toolbox.py 498
 services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 441
-services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 539
-services/gateway/src/main/java/app/wingtipmaps/gateway/service/PlannerClient.java 505
+services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 534
+services/gateway/src/main/java/app/wingtipmaps/gateway/service/PlannerClient.java 495
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/AircraftControllerTest.java 525
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 568
 services/ingest/ingest/swim.py 493

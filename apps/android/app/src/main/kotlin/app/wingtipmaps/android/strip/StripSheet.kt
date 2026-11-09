@@ -39,6 +39,7 @@ import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.ui.BriefModel
 import app.wingtipmaps.android.ui.BriefSheet
 import app.wingtipmaps.android.ui.LegSheet
@@ -91,9 +92,10 @@ fun StripLayout(
     // Where the engine could not place the airplane on the route, the
     // field's row says so rather than the ribbon showing it nowhere.
     val positionProblem = positionAsked.exceptionOrNull()?.let { "Where the airplane is on the route failed: ${it.message}" }
-    // When the flight leaves: now, as this app's plan has no time of its
-    // own; the times down the strip are this plus the planner's minutes.
-    val leaveMs = remember(state.legs) { System.currentTimeMillis() }
+    // When the flight leaves: the plan's time where it has one (Plan.setDepart,
+    // a trip leg used), else now; the times down the strip are this plus
+    // the planner's minutes.
+    val leaveMs = remember(state.legs, state.depart) { Plan.departMs(state.depart) ?: System.currentTimeMillis() }
     var unfolded by rememberSaveable { mutableStateOf(false) }
     var source by remember { mutableStateOf<AssistantSource?>(null) }
     var briefOpen by rememberSaveable { mutableStateOf(false) }
@@ -109,7 +111,7 @@ fun StripLayout(
 
     val context = AssistantContext(
         dep = state.dep, dest = state.dest, stops = state.stops, aircraft = state.aircraft,
-        altitudeFt = state.legs.firstOrNull()?.altitudeFt,
+        altitudeFt = state.altitudeFt ?: state.legs.firstOrNull()?.altitudeFt, depart = state.depart,
         ownShip = fix?.let { AssistantContext.OwnShipFix(it.lat, it.lon, it.altitudeFt, it.trackDeg, it.groundspeedKt) },
         pilot = pilot?.let { AssistantContext.PilotRecord(homeBase = it.homeBase) },
     )
@@ -133,7 +135,7 @@ fun StripLayout(
             FieldScreen.SETUP, FieldScreen.MAP -> { model.open(StripModel.Over.Setup); null }
             FieldScreen.NAVLOG -> if (state.routed) null else "Plan a route first."
             FieldScreen.BRIEF -> if (state.routed) { briefOpen = true; null } else "Plan a route first, then say \"Brief me\"."
-            FieldScreen.RADIO, FieldScreen.CLEARANCE -> "Tap the mic and say it; the clearance card is the web app's for now."
+            FieldScreen.RADIO, FieldScreen.CLEARANCE -> { model.open(StripModel.Over.Clearance); null }
             else -> "${screen.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' ')} isn't on this phone yet."
         }
     }
@@ -202,13 +204,20 @@ fun StripLayout(
                     unfolded = unfolded, onUnfold = { unfolded = true },
                     onField = { model.open(StripModel.Over.Airport(it)) },
                     onCheckpoint = { leg = it },
+                    onClearance = { model.open(StripModel.Over.Clearance) },
                 )
             }
         }
     }
 
     strip.over?.let { over -> StripOver(over = over, plan = plan, session = session, ownShip = ownShip, assistant = assistant, onClose = { model.open(null) }) }
-    if (briefOpen) BriefSheet(brief, state, signedIn = pilot != null, onClose = { briefOpen = false })
+    // Ready to fly at the Brief's head; a route is typed in the field, so
+    // its Plan the Route closes the Brief to the field.
+    if (briefOpen) {
+        BriefSheet(brief, state, signedIn = pilot != null, onClose = { briefOpen = false }) {
+            ReadyToFlyRow(plan, onSetRoute = { briefOpen = false })
+        }
+    }
     leg?.let { row -> LegSheet(number = row.number, leg = row.leg, onClose = { leg = null }) }
     source?.let { shown -> SourceSheet(shown, onClose = { source = null }) }
 }

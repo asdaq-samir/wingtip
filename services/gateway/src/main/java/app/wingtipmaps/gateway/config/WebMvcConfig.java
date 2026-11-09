@@ -5,7 +5,7 @@ import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.MimeMappings;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
-import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.boot.web.server.servlet.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -47,16 +47,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     }
 
     /**
-     * The bare app root ({@code /app} or {@code /app/}) is a real 500,
-     * not a routing edge case: it dispatches to the resource handler
-     * below with nothing left of the path after the {@code /app/}
-     * prefix is stripped, which Spring normalizes to {@code "."} --
-     * and rejects as an invalid resource path before the custom
-     * resolver below ever runs, regardless of what it would have
-     * returned. A redirect sidesteps it entirely: the browser reissues
-     * the request for a concrete file, which resolves normally.
-     */
-    /**
      * The web app manifest ({@code /app/manifest.webmanifest}, from
      * vite-plugin-pwa) served as what it is: Tomcat's own mime table
      * has no entry for the extension and sends it as an octet stream,
@@ -72,6 +62,16 @@ public class WebMvcConfig implements WebMvcConfigurer {
         };
     }
 
+    /**
+     * The bare app root ({@code /app} or {@code /app/}) is a real 500,
+     * not a routing edge case: it dispatches to the resource handler
+     * below with nothing left of the path after the {@code /app/}
+     * prefix is stripped, which Spring normalizes to {@code "."} --
+     * and rejects as an invalid resource path before the custom
+     * resolver below ever runs, regardless of what it would have
+     * returned. A redirect sidesteps it entirely: the browser reissues
+     * the request for a concrete file, which resolves normally.
+     */
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
         // /app/plan, not /app/index.html: that file resolves fine (it's

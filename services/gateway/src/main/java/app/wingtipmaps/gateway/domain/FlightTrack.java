@@ -38,10 +38,16 @@ public class FlightTrack {
 
     public FlightTrack(Long flightId, String source, String points, int pointCount) {
         this.flightId = flightId;
-        replace(source, points, pointCount);
+        keep(source, points, pointCount);
     }
 
     public void replace(String source, String points, int pointCount) {
+        keep(source, points, pointCount);
+    }
+
+    /** Private, so the constructor's call cannot reach an override
+     *  (Hibernate's proxies subclass an entity). */
+    private void keep(String source, String points, int pointCount) {
         this.source = source;
         this.points = points;
         this.pointCount = pointCount;

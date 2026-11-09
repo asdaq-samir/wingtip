@@ -2,7 +2,7 @@ package app.wingtipmaps.gateway.dto;
 
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** The pilot's telephone number and home base -- PUT /api/me/contact --
  *  for a flight plan's item 19 C/, the pilot in command's contact

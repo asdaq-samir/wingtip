@@ -81,7 +81,9 @@ describe("the phone's own copy, where the search is off or only typed into", () 
 
   test("is read when something is typed, with no field focused", async () => {
     renderHook(() => useAirportSearch("osh", true), { wrapper: wrapper() });
-    await waitFor(() => expect(api.airportIndex).toHaveBeenCalledTimes(1));
+    // Read after the search's debounce and a dynamic import, which a Mac
+    // busy with builds took past waitFor's default second to finish.
+    await waitFor(() => expect(api.airportIndex).toHaveBeenCalledTimes(1), { timeout: 5000 });
   });
 });
 

@@ -63,6 +63,37 @@ function lingeringTimers() {
   });
 }
 
+// No warnings (the owner's rule): a test that makes React, a library or
+// the app write a warning or an error to the console fails, with what was
+// said, rather than passing over it in the run's output. Only what a test
+// means to provoke is let through, matched here with why; a test that
+// expects one of its own spies on console itself (vi.spyOn), which
+// replaces this for that test.
+const ALLOWED_CONSOLE: RegExp[] = [
+  // The copilot says in the console when the engine refused its question
+  // and it answers nothing (features/copilot/copilotInput's watch).
+  /^copilot_watch:/,
+];
+const consoleSaid: string[] = [];
+for (const level of ["warn", "error"] as const) {
+  const write = console[level].bind(console);
+  console[level] = (...args: unknown[]) => {
+    const text = args.map((a) => (a instanceof Error ? (a.stack ?? a.message) : String(a))).join(" ");
+    if (ALLOWED_CONSOLE.some((allowed) => allowed.test(text))) return;
+    consoleSaid.push(`console.${level}: ${text}`);
+    write(...args);
+  };
+}
+afterEach(() => {
+  if (consoleSaid.length === 0) return;
+  const said = consoleSaid.splice(0).join("\n");
+  throw new Error(
+    `This test wrote to the console:\n${said}\n` +
+      "Fix the cause; if the test means to provoke it, spy on console in the test, or add it to " +
+      "ALLOWED_CONSOLE in src/test/guards.ts with why.",
+  );
+});
+
 // A test that turns on fake timers turns them off again (vi.useRealTimers
 // in its own afterEach or finally). Left on, the next test's setTimeout
 // never fires and it times out, or its Date.now() is frozen at another

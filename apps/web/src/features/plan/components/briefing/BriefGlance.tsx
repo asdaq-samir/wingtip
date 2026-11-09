@@ -17,6 +17,8 @@ import { useAirplaneChosen } from "../../../../lib/preferences";
 import { useVerdict, verdictLine } from "../../../../lib/verdict";
 import type { PanelTab } from "../navlog/panelTab";
 import CategoryBadge from "./CategoryBadge";
+import { CARD, TRIGGER } from "../../../../components/glanceLook";
+import { ReadyToFly } from "../../../readyToFly";
 
 /** One figure of a card: its name over it, the figure at a glance's size. */
 function Stat({ label, value, finding }: { label: string; value: ReactNode; finding?: Finding }) {
@@ -38,7 +40,6 @@ const ft = (n: number | null) => (n == null ? DASH : `${grouped(n)}`);
 const time = (iso: string | null) => (iso ? clockTime(new Date(iso)) : null);
 /** The verdict's wash: the Brief's one alarm. */
 const MARK_TINT: Partial<Record<Finding, string>> = { stop: "bg-destructive/10", caution: "bg-caution-wash" };
-const CARD = "rounded-xl bg-card shadow-[0_0_0_0.5px_var(--border)]";
 
 /** A card: its part's name, the field and its category, its time at the
  *  right with the way in, its figures under, a line of note. The whole
@@ -133,8 +134,6 @@ function FieldCard({
     />
   );
 }
-
-const TRIGGER = "group flex w-full items-start gap-2.5 px-3.5 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /** A line a pilot acts on: the finding and what to do about it, in one
  *  sentence (features/plan/lib/glance), and under a tap why it matters with the rule it
@@ -252,6 +251,9 @@ export default function BriefGlance({
   const airplane = useAirplaneChosen();
   return (
     <div className="flex flex-col gap-2.5 pt-1 pb-4" data-testid="brief-glance">
+      {/* Ready to fly first: what the device needs while there is still a
+          signal, the pre-flight's own first look (features/readyToFly). */}
+      <ReadyToFly />
       {verdict && (
         <div
           className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-2.5", MARK_TINT[verdict.finding] ?? "bg-muted")}

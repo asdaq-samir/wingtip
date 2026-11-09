@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An approach set as a lesson, as its student or its instructor reads
  *  it: the approach, who set it, their note at each fix, the day it is
