@@ -8,7 +8,7 @@ scripts that keep the owner's Mac tidy. What the services are is
 
 - **Docker Desktop** with Compose v2. Nothing else is installed natively:
   every service builds its own image, and the checks run in containers.
-- **Git.**
+- **Git** and **make** (it ships with macOS and every Linux).
 - **An Anthropic API key**, only for the Claude features (the Brief's
   narrative, checkpoint notes, the words, the assistant, the mock oral).
   Put `ANTHROPIC_API_KEY=sk-...` in `.env` at the repository's root
@@ -24,13 +24,52 @@ scripts that keep the owner's Mac tidy. What the services are is
 ```bash
 git clone https://github.com/asdaq-samir/wingtip.git
 cd wingtip
-docker compose up -d          # gateway, planner, ingest, weather, assistant, db, mailpit, dev-services
+make dev
 ```
 
+`make dev` (`scripts/dev/dev.sh up`) does, in order:
+
+1. Checks that Docker is installed and running, that Compose v2 is there,
+   that Docker has 8 GB of memory or more (`WINGTIP_MIN_DOCKER_GB` changes
+   the bar) and that nothing else holds ports 8080 and 8025. A failure is
+   a line marked FAIL saying what to do, and nothing is started.
+2. Makes `.env` from `.env.example` when there is none, and says what to
+   fill in: `ANTHROPIC_API_KEY` for the Claude features, your address in
+   `APP_DEVELOPER_EMAILS` for the developer role. Nothing in it is
+   required.
+3. Builds the images, runs `docker compose up -d --wait` (gateway,
+   planner, ingest, weather, assistant, db, mailpit, dev-services) and
+   waits for every service's health, up to 25 minutes
+   (`WINGTIP_WAIT_SECONDS`).
+4. Prints the app's address, the API docs, the Mailpit inbox and how to
+   sign in. If the wait runs out it shows `docker compose ps` and says
+   which log to read.
+
 The first start downloads the FAA's reference data (about a gigabyte) and
-takes some minutes before the planner is healthy; `docker compose ps`
-shows each service's health. Then open
-[localhost:8080/app](http://localhost:8080/app).
+takes some minutes before the planner is healthy. Then open
+[localhost:8080/app](http://localhost:8080/app). The other commands are in
+the [Makefile](../Makefile) (`make` lists them):
+
+| Command | What it does |
+|---|---|
+| `make doctor` | Steps 1 and 2 alone: changes nothing but a missing `.env` |
+| `make stop`, `make down` | Stop the stack, keeping its data; also remove its containers (the database volume stays) |
+| `make ps`, `make logs s=planner` | Each service and its health; one service's log, followed |
+| `make check` | `scripts/dev/check.sh all-changed`, the quick checks for what the branch changed |
+| `make live b=<branch>` | `scripts/dev/go-live.sh`, a branch on the owner's phone stack ([below](#going-live-for-the-owner)) |
+
+The same stack without `make` is `docker compose up -d`. The compose file
+fixes the project's name (`wingtip`) and its ports, so two stacks cannot
+run on one machine at once; stop the first.
+
+### In a VS Code dev container
+
+"Reopen in Container" builds `.devcontainer/devcontainer.json`: Node 24,
+Python 3.14, Rust stable, the Docker CLI and the recommended extensions.
+It shares the host's Docker (docker-outside-of-docker), so `make dev` and
+`make check` start containers beside the dev container, and it mounts the
+checkout at its own host path so those containers find its files. It has
+no Xcode and no Android SDK; work on the phone apps on the Mac.
 
 ### Signing in
 
@@ -163,6 +202,7 @@ All in `scripts/dev/`, each with its usage at its top.
 | Script | What it does |
 |---|---|
 | `check.sh <area>` or `check.sh all-changed` | The quick checks for a part of the repo (web, py, planner, ingest, assistant, weather, jobs, engine, java, ios, android), in Docker, warm from any worktree's first run ([CI.md](CI.md)) |
+| `dev.sh doctor` or `dev.sh up` | What `make dev` and `make doctor` run (First run, above) |
 | `one-at-a-time.sh "<label>" <command>` | Runs a heavy command (a suite, an image build, a browser run) in one of two turns, waiting while memory is short; `--alone` takes the whole machine for a measurement |
 | `validate-wave.sh` | The end-of-wave validation on `claude/integration`: every check area, the image builds, the `@smoke` browser specs on a throwaway stack, the iPad tests; one table of what passed |
 | `go-live.sh [branch]` | A branch on the owner's stack for the phone (above) |
