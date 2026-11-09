@@ -1,17 +1,19 @@
 import type { CircleLayerSpecification, SymbolLayerSpecification } from "maplibre-gl";
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import type { Course } from "../../../api/types";
 import type { AirspaceClass } from "../../../preferences";
 import { courseColour } from "../../chartColors";
-import { airportMarkIcon, dotIcon, fixMarkIcon } from "../../icons";
+import { dotIcon, fixMarkIcon } from "../../icons";
+import { routeFieldIcon } from "../../routeMarks";
 import { usePreferences } from "../../../preferences";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
 import { useDarkTheme } from "../useDarkTheme";
-import { CHECKPOINT_SOURCE, ROUTE_SOURCE, glZoom, pointFeatures, routeCasingPaint, routeFeature, routeLayers } from "../glStyle";
+import { CHECKPOINT_SOURCE, ROUTE_SOURCE, glZoom, pointFeatures, routeCasingPaint, routeEdgePaint, routeFeature, routeLayers } from "../glStyle";
 import { useGlProbe } from "../useGlProbe";
 import { GL_FONT, TAP } from "./common";
 import { useGlMarks, type GlMark } from "../useGlMarks";
+import { LEG_RANK, LEG_REACH, nearestLeg, type GlLeg } from "../legTap";
 
 export interface GlCheckpoint {
   key: string;
@@ -52,6 +54,7 @@ const NAME_ZOOM = 10;
 
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
 const CANDIDATES = "candidates";
+const NO_LEGS: GlLeg[] = [];
 const LINE_SOURCES = { [ROUTE_SOURCE]: empty() };
 const MARK_SOURCES = { [CHECKPOINT_SOURCE]: empty(), [CANDIDATES]: empty() };
 
@@ -73,14 +76,17 @@ const NAMES: SymbolLayerSpecification = {
 };
 
 /**
- * The route: the course line (a white casing under a magenta
- * core), its checkpoints numbered in flight order and named closer in (a
- * tap the checkpoint's card, the map flying in to it), the points they
- * were chosen from, and its departure, stops and destination as every
- * airport's mark on the chart, in its weather (a tap its card).
+ * The route: the course line (a magenta core cased in green, as
+ * ForeFlight draws a route, with a dark edge round it; a tap on it the
+ * nearest leg's Route Leg sheet), its checkpoints numbered in flight
+ * order and named closer in (a tap the checkpoint's card, the map flying
+ * in to it), the points they were chosen from, and its departure, stops
+ * and destination as every airport's mark on the chart, in its weather,
+ * the ident on a dark pill (routeFieldIcon; a tap its card).
  */
-export function RouteGl({ course, checkpoints, candidates, endpoints }: {
+export function RouteGl({ course, checkpoints, candidates, endpoints, legs = NO_LEGS, onSelectLeg }: {
   course: Course | null; checkpoints: GlCheckpoint[]; candidates: GlCandidate[]; endpoints: GlEndpoint[];
+  legs?: GlLeg[]; onSelectLeg?: (key: string) => void;
 }) {
   const layers = useMemo(() => routeLayers(courseColour()), []);
   // The line in the route's slot, the marks over every mark on the chart.
@@ -91,7 +97,8 @@ export function RouteGl({ course, checkpoints, candidates, endpoints }: {
   const dark = useDarkTheme();
   const chartNight = usePreferences(s => s.chartNight);
   const night = dark && chartNight === "dimmed";
-  useGlPaint(["route-casing"], routeCasingPaint(night, sunlight));
+  useGlPaint(["route-edge"], routeEdgePaint(night, sunlight));
+  useGlPaint(["route-casing"], routeCasingPaint(night));
   const line = useMemo(() => (course ? routeFeature(course.course_line as [number, number][]) : null), [course]);
   useGlData(ROUTE_SOURCE, line);
   // The course drawn, for the browser tests.
@@ -112,7 +119,7 @@ export function RouteGl({ course, checkpoints, candidates, endpoints }: {
   useGlData(CANDIDATES, others);
   const fields = useMemo<GlMark[]>(() => endpoints.map(e => ({
     key: e.ident, lat: e.lat, lon: e.lon, onTap: e.select,
-    icon: e.fix ? fixMarkIcon(e.ident) : airportMarkIcon(e.ident, e.space, e.colour),
+    icon: e.fix ? fixMarkIcon(e.ident) : routeFieldIcon(e.ident, e.space, e.colour),
   })), [endpoints]);
   useGlMarks(fields);
   // The chosen checkpoints as the app's numbered dots (icons.ts dotIcon),
@@ -124,6 +131,21 @@ export function RouteGl({ course, checkpoints, candidates, endpoints }: {
     onTap: () => { c.select(); openCard(c.card); },
   })), [checkpoints, openCard]);
   useGlMarks(numbered);
+  // A tap on the course within a finger's reach of it, nothing nearer
+  // taken first (LEG_RANK), the nearest leg's sheet.
+  const { map } = useGlMap();
+  // Each leg's ends where they are on the screen, for the browser tests to
+  // tap one, and to tap the chart clear of them (helpers' tapTheChart).
+  useGlProbe("route-legs", ["route-edge"], () => ({
+    legs: legs.map(l => ({ key: l.key, ends: [l.from, l.to].map(p => map.project([p.lon, p.lat])).map(p => [Math.round(p.x), Math.round(p.y)]) })),
+  }));
+  // The legs come in after the line is drawn, with nothing on the map to
+  // draw again: a frame asked for, so the probe's next idle has them.
+  useEffect(() => { map.triggerRepaint(); }, [map, legs]);
+  useGlTap(onSelectLeg ? ["route-edge"] : [], LEG_REACH, LEG_RANK, (_feature, event) => {
+    const leg = nearestLeg(legs, event.point, p => map.project([p.lon, p.lat]));
+    if (leg) onSelectLeg?.(leg.key);
+  });
   useGlTap(["candidates"], 8, TAP.rank.checkpoint + 0.5, feature => {
     const c = candidates.find(p => p.key === String(feature.properties.key));
     if (c?.select) c.select();

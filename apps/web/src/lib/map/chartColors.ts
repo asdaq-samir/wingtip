@@ -10,6 +10,15 @@
  *  a hold's racetrack, a top of climb's or descent's tag. */
 export const COURSE_MAGENTA = "#e600e6";
 
+/** The green either side of the course line, as ForeFlight cases its
+ *  magenta (the owner's screenshot of its selected course, 2026-11-08):
+ *  a colour no airspace, airway or field on the sectional is drawn in, so
+ *  the route reads as the pilot's own over any of them. A shade deeper
+ *  over the dimmed chart at night, so it does not glare. The phones keep
+ *  the same two (NightPalette.routeGreen, ChartMap.kt's greenColour). */
+export const ROUTE_GREEN = "#52c41a";
+export const ROUTE_GREEN_NIGHT = "#3f9a1c";
+
 /** The sectional's magenta, a VFR waypoint's colour on the chart. */
 export const WAYPOINT_MAGENTA = "#c0309f";
 

@@ -6517,6 +6517,7 @@ export interface NavLogLegOneAnswer {
   true_heading_deg?: number;
   magnetic_variation_deg?: number;
   magnetic_heading_deg?: number;
+  magnetic_course_deg?: number;
   groundspeed_kt?: number | null;
   ete_min?: number | null;
   fuel_gal?: number | null;
@@ -6607,6 +6608,7 @@ export interface NavLogLeg {
   true_heading_deg?: number;
   magnetic_variation_deg?: number;
   magnetic_heading_deg?: number;
+  magnetic_course_deg?: number;
   groundspeed_kt?: number | null;
   ete_min?: number | null;
   fuel_gal?: number | null;
@@ -6819,6 +6821,7 @@ export interface NavLogLeg1 {
   true_heading_deg?: number;
   magnetic_variation_deg?: number;
   magnetic_heading_deg?: number;
+  magnetic_course_deg?: number;
   groundspeed_kt?: number | null;
   ete_min?: number | null;
   fuel_gal?: number | null;

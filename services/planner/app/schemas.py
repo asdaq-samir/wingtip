@@ -290,6 +290,9 @@ class Leg(BaseModel):
     true_heading_deg: float
     magnetic_variation_deg: float
     magnetic_heading_deg: float
+    # The true course less the variation (east is least, west is best,
+    # FAA-H-8083-25C ch. 16), the engine's: what the map's Route Leg sheet shows.
+    magnetic_course_deg: float
     groundspeed_kt: float | None
     ete_min: float | None
     fuel_gal: float | None

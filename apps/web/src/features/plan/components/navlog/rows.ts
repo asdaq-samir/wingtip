@@ -151,6 +151,27 @@ export function rowPoint(row: NavLogRow): { name: string; lat: number; lon: numb
   return { name: pointName(row.airport.ident), lat: row.airport.lat, lon: row.airport.lon };
 }
 
+/** A leg of the route as the map draws it and a tap on the course opens
+ *  (RouteLegCard): from one row to the next, the tops of climb and
+ *  descent being points on a leg rather than its ends, keyed by the row it
+ *  arrives at. `leg` is the whole leg's figures, the engine's, undefined
+ *  until it streams in. */
+export interface RouteLeg {
+  key: string;
+  from: { name: string; lat: number; lon: number };
+  to: { name: string; lat: number; lon: number };
+  /** The row it arrives at, for what can be done to that point. */
+  toRow: Exclude<NavLogRow, { kind: "departure" | "toc" | "tod" }>;
+  leg: Leg | undefined;
+}
+
+export function routeLegs(rows: NavLogRow[]): RouteLeg[] {
+  const ends = rows.filter((row): row is Exclude<NavLogRow, { kind: "toc" | "tod" }> => !isLegPoint(row));
+  return ends.slice(1).flatMap((row, i) => (row.kind === "departure" ? [] : [{
+    key: row.key, from: rowPoint(ends[i]!), to: rowPoint(row), toRow: row, leg: row.leg,
+  }]));
+}
+
 /**
  * The same rows as a filed flight's checkpoints, the shape Spring stores:
  * `sequenceNo` from 0, the airports' categories "departure", "stop" and

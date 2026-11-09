@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { navLogRows, turnaroundMin } from "../components/navlog/rows";
+import { navLogRows, routeLegs, turnaroundMin } from "../components/navlog/rows";
+import { useFlyingTo } from "../components/navlog/flyingTo";
+import type { RouteLegView } from "../components/RouteLegCard";
 import { api } from "../../../lib/api/client";
 import { showError } from "../../../lib/problems";
 import { aircraftListQuery, aircraftProfilesQuery, airportQuery, checkpointsQuery, courseQuery, flightsQuery, stopsNearQuery, stopsAlongQuery, nearestQuery, pilotQuery, procedureQuery, queryClient, routeOptionsQuery } from "../../../lib/queryClient";
@@ -1947,6 +1949,31 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // runways and procedures, and the tops of climb and descent and the
   // fixes flown through, by the nav log's rows.
   const routeRows = useMemo(() => navLogRows(course, s.logSelected, s.legs), [course, s.logSelected, s.legs]);
+  // The route's legs as the map's course line is tapped by (RouteGl), and
+  // the one tapped, by the row it arrives at, for its Route Leg sheet: its
+  // figures the nav log's leg's, the engine's; Direct to its end as the
+  // route list's (directToPoint), a stop's Remove as the route list's
+  // (removeStop); Active Leg where flying mode is flying it (useFlyingTo).
+  // Fly Leg, ForeFlight's third action, is not here: the planner has no
+  // way to make a leg the active one but flying it.
+  const mapLegs = useMemo(() => routeLegs(routeRows), [routeRows]);
+  const [legAt, setLegAt] = useState<string | null>(null);
+  const flyingTo = useFlyingTo(dryRunning, routeRows);
+  const openLeg = useMemo<RouteLegView | null>(() => {
+    const at = mapLegs.find(l => l.key === legAt);
+    if (!at) return null;
+    const row = at.toRow;
+    const ident = row.kind === "checkpoint" ? null : row.airport.ident;
+    const on = ident !== null && directParam !== null && sameField(directParam, ident);
+    return {
+      key: at.key, from: at.from.name, to: at.to.name,
+      distanceNm: at.leg?.distance_nm ?? null, courseMagDeg: at.leg?.magnetic_course_deg ?? null,
+      active: flyingTo === at.key,
+      direct: ident === null ? null : { on, go: () => { directToPoint(on ? null : ident); setLegAt(null); } },
+      remove: row.kind === "stop" ? () => { removeStop(row.airport.ident); setLegAt(null); } : null,
+    };
+  }, [mapLegs, legAt, directParam, flyingTo, directToPoint, removeStop]);
+  const closeLeg = useCallback(() => setLegAt(null), []);
   // The route's airports' airspace classes, as the course came with them:
   // the pills coloured the moment it is in.
   // Each made again only when what it reads changes, as the box is drawn
@@ -2220,14 +2247,14 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     aircraftInput, aircraftOpen, aircraftRecentsOpen, aircraftTyped, aircraftValue, airportRecentsOpen, airspaceOf,
     altitudeAt, altitudeFt, altitudeMark, altitudeNearest, approachesOf, askFor, autoPicked, avoidClassB, briefHere, briefLine,
     briefMark, briefShown, cardOpen, cardTitle, cardUp, changeAircraft, changeAltitudeChoice, changeDepart, changeLocalMin, classBClearance,
-    clearRoute, closeBrief, closeCard, closeFlight, closeLesson, closeList, closeNavLogCard, closeNearest, closePlace, closeProfileCard, closeSaved,
+    clearRoute, closeBrief, closeCard, closeFlight, closeLeg, closeLesson, closeList, closeNavLogCard, closeNearest, closePlace, closeProfileCard, closeSaved,
     closeSheet, closeStops, course, crossings, depAlone, depart, descriptionsHidden, descriptionsLoading, deselectPoint, directParam,
     directTo, directToPoint, doneFlying, drawerOpen, dropIntoRoute, dryRunReady, dryRunning, estimate, favorites, favoritesOpen,
     fileFlightPlan, fileable, filedProcedures, findNearby, firstFuelStop, fitAircraft, flight, flightRules, flightToSave, flownPatterns,
     flyAltitude, flyHere, flying, fuelHidden, fuelStopPins, fuelStops, goMissed, goMissedNow, ground, hasPoints, heldPoint, hideFuelStop,
     holdAsk, holdPoint, holds, home, insertStopAfter, keepFuelStops, landedStops, landings, lessonOpen, lineKey, list, listAway, listEdit,
-    local, localMin, mapDirects, mapProcedures, marks, measuredFrom, metarColour, moveFavoriteAirport, navLogShown, nearFrom, nearOpen,
-    nearOrigin, nearStrip, nearTyped, nearestPoints, noApproaches, openAirportOverFlight, openBrief, openFix, openList, openNavLogCard,
+    legAt, local, localMin, mapDirects, mapLegs, mapProcedures, marks, measuredFrom, metarColour, moveFavoriteAirport, navLogShown, nearFrom, nearOpen,
+    nearOrigin, nearStrip, nearTyped, nearestPoints, noApproaches, openAirportOverFlight, openLeg, openBrief, openFix, openList, openNavLogCard,
     openNearest, openProcedures, openProfile, openSaved, opened, panelOpen, past, patternFocus, paywalled, pickPattern, pickPlace,
     pickPoint, pickProcedures, pickStopField, pickTab, pickTail, pickWay, pickedPatterns, pickedProcedures, pickedTakeoffs, picking,
     pickingFavorite, pickingMine, place, placePin, planned, preselectPattern, preselectTakeoff, previewProcedure, procedureAirports,
@@ -2235,7 +2262,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     routeEdit, routeFolded, routeKey, routeLine, routeOpen, routePoints, routeProcedures, routeRecentsOpen, routeRows, routed,
     runwayFitInputs, s, savedOpen, search, searchInput, searchNear, selectCandidate, selectFlight, selectPast, selectPlace,
     selectPlaceOnChart, selectPointAt, selected, selectedPoint, setAddingStop, setApproachesOf, setCrossing, setFlightRules, setGround,
-    setHold, setHomeAirport, setLoad, setNearFrom, setNewStopVia, setOpenFixAt, setPicking, setPointAltitude, setProceduresShown, setQuery,
+    setHold, setHomeAirport, setLegAt, setLoad, setNearFrom, setNewStopVia, setOpenFixAt, setPicking, setPointAltitude, setProceduresShown, setQuery,
     setRoute, setRouteOpen, setStops, setStopsScope, setTakeoff, showFix, showFuelStops, showLegs, stale, startDryRun, startPin, stopDryRun,
     stopFieldPins, stopsAt, stopsHere, stopsRoute, stopsScope, stopsShown, stripsDrawn, suggestedAt, tab, tabTap, tabUp, tankFigures,
     tightLeg, toggleFavoriteAirport, typeProcedures, typeStopAt, unflyable, unflyableBrief, upAsTyped, wayLines, waypointStops, wholeRoute,

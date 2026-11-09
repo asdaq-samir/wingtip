@@ -583,7 +583,16 @@ export async function tapTheChart(page: Page) {
         marks.push(new DOMRect(r.left + m.x - 13, r.top + m.y - 13, 26, 26));
       }
     }
-    const clear = (x: number, y: number) => marks.every(m => x < m.left - 30 || x > m.right + 30 || y < m.top - 30 || y > m.bottom + 30);
+    // And clear of the course, whose legs a tap within 22 opens (RouteGl's
+    // route-legs probe: each leg's ends on the screen).
+    const legs = (JSON.parse(map.querySelector("[data-route-legs]")?.getAttribute("data-route-legs") ?? "[]") as { legs: { ends: [number, number][] }[] }[])
+      .flatMap(row => row.legs).map(l => l.ends.map(([x, y]) => ({ x: r.left + x, y: r.top + y })));
+    const offLine = (x: number, y: number) => legs.every(([a, b]) => {
+      const dx = b!.x - a!.x, dy = b!.y - a!.y, l2 = dx * dx + dy * dy;
+      const t = l2 ? Math.max(0, Math.min(1, ((x - a!.x) * dx + (y - a!.y) * dy) / l2)) : 0;
+      return Math.hypot(x - (a!.x + t * dx), y - (a!.y + t * dy)) > 30;
+    });
+    const clear = (x: number, y: number) => offLine(x, y) && marks.every(m => x < m.left - 30 || x > m.right + 30 || y < m.top - 30 || y > m.bottom + 30);
     for (let fy = 0.85; fy > 0.1; fy -= 0.1) {
       for (let fx = 0.15; fx < 0.9; fx += 0.1) {
         const x = r.left + r.width * fx, y = r.top + r.height * fy;

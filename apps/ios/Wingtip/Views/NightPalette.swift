@@ -28,6 +28,20 @@ enum NightPalette {
     /// a dimmed chart (as web index.css's course-core).
     static func course(night: Bool) -> UIColor { night ? route : courseByDay }
 
+    /// The green either side of the course, as ForeFlight cases its
+    /// magenta line (the owner's screenshot, 8 November 2026), the web's
+    /// ROUTE_GREEN and ROUTE_GREEN_NIGHT (lib/map/chartColors): a shade
+    /// deeper over the dimmed chart so it does not glare.
+    static func routeGreen(night: Bool) -> UIColor {
+        night ? UIColor(hex: 0x3F9A1C).withAlphaComponent(0.9) : UIColor(hex: 0x52C41A)
+    }
+
+    /// The edge round the course's green: dark by day, faint and light
+    /// over the dimmed chart, where dark would vanish (web routeEdgePaint).
+    static func routeEdge(night: Bool) -> UIColor {
+        night ? UIColor.white.withAlphaComponent(0.35) : UIColor(hex: 0x0B0F0A).withAlphaComponent(0.6)
+    }
+
     /// The casing under a line on the chart: white by day, the night's
     /// ground over a dimmed chart, where white would be the brightest line
     /// on the screen.

@@ -23394,6 +23394,9 @@
         "magnetic_heading_deg": {
           "type": "number"
         },
+        "magnetic_course_deg": {
+          "type": "number"
+        },
         "groundspeed_kt": {
           "type": [
             "number",
