@@ -133,10 +133,19 @@ def schemes(tree):
         "sunlight": [light, sun],
         "cockpitLight": [light, theme_group(tree, "color", "look", "cockpit", "light")],
         "cockpitDark": [light, dark, theme_group(tree, "color", "look", "cockpit", "dark")],
-        "inkLight": [light, theme_group(tree, "color", "look", "ink", "all"), theme_group(tree, "color", "look", "ink", "light"),
-                     theme_group(tree, "color", "material", "ink", "light")],
-        "inkDark": [light, dark, theme_group(tree, "color", "look", "ink", "all"), theme_group(tree, "color", "look", "ink", "dark"),
-                    theme_group(tree, "color", "material", "ink", "dark")],
+        "inkLight": [
+            light,
+            theme_group(tree, "color", "look", "ink", "all"),
+            theme_group(tree, "color", "look", "ink", "light"),
+            theme_group(tree, "color", "material", "ink", "light"),
+        ],
+        "inkDark": [
+            light,
+            dark,
+            theme_group(tree, "color", "look", "ink", "all"),
+            theme_group(tree, "color", "look", "ink", "dark"),
+            theme_group(tree, "color", "material", "ink", "dark"),
+        ],
     }
     out = {}
     for name, stack in layers.items():
@@ -209,20 +218,30 @@ def gen_css(tree):
     root = [("display", "var(--font-sans)"), ("radius", rem(radius["base"])), ("spacing", rem(space["unit"]))]
     root += [("space-%s" % k, rem(v)) for k, v in space.items() if k != "unit"]
     root += [("radius-card", rem(radius["card"])), ("radius-dialog", "%gpx" % radius["dialog"]), ("radius-sheet", "%gpx" % radius["sheet"])]
-    root += [("glass-blur", "%gpx" % mat["glass-blur"]), ("glass-fill-light", "%g%%" % (mat["glass-fill"] * 100)),
-             ("glass-fill-dark", "%g%%" % (mat["glass-fill-dark"] * 100)), ("sheet-blur", "%gpx" % mat["sheet-blur"])]
+    root += [
+        ("glass-blur", "%gpx" % mat["glass-blur"]),
+        ("glass-fill-light", "%g%%" % (mat["glass-fill"] * 100)),
+        ("glass-fill-dark", "%g%%" % (mat["glass-fill-dark"] * 100)),
+        ("sheet-blur", "%gpx" % mat["sheet-blur"]),
+    ]
     root += [("motion-%s" % k, bezier(v) if isinstance(v, list) else "%gs" % v) for k, v in motion.items()]
     root += [("tap-target", "%gpx" % tree["size"]["tap-target"]["$value"])]
     root += decls("color", "theme", "light")
-    ink_all = [("brand-font", font_stack(tree, "font.brand").rsplit(",", 1)[0]), ("display", font_stack(tree, "font.display")),
-               ("radius", rem(radius["ink"]))] + decls("color", "look", "ink", "all")
+    ink_all = [
+        ("brand-font", font_stack(tree, "font.brand").rsplit(",", 1)[0]),
+        ("display", font_stack(tree, "font.display")),
+        ("radius", rem(radius["ink"])),
+    ] + decls("color", "look", "ink", "all")
     blocks = [
         "/* %s */" % BANNER,
         "/* The ground every look builds on, by day. */\n" + css_block(":root", root),
         "/* Night (the cockpit's navy). */\n" + css_block(".dark", decls("color", "theme", "dark")),
-        "/* Glass Cockpit: what can be tapped, the typeface and the corners.\n   :not(.dark) and .dark each, so a look's day never wins over the night. */\n"
-        + css_block(':root[data-brand="cockpit"]', [("brand-font", font_stack(tree, "font.brand").rsplit(",", 1)[0]),
-                                                     ("radius", rem(radius["cockpit"]))]),
+        "/* Glass Cockpit: what can be tapped, the typeface and the corners.\n"
+        "   :not(.dark) and .dark each, so a look's day never wins over the night. */\n"
+        + css_block(
+            ':root[data-brand="cockpit"]',
+            [("brand-font", font_stack(tree, "font.brand").rsplit(",", 1)[0]), ("radius", rem(radius["cockpit"]))],
+        ),
         css_block(':root[data-brand="cockpit"]:not(.dark)', decls("color", "look", "cockpit", "light")),
         css_block(':root.dark[data-brand="cockpit"]', decls("color", "look", "cockpit", "dark")),
         "/* Chart ink, not in sunlight, whose own tokens win. */\n" + css_block(':root[data-brand="ink"]', ink_all),
@@ -282,8 +301,11 @@ def gen_ts(tree):
     chart = {camel(k): q(hex6(c)) for k, c in flat_colours(tree, "color.chart").items()}
     cat = {k.upper(): q(hex6(c)) for k, c in flat_colours(tree, "color.category").items() if k != "unknown"}
     brand = {camel(k): q(hex6(c)) for k, c in flat_colours(tree, "color.brand").items()}
-    ink = {camel(k): q(css_value(tree, t["$value"])) for k, t in theme_group(tree, "color", "look", "ink", "all").items()
-           if k.startswith("ink-")}
+    ink = {
+        camel(k): q(css_value(tree, t["$value"]))
+        for k, t in theme_group(tree, "color", "look", "ink", "all").items()
+        if k.startswith("ink-")
+    }
     roles = tokens(tree["type"])
     classes = {(camel(k) if "-" in k else k): q(web_class(r)) for k, r in roles.items()}
     points = {camel(k): r["$value"]["fontSize"] for k, r in roles.items() if "fontSize" in r["$value"]}
@@ -295,11 +317,14 @@ def gen_ts(tree):
         "/** The chart's own colours, as values for what a stylesheet does not reach (a map layer's paint, a marker's html). */\n"
         "export const CHART = %s;" % ts_obj(chart),
         "/** The FAA's flight categories (AIM 7-1-7). */\nexport const CATEGORY: Record<string, string> = %s;" % ts_obj(cat),
-        "/** A field with no report: unknown, not fine. */\nexport const CATEGORY_UNKNOWN = %s;" % q(hex6(flat_colours(tree, "color.category")["unknown"])),
+        "/** A field with no report: unknown, not fine. */\nexport const CATEGORY_UNKNOWN = %s;"
+        % q(hex6(flat_colours(tree, "color.category")["unknown"])),
         "/** Wingtip's mark. */\nexport const BRAND = %s;" % ts_obj(brand),
-        "/** Chart ink's own inks by day (index.css's --ink-*), for where the stylesheet is not loaded. */\nexport const INK = %s;" % ts_obj(ink),
+        "/** Chart ink's own inks by day (index.css's --ink-*), for where the stylesheet is not loaded. */\nexport const INK = %s;"
+        % ts_obj(ink),
         "/** Each text role's classes (lib/text's TEXT reads these). */\nexport const TYPE_CLASS = %s as const;" % ts_obj(classes),
-        "/** Each text role's size in points on a touch screen, for text drawn in points (an SVG). */\nexport const TYPE_POINTS = %s as const;" % ts_obj(points),
+        "/** Each text role's size in points on a touch screen, for text drawn in points (an SVG). */\n"
+        "export const TYPE_POINTS = %s as const;" % ts_obj(points),
         "/** Motion: durations in seconds, curves as cubic-bezier points. */\nexport const MOTION = %s as const;" % ts_obj(motion),
         "/** Corners, in points. */\nexport const RADIUS = %s as const;" % ts_obj(radius),
         "/** The spacing scale, in points. */\nexport const SPACE = %s as const;" % ts_obj(space),
@@ -318,27 +343,57 @@ def swift_colour(c):
     return "rgb(0x%02X%02X%02X, %s)" % (r, g, b, ("%.3f" % a).rstrip("0").rstrip("."))
 
 
-IOS_STYLES = {"title": ".title", "title2": ".title2", "title3": ".title3", "headline": ".headline", "body": ".body",
-              "subheadline": ".subheadline", "footnote": ".footnote", "caption": ".caption", "caption2": ".caption2"}
-UIKIT_STYLES = {"title": ".title1", "title2": ".title2", "title3": ".title3", "headline": ".headline", "body": ".body",
-                "subheadline": ".subheadline", "footnote": ".footnote", "caption": ".caption1", "caption2": ".caption2"}
+IOS_STYLES = {
+    "title": ".title",
+    "title2": ".title2",
+    "title3": ".title3",
+    "headline": ".headline",
+    "body": ".body",
+    "subheadline": ".subheadline",
+    "footnote": ".footnote",
+    "caption": ".caption",
+    "caption2": ".caption2",
+}
+UIKIT_STYLES = {
+    "title": ".title1",
+    "title2": ".title2",
+    "title3": ".title3",
+    "headline": ".headline",
+    "body": ".body",
+    "subheadline": ".subheadline",
+    "footnote": ".footnote",
+    "caption": ".caption1",
+    "caption2": ".caption2",
+}
 WEIGHTS = {400: "regular", 500: "medium", 600: "semibold", 700: "bold"}
 
 # The size each iOS text style has at the default (Large) text size: a role
 # whose own size is its style's takes the style; one that is not is scaled
 # with it (UIFontMetrics), so both follow Dynamic Type.
-IOS_DEFAULT_SIZE = {"title": 28, "title2": 22, "title3": 20, "headline": 17, "body": 17, "subheadline": 15,
-                    "footnote": 13, "caption": 12, "caption2": 11}
+IOS_DEFAULT_SIZE = {
+    "title": 28,
+    "title2": 22,
+    "title3": 20,
+    "headline": 17,
+    "body": 17,
+    "subheadline": 15,
+    "footnote": 13,
+    "caption": 12,
+    "caption2": 11,
+}
 
 
 def gen_swift(tree, sch):
     names = all_names(sch)
     L = ["// %s" % BANNER, "", "import SwiftUI", "import UIKit", ""]
-    L += ["/// A colour from its 0xRRGGBB and an alpha.",
-          "private func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> UIColor {",
-          "    UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,",
-          "            blue: CGFloat(hex & 0xFF) / 255, alpha: alpha)",
-          "}", ""]
+    L += [
+        "/// A colour from its 0xRRGGBB and an alpha.",
+        "private func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> UIColor {",
+        "    UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,",
+        "            blue: CGFloat(hex & 0xFF) / 255, alpha: alpha)",
+        "}",
+        "",
+    ]
     L.append("/// Wingtip's colours: the chart's, the flight categories', the mark's.")
     L.append("enum WingtipColor {")
     for group, title in (("chart", "Chart"), ("category", "Category"), ("brand", "Brand"), ("strip", "Strip")):
@@ -382,12 +437,17 @@ def gen_swift(tree, sch):
             expr = "Font.system(%s, weight: .%s)" % (IOS_STYLES[style], w)
             decl = "static let"
         else:
-            expr = ("Font(UIFontMetrics(forTextStyle: %s).scaledFont(for: UIFont.systemFont(ofSize: %g, weight: .%s)))"
-                    % (UIKIT_STYLES[style], v["fontSize"], w))
+            expr = "Font(UIFontMetrics(forTextStyle: %s).scaledFont(for: UIFont.systemFont(ofSize: %g, weight: .%s)))" % (
+                UIKIT_STYLES[style],
+                v["fontSize"],
+                w,
+            )
             decl = "static var"
         if v.get("tabular"):
             expr += ".monospacedDigit()"
-        L.append("    %s %s: Font %s %s" % (decl, camel(k), "{" if decl == "static var" else "=", expr + (" }" if decl == "static var" else "")))
+        L.append(
+            "    %s %s: Font %s %s" % (decl, camel(k), "{" if decl == "static var" else "=", expr + (" }" if decl == "static var" else ""))
+        )
         if "letterSpacing" in v:
             L.append("    /// %s's letter spacing in points (%gem)." % (camel(k), v["letterSpacing"]))
             L.append("    static let %sTracking: CGFloat = %g" % (camel(k), round(v["letterSpacing"] * v["fontSize"], 2)))
@@ -404,7 +464,10 @@ def gen_swift(tree, sch):
     for k, t in tokens(tree["motion"]).items():
         v = t["$value"]
         if isinstance(v, list):
-            L.append("    static let %s = Animation.timingCurve(%s, duration: %g)" % (camel(k), ", ".join("%g" % x for x in v), tree["motion"]["sheet"]["$value"]))
+            L.append(
+                "    static let %s = Animation.timingCurve(%s, duration: %g)"
+                % (camel(k), ", ".join("%g" % x for x in v), tree["motion"]["sheet"]["$value"])
+            )
         else:
             L.append("    static let %s: TimeInterval = %g" % (camel(k), v))
     L.append("}")
@@ -420,7 +483,10 @@ def gen_swift(tree, sch):
 
 def gen_accent(sch):
     def comp(c):
-        return {"color-space": "srgb", "components": {"red": "0x%02X" % c[0], "green": "0x%02X" % c[1], "blue": "0x%02X" % c[2], "alpha": "1.000"}}
+        return {
+            "color-space": "srgb",
+            "components": {"red": "0x%02X" % c[0], "green": "0x%02X" % c[1], "blue": "0x%02X" % c[2], "alpha": "1.000"},
+        }
 
     doc = {
         "colors": [
@@ -445,17 +511,23 @@ ANDROID_WEIGHT = {400: "FontWeight.Normal", 500: "FontWeight.Medium", 600: "Font
 
 def gen_kotlin(tree, sch):
     names = all_names(sch)
-    L = ["// %s" % BANNER, "", "package app.wingtipmaps.android.design.generated", "",
-         "import androidx.compose.animation.core.CubicBezierEasing",
-         "import androidx.compose.material3.Typography",
-         "import androidx.compose.runtime.Immutable",
-         "import androidx.compose.ui.graphics.Color",
-         "import androidx.compose.ui.text.TextStyle",
-         "import androidx.compose.ui.text.font.FontFamily",
-         "import androidx.compose.ui.text.font.FontWeight",
-         "import androidx.compose.ui.unit.dp",
-         "import androidx.compose.ui.unit.em",
-         "import androidx.compose.ui.unit.sp", ""]
+    L = [
+        "// %s" % BANNER,
+        "",
+        "package app.wingtipmaps.android.design.generated",
+        "",
+        "import androidx.compose.animation.core.CubicBezierEasing",
+        "import androidx.compose.material3.Typography",
+        "import androidx.compose.runtime.Immutable",
+        "import androidx.compose.ui.graphics.Color",
+        "import androidx.compose.ui.text.TextStyle",
+        "import androidx.compose.ui.text.font.FontFamily",
+        "import androidx.compose.ui.text.font.FontWeight",
+        "import androidx.compose.ui.unit.dp",
+        "import androidx.compose.ui.unit.em",
+        "import androidx.compose.ui.unit.sp",
+        "",
+    ]
     L.append("/** Wingtip's colours: the chart's, the flight categories', the mark's; each also as")
     L.append(" *  the hex a MapLibre style takes. */")
     L.append("object WingtipColors {")
@@ -466,7 +538,7 @@ def gen_kotlin(tree, sch):
             if "$description" in t:
                 L.append("        /** %s */" % t["$description"].replace("*/", "* /"))
             L.append("        val %s = %s" % (pascal(k), kt_colour(c)))
-            L.append("        const val %s_HEX = \"%s\"" % (k.replace("-", "_").upper(), hex6(c)))
+            L.append('        const val %s_HEX = "%s"' % (k.replace("-", "_").upper(), hex6(c)))
         L.append("    }")
     L.append("}")
     L.append("")
@@ -495,12 +567,16 @@ def gen_kotlin(tree, sch):
     L.append("val WingtipTypography = Typography(")
     for slot, r in slots.items():
         v = r["$value"]
-        args = ["fontFamily = FontFamily.SansSerif", "fontWeight = %s" % ANDROID_WEIGHT[v.get("fontWeight", 400)],
-                "fontSize = %g.sp" % v["fontSize"], "lineHeight = %g.sp" % v["lineHeight"]]
+        args = [
+            "fontFamily = FontFamily.SansSerif",
+            "fontWeight = %s" % ANDROID_WEIGHT[v.get("fontWeight", 400)],
+            "fontSize = %g.sp" % v["fontSize"],
+            "lineHeight = %g.sp" % v["lineHeight"],
+        ]
         if "letterSpacing" in v:
             args.append("letterSpacing = %g.em" % v["letterSpacing"])
         if v.get("tabular"):
-            args.append("fontFeatureSettings = \"tnum\"")
+            args.append('fontFeatureSettings = "tnum"')
         L.append("    %s = TextStyle(%s)," % (slot, ", ".join(args)))
     L.append(")")
     L.append("")
