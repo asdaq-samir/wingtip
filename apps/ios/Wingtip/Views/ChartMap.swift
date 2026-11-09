@@ -307,6 +307,8 @@ struct ChartMap: UIViewRepresentable {
         /// The route's fields (its ends and stops): drawn whatever the
         /// zoom, never dropped for another (AirportAnnotation.priority).
         var routeIdents: Set<String> = []
+        /// Whether the checkpoints' names show at the zoom now.
+        var checkpointNames = false
         var onAirport: ((String) -> Void)?
 
         /// The checkpoints' marks brought to `checkpoints`: a new one
@@ -439,7 +441,9 @@ struct ChartMap: UIViewRepresentable {
             if let extra = MainActor.assumeIsolated({ extras.view(for: annotation, on: mapView) }) { return extra }
             if let overlay = MainActor.assumeIsolated({ overlays.view(for: annotation, on: mapView) }) { return overlay }
             if annotation is CheckpointAnnotation {
-                return mapView.dequeueReusableAnnotationView(withIdentifier: CheckpointMarkView.reuse, for: annotation)
+                let view = mapView.dequeueReusableAnnotationView(withIdentifier: CheckpointMarkView.reuse, for: annotation)
+                (view as? CheckpointMarkView)?.showName(checkpointNames)
+                return view
             }
             guard annotation is AirportAnnotation else { return nil }
             let view = mapView.dequeueReusableAnnotationView(withIdentifier: AirportMarkView.reuse, for: annotation)
@@ -580,6 +584,14 @@ struct ChartMap: UIViewRepresentable {
                 // The chart's loads of tiles gone out of view stopped.
                 if mapView.visibleMapRect.width > 0 {
                     tiles?.keep(visible: mapView.visibleMapRect, zoomScale: MKZoomScale(Double(mapView.bounds.width) / mapView.visibleMapRect.width))
+                }
+                // The checkpoints' names in with the zoom (CheckpointAnnotation).
+                let names = zoom >= CheckpointAnnotation.namesFromZoom
+                if names != checkpointNames {
+                    checkpointNames = names
+                    for case let mark as CheckpointAnnotation in mapView.annotations {
+                        (mapView.view(for: mark) as? CheckpointMarkView)?.showName(names)
+                    }
                 }
                 let scale = SectionalSymbol.scale(zoom: zoom)
                 if abs(scale - symbolScale) > 0.02 {

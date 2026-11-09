@@ -1,4 +1,5 @@
 import Foundation
+import MapKit
 import Testing
 import UIKit
 @testable import Wingtip
@@ -40,6 +41,15 @@ struct CheckpointColourTests {
         #expect(Set(steps.map { $0.description }).count == 5)
         #expect(CheckpointAnnotation.colour(for: 4.49) == CheckpointAnnotation.colour(for: 4.0))
         #expect(CheckpointAnnotation.ink(for: 3.4) != CheckpointAnnotation.ink(for: 3.5))
+    }
+
+    /// Crowded checkpoints give way as airport marks do: the better scored
+    /// stays, none outranks the route's own fields (.required).
+    @Test func aBetterCheckpointStaysWhereMarksMeet() throws {
+        let priorities = [0.0, 2.5, 3.5, 4.5, 5.0, 9.0].map { CheckpointAnnotation.priority(for: $0).rawValue }
+        #expect(priorities == priorities.sorted())
+        #expect(priorities.allSatisfy { $0 < MKFeatureDisplayPriority.required.rawValue })
+        #expect(CheckpointAnnotation.priority(for: 4.6).rawValue > MKFeatureDisplayPriority.defaultHigh.rawValue)
     }
 }
 
