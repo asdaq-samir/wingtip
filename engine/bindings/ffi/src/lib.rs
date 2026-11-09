@@ -4,7 +4,7 @@
 //! with `wt_string_free`.
 
 use std::ffi::{c_char, CStr, CString};
-use wingtip_engine::{ahead, clearance::Route, pack::Pack, pack_query, spoken, view};
+use wingtip_engine::{ahead, clearance::Route, pack::Pack, pack_query, spoken, view, view_marks};
 
 /// SAFETY: the caller passes `len` readable bytes at `ptr` (or a null
 /// pointer and 0), alive for the call.
@@ -214,6 +214,29 @@ pub unsafe extern "C" fn wt_airports_in_view(ptrs: *const *const u8, lens: *cons
 pub unsafe extern "C" fn wt_navaids_in_view(ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64,
                                             north: f64, east: f64) -> *mut c_char {
     give(view::navaids_in_view(&packs(ptrs, lens, count), south, west, north, east))
+}
+
+/// The special-use areas reaching into the box, the MOAs and alert areas
+/// first and the prohibited, restricted, warning and danger areas over
+/// them, each ring with the area on its left (view_marks).
+///
+/// # Safety
+/// As above.
+#[no_mangle]
+pub unsafe extern "C" fn wt_special_use_in_view(ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64,
+                                                north: f64, east: f64) -> *mut c_char {
+    give(view_marks::special_use_in_view(&packs(ptrs, lens, count), south, west, north, east))
+}
+
+/// The Enroute Low chart's fixes and the charted VFR waypoints inside the
+/// box, by ident (view_marks).
+///
+/// # Safety
+/// As above.
+#[no_mangle]
+pub unsafe extern "C" fn wt_fixes_in_view(ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64,
+                                          north: f64, east: f64) -> *mut c_char {
+    give(view_marks::fixes_in_view(&packs(ptrs, lens, count), south, west, north, east))
 }
 
 /// Status and answer of wt_call: `ok` 1 with the rule's answer as JSON in

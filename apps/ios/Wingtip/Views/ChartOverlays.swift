@@ -572,10 +572,10 @@ struct RunwayShape: Equatable, Sendable {
 
 // MARK: - The overlays on the map
 
-/// The airspace, the VORs and the runways on the map, kept in step with
-/// the view; on the main actor, as the map is.
-@MainActor
-final class ChartOverlays {
+/// The airspace, the VORs, the runways and the marks on the map, kept with the view, on the main actor as the map is.
+@MainActor final class ChartOverlays {
+    /// The special-use areas and the fixes (ChartMarks).
+    let marks = ChartMarks()
     private var airspaceFetch = ViewFetch()
     private var vorFetch = ViewFetch()
     private var volumes: [String: (volume: AirspaceVolume, lines: [AirspaceLine], band: AirspaceVignette?)] = [:]
@@ -585,18 +585,19 @@ final class ChartOverlays {
     private var runwayEnds: [String: [RunwayEndAnnotation]] = [:]
     private var runwaysKept: [String: [RunwayShape]] = [:]
     private var runwaysAsking: Set<String> = []
-    /// Told once, the first time the airspace is answered (or cannot be):
-    /// the map shows itself with its rings on (ChartMap's reveal).
+    /// Told once, the first time the airspace is answered (or cannot be): the map shows itself with its rings on (ChartMap's reveal).
     var onFirstAnswer: (() -> Void)?
     private var answered = false
 
     func attach(to map: MKMapView) {
+        marks.attach(to: map)
         map.register(AirspaceTabView.self, forAnnotationViewWithReuseIdentifier: AirspaceTabView.reuse)
         map.register(VorMarkView.self, forAnnotationViewWithReuseIdentifier: VorMarkView.reuse)
         map.register(RunwayEndView.self, forAnnotationViewWithReuseIdentifier: RunwayEndView.reuse)
     }
 
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
+        if let renderer = marks.renderer(for: overlay) { return renderer }
         if let band = overlay as? AirspaceVignette {
             // The class's ink, faint (glStyle AIRSPACE_INK's band).
             let renderer = AirspaceVignetteRenderer(polygon: band)
@@ -644,12 +645,9 @@ final class ChartOverlays {
     }
 
     func view(for annotation: any MKAnnotation, on map: MKMapView) -> MKAnnotationView? {
-        if annotation is AirspaceTabAnnotation {
-            return map.dequeueReusableAnnotationView(withIdentifier: AirspaceTabView.reuse, for: annotation)
-        }
-        if annotation is VorAnnotation {
-            return map.dequeueReusableAnnotationView(withIdentifier: VorMarkView.reuse, for: annotation)
-        }
+        if let view = marks.view(for: annotation, on: map) { return view }
+        if annotation is AirspaceTabAnnotation { return map.dequeueReusableAnnotationView(withIdentifier: AirspaceTabView.reuse, for: annotation) }
+        if annotation is VorAnnotation { return map.dequeueReusableAnnotationView(withIdentifier: VorMarkView.reuse, for: annotation) }
         if annotation is RunwayEndAnnotation {
             let view = map.dequeueReusableAnnotationView(withIdentifier: RunwayEndView.reuse, for: annotation) as! RunwayEndView
             view.turn(mapHeading: map.camera.heading)
@@ -658,13 +656,13 @@ final class ChartOverlays {
         return nil
     }
 
-    /// The view moved (during a gesture with `live`, or at its rest): what
-    /// is drawn for its zoom, and a new answer where it wants one -- from
-    /// the packs at once, from the planner only once it rests.
+    /// The view moved (during a gesture with `live`, or at its rest): what is drawn for its zoom, and a new
+    /// answer where it wants one -- from the packs at once, from the planner only once it rests.
     func moved(_ map: MKMapView, chart: (any MKOverlay)?, live: Bool) {
         guard map.bounds.width > 0 else { return }
         let view = ViewBox(map.region)
         let zoom = MapExtras.zoom(longitudeDelta: map.region.span.longitudeDelta, width: Double(map.bounds.width))
+        marks.moved(map, view: view, zoom: zoom)
         if airspaceFetch.wants(view, zoom: zoom) { askAirspace(map, view: view, zoom: zoom, chart: chart, live: live) }
         if zoom >= VorZoom.from, vorFetch.wants(view, zoom: zoom) { askVors(map, view: view, zoom: zoom, live: live) }
         if zoom < VorZoom.from, !vors.isEmpty {

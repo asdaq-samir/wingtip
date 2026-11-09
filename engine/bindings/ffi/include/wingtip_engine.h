@@ -53,6 +53,16 @@ char *wt_airports_in_view(const uint8_t *const *ptrs, const size_t *lens, size_t
 /// OPER_HOURS, and no fixes.
 char *wt_navaids_in_view(const uint8_t *const *ptrs, const size_t *lens, size_t count, double south, double west,
                          double north, double east);
+/// {"areas": [{type, name, floor_ft, ceiling_ft, rings, label}]}: the
+/// special-use areas reaching into the box, MOAs and alert areas first,
+/// each ring [lat, lon] with the area on its left; an empty list with no
+/// sua sections.
+char *wt_special_use_in_view(const uint8_t *const *ptrs, const size_t *lens, size_t count, double south, double west,
+                             double north, double east);
+/// {"fixes": [{ident, lat, lon, vfr}]}: the Enroute Low chart's fixes
+/// (vfr false) and the charted VFR waypoints (vfr true) in the box.
+char *wt_fixes_in_view(const uint8_t *const *ptrs, const size_t *lens, size_t count, double south, double west,
+                       double north, double east);
 
 /// wt_call's answer: ok 1 with the rule's JSON in text, or 0 with what
 /// was wrong in words; text freed with wt_string_free either way.

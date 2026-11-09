@@ -51,6 +51,20 @@ extension CyclePacks {
         return try? Planner.snakeCase.decode(T.self, from: Data(String(cString: answer).utf8))
     }
 
+    struct AreasAnswer: Decodable { let areas: [ChartMarks.Area] }
+    struct FixesAnswer: Decodable { let fixes: [ChartMarks.Fix] }
+
+    /// The special-use areas reaching into the box (the engine's
+    /// special_use_in_view), MOAs first; nil with no pack.
+    func specialUseInView(south: Double, west: Double, north: Double, east: Double) -> [ChartMarks.Area]? {
+        inView(AreasAnswer.self, south: south, west: west, north: north, east: east, wt_special_use_in_view)?.areas
+    }
+
+    /// The Enroute Low fixes and charted VFR waypoints in the box; nil with no pack.
+    func fixesInView(south: Double, west: Double, north: Double, east: Double) -> [ChartMarks.Fix]? {
+        inView(FixesAnswer.self, south: south, west: west, north: north, east: east, wt_fixes_in_view)?.fixes
+    }
+
     private struct AirportsAnswer: Decodable { let airports: [AirportPin] }
 
     /// The fields in the box (AirportsInView), biggest first; nil with no pack.

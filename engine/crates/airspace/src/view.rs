@@ -82,11 +82,11 @@ const NAVAID_KINDS: &[&str] = &["VORTAC", "VOR/DME", "VOR", "DME", "TACAN", "NDB
 const SAME_FACILITY_NM: f64 = 1.0;
 
 /// A point as (lon, lat), the shapes' own order.
-type Pt = (f64, f64);
+pub(crate) type Pt = (f64, f64);
 
 /// (west, south, east, north): min lon, min lat, max lon, max lat, as a
 /// layer's boxes are.
-type Bbox = [f64; 4];
+pub(crate) type Bbox = [f64; 4];
 
 fn u32_at(b: &[u8], o: usize) -> Option<u32> {
     b.get(o..o + 4).map(|s| u32::from_le_bytes(s.try_into().unwrap()))
@@ -96,22 +96,22 @@ fn f64_at(b: &[u8], o: usize) -> Option<f64> {
     b.get(o..o + 8).map(|s| f64::from_le_bytes(s.try_into().unwrap()))
 }
 
-fn text_at<'a>(names: &'a [u8], record: &[u8], at: usize) -> Option<&'a str> {
+pub(crate) fn text_at<'a>(names: &'a [u8], record: &[u8], at: usize) -> Option<&'a str> {
     let (o, l) = (u32_at(record, at)? as usize, u32_at(record, at + 4)? as usize);
     std::str::from_utf8(names.get(o..o + l)?).ok()
 }
 
-fn meets(b: Bbox, view: Bbox) -> bool {
+pub(crate) fn meets(b: Bbox, view: Bbox) -> bool {
     !(b[2] < view[0] || b[0] > view[2] || b[3] < view[1] || b[1] > view[3])
 }
 
-fn in_box(p: Pt, view: Bbox) -> bool {
+pub(crate) fn in_box(p: Pt, view: Bbox) -> bool {
     p.0 >= view[0] && p.0 <= view[2] && p.1 >= view[1] && p.1 <= view[3]
 }
 
 /// Python's round(v, 5), near enough: a tie at the sixth place is the
 /// only difference, and no coordinate lands on one.
-fn round5(v: f64) -> f64 {
+pub(crate) fn round5(v: f64) -> f64 {
     (v * 1e5).round() / 1e5
 }
 
@@ -119,7 +119,7 @@ fn round5(v: f64) -> f64 {
 
 /// A little-endian 2D WKB Polygon or MultiPolygon as its polygons' rings'
 /// points; None where it is anything else or cut short.
-fn rings_of(wkb: &[u8]) -> Option<Vec<Vec<Vec<Pt>>>> {
+pub(crate) fn rings_of(wkb: &[u8]) -> Option<Vec<Vec<Vec<Pt>>>> {
     fn polygon(wkb: &[u8], at: &mut usize) -> Option<Vec<Vec<Pt>>> {
         if *wkb.get(*at)? != 1 || u32_at(wkb, *at + 1)? != 3 {
             return None;
@@ -174,9 +174,9 @@ fn ring_holds(ring: &[Pt], p: Pt) -> bool {
 }
 
 /// A polygon as the planner draws it: its shell and its holes.
-struct Polygon {
-    shell: Vec<Pt>,
-    holes: Vec<Vec<Pt>>,
+pub(crate) struct Polygon {
+    pub(crate) shell: Vec<Pt>,
+    pub(crate) holes: Vec<Vec<Pt>>,
 }
 
 /// The pack's rings (a shapefile's: outer rings clockwise, holes
@@ -185,7 +185,7 @@ struct Polygon {
 /// shell counter-clockwise, the holes clockwise, so every line runs with
 /// the volume on its left. A hole no outer ring holds is a polygon of its
 /// own, as pyshp makes it.
-fn oriented(polygons: Vec<Vec<Vec<Pt>>>) -> Vec<Polygon> {
+pub(crate) fn oriented(polygons: Vec<Vec<Vec<Pt>>>) -> Vec<Polygon> {
     let mut out = Vec::new();
     for rings in polygons {
         let rings: Vec<Vec<Pt>> = rings.into_iter().filter(|r| r.len() >= 4).collect();
@@ -237,7 +237,7 @@ fn segment_meets(a: Pt, b: Pt, view: Bbox) -> bool {
 
 /// Whether the polygons reach into the box: a line of theirs crosses it,
 /// or a corner of it is inside one -- shapely's intersects, for a box.
-fn reaches(polygons: &[Polygon], view: Bbox) -> bool {
+pub(crate) fn reaches(polygons: &[Polygon], view: Bbox) -> bool {
     let rings = polygons.iter().flat_map(|p| std::iter::once(&p.shell).chain(p.holes.iter()));
     for ring in rings {
         for k in 0..ring.len() {
@@ -304,7 +304,7 @@ pub fn simplified(points: &[Pt], tolerance: f64) -> Vec<Pt> {
 /// (shapely's representative_point) finds one: the middle of the widest
 /// horizontal section through each polygon on a bisector of it safe of
 /// its vertices, the widest of them all.
-fn representative(polygons: &[Polygon]) -> Option<Pt> {
+pub(crate) fn representative(polygons: &[Polygon]) -> Option<Pt> {
     let mut best: Option<(f64, Pt)> = None;
     for polygon in polygons {
         let (mut lo, mut hi) = (f64::INFINITY, f64::NEG_INFINITY);

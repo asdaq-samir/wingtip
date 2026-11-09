@@ -70,7 +70,7 @@
 
 pub mod call;
 
-pub use wingtip_airspace::{ahead, airspace, drills, pack, pack_query, rules, spoken, view};
+pub use wingtip_airspace::{ahead, airspace, drills, pack, pack_query, rules, spoken, view, view_marks};
 pub use wingtip_altitude::altitude;
 pub use wingtip_brief::{alternates, fields, gonogo, passengers, runway};
 // Forecast icing along an IFR route (#216).

@@ -19,6 +19,7 @@ pub mod pack_query;
 pub mod rules;
 pub mod spoken;
 pub mod view;
+pub mod view_marks;
 
 // The modules below this crate by the names they had when the engine was
 // one crate, so the code reads them as crate::json and so on.
