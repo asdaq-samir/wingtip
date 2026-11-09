@@ -130,6 +130,49 @@ writes the sentences, and never a figure of its own:
   canImport(FoundationModels)` and `#available(iOS 26, *)`, so the app
   builds on an older SDK and runs on iOS 18 without the words.
 
+## Ask and the Brief's glance, with no signal
+
+`Wingtip/OnDevice/` answers Ask in the air with nothing leaving the
+phone, and gives the Brief its glance when the planner's words cannot be
+had. The figures are the engine's on the phone or the planner's as last
+fetched; a model only words them:
+
+- **Where an answer comes from** (`AskRoute`): Ask's menu at its top left
+  picks Automatic (the planner, else this iPhone), The Planner, or On
+  This iPhone, kept as `wingtip.ask.where`. Under Automatic a phone with
+  no path out (`NWPathMonitor`) asks the phone at once, and a planner
+  that fails or errs before its first word is replaced by the phone's
+  answer; one begun stays the planner's. The caption over each answer
+  says who wrote it.
+- **The tools** (`OnDeviceTools`, Foundation Models' `Tool`): the field's
+  METAR, TAF and density altitude; the wind on its runways; the fuel; the
+  glide; the nearest fields from the cycle packs. Each asks the engine
+  (`FieldFigures`, `FlightFigures`: `wind_components`,
+  `pressure_altitude_ft`, `gonogo_density_altitude`, `filed_endurance`,
+  `glide_range`, `best_fields` over `airports_in_view`) or quotes the
+  report as sent, and hands the model `[id] label: words`; each chip
+  ends with its source line. There is no ADS-B (FIS-B) weather on the
+  phone yet, so the reports are the briefing's, with the time they were
+  fetched.
+- **The guard** (`OnDeviceAsk`): a sentence citing an id no tool handed
+  over is dropped (`Words.checked`), and so is one quoting a number not
+  in the figures it cites (`NumberGuard`).
+- **With no model** (an older iOS, Apple Intelligence off, the model
+  still downloading, or nothing kept): `EngineWords` reads the question's
+  words for its topic and says each figure as the engine's own sentence,
+  captioned "The engine on this iPhone" with why.
+- **The Brief's glance** (`BriefSummary`, `BriefSummarySection`): when
+  the Go / No-Go's words are not the planner's, "At a Glance" over it
+  gives the verdict and at most three actions (docs/decisions/0012),
+  guided generation of `BriefGlanceAnswer` from the findings held. The
+  finding must be the verdict's, each action must name a finding acted
+  on and quote only its numbers, or the engine's `Glance` is shown. Say
+  It reads it aloud.
+- `WingtipTests/OnDeviceAskTests` and `OnDeviceRouteTests` hold the
+  engine's figures through the bridge, the tools' calls through
+  `GeneratedContent`, the guided glance parsed from JSON, the guard, the
+  router's falls and the degrade with no model, with the model faked.
+
 ## Apple's guidance, and where the app stands
 
 Apple names no architecture; for SwiftUI it asks for a declarative data
