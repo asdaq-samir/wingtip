@@ -51,7 +51,8 @@ struct FieldsBelowVfrSection: View {
 /// When the data under each of the map's weather layers is from, in
 /// Setup's Map section: the METARs behind the fields' colours and the
 /// TFRs as the planner fetched them (/api/map/ages), the traffic as the
-/// map last heard it. Asked and said again each minute.
+/// map last heard it, and any source the planner finds has stopped
+/// updating. Asked and said again each minute.
 struct LayerAgesRows: View {
     @Environment(Traffic.self) private var traffic
     @State private var ages: MapLayerAges?
@@ -63,6 +64,14 @@ struct LayerAgesRows: View {
             LabeledContent("TFRs", value: words("tfr.faa.gov", AirportWords.date(ages?.tfrsAt)))
             if traffic.on {
                 LabeledContent("Traffic data", value: words("adsb.lol", traffic.heardAt))
+            }
+            // A feed the planner's watch finds not updating -- the NOTAMs,
+            // the radar or satellite frames, a weather report -- said here,
+            // where the pilot reads each source's age.
+            ForEach(BriefLegs.staleSources(ages), id: \.name) { source in
+                LabeledContent(source.name) {
+                    Text(BriefLegs.staleWords(AirportWords.date(source.fetchedAt), now: now)).foregroundStyle(.orange)
+                }
             }
         }
         .task {

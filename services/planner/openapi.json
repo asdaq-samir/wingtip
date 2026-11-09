@@ -5686,7 +5686,7 @@
         "type": "object"
       },
       "DataSource": {
-        "description": "One source the planner downloads and keeps, for the pilot's Status\npage: its name in a pilot's words, when the copy it holds was fetched,\nto when that copy may still be served by the product's own validity\n(None: no limit, or none held), and whether the source is failing,\nthe held copy then served on (ISO 8601 UTC).",
+        "description": "One source the planner downloads and keeps, for the pilot's Status\npage: its name in a pilot's words, when the copy it holds was fetched,\nto when that copy may still be served by the product's own validity\n(None: no limit, or none held), and whether the source is failing,\nthe held copy then served on (ISO 8601 UTC); and whether it has\nstopped updating past its usual cadence, as the minute's feed watch\nfound it (app.feeds.status_rows), for the page to say so.",
         "properties": {
           "failing": {
             "default": false,
@@ -5718,6 +5718,11 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "stale": {
+            "default": false,
+            "title": "Stale",
+            "type": "boolean"
           }
         },
         "required": [
@@ -25254,7 +25259,7 @@
     },
     "/api/map/ages": {
       "get": {
-        "description": "When the planner fetched what the map's weather layers are drawn\nfrom, for the map's settings to say how old each is: the METARs\n(aviationweather.gov's METAR file, held and refreshed by wingtip.weather)\nand the TFRs (tfr.faa.gov); and each source the planner keeps\nthrough an outage, for the pilot's Status page; and each FAA data\nset's edition and whether it is still in its cycle.",
+        "description": "When the planner fetched what the map's weather layers are drawn\nfrom, for the map's settings to say how old each is: the METARs\n(aviationweather.gov's METAR file, held and refreshed by wingtip.weather)\nand the TFRs (tfr.faa.gov); and each source the planner keeps\nthrough an outage, for the pilot's Status page, each said where it\nhas stopped updating (app.feeds.status_rows); and each FAA data set's\nedition and whether it is still in its cycle.",
         "operationId": "map_layer_ages_api_map_ages_get",
         "responses": {
           "200": {

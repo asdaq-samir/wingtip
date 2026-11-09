@@ -140,6 +140,19 @@ enum BriefLegs {
         if minutes < 1 { return "just now" }
         return minutes < 60 ? "\(minutes) min ago" : "\(minutes / 60) h \(minutes % 60) min ago"
     }
+
+    /// What is said of a source that has stopped coming in past its usual
+    /// cadence (the planner's feed watch, a source's `stale`): "Not
+    /// updating: last updated 3 h 0 min ago", for a pilot to tell a feed
+    /// gone quiet from a sky with nothing in it.
+    static func staleWords(_ at: Date?, now: Date = Date()) -> String {
+        age(at, now: now).map { "Not updating: last updated \($0)" } ?? "Not updating"
+    }
+
+    /// The sources the planner says have stopped updating, from its ages.
+    static func staleSources(_ ages: MapLayerAges?) -> [APIDataSource] {
+        (ages?.sources ?? []).filter { $0.stale == true }
+    }
 }
 
 extension Planner {

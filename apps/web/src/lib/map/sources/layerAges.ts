@@ -10,6 +10,15 @@ export function ageWords(at: number | null, now: number): string | null {
   return at == null || Number.isNaN(at) ? null : ago(now - at);
 }
 
+/** What the Status page says under a source that has stopped coming in
+ *  past its usual cadence (the planner's feed watch, a source's `stale`):
+ *  "Not updating: last updated 3h ago", for a pilot to tell a feed that
+ *  went quiet from a sky with nothing in it. */
+export function staleWords(fetchedAt: string | null | undefined, now: number): string {
+  const age = ageWords(fetchedAt ? Date.parse(fetchedAt) : null, now);
+  return age ? `Not updating: last updated ${age}` : "Not updating";
+}
+
 /** The newest traffic answer the map holds: when its airplanes were
  *  where it gives them (its time, less its own `age_s`). */
 export function trafficAt(answers: { data: Traffic | undefined; updatedAt: number }[]): number | null {
