@@ -113,8 +113,10 @@ def _airport_rows(path: str, _mtime: float) -> dict:
     df = _read_table(path, _mtime)
     rows: dict = {}
     # A missing local code is no code: as "NAN" it would answer a lookup of "NAN".
-    idents = df["ident"].fillna("").astype(str).str.strip().str.upper()
-    locals_ = df["local_code"].fillna("").astype(str).str.strip().str.upper()
+    # Cast first, then fill: pandas 3's str keeps a missing value missing,
+    # and a column read all-empty is float64, which "" will not fill in pandas 4.
+    idents = df["ident"].astype(str).fillna("").str.strip().str.upper()
+    locals_ = df["local_code"].astype(str).fillna("").str.strip().str.upper()
     for i, (ident, local) in enumerate(zip(idents, locals_)):
         if ident:
             rows.setdefault(ident, i)
@@ -252,7 +254,7 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
             on = np.zeros(len(us), dtype=bool)
             for column in ("ident", "local_code", "icao_code", "gps_code"):
                 if column in us.columns:
-                    on |= us[column].fillna("").astype(str).str.strip().str.upper().isin(listed).to_numpy()
+                    on |= us[column].astype(str).fillna("").str.strip().str.upper().isin(listed).to_numpy()
             us = us[on]
     us = us.copy()
     us["_ident_upper"] = us["ident"].astype(str).str.upper()
@@ -261,7 +263,7 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
     # Every word of the name and the town, each after a space, so a
     # search finds a word's start anywhere: "oshkosh" is Wittman
     # Regional's town, not the start of its name.
-    us["_words_upper"] = " " + us["_name_upper"] + " " + us["municipality"].fillna("").astype(str).str.upper()
+    us["_words_upper"] = " " + us["_name_upper"] + " " + us["municipality"].astype(str).fillna("").str.upper()
     us["_size_rank"] = us["type"].map({"large_airport": 0, "medium_airport": 1, "small_airport": 2}).fillna(3)
     # OurAirports' own `ident` column is a synthesized ICAO-style
     # code (usually "K" + `local_code`) it assigns even to airports

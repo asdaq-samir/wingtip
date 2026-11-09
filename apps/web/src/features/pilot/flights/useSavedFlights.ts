@@ -1,67 +1,93 @@
-import { useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, describeError } from "../../../lib/api/client";
 import type { FlightSummary } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
+import { useOptimisticList } from "../../../lib/optimisticList";
 import { flightsQuery } from "../../../lib/queryClient";
 import { flightEdit, flightEditProblem, type FlightEditRequest } from "./flightEdit";
+
+/** What the row's save asks: a change to send, a problem found before
+ *  sending, or the last problem put away (the row opened afresh or let go). */
+type SaveAsk = { send: FlightSummary; body: FlightEditRequest } | { wrong: string } | null;
+
+/** The name and notes the pilot typed, kept for the row's fields when the
+ *  server refused them, so the pilot fixes them rather than types again. */
+type Draft = { name: string; notes: string };
 
 /**
  * The saved flights' list, its one hook (MVVM): the list, Edit's minus
  * and the delete it asks for, and a row's name and notes changed in the
- * row (PATCH /api/flights/{id}). What went wrong with a change is said in
- * that row, under its field (`problem`), not in a toast or an alert
- * (lib/problems: a result shows where it happened).
+ * row (PATCH /api/flights/{id}). A change shows at once, the row closed
+ * on its new name (useOptimistic, lib/optimisticList); where the gateway
+ * refuses it the row goes back to what it was and opens again on what was
+ * typed, with why under its field (`problem`), not in a toast or an alert
+ * (lib/problems: a result shows where it happened). A delete takes the row
+ * out at once too, and a refused one brings it back, with the alert every
+ * failed action has (the mutation cache's).
  */
 export function useSavedFlights() {
   const queryClient = useQueryClient();
   const asked = useQuery(flightsQuery);
+  const [list, change] = useOptimisticList(asked.data);
   const [editing, setEditing] = useState(false);
   const [flightToDelete, setFlightToDelete] = useState<FlightSummary | null>(null);
-  // The flight whose row is its fields now, and what is wrong with the
-  // last try to save them.
+  // The flight whose row is its fields now, and what was typed in them.
   const [changing, setChanging] = useState<number | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const keep = (saved: FlightSummary) =>
+    queryClient.setQueryData<FlightSummary[]>(flightsQuery.queryKey, (now) => now?.map((f) => (f.id === saved.id ? saved : f)));
 
-  const remove = useMutation({
-    mutationFn: (id: number) => api.flights.remove(id),
-    onSuccess: () => {
-      done("Flight Deleted");
-      setFlightToDelete(null);
-      void queryClient.invalidateQueries({ queryKey: flightsQuery.queryKey });
-    },
-  });
-
+  const remove = useMutation({ mutationFn: (id: number) => api.flights.remove(id) });
   const update = useMutation({
     mutationFn: ({ id, body }: { id: number; body: FlightEditRequest }) => api.flights.update(id, body),
-    // Said in the row (`problem`), not as a system problem.
+    // Said in the row (`problem`), not as the alert.
     meta: { silent: true },
-    onSuccess: (saved) => {
-      queryClient.setQueryData<FlightSummary[]>(flightsQuery.queryKey, (list) => list?.map((f) => (f.id === saved.id ? saved : f)));
-      setChanging(null);
-      setProblem(null);
-      done("Flight Saved");
-    },
-    onError: (err) => setProblem(describeError(err, "The flight could not be saved")),
   });
+
+  // The row's save as an Action: its pending and its problem are React's
+  // (useActionState), where they were the hook's own state.
+  const [problem, save, saving] = useActionState(async (_was: string | null, ask: SaveAsk): Promise<string | null> => {
+    if (!ask) return null;
+    if ("wrong" in ask) return ask.wrong;
+    const { send: flight, body } = ask;
+    // Null keeps a field, blank clears it (flightEdit).
+    change({ put: { ...flight, name: body.name ?? flight.name, notes: body.notes ?? flight.notes } });
+    try {
+      keep(await update.mutateAsync({ id: flight.id, body }));
+      done("Flight Saved");
+      return null;
+    } catch (err) {
+      // Back to the row's fields, on what was typed.
+      setChanging(flight.id);
+      return describeError(err, "The flight could not be saved");
+    }
+  }, null);
+  const ask = (next: SaveAsk) => startTransition(() => save(next));
+  // The last problem put away, where there is one: an Action queued for
+  // nothing would hold up the next save's change behind it.
+  const putAway = () => {
+    if (problem) ask(null);
+  };
 
   /** The row's fields, opened in place of the row. */
   const startChange = (id: number) => {
-    setProblem(null);
+    setDraft(null);
+    putAway();
     setChanging(id);
   };
   /** Escape: the row as it was, nothing sent. */
   const cancelChange = () => {
-    setProblem(null);
+    setDraft(null);
+    putAway();
     setChanging(null);
   };
   /** Return or the fields left: what changed sent, nothing sent where
-   *  nothing did. */
+   *  nothing did; the row closed on it at once. */
   const saveChange = (flight: FlightSummary, name: string, notes: string) => {
-    if (update.isPending) return;
     const wrong = flightEditProblem(name, notes);
     if (wrong) {
-      setProblem(wrong);
+      ask({ wrong });
       return;
     }
     const body = flightEdit(flight, name, notes);
@@ -69,25 +95,43 @@ export function useSavedFlights() {
       cancelChange();
       return;
     }
-    update.mutate({ id: flight.id, body });
+    setDraft({ name, notes });
+    setChanging(null);
+    ask({ send: flight, body });
   };
 
   /** Edit's minus or a swipe: the flight to ask about, then the ask. */
   const askToDelete = (flight: FlightSummary) => setFlightToDelete(flight);
+  /** The ask answered: the row gone at once, back if the gateway refuses. */
+  const deleteAsked = () => {
+    if (!flightToDelete) return;
+    const { id } = flightToDelete;
+    setFlightToDelete(null);
+    startTransition(async () => {
+      change({ drop: id });
+      try {
+        await remove.mutateAsync(id);
+        queryClient.setQueryData<FlightSummary[]>(flightsQuery.queryKey, (now) => now?.filter((f) => f.id !== id));
+        done("Flight Deleted");
+      } catch {
+        // The row is back by itself; the mutation cache's alert says why.
+      }
+      void queryClient.invalidateQueries({ queryKey: flightsQuery.queryKey });
+    });
+  };
 
   return {
     asked,
-    list: asked.data,
+    list,
     editing,
     toggleEditing: () => setEditing((e) => !e),
     flightToDelete,
     askToDelete,
-    deleteAsked: () => {
-      if (flightToDelete) remove.mutate(flightToDelete.id);
-    },
+    deleteAsked,
     changing,
+    draft,
     problem,
-    saving: update.isPending,
+    saving,
     startChange,
     cancelChange,
     saveChange,

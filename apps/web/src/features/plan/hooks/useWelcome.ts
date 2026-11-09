@@ -3,7 +3,7 @@ import { FIRST_FLIGHT, WELCOME, useTips, useWelcomeOpen } from "../../../lib/fir
 import { locateOnOpen, ownShipAvailable } from "../../../lib/map/position/ownShip";
 import { permissionState } from "../../../lib/permissions";
 import { NO_AIRPLANE, usePreferences } from "../../../lib/preferences";
-import { withPageTransition } from "../../../lib/viewTransition";
+import { pageStep } from "../../../lib/viewTransition";
 import type { RouteParts } from "../components/RouteBox";
 import { useAircraftPick } from "./useAircraftPick";
 
@@ -79,7 +79,7 @@ export function useWelcome({
 
   const go = useCallback(
     (by: number) => {
-      withPageTransition(() => setIndex((i) => Math.max(0, Math.min(steps.length - 1, i + by))));
+      pageStep(by > 0, () => setIndex((i) => Math.max(0, Math.min(steps.length - 1, i + by))));
     },
     [steps.length],
   );

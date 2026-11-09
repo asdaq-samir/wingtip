@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, type ReactNode, useEffectEvent } from "react";
 import { prefersReducedMotion } from "../../motion";
 import type { GeoJSONSource, LayerSpecification, Map as MlMap, MapGeoJSONFeature, MapMouseEvent, SourceSpecification } from "maplibre-gl";
 
@@ -216,36 +216,31 @@ export function useGlData(source: string, data: GeoJSON.GeoJSON | null) {
 export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
   const { map } = useGlMap();
   const key = JSON.stringify(paint);
+  const ids = layers.join();
   useEffect(() => {
     const values = JSON.parse(key) as Record<string, unknown>;
-    for (const id of layers) {
+    for (const id of ids.split(",")) {
       if (!map.getLayer(id)) continue;
       for (const [k, v] of Object.entries(values)) map.setPaintProperty(id, k as Parameters<MlMap["setPaintProperty"]>[1], v as never);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- by value
-  }, [map, key, layers.join()]);
+    // By value: the paint by its JSON, the layers by their names.
+  }, [map, key, ids]);
 }
 
 /** A tap on this layer's features while mounted; the handler is read at
  *  the tap, so a new one each render costs nothing. */
 export function useGlTap(layers: string[], reach: number, rank: number, onTap: GlTap["onTap"]) {
   const { addTap } = useGlMap();
-  const handler = useRef(onTap);
-  useEffect(() => {
-    handler.current = onTap;
-  });
+  const handler = useEffectEvent(onTap);
   const ids = layers.join();
-  useEffect(() => addTap({ layers: ids.split(","), reach, rank, onTap: (f, e) => handler.current(f, e) }), [addTap, ids, reach, rank]);
+  useEffect(() => addTap({ layers: ids.split(","), reach, rank, onTap: (f, e) => handler(f, e) }), [addTap, ids, reach, rank]);
 }
 
 /** A tap on the chart that found nothing, while mounted. */
 export function useGlMiss(onMiss: (event: MapMouseEvent) => void) {
   const { addMiss } = useGlMap();
-  const handler = useRef(onMiss);
-  useEffect(() => {
-    handler.current = onMiss;
-  });
-  useEffect(() => addMiss((e) => handler.current(e)), [addMiss]);
+  const handler = useEffectEvent(onMiss);
+  useEffect(() => addMiss((e) => handler(e)), [addMiss]);
 }
 
 export const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };

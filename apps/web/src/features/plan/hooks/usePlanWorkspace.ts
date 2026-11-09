@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useEffectEvent } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   altitudesOf,
@@ -91,6 +91,7 @@ export const LOCAL_MINUTES = [30, 45, 60, 90, 120, 150, 180, 240];
  * run in, as it was when they were one hook.
  */
 export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "panel" | "setPanel">) {
+  "use no memo"; // Left to its own memos, as it always was: compiled, it put 18 KB on the first load.
   useEffect(() => {
     const later = window.setTimeout(prefetchPilotPanel, 2000);
     return () => window.clearTimeout(later);
@@ -425,16 +426,14 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const aheadKey = nextStops
     ? JSON.stringify([nextStops, planParams.altitudeFt, planParams.altitudeChoice, planParams.depart, aircraft.profile, load])
     : "";
-  useEffect(() => {
+  const prefetchAhead = useEffectEvent(() => {
     if (!nextStops) return;
     const ahead = { ...planParams, stops: nextStops };
     void queryClient.prefetchQuery(courseQuery(ahead.dep, ahead.dest, nextStops));
     if (showWaypoints) void queryClient.prefetchQuery(checkpointsQuery(ahead.dep, ahead.dest, nextStops));
     void queryClient.prefetchQuery(navlogQuery(ahead, showWaypoints));
-    // Keyed on the route and the plan's own choices, not the object made
-    // each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aheadKey]);
+  });
+  useEffect(() => prefetchAhead(), [aheadKey]); // keyed on the route and the plan's choices
   // Add Stop open: from its own button, or from no legal altitude's --
   // "via", its Fly via round a Class B, the ways round suggested.
   const [addingStop, setAddingStop] = useState<false | "stop" | "via">(false);

@@ -1,6 +1,7 @@
 """wingtip.charts: the FAA chart cycle, the tile grid, finding the chart
 face in a raster, and rendering tiles from more than one sheet."""
 
+import contextlib
 import dataclasses
 import datetime as dt
 import io
@@ -1171,7 +1172,11 @@ with charts.refresh_lock() as got:
 """
 
 
-def _hold_in_another_process(tiles, seconds):
+@contextlib.contextmanager
+def _held_in_another_process(tiles, seconds):
+    """The lock held by a child until the block ends, when it is killed
+    and reaped, and its pipe closed (Popen's own exit): a pipe left open
+    was a ResourceWarning, an error under the suite's warnings filter."""
     import os
     import subprocess
     import sys
@@ -1179,9 +1184,12 @@ def _hold_in_another_process(tiles, seconds):
     from pathlib import Path
 
     env = {**os.environ, "PYTHONPATH": str(Path(charts.__file__).resolve().parents[1])}
-    child = subprocess.Popen([sys.executable, "-c", _HOLD, str(tiles), str(seconds)], stdout=subprocess.PIPE, text=True, env=env)
-    assert child.stdout.readline().strip() == "held"
-    return child
+    with subprocess.Popen([sys.executable, "-c", _HOLD, str(tiles), str(seconds)], stdout=subprocess.PIPE, text=True, env=env) as child:
+        try:
+            assert child.stdout.readline().strip() == "held"
+            yield child
+        finally:
+            child.kill()
 
 
 def test_a_refresh_is_running_exactly_while_another_process_holds_the_lock(tmp_path, monkeypatch):
@@ -1189,12 +1197,8 @@ def test_a_refresh_is_running_exactly_while_another_process_holds_the_lock(tmp_p
     reaped its finished child, a zombie answers kill(pid, 0), and one
     refresh read as running until the planner restarted."""
     monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
-    child = _hold_in_another_process(tmp_path / "tiles", 30)
-    try:
+    with _held_in_another_process(tmp_path / "tiles", 30):
         assert charts.refresh_running()
-    finally:
-        child.kill()
-        child.wait()
     assert not charts.refresh_running()  # ended, however it ended: the kernel let go
 
 

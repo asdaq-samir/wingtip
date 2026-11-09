@@ -113,7 +113,7 @@ export default function QuickControls() {
  *  own. */
 const TILE = cn(
   "group flex h-auto min-h-14 w-full min-w-0 items-center justify-start gap-2.5 rounded-2xl bg-card px-2.5 py-2 text-left outline-none",
-  "hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 data-[state=on]:bg-card",
+  "lift active:bg-wash-press focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 data-[state=on]:bg-card",
 );
 
 function Face({ icon, label, value, menu = false }: { icon: ReactNode; label: string; value: string; menu?: boolean }) {

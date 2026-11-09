@@ -159,6 +159,6 @@ def test_a_code_that_is_not_an_acs_code_is_refused():
 
 
 def _response(status: int):
-    import httpx
+    import httpx2 as httpx
 
     return httpx.Response(status, request=httpx.Request("POST", "https://api.anthropic.com/v1/messages"))

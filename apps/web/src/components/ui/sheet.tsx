@@ -118,7 +118,7 @@ function SheetContent({
                 GLASS_SHEET,
                 "text-foreground data-[side=bottom]:inset-x-2 data-[side=bottom]:bottom-2 data-[side=top]:inset-x-2 data-[side=top]:top-[max(0.5rem,env(safe-area-inset-top))]",
               )
-            : "bg-card text-card-foreground shadow-lg data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:border-t data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:border-b",
+            : "bg-card text-card-foreground shadow-overlay data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:border-t data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:border-b",
           className,
         )}
         {...props}

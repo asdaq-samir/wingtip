@@ -29,6 +29,11 @@ interface Recorded {
 
 const KEY = "wingtip.autolog.track";
 export const recorded = keptStore<Recorded>(KEY, { points: [], askedTo: null });
+/** The same store as a hook, by a hook's name: called as `recorded(…)` in a
+ *  component, the React Compiler took it for a plain function and kept its
+ *  first answer, so the next render called one hook fewer and React threw
+ *  ("reading 'length'" in the next useQuery), taking the map page down. */
+export const useRecorded = recorded;
 
 /** A point every 5 s: four hours are under 3,000 points, a light
  *  airplane's track keeps its shape (the engine's ground speeds read ten

@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { onShortcut } from "./use-shortcuts";
+import { isPaletteKey, onShortcut } from "./use-shortcuts";
+import { useWanted } from "../lib/navigation/wanted";
+import { closePalette, usePalette } from "../lib/palette";
 
 /** A panel with its tabs, a search field and a close, all in sight. */
 function page() {
@@ -59,5 +61,26 @@ describe("a desktop's shortcuts", () => {
     document.querySelector('[data-testid="tab-close"]')!.addEventListener("click", back);
     document.body.dispatchEvent(used);
     expect(back).not.toHaveBeenCalled();
+  });
+
+  it("B opens the Brief, N Nearest and D the palette for Direct To", () => {
+    expect(press("b").defaultPrevented).toBe(true);
+    expect(useWanted.getState().screen).toBe("brief");
+    press("N");
+    expect(useWanted.getState().screen).toBe("nearest");
+    press("d");
+    expect(usePalette.getState().open).toBe("direct");
+    closePalette();
+    const field = document.getElementById("field")!;
+    field.focus();
+    expect(press("b", field).defaultPrevented).toBe(false);
+  });
+
+  it("knows ⌘K and Ctrl K for the palette, and not K alone", () => {
+    const key = (init: KeyboardEventInit) => new KeyboardEvent("keydown", { key: "k", ...init });
+    expect(isPaletteKey(key({ metaKey: true }))).toBe(true);
+    expect(isPaletteKey(key({ ctrlKey: true }))).toBe(true);
+    expect(isPaletteKey(key({}))).toBe(false);
+    expect(isPaletteKey(key({ metaKey: true, shiftKey: true }))).toBe(false);
   });
 });

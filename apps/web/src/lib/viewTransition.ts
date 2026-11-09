@@ -1,21 +1,53 @@
+import { addTransitionType, startTransition, type ViewTransitionClass } from "react";
 import { flushSync } from "react-dom";
 import { prefersReducedMotion } from "./motion";
 
-type WithTransitions = Document & { startViewTransition?: (update: () => void) => unknown };
+/**
+ * A page giving way to the next as the platform's own pages do, through
+ * React's own View Transitions (React 19.3's <ViewTransition>): the change
+ * is made in a transition typed by its direction, and a <ViewTransition>
+ * round the page (PAGE_STEP) slides the old page out and the new one in
+ * on the sheet's ease-out over motion.page (index.css), forward to the
+ * left and back to the right, as a navigation stack's pages go. Only a
+ * page step animates: the router's own transitions, which change these
+ * pages too, carry no type, and PAGE_STEP is "none" for them. Reduce
+ * Motion holds the pages still (index.css).
+ */
+export function pageStep(forward: boolean, change: () => void): void {
+  startTransition(() => {
+    addTransitionType(forward ? "page-forward" : "page-back");
+    change();
+  });
+}
+
+/** The classes a page's <ViewTransition update={…}> takes: the slide for
+ *  a page step, nothing for any other change. */
+export const PAGE_STEP: ViewTransitionClass = { "page-forward": "page-step", "page-back": "page-back", default: "none" };
+
+type WithTransitions = Document & { startViewTransition?: (update: () => void) => { finished: Promise<unknown> } };
 
 /**
- * A page or card giving way to the next as the platform's own pages do:
- * the browser's View Transition (index.css times it by motion.page on the
- * sheet's ease-out, a short shared-axis slide of the element named
- * `wingtip-page`), where the browser has one. React's change is made
- * inside it, at once (flushSync), so the new page is the one captured.
+ * The map panel's tabs changing: the panel's body cross-fades from one
+ * tab to the next (index.css's wingtip-tab, named only while it runs, so
+ * no other transition captures the body). The browser's View Transition
+ * with the change made inside it at once (flushSync), not React's
+ * <ViewTransition>: a tab tapped also closes Setup and a card's sheet,
+ * which live in stores outside React's state, whose updates are always
+ * synchronous; in a React transition the tab would land a frame after
+ * them, and the tab under Setup showed for that frame (the owner,
+ * 2026-11-05: "Why does the airport tab get selected momentarily?").
  * With Reduce Motion, or no View Transitions, the change is just made.
  */
-export function withPageTransition(change: () => void): void {
+export function withTabTransition(change: () => void): void {
   const doc = typeof document !== "undefined" ? (document as WithTransitions) : null;
-  if (!doc || typeof doc.startViewTransition !== "function" || prefersReducedMotion()) {
+  if (!doc?.startViewTransition || prefersReducedMotion()) {
     change();
     return;
   }
-  doc.startViewTransition(() => flushSync(change));
+  const root = doc.documentElement;
+  root.dataset.vt = "tab";
+  const done = () => {
+    if (root.dataset.vt === "tab") delete root.dataset.vt;
+  };
+  doc.startViewTransition(() => flushSync(change)).finished.then(done, done);
 }

@@ -187,7 +187,7 @@ struct WingtipPalette: Sendable {
         destructiveInk: rgb(0xC10007),
         border: rgb(0xE5E5E5),
         input: rgb(0x8F8F8F),
-        ring: rgb(0x737373),
+        ring: rgb(0x0066CC),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
         chart3: rgb(0x525252),
@@ -234,7 +234,7 @@ struct WingtipPalette: Sendable {
         destructiveInk: rgb(0xFF7979),
         border: rgb(0xFFFFFF, 0.1),
         input: rgb(0xFFFFFF, 0.15),
-        ring: rgb(0xA9B8CA),
+        ring: rgb(0x57A8FF),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
         chart3: rgb(0x525252),
@@ -281,7 +281,7 @@ struct WingtipPalette: Sendable {
         destructiveInk: rgb(0x9C1C15),
         border: rgb(0x000000),
         input: rgb(0x333333),
-        ring: rgb(0x333333),
+        ring: rgb(0x0047A0),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
         chart3: rgb(0x525252),
@@ -328,7 +328,7 @@ struct WingtipPalette: Sendable {
         destructiveInk: rgb(0xC10007),
         border: rgb(0xE5E5E5),
         input: rgb(0x8F8F8F),
-        ring: rgb(0x737373),
+        ring: rgb(0x00707E),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
         chart3: rgb(0x525252),
@@ -375,7 +375,7 @@ struct WingtipPalette: Sendable {
         destructiveInk: rgb(0xFF7979),
         border: rgb(0xFFFFFF, 0.1),
         input: rgb(0xFFFFFF, 0.15),
-        ring: rgb(0xA9B8CA),
+        ring: rgb(0x46D3E6),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
         chart3: rgb(0x525252),
@@ -422,7 +422,7 @@ struct WingtipPalette: Sendable {
         destructiveInk: rgb(0xC10007),
         border: rgb(0xE2D8C4),
         input: rgb(0x8F8F8F),
-        ring: rgb(0x737373),
+        ring: rgb(0x0066CC),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
         chart3: rgb(0x525252),
@@ -469,7 +469,7 @@ struct WingtipPalette: Sendable {
         destructiveInk: rgb(0xFF7979),
         border: rgb(0xFFFFFF, 0.1),
         input: rgb(0xFFFFFF, 0.15),
-        ring: rgb(0xA9B8CA),
+        ring: rgb(0x5AC8FA),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
         chart3: rgb(0x525252),
@@ -548,6 +548,7 @@ enum WingtipMotion {
     static let quick: TimeInterval = 0.15
     static let page: TimeInterval = 0.25
     static let skeletonPulse: TimeInterval = 1.5
+    static let press: TimeInterval = 0.1
 }
 
 /// The taps felt on a key action, as SwiftUI's sensory feedback

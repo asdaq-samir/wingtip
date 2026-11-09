@@ -54,7 +54,8 @@ export function deletedWords(entry: Pick<LogbookEntry, "flownOn" | "route">): st
 }
 
 /** Everything a logged flight counts toward, fetched again after one
- *  changes: the list, currency, the checkride's experience, what is due. */
-export function refreshLogbook(queryClient: QueryClient) {
-  for (const key of ["logbook", "currency", "training", "paperwork"]) void queryClient.invalidateQueries({ queryKey: [key] });
+ *  changes: the list, currency, the checkride's experience, what is due;
+ *  settled once they are in, for an Action that waits on them. */
+export async function refreshLogbook(queryClient: QueryClient): Promise<void> {
+  await Promise.all(["logbook", "currency", "training", "paperwork"].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 }

@@ -6,7 +6,7 @@ import { PANEL_FIELD } from "../../components/panelField";
 import SourceChips from "../../components/SourceChips";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { Spinner } from "../../components/ui/spinner";
+import SkeletonLines from "../../components/SkeletonLines";
 import type { TripLeg } from "../../lib/api/types";
 import { clockTime, duration, feet, gal, nm } from "../../lib/format";
 import { TEXT } from "../../lib/text";
@@ -89,11 +89,12 @@ export default function TripPlanner({ onClose }: { onClose: () => void }) {
         </p>
       )}
       {state.status && (
-        <p className={cn("flex items-center gap-2 text-muted-foreground", TEXT.note)} role="status" data-testid="trip-status">
-          <Spinner aria-hidden />
+        <p className={cn("appear text-muted-foreground", TEXT.note)} role="status" data-testid="trip-status">
           {state.status}…
         </p>
       )}
+      {/* The proposal's shape where it will be, until its first words. */}
+      {state.status && !(p || state.words) && <SkeletonLines className="w-4/5 rounded-2xl rounded-bl-md bg-card px-3.5 py-3" />}
       {(p || state.words) && (
         <div
           className="flex flex-col gap-3 rounded-2xl rounded-bl-md bg-card px-3.5 py-3 shadow-[0_1px_4px_rgb(0_0_0/0.06)]"

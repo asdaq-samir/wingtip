@@ -3,7 +3,7 @@
 -r requirements.txt
 pytest
 pytest-randomly==5.1.0   # every run in a new random order, --randomly-seed=N repeats one (docs/CI.md, "Flaky tests")
-httpx   # fastapi.testclient.TestClient's transport
+httpx2   # fastapi.testclient.TestClient's transport: Starlette 1.10 deprecates httpx for it (StarletteDeprecationWarning)
 ruff==0.17.4
 # app/generated held to what it is generated from (tests/test_generated.py,
 # scripts/build/assistant_client.py): pinned, its output being what is
