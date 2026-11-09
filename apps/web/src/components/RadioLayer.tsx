@@ -452,7 +452,7 @@ function RadioCall({ call }: { call: Transmission }) {
   useAnnounce(`ATC: ${call.text}`, "assertive");
   return (
     <div
-      className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-[22px] py-2 pr-1 pl-3")}
+      className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-(--radius-banner) py-2 pr-1 pl-3")}
       role="region"
       aria-label="Call from ATC"
       data-testid="radio-call"
@@ -492,7 +492,7 @@ function RadioCaptions() {
       }
       className={cn(
         GLASS,
-        "pointer-events-auto flex w-full max-w-md items-start gap-2 rounded-[22px] px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "pointer-events-auto flex w-full max-w-md items-start gap-2 rounded-(--radius-banner) px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
     >
       {/* While an input is metered its level, in the glyph's place and

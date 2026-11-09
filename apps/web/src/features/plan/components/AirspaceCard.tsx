@@ -38,10 +38,10 @@ function Rule({ icon, children }: { icon: ReactNode; children: ReactNode }) {
  *  for C, dashed blue for D, dashed magenta for E, none for G. */
 const CLASS_STYLE: Record<AirspaceBand["class"], string> = {
   A: "border-muted-foreground text-muted-foreground",
-  B: "border-[#1f5fa8] bg-[#1f5fa8] text-white dark:border-[#6fa8e6] dark:bg-[#6fa8e6] dark:text-black",
-  C: "border-[#a1316f] bg-[#a1316f] text-white dark:border-[#e286bb] dark:bg-[#e286bb] dark:text-black",
-  D: "border-dashed border-[#1f5fa8] text-[#1f5fa8] dark:border-[#6fa8e6] dark:text-[#6fa8e6]",
-  E: "border-dashed border-[#a1316f] text-[#a1316f] dark:border-[#e286bb] dark:text-[#e286bb]",
+  B: "border-(color:--airspace-blue-text) bg-(--airspace-blue-text) text-white dark:text-black",
+  C: "border-(color:--airspace-magenta-text) bg-(--airspace-magenta-text) text-white dark:text-black",
+  D: "border-dashed border-(color:--airspace-blue-text) text-(color:--airspace-blue-ink)",
+  E: "border-dashed border-(color:--airspace-magenta-text) text-(color:--airspace-magenta-ink)",
   G: "border-border text-muted-foreground",
 };
 

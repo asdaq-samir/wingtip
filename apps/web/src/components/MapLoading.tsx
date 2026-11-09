@@ -34,14 +34,14 @@ export default function MapLoading({ shown, insets }: { shown: boolean; insets: 
             strokeWidth="2"
             strokeDasharray="7 3.2"
             transform="rotate(-112.5 16 16)"
-            className="stroke-[#A3266F] dark:stroke-[#E37BB5]"
+            className="stroke-(color:--brand-mark-ring) dark:stroke-(color:--brand-mark-ring-night)"
           />
         </g>
         <g
           transform="translate(16 16.3) scale(0.36) translate(-32 -31.5)"
           strokeWidth="3.5"
           strokeLinejoin="round"
-          className="fill-[#14284B] stroke-[#14284B] dark:fill-white dark:stroke-white"
+          className="fill-(--brand-mark-plane) stroke-(color:--brand-mark-plane) dark:fill-white dark:stroke-white"
         >
           <path d="M32 12 C34.2 12 35 14.5 35 18 L34.2 44 L33 51 L31 51 L29.8 44 L29 18 C29 14.5 29.8 12 32 12 Z" />
           <rect x="9" y="23" width="46" height="6.5" rx="3" />

@@ -196,13 +196,13 @@ struct LogbookView: View {
                 Text("Passengers at night")
                 Text("3 to a full stop at night in 90 days")
             }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 OptionalDayRow(title: "Flight review", day: dateBinding(\.flightReviewOn), upTo: Date())
                 if let until = currency?.flightReviewUntil { UntilText(date: until).font(.footnote) } else {
                     Text("Within 24 calendar months").font(.footnote).foregroundStyle(.secondary)
                 }
             }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 OptionalDayRow(title: "Medical expires", day: dateBinding(\.medicalExpiresOn))
                 if let on = currency?.medicalExpiresOn { UntilText(date: on).font(.footnote) } else {
                     Text("The day it expires").font(.footnote).foregroundStyle(.secondary)

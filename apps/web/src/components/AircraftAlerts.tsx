@@ -71,10 +71,14 @@ export default function AircraftAlerts() {
   useAircraftAlertWatch();
   const shown = useFiredAlerts((s) => s.fired);
   return shown.map((alert) => (
-    <div key={alert.id} className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-testid="aircraft-alert">
+    <div
+      key={alert.id}
+      className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-(--radius-banner)")}
+      data-testid="aircraft-alert"
+    >
       <Alert
         role="alert"
-        className="flex min-h-11 items-center gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0"
+        className="flex min-h-11 items-center gap-2 rounded-(--radius-banner) border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0"
       >
         <BellRing className="shrink-0 text-tint" />
         <div className={cn("flex min-w-0 flex-1 flex-col py-1", TEXT.detail)}>

@@ -25,12 +25,14 @@ export default function FlownTrackButton() {
         <ListGroup>
           <ListRow title={track.title} description="As flown, from its debrief" />
           <ListRow
-            media={<span className="inline-block h-1 w-5 rounded-full bg-[#1d1d1f] ring-2 ring-white dark:bg-white dark:ring-black" />}
+            media={
+              <span className="inline-block h-1 w-5 rounded-full bg-(--chart-fix-ink) ring-2 ring-white dark:bg-white dark:ring-black" />
+            }
             title="Within the tolerances"
           />
           {/* The ACS's (PA.VI.A): over 3 nm off the route, or 200 ft off the altitude in the cruise. */}
           <ListRow
-            media={<span className="inline-block h-1 w-5 rounded-full bg-[#d70015] ring-2 ring-white" />}
+            media={<span className="inline-block h-1 w-5 rounded-full bg-(--chart-warning) ring-2 ring-white" />}
             title="Outside them"
             description="Over 3 nm off the route or 200 ft off the cruise altitude"
           />

@@ -35,6 +35,7 @@ import { useMicPrimer } from "./MicPrimer";
 import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../lib/atc/listenSetting";
 import { useCanListen } from "../lib/speechLocal";
 import PaletteHint from "./PaletteHint";
+import { CHART } from "../lib/tokens";
 
 /**
  * The map's settings, the whole of the map's own button's sheet
@@ -61,8 +62,7 @@ export default function MapSettings() {
   // The edition is what a pilot checks: a chart is current for its cycle.
   // adsb.lol's licence (ODbL 1.0, 4.3) asks it be credited, as the owner
   // asked it be here ("say traffic adsb.lol in settings like we do for
-  // FAA"). Rows, not a footnote (the owner's "Avoid putting so many
-  // footnotes").
+  // FAA"). Rows, not a footnote (the owner's "Avoid putting so many footnotes").
   const { data: chart } = useQuery(chartQuery);
   // How old each weather layer's data is, beside where it comes from.
   const ages = useLayerAges();
@@ -281,7 +281,7 @@ export default function MapSettings() {
               testId: `own-ship-look-${o.value}`,
               label: (
                 <>
-                  <span className="size-5 shrink-0" dangerouslySetInnerHTML={{ __html: ownShipSvg(o.value, "#2563eb", 20) }} />
+                  <span className="size-5 shrink-0" dangerouslySetInnerHTML={{ __html: ownShipSvg(o.value, CHART.mapBlue, 20) }} />
                   {o.label}
                 </>
               ),

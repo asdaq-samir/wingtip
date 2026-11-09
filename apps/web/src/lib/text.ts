@@ -110,7 +110,7 @@ export const GROW_FIGURE = {
  *  31, its unit 14 and its name 12 on 16, as the canvas draws the Flying
  *  screen (2026-11-03). */
 export const FLYING_FIGURE = {
-  value: "text-[1.625rem] leading-[1.9375rem]",
-  unit: "text-[0.875rem] leading-[1.125rem]",
+  value: "text-(length:--type-figure) leading-[1.9375rem]",
+  unit: "text-sm leading-[1.125rem]",
   name: "text-xs leading-4",
 };

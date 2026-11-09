@@ -48,7 +48,7 @@ function Turn({ turn }: { turn: AskTurn }) {
           it, facing the pilot's blue one. */}
       {(turn.answer || turn.done) && (
         <div
-          className="flex max-w-[92%] flex-col gap-2.5 self-start rounded-2xl rounded-bl-md bg-card px-3.5 py-3 shadow-[0_1px_4px_rgb(0_0_0/0.06)]"
+          className="flex max-w-[92%] flex-col gap-2.5 self-start rounded-2xl rounded-bl-md bg-card px-3.5 py-3 shadow-float"
           data-testid="ask-bubble"
         >
           {turn.answer && (
@@ -234,7 +234,7 @@ export default function AskSection() {
             onClick={hear}
             disabled={listeningFor === "ask"}
             data-testid="ask-mic"
-            className="size-12 shrink-0 rounded-full border-0 bg-card shadow-[0_1px_4px_rgb(0_0_0/0.12)]"
+            className="size-12 shrink-0 rounded-full border-0 bg-card shadow-raised"
           >
             <Mic className={cn("size-5", listeningFor === "ask" && "animate-pulse")} strokeWidth={2.4} />
           </IconButton>

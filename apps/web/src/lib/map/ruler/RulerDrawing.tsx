@@ -1,5 +1,6 @@
 import { TEXT } from "../../text";
 import type { Placed } from "./rulerPlaced";
+import { CHART } from "../../tokens";
 
 /** How far the map may zoom under two fingers held for the ruler, in
  *  levels: a twentieth is 3.5% of its size, more than fingers at rest on
@@ -33,13 +34,14 @@ export function RulerDrawing({ drawn, spoken }: { drawn: Placed | null; spoken: 
               y1={drawn.a.y}
               x2={drawn.b.x}
               y2={drawn.b.y}
-              stroke="rgb(0 0 0 / 0.6)"
+              stroke={CHART.shade}
+              strokeOpacity={0.6}
               strokeWidth={5}
               strokeLinecap="round"
             />
-            <line x1={drawn.a.x} y1={drawn.a.y} x2={drawn.b.x} y2={drawn.b.y} stroke="white" strokeWidth={2} strokeLinecap="round" />
+            <line x1={drawn.a.x} y1={drawn.a.y} x2={drawn.b.x} y2={drawn.b.y} stroke={CHART.casing} strokeWidth={2} strokeLinecap="round" />
             {[drawn.a, drawn.b].map((p, i) => (
-              <circle key={i} cx={p.x} cy={p.y} r={5} fill="white" stroke="rgb(0 0 0 / 0.6)" strokeWidth={2} />
+              <circle key={i} cx={p.x} cy={p.y} r={5} fill={CHART.casing} stroke={CHART.shade} strokeOpacity={0.6} strokeWidth={2} />
             ))}
           </svg>
           <div

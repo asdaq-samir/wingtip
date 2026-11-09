@@ -207,7 +207,7 @@ export function PhotoHead({
             transformed) track over it, an opaque slide hiding the name. */}
         <div
           className={cn(
-            "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex transition-opacity duration-200 flex-col bg-linear-to-t from-black/85 via-black/55 to-transparent pt-14 pb-3.5 pl-4 text-white [text-shadow:0_1px_2px_rgba(0,0,0,.45)]",
+            "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex transition-opacity duration-200 flex-col bg-linear-to-t from-black/85 via-black/55 to-transparent pt-14 pb-3.5 pl-4 text-white text-shadow-xs text-shadow-black/45",
             shown.length > 1 ? "pr-16" : "pr-4",
             bare && "opacity-0",
           )}

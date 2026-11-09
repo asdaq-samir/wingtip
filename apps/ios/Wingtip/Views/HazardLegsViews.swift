@@ -35,7 +35,7 @@ struct FieldsBelowVfrSection: View {
         if !fields.isEmpty {
             Section(title: "Fields Below VFR") {
                 ForEach(Array(fields.enumerated()), id: \.offset) { _, field in
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text("\(field.ident) · \(field.source == "METAR" ? "\(field.flightCategory ?? "IFR") now" : "forecast then")").font(.headline)
                         Text([field.ceilingFt.map { Format.altitude(Double($0)) } ?? "no ceiling",
                               field.visibilitySm.map { String(format: "%g sm", $0) } ?? "—"].joined(separator: " · "))

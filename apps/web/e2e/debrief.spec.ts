@@ -165,11 +165,11 @@ test("Show on the map draws the flown track over its route, and the map's button
   await expect(page).toHaveURL(/dep=C81/);
   await expect(page).toHaveURL(/dest=KUGN/);
   // Drawn once the route is: near-black where within the tolerances.
-  await expect(page.locator('path[stroke="#1d1d1f"]').first()).toBeAttached({ timeout: 60_000 });
+  await expect(page.locator('path[stroke="#1c1a17"]').first()).toBeAttached({ timeout: 60_000 });
   await page.getByTestId("flown-track-button").click();
   await page.getByTestId("flown-track-hide").click();
   await expect(page.getByTestId("flown-track-button")).toHaveCount(0);
-  await expect(page.locator('path[stroke="#1d1d1f"]')).toHaveCount(0);
+  await expect(page.locator('path[stroke="#1c1a17"]')).toHaveCount(0);
 });
 
 test("a file that is not a track says so where it was imported", async ({ page }) => {

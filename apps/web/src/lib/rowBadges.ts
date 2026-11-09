@@ -1,25 +1,10 @@
+import { BADGE } from "./tokens";
+
 /** The badges' colours, by what a row is about: one per kind, the same
- *  on every card. Not the weather's colours (lib/map/marks/flightCategory), so
- *  a badge is never read as a flight category. */
-export const BADGE = {
-  tower: CHART.towered,
-  ground: "#0f766e",
-  weather: "#0284c7",
-  approach: CHART.procedure,
-  traffic: "#c2410c",
-  other: "#6b7280",
-  runway: "#3f4652",
-  chart: "#475569",
-  rule: "#64748b",
-  hazard: "#b42318",
-  lights: "#a16207",
-  // A stop's services (StopServices): the fuel, a car, food, a bed.
-  fuel: "#b45309",
-  car: "#2563eb",
-  food: "#be185d",
-  lodging: "#7e3fb8",
-} as const;
-import { CHART } from "./tokens";
+ *  on every card and on the phones (design/tokens.json color.badge). Not
+ *  the weather's colours (lib/map/marks/flightCategory), so a badge is
+ *  never read as a flight category. */
+export { BADGE };
 
 /** The consoles' rows -- the settings, the Personal tab's pages -- each
  *  in a colour of its own, as iOS's Settings leads every row with one,
@@ -33,7 +18,7 @@ export const SETTING_BADGE = {
   coach: BADGE.weather,
   practice: BADGE.chart,
   emergency: BADGE.hazard,
-  subscription: "#be185d",
+  subscription: BADGE.food,
   tips: BADGE.lights,
   about: BADGE.other,
 } as const;

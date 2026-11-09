@@ -722,6 +722,11 @@ jobs:
                 - '**/*.java'
                 - scripts/ci/file_sizes.py
                 - scripts/ci/file_sizes_allow.txt
+                - scripts/ci/brand_guard.py
+                - scripts/ci/brand_guard_allow.txt
+                - design/tokens.json
+                - apps/web/src/*.css
+                - apps/web/src/**/*.css
                 - scripts/ci/dead_python.sh
                 - scripts/ci/vulture_allow.py
                 - .tool-versions
@@ -1872,6 +1877,12 @@ jobs:
       # docs -- is .tool-versions', and every workflow reads that file.
       - name: Every toolchain at .tool-versions' version
         run: scripts/build/toolchain.sh --check
+      # Every colour, type size, padding, gap and corner in the apps from
+      # design/tokens.json (the owner, 2026-11-09: "make the styling
+      # consistent with the branding"), past what
+      # scripts/ci/brand_guard_allow.txt lists with why. Seconds.
+      - name: No raw style value outside the design tokens
+        run: python3 scripts/ci/brand_guard.py
       - name: No unused Python
         run: scripts/ci/dead_python.sh
       # Every Python file as ruff format writes it (.ruff.toml's [format],

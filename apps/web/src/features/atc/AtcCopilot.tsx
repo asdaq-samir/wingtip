@@ -31,7 +31,7 @@ export default function AtcCopilot() {
   if (atc.noTail) {
     return (
       <p
-        className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px] px-3 py-2 text-muted-foreground", TEXT.detail)}
+        className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-(--radius-banner) px-3 py-2 text-muted-foreground", TEXT.detail)}
         role="status"
         data-testid="atc-no-tail"
       >
@@ -42,7 +42,7 @@ export default function AtcCopilot() {
   if (atc.needsTap) {
     return (
       <div
-        className={cn(GLASS, "pointer-events-auto flex w-fit max-w-full items-center gap-2 rounded-[22px] py-1 pr-1 pl-3")}
+        className={cn(GLASS, "pointer-events-auto flex w-fit max-w-full items-center gap-2 rounded-(--radius-banner) py-1 pr-1 pl-3")}
         data-testid="atc-listen"
       >
         <Mic className="size-5 shrink-0 text-tint" aria-hidden="true" />

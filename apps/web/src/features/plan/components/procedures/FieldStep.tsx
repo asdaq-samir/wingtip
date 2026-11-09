@@ -401,10 +401,10 @@ export function FieldStep({
                 arrival approach buttons"), right of the line down its
                 marks (CARD_BODY): the arrival and the approach then fit
                 on the runway's line. */}
-            <CollapsibleContent className={asCards ? CARD_BODY : "pl-[2.375rem]"}>{partBody(first)}</CollapsibleContent>
+            <CollapsibleContent className={asCards ? CARD_BODY : "pl-9.5"}>{partBody(first)}</CollapsibleContent>
           </section>
           {opened && parts[1] && (
-            <section aria-label={`${a.ident} · ${parts[1].role}`} className={asCards ? CARD_BODY : "pl-[2.375rem] pb-5"}>
+            <section aria-label={`${a.ident} · ${parts[1].role}`} className={asCards ? CARD_BODY : "pl-9.5 pb-5"}>
               {partBody(parts[1])}
             </section>
           )}

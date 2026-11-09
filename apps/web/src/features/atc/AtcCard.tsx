@@ -69,7 +69,7 @@ export default function AtcCard({
   useAnnounce(`ATC: ${card.text}`, "assertive");
   return (
     <div
-      className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-[22px] py-2 pr-1 pl-3")}
+      className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-(--radius-banner) py-2 pr-1 pl-3")}
       role="region"
       aria-label="Call from ATC"
       data-testid="atc-card"

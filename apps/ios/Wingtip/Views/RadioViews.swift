@@ -27,7 +27,7 @@ struct RadioOverlay: View {
                         Image(systemName: "mic.fill").foregroundStyle(listener.listening ? Color.accentColor : .secondary)
                             .symbolListening(listener.listening)
                             .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             if let problem = listener.problem {
                                 ProblemLine(problem)
                             } else if listener.heard.isEmpty {

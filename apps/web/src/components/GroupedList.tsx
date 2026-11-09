@@ -193,7 +193,7 @@ export function ListRow({
       <Item
         asChild
         size="sm"
-        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] no-underline! hover:bg-muted/50 pointer-coarse:active:bg-muted"
+        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline! hover:bg-muted/50 pointer-coarse:active:bg-muted"
       >
         {/* What a wrapper hands a row (a sheet's Close, its click) goes
             on the link; a button's own attributes do not. */}
@@ -213,7 +213,7 @@ export function ListRow({
     return (
       // no-underline!: a section's own links are underlined (the
       // accordion's content styles every <a>), and a row is not prose.
-      <Item asChild size="sm" className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] no-underline!">
+      <Item asChild size="sm" className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline!">
         {/* A click handler goes on the link too, run before it opens: a
             row that copies what the site it opens is to be given (the
             Brief's Open in 1800wxbrief), in the tap's own gesture. */}
@@ -235,7 +235,7 @@ export function ListRow({
       <Item
         asChild
         size="sm"
-        className="min-h-11 cursor-pointer rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] hover:bg-muted/50 pointer-coarse:active:bg-muted"
+        className="min-h-11 cursor-pointer rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 hover:bg-muted/50 pointer-coarse:active:bg-muted"
       >
         <label className={buttonProps.className}>{body}</label>
       </Item>
@@ -246,7 +246,7 @@ export function ListRow({
       <Item
         asChild
         size="sm"
-        className="group min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
+        className="group min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
       >
         <RadioGroupPrimitive.Item value={radio} asChild disabled={buttonProps.disabled}>
           <button type="button" {...buttonProps}>
@@ -261,7 +261,7 @@ export function ListRow({
       <Item
         asChild
         size="sm"
-        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
+        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
       >
         <button type="button" {...buttonProps}>
           {body}
@@ -274,7 +274,7 @@ export function ListRow({
   return (
     <Item
       size="sm"
-      className={cn("min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px]", buttonProps.className)}
+      className={cn("min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25", buttonProps.className)}
       aria-current={buttonProps["aria-current"]}
       data-testid={(buttonProps as { "data-testid"?: string })["data-testid"]}
     >

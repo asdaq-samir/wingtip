@@ -85,10 +85,10 @@ export function DevPanel({ pilotPanel: PilotPanel }: { pilotPanel: PilotPanelPar
  *  serving, each by its 5-fold CV error, sorted best-first. */
 const modelComparisonChartConfig = { score: { label: "MAE", color: "var(--chart-1)" } } satisfies ChartConfig;
 
-// Emerald, the dot of the promoted model's own Promoted badge
+// Go's green, as the dot of the promoted model's own Promoted badge
 // (StatusBadge's "up") -- the promoted one's bar reads as such at a
 // glance, not just on hover.
-const PROMOTED_BAR_COLOR = "#10b981";
+const PROMOTED_BAR_COLOR = "var(--go)";
 
 function ModelComparison() {
   const { data, error } = useQuery({ queryKey: ["modelComparison"], queryFn: api.modelComparison });

@@ -14,6 +14,7 @@ import { glZoom } from "../../../../lib/map/gl/glStyle";
 import type { IconLike } from "../../../../lib/map/gl/htmlMarker";
 import { useGlMarks, type GlMark } from "../../../../lib/map/gl/useGlMarks";
 import { useGlLines, type GlRun } from "../../../../lib/map/gl/useGlLines";
+import { CHART } from "../../../../lib/tokens";
 
 /**
  * The Class B fields' weather, as chips over the chart, at
@@ -76,7 +77,7 @@ export function ClassBGl({
  * from own ship where it is not already inside.
  */
 /** The alerts' inks: a warning red, a caution amber. */
-const AHEAD_INK = { warning: "#dc2626", caution: "#d97706" } as const;
+const AHEAD_INK = { warning: CHART.warning, caution: CHART.caution } as const;
 
 export function AheadGl() {
   const ahead = useAhead();
@@ -115,7 +116,9 @@ const aheadIcons = new Map<string, IconLike>();
 function aheadIcon(level: "warning" | "caution"): IconLike {
   let icon = aheadIcons.get(level);
   if (!icon) {
-    const [line, fill] = level === "warning" ? ["#dc2626", "rgba(220,38,38,.25)"] : ["#d97706", "rgba(245,158,11,.25)"];
+    // The wash: the ink at a quarter (an 8-digit hex's alpha, 0x40).
+    const line = AHEAD_INK[level];
+    const fill = `${line}40`;
     icon = {
       options: {
         className: `ahead-${level}`,

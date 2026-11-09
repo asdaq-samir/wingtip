@@ -66,7 +66,7 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
           size, and at the owner's 19.65 px these grew to 39 with 15 between,
           29 more than at 16, and wrapped onto a line of their own (the FPL
           audit's A3). */}
-      <div className="ml-auto flex shrink-0 items-center gap-[12px] pl-[14px]" data-testid="route-actions">
+      <div className="ml-auto flex shrink-0 items-center gap-3 pl-3.5" data-testid="route-actions">
         {/* The Profile -- the route from the side, its altitude's wheel and
             its dry run -- where the nav log's button was, the nav log in
             the route's ••• menu, at the owner's ask (2026-11-04: "Replace

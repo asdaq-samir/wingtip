@@ -1,10 +1,13 @@
 import type { ExpressionSpecification } from "maplibre-gl";
 import { callEngine } from "../../../../lib/engine/engine";
 import { M_PER_FT } from "./geometry";
+import { CHART } from "../../../../lib/tokens";
 
-const SV_AMBER = "rgba(255, 176, 0, 0.75)";
-const SV_RED = "rgba(215, 0, 21, 0.8)";
-const CLEAR = "rgba(0, 0, 0, 0)";
+// The chart's caution and warning, three quarters and four fifths strong
+// (an 8-digit hex's alpha), over the ground seen through them.
+const SV_AMBER = `${CHART.caution}bf`;
+const SV_RED = `${CHART.warning}cc`;
+const CLEAR = "transparent";
 
 /**
  * The pilot's-eye view's colours for the ground (a color-relief layer on

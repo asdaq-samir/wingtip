@@ -32,6 +32,17 @@ export const CHART = {
   trafficFar: "#06b6d4",
   tfr: "#dc2626",
   emergency: "#ff3b30",
+  casing: "#ffffff",
+  tag: "#14181f",
+  shade: "#0a141c",
+  warning: "#d70015",
+  caution: "#ffb000",
+  terrain: "#8b6f47",
+  selected: "#ff3b00",
+  courseChip: "#b000b0",
+  pattern: "#0e8f8a",
+  patternLabel: "#0b7a75",
+  obstacle: "#7a1f1f",
 };
 
 /** The FAA's flight categories (AIM 7-1-7). */
@@ -62,6 +73,55 @@ export const BRAND = {
   launch: "#ffffff",
   launchNight: "#0b1422",
   chartLand: "#d7e8c6",
+};
+
+export const BADGE = {
+  tower: "#2465b8",
+  ground: "#0f766e",
+  weather: "#0284c7",
+  approach: "#5b5bd6",
+  traffic: "#c2410c",
+  other: "#6b7280",
+  runway: "#3f4652",
+  chart: "#475569",
+  rule: "#64748b",
+  hazard: "#b42318",
+  lights: "#a16207",
+  fuel: "#b45309",
+  car: "#2563eb",
+  food: "#be185d",
+  lodging: "#7e3fb8",
+  stopFuel: "#d97706",
+  stopFood: "#dc2626",
+  stopRepair: "#0f766e",
+  stopTraining: "#0369a1",
+};
+
+export const WEATHER = {
+  convective: "#c2410c",
+  icing: "#2563eb",
+  turbulence: "#d97706",
+  ifr: "#7c3aed",
+  mountains: "#78716c",
+  shear: "#be185d",
+  wind: "#0f766e",
+  ash: "#57534e",
+  other: "#9333ea",
+  urgent: "#dc2626",
+};
+
+export const SCORE = {
+  step1: "#d99a1e",
+  step2: "#b98014",
+  step3: "#96660e",
+  step4: "#724d09",
+  step5: "#4e3406",
+};
+
+export const SIGNAL = {
+  green: "#16a34a",
+  red: "#dc2626",
+  white: "#f8fafc",
 };
 
 /** Chart ink's own inks by day (index.css's --ink-*), for where the stylesheet is not loaded. */
@@ -133,7 +193,10 @@ export const RADIUS = {
   base: 10,
   cockpit: 8,
   ink: 12,
+  badge: 7,
+  control: 14,
   card: 18,
+  banner: 22,
   dialog: 28,
   sheet: 36,
 } as const;
@@ -141,6 +204,7 @@ export const RADIUS = {
 /** The spacing scale, in points. */
 export const SPACE = {
   unit: 4,
+  xxs: 2,
   xs: 4,
   sm: 8,
   md: 12,

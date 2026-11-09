@@ -90,7 +90,7 @@ struct WelcomeChoice: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     Text(title).font(WingtipType.title)
                     if let detail, !detail.isEmpty { Text(detail).font(WingtipType.detail).foregroundStyle(.secondary) }
                 }

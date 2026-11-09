@@ -39,7 +39,7 @@ export default function AlertsBanner() {
   const Icon = level === "warning" ? TriangleAlert : CircleAlert;
   const unread = failed ? "No alerts ahead: the planner did not answer" : `Not read for alerts: ${unavailable.join(", ")}`;
   return (
-    <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-alerts-banner="">
+    <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-(--radius-banner)")} data-alerts-banner="">
       <Alert
         // Said to a screen reader once each as it comes (useSpokenAlerts,
         // lib/announce), not as a live region: the countdown under the
@@ -47,7 +47,7 @@ export default function AlertsBanner() {
         role="region"
         aria-label="Alerts ahead"
         className={cn(
-          "flex min-h-11 gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
+          "flex min-h-11 gap-2 rounded-(--radius-banner) border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
           // Opened, the sign by the first line rather than the middle.
           open ? "items-start *:[svg]:mt-[0.6rem]" : "items-center",
           INK[level],

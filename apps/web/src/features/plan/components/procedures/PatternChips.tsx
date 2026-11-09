@@ -144,7 +144,7 @@ const trailingStood = new Map<string, { open: boolean; x: number }>();
  *  head 44 across, so the chip against it takes none of its 44 points
  *  (the iOS audit's P1). */
 export const TRAY_HEAD = "relative flex h-[38px] w-11 shrink-0 items-center justify-center rounded-l-full bg-tint/12 text-tint";
-const TRAY_BODY = "rounded-r-full bg-tint/12 p-[3px] pl-0";
+const TRAY_BODY = "rounded-r-full bg-tint/12 p-0.75 pl-0";
 /** The arrow in a folded line's chip, after its words: a tap opens it. */
 const FOLDED_ARROW = <ChevronRight className="-mr-1 size-3.5 shrink-0" strokeWidth={2.6} aria-hidden />;
 

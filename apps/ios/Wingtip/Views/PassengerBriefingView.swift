@@ -30,7 +30,7 @@ struct PassengerBriefingView: View {
                     } label: {
                         HStack(alignment: .firstTextBaseline) {
                             Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Color.accentColor : Color.secondary).symbolSwap()
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(item.title).foregroundStyle(.primary)
                                 Text(item.source).font(.footnote).foregroundStyle(.secondary)
                             }

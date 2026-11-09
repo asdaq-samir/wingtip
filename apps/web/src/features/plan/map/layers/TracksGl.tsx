@@ -17,9 +17,10 @@ import { useGlMap } from "../../../../lib/map/gl/glLayer";
 import { iconMarker, setMarkerIcon } from "../../../../lib/map/gl/htmlMarker";
 import { useGlFit } from "../useGlFit";
 import { useGlLines, type GlRun } from "../../../../lib/map/gl/useGlLines";
+import { CHART } from "../../../../lib/tokens";
 
 /** Every track's white casing, so it reads over any chart. */
-const CASING = { colour: "#ffffff", width: 6, opacity: 0.85 };
+const CASING = { colour: CHART.casing, width: 6, opacity: 0.85 };
 
 /** Where own ship has flown, at the pilot's ask: blue on
  *  a white casing, joined to the position now. */
@@ -30,7 +31,7 @@ export function OwnTrailGl() {
     if (path.length < 2) return null;
     const line = path.map((p) => [p.lat, p.lon] as [number, number]);
     if (fix) line.push([fix.lat, fix.lon]);
-    return [{ points: line, colour: "#2563eb", width: 3 }];
+    return [{ points: line, colour: CHART.mapBlue, width: 3 }];
   }, [path, fix]);
   useGlLines("own-trail", "route", runs, CASING);
   return null;
@@ -46,7 +47,7 @@ export function FlownTrackGl({ course }: { course: Course }) {
     track.line.forEach((pt, i) => {
       const last = out.at(-1);
       const off = pt.off;
-      const colour = off ? "#d70015" : "#1d1d1f";
+      const colour = off ? CHART.warning : CHART.fixInk;
       if (last && last.colour === colour) last.points.push([pt.lat, pt.lon]);
       else
         out.push({
@@ -63,12 +64,12 @@ export function FlownTrackGl({ course }: { course: Course }) {
     });
     return out;
   }, [track, course]);
-  useGlLines("flown-track", "route", runs, { colour: "#ffffff", width: 6, opacity: 0.9 });
+  useGlLines("flown-track", "route", runs, { colour: CHART.casing, width: 6, opacity: 0.9 });
   return null;
 }
 
 /** The legs a hazard in the Brief is on, at the pilot's tap:
- *  a wide orange band under the course, fitted. */
+ *  a wide amber band under the course, fitted. */
 export function LegHighlightGl({ course }: { course: Course }) {
   const shown = useLegHighlight((s) => s.shown);
   const clear = useLegHighlight((s) => s.clear);
@@ -79,7 +80,7 @@ export function LegHighlightGl({ course }: { course: Course }) {
       shown
         ? shown.lines.map((line) => ({
             points: line.map((p) => [p.lat, p.lon] as [number, number]),
-            colour: "#ff9500",
+            colour: CHART.caution,
             width: 12,
             opacity: 0.55,
           }))

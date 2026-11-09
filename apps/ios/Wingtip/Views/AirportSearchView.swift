@@ -62,7 +62,7 @@ struct AirportSearchView: View {
                         Section(title: "Airports") {
                             ForEach(found) { field in
                                 NavigationLink(value: field.ident) {
-                                    VStack(alignment: .leading, spacing: 2) {
+                                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                         Text(field.ident).font(.headline)
                                         Text([field.name, field.municipality, field.region].compactMap { $0 }.joined(separator: " · "))
                                             .font(.subheadline).foregroundStyle(.secondary)
@@ -263,7 +263,7 @@ struct AirportListView: View {
     }
 
     private func keptRow(_ field: KeptAirport) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             Text(field.ident).font(.headline)
             Text([field.name, field.municipality].compactMap { $0 }.joined(separator: " · ")).font(.subheadline).foregroundStyle(.secondary)
         }
@@ -312,7 +312,7 @@ struct NearestRow: View {
         let bearing = field.bearingDeg.truncatingRemainder(dividingBy: 360)
         HStack(spacing: WingtipSpace.md) {
             Circle().strokeBorder(Color(uiColor: FlightCategory.mark(field.flightCategory)), lineWidth: 2.5).frame(width: 12, height: 12)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 HStack(spacing: WingtipSpace.sm) {
                     Text(field.ident).font(.headline)
                     if withoutColour, let category = field.flightCategory { Text(category).font(.caption.weight(.semibold)).foregroundStyle(.secondary) }
@@ -321,7 +321,7 @@ struct NearestRow: View {
                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
                 Text(Format.distance(field.distanceNm, decimals: 0)).font(.body.monospacedDigit())
                 Text("\(Format.heading(bearing))T").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
             }

@@ -287,6 +287,9 @@ run_area() {
       python3 "$here/scripts/ci/file_sizes.py" "${base[@]+"${base[@]}"}"
       # Every version the repo states is .tool-versions' (seconds).
       "$here/scripts/build/toolchain.sh" --check
+      # No raw colour, type size, padding or corner outside the design
+      # tokens, past the allow-list (seconds).
+      python3 "$here/scripts/ci/brand_guard.py"
       # No unused Python (vulture, with its list of what it cannot see used).
       "$here/scripts/ci/dead_python.sh"
       ;;

@@ -69,7 +69,7 @@ struct AircraftView: View {
                                     fly()
                                 } label: {
                                     HStack {
-                                        VStack(alignment: .leading, spacing: 2) {
+                                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                             Text(airplane.tailNumber).font(.headline.monospaced())
                                             Text("\(airplane.typeDesignator) · \(Format.speed(airplane.cruiseTasKt)) · \(Format.number(airplane.fuelBurnGph, decimals: 1)) gal/h")
                                                 .font(.footnote).foregroundStyle(.secondary)
@@ -99,7 +99,7 @@ struct AircraftView: View {
                     }
                     ForEach(profiles, id: \.name) { profile in
                         HStack {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(profile.type ?? profile.designator ?? profile.name.uppercased()).font(.headline)
                                 Text("\(Format.speed(profile.cruiseTasKt)) · \(Format.number(profile.fuelBurnGph, decimals: 1)) gal/h · ceiling \(Format.altitude(profile.serviceCeilingFt))"
                                     + (profile.usableFuelGal.map { " · \(Format.fuel($0, decimals: 0)) usable" } ?? ""))

@@ -26,6 +26,8 @@ struct DiagramOwnShipView: View {
     @State private var settledScale: CGFloat = 1
     @State private var offset: CGSize = .zero
     @State private var settledOffset: CGSize = .zero
+    /// The white disc behind the airplane, growing with its glyph's text size.
+    @ScaledMetric(relativeTo: .title2) private var disc = 30.0
 
     /// The fix to draw now, nil where it is stale or too coarse: the
     /// engine's `diagram_fix_usable` (AC 120-76D 11.17.2.3, three seconds;
@@ -95,9 +97,9 @@ struct DiagramOwnShipView: View {
                 if let fix, let at = diagram.place(fix), at.onPage {
                     let k = fitted.width / diagram.size.width
                     Image(systemName: fix.trackDeg == nil ? "circle.fill" : "location.north.fill")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(WingtipType.card)
                         .foregroundStyle(.blue)
-                        .background(Circle().fill(.white).frame(width: 30, height: 30))
+                        .background(Circle().fill(.white).frame(width: disc, height: disc))
                         .rotationEffect(.degrees((diagram.graticule?.northDeg ?? 0) + (fix.trackDeg ?? 0)))
                         .position(x: at.x * k, y: at.y * k)
                         .accessibilityLabel(fix.trackDeg.map { "You are here, tracking \(SpokenFigures.degrees($0)) true" } ?? "You are here")

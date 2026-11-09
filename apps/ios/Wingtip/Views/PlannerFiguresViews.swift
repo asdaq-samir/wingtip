@@ -66,7 +66,7 @@ struct DebriefSections: View {
                 ForEach(Array(d.legs.enumerated()), id: \.offset) { _, leg in
                     HStack(alignment: .top, spacing: WingtipSpace.md) {
                         WithinMark(ok: leg.ok)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text("\(leg.from) → \(leg.to)")
                             Text(altitudeLine(leg, d, t)).font(.subheadline).foregroundStyle(.secondary)
                             if let course = courseLine(leg, t) { Text(course).font(.subheadline).foregroundStyle(.secondary) }
@@ -78,7 +78,7 @@ struct DebriefSections: View {
                 ForEach(Array(d.passes.enumerated()), id: \.offset) { _, pass in
                     HStack(alignment: .top, spacing: WingtipSpace.md) {
                         if let ok = pass.ok { WithinMark(ok: ok) } else { Image(systemName: "circle").foregroundStyle(.secondary).accessibilityHidden(true) }
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(pass.name)
                             Text(passLine(pass)).font(.subheadline).foregroundStyle(.secondary)
                         }
@@ -213,7 +213,7 @@ struct DiversionDrillView: View {
                     ForEach(fields) { field in
                         Button { chosen = field.ident } label: {
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text("\(field.ident) · \(field.name)").foregroundStyle(.primary)
                                     Text([field.longestRunwayFt.map { "\(Format.altitude(Double($0))) runway" } ?? "no runway length",
                                           field.flightCategory ?? "no weather report"].joined(separator: " · "))
@@ -361,7 +361,7 @@ struct HoldingView: View {
                     }
                     // Within 5° of a sector's line, either entry (AIM 5-3-8).
                     if let either = answer.eitherName {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text("Or \(either.lowercased())")
                             Text("Within 5° of the line between the two").font(.subheadline).foregroundStyle(.secondary)
                         }
@@ -461,7 +461,7 @@ struct HoldDiagram: View {
             let labels: [(String, Double)] = turns == "right"
                 ? [("parallel", 52), ("teardrop", 322), ("direct", 205)] : [("parallel", 308), ("teardrop", 38), ("direct", 155)]
             for (name, deg) in labels {
-                context.draw(Text(Self.names[name] ?? name).font(.system(size: 12, weight: name == entry ? .bold : .regular)).foregroundStyle(.secondary),
+                context.draw(Text(Self.names[name] ?? name).font(WingtipType.tabBar.weight(name == entry ? .bold : .regular)).foregroundStyle(.secondary),
                              at: at(fx, fy, 92, deg))
             }
 
@@ -498,7 +498,7 @@ struct HoldDiagram: View {
             chevron.move(to: CGPoint(x: fx - 6, y: fy + len - 30)); chevron.addLine(to: CGPoint(x: fx, y: fy + len - 42)); chevron.addLine(to: CGPoint(x: fx + 6, y: fy + len - 30))
             context.stroke(chevron, with: .color(.primary.opacity(0.55)), lineWidth: 1.5)
             context.fill(Path(ellipseIn: CGRect(x: fx - 5, y: fy - 5, width: 10, height: 10)), with: .color(.primary))
-            context.draw(Text("Fix").font(.system(size: 12)), at: CGPoint(x: fx - side * 10, y: fy - 8), anchor: turns == "right" ? .trailing : .leading)
+            context.draw(Text("Fix").font(WingtipType.tabBar), at: CGPoint(x: fx - side * 10, y: fy - 8), anchor: turns == "right" ? .trailing : .leading)
 
             // The way in, dashed, with its arrowhead at the fix's end.
             let a = at(fx, fy, 128, from), b = at(fx, fy, 30, from)

@@ -175,7 +175,7 @@ struct AirplaneCard: View {
                     // Its flight number's scheduled route, not the flight
                     // plan filed, which the FAA does not publish openly.
                     Section(title: "Scheduled Route") {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(route.airports.map(\.ident).joined(separator: " → ")).font(.headline)
                             Text([route.airports.compactMap { $0.location ?? $0.name }.joined(separator: " to "),
                                   route.plausible == false ? "not where it is flying now" : nil].compactMap { $0 }.joined(separator: " · "))
@@ -346,7 +346,7 @@ struct PastFlightRow: View {
     }
 
     private func end(_ ident: String, _ place: String?, _ when: String?, trailing: Bool) -> some View {
-        VStack(alignment: trailing ? .trailing : .leading, spacing: 1) {
+        VStack(alignment: trailing ? .trailing : .leading, spacing: WingtipSpace.xxs) {
             Text(ident).font(.headline)
             if let place { Text(place).font(.footnote).foregroundStyle(.secondary).lineLimit(1) }
             if let when { Text(when).font(.footnote) }
@@ -479,7 +479,7 @@ struct FAARecordSection: View {
     var body: some View {
         Section(title: "FAA Registration") {
             if let owner = faa.owner {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     Text("Registered to").font(.subheadline.weight(.semibold))
                     Text([owner, faa.ownerType, [faa.city, faa.state].compactMap { $0 }.joined(separator: ", ").nonEmpty,
                           (faa.coOwners ?? 0) > 0 ? "and \(faa.coOwners!) more" : nil, faa.fractional == true ? "fractional" : nil]

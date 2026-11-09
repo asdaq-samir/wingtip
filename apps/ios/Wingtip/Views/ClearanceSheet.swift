@@ -359,7 +359,7 @@ struct ClearanceSheet: View {
                 text = t.text
                 following = false
             } label: {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     Text(t.text).foregroundStyle(t.forUs ? Color.accentColor : Color.primary).fontWeight(t.forUs ? .semibold : .regular)
                     Text(t.at, style: .time).font(.caption).foregroundStyle(.secondary)
                 }
