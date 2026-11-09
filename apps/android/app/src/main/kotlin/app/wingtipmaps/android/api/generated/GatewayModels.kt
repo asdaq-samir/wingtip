@@ -7,7 +7,7 @@ import kotlinx.serialization.json.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 
-typealias StreamingResponseBody = HashMap<String, JsonElement?>
+typealias StreamingResponseBody = JsonElement?
 
 @Serializable
 data class AccountExport (
@@ -1096,7 +1096,7 @@ data class SaveFlightRequest (
     val picks: String? = null,
     val plannedFor: String? = null,
     val risk: RiskAssessmentDto? = null,
-    val stops: List<String?>? = null,
+    val stops: List<String>? = null,
     val totalDistanceNm: Double? = null,
     val totalEteMin: Double? = null,
     val totalFuelGal: Double? = null

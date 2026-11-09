@@ -808,7 +808,7 @@ struct GWSaveFlightRequest: Codable, Equatable, Sendable {
     var picks: String?
     var plannedFor: String?
     var risk: GWRiskAssessmentDto?
-    var stops: [String?]?
+    var stops: [String]?
     var totalDistanceNm, totalEteMin, totalFuelGal: Double?
 }
 
@@ -919,5 +919,5 @@ struct GWWatchFlightRequest: Codable, Equatable, Sendable {
     var departAt: String
 }
 
-typealias GWStreamingResponseBody = [String: JSONValue]
+typealias GWStreamingResponseBody = JSONValue
 
