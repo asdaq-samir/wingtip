@@ -340,6 +340,7 @@ class OwnShip private constructor(private val context: Context) {
  */
 class OwnShipService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        running = true
         val notification = Notifications.ownShip(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ServiceCompat.startForeground(this, Notifications.OWN_SHIP_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
@@ -351,5 +352,18 @@ class OwnShipService : Service() {
         return START_NOT_STICKY
     }
 
+    override fun onDestroy() {
+        running = false
+        super.onDestroy()
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
+
+    companion object {
+        /** Whether the service is up, so its notification may be changed
+         *  in place (LiveFlight's Live Update) and is never posted again
+         *  once the service has gone with it. Main thread only. */
+        var running = false
+            private set
+    }
 }

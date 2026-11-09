@@ -20,6 +20,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16's Live Updates (notify/LiveFlight.kt): own ship's
+         notification promoted to the status bar's chip and the top of the
+         shade while flying a route, as the iPhone's Live Activity is. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <!-- The ATC copilot (atc/): the radio listened to through the phone's
          speech recognizer while flying, with the pilot's leave (Setup's
          ATC, off until turned on), kept with the screen off by a
