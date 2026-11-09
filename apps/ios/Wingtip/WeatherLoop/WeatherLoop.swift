@@ -120,16 +120,25 @@ final class WeatherLoop {
     }
 
     /// Told by the map's layer once the frames in view have loaded: the
-    /// loop plays by itself the first time, unless Reduce Motion is on.
+    /// loop plays by itself the first time, unless Reduce Motion is on or
+    /// the system asks apps to do less (Self.savingResources).
     func loaded() {
         guard !ready else { return }
         ready = true
         guard !started, frames.count >= 2 else { return }
         started = true
-        if !UIAccessibility.isReduceMotionEnabled {
+        if !UIAccessibility.isReduceMotionEnabled, !Self.savingResources {
             index = 0
             play()
         }
+    }
+
+    /// iOS 27's ask to scale back live effects (UIApplication's
+    /// systemPrefersReducedResourceUsage): the loop then waits for Play
+    /// rather than starting by itself, the newest frame shown. Never so
+    /// before iOS 27.
+    private static var savingResources: Bool {
+        if #available(iOS 27.0, *) { UIApplication.shared.systemPrefersReducedResourceUsage } else { false }
     }
 
     func toggle() {

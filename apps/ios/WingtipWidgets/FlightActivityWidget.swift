@@ -34,9 +34,7 @@ struct FlightActivityWidget: Widget {
             } compactLeading: {
                 Glyph(lines: lines)
             } compactTrailing: {
-                Text(lines.compact)
-                    .font(WingtipType.note.monospacedDigit().weight(.semibold))
-                    .accessibilityLabel(lines.nextSentence)
+                CompactFigure(lines: lines)
             } minimal: {
                 Glyph(lines: lines)
                     .accessibilityLabel(lines.spoken)
@@ -151,6 +149,33 @@ private struct Extras: View {
             }
         }
     }
+}
+
+/// The compact island's figure: on iOS 27 its short form when the system
+/// draws the island narrow (FlightActivityLines.compactNarrow), the usual
+/// one otherwise and before iOS 27.
+private struct CompactFigure: View {
+    let lines: FlightActivityLines
+
+    var body: some View {
+        Group {
+            if #available(iOS 27.0, *) {
+                NarrowAwareFigure(lines: lines)
+            } else {
+                Text(lines.compact)
+            }
+        }
+        .font(WingtipType.note.monospacedDigit().weight(.semibold))
+        .accessibilityLabel(lines.nextSentence)
+    }
+}
+
+@available(iOS 27.0, *)
+private struct NarrowAwareFigure: View {
+    let lines: FlightActivityLines
+    @Environment(\.isDynamicIslandLimitedInWidth) private var narrow
+
+    var body: some View { Text(narrow ? lines.compactNarrow : lines.compact) }
 }
 
 /// The island's glyph: the airplane in the map's blue, or the copilot's
