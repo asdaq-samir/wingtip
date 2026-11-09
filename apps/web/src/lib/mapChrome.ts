@@ -91,7 +91,7 @@ export const useConsoleOpen = create<{ open: boolean; setOpen: (open: boolean) =
  * blurred, as iOS's materials are -- the panel, the map's buttons. On
  * the popover's grey in the dark theme, so it stands off a dark chart.
  */
-export const MATERIAL = "bg-background/85 backdrop-blur-xl backdrop-saturate-150 dark:bg-popover/90";
+export const MATERIAL = "bg-background/85 backdrop-blur-xl backdrop-saturate-150 dark:bg-popover/90 solid:bg-background solid:backdrop-blur-none solid:backdrop-saturate-100 dark:solid:bg-popover";
 
 /**
  * iOS 26's Liquid Glass, for what floats over the chart at rest: the
@@ -137,7 +137,7 @@ export const DIALOG_CORNERS = "rounded-[var(--radius-dialog)]";
  *  sheet consolidation, 2026-10-27): the page a tenth darker and lightly
  *  blurred, half in the dark theme, where the dialogs dimmed it a fifth
  *  or a half and the sheets a tenth. */
-export const DIM = "bg-black/10 dark:bg-black/50 supports-backdrop-filter:backdrop-blur-xs";
+export const DIM = "bg-black/10 dark:bg-black/50 supports-backdrop-filter:backdrop-blur-xs solid:backdrop-blur-none";
 /** The panel at rest, its tabs and the route's figures: a rectangle with
  *  round corners, at the pilot's ask ("more of a rectangle"), where it was
  *  a capsule, its ends half its height round. */

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api/client";
+import { announce } from "../../lib/announce";
 import { useFlying } from "../../lib/mapChrome";
 import { useCopilotFlight } from "../../lib/copilot/flight";
 import { copilotVoice } from "../../lib/copilot/voice";
@@ -90,6 +91,10 @@ export function useCopilot(): { message: CopilotMessage | null; dismiss: () => v
         if (mode === "spoken") {
           if (first.level === "warning") copilotVoice().interrupt(first.say);
           else copilotVoice().say(first.say);
+        } else {
+          // Told to a screen reader instead, once, in the words a voice
+          // reads (lib/announce): the banner arriving whole is not.
+          announce(first.say, first.level === "warning" ? "assertive" : "polite");
         }
       }
     };

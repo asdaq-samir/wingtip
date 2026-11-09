@@ -41,8 +41,10 @@ export default function AlertsBanner() {
   return (
     <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-alerts-banner="">
       <Alert
-        // A warning is said at once to a screen reader; a caution as it can.
-        role={level === "warning" ? "alert" : "status"}
+        // Said to a screen reader once each as it comes (useSpokenAlerts,
+        // lib/announce), not as a live region: the countdown under the
+        // name changes every few seconds and would be read again each time.
+        role="region" aria-label="Alerts ahead"
         className={cn(
           "flex min-h-11 gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
           // Opened, the sign by the first line rather than the middle.

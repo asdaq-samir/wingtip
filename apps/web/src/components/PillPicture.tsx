@@ -5,7 +5,7 @@ import type { PillHead } from "../lib/openCards";
 /** The round buttons on the pill over a card's picture: a light pane of
  *  glass with the glyph white, which reads on the shade below whatever
  *  the picture, as the head's dark ones do on the picture itself. */
-export const ON_PILL_PICTURE = "bg-white/20 text-white backdrop-blur-md hover:bg-white/30 hover:text-white dark:bg-white/20 dark:hover:bg-white/30";
+export const ON_PILL_PICTURE = "bg-white/20 text-white backdrop-blur-md hover:bg-white/30 hover:text-white dark:bg-white/20 dark:hover:bg-white/30 solid:bg-black/75 solid:backdrop-blur-none dark:solid:bg-black/75";
 
 /**
  * Behind the pill while an airport's or an airplane's card is in it, at

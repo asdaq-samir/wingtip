@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import formats from "../fixtures/formats.json";
 import {
   bearing, duration, feet, feetRange, flightLevel, gal, hm, knots, magneticVariation, mapLevel, nm, pounds,
-  windCorrection, zuluTime,
+  spokenAltitude, spokenDistance, spokenDuration, spokenFuel, spokenHeading, spokenHeadingMagnetic, spokenHeadingTrue,
+  spokenSpeed, spokenZulu, windCorrection, zuluTime,
 } from ".";
 
 /**
@@ -29,6 +30,15 @@ const FORMATTERS: Record<string, (x: Input) => string> = {
   weight: x => pounds(n(x)),
   windCorrection: x => windCorrection(n(x)),
   variation: x => magneticVariation(n(x)),
+  spokenAltitude: x => spokenAltitude(x as number | null),
+  spokenHeading: x => spokenHeading(n(x)),
+  spokenHeadingMagnetic: x => spokenHeadingMagnetic(n(x)),
+  spokenHeadingTrue: x => spokenHeadingTrue(n(x)),
+  spokenDistance: x => spokenDistance(x as number | null),
+  spokenSpeed: x => spokenSpeed(x as number | null),
+  spokenFuel: x => spokenFuel(x as number | null),
+  spokenDuration: x => spokenDuration(n(x)),
+  spokenZulu: x => spokenZulu(new Date(x as string)),
 };
 
 const table = Object.entries(formats).filter(([name]) => !name.startsWith("$")) as

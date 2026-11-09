@@ -37,7 +37,7 @@ export default function FirstFlight({ routed, onPlan, onPlanned }: {
       // map's buttons stand off it), in from the screen's sides as the
       // sheet is; one column on a phone, the sheet's width beside it.
       className={cn(
-        "absolute right-3 bottom-[calc(max(env(safe-area-inset-bottom),var(--sheet-cover,var(--map-inset-bottom,0px)))+0.75rem)] left-[calc(0.75rem+var(--map-inset-left,0px))] z-[1000] mx-auto flex max-w-md flex-col gap-3 rounded-[18px] bg-card/95 p-4 text-card-foreground shadow-[0_2px_14px_rgb(0_0_0/0.14)] backdrop-blur-xl",
+        "absolute right-3 bottom-[calc(max(env(safe-area-inset-bottom),var(--sheet-cover,var(--map-inset-bottom,0px)))+0.75rem)] left-[calc(0.75rem+var(--map-inset-left,0px))] z-[1000] mx-auto flex max-w-md flex-col gap-3 rounded-[18px] bg-card/95 p-4 text-card-foreground shadow-[0_2px_14px_rgb(0_0_0/0.14)] backdrop-blur-xl solid:bg-card solid:backdrop-blur-none",
       )}
     >
       <div className="flex items-center gap-2.5">

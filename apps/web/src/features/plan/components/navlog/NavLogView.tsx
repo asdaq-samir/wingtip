@@ -712,7 +712,7 @@ export default function NavLogView({
       </TableCaption>
       {/* Over the rows as they scroll, the sheet's own frosted glass
           rather than a band of white across it. */}
-      <TableHeader className="sticky top-[var(--section-tabs,0px)] z-10 bg-background/75 backdrop-blur-xl print:static print:bg-transparent print:backdrop-blur-none dark:bg-popover/75">
+      <TableHeader className="sticky top-[var(--section-tabs,0px)] z-10 bg-background/75 backdrop-blur-xl solid:bg-background solid:backdrop-blur-none dark:solid:bg-popover print:static print:bg-transparent print:backdrop-blur-none dark:bg-popover/75">
         {table.getHeaderGroups().map(headerGroup => (
           <TableRow key={headerGroup.id}>
             {headerGroup.headers.map(header => (

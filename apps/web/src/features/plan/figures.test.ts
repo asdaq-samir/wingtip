@@ -46,6 +46,12 @@ describe("tripFigures", () => {
     expect(tripFigures(input, false).map(f => f.value)).toEqual(["KLAS", "323.6", "2h 45m", "30.1"]);
   });
 
+  it("says each figure in full words to a screen reader, the exact one where the shown is rounded", () => {
+    const said = ["To KLAS", "Distance, three hundred twenty-three point six nautical miles", "Time en route, two hours forty-five minutes", "Fuel required, thirty point one gallons"];
+    expect(tripFigures(input, false).map(f => f.said)).toEqual(said);
+    expect(tripFigures(input, true).map(f => f.said)).toEqual(said);
+  });
+
   it("says the arrival's clock time in the time en route's place when asked", () => {
     const figures = tripFigures({ ...input, depart: "2026-01-01T14:22:00Z", arrival: true }, false);
     expect(figures[2]!.name).toBe("ETA");

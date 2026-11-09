@@ -9,6 +9,7 @@ import { setAirportWeather, setOverlayExclusion, setSelectedAirport } from "../.
 import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
+import MapMarksList from "./MapMarksList";
 
 const SELECTED = "airport-selected";
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
@@ -119,5 +120,7 @@ function TileAirports(props: Props) {
     const use = p.military === "military" ? "military" : p.use === "private" ? "private" : "";
     return { ident: p.ident, chip: true, space: "", use, weather: known.current.get(String(p.ident)) ?? colourOf(null) };
   });
-  return null;
+  // The same fields for a screen reader and a keyboard, which cannot see
+  // the canvas's symbols: the reporting ones in sight, each opening its card.
+  return <MapMarksList fields={inView ?? []} onSelect={props.onSelect} />;
 }

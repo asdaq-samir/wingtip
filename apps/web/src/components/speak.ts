@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { AheadAlert } from "../lib/api/types";
 import { usePreferences } from "../lib/preferences";
 import { say } from "../lib/speech";
+import { announce } from "../lib/announce";
 import { alertTitle, alertWhen, type Ahead } from "../lib/map/position/ahead";
 import { grouped } from "../lib/format";
 
@@ -46,8 +47,13 @@ export function toSay(alerts: AheadAlert[], said: ReadonlySet<string>): { words:
 }
 
 let said = new Set<string>();
+let announced = new Set<string>();
 
-/** Says each alert ahead as it comes, while the pilot has them spoken. */
+/** Says each alert ahead as it comes, while the pilot has them spoken;
+ *  and, with the voice off, tells a screen reader the same words once
+ *  each (lib/announce), a warning at once and a caution as it can, as the
+ *  banner's countdown is not a live region that would be read again at
+ *  every change. */
 export function useSpokenAlerts(ahead: Ahead | null) {
   const on = usePreferences(s => s.speakAlerts);
   const alerts = ahead?.alerts;
@@ -56,10 +62,17 @@ export function useSpokenAlerts(ahead: Ahead | null) {
     // On the ground, or looking at nothing: the next flight starts afresh.
     if (!alerts) {
       said = new Set();
+      announced = new Set();
+      return;
+    }
+    // The voice says it already; a reader would say it over the voice.
+    if (!on) {
+      const next = toSay(alerts, announced);
+      announced = next.said;
+      if (next.words) announce(next.words, alerts.some(a => a.level === "warning") ? "assertive" : "polite");
       return;
     }
     // Turned on in the air, what is ahead then is said at once.
-    if (!on) return;
     const next = toSay(alerts, said);
     said = next.said;
     if (next.words) say(next.words);

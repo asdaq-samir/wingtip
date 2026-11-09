@@ -57,7 +57,10 @@ export default function CopilotBanner() {
   return (
     <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-copilot-banner={message.kind}>
       <Alert
-        role={message.level === "warning" ? "alert" : "status"}
+        // Told to a screen reader once by useCopilot (lib/announce): a
+        // live region arriving with its words in it is not read by every
+        // reader, and the message is read again with each look.
+        role="region" aria-label="Copilot"
         className={cn(
           "flex min-h-11 gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
           open ? "items-start *:[svg]:mt-[0.6rem]" : "items-center", INK[message.level],
