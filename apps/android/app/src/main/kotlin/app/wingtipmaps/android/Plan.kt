@@ -126,26 +126,21 @@ class Plan(app: Application) : AndroidViewModel(app) {
     }
 
     /** A Route Leg's Remove: the stop taken out of the route. */
-    fun removeStop(ident: String) {
-        val s = _state.value
-        undoable(RouteUndo.Kind.REMOVED, ident)
-        plan(s.dep, s.dest, RouteEdits.without(s.stops, ident))
-    }
+    fun removeStop(ident: String) = restop(RouteUndo.Kind.REMOVED, ident, RouteEdits.without(_state.value.stops, ident))
 
     /** A point's Move Up and Move Down (RouteEdits.moved). */
-    fun moveStop(ident: String, by: Int) {
-        val s = _state.value
-        val stops = RouteEdits.moved(s.stops, ident, by) ?: return
-        undoable(RouteUndo.Kind.MOVED, ident)
-        plan(s.dep, s.dest, stops)
-    }
+    fun moveStop(ident: String, by: Int) = restop(RouteUndo.Kind.MOVED, ident, RouteEdits.moved(_state.value.stops, ident, by))
 
     /** A point's Add a Stop After (RouteEdits.insertedAfter). */
-    fun addStopAfter(after: String, ident: String) {
-        val s = _state.value
-        val stops = RouteEdits.insertedAfter(RouteEdits.Route(s.dep, s.stops, s.dest), after, ident) ?: return
-        undoable(RouteUndo.Kind.ADDED, ident.trim().uppercase())
-        plan(s.dep, s.dest, stops)
+    fun addStopAfter(after: String, ident: String) = _state.value.let { s ->
+        restop(RouteUndo.Kind.ADDED, ident.trim().uppercase(), RouteEdits.insertedAfter(RouteEdits.Route(s.dep, s.stops, s.dest), after, ident))
+    }
+
+    /** The route's stops changed by an edit, kept for its Undo first. */
+    private fun restop(kind: RouteUndo.Kind, ident: String, stops: List<String>?) {
+        val s = _state.value.takeIf { stops != null } ?: return
+        undoable(kind, ident)
+        plan(s.dep, s.dest, stops!!)
     }
 
     /** The last edit that changed the route, for its Undo row. */
