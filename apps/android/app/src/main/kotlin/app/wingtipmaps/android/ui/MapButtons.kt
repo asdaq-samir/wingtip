@@ -4,9 +4,11 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -54,11 +56,16 @@ fun MapButtons(
     onAsk: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     // Material 3 Expressive's floating toolbar round the buttons, placed
     // its inset further out so the buttons stay where they were; each
     // button's corners draw in under the finger (rememberPressShape).
-    VerticalFloatingToolbar(modifier.padding(top = top + WingtipSpace.Sm - ToolbarInset, end = WingtipSpace.Sm - ToolbarInset)) {
+    // Under the status bar, and clear of a cutout or a navigation bar at
+    // the side in landscape (edge to edge).
+    VerticalFloatingToolbar(
+        modifier
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.End))
+            .padding(top = WingtipSpace.Sm - ToolbarInset, end = WingtipSpace.Sm - ToolbarInset),
+    ) {
         val ownShipTouch = remember { MutableInteractionSource() }
         val askTouch = remember { MutableInteractionSource() }
         val state = stringResource(
@@ -104,9 +111,10 @@ fun MapButtons(
  */
 @Composable
 fun OwnShipNote(approximate: Boolean, onAskAgain: () -> Unit, onClose: () -> Unit, modifier: Modifier = Modifier) {
-    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Surface(
-        modifier = modifier.padding(top = top + WingtipSpace.Sm, start = WingtipSpace.Sm, end = WingtipSize.TapTarget + WingtipSpace.Lg),
+        modifier = modifier
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+            .padding(top = WingtipSpace.Sm, start = WingtipSpace.Sm, end = WingtipSize.TapTarget + WingtipSpace.Lg),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
