@@ -34,7 +34,22 @@ struct RouteBoxRow: View {
     /// cleared, the planner's again.
     private var airplane: some View {
         HStack(spacing: WingtipSpace.sm) {
-            Text(plan.tail ?? plan.aircraft.uppercased()).font(WingtipType.row.monospaced())
+            if let name = plan.airplaneName {
+                Text(name).font(WingtipType.row.monospaced())
+            } else {
+                // No airplane picked: the chip asks for one, tinted as a
+                // tap is, rather than flying a type unasked (docs/decisions/0011).
+                Button { open(.airplane) } label: {
+                    Label("Airplane", systemImage: WingtipIcon.tabAirplane)
+                }
+                .font(WingtipType.row)
+                // Its own tap in the row, the tint's blue, and a 44-point
+                // area round the words without the chip growing (HIG).
+                .buttonStyle(.borderless)
+                .contentShape(Rectangle().inset(by: -12))
+                .accessibilityLabel("No airplane picked")
+                .accessibilityHint("Pick one for the time, fuel and groundspeed")
+            }
             TextField(Format.cruiseAltitude(plan.altitudeFt), text: $altitude)
                 .textFieldStyle(.roundedBorder).keyboardType(.numberPad).font(WingtipType.row.monospaced())
                 .frame(width: altitudeWidth).multilineTextAlignment(.trailing)

@@ -31,8 +31,22 @@ struct AircraftView: View {
                             .buttonStyle(.borderedProminent)
                             .disabled((try? Registered.isNNumber(typed.uppercased())) != true)
                     }
+                    // No airplane: the route's own figures alone, none
+                    // assumed (docs/decisions/0011); the plan's start.
+                    Button { plan.flyNoAirplane() } label: {
+                        HStack {
+                            Text("No Airplane")
+                            Spacer()
+                            if !plan.airplaneChosen && plan.tail == nil {
+                                Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Flying now")
+                            }
+                        }
+                    }
+                    .foregroundStyle(.primary)
                     if let tail = plan.tail {
-                        LabeledContent("Flying", value: "\(tail) on \(plan.aircraft.uppercased())\(plan.figures.cruiseTasKt == nil ? "" : ", your figures")")
+                        LabeledContent("Flying", value: plan.airplaneChosen
+                            ? "\(tail) on \(plan.aircraft.uppercased())\(plan.figures.cruiseTasKt == nil ? "" : ", your figures")"
+                            : "\(tail), a type the planner has no figures for")
                         // The figures the planner flies it on, the pilot's to
                         // set from the handbook, or read off a photo of it.
                         NavigationLink("Planning Figures") { AirplaneFiguresView().closesBack() }

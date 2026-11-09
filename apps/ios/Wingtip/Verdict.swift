@@ -90,12 +90,29 @@ final class Verdict {
         do {
             let answer = try await Planner.goNoGo(try ask(for: plan))
             guard !Task.isCancelled else { return }
-            self.answer = answer
+            self.answer = Self.shown(answer, airplane: plan.airplaneChosen)
             problem = nil
         } catch {
             guard !Task.isCancelled else { return }
             problem = error.localizedDescription
         }
+    }
+
+    /// The findings that need an airplane's figures: the fuel, the
+    /// runways' distances and crosswind limits, the weight and balance
+    /// (the web's AIRPLANE_ITEMS).
+    nonisolated static let airplaneItems: Set<String> = ["fuel", "runways", "balance"]
+
+    /// The planner's answer as the Brief shows it: with no airplane picked
+    /// those findings and the loading are left out, not judged on an
+    /// airplane assumed (docs/decisions/0011).
+    nonisolated static func shown(_ answer: GoNoGoAnswer, airplane: Bool) -> GoNoGoAnswer {
+        guard !airplane else { return answer }
+        var shown = answer
+        shown.items = answer.items.filter { !airplaneItems.contains($0.key) }
+        shown.loading = nil
+        shown.balance = nil
+        return shown
     }
 
     /// What a new ask turns on: the plan's route and times, and every

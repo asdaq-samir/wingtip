@@ -35,10 +35,16 @@ struct FiguresStrip: View {
         let asked = Result { try Self.fuel(plan.totals) }
         let fuel = (try? asked.get()) ?? StripFuel(requiredGal: nil, short: [])
         let refused = (try? asked.get()) == nil
-        let warn = !fuel.short.isEmpty || refused
+        let warn = plan.airplaneChosen && (!fuel.short.isEmpty || refused)
         HStack {
             stripFigure("TO", plan.routed ? plan.dest : "—")
-            if let flying {
+            if !plan.airplaneChosen {
+                // No airplane picked: the route's own figures, To and Dist;
+                // the time and the fuel are an airplane's, and none is
+                // assumed (docs/decisions/0011).
+                let distance = flying?.leftNm ?? plan.totals?.distanceNm ?? plan.course?.distanceNm
+                stripFigure("DIST", distance.map { Format.distance($0) } ?? "—", spoken: distance.map(SpokenFigures.nauticalMiles))
+            } else if let flying {
                 stripFigure("DIST", Format.distance(flying.leftNm), spoken: SpokenFigures.nauticalMiles(flying.leftNm))
                 stripFigure("ETE", flying.minutes.map(Format.duration) ?? "—", spoken: flying.minutes.map(SpokenFigures.minutes))
                 stripFigure("FUEL", flying.fuelGal.map { Format.fuel($0) } ?? "—", spoken: flying.fuelGal.map(SpokenFigures.gallons), warn: warn)

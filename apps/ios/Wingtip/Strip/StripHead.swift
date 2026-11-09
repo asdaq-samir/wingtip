@@ -18,7 +18,7 @@ struct StripHead: View {
     let onFile: () -> Void
 
     private var line: String {
-        StripData.headLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.tail ?? plan.aircraft.uppercased(),
+        StripData.headLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
                            cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: nil)
     }
 

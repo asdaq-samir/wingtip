@@ -11,6 +11,9 @@ struct Kept: Codable, Equatable, Sendable {
     var dest: String
     var stops: [String]
     var aircraft: String
+    /// The airplane's N-number where one was picked; none in a plan kept
+    /// before it was kept.
+    var tail: String?
     var ownAltitudeFt: Double?
     var altitudeChoice: String?
     var course: Course?

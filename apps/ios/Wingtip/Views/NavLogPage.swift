@@ -36,9 +36,14 @@ struct LegRow: View {
             VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 Text(leg.to).font(WingtipType.title)
                 HStack(spacing: WingtipSpace.md) {
-                    // No heading without an airplane: the planner sends
-                    // none, and the row shows the figures it has.
-                    if let heading = leg.magneticHeadingDeg { Text(Format.heading(heading)) }
+                    // No heading without an airplane (the wind's correction
+                    // is at its speed): the leg's magnetic course in its
+                    // place, said as one (docs/decisions/0011).
+                    if let heading = leg.magneticHeadingDeg {
+                        Text(Format.heading(heading))
+                    } else {
+                        Text("CRS \(Format.heading(leg.magneticCourseDeg))")
+                    }
                     if let gs = leg.groundspeedKt { Text(Format.speed(gs)) }
                     if let wind = leg.wind {
                         Text("\(Format.heading(wind.windDirTrueDeg)) \(Format.speed(wind.windSpeedKt))")
@@ -67,7 +72,11 @@ struct LegRow: View {
     /// nautical miles, twelve minutes, one point four gallons".
     private var spoken: String {
         var parts = ["To \(leg.to)"]
-        if let heading = leg.magneticHeadingDeg { parts.append("heading \(SpokenFigures.degrees(heading))") }
+        if let heading = leg.magneticHeadingDeg {
+            parts.append("heading \(SpokenFigures.degrees(heading))")
+        } else {
+            parts.append("course \(SpokenFigures.degrees(leg.magneticCourseDeg))")
+        }
         if let gs = leg.groundspeedKt { parts.append(SpokenFigures.knots(gs)) }
         if let wind = leg.wind {
             parts.append("wind \(SpokenFigures.degrees(wind.windDirTrueDeg)) at \(SpokenFigures.number(wind.windSpeedKt))")

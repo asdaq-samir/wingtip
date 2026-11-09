@@ -37,6 +37,8 @@ struct ChecklistsTests {
 
     @Test func theAirplaneIsItsNNumberElseItsType() throws {
         let plan = Plan()
+        #expect(LocalChecklists.airplane(of: plan) == "")
+        plan.aircraft = "c172"
         #expect(LocalChecklists.airplane(of: plan) == "C172")
         plan.tail = "N3429J"
         #expect(LocalChecklists.airplane(of: plan) == "N3429J")

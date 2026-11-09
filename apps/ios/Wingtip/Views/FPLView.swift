@@ -15,7 +15,7 @@ struct FPLView: View {
 
     enum Field { case dep, dest, altitude }
     /// FPL's own pages.
-    enum Page: String { case profile, brief, navLog = "navlog", flights }
+    enum Page: String { case profile, brief, navLog = "navlog", flights, airplane }
     @State private var altitude = ""
     /// The fields' widths follow the type size, so an ident still fits at
     /// the larger sizes.
@@ -108,9 +108,13 @@ struct FPLView: View {
                         HStack {
                             stripFigure("TO", plan.dest)
                             stripFigure("DIST", Format.distance(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
-                            stripFigure("ETE", totals.eteMin.map(Format.duration) ?? Format.none, spoken: totals.eteMin.map(SpokenFigures.minutes))
-                            stripFigure("FUEL", Format.fuel(totals.fuelGal), spoken: totals.fuelGal.map(SpokenFigures.gallons),
-                                        warn: (totals.fuelMarginGal ?? 0) < 0)
+                            // Time and fuel are an airplane's: none picked,
+                            // none shown (docs/decisions/0011).
+                            if plan.airplaneChosen {
+                                stripFigure("ETE", totals.eteMin.map(Format.duration) ?? Format.none, spoken: totals.eteMin.map(SpokenFigures.minutes))
+                                stripFigure("FUEL", Format.fuel(totals.fuelGal), spoken: totals.fuelGal.map(SpokenFigures.gallons),
+                                            warn: (totals.fuelMarginGal ?? 0) < 0)
+                            }
                         }
                         .accessibilityElement(children: .combine)
                         // As the sheet's strip: four across stop at this size.
@@ -156,6 +160,7 @@ struct FPLView: View {
                     case .brief: BriefView()
                     case .flights: FlightsView()
                     case .navLog: NavLogPage()
+                    case .airplane: AircraftView()
                     case nil: FlightPage(name: page)
                     }
                 }

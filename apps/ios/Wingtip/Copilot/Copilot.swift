@@ -65,9 +65,13 @@ final class Copilot {
     /// airplane's figures the fuel and speeds are nil, never assumed.
     static func flight(_ plan: Plan) -> Flight? {
         guard let course = plan.course, course.coordinates.count >= 2, !plan.dest.isEmpty else { return nil }
+        let line = course.coordinates.map { [$0.latitude, $0.longitude] }
+        // No airplane picked: the weather and the areas ahead, and no
+        // fuel or groundspeed message, which would be an assumed airplane's.
+        guard plan.airplaneChosen else { return Flight(dest: plan.dest.uppercased(), line: line) }
         let totals = plan.totals
         let gs = totals.flatMap { t in t.eteMin.flatMap { $0 > 0 ? t.distanceNm / ($0 / 60) : nil } }
-        return Flight(dest: plan.dest.uppercased(), line: course.coordinates.map { [$0.latitude, $0.longitude] },
+        return Flight(dest: plan.dest.uppercased(), line: line,
                       plannedGsKt: gs, tasKt: plan.legs.first?.tasKt, burnGph: plan.legs.first?.fuelBurnGph,
                       fuelGal: totals?.usableFuelGal)
     }

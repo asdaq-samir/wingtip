@@ -113,7 +113,7 @@ struct GoNoGoTests {
         let verdict = Verdict(store: store)
         verdict.setMinimum(.windKt, 20)
         let ask = try verdict.ask(for: plan)
-        #expect(ask.stops == "KMSN" && ask.aircraft == "c172" && ask.altitudeFt == 5500 && ask.altitudeNearest == true)
+        #expect(ask.stops == "KMSN" && ask.aircraft == "none" && ask.altitudeFt == 5500 && ask.altitudeNearest == true)
         #expect(ask.altitudeChoice == "fastest" && ask.minimums?.windKt == 20 && ask.load == nil)
         store.removePersistentDomain(forName: "GoNoGoTests.plan")
     }

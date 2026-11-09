@@ -243,7 +243,7 @@ struct FlightServiceView: View {
         .task {
             status = try? await Gateway.flightService()
             if aircraftId.isEmpty { aircraftId = plan.tail ?? "" }
-            if aircraftType.isEmpty { aircraftType = plan.aircraft.uppercased() }
+            if aircraftType.isEmpty, plan.airplaneChosen { aircraftType = plan.aircraft.uppercased() }
         }
     }
 
@@ -553,6 +553,11 @@ struct Kneeboard: View {
     let aircraft: String
     let totals: Totals?
     let legs: [Leg]
+    /// An airplane picked. Without one each leg's magnetic course takes
+    /// the heading's place (the wind's correction is at an airplane's
+    /// speed), and the groundspeed, time and fuel are left blank, not
+    /// assumed (docs/decisions/0011).
+    var airplane = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: WingtipSpace.sm) {
@@ -565,20 +570,20 @@ struct Kneeboard: View {
             Text(summary).font(.system(size: 9))
             Grid(alignment: .leading, horizontalSpacing: 6, verticalSpacing: 3) {
                 GridRow {
-                    ForEach(["Checkpoint", "Alt", "MH", "Dist", "GS", "ETE", "ETA", "ATA", "Fuel", "Rem"], id: \.self) { Text($0).bold() }
+                    ForEach(["Checkpoint", "Alt", airplane ? "MH" : "MC", "Dist", "GS", "ETE", "ETA", "ATA", "Fuel", "Rem"], id: \.self) { Text($0).bold() }
                 }
                 Divider().gridCellUnsizedAxes(.horizontal)
                 ForEach(Array(legs.enumerated()), id: \.offset) { _, leg in
                     GridRow {
                         Text(leg.to).lineLimit(1)
                         Text(Int(leg.altitudeFt).formatted())
-                        Text(leg.magneticHeadingDeg.map { Format.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
+                        Text((airplane ? leg.magneticHeadingDeg : Optional(leg.magneticCourseDeg)).map { Format.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
                         Text(Format.number(leg.distanceNm, decimals: 1))
-                        Text(leg.groundspeedKt.map { Format.number($0, decimals: 0) } ?? "")
-                        Text(leg.eteMin.map { Format.number($0, decimals: 1) } ?? "")
+                        Text(airplane ? leg.groundspeedKt.map { Format.number($0, decimals: 0) } ?? "" : "")
+                        Text(airplane ? leg.eteMin.map { Format.number($0, decimals: 1) } ?? "" : "")
                         Text("")
                         Text("")
-                        Text(leg.fuelGal.map { Format.number($0, decimals: 1) } ?? "")
+                        Text(airplane ? leg.fuelGal.map { Format.number($0, decimals: 1) } ?? "" : "")
                         Text("")
                     }
                     Divider().gridCellUnsizedAxes(.horizontal)
@@ -602,9 +607,9 @@ struct Kneeboard: View {
         let parts: [String?] = [
             aircraft,
             totals.map { Format.distance($0.distanceNm) },
-            totals?.eteMin.map(Format.duration),
-            totals?.fuelGal.map { Format.fuel($0) },
-            totals?.fuelRequiredGal.map { "(\(Format.number($0, decimals: 1)) with reserve)" },
+            airplane ? totals?.eteMin.map(Format.duration) : nil,
+            airplane ? totals?.fuelGal.map { Format.fuel($0) } : nil,
+            airplane ? totals?.fuelRequiredGal.map { "(\(Format.number($0, decimals: 1)) with reserve)" } : nil,
         ]
         return parts.compactMap { $0 }.joined(separator: " · ")
     }
@@ -612,7 +617,8 @@ struct Kneeboard: View {
     /// The page as a PDF in the temporary folder, for the share sheet.
     @MainActor
     static func pdf(_ plan: Plan) -> URL? {
-        let page = Kneeboard(route: plan.idents.joined(separator: " → "), aircraft: plan.tail ?? plan.aircraft.uppercased(), totals: plan.totals, legs: plan.legs)
+        let page = Kneeboard(route: plan.idents.joined(separator: " → "), aircraft: plan.airplaneName ?? "No airplane", totals: plan.totals, legs: plan.legs,
+                             airplane: plan.airplaneChosen)
         let url = FileManager.default.temporaryDirectory.appending(path: "\(RouteShare.fileName(plan))-nav-log.pdf")
         let renderer = ImageRenderer(content: page)
         var made = false

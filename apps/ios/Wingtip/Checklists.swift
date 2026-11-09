@@ -64,9 +64,10 @@ enum LocalChecklists {
     }
 
     /// The airplane a plan flies, as its checklists are kept: its
-    /// N-number, else its type's profile.
+    /// N-number, else its type's profile; "" with none picked, the
+    /// device's own lists for no airplane in particular.
     @MainActor static func airplane(of plan: Plan) -> String {
-        (plan.tail ?? plan.aircraft).uppercased()
+        (plan.airplaneName ?? "").uppercased()
     }
 
     /// Empty where nothing is written yet: the app starts no list itself.

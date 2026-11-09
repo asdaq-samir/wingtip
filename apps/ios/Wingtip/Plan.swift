@@ -12,9 +12,18 @@ final class Plan {
     var dep = ""
     var dest = ""
     var stops: [String] = []
-    /// The planner's aircraft profile; the airplane by N-number comes in
-    /// phase 3.
-    var aircraft = "c172"
+    /// The planner's aircraft profile, or `noAirplane` until the pilot
+    /// picks one: then the planner gives the route's own figures and none
+    /// that needs an airplane (docs/decisions/0011, the web's NO_AIRPLANE).
+    var aircraft = Plan.noAirplane
+    /// The planner's name for no airplane picked (wingtip.planning.NO_AIRPLANE).
+    nonisolated static let noAirplane = "none"
+    /// Whether an airplane has been picked, so its figures (time, fuel,
+    /// groundspeed, weight and balance) may be shown; none is assumed.
+    var airplaneChosen: Bool { aircraft != Plan.noAirplane }
+    /// The airplane as the chip names it: its N-number, else its type;
+    /// nil with none picked, where the chip asks for one.
+    var airplaneName: String? { tail ?? (airplaneChosen ? aircraft.uppercased() : nil) }
     /// The airplane by its N-number, where one is picked: its type's
     /// profile is `aircraft`, and the pilot's own figures for it, where
     /// set on the gateway, are flown over the type's.
@@ -93,7 +102,7 @@ final class Plan {
     /// (PlannedRoute).
     func keep() {
         guard routed, course != nil, totals != nil else { return }
-        Kept(dep: dep, dest: dest, stops: stops, aircraft: aircraft, ownAltitudeFt: ownAltitudeFt, altitudeChoice: altitudeChoice,
+        Kept(dep: dep, dest: dest, stops: stops, aircraft: aircraft, tail: tail, ownAltitudeFt: ownAltitudeFt, altitudeChoice: altitudeChoice,
              course: course, checkpoints: checkpoints, profile: profile, altitude: altitude, legs: legs, totals: totals,
              briefing: briefing, plannedAt: plannedAt ?? Date()).save()
         PlanHistory.planned(routeState, at: plannedAt ?? Date())
@@ -105,7 +114,9 @@ final class Plan {
         // A UI test launched with -fresh starts with no route, whatever
         // the simulator kept from the last run (WingtipUITests).
         guard !CommandLine.arguments.contains("-fresh"), let kept = Kept.load() else { return }
-        dep = kept.dep; dest = kept.dest; stops = kept.stops; aircraft = kept.aircraft
+        dep = kept.dep; dest = kept.dest; stops = kept.stops
+        (aircraft, tail) = Self.airplane(kept: kept)
+        figures = tail.map { TailFigures.load($0) } ?? Figures()
         ownAltitudeFt = kept.ownAltitudeFt; altitudeChoice = kept.altitudeChoice
         course = kept.course; checkpoints = kept.checkpoints; profile = kept.profile; altitude = kept.altitude
         legs = kept.legs; totals = kept.totals; altitudeFt = kept.altitude?.altitudeFt; briefing = kept.briefing
@@ -114,6 +125,15 @@ final class Plan {
         plan()
         remembering = true
         history = PlanHistory(routeState)
+    }
+
+    /// The airplane a kept plan flew: the stock profile with no N-number
+    /// was the profile every plan was once flown on unasked, so it is no
+    /// airplane now (docs/decisions/0011), as the web's preferences took
+    /// their stock default to NO_AIRPLANE.
+    nonisolated static func airplane(kept: Kept) -> (aircraft: String, tail: String?) {
+        if kept.tail == nil && kept.aircraft == stockProfile { return (noAirplane, nil) }
+        return (kept.aircraft, kept.tail)
     }
 
     /// The route's idents in order, as the route box shows them.
@@ -245,7 +265,10 @@ final class Plan {
         let kept = TailFigures.load(tail)
         if let mine = own.first(where: { $0.tailNumber.uppercased() == tail }) {
             let wanted = mine.typeDesignator.lowercased().filter { $0.isLetter || $0.isNumber }
-            if profiles.contains(where: { $0.name == wanted }) { aircraft = wanted }
+            // The pilot's own airplane flies on its own figures over its
+            // type's profile, else over the stock one for the service
+            // ceiling the altitudes need, as the web's baseProfile does.
+            aircraft = profiles.contains(where: { $0.name == wanted }) ? wanted : Plan.stockProfile
             figures = kept.cruiseTasKt == nil && kept.serviceCeilingFt == nil ? Figures(mine) : kept
         } else {
             figures = kept
@@ -255,6 +278,19 @@ final class Plan {
                 aircraft = profile
             }
         }
+        if routed { plan() }
+    }
+
+    /// The profile a pilot's own airplane of a type the planner has no
+    /// figures for is flown on, under the pilot's figures (the web's
+    /// DEFAULT_AIRCRAFT): never flown with no airplane picked.
+    nonisolated static let stockProfile = "c172"
+
+    /// No airplane: the route's own figures alone, planned again.
+    func flyNoAirplane() {
+        tail = nil
+        aircraft = Plan.noAirplane
+        figures = Figures()
         if routed { plan() }
     }
 

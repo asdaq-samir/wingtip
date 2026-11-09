@@ -18,6 +18,9 @@ struct EmergencySheet: View {
 
     private var model: Emergency { .shared }
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
+    /// The airplane's profile for its glide, none with none picked (the
+    /// web's useEmergency): never a type assumed.
+    private var emergencyAircraft: String? { plan.airplaneChosen ? plan.aircraft : nil }
 
     var body: some View {
         NavigationStack {
@@ -29,7 +32,7 @@ struct EmergencySheet: View {
             .navigationTitle("Emergency")
             .navigationBarTitleDisplayMode(.inline)
             .closeButton { model.close() }
-            .task(id: fix.map { Emergency.key($0, aircraft: plan.aircraft) }) { await model.refresh(fix: fix, aircraft: plan.aircraft) }
+            .task(id: fix.map { Emergency.key($0, aircraft: emergencyAircraft) }) { await model.refresh(fix: fix, aircraft: emergencyAircraft) }
             .onChange(of: fix) { _, new in if let new { model.rank(new) } }
         }
     }
