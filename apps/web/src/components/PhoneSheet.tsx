@@ -18,7 +18,7 @@ const SLOP = 10;
 
 /** As the map's sheet settles (SHEET_SECONDS): ease-out, a third of a
  *  second. */
-const BACK = "transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1)";
+const BACK = "transform var(--motion-sheet) var(--motion-sheet-back-ease)";
 
 /**
  * A phone's sheet, as the map's own floating sheet is (MapPanel), at the

@@ -6,6 +6,7 @@ import type { ChartInfo } from "../../api/types";
 import type { AirspaceVolume } from "../overlayTypes";
 import { chartPair, tileTemplate } from "../tiles";
 import { COURSE_MAGENTA, ROUTE_GREEN, ROUTE_GREEN_NIGHT } from "../chartColors";
+import { CHART } from "../../tokens";
 
 /**
  * The map's style (the owner, 2026-11-06: "Like ForeFlight, I want
@@ -117,12 +118,12 @@ type AirspaceClass = AirspaceVolume["airspace_class"] | "E";
  * translucent band along the inside of the line is (airspaceLayers).
  */
 export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number[]; opacity: number; width: number; band: number }> = {
-  B: { colour: "#2f8cff", opacity: 1, width: 4, band: 0.3 },
-  C: { colour: "#e02ad8", opacity: 1, width: 4, band: 0.3 },
+  B: { colour: CHART.airspaceBlue, opacity: 1, width: 4, band: 0.3 },
+  C: { colour: CHART.airspaceMagenta, opacity: 1, width: 4, band: 0.3 },
   // A dash of 10 px and a gap of 5, in MapLibre's units, the line's own
   // width.
-  D: { colour: "#2f8cff", dash: [10 / 3.5, 5 / 3.5], opacity: 1, width: 3.5, band: 0.22 },
-  E: { colour: "#e02ad8", dash: [10 / 3, 5 / 3], opacity: 0.45, width: 3, band: 0 },
+  D: { colour: CHART.airspaceBlue, dash: [10 / 3.5, 5 / 3.5], opacity: 1, width: 3.5, band: 0.22 },
+  E: { colour: CHART.airspaceMagenta, dash: [10 / 3, 5 / 3], opacity: 0.45, width: 3, band: 0 },
 };
 
 /** From which zoom each class is drawn, in the app's levels:
@@ -271,7 +272,7 @@ export function airspaceLayers(font: string[], labelPoints = true): LayerSpecifi
  *  Terms and Symbols, Airspace: prohibited, restricted and warning areas
  *  blue, MOAs and alert areas magenta); the owner's pick is ForeFlight's
  *  colours. By the FAA's TYPE_CODE (wingtip.sua TYPES). */
-export const SUA_INK = { restricted: "#e0662a", moa: AIRSPACE_INK.C.colour } as const;
+export const SUA_INK = { restricted: CHART.specialUse, moa: AIRSPACE_INK.C.colour } as const;
 const SUA_RESTRICTED = ["P", "R", "W", "D"];
 const SUA_MOA = ["MOA", "A"];
 /** The hatch picture of each ink (glOverlays' SUA_PICTURES). */

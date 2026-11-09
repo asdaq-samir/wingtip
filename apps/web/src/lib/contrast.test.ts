@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { contrast, over, parseColour, tokensOf, type Linear } from "./contrast";
 
-const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+const css = readFileSync(new URL("../styles/tokens.css", import.meta.url), "utf8");
 
 const colour = (v: string): Linear => {
   const c = parseColour(v);
@@ -30,7 +30,7 @@ describe("contrast", () => {
   });
 });
 
-describe("the night theme's tokens (index.css .dark)", () => {
+describe("the night theme's tokens (styles/tokens.css .dark)", () => {
   const dark = tokensOf(css, ".dark");
   const light = tokensOf(css, ":root");
   const t = (name: string) => colour(dark[name] ?? light[name] ?? "");

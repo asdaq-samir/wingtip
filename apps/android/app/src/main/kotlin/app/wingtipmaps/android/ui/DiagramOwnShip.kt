@@ -64,6 +64,7 @@ import kotlinx.serialization.Serializable
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import app.wingtipmaps.android.design.generated.WingtipColors
 
 /**
  * The FAA's airport diagram with the airplane on it (#218), as the iOS
@@ -170,7 +171,7 @@ private fun DiagramWithOwnShip(page: DiagramPage, fix: OwnShip.Fix?) {
                     drawCircle(Color.White, radius = r + 3.dp.toPx(), center = centre)
                     // No track: a circle, not an arrow (AC 120-76D 11.17.2.2).
                     if (track == null) {
-                        drawCircle(Color(0xFF007AFF), radius = r * 0.7f, center = centre)
+                        drawCircle(WingtipColors.Chart.MapBlue, radius = r * 0.7f, center = centre)
                         return@Canvas
                     }
                     rotate(turn, pivot = centre) {
@@ -181,7 +182,7 @@ private fun DiagramWithOwnShip(page: DiagramPage, fix: OwnShip.Fix?) {
                             lineTo(centre.x - r * 0.7f, centre.y + r * 0.8f)
                             close()
                         }
-                        drawPath(arrow, Color(0xFF007AFF))
+                        drawPath(arrow, WingtipColors.Chart.MapBlue)
                     }
                 }
             }

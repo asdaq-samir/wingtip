@@ -78,7 +78,7 @@ fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () ->
 fun AlertsBanner(alerts: List<AheadAlert>) {
     val first = alerts.minByOrNull { it.seconds } ?: return
     val danger = first.level == "stop" || first.level == "danger"
-    Surface(color = if (danger) Color(0xFFD32F2F) else Color(0xFFF57C00), contentColor = Color.White, shape = MaterialTheme.shapes.medium) {
+    Surface(color = if (danger) LocalWingtipPalette.current.destructive else LocalWingtipPalette.current.caution, contentColor = Color.White, shape = MaterialTheme.shapes.medium) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
                 .semantics(mergeDescendants = true) {},

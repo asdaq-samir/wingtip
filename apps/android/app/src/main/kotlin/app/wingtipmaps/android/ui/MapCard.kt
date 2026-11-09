@@ -242,7 +242,7 @@ private fun VorCard(vor: MapPick.Vor) {
         TextButton(onClick = { open = !open }) {
             Text(
                 if (vor.restricted) "Restrictions" else "Remarks",
-                color = if (vor.restricted) Color(0xFFB45309) else MaterialTheme.colorScheme.primary,
+                color = if (vor.restricted) LocalWingtipPalette.current.caution else MaterialTheme.colorScheme.primary,
             )
         }
         if (open) {

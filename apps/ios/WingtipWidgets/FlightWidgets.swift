@@ -282,10 +282,10 @@ enum VerdictMark {
 enum CategoryMark {
     static func colour(_ category: String) -> Color {
         switch category.uppercased() {
-        case "VFR": return .green
-        case "MVFR": return .blue
-        case "IFR": return .red
-        case "LIFR": return Color(red: 0.8, green: 0.1, blue: 0.8)
+        case "VFR": return Color(uiColor: WingtipColor.Category.vfr)
+        case "MVFR": return Color(uiColor: WingtipColor.Category.mvfr)
+        case "IFR": return Color(uiColor: WingtipColor.Category.ifr)
+        case "LIFR": return Color(uiColor: WingtipColor.Category.lifr)
         default: return .secondary
         }
     }

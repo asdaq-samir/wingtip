@@ -1,4 +1,5 @@
 import { callEngine } from "../engine/engine";
+import { CATEGORY, CATEGORY_UNKNOWN } from "../tokens";
 
 /** The FAA's own categories, in the colours a pilot already reads them
  *  in: green good, blue marginal, red instrument, magenta worse than
@@ -8,13 +9,8 @@ import { callEngine } from "../engine/engine";
  *  The one map of them on the page: every marker that colours itself
  *  by current weather (Class B airports, and the route's own departure
  *  and destination) and the briefing's METAR badges. */
-const CATEGORY_COLOURS: Record<string, string> = {
-  VFR: "#1a7f37",
-  MVFR: "#1f6feb",
-  IFR: "#b3261e",
-  LIFR: "#a371f7",
-};
-const UNKNOWN_COLOUR = "#8fa3b0";
+const CATEGORY_COLOURS = CATEGORY;
+const UNKNOWN_COLOUR = CATEGORY_UNKNOWN;
 
 /** JSON has no Infinity or NaN: an unlimited figure goes as the largest
  *  number, and NaN, which every bound passes as it passes Infinity, the
