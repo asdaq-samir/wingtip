@@ -31,7 +31,8 @@ export function useDepartureWindow() {
   const { data: currency } = useQuery({ ...currencyQuery, enabled: !!pilot });
   const ask: DepartureWindowAsk = {
     dep: plan.dep, dest: plan.dest, stops: plan.stops.join(","),
-    aircraft: aircraft.profile,
+    // None asked with no airplane picked: the planner then assumes none.
+    aircraft: airplane ? aircraft.profile : null,
     cruise_tas_kt: aircraft.cruiseTasKt ?? null, fuel_burn_gph: aircraft.fuelBurnGph ?? null,
     usable_fuel_gal: aircraft.usableFuelGal ?? null, climb_tas_kt: aircraft.climbTasKt ?? null,
     climb_fuel_burn_gph: aircraft.climbFuelBurnGph ?? null, cruise_power_pct: aircraft.cruisePowerPct ?? null,

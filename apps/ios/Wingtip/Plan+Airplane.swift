@@ -4,11 +4,17 @@ import Foundation
 /// pilot picks one by its N-number, its type's profile then, and what the
 /// chip and the screens read of it.
 extension Plan {
-    /// The planner's name for no airplane picked (wingtip.planning.NO_AIRPLANE).
+    /// This app's mark for no airplane picked, as a kept plan stores it:
+    /// never sent, as the planner takes no airplane as no `aircraft` at all
+    /// (`plannerAircraft`).
     nonisolated static let noAirplane = "none"
     /// Whether an airplane has been picked, so its figures (time, fuel,
     /// groundspeed, weight and balance) may be shown; none is assumed.
     var airplaneChosen: Bool { aircraft != Plan.noAirplane }
+    /// The airplane as the planner is asked it: the profile's name, nil
+    /// with none picked, which it plans with no airplane (the owner,
+    /// 2026-11-09: "don't assume").
+    var plannerAircraft: String? { airplaneChosen ? aircraft : nil }
     /// The airplane as the chip names it: its N-number, else its type;
     /// nil with none picked, where the chip asks for one.
     var airplaneName: String? { tail ?? (airplaneChosen ? aircraft.uppercased() : nil) }

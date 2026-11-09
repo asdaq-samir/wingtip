@@ -275,12 +275,12 @@ export const errorMessage = (err: unknown, fallback: string) => (err ? describeE
 /** A route's stops as the planner takes them, "KDSM,KLNK"; none, none. */
 const stopsParam = (stops?: string[]) => (stops?.length ? stops.join(",") : undefined);
 
-/** The airplane the planner plans with: "none" for no airplane picked
+/** The airplane the planner plans with: none asked for no airplane picked
  *  (preferences' NO_AIRPLANE), which it plans with none -- the route's own
  *  figures, and null for every one that needs an airplane -- rather than
  *  the stock profile it was asked with before (the owner, 2026-11-09:
  *  "don't assume"). */
-const plannerAircraft = (aircraft?: AircraftChoice) => (aircraft?.none ? "none" : aircraft?.profile);
+const plannerAircraft = (aircraft?: AircraftChoice) => (aircraft?.none ? undefined : aircraft?.profile);
 
 /** The airport index's shape (wingtip.airports.search_index), in its address
  *  so a day's copy in the browser of an older shape is not read as this
@@ -600,7 +600,7 @@ export const api = {
     planner.GET("/api/route-options", {
       params: {
         query: {
-          dep, dest, stops: stops || undefined, aircraft: aircraft?.profile,
+          dep, dest, stops: stops || undefined, aircraft: plannerAircraft(aircraft),
           cruise_tas_kt: aircraft?.cruiseTasKt, fuel_burn_gph: aircraft?.fuelBurnGph, usable_fuel_gal: aircraft?.usableFuelGal,
           service_ceiling_ft: aircraft?.serviceCeilingFt, depart: depart || undefined,
           min_ceiling_ft: minimums.ceilingFt ?? undefined, min_visibility_sm: minimums.visibilitySm ?? undefined,

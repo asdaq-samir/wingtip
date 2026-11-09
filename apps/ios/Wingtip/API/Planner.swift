@@ -217,7 +217,7 @@ enum Planner {
 
     /// The ways to fly a route (/api/route-options): the planner's grid
     /// search round what the direct line meets.
-    static func routeOptions(dep: String, dest: String, stops: [String], aircraft: String) async throws -> RouteOptions {
+    static func routeOptions(dep: String, dest: String, stops: [String], aircraft: String?) async throws -> RouteOptions {
         try await fetch(RouteOptions.self, "/api/route-options", route(dep, dest, stops).merging(["aircraft": aircraft]) { $1 })
     }
 

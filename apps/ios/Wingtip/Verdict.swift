@@ -55,7 +55,7 @@ final class Verdict {
         let figures = plan.figures
         var ask = GoNoGoAsk(dep: plan.dep, dest: plan.dest)
         ask.stops = plan.stops.joined(separator: ",")
-        ask.aircraft = plan.aircraft
+        ask.aircraft = plan.plannerAircraft
         ask.altitudeFt = plan.ownAltitudeFt
         ask.altitudeNearest = plan.ownAltitudeFt != nil && plan.ownAltitudeLegal
         ask.altitudeChoice = plan.altitudeChoice ?? "fastest"

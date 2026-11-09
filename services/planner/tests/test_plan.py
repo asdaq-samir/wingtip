@@ -5,16 +5,15 @@ selection and the per-leg wind lookup. What this proves is the contract
 that /api/plan and /api/checkpoints serialise, and that the nav-log
 stream's lines are the messages app.schemas declares."""
 import pytest
-from fastapi.testclient import TestClient
 from wingtip import altitude as altitude_module
 from wingtip import navlog
 
 from app import checkpoint_scoring
 from app.main import app
 
-from .conftest import select_cruise_altitude_stub
+from .conftest import AirplaneClient, select_cruise_altitude_stub
 
-client = TestClient(app)
+client = AirplaneClient(app)
 
 CANDIDATES = [
     {"id": "water@42.35000,-88.09000", "category": "water", "name": "Lake", "lat": 42.35, "lon": -88.09,

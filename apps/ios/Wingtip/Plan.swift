@@ -247,7 +247,7 @@ final class Plan {
 
     /// The ways to fly the route as the pilot typed it, for the route
     /// line's chips: asked for once per route, whichever way is flown.
-    private func findRoutes(dep: String, dest: String, stops: [String], aircraft: String, asked: String) async {
+    private func findRoutes(dep: String, dest: String, stops: [String], aircraft: String?, asked: String) async {
         do {
             let found = try await Planner.routeOptions(dep: dep, dest: dest, stops: stops, aircraft: aircraft)
             guard routesAskedFor == asked else { return }
@@ -299,7 +299,7 @@ final class Plan {
     func plan() {
         guard routed else { return }
         running?.cancel()
-        let dep = dep.uppercased(), dest = dest.uppercased(), stops = stops.map { $0.uppercased() }, aircraft = aircraft
+        let dep = dep.uppercased(), dest = dest.uppercased(), stops = stops.map { $0.uppercased() }, aircraft = plannerAircraft
         let own = ownAltitudeFt, legal = ownAltitudeLegal, choice = altitudeChoice, figures = figures
         let picks = procedures.filter { idents.contains($0.ident) }
         let extra: [String: String?]
@@ -316,7 +316,7 @@ final class Plan {
         // and the ways are asked for afresh for it.
         if let chip = pickedChip, chip.stops.map({ $0.uppercased() }) != stops { pickedChip = nil }
         if pickedChip == nil { typedStops = stops }
-        let asked = ([dep, dest, aircraft] + typedStops).joined(separator: " ")
+        let asked = ([dep, dest, aircraft ?? Plan.noAirplane] + typedStops).joined(separator: " ")
         if asked != routesAskedFor {
             routesAskedFor = asked
             routes = nil; routesProblem = nil

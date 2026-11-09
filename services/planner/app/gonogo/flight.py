@@ -62,7 +62,7 @@ def plan_for(q: PlanQuery, r) -> Planned:
     """The route planned as /api/plan plans it, bounded the same way."""
     asked = q.asked()
     _, _, runs, outcome = fp.plan_within_limit(r, asked, lambda: named_checkpoints(r))
-    aircraft = {"name": q.aircraft, **asked.profile}
+    aircraft = None if asked.profile is None else {"name": q.aircraft, **asked.profile}
     if isinstance(outcome, fp.Unflyable):
         why, _ = fp.unflyable_parts(outcome, runs)
         return Planned(nav=None, legs=[], totals=None, problem=why["brief"])
@@ -223,7 +223,7 @@ def findings_for(ask: GoNoGoAsk, q: PlanQuery, r, planned: Planned, briefing: di
 
     # The loading (lib/weightBalance): the pilot's, else the POH's sample
     # airplane with the usable fuel aboard.
-    # With no airplane (aircraft=none) there is no loading to balance.
+    # With no airplane (no `aircraft` asked) there is no loading to balance.
     airplane = q.profile()
     profile = (nav or {}).get("aircraft") or ({"name": q.aircraft, **airplane} if airplane else {})
     loading = profile.get("loading")

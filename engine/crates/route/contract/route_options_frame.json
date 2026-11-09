@@ -49,6 +49,10 @@
         "lowest_cruise_ft": {
           "type": "number"
         },
+        "tas_kt": {
+          "type": "number",
+          "description": "The true airspeed the ways are costed at: the airplane's cruise, else with none picked the still-air reference (100 kt), for the host's glide reach of dry land."
+        },
         "metars": {
           "type": "boolean"
         },
@@ -80,6 +84,7 @@
         "window",
         "altitudes_ft",
         "lowest_cruise_ft",
+        "tas_kt",
         "metars",
         "bbox",
         "data_box"

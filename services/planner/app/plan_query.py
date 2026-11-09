@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import HTTPException, Query
-from wingtip import airports, fixes, planning, procedures
+from wingtip import airports, fixes, procedures
 from wingtip import flight_plan as fp
 # As vfr_holds: PlanQuery's own `holds` is the address's.
 from wingtip import holds as vfr_holds
@@ -17,7 +17,7 @@ from wingtip.planning import aircraft_profile
 
 from . import foreflight
 from .checkpoint_scoring import route_checkpoints
-from .router_basics import DEFAULT_AIRCRAFT, Route
+from .router_basics import Route
 from .schemas.common import AltitudeChoice, FlightRules
 
 # A pilot's own cruise speed: above zero, since every leg's time divides
@@ -51,10 +51,15 @@ class PlanQuery:
     #: not, with its cautions.
     altitude_nearest: bool = False
     altitude_choice: AltitudeChoice = "fastest"
-    #: A stock profile's name, or "none" for no airplane picked
-    #: (wingtip.planning.NO_AIRPLANE): the route's own figures and none
-    #: that needs an airplane, the pilot's own figures below then unread.
-    aircraft: str = DEFAULT_AIRCRAFT
+    #: A stock profile's name; none asked, no airplane is picked: the
+    #: plan is the route's own figures (its course, miles, legs,
+    #: checkpoints, altitudes, weather and airspace) and none that needs an
+    #: airplane (times, ground speeds, fuel, the tops of climb and
+    #: descent), never a stock airplane's in its place, the pilot's own
+    #: figures below then unread. The owner (2026-11-09): "If no airplane
+    #: is entered, only show the distance and the things you can without
+    #: airplane profile, don't assume."
+    aircraft: str | None = None
     cruise_tas_kt: CruiseTas = None
     fuel_burn_gph: float | None = None
     usable_fuel_gal: float | None = None
@@ -126,9 +131,9 @@ class PlanQuery:
 
     def profile(self) -> dict | None:
         """The airplane: a stock profile with the pilot's own figures over
-        it; None for no airplane (`aircraft=none`, wingtip.planning.NO_AIRPLANE),
-        which plans the route's own figures and none that needs one."""
-        if self.aircraft == planning.NO_AIRPLANE:
+        it; None for no airplane (no `aircraft` asked), which plans the
+        route's own figures and none that needs one."""
+        if self.aircraft is None:
             return None
         return aircraft_profile(
             self.aircraft, self.cruise_tas_kt, self.fuel_burn_gph, self.usable_fuel_gal,
@@ -138,7 +143,10 @@ class PlanQuery:
     @property
     def aircraft_key(self) -> str:
         """The profile's name, and its own ceiling where one is set: what the
-        altitude selection is cached by, as the ceiling decides it."""
+        altitude selection is cached by, as the ceiling decides it; "" for
+        no airplane, whose own ceiling is unread."""
+        if self.aircraft is None:
+            return ""
         return self.aircraft if self.service_ceiling_ft is None else f"{self.aircraft}@{self.service_ceiling_ft:.0f}"
 
     def own_altitudes(self) -> dict[str, float]:

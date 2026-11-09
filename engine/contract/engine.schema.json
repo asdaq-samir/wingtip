@@ -18989,6 +18989,10 @@
             "lowest_cruise_ft": {
               "type": "number"
             },
+            "tas_kt": {
+              "type": "number",
+              "description": "The true airspeed the ways are costed at: the airplane's cruise, else with none picked the still-air reference (100 kt), for the host's glide reach of dry land."
+            },
             "metars": {
               "type": "boolean"
             },
@@ -19020,6 +19024,7 @@
             "window",
             "altitudes_ft",
             "lowest_cruise_ft",
+            "tas_kt",
             "metars",
             "bbox",
             "data_box"
@@ -28950,7 +28955,7 @@
       }
     },
     "RouteOption": {
-      "description": "One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets.",
+      "description": "One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets. With no airplane (a null profile) its minutes in the air and its fuel are null, and it has no fuel stops.",
       "title": "RouteOption",
       "type": "object",
       "properties": {
@@ -28999,13 +29004,19 @@
           "type": "number"
         },
         "air_min": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "ground_min": {
           "type": "number"
         },
         "fuel_gal": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "landings": {
           "type": "integer"
@@ -29341,7 +29352,15 @@
           "$ref": "#/definitions/RouteOptionsEnd"
         },
         "profile": {
-          "$ref": "#/definitions/RouteOptionsProfile"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RouteOptionsProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The airplane; missing or null for none picked: the ways are then costed in still air, with no minutes, fuel or fuel stops."
         },
         "depart_s": {
           "type": "number"
@@ -29538,7 +29557,6 @@
       "required": [
         "dep",
         "dest",
-        "profile",
         "depart_s"
       ]
     },

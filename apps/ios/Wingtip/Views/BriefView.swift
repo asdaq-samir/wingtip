@@ -47,7 +47,7 @@ struct BriefView: View {
                     GoNoGoSection { anchor in
                         if reduceMotion { reader.scrollTo(anchor, anchor: .top) } else { withAnimation { reader.scrollTo(anchor, anchor: .top) } }
                     }
-                    DepartureWindowSection(model: window, signedIn: session.signedIn, airplane: plan.aircraft != "none")
+                    DepartureWindowSection(model: window, signedIn: session.signedIn, airplane: plan.airplaneChosen)
                 }
                 if let briefing = plan.briefing {
                     let weatherAt = weatherPart(briefing)
@@ -209,7 +209,7 @@ struct BriefView: View {
         // The hours to go, asked again as the Go / No-Go's question changes.
         .task(id: "\(verdict.key(for: plan))|\(session.signedIn)") {
             guard session.signedIn, plan.routed else { return }
-            await window.refresh(try? DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.aircraft != "none"))
+            await window.refresh(try? DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.airplaneChosen))
         }
         // The words for the briefing on the page, written again when it
         // changes; the figures stay as they are while they are written.

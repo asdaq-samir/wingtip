@@ -2143,7 +2143,8 @@ struct APIRiskCheck: Codable, Equatable, Sendable {
 /// only the pilot knows.
 // MARK: - APIGoNoGoAsk
 struct APIGoNoGoAsk: Codable, Equatable, Sendable {
-    var aircraft, alternate, altitudeChoice: String?
+    var aircraft: String?
+    var alternate, altitudeChoice: String?
     var altitudeFt: Double?
     var altitudeNearest: Bool?
     var altitudes: String?
@@ -3830,14 +3831,15 @@ struct APIRouteHazard: Codable, Equatable, Sendable {
 /// index in RouteOptions.hazards.
 // MARK: - APIRouteOption
 struct APIRouteOption: Codable, Equatable, Sendable {
-    var airMin: Double
+    var airMin: Double?
     var bands: [APIRouteBand]?
     var crosses: [Int]
     var distanceNm: Double
     var floorFt: Int?
     var food: [String]?
     var fuel: [String]
-    var fuelGal, groundMin: Double
+    var fuelGal: Double?
+    var groundMin: Double
     var kind: String
     var kinds: [String]
     var landings: Int

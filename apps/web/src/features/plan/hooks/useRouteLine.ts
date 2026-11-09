@@ -171,7 +171,7 @@ export function useRouteLine({
       // By its stops, as the planner made the chip: a way is the best of
       // several kinds, its own `kind` only the first of them.
       const way = chip.key === "fuel" ? routeWays.own : routeWays.options.find(o => sameStops(o.stops, chip.stops));
-      if (way) lines.push({ key: chip.key, path: way.path as [number, number][], label: wayTime(way, scale), name: chip.label });
+      if (way) lines.push({ key: chip.key, path: way.path as [number, number][], label: wayTime(way, scale) ?? "", name: chip.label });
     }
     // Each chip where it is whichever others are drawn, by its place among
     // all of them (it jumped along its line as another went).

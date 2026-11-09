@@ -4832,7 +4832,7 @@ class DepartureWindowAsk(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    aircraft: Annotated[str | None, Field(title='Aircraft')] = 'c172'
+    aircraft: Annotated[str | None, Field(title='Aircraft')] = None
     airplane: Annotated[bool | None, Field(title='Airplane')] = True
     alternate: Annotated[str | None, Field(title='Alternate')] = ''
     altitude_choice: Annotated[
@@ -4926,7 +4926,7 @@ class GoNoGoAsk(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    aircraft: Annotated[str | None, Field(title='Aircraft')] = 'c172'
+    aircraft: Annotated[str | None, Field(title='Aircraft')] = None
     alternate: Annotated[str | None, Field(title='Alternate')] = ''
     altitude_choice: Annotated[
         Literal['lowest', 'highest', 'fastest', 'economical'] | None,

@@ -52,7 +52,7 @@ class Asked:
     `profile` is the airplane's (wingtip.planning.aircraft_profile) and
     `aircraft_key` what the altitude selection is cached by (its name and
     any ceiling of the pilot's own); `profile` None is no airplane
-    (wingtip.planning.NO_AIRPLANE): the route's own figures, and none that
+    (no `aircraft` asked): the route's own figures, and none that
     needs an airplane. `altitude_ft`, a pilot's own cruise,
     is flown on every leg -- or, `altitude_nearest` (the wheel's pick), at
     each leg's legal altitude nearest it; without it the plan

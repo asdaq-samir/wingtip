@@ -10,14 +10,15 @@ export function gridScale(found: RouteOptions | undefined, ownMinutes: number | 
   // way's air time where that way adds no stop (RouteOptions.own) -- with
   // neither, the two clocks are told as they are.
   const bands = (found?.current_along?.bands ?? []).reduce((sum, b) => sum + b.min, 0);
-  const grid = bands || (found?.own && !found.own.fuel.length ? found.own.air_min : 0);
+  const grid = bands || (found?.own && !found.own.fuel.length ? found.own.air_min ?? 0 : 0);
   return ownMinutes && grid > 0 ? ownMinutes / grid : 1;
 }
 
 /** "3 h 10 min", "45 min": a way's whole time, its stops' too, its air
- *  time on the route's clock (`scale`, gridScale). */
-export function wayTime(option: RouteOption, scale = 1): string {
-  return duration(option.air_min * scale + option.ground_min);
+ *  time on the route's clock (`scale`, gridScale); null with no airplane
+ *  picked, whose ways have no minutes. */
+export function wayTime(option: RouteOption, scale = 1): string | null {
+  return option.air_min === null ? null : duration(option.air_min * scale + option.ground_min);
 }
 
 /** Whether two routes' stops are the same points in order. */

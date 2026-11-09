@@ -33,7 +33,7 @@ final class DepartureWindow {
         var ask: APIDepartureWindowAsk = try Engine.recoded(goNoGo)
         ask.hours = hours
         ask.airplane = airplane
-        ask.rules = "VFR"
+        ask.rules = "vfr"
         ask.depart = nil
         return ask
     }

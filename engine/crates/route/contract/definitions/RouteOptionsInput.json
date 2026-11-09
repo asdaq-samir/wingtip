@@ -9,7 +9,15 @@
       "$ref": "#/definitions/RouteOptionsEnd"
     },
     "profile": {
-      "$ref": "#/definitions/RouteOptionsProfile"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/RouteOptionsProfile"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The airplane; missing or null for none picked: the ways are then costed in still air, with no minutes, fuel or fuel stops."
     },
     "depart_s": {
       "type": "number"
@@ -206,7 +214,6 @@
   "required": [
     "dep",
     "dest",
-    "profile",
     "depart_s"
   ]
 }

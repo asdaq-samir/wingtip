@@ -8921,7 +8921,10 @@ export interface ReserveMinInput {
 export interface RouteOptionsInput {
   dep: RouteOptionsEnd;
   dest: RouteOptionsEnd;
-  profile: RouteOptionsProfile;
+  /**
+   * The airplane; missing or null for none picked: the ways are then costed in still air, with no minutes, fuel or fuel stops.
+   */
+  profile?: RouteOptionsProfile | null;
   depart_s: number;
   now_s?: number | null;
   min_ceiling_ft?: number | null;
@@ -9053,7 +9056,7 @@ export interface RouteOptionsAnswer {
   food_unread: RouteOptionsFoodUnread[];
 }
 /**
- * One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets.
+ * One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets. With no airplane (a null profile) its minutes in the air and its fuel are null, and it has no fuel stops.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "RouteOption".
@@ -9067,9 +9070,9 @@ export interface RouteOption {
   food: string[];
   path: [number, number][];
   distance_nm: number;
-  air_min: number;
+  air_min: number | null;
   ground_min: number;
-  fuel_gal: number;
+  fuel_gal: number | null;
   landings: number;
   crosses: number[];
   marginal: number[];
@@ -9126,6 +9129,10 @@ export interface RouteOptionsFrameAnswer {
   window: [number, number];
   altitudes_ft: number[];
   lowest_cruise_ft: number;
+  /**
+   * The true airspeed the ways are costed at: the airplane's cruise, else with none picked the still-air reference (100 kt), for the host's glide reach of dry land.
+   */
+  tas_kt: number;
   metars: boolean;
   /**
    * @minItems 4

@@ -6327,7 +6327,7 @@ data class RouteHazard (
 @Serializable
 data class RouteOption (
     @SerialName("air_min")
-    val airMin: Double,
+    val airMin: Double? = null,
 
     val bands: List<RouteBand>? = null,
     val crosses: List<Int>,
@@ -6342,7 +6342,7 @@ data class RouteOption (
     val fuel: List<String>,
 
     @SerialName("fuel_gal")
-    val fuelGal: Double,
+    val fuelGal: Double? = null,
 
     @SerialName("ground_min")
     val groundMin: Double,

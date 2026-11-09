@@ -20,7 +20,7 @@ struct EmergencySheet: View {
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
     /// The airplane's profile for its glide, none with none picked (the
     /// web's useEmergency): never a type assumed.
-    private var emergencyAircraft: String? { plan.airplaneChosen ? plan.aircraft : nil }
+    private var emergencyAircraft: String? { plan.plannerAircraft }
 
     var body: some View {
         NavigationStack {

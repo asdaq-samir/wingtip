@@ -50,9 +50,11 @@ class RouteOption(BaseModel):
     food: list[str] = []
     path: list[list[float]]
     distance_nm: float
-    air_min: float
+    #: Minutes in the air and the fuel burnt: None with no airplane picked,
+    #: which they need.
+    air_min: float | None
     ground_min: float
-    fuel_gal: float
+    fuel_gal: float | None
     landings: int
     crosses: list[int]
     marginal: list[int]

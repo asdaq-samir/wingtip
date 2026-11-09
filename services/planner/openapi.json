@@ -6207,9 +6207,15 @@
         "description": "The Go / No-Go's ask, its `depart` unused: each hour is a departure.",
         "properties": {
           "aircraft": {
-            "default": "c172",
-            "title": "Aircraft",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aircraft"
           },
           "airplane": {
             "default": true,
@@ -9698,9 +9704,15 @@
         "description": "The route, as /api/navlog is asked it (PlanQuery's fields), and what\nonly the pilot knows.",
         "properties": {
           "aircraft": {
-            "default": "c172",
-            "title": "Aircraft",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aircraft"
           },
           "alternate": {
             "default": "",
@@ -17188,8 +17200,15 @@
         "description": "One way to fly the route (wingtip.route_options): the points between\nits ends in order, as the address's `stops` takes them -- turns as the\npilot's own points off a fix, fuel stops as fields (`fuel`) -- and the\nkinds of way it is the best of, with its estimate of the flight. The\nhazards it still crosses and the marginal weather it passes, by their\nindex in RouteOptions.hazards.",
         "properties": {
           "air_min": {
-            "title": "Air Min",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Air Min"
           },
           "bands": {
             "default": [],
@@ -17231,8 +17250,15 @@
             "type": "array"
           },
           "fuel_gal": {
-            "title": "Fuel Gal",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Gal"
           },
           "ground_min": {
             "title": "Ground Min",
@@ -24516,9 +24542,15 @@
             "name": "aircraft",
             "required": false,
             "schema": {
-              "default": "c172",
-              "title": "Aircraft",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Aircraft"
             }
           },
           {
@@ -25048,9 +25080,15 @@
             "name": "aircraft",
             "required": false,
             "schema": {
-              "default": "c172",
-              "title": "Aircraft",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Aircraft"
             }
           },
           {
@@ -26144,9 +26182,15 @@
             "name": "aircraft",
             "required": false,
             "schema": {
-              "default": "c172",
-              "title": "Aircraft",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Aircraft"
             }
           },
           {
@@ -26557,9 +26601,15 @@
             "name": "aircraft",
             "required": false,
             "schema": {
-              "default": "c172",
-              "title": "Aircraft",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Aircraft"
             }
           },
           {

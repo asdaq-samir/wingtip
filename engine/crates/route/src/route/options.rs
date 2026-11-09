@@ -51,6 +51,7 @@
 //! along a route for the map's Stops, `fuel`'s; whether a leg enters
 //! Class B and the fixes that take it round, `classb`'s.
 
+mod answer;
 pub mod ask;
 pub mod classb;
 pub mod fuel;
@@ -62,12 +63,13 @@ pub mod terrain;
 pub mod ways;
 pub mod words;
 
+use self::answer::{along_json, ints, path_json, strings, way_json};
 use self::ask::{Ask, Field, Reader};
 use self::grid::{Grid, CELL_DEG, PER_CELL};
 use self::read::{highest_cruise_ft, LEGAL_CEILING_FT, LEGAL_VISIBILITY_SM, LOWEST_CRUISE_FT, METAR_AHEAD_S};
 use self::stops::{Fuel, Stop, MARGINAL_STOP_MIN, STOP_FIELD_NM, TURNAROUND_MIN};
 use self::ways::{along, crossed, line_minutes, minutes_along, straightened, way, Along};
-use self::words::{r1, r5};
+use self::words::r1;
 use crate::geo;
 use crate::json::{self, Value};
 use std::cell::RefCell;
@@ -379,7 +381,9 @@ fn read_grid(a: &Ask, unchecked: &mut Vec<String>) -> Result<(Grid, Vec<f64>), S
     let mid_lat = grid.lats.iter().sum::<f64>() / grid.rows as f64;
     let mid_lon = grid.lons.iter().sum::<f64>() / grid.cols as f64;
     let variation = wmm::declination(mid_lat, mid_lon, naming::decimal_year(a.now_s));
-    let gs = read::groundspeeds(&grid, &a.winds, &read::cruising_altitudes(top), a.profile.tas_kt.max(1.0), variation);
+    // With no airplane the ways are the route's own, in still air.
+    let winds = if a.profile.airplane { &a.winds[..] } else { &[] };
+    let gs = read::groundspeeds(&grid, winds, &read::cruising_altitudes(top), a.profile.tas_kt.max(1.0), variation);
     Ok((grid, gs))
 }
 
@@ -465,13 +469,13 @@ fn options(a: &Ask) -> Result<String, String> {
         if i > 0 {
             out.push(',');
         }
-        way_json(&mut out, w);
+        way_json(&mut out, w, a.profile.airplane);
     }
     out.push_str("],\"own\":");
-    way_json(&mut out, &mine);
+    way_json(&mut out, &mine, a.profile.airplane);
     out.push_str(",\"filed\":");
     match &filed {
-        Some(w) => way_json(&mut out, w),
+        Some(w) => way_json(&mut out, w, a.profile.airplane),
         None => out.push_str("null"),
     }
     // The pilot's own route as it is flown, end to end, for the map to
@@ -536,87 +540,6 @@ fn options(a: &Ask) -> Result<String, String> {
     Ok(out)
 }
 
-fn strings(out: &mut String, items: &[String]) {
-    out.push('[');
-    for (i, s) in items.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        json::string(out, s);
-    }
-    out.push(']');
-}
-
-fn ints(out: &mut String, items: &[i64]) {
-    out.push('[');
-    for (i, n) in items.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push_str(&n.to_string());
-    }
-    out.push(']');
-}
-
-fn path_json(out: &mut String, path: &[Point]) {
-    out.push('[');
-    for (i, p) in path.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push('[');
-        json::number(out, r5(p.0));
-        out.push(',');
-        json::number(out, r5(p.1));
-        out.push(']');
-    }
-    out.push(']');
-}
-
-fn along_json(out: &mut String, a: &Along) {
-    out.push_str("\"bands\":[");
-    for (i, (kind, min)) in a.bands.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push_str(&format!("{{\"kind\":\"{kind}\",\"min\":"));
-        json::number(out, *min);
-        out.push('}');
-    }
-    out.push_str("],\"tail_kt\":");
-    json::number(out, a.tail_kt);
-    out.push_str(&format!(",\"floor_ft\":{},\"water_nm\":{}", a.floor_ft, a.water_nm));
-}
-
-fn way_json(out: &mut String, w: &Way) {
-    out.push_str("{\"kind\":");
-    json::string(out, &w.kind);
-    out.push_str(",\"kinds\":");
-    strings(out, &w.kinds);
-    out.push_str(",\"title\":");
-    json::string(out, &w.title);
-    out.push_str(",\"stops\":");
-    strings(out, &w.stops);
-    out.push_str(",\"fuel\":");
-    strings(out, &w.fuel);
-    out.push_str(",\"food\":");
-    strings(out, &w.food);
-    out.push_str(",\"path\":");
-    path_json(out, &w.path);
-    for (key, v) in [("distance_nm", w.distance_nm), ("air_min", w.air_min), ("ground_min", w.ground_min), ("fuel_gal", w.fuel_gal)] {
-        out.push_str(&format!(",\"{key}\":"));
-        json::number(out, v);
-    }
-    out.push_str(&format!(",\"landings\":{}", w.landings));
-    out.push_str(",\"crosses\":");
-    ints(out, &w.crosses);
-    out.push_str(",\"marginal\":");
-    ints(out, &w.marginal);
-    out.push(',');
-    along_json(out, &w.along);
-    out.push('}');
-}
-
 /// route_options_frame's answer: where the cells are and their samples,
 /// the flight's time, and what the planner reads for them.
 fn frame(a: &Ask) -> String {
@@ -651,6 +574,10 @@ fn frame(a: &Ask) -> String {
     }
     out.push_str("],\"lowest_cruise_ft\":");
     json::number(&mut out, LOWEST_CRUISE_FT);
+    // The speed the ways are costed at: the airplane's, else the still-air
+    // reference (ask::REFERENCE_TAS_KT), for the host's glide reach.
+    out.push_str(",\"tas_kt\":");
+    json::number(&mut out, a.profile.tas_kt);
     out.push_str(",\"metars\":");
     out.push_str(if a.depart_s - a.now_s <= METAR_AHEAD_S { "true" } else { "false" });
     let boxed = |out: &mut String, key: &str, b: [f64; 4]| {

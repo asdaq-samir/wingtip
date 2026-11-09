@@ -55,7 +55,7 @@ extension Planner {
 
     /// The diversion from a point to a field in the planner's air there,
     /// the student's estimates checked where given (GET /api/diversion).
-    static func diversion(lat: Double, lon: Double, to ident: String, altitudeFt: Double, aircraft: String, figures: Figures,
+    static func diversion(lat: Double, lon: Double, to ident: String, altitudeFt: Double, aircraft: String?, figures: Figures,
                           estimates: [String: Double]) async throws -> DiversionAnswer {
         var query: [String: String?] = [
             "lat": String(lat), "lon": String(lon), "to": ident, "altitude_ft": String(Int(altitudeFt.rounded())), "aircraft": aircraft,

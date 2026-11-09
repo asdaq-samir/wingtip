@@ -23,10 +23,10 @@ class DepartureWindowAsk(GoNoGoAsk):
     #: How many hours to look at, each an hour after the last; fewer where
     #: the forecasts end first.
     hours: int = Field(default=MAX_HOURS, ge=1, le=MAX_HOURS)
-    #: An airplane is picked. False: the stock profile plans the route's
-    #: own figures, and the hours say nothing of time, fuel, runways or
-    #: loading, which are an airplane's (the owner, 2026-11-08: "don't
-    #: assume").
+    #: An airplane is picked. False: the hours say nothing of time, fuel,
+    #: runways or loading, which are an airplane's (the owner, 2026-11-08:
+    #: "don't assume"); with no `aircraft` asked, as a client with none
+    #: picked asks, the plan itself has none.
     airplane: bool = True
 
 

@@ -8036,7 +8036,7 @@ object EngineContract {
     )
 
     /**
-     * One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets.
+     * One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets. With no airplane (a null profile) its minutes in the air and its fuel are null, and it has no fuel stops.
      */
     @Serializable
     data class RouteOption(
@@ -8050,11 +8050,11 @@ object EngineContract {
         @SerialName("distance_nm")
         val distanceNm: Double,
         @SerialName("air_min")
-        val airMin: Double,
+        val airMin: Double? = null,
         @SerialName("ground_min")
         val groundMin: Double,
         @SerialName("fuel_gal")
-        val fuelGal: Double,
+        val fuelGal: Double? = null,
         val landings: Int,
         val crosses: List<Int>,
         val marginal: List<Int>,
@@ -8197,6 +8197,11 @@ object EngineContract {
         val altitudesFt: List<Double>,
         @SerialName("lowest_cruise_ft")
         val lowestCruiseFt: Double,
+        /**
+         * The true airspeed the ways are costed at: the airplane's cruise, else with none picked the still-air reference (100 kt), for the host's glide reach of dry land.
+         */
+        @SerialName("tas_kt")
+        val tasKt: Double,
         val metars: Boolean,
         val bbox: List<Double>,
         @SerialName("data_box")
@@ -8213,7 +8218,10 @@ object EngineContract {
     data class RouteOptionsInput(
         val dep: EngineContract.RouteOptionsEnd,
         val dest: EngineContract.RouteOptionsEnd,
-        val profile: EngineContract.RouteOptionsProfile,
+        /**
+         * The airplane; missing or null for none picked: the ways are then costed in still air, with no minutes, fuel or fuel stops.
+         */
+        val profile: EngineContract.RouteOptionsProfile? = null,
         @SerialName("depart_s")
         val departS: Double,
         @SerialName("now_s")

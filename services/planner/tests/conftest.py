@@ -3,10 +3,27 @@ flyable altitude selection and an NDJSON reader."""
 import json
 
 import pytest
+from fastapi.testclient import TestClient
 from wingtip import airports, airspace, faa_data, fixes, pattern, planning, publications, tfr, weather
 from wingtip.config import get_settings
 
 from app import chart_model, chart_scorer, detection, prefetch, checkpoint_scoring
+
+
+#: The endpoints that plan a flight: with no `aircraft` they plan with no
+#: airplane (PlanQuery's).
+PLANNING = ("/api/plan", "/api/navlog", "/api/local-flight")
+
+
+class AirplaneClient(TestClient):
+    """A client whose plans fly the stock C172 unless a test names another
+    airplane, as every plan did before no airplane became the default
+    (the owner, 2026-11-09): the tests of an airplane's figures."""
+
+    def get(self, url, *, params=None, **kwargs):
+        if str(url).split("?")[0] in PLANNING and "aircraft=" not in str(url):
+            params = {"aircraft": "c172", **(params or {})}
+        return super().get(url, params=params, **kwargs)
 
 
 @pytest.fixture(autouse=True)

@@ -70,7 +70,7 @@ extension AssistantContext {
     /// is the planner's own now: the plan has none of its own.
     @MainActor
     static func make(plan: Plan, ownShip: OwnShip, session: Session, minimums: PersonalMinimums? = nil, currency: Currency? = nil) -> AssistantContext {
-        var context = AssistantContext(aircraft: plan.aircraft, altitudeFt: plan.ownAltitudeFt ?? plan.altitudeFt, dep: plan.dep, depart: nil,
+        var context = AssistantContext(aircraft: plan.plannerAircraft, altitudeFt: plan.ownAltitudeFt ?? plan.altitudeFt, dep: plan.dep, depart: nil,
                                        dest: plan.dest, ownShip: nil, pilot: nil, rules: nil, stops: plan.stops)
         if let fix = ownShip.fix {
             context.ownShip = OwnShipFix(altitudeFt: fix.altitudeFt, groundspeedKt: fix.groundspeedKt, lat: fix.coordinate.latitude,

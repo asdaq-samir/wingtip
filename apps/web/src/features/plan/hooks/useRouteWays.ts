@@ -9,7 +9,7 @@ import type { PlannedRoute } from "./planAddress";
 
 /** The route with the fuel stops it needs put in (RouteOptions.own), for
  *  its card before anything is planned. */
-export interface FuelCard { stops: string[]; added: string[]; nm: number; air: number; ground: number; landings: number }
+export interface FuelCard { stops: string[]; added: string[]; nm: number; air: number | null; ground: number; landings: number }
 
 /** The route as it was before the first Routes card was swiped into FPL,
  *  with its figures, kept for Your Route to put it back (useRouteWays). */

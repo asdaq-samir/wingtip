@@ -8143,7 +8143,7 @@ enum EngineContract {
         }
     }
 
-    /// One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets.
+    /// One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets. With no airplane (a null profile) its minutes in the air and its fuel are null, and it has no fuel stops.
     struct RouteOption: Codable, Equatable, Sendable {
         var kind: String
         var kinds: [String]
@@ -8153,9 +8153,9 @@ enum EngineContract {
         var food: [String]
         var path: [[Double]]
         var distanceNm: Double
-        var airMin: Double
+        var airMin: Double?
         var groundMin: Double
-        var fuelGal: Double
+        var fuelGal: Double?
         var landings: Int
         var crosses: [Int]
         var marginal: [Int]
@@ -8337,6 +8337,8 @@ enum EngineContract {
         var window: [Double]
         var altitudesFt: [Double]
         var lowestCruiseFt: Double
+        /// The true airspeed the ways are costed at: the airplane's cruise, else with none picked the still-air reference (100 kt), for the host's glide reach of dry land.
+        var tasKt: Double
         var metars: Bool
         var bbox: [Double]
         var dataBox: [Double]
@@ -8352,6 +8354,7 @@ enum EngineContract {
             case window
             case altitudesFt = "altitudes_ft"
             case lowestCruiseFt = "lowest_cruise_ft"
+            case tasKt = "tas_kt"
             case metars
             case bbox
             case dataBox = "data_box"
@@ -8366,7 +8369,8 @@ enum EngineContract {
     struct RouteOptionsInput: Codable, Equatable, Sendable {
         var dep: EngineContract.RouteOptionsEnd
         var dest: EngineContract.RouteOptionsEnd
-        var profile: EngineContract.RouteOptionsProfile
+        /// The airplane; missing or null for none picked: the ways are then costed in still air, with no minutes, fuel or fuel stops.
+        var profile: EngineContract.RouteOptionsProfile?
         var departS: Double
         var nowS: Double?
         var minCeilingFt: Double?

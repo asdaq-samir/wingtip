@@ -60,16 +60,6 @@ class StillComputing(RuntimeError):
         self.stages = sorted(stages)
 
 
-#: The aircraft asked for when none is picked: the plan is made with no
-#: airplane -- the route's own figures (its course, miles, legs,
-#: checkpoints, altitudes, weather and airspace) and none that needs one
-#: (times, ground speeds, fuel, the tops of climb and descent), never a
-#: stock airplane's in its place. The owner (2026-11-09): "If no airplane
-#: is entered, only show the distance and the things you can without
-#: airplane profile, don't assume."
-NO_AIRPLANE = "none"
-
-
 class UnknownAircraft(ValueError):
     """No stock profile goes by the name asked: the planner answers it a
     422 (app.main), as it did when this was wingtip.planning's HTTPException."""

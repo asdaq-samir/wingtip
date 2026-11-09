@@ -15,7 +15,7 @@ struct DepartureWindowTests {
         go.minimums = PersonalMinimums(ceilingFt: 3000)
         let ask = try DepartureWindow.ask(go, airplane: true)
         #expect(ask.dep == "KDLH" && ask.dest == "KHIB" && ask.stops == "KCKC" && ask.aircraft == "c172")
-        #expect(ask.minimums?.ceilingFt == 3000 && ask.hours == 48 && ask.airplane == true && ask.rules == "VFR")
+        #expect(ask.minimums?.ceilingFt == 3000 && ask.hours == 48 && ask.airplane == true && ask.rules == "vfr")
     }
 
     @Test func hoursInWords() throws {

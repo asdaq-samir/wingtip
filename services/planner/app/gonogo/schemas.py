@@ -8,7 +8,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from ..router_basics import DEFAULT_AIRCRAFT
 from ..schemas.common import AltitudeChoice, FlightRules, Loading
 
 Finding = Literal["ok", "caution", "stop", "unknown", "pending"]
@@ -114,7 +113,8 @@ class GoNoGoAsk(BaseModel):
     altitude_ft: float | None = None
     altitude_nearest: bool = False
     altitude_choice: AltitudeChoice = "fastest"
-    aircraft: str = DEFAULT_AIRCRAFT
+    #: A stock profile's name; none for no airplane picked (PlanQuery's).
+    aircraft: str | None = None
     cruise_tas_kt: float | None = Field(default=None, gt=0, le=1000)
     fuel_burn_gph: float | None = None
     usable_fuel_gal: float | None = None

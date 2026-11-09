@@ -87,10 +87,11 @@ object Planner {
     fun route(dep: String, dest: String, stops: List<String>): Map<String, String?> =
         mapOf("dep" to dep, "dest" to dest, "stops" to stops.joinToString(",").ifEmpty { null })
 
-    /** The planner's word for no airplane chosen (wingtip.planning
-     *  NO_AIRPLANE): the plan gives distances and courses, no times or
-     *  fuel (decision 0011). */
-    const val NO_AIRPLANE = "none"
+    /** The airplane as the planner is asked it: the profile's name, null
+     *  with none chosen (an empty name), which it plans with no airplane --
+     *  distances and courses, no times or fuel (decision 0011; the owner,
+     *  2026-11-09: "don't assume"). */
+    fun aircraft(name: String): String? = name.ifEmpty { null }
 
     /** Which chart the map draws and where its tiles are (/api/chart). */
     suspend fun chart(): ChartInfo = Gateway.json.decodeFromString(fetch("/api/chart"))
@@ -127,7 +128,7 @@ object Planner {
     fun navlog(dep: String, dest: String, stops: List<String>, aircraft: String, holds: List<String> = emptyList(), rules: String = "vfr"): Flow<NavLogMessage> =
         lines(
             "/api/navlog",
-            route(dep, dest, stops) + ("aircraft" to aircraft.ifEmpty { NO_AIRPLANE }) + ("holds" to holds.joinToString(",").ifEmpty { null }) + ("rules" to rules),
+            route(dep, dest, stops) + ("aircraft" to aircraft(aircraft)) + ("holds" to holds.joinToString(",").ifEmpty { null }) + ("rules" to rules),
         )
             .mapNotNull { NavLog.decode(it) }
 

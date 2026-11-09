@@ -6,7 +6,6 @@ candidates, flies at the one legal altitude, and each leg is 10 nm."""
 from types import SimpleNamespace
 
 import pytest
-from fastapi.testclient import TestClient
 from wingtip import airports, fixes, geo
 from wingtip import altitude as altitude_module
 
@@ -16,10 +15,10 @@ from app import checkpoint_scoring
 from app.router_basics import load_hop, load_route
 from app.main import app
 
-from .conftest import airport, select_cruise_altitude_stub
+from .conftest import AirplaneClient, airport, select_cruise_altitude_stub
 from .test_plan import CANDIDATES, _air
 
-client = TestClient(app)
+client = AirplaneClient(app)
 
 VIA_MADISON = {"dep": "C81", "dest": "KDLH", "stops": "KMSN"}
 

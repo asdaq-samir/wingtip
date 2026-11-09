@@ -12,7 +12,7 @@ from wingtip import filed_routes, nearby
 from wingtip import route_options as wingtip_route_options
 
 from .. import prefetch
-from ..router_basics import DEFAULT_AIRCRAFT, load_route, resolve
+from ..router_basics import load_route, resolve
 from wingtip.planning import aircraft_profile, forecast_hour_for
 from ..schemas.route_options import RouteOptions
 from ..gateway import PUBLIC
@@ -99,7 +99,10 @@ def route_options(
     dep: str, dest: str,
     #: The pilot's own route's stops, "KDSM,VPBNG": what it meets is said.
     stops: str = "",
-    aircraft: str = DEFAULT_AIRCRAFT,
+    #: A stock profile's name; none for no airplane picked: the ways are
+    #: then the route's own, with no minutes, fuel or fuel stops (the
+    #: engine's route_options with a null profile).
+    aircraft: str | None = None,
     cruise_tas_kt: CruiseTas = None,
     fuel_burn_gph: Annotated[float | None, Query(gt=0, le=200)] = None,
     usable_fuel_gal: Annotated[float | None, Query(gt=0, le=2000)] = None,
@@ -123,8 +126,9 @@ def route_options(
     if kept is not None:
         return kept
     start, end = resolve(dep, dest)
-    profile = aircraft_profile(aircraft, cruise_tas_kt=cruise_tas_kt, fuel_burn_gph=fuel_burn_gph,
-                               usable_fuel_gal=usable_fuel_gal, service_ceiling_ft=service_ceiling_ft)
+    profile = None if aircraft is None else aircraft_profile(
+        aircraft, cruise_tas_kt=cruise_tas_kt, fuel_burn_gph=fuel_burn_gph, usable_fuel_gal=usable_fuel_gal,
+        service_ceiling_ft=service_ceiling_ft)
     # The pilot's own route, its points by ident: what it meets, and it with
     # the fuel stops it needs put in (`own`).
     # A route the plan refuses (too many stops, a stop twice over) still

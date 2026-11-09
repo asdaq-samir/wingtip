@@ -152,6 +152,22 @@ fn fuel_stops_land_with_the_reserve_and_the_fewest_kind_lands_least() {
 }
 
 #[test]
+fn with_no_airplane_the_ways_have_no_minutes_fuel_or_fuel_stops() {
+    // The same 600 nm with no airplane picked: no fuel stop is planned, and
+    // the minutes and fuel, which need an airplane, are null -- only the
+    // route's own figures (the owner, 2026-11-09: "don't assume").
+    let mut input = fixture()["fuelStops"]["input"].clone();
+    input["profile"] = Value::Null;
+    let answer: Value = serde_json::from_str(&call("route_options", &flat_ground(input).to_string()).unwrap()).unwrap();
+    for w in answer["options"].as_array().unwrap().iter().chain([&answer["own"]]) {
+        assert!(w["air_min"].is_null() && w["fuel_gal"].is_null(), "{w}");
+        assert_eq!(w["landings"], 0);
+        assert!(w["fuel"].as_array().unwrap().is_empty());
+        assert!(w["distance_nm"].as_f64().unwrap() >= 590.0);
+    }
+}
+
+#[test]
 fn a_meal_is_had_among_chains_of_as_many_stops_and_a_landing_is_a_refuel() {
     let (answer, expect) = options("food");
     assert_eq!(answer["own"]["fuel"], expect["own_fuel"]);

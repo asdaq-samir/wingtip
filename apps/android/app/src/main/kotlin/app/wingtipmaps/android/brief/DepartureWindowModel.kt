@@ -58,7 +58,7 @@ class DepartureWindowModel(
         asking = viewModelScope.launch {
             val question = DepartureWindowAsk(
                 dep = plan.dep, dest = plan.dest, stops = plan.stops.joinToString(",").ifEmpty { null },
-                aircraft = plan.aircraft.ifEmpty { Planner.NO_AIRPLANE }, airplane = plan.airplane,
+                aircraft = Planner.aircraft(plan.aircraft), airplane = plan.airplane,
                 hours = HOURS, day = LocalDate.now().toString(),
             )
             try {

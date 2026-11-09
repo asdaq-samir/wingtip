@@ -149,13 +149,14 @@ def _fixes(box) -> list[dict]:
             for f in fixes.within(s, w, n, e)]
 
 
-def options(dep: dict, dest: dict, profile: dict, *, depart: datetime | None = None, fcst_hr: str = "06",
+def options(dep: dict, dest: dict, profile: dict | None, *, depart: datetime | None = None, fcst_hr: str = "06",
             min_ceiling_ft: float | None = None, min_visibility_sm: float | None = None,
             current: list[tuple] | None = None, current_idents: list[str] | None = None,
             current_landed: list[bool] | None = None, fields=None,
             filed: tuple[list[tuple], list[str]] | None = None, food=None, night: bool | None = None) -> dict:
     """The ways to fly from `dep` to `dest` ({"ident", "lat", "lon"}) in an
-    airplane of `profile` (wingtip.aircraft's), the engine's route_options
+    airplane of `profile` (wingtip.aircraft's; None for no airplane picked,
+    the ways then with no minutes, fuel or fuel stops), the engine's route_options
     answer (its contract: engine/contract/engine.schema.json). `current`
     is the pilot's own route [(lat, lon)] end to end, its points' idents
     and which of them are landed at; `filed` the most filed route's points
@@ -171,8 +172,8 @@ def options(dep: dict, dest: dict, profile: dict, *, depart: datetime | None = N
     asked = {
         "dep": {"ident": dep.get("ident") or "", "lat": dep["lat"], "lon": dep["lon"]},
         "dest": {"ident": dest.get("ident") or "", "lat": dest["lat"], "lon": dest["lon"]},
-        "profile": {k: profile.get(k) for k in ("cruise_tas_kt", "fuel_burn_gph", "usable_fuel_gal", "taxi_fuel_gal",
-                                                "service_ceiling_ft")},
+        "profile": profile and {k: profile.get(k) for k in ("cruise_tas_kt", "fuel_burn_gph", "usable_fuel_gal",
+                                                            "taxi_fuel_gal", "service_ceiling_ft")},
         "depart_s": leave, "now_s": now,
         "min_ceiling_ft": min_ceiling_ft, "min_visibility_sm": min_visibility_sm,
         "current": [[lat, lon] for lat, lon in current] if current else None,
@@ -189,7 +190,7 @@ def options(dep: dict, dest: dict, profile: dict, *, depart: datetime | None = N
         logger.warning("route options: terrain not read (%s)", error)
     try:
         far = water.out_of_glide_samples(frame["lat0"], frame["lon0"], frame["rows"], frame["cols"], frame["cell_deg"],
-                                         height_ft=frame["lowest_cruise_ft"], speed_kt=max(float(profile["cruise_tas_kt"]), 1.0))
+                                         height_ft=frame["lowest_cruise_ft"], speed_kt=max(float(frame["tas_kt"]), 1.0))
         asked["water_far"] = (np.asarray(far, dtype=np.uint8).ravel() + ord("0")).tobytes().decode()
     except (water.WaterUnavailable, OSError, ValueError) as error:
         logger.warning("route options: water not read (%s)", error)

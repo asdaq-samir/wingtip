@@ -296,7 +296,7 @@ struct DiversionDrillView: View {
         let estimates = typed.compactMapValues { Double($0.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces)) }
         stopped = Date()
         checking = true
-        let aircraft = plan.aircraft, figures = plan.figures, altitude = altitudeFt
+        let aircraft = plan.plannerAircraft, figures = plan.figures, altitude = altitudeFt
         Task {
             do {
                 answer = try await Planner.diversion(lat: at.latitude, lon: at.longitude, to: ident, altitudeFt: altitude,
