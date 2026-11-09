@@ -6,7 +6,7 @@ import type { Candidate, Leg } from "../../../../lib/api/types";
 import { Skeleton } from "../../../../components/ui/skeleton";
 import { routeProfileQuery } from "../../../../lib/queryClient";
 import { TEXT } from "../../../../lib/text";
-import { altFt } from "../../../../lib/units";
+import { altFt, flightLevel } from "../../../../lib/units";
 import { one } from "../../format";
 import { planProfile } from "./profile";
 import { navLogRows, type RouteEnds } from "./rows";
@@ -234,7 +234,10 @@ export default memo(function MiniProfile({ ends, selected, legs, onOpen, preview
           )}
           style={{ top: ruler ? `${(y(preview ?? cruise) / H) * 100}%` : `calc(${(y(preview ?? cruise) / H) * 100}% + 3px)` }} aria-hidden="true" data-testid="mini-profile-cruise"
         >
-          {altFt(preview ?? cruise)} ft
+          {/* The owner's FL-055, as the altitude field and the wheel write it
+              (lib/units flightLevel; the FPL audit's A7); a reader hears the
+              feet in the chart's own label. */}
+          {flightLevel(preview ?? cruise)}
         </span>
       )}
       </span>

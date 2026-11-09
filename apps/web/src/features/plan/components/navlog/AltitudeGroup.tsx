@@ -371,7 +371,8 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
     el.style.setProperty("--scale-top", String(top));
     el.style.setProperty("--roll-ft", String(altitude));
     el.style.setProperty("--roll-on", "1");
-    el.querySelector("[data-roll-label]")?.setAttribute("data-label", `${altFt(altitude)} ft`);
+    // FL-055, the owner's format for the cruise (the FPL audit's A7).
+    el.querySelector("[data-roll-label]")?.setAttribute("data-label", flightLevel(altitude));
     const base = baseTop();
     const at = (ft: number) => String(Math.max(0, Math.min(1, 1 - ft / base)));
     for (const [tint, ft] of [["red", altitude], ["red-end", altitude], ["amber", altitude - 500], ["amber-end", altitude - 500]] as const) {
