@@ -1,21 +1,23 @@
 /**
- * Whether this browser can recognise speech on the device, and nowhere
- * else: the one test every voice control asks (lib/listen, and the
- * screens through useCanListen).
+ * Whether this browser can recognise speech, and whether on the device:
+ * the one test every voice control asks (lib/listen, and the screens
+ * through useCanListen).
  *
- * Nothing a pilot says leaves the phone or computer (the owner,
- * 2026-11-09: "I don't want anyone to get spooked that we are sending
- * their data to Google or Apple"). The Web Speech API sends audio to the
+ * The phones recognise speech on the device only (the owner, 2026-11-09:
+ * "I don't want anyone to get spooked that we are sending their data to
+ * Google or Apple"); in a browser, the owner then said, voice is offered
+ * in every browser that has a recognizer, kept on the device wherever the
+ * browser can promise it (privacy.md says so). The Web Speech API sends audio to the
  * browser maker's servers unless the page asks for local processing:
  * Chrome 139+ takes `processLocally` on a recognizer and answers
  * `SpeechRecognition.available({ langs, processLocally: true })` with
  * "available", "downloadable", "downloading" or "unavailable", and
  * `install` fetches the language pack (the Web Speech API draft, "on-device
  * speech recognition"; Chrome's 2025 on-device launch). Safari's
- * recognizer and Firefox's have neither, and an older Chrome neither, so
- * there they cannot be told to stay on the device: voice is not offered
- * at all there, the microphone controls hidden, and a clearance is typed.
- * There is no server fallback and no setting for one.
+ * recognizer has neither, nor an older Chrome: there the browser's own
+ * recognizer is used ("browser"), which may send the audio to its maker.
+ * Where a browser has no recognizer at all (Firefox), voice is hidden and
+ * a clearance is typed.
  */
 import { useEffect } from "react";
 import { create } from "zustand";
@@ -24,8 +26,9 @@ import { create } from "zustand";
  *  JO 7110.65, and AIM 4-2 for the pilot's side) is spoken in English. */
 export const SPEECH_LANG = "en-US";
 
-/** What `available` answers, and "checking" before it has. */
-type SpeechHere = "checking" | "available" | "downloadable" | "downloading" | "unavailable";
+/** What `available` answers, "checking" before it has, and "browser"
+ *  where there is a recognizer that cannot be kept on the device. */
+type SpeechHere = "checking" | "available" | "downloadable" | "downloading" | "browser" | "unavailable";
 
 interface LocalOptions { langs: string[]; processLocally: boolean }
 
@@ -51,17 +54,17 @@ const useSpeechHere = create<{ state: SpeechHere }>(() => ({ state: "checking" }
 let asked: Promise<SpeechHere> | null = null;
 
 /** Asks the browser once whether it can recognise English on the device;
- *  anything but a clear answer is "unavailable". */
+ *  a recognizer that can't say so, or says not, is "browser". */
 export function checkSpeech(): Promise<SpeechHere> {
   asked ??= (async (): Promise<SpeechHere> => {
     const Recognition = recognitionClass();
-    let state: SpeechHere = "unavailable";
+    let state: SpeechHere = Recognition ? "browser" : "unavailable";
     if (Recognition && typeof Recognition.available === "function") {
       try {
         const answer = await Recognition.available(LOCAL);
         if (answer === "available" || answer === "downloadable" || answer === "downloading") state = answer;
       } catch {
-        state = "unavailable";
+        state = "browser";
       }
     }
     useSpeechHere.setState({ state });
@@ -71,21 +74,27 @@ export function checkSpeech(): Promise<SpeechHere> {
 }
 
 /** Whether voice is offered here, for a screen, which shows its
- *  microphone once the browser has answered that speech stays on the
- *  device: false until then, and where it cannot. */
+ *  microphone once the browser has answered: false until then, and where
+ *  there is no recognizer. */
 export function useCanListen(): boolean {
   useEffect(() => { void checkSpeech(); }, []);
-  return useSpeechHere(s => s.state === "available" || s.state === "downloadable" || s.state === "downloading");
+  return useSpeechHere(s => s.state !== "checking" && s.state !== "unavailable");
+}
+
+/** Whether the recognizer is to be told to stay on the device. */
+export function processesLocally(): boolean {
+  return useSpeechHere.getState().state === "available";
 }
 
 /**
- * Ready to recognise on the device: at once where the language pack is
- * there, else after `install` fetches it (started from the pilot's tap,
- * which Chrome asks of a download). False where it cannot be.
+ * Ready to recognise: at once where the language pack is there or the
+ * browser has only its own recognizer, else after `install` fetches the
+ * pack (started from the pilot's tap, which Chrome asks of a download).
+ * False where there is no recognizer, or the pack would not install.
  */
 export async function readyLocally(): Promise<boolean> {
   const state = useSpeechHere.getState().state === "checking" ? await checkSpeech() : useSpeechHere.getState().state;
-  if (state === "available") return true;
+  if (state === "available" || state === "browser") return true;
   if (state === "unavailable") return false;
   const Recognition = recognitionClass();
   try {
@@ -97,9 +106,11 @@ export async function readyLocally(): Promise<boolean> {
   }
 }
 
-/** Whether a start needs no wait: the pack is there already. */
+/** Whether a start needs no wait: the pack is there already, or the
+ *  browser's own recognizer is all there is. */
 export function readyNow(): boolean {
-  return useSpeechHere.getState().state === "available";
+  const state = useSpeechHere.getState().state;
+  return state === "available" || state === "browser";
 }
 
 /** For tests: forget the browser's answer, so the next check asks again. */

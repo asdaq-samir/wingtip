@@ -35,9 +35,9 @@ afterEach(() => {
 });
 
 describe("Listen to ATIS", () => {
-  test("not offered where speech cannot be recognised on the device", async () => {
-    class ServerOnly { start() {} stop() {} }
-    vi.stubGlobal("SpeechRecognition", ServerOnly);
+  test("not offered where the browser has no recognizer (Firefox)", async () => {
+    vi.stubGlobal("SpeechRecognition", undefined);
+    vi.stubGlobal("webkitSpeechRecognition", undefined);
     await speechAnswered();
     render(<AtisRows />);
     expect(screen.queryByTestId("place-atis-listen")).toBeNull();

@@ -13,14 +13,12 @@ import { openPanel, settle, sideDrawer, slow } from "./helpers";
  * (AIM 4-4-3, 5-2-6).
  */
 test("a clearance read is shown in its items and entered as the route", async ({ page }) => {
-  // A browser whose recognizer cannot keep speech on the device, as
-  // Safari's (no on-device ask): no voice is offered, and the comms
-  // button opens the card to type in, with no microphone in it.
+  // A browser with no recognizer, as Firefox: no voice is offered, and
+  // the comms button opens the card to type in, with no microphone in it.
   await page.addInitScript(() => {
-    class ServerOnly { start() {} stop() {} }
     const w = window as unknown as Record<string, unknown>;
     delete w.SpeechRecognition;
-    w.webkitSpeechRecognition = ServerOnly;
+    delete w.webkitSpeechRecognition;
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

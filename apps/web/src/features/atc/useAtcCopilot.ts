@@ -80,8 +80,8 @@ interface AtcCopilot {
  * copilot's banner (lib/atc/latestCall). Nothing is set until a tap.
  */
 export function useAtcCopilot(): AtcCopilot {
-  // The copilot listens or is not there: where speech cannot be
-  // recognised on the device it is off, whatever the setting says.
+  // The copilot listens or is not there: where the browser has no
+  // recognizer it is off, whatever the setting says.
   const voice = useCanListen();
   const on = useAtcListen(s => s.value === "flying") && voice;
   const flying = useFlying(s => s.flying);

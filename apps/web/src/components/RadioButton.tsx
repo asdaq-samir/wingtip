@@ -22,8 +22,8 @@ const load = () => import("../lib/atcListening").then(m => (listening = m));
  * MapControls) -- and a pause or a second tap ends it, the pill then
  * offering what can be done of what was heard. While the radio is
  * listened to on and on (the Radio card's Listen) a tap opens the card,
- * the log; where speech cannot be recognised on the device (Safari,
- * Firefox, lib/speechLocal), the card to type in, nothing listening.
+ * the log; where the browser has no recognizer (Firefox,
+ * lib/speechLocal), the card to type in, nothing listening.
  */
 export default function RadioButton() {
   const open = useAtcRadio(s => s.cardOpen);

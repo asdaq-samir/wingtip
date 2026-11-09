@@ -176,11 +176,10 @@ describe("the clearance card", () => {
   });
 });
 
-describe("on the device or not at all", () => {
-  test("a browser that cannot keep speech on the device (Safari, Firefox): no microphone, no picker, the clearance typed", async () => {
-    // A recognizer without Chrome's on-device ask: it would send the audio to a server.
+describe("the browser's recognizer, on the device where it can be", () => {
+  test("a browser with no recognizer (Firefox): no microphone, no picker, the clearance typed", async () => {
     vi.stubGlobal("SpeechRecognition", undefined);
-    vi.stubGlobal("webkitSpeechRecognition", class { start() {} stop() {} });
+    vi.stubGlobal("webkitSpeechRecognition", undefined);
     await speechAnswered();
     card();
     expect(screen.queryByTestId("clearance-toggle")).toBeNull();
@@ -189,11 +188,19 @@ describe("on the device or not at all", () => {
     expect((screen.getByTestId("clearance-text") as HTMLTextAreaElement).placeholder).toMatch(/^Type it as read: /);
   });
 
-  test("on-device recognition unavailable for English: the same", async () => {
+  test("a recognizer without Chrome's on-device ask (Safari): the microphone is offered", async () => {
+    vi.stubGlobal("SpeechRecognition", undefined);
+    vi.stubGlobal("webkitSpeechRecognition", class { start() {} stop() {} });
+    await speechAnswered();
+    card();
+    expect(screen.getByTestId("clearance-toggle")).toBeTruthy();
+  });
+
+  test("on-device recognition unavailable for English: the browser's recognizer, still offered", async () => {
     vi.stubGlobal("SpeechRecognition", class extends LocalSpeech { static override available = async () => "unavailable"; });
     await speechAnswered();
     card();
-    expect(screen.queryByTestId("clearance-toggle")).toBeNull();
+    expect(screen.getByTestId("clearance-toggle")).toBeTruthy();
   });
 });
 

@@ -3,8 +3,8 @@
  * as Chrome's answers (lib/speechLocal): `available` says "available" for
  * English processed locally, `install` succeeds, and each recognizer has
  * the `processLocally` switch. Tests extend it for their recognizers; one
- * without it is a browser that cannot promise the device (Safari,
- * Firefox), where voice is not offered.
+ * without it is a browser that cannot promise the device (Safari), whose
+ * own recognizer is used; with none at all (Firefox) voice is hidden.
  */
 import { checkSpeech, forgetSpeechCheck } from "../lib/speechLocal";
 

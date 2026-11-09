@@ -18,7 +18,7 @@
  * Bluetooth or a cable, as a microphone).
  */
 
-import { readyLocally, readyNow, recognitionClass, SPEECH_LANG } from "./speechLocal";
+import { processesLocally, readyLocally, readyNow, recognitionClass, SPEECH_LANG } from "./speechLocal";
 
 /** A transmission heard so far (`id` the same until it ends), and
  *  whether the recognizer has settled on it. */
@@ -123,7 +123,8 @@ export async function listen(
 ): Promise<Listening> {
   const Recognition = recognitionClass() as WebRecognitionClass | null;
   // Where the language pack is there, no await before the start; else it
-  // is fetched first, from the pilot's tap. Never a server's recognizer.
+  // is fetched first, from the pilot's tap; where the browser cannot keep
+  // it on the device, its own recognizer (lib/speechLocal).
   if (!Recognition || !(readyNow() || await readyLocally())) {
     onEnded(NOT_HERE);
     return { stop: () => {}, renew: () => {} };
@@ -136,7 +137,7 @@ export async function listen(
     // Stopped by `renew` to start again on another input: what it says
     // as it goes is no failure.
     let retired = false;
-    recognition.processLocally = true;
+    if (processesLocally()) recognition.processLocally = true;
     recognition.lang = SPEECH_LANG;
     recognition.continuous = true;
     recognition.interimResults = true;

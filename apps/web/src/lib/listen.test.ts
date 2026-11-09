@@ -102,7 +102,7 @@ describe("the recognizer's input", () => {
   });
 });
 
-describe("on the device only", () => {
+describe("on the device where it can be", () => {
   test("every recognizer is told to process locally, English asked for on the device", async () => {
     const { renew } = await listen([], undefined, () => {}, () => {});
     renew();
@@ -121,23 +121,35 @@ describe("on the device only", () => {
     expect(Recognizer.made[0]!.processLocally).toBe(true);
   });
 
-  test("a recognizer that cannot promise the device (Safari, Firefox, an older Chrome): nothing starts", async () => {
-    class ServerOnly { start = vi.fn(); stop() {} }
+  test("a recognizer that cannot promise the device (Safari, an older Chrome): the browser's own, not told to stay local", async () => {
+    const made: Record<string, unknown>[] = [];
+    class BrowserOnly { start = vi.fn(); stop() {} constructor() { made.push(this as unknown as Record<string, unknown>); } }
     vi.stubGlobal("SpeechRecognition", undefined);
-    vi.stubGlobal("webkitSpeechRecognition", ServerOnly);
+    vi.stubGlobal("webkitSpeechRecognition", BrowserOnly);
+    forgetSpeechCheck();
+    const ended = vi.fn();
+    await listen([], undefined, () => {}, ended);
+    expect(ended).not.toHaveBeenCalled();
+    expect(made).toHaveLength(1);
+    expect(made[0]!.processLocally).toBeUndefined();
+    expect(made[0]!.start).toHaveBeenCalled();
+  });
+
+  test("on-device recognition unavailable: the browser's recognizer, not told to stay local", async () => {
+    Recognizer.here = "unavailable";
+    forgetSpeechCheck();
+    await listen([], undefined, () => {}, () => {});
+    expect(Recognizer.made).toHaveLength(1);
+    expect(Recognizer.made[0]!.processLocally).toBe(false);
+  });
+
+  test("no recognizer at all (Firefox): nothing starts", async () => {
+    vi.stubGlobal("SpeechRecognition", undefined);
+    vi.stubGlobal("webkitSpeechRecognition", undefined);
     forgetSpeechCheck();
     const ended = vi.fn();
     await listen([], undefined, () => {}, ended);
     expect(ended).toHaveBeenCalledWith("Speech can't be recognised on this device; type the clearance instead.");
-  });
-
-  test("on-device recognition unavailable: nothing starts", async () => {
-    Recognizer.here = "unavailable";
-    forgetSpeechCheck();
-    const ended = vi.fn();
-    await listen([], undefined, () => {}, ended);
-    expect(Recognizer.made).toHaveLength(0);
-    expect(ended).toHaveBeenCalledOnce();
   });
 });
 

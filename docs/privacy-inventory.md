@@ -37,16 +37,17 @@ longer than it takes to answer the request.
   by the engine on the device and shown there; nothing of it is sent
   anywhere or kept past a few hours.
 - **The radio, with the ATC copilot on, and anything said to the app.**
-  Speech is recognised on the device and never leaves it (the owner,
-  2026-11-09): no audio is recorded or sent to us, Apple, Google or
-  anyone. Apple's recognizer on the iPhone with
+  On the phones speech is recognised on the device and never leaves it
+  (the owner, 2026-11-09); no audio is recorded or sent to us. Apple's recognizer on the iPhone with
   `requiresOnDeviceRecognition` always (`ClearanceListener.swift`), only
   where `supportsOnDeviceRecognition`; Android's on-device recognizer
   (`createOnDeviceSpeechRecognizer`, API 31+, `atc/RadioListener.kt`);
-  on the web, the Web Speech API with `processLocally` only where
-  `SpeechRecognition.available({processLocally: true})` says so
-  (`lib/speechLocal.ts`; Chrome). Elsewhere voice is not offered: the
-  microphone controls are hidden, with no server fallback. Of the text,
+  phones without one get no voice. On the web (the owner, 2026-11-09:
+  other browsers are fine) the Web Speech API with `processLocally`
+  where `SpeechRecognition.available({processLocally: true})` says so
+  (Chrome), else the browser's own recognizer, which may send audio to
+  its maker (Safari to Apple); no recognizer (Firefox), no voice
+  (`lib/speechLocal.ts`). Of the text,
   only a clearance's place words go to the planner
   (`/api/clearance/places`).
 - **iCloud (iPhone).** Kept and watched airplanes and planned routes are

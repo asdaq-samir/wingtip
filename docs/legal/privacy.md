@@ -43,13 +43,10 @@ Your position is stored with your account only as a track you choose to save to 
 
 ## Listening to the radio
 
-When you turn on the ATC copilot, or speak to the app, it listens through your device's microphone and turns the speech into text, to show the calls addressed to you. **Speech is recognised on your device and never leaves it:** the app records no audio, saves none to a file, and sends none to us, to Apple, to Google or to anyone else. It uses only the recognizer that runs on the device itself:
+When you turn on the ATC copilot, or speak to the app, it listens through your device's microphone and turns the speech into text, to show the calls addressed to you. The app records no audio, saves none to a file, and sends none to us.
 
-- on the iPhone, Apple's on-device speech recognition;
-- on Android, the phone's on-device speech recognizer (Android 12 and later);
-- in a web browser, the browser's on-device speech recognition, where the browser can promise that the audio stays on the device (Chrome, which may first download its English language pack).
-
-Where a device or browser cannot recognise speech on the device itself (an older phone, Safari or Firefox in a browser), the app does not offer voice at all, and you type instead; it never falls back to a recognizer on someone's servers. Of the text, only the place names in a clearance you heard (a clearance limit, a route, a departure) go to our planner, to find them on the map; a question you ask aloud goes to Claude as any typed question does.
+- **In the iPhone and Android apps, speech is recognised on your phone and never leaves it.** They use only the recognizer that runs on the phone itself: Apple's on-device speech recognition on the iPhone, and the phone's on-device speech recognizer on Android (Android 12 and later). Where a phone cannot do that, the app does not offer voice, and you type instead; it never falls back to a recognizer on someone's servers.
+- **In a web browser, the app uses the browser's own speech recognition.** Where the browser can promise that the audio stays on your computer or phone (Chrome, which may first download its English language pack), the app asks it to. Other browsers, such as Safari, may send the audio to their maker (Apple, for Safari) to be recognised, under that company's privacy policy. A browser with no speech recognition (Firefox) is not offered voice. Of the text, only the place names in a clearance you heard (a clearance limit, a route, a departure) go to our planner, to find them on the map; a question you ask aloud goes to Claude as any typed question does.
 
 ## Features Claude writes
 
