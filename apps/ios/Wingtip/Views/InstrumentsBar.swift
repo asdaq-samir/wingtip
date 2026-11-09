@@ -17,11 +17,11 @@ struct InstrumentsBar: View {
         if let fix = flight.fix, flight.underway {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 4) {
-                    cell("GS", fix.groundspeedKt.map { Formats.number($0, decimals: 0) } ?? "—", unit: "kt",
+                    cell("GS", fix.groundspeedKt.map { Format.number($0, decimals: 0) } ?? "—", unit: "kt",
                          spoken: fix.groundspeedKt.map { "Groundspeed \(SpokenFigures.knots($0))" })
                     cell("TRK", Self.track(fix.trackDeg, magnetic: flight.progress?.trackMagDeg),
                          spoken: fix.trackDeg.map { "Track \(SpokenFigures.degrees(flight.progress?.trackMagDeg ?? $0))" })
-                    cell("ALT", fix.altitudeFt.map(Formats.grouped) ?? "—", unit: "ft",
+                    cell("ALT", fix.altitudeFt.map(Format.grouped) ?? "—", unit: "ft",
                          spoken: fix.altitudeFt.map { "GPS altitude \(SpokenFigures.feet($0))" })
                     cell("VS", Self.verticalSpeed(flight.verticalFpm), unit: "fpm",
                          spoken: flight.verticalFpm.map { "Vertical speed \(SpokenFigures.feetPerMinute(Self.roundedFpm($0)))" })
@@ -36,10 +36,10 @@ struct InstrumentsBar: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("Next, \(next.name)")
-                        cell("DIS", Formats.number(next.distanceNm, decimals: next.distanceNm < 10 ? 1 : 0), unit: "nm",
+                        cell("DIS", Format.number(next.distanceNm, decimals: next.distanceNm < 10 ? 1 : 0), unit: "nm",
                              spoken: SpokenFigures.nauticalMiles(next.distanceNm))
                         cell("ETE", next.eteMin.map(Self.minutesSeconds) ?? "—", spoken: next.eteMin.map(SpokenFigures.minutes))
-                        cell("DTK", Formats.degrees(progress.desiredTrackMagDeg ?? progress.desiredTrackDeg),
+                        cell("DTK", Format.heading(progress.desiredTrackMagDeg ?? progress.desiredTrackDeg),
                              spoken: "Desired track \(SpokenFigures.degrees(progress.desiredTrackMagDeg ?? progress.desiredTrackDeg))")
                     }
                     if let line = Self.offCourse(progress) {
@@ -116,9 +116,9 @@ struct InstrumentsBar: View {
     /// The track: magnetic as the nav log and the compass read it where
     /// the engine knows the variation (a route flown), else true, marked T.
     static func track(_ trueDeg: Double?, magnetic: Double?) -> String {
-        if let magnetic { return Formats.degrees(magnetic) }
+        if let magnetic { return Format.heading(magnetic) }
         guard let trueDeg else { return "—" }
-        return "\(Formats.degrees(trueDeg))T"
+        return "\(Format.heading(trueDeg))T"
     }
 
     /// Feet a minute to the nearest ten, as a VSI is read: a GPS's figure
@@ -129,34 +129,29 @@ struct InstrumentsBar: View {
     static func verticalSpeed(_ fpm: Double?) -> String {
         guard let fpm else { return "—" }
         let r = roundedFpm(fpm)
-        return r > 0 ? "+\(Formats.grouped(r))" : Formats.grouped(r)
+        return r > 0 ? "+\(Format.grouped(r))" : Format.grouped(r)
     }
 
     /// Minutes as a clock counts them down, "7:05"; past an hour "1h 12m".
     static func minutesSeconds(_ minutes: Double) -> String {
-        if minutes >= 60 { return hoursMinutes(minutes) }
+        if minutes >= 60 { return Format.duration(minutes) }
         let s = Int((minutes * 60).rounded())
         return String(format: "%d:%02d", s / 60, s % 60)
     }
 
     /// The UTC clock time a flight plan and ATC use, "1432Z".
-    static func zulu(_ unixS: Double) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
-        let parts = calendar.dateComponents([.hour, .minute], from: Date(timeIntervalSince1970: unixS))
-        return String(format: "%02d%02dZ", parts.hour ?? 0, parts.minute ?? 0)
-    }
+    static func zulu(_ unixS: Double) -> String { Format.zulu(Date(timeIntervalSince1970: unixS)) }
 
     /// How far off the course line and which side; nil within a tenth.
     static func offCourse(_ p: InFlight.Progress) -> String? {
         guard let side = p.offSide, p.offNm >= 0.1 else { return nil }
-        return "\(Formats.nm(p.offNm)) \(side) of course"
+        return "\(Format.distance(p.offNm)) \(side) of course"
     }
 
     /// The destination's arrival and the fuel the plan leaves there.
     static func arrival(_ dest: InFlight.Waypoint, eta: Double) -> String {
-        var line = "\(dest.name) at \(zulu(eta)), \(Formats.nm(dest.distanceNm, decimals: 0))"
-        if let fuel = dest.fuelLeftGal { line += ", about \(Formats.gal(max(0, fuel))) left by the plan" }
+        var line = "\(dest.name) at \(zulu(eta)), \(Format.distance(dest.distanceNm, decimals: 0))"
+        if let fuel = dest.fuelLeftGal { line += ", about \(Format.fuel(max(0, fuel))) left by the plan" }
         return line
     }
 }

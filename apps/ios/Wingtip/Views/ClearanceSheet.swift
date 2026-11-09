@@ -104,7 +104,7 @@ struct ClearanceSheet: View {
         for item in clearance.route {
             switch item.kind {
             case "vectors": parts.append(Text("Radar vectors"))
-            case "heading": parts.append(Text(String(format: "Heading %03d", item.degrees ?? 0)))
+            case "heading": parts.append(Text("Heading \(Format.heading(Double(item.degrees ?? 0)))"))
             case "airway": parts.append(Text(item.ident ?? ""))
             case "places":
                 let places = found.flatMap { $0.route.flatMap { run < $0.count ? $0[run] : nil } }
@@ -201,7 +201,7 @@ struct ClearanceSheet: View {
                             craft("Transponder", Text(squawk), spoken: SpokenFigures.digits(squawk))
                         }
                     } header: {
-                        Text(heardAt.map { "Heard \(Formats.time($0))" } ?? "Heard")
+                        Text(heardAt.map { "Heard \(Format.time($0))" } ?? "Heard")
                     }
                     Section("Your read back") {
                         if readback.isEmpty {

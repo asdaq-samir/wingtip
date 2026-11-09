@@ -304,7 +304,7 @@ struct FlownTrackView: View {
                         if let first = points.first, let last = points.last {
                             LabeledContent("Flown", value: FlightWords.lasted(last.t - first.t))
                         }
-                        if let top = points.compactMap(\.altFt).max() { LabeledContent("Highest", value: "\(Int(top).formatted()) ft") }
+                        if let top = points.compactMap(\.altFt).max() { LabeledContent("Highest", value: Format.altitude(top)) }
                     }
                     // Its debrief against the flight's nav log, the planner's (POST /api/debrief).
                     DebriefSections(flight: flight, points: track.points)
@@ -476,14 +476,14 @@ enum RouteShare {
     static func navLogText(_ plan: Plan) -> String {
         var lines = [plan.idents.joined(separator: " → ")]
         if let totals = plan.totals {
-            lines.append([AirportWords.nm(totals.distanceNm), totals.eteMin.map(hoursMinutes),
-                          totals.fuelGal.map(AirportWords.gal)].compactMap { $0 }.joined(separator: " · "))
+            lines.append([Format.distance(totals.distanceNm), totals.eteMin.map(Format.duration),
+                          totals.fuelGal.map { Format.fuel($0) }].compactMap { $0 }.joined(separator: " · "))
         }
         for leg in plan.legs {
             // No heading without an airplane: the planner sends none.
-            let heading = leg.magneticHeadingDeg.map { String(format: "MH %03.0f°", $0) } ?? ""
-            lines.append(String(format: "%@ → %@  %05.0f ft  %@  %.1f nm  %@  %@", leg.from, leg.to, leg.altitudeFt, heading, leg.distanceNm,
-                                leg.groundspeedKt.map { String(format: "GS %.0f kt", $0) } ?? "", leg.eteMin.map(hoursMinutes) ?? ""))
+            let heading = leg.magneticHeadingDeg.map { "MH \(Format.heading($0))" }
+            lines.append([("\(leg.from) → \(leg.to)"), Format.altitude(leg.altitudeFt), heading, Format.distance(leg.distanceNm),
+                          leg.groundspeedKt.map { "GS \(Format.speed($0))" }, leg.eteMin.map(Format.navLogTime)].compactMap { $0 }.joined(separator: "  "))
         }
         return lines.joined(separator: "\n")
     }
@@ -572,13 +572,13 @@ struct Kneeboard: View {
                     GridRow {
                         Text(leg.to).lineLimit(1)
                         Text(Int(leg.altitudeFt).formatted())
-                        Text(leg.magneticHeadingDeg.map { Formats.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
-                        Text(Formats.number(leg.distanceNm, decimals: 1))
-                        Text(leg.groundspeedKt.map { Formats.number($0, decimals: 0) } ?? "")
-                        Text(leg.eteMin.map { Formats.number($0, decimals: 1) } ?? "")
+                        Text(leg.magneticHeadingDeg.map { Format.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
+                        Text(Format.number(leg.distanceNm, decimals: 1))
+                        Text(leg.groundspeedKt.map { Format.number($0, decimals: 0) } ?? "")
+                        Text(leg.eteMin.map { Format.number($0, decimals: 1) } ?? "")
                         Text("")
                         Text("")
-                        Text(leg.fuelGal.map { Formats.number($0, decimals: 1) } ?? "")
+                        Text(leg.fuelGal.map { Format.number($0, decimals: 1) } ?? "")
                         Text("")
                     }
                     Divider().gridCellUnsizedAxes(.horizontal)
@@ -601,10 +601,10 @@ struct Kneeboard: View {
     private var summary: String {
         let parts: [String?] = [
             aircraft,
-            totals.map { AirportWords.nm($0.distanceNm) },
-            totals?.eteMin.map(hoursMinutes),
-            totals?.fuelGal.map(AirportWords.gal),
-            totals?.fuelRequiredGal.map { "(\(Formats.number($0, decimals: 1)) with reserve)" },
+            totals.map { Format.distance($0.distanceNm) },
+            totals?.eteMin.map(Format.duration),
+            totals?.fuelGal.map { Format.fuel($0) },
+            totals?.fuelRequiredGal.map { "(\(Format.number($0, decimals: 1)) with reserve)" },
         ]
         return parts.compactMap { $0 }.joined(separator: " · ")
     }

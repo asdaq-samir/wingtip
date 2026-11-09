@@ -50,13 +50,13 @@ struct ProfileCard: View {
                     ForEach(altitudes, id: \.self) { altitude in
                         let ete = plan.altitude?.altitudeFigures?.first(where: { $0.altitudeFt == altitude })?.eteMin
                         HStack {
-                            Text(flightLevel(altitude)).monospacedDigit().bold()
+                            Text(Format.cruiseAltitude(altitude)).monospacedDigit().bold()
                             if let name = name(of: altitude) {
                                 Text(name).foregroundStyle(legal.contains(altitude) ? Color.secondary : Color.orange)
                             }
                             if let ete {
                                 Spacer()
-                                Text(hoursMinutes(ete)).foregroundStyle(.secondary).monospacedDigit()
+                                Text(Format.duration(ete)).foregroundStyle(.secondary).monospacedDigit()
                             }
                         }
                         // "FL-045" read as the feet it stands for.
@@ -71,7 +71,7 @@ struct ProfileCard: View {
                 if let options = plan.altitude?.options, !options.isEmpty {
                     Picker("Plan", selection: Binding(get: { plan.altitudeChoice ?? (plan.ownAltitudeFt == nil ? "fastest" : "") }, set: { choose($0) })) {
                         ForEach(options.filter { !$0.steps.isEmpty }) { option in
-                            Text("\(option.kind.prefix(1).uppercased() + option.kind.dropFirst()) · \(flightLevel(option.altitudeFt ?? 0))").tag(option.kind)
+                            Text("\(option.kind.prefix(1).uppercased() + option.kind.dropFirst()) · \(Format.cruiseAltitude(option.altitudeFt ?? 0))").tag(option.kind)
                         }
                         if plan.ownAltitudeFt != nil { Text("Your altitude").tag("") }
                     }
@@ -81,7 +81,7 @@ struct ProfileCard: View {
                 Section {
                     ForEach(cautions) { caution in
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("\(flightLevel(caution.altitudeFt)) \(caution.fromIdent) → \(caution.toIdent)").font(.subheadline.weight(.semibold))
+                            Text("\(Format.cruiseAltitude(caution.altitudeFt)) \(caution.fromIdent) → \(caution.toIdent)").font(.subheadline.weight(.semibold))
                             ForEach(caution.reasons, id: \.self) { Text("• \($0)").font(.footnote) }
                         }
                         .foregroundStyle(Color.orange)
@@ -92,17 +92,17 @@ struct ProfileCard: View {
             }
             if let selection = plan.altitude?.altitudeSelection {
                 Section("How the altitude was chosen") {
-                    LabeledContent("Floor", value: "\(Int(selection.floorFt).formatted()) ft, the terrain and obstacles (14 CFR 91.119)")
-                    if let ceiling = selection.serviceCeilingFt { LabeledContent("Ceiling", value: "\(Int(ceiling).formatted()) ft, the airplane's") }
-                    if let clouds = selection.cloudBaseFt { LabeledContent("Clouds", value: "base \(Int(clouds).formatted()) ft (14 CFR 91.155)") }
-                    if let shelf = selection.airspaceCeilingFt { LabeledContent("Class B", value: "from \(Int(shelf).formatted()) ft (14 CFR 91.131)") }
+                    LabeledContent("Floor", value: "\(Format.altitude(selection.floorFt)), the terrain and obstacles (14 CFR 91.119)")
+                    if let ceiling = selection.serviceCeilingFt { LabeledContent("Ceiling", value: "\(Format.altitude(ceiling)), the airplane's") }
+                    if let clouds = selection.cloudBaseFt { LabeledContent("Clouds", value: "base \(Format.altitude(clouds)) (14 CFR 91.155)") }
+                    if let shelf = selection.airspaceCeilingFt { LabeledContent("Class B", value: "from \(Format.altitude(shelf)) (14 CFR 91.131)") }
                     if let candidates = selection.candidatesFt, !candidates.isEmpty {
-                        LabeledContent("Legal", value: candidates.map(flightLevel).joined(separator: " "))
+                        LabeledContent("Legal", value: candidates.map { Format.cruiseAltitude($0) }.joined(separator: " "))
                     }
                 }
             }
         }
-        .navigationTitle(plan.altitudeFt.map(flightLevel) ?? "Profile")
+        .navigationTitle(plan.altitudeFt.map { Format.cruiseAltitude($0) } ?? "Profile")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // The dry run from the profile's corner, as the web app has it.
@@ -138,16 +138,6 @@ struct ProfileCard: View {
         plan.altitudeChoice = kind
         plan.plan()
     }
-}
-
-/// The owner's FL-style figure for an altitude, the app's one copy:
-/// "FL-" and hundreds of feet in three digits ("FL-065" for 6,500 ft),
-/// written as the web's lib/format flightLevel and Android's StripData
-/// write it (the owner, 2026-10-27: "make it in the format FL-***"),
-/// knowingly not the FAA's meaning, which starts flight levels at 18,000
-/// ft (14 CFR 1.1, 91.121(a)(2)). VoiceOver still says the feet.
-func flightLevel(_ feet: Double) -> String {
-    String(format: "FL-%03d", Int((feet / 100).rounded()))
 }
 
 /// The side view itself, drawn: the ground in brown, Class B and C in
@@ -196,7 +186,7 @@ struct ProfileChart: View {
             }
             context.stroke(line, with: .color(.blue), style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
             // The scale's top and the floor.
-            context.draw(Text("\(Int(top).formatted()) ft").font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: 28, y: 10))
+            context.draw(Text(Format.altitude(top)).font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: 28, y: 10))
         }
         .background(Color(.secondarySystemBackground))
         .accessibilityLabel("The route from the side: the ground, the airspace and the altitude flown")

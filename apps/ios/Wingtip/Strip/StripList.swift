@@ -67,13 +67,13 @@ struct StripList: View {
                         Text("\(number.map { "\($0). " } ?? "")\(point.name)")
                             .font(ChartInk.text.weight(.medium)).lineLimit(1)
                         if let leg = point.leg {
-                            Text("MH \(leg.magneticHeadingDeg.map { String(format: "%03d", Int($0.rounded())) } ?? "—") · \(Int(leg.distanceNm.rounded())) NM")
+                            Text("MH \(leg.magneticHeadingDeg.map(Format.heading) ?? Format.none) · \(Format.distance(leg.distanceNm))")
                                 .font(ChartInk.note.monospacedDigit()).foregroundStyle(ink.muted)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     if let ete = point.leg?.eteMin {
-                        Text(StripData.duration(ete)).font(ChartInk.detail.monospacedDigit()).foregroundStyle(ink.muted)
+                        Text(Format.duration(ete)).font(ChartInk.detail.monospacedDigit()).foregroundStyle(ink.muted)
                     }
                 }
                 .padding(.horizontal, 4).padding(.vertical, 6)
@@ -167,7 +167,7 @@ struct StripFieldCard: View {
                     Spacer(minLength: 0)
                     if let minutes = point.minutesFlown {
                         VStack(alignment: .trailing, spacing: 2) {
-                            Text(Formats.time(Date().addingTimeInterval(minutes * 60)))
+                            Text(Format.time(Date().addingTimeInterval(minutes * 60)))
                                 .font(ChartInk.text.weight(.semibold).monospacedDigit())
                             Text(atLabel).font(ChartInk.note).foregroundStyle(ink.muted)
                         }
@@ -177,7 +177,7 @@ struct StripFieldCard: View {
                 if let detail {
                     Text(detail).font(ChartInk.detail).foregroundStyle(ink.ink.opacity(0.8))
                 } else if let ground = point.leg?.groundMin, point.kind == .stop, ground > 0 {
-                    Text("\(StripData.duration(ground)) on the ground").font(ChartInk.detail).foregroundStyle(ink.ink.opacity(0.8))
+                    Text("\(Format.duration(ground)) on the ground").font(ChartInk.detail).foregroundStyle(ink.ink.opacity(0.8))
                 }
                 chips
             }

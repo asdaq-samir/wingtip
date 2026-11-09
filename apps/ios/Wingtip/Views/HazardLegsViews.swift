@@ -37,7 +37,7 @@ struct FieldsBelowVfrSection: View {
                 ForEach(Array(fields.enumerated()), id: \.offset) { _, field in
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(field.ident) · \(field.source == "METAR" ? "\(field.flightCategory ?? "IFR") now" : "forecast then")").font(.headline)
-                        Text([field.ceilingFt.map { "\(Int($0).formatted()) ft" } ?? "no ceiling",
+                        Text([field.ceilingFt.map { Format.altitude(Double($0)) } ?? "no ceiling",
                               field.visibilitySm.map { String(format: "%g sm", $0) } ?? "—"].joined(separator: " · "))
                             .font(.footnote).foregroundStyle(.secondary)
                     }

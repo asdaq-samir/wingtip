@@ -14,10 +14,9 @@ enum FlightWords {
         }.joined(separator: " ")
     }
 
-    /// "2 h 13 min", "41 min".
+    /// How long, as every duration is written (Format.duration): "2h 13m", "41m".
     static func lasted(_ seconds: Double) -> String {
-        let minutes = Int((seconds / 60).rounded())
-        return minutes >= 60 ? "\(minutes / 60) h \(minutes % 60) min" : "\(minutes) min"
+        Format.duration(seconds / 60)
     }
 
     /// A field's town as FlightAware writes it under the ident: "Skyhaven,
@@ -63,7 +62,7 @@ enum FlightWords {
     static func against(_ feet: Double) -> String {
         let rounded = Int((feet / 100).rounded()) * 100
         if rounded == 0 { return "level" }
-        return "\(abs(rounded).formatted()) ft \(rounded > 0 ? "above" : "below")"
+        return "\(Format.altitude(Double(abs(rounded)))) \(rounded > 0 ? "above" : "below")"
     }
 }
 
@@ -287,9 +286,9 @@ struct NowFlightRow: View {
     private var flying: String {
         let rate = plane.verticalFpm ?? 0
         let climb = abs(rate) >= 100 ? "\(rate > 0 ? "↑" : "↓") \((Int((abs(rate) / 100).rounded()) * 100).formatted()) fpm" : "level"
-        let height = plane.altitudeFt.map { "\((Int(($0 / 25).rounded()) * 25).formatted()) ft" } ?? "—"
-        let speed = plane.speedKt.map { "\(Int($0.rounded())) kt" } ?? "—"
-        let track = plane.trackDeg.map { " · \(Formats.degrees($0)) true" } ?? ""
+        let height = Format.altitude(plane.altitudeFt.map { ($0 / 25).rounded() * 25 })
+        let speed = Format.speed(plane.speedKt)
+        let track = plane.trackDeg.map { " · \(Format.heading($0)) true" } ?? ""
         return "\(height) \(climb) · \(speed)\(track)"
     }
 
@@ -306,7 +305,7 @@ struct NowFlightRow: View {
         let nm = Flight.nm(from: fix.coordinate, to: here)
         let bearing = Flight.bearing(from: fix.coordinate, to: here)
         let height = fix.altitudeFt.flatMap { own in plane.altitudeFt.map { ", " + FlightWords.against($0 - own) } } ?? ""
-        return "\(Formats.nm(nm, decimals: 0)) \(AirportWords.compassPoint(bearing)) of you" + height
+        return "\(Format.distance(nm, decimals: 0)) \(AirportWords.compassPoint(bearing)) of you" + height
     }
 }
 
@@ -364,7 +363,7 @@ struct PastFlightCard: View {
                 // Its replay, the airplane flown along it again on the map.
                 ReplaySection(points: Replay.points(points), key: replayKey)
                 Section {
-                    LabeledContent("Highest", value: "\(Int(flight.maxAltFt).formatted()) ft")
+                    LabeledContent("Highest", value: Format.altitude(flight.maxAltFt))
                     LabeledContent("Flown", value: FlightWords.lasted(flight.on - flight.off))
                 }
             }

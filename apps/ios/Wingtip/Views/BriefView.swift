@@ -66,7 +66,7 @@ struct BriefView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text([hazard.type, hazard.hazard].compactMap { $0 }.joined(separator: " · ")).font(.headline)
                                     if let low = hazard.altitudeLowFt, let high = hazard.altitudeHighFt {
-                                        Text("\(Int(low).formatted()) to \(Int(high).formatted()) ft").font(.footnote).foregroundStyle(.secondary)
+                                        Text(Format.altitudeRange(low, high)).font(.footnote).foregroundStyle(.secondary)
                                     }
                                     if let raw = hazard.raw { Text(raw).font(.footnote.monospaced()).foregroundStyle(.secondary) }
                                 }
@@ -82,7 +82,7 @@ struct BriefView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text([g.hazard, g.severity].compactMap { $0 }.joined(separator: " · ")).font(.headline)
                                     HStack(spacing: 8) {
-                                        if let low = g.altitudeLowFt, let high = g.altitudeHighFt { Text("\(Int(low).formatted()) to \(Int(high).formatted()) ft") }
+                                        if let low = g.altitudeLowFt, let high = g.altitudeHighFt { Text(Format.altitudeRange(low, high)) }
                                         if let due = g.dueTo { Text(due) }
                                         if let at = g.validAt { Text(at) }
                                     }
@@ -103,8 +103,8 @@ struct BriefView: View {
                                         if tfr.activeNow { Text("active now").foregroundStyle(.red).font(.footnote.weight(.semibold)) }
                                     }
                                     HStack(spacing: 8) {
-                                        Text("\(Formats.nm(tfr.alongTrackNm, decimals: 0)) along")
-                                        if let floor = tfr.floorFt, let ceiling = tfr.ceilingFt { Text("\(Int(floor).formatted()) to \(Int(ceiling).formatted()) ft") }
+                                        Text("\(Format.distance(tfr.alongTrackNm, decimals: 0)) along")
+                                        if let floor = tfr.floorFt, let ceiling = tfr.ceilingFt { Text(Format.altitudeRange(floor, ceiling)) }
                                         if let effective = tfr.effective { Text("from \(effective)") }
                                     }
                                     .font(.footnote).foregroundStyle(.secondary)
@@ -119,7 +119,7 @@ struct BriefView: View {
                             ForEach(Array(pireps.enumerated()), id: \.offset) { i, p in
                                 VStack(alignment: .leading, spacing: 2) {
                                     HStack(spacing: 8) {
-                                        Text("\(Formats.nm(p.alongTrackNm, decimals: 0)) along").font(.headline)
+                                        Text("\(Format.distance(p.alongTrackNm, decimals: 0)) along").font(.headline)
                                         if let turbulence = p.turbulence { Text("turbulence \(turbulence)") }
                                         if let icing = p.icing { Text("icing \(icing)") }
                                         if p.urgent == true { Text("URGENT").foregroundStyle(.red).bold() }
@@ -132,7 +132,7 @@ struct BriefView: View {
                     }
                     FieldsBelowVfrSection(fields: briefing.fieldsBelowVfr ?? [])
                     Section("Forecast along the route") {
-                        LabeledContent("Lowest ceiling", value: briefing.forecast.minCeilingFt.map { "\(Int($0).formatted()) ft" } ?? "—")
+                        LabeledContent("Lowest ceiling", value: Format.altitude(briefing.forecast.minCeilingFt))
                             .id(rowId("forecast", 0, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
                         LabeledContent("Lowest visibility", value: briefing.forecast.minVisibilitySm.map { String(format: "%g SM", $0) } ?? "—")
                         ForEach(Array(briefing.forecast.stations.enumerated()), id: \.offset) { _, station in

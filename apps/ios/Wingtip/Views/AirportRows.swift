@@ -126,7 +126,7 @@ struct RunwayRowView: View {
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
-                Text(runway.lengthFt.map { "\(AirportWords.grouped(Double($0))) ft" } ?? "—").fontWeight(.semibold).monospacedDigit()
+                Text(Format.altitude(runway.lengthFt.map(Double.init))).fontWeight(.semibold).monospacedDigit()
                     .accessibilityLabel(runway.lengthFt.map { "\(SpokenFigures.feet(Double($0))) long" } ?? "length not listed")
                 if let width = runway.widthFt {
                     Text("\(width) ft wide").font(.footnote).foregroundStyle(.secondary)

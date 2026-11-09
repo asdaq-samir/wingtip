@@ -157,7 +157,7 @@ struct AirportStrip: View {
                     case .recents:
                         ForEach(shelf.recents) { field in tile(field.ident, field.name) }
                     case .nearest:
-                        ForEach(nearest.prefix(12)) { field in tile(field.ident, Formats.nm(field.distanceNm, decimals: 0), category: field.flightCategory) }
+                        ForEach(nearest.prefix(12)) { field in tile(field.ident, Format.distance(field.distanceNm, decimals: 0), category: field.flightCategory) }
                     }
                     if empty { Text(emptyWords).foregroundStyle(.secondary).padding(.vertical, 12) }
                 }
@@ -312,13 +312,13 @@ struct NearestRow: View {
                     Text(field.ident).font(.headline)
                     if withoutColour, let category = field.flightCategory { Text(category).font(.caption.weight(.semibold)).foregroundStyle(.secondary) }
                 }
-                Text([field.name, field.longestRunwayFt.map { "\($0.formatted()) ft" }].compactMap { $0 }.joined(separator: " · "))
+                Text([field.name, field.longestRunwayFt.map { Format.altitude(Double($0)) }].compactMap { $0 }.joined(separator: " · "))
                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text(Formats.nm(field.distanceNm, decimals: 0)).font(.body.monospacedDigit())
-                Text("\(Formats.degrees(bearing))T").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
+                Text(Format.distance(field.distanceNm, decimals: 0)).font(.body.monospacedDigit())
+                Text("\(Format.heading(bearing))T").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
             }
         }
         // One row, read as a pilot would say it: the ident, its weather,

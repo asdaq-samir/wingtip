@@ -20,7 +20,7 @@ enum WordsFigures {
     /// "From 3,000 to 12,000 ft", where both are given.
     private static func altitudes(_ low: Double?, _ high: Double?) -> String? {
         guard let low, let high else { return nil }
-        return "From \(Formats.grouped(low)) to \(Formats.grouped(high)) ft."
+        return "From \(Format.grouped(low)) to \(Format.altitude(high))."
     }
 
     /// Where and when the flight meets something, as the Brief's row says it.
@@ -43,8 +43,8 @@ enum WordsFigures {
                                    text: "VFR flight not recommended (AIM 7-1-5): \(reasons.joined(separator: "; "))."))
         }
         for f in b.fieldsBelowVfr ?? [] {
-            let ceiling = f.ceilingFt.map { "ceiling \(Formats.grouped($0)) ft" } ?? "no ceiling"
-            let visibility = f.visibilitySm.map { "visibility \(Formats.number($0, decimals: 1)) sm" } ?? "visibility not reported"
+            let ceiling = f.ceilingFt.map { "ceiling \(Format.altitude($0))" } ?? "no ceiling"
+            let visibility = f.visibilitySm.map { "visibility \(Format.number($0, decimals: 1)) sm" } ?? "visibility not reported"
             out.append(WordsSource(id: "below-vfr:\(f.ident)", label: "\(f.ident) below VFR",
                                    text: "\(f.ident) is below VFR where the flight meets it, by its \(f.source)\(f.flightCategory.map { " (\($0))" } ?? ""): \(ceiling), \(visibility). \(meets(f.onRoute) ?? "")"))
         }
@@ -61,8 +61,8 @@ enum WordsFigures {
         for s in b.forecast.stations {
             let ident = s.icaoId
             var lines: [String] = []
-            let ceiling = s.ceilingFt.map { "ceiling \(Formats.grouped($0)) ft" } ?? "no ceiling"
-            let visibility = s.visibilitySm.map { "visibility \(Formats.number($0, decimals: 1)) sm" } ?? "visibility not reported"
+            let ceiling = s.ceilingFt.map { "ceiling \(Format.altitude($0))" } ?? "no ceiling"
+            let visibility = s.visibilitySm.map { "visibility \(Format.number($0, decimals: 1)) sm" } ?? "visibility not reported"
             lines.append("Worst over the flight: \(ceiling), \(visibility).")
             if let raw = s.raw { lines.append(raw) }
             out.append(WordsSource(id: "taf:\(ident)", label: "\(ident) TAF", text: lines.joined(separator: "\n")))
@@ -80,7 +80,7 @@ enum WordsFigures {
             // AWC gives an IFR G-AIRMET a top of -1, which is no top (the
             // web's gairmetAltitudes): such a one has no altitude line.
             if let high = g.altitudeHighFt, high > 0 {
-                lines.append("From \(g.altitudeLowFt.map { "\(Formats.grouped($0)) ft" } ?? "the surface") to \(Formats.grouped(high)) ft.")
+                lines.append("From \(g.altitudeLowFt.map { Format.altitude($0) } ?? "the surface") to \(Format.altitude(high)).")
             }
             if let at = g.validAt { lines.append("Valid at \(at).") }
             if let on = meets(g.onRoute) { lines.append(on) }
@@ -90,12 +90,12 @@ enum WordsFigures {
             var lines = [p.raw ?? "Pilot report."]
             if p.urgent == true { lines.append("Urgent.") }
             if let on = meets(p.onRoute) { lines.append(on) }
-            let label = "Pilot report" + (p.altitudeFt.map { " at \(Formats.grouped($0)) ft" } ?? "")
+            let label = "Pilot report" + (p.altitudeFt.map { " at \(Format.altitude($0))" } ?? "")
             out.append(WordsSource(id: "pirep:\(i)", label: label, text: lines.joined(separator: " ")))
         }
         for t in b.tfrs ?? [] {
             var lines = ["TFR \(t.notamId)" + (t.title.map { ": \($0)" } ?? "") + "."]
-            lines.append("\(Formats.nm(t.alongTrackNm, decimals: 0)) along the route" + (t.crosses ? ", which crosses it" : "") + (t.activeNow ? ", active now" : "") + ".")
+            lines.append("\(Format.distance(t.alongTrackNm, decimals: 0)) along the route" + (t.crosses ? ", which crosses it" : "") + (t.activeNow ? ", active now" : "") + ".")
             if let a = altitudes(t.floorFt, t.ceilingFt) { lines.append(a) }
             if let from = t.effective { lines.append("From \(from)" + (t.expires.map { " to \($0)" } ?? "") + ".") }
             if let on = meets(t.onRoute) { lines.append(on) }

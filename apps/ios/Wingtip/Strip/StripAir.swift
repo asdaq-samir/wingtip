@@ -34,7 +34,7 @@ struct StripAir: View {
                     if let heading = next.leg?.magneticHeadingDeg {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("MH").condensedCaps(.caption).foregroundStyle(ink.muted)
-                            Text(String(format: "%03d", Int(heading.rounded()))).font(ChartInk.figure(28))
+                            Text(Format.heading(heading)).font(ChartInk.figure(28))
                         }
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("Magnetic heading \(SpokenFigures.degrees(heading))")
@@ -43,7 +43,7 @@ struct StripAir: View {
                         let nm = Flight.nm(from: fix.coordinate, to: at)
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("To go").condensedCaps(.caption).foregroundStyle(ink.muted)
-                            Text(Formats.number(nm, decimals: nm < 10 ? 1 : 0)).font(ChartInk.figure(28))
+                            Text(Format.number(nm, decimals: nm < 10 ? 1 : 0)).font(ChartInk.figure(28))
                         }
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("\(SpokenFigures.nauticalMiles(nm)) to go")

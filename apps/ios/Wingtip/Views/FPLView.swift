@@ -63,7 +63,7 @@ struct FPLView: View {
                             // The ways round the planner found: a Class B's
                             // waypoint, or the way round high ground.
                             ForEach(problem.detours ?? []) { detour in
-                                let added = "+\(Int(detour.addedNm.rounded())) nm"
+                                let added = "+\(Format.distance(detour.addedNm, decimals: 0))"
                                 let words: String = (detour.via ?? []).isEmpty ? "Fly via \(detour.ident) · \(added)" : "Go Round · \(added)"
                                 Button {
                                     plan.goRound(detour)
@@ -92,7 +92,7 @@ struct FPLView: View {
                         Text(plan.tail ?? plan.aircraft.uppercased()).font(.body.monospaced())
                         Spacer()
                         Text("Altitude").foregroundStyle(.secondary)
-                        TextField(plan.altitudeFt.map { String(format: "%03d", Int($0) / 100) } ?? "—", text: $altitude)
+                        TextField(Format.cruiseAltitude(plan.altitudeFt), text: $altitude)
                             .textFieldStyle(.roundedBorder).keyboardType(.numberPad).font(.body.monospaced())
                             .frame(width: altitudeWidth).multilineTextAlignment(.trailing)
                             .focused($focused, equals: .altitude)
@@ -146,9 +146,9 @@ struct FPLView: View {
                     Section {
                         HStack {
                             stripFigure("TO", plan.dest)
-                            stripFigure("DIST", AirportWords.nm(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
-                            stripFigure("ETE", totals.eteMin.map(hoursMinutes) ?? "—", spoken: totals.eteMin.map(SpokenFigures.minutes))
-                            stripFigure("FUEL", totals.fuelGal.map(AirportWords.gal) ?? "—", spoken: totals.fuelGal.map(SpokenFigures.gallons),
+                            stripFigure("DIST", Format.distance(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
+                            stripFigure("ETE", totals.eteMin.map(Format.duration) ?? "—", spoken: totals.eteMin.map(SpokenFigures.minutes))
+                            stripFigure("FUEL", totals.fuelGal.map { Format.fuel($0) } ?? "—", spoken: totals.fuelGal.map(SpokenFigures.gallons),
                                    warn: (totals.fuelMarginGal ?? 0) < 0)
                         }
                         .accessibilityElement(children: .combine)
@@ -184,7 +184,7 @@ struct FPLView: View {
                     }
                 }
                 if !plan.legs.isEmpty {
-                    Section(plan.altitudeFt.map { "Nav log · \(Int($0).formatted()) ft" } ?? "Nav log") {
+                    Section(plan.altitudeFt.map { "Nav Log · \(Format.cruiseAltitude($0))" } ?? "Nav Log") {
                         ForEach(plan.legs) { leg in
                             NavigationLink(value: leg) { LegRow(leg: leg) }
                         }
@@ -239,11 +239,11 @@ struct LegRow: View {
                 HStack(spacing: 10) {
                     // No heading without an airplane: the planner sends
                     // none, and the row shows the figures it has.
-                    if let heading = leg.magneticHeadingDeg { Text(AirportWords.degrees(heading)) }
-                    if let gs = leg.groundspeedKt { Text(AirportWords.kt(gs)) }
+                    if let heading = leg.magneticHeadingDeg { Text(Format.heading(heading)) }
+                    if let gs = leg.groundspeedKt { Text(Format.speed(gs)) }
                     if let wind = leg.wind {
                         let (dir, kt) = (wind.windDirTrueDeg, wind.windSpeedKt)
-                        Text(String(format: "%03.0f/%.0f", dir, kt))
+                        Text("\(Format.heading(dir)) \(Format.speed(kt))")
                     }
                 }
                 .font(.footnote.monospacedDigit())
@@ -251,10 +251,10 @@ struct LegRow: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text(AirportWords.nm(leg.distanceNm)).font(.subheadline.monospacedDigit())
+                Text(Format.distance(leg.distanceNm)).font(.subheadline.monospacedDigit())
                 HStack(spacing: 8) {
-                    if let ete = leg.eteMin { Text(hoursMinutes(ete)) }
-                    if let fuel = leg.fuelGal { Text(AirportWords.gal(fuel)) }
+                    if let ete = leg.eteMin { Text(Format.duration(ete)) }
+                    if let fuel = leg.fuelGal { Text(Format.fuel(fuel)) }
                 }
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -280,10 +280,4 @@ struct LegRow: View {
         if let fuel = leg.fuelGal { parts.append(SpokenFigures.gallons(fuel)) }
         return parts.joined(separator: ", ")
     }
-}
-
-/// Minutes as the web app shows them: "2h 06m".
-func hoursMinutes(_ minutes: Double) -> String {
-    let whole = Int(minutes.rounded())
-    return String(format: "%dh %02dm", whole / 60, whole % 60)
 }

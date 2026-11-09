@@ -82,6 +82,6 @@ final class Metrics: NSObject, MXMetricManagerSubscriber {
             guard let bucket = bucket as? MXHistogramBucket<UnitDuration> else { continue }
             seconds += bucket.bucketEnd.converted(to: .seconds).value * Double(bucket.bucketCount)
         }
-        return "\(Formats.number(seconds, decimals: 1)) s"
+        return "\(Format.number(seconds, decimals: 1)) s"
     }
 }

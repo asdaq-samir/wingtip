@@ -217,7 +217,7 @@ struct RoutePointMenu: View {
                     Label(plan.extras.direct == ident ? "Fly as Planned" : "Direct To", systemImage: "arrow.up.right")
                 }
                 Button { FlightUI.shared.altitudeAt = ident } label: {
-                    Label(plan.extras.altitudes[ident.uppercased()].map { "Set Altitude… (\($0.formatted()) ft)" } ?? "Set Altitude…", systemImage: "arrow.up.and.down")
+                    Label(plan.extras.altitudes[ident.uppercased()].map { "Set Altitude… (\(Format.altitude(Double($0))))" } ?? "Set Altitude…", systemImage: "arrow.up.and.down")
                 }
             }
             Button { FlightUI.shared.fixFrom = ident } label: { Label("Create a Fix from Here…", systemImage: "scope") }
@@ -236,7 +236,7 @@ struct RoutePointMenu: View {
                 Text(ident).font(.body.monospaced()).foregroundStyle(.primary)
                 Spacer()
                 if let feet = plan.extras.altitudes[ident.uppercased()] {
-                    Text("\(feet.formatted()) ft").font(.footnote.monospacedDigit()).foregroundStyle(.tint)
+                    Text(Format.altitude(Double(feet))).font(.footnote.monospacedDigit()).foregroundStyle(.tint)
                 }
                 if plan.hold(at: ident) != nil { Image(systemName: "repeat").foregroundStyle(.tint) }
                 if plan.extras.direct == ident { Image(systemName: "arrow.up.right").foregroundStyle(.tint) }
@@ -472,7 +472,7 @@ struct ProcedureFixesView: View {
                                 if !fix.roles.isEmpty { Text(fix.roles.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary) }
                                 Spacer()
                                 if let own = plan.extras.crossings[fix.ident.uppercased()] {
-                                    Text("\(own.formatted()) ft").font(.subheadline.monospacedDigit()).foregroundStyle(.tint)
+                                    Text(Format.altitude(Double(own))).font(.subheadline.monospacedDigit()).foregroundStyle(.tint)
                                 } else {
                                     switch Result(catching: { try fix.charted() }) {
                                     case .success(let charted?): Text(charted).font(.subheadline).foregroundStyle(.secondary)

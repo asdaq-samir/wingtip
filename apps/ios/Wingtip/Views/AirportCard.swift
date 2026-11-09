@@ -181,7 +181,7 @@ struct AirportHead: View {
                 if !whereIs.isEmpty { Text(whereIs).foregroundStyle(.secondary) }
                 if let restriction = Self.restriction(place) { Text(restriction).font(.subheadline).foregroundStyle(.orange) }
                 HStack(spacing: 12) {
-                    if let elevation = place.elevationFt { Text("Elev \(AirportWords.feet(elevation))") }
+                    if let elevation = place.elevationFt { Text("Elev \(Format.altitude(elevation))") }
                     Text(place.towered ? "Towered" : "Non-towered")
                     if let cls = place.airspaceClass { Text("Class \(cls)") }
                 }
@@ -310,7 +310,7 @@ struct AirportWeatherTab: View {
                     figure("wind", "Wind", AirportWords.windLine(dirTrueDeg: metar.windDirTrueDeg, speedKt: metar.windSpeedKt, gustKt: metar.windGustKt))
                 }
                 figure("eye", "Visibility", metar.visibilitySm.map { "\(AirportWords.plain($0)) sm" } ?? "—", spoken: metar.visibilitySm.map(SpokenFigures.statuteMiles))
-                figure("cloud", "Ceiling", metar.ceilingFt.map(AirportWords.feet) ?? "None", spoken: metar.ceilingFt.map(SpokenFigures.feet))
+                figure("cloud", "Ceiling", metar.ceilingFt.map { Format.altitude($0) } ?? "None", spoken: metar.ceilingFt.map(SpokenFigures.feet))
                 if let temp = metar.tempC {
                     CardRow(badge: RowBadge(systemImage: "thermometer.medium", colour: Badge.weather), title: "Temperature",
                             detail: metar.dewpointC.map { "Dew point \(Int($0.rounded())) °C" }) {
@@ -320,8 +320,8 @@ struct AirportWeatherTab: View {
                 }
                 if let altimeter = metar.altimeterInHg {
                     // Read as set on the altimeter: "two niner niner two".
-                    figure("gauge.with.dots.needle.33percent", "Altimeter", "\(Formats.number(altimeter, decimals: 2)) inHg",
-                           spoken: "\(SpokenFigures.digits(Formats.number(altimeter, decimals: 2))) inches")
+                    figure("gauge.with.dots.needle.33percent", "Altimeter", "\(Format.number(altimeter, decimals: 2)) inHg",
+                           spoken: "\(SpokenFigures.digits(Format.number(altimeter, decimals: 2))) inches")
                 }
                 // The report as sent, never reworded.
                 if let raw = metar.raw { Text(raw).font(.footnote.monospaced()).textSelection(.enabled) }
@@ -333,17 +333,17 @@ struct AirportWeatherTab: View {
         // The National Weather Service's Gridded LAMP at the field for the
         // hour (wingtip.glmp): planning guidance from a model, not a report.
         if place.metar == nil, let modelled = place.modelledWeather {
-            Section("Modelled for \(AirportWords.date(modelled.validAt).map(AirportWords.zulu) ?? modelled.validAt)") {
+            Section("Modelled for \(AirportWords.date(modelled.validAt).map(Format.zulu) ?? modelled.validAt)") {
                 figure("cloud.sun", "Flight category", modelled.flightCategory, spoken: SpokenFigures.flightCategory(modelled.flightCategory))
                 // GLMP's most is 10 sm, as a METAR's "10SM" is.
                 figure("eye", "Visibility", modelled.visibilitySm >= 10 ? "10+ sm" : "\(AirportWords.plain(modelled.visibilitySm)) sm",
                        spoken: modelled.visibilitySm >= 10 ? "ten statute miles or more" : SpokenFigures.statuteMiles(modelled.visibilitySm))
-                figure("cloud", "Ceiling", modelled.ceilingFt.map(AirportWords.feet) ?? "None", spoken: modelled.ceilingFt.map(SpokenFigures.feet))
+                figure("cloud", "Ceiling", modelled.ceilingFt.map { Format.altitude($0) } ?? "None", spoken: modelled.ceilingFt.map(SpokenFigures.feet))
             }
         }
         AtisSection()
         if place.metar == nil, let nearby = place.nearbyMetar {
-            Section("Nearest report, \(AirportWords.plain(nearby.distanceNm)) nm \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
+            Section("Nearest report, \(Format.distance(nearby.distanceNm)) \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
                 CardRow(title: nearby.ident, detail: nearby.metar.observedAt.flatMap { AirportWords.observed($0) }) {
                     if let category = nearby.metar.flightCategory {
                         Text(category).fontWeight(.semibold).accessibilityLabel(SpokenFigures.flightCategory(category))
@@ -444,7 +444,7 @@ struct AirportRunwaysTab: View {
             if let pattern = place.pattern, let altitude = pattern.altitudeFt {
                 CardRow(badge: RowBadge(systemImage: "arrow.triangle.2.circlepath", colour: Badge.runway), title: "Pattern altitude",
                         detail: pattern.published == true ? "As the FAA publishes it" : "1,000 ft above the field: none published") {
-                    Text(AirportWords.feet(altitude)).fontWeight(.semibold).accessibilityLabel(SpokenFigures.feet(altitude))
+                    Text(Format.altitude(altitude)).fontWeight(.semibold).accessibilityLabel(SpokenFigures.feet(altitude))
                 }
             }
             if place.runways.isEmpty { Text("No runways listed").foregroundStyle(.secondary) }

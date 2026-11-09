@@ -77,8 +77,8 @@ struct ReplaySection: View {
     /// "3,000 ft · 108 kt · NE", as the web app's replay says it: the height
     /// to the 100 ft, as the map's airplane carries it.
     static func figures(_ here: Replay.Point) -> String {
-        let height = here.altFt.map { "\((Int(($0 / 100).rounded()) * 100).formatted()) ft" } ?? "—"
-        let speed = here.gsKt.map { "\(Int($0.rounded())) kt" } ?? "—"
+        let height = Format.altitude(here.altFt.map { ($0 / 100).rounded() * 100 })
+        let speed = Format.speed(here.gsKt)
         let heading = here.trackDeg.map { " · " + AirportWords.compassPoint($0) } ?? ""
         return "\(height) · \(speed)\(heading)"
     }

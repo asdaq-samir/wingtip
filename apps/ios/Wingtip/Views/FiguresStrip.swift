@@ -39,14 +39,14 @@ struct FiguresStrip: View {
         HStack {
             stripFigure("TO", plan.routed ? plan.dest : "—")
             if let flying {
-                stripFigure("DIST", AirportWords.nm(flying.leftNm), spoken: SpokenFigures.nauticalMiles(flying.leftNm))
-                stripFigure("ETE", flying.minutes.map(hoursMinutes) ?? "—", spoken: flying.minutes.map(SpokenFigures.minutes))
-                stripFigure("FUEL", flying.fuelGal.map(AirportWords.gal) ?? "—", spoken: flying.fuelGal.map(SpokenFigures.gallons), warn: warn)
+                stripFigure("DIST", Format.distance(flying.leftNm), spoken: SpokenFigures.nauticalMiles(flying.leftNm))
+                stripFigure("ETE", flying.minutes.map(Format.duration) ?? "—", spoken: flying.minutes.map(SpokenFigures.minutes))
+                stripFigure("FUEL", flying.fuelGal.map { Format.fuel($0) } ?? "—", spoken: flying.fuelGal.map(SpokenFigures.gallons), warn: warn)
             } else {
                 let distance = plan.totals?.distanceNm ?? plan.course?.distanceNm
-                stripFigure("DIST", distance.map(AirportWords.nm) ?? "—", spoken: distance.map(SpokenFigures.nauticalMiles))
-                stripFigure("ETE", plan.totals?.eteMin.map(hoursMinutes) ?? "—", spoken: plan.totals?.eteMin.map(SpokenFigures.minutes))
-                stripFigure("FUEL", fuel.requiredGal.map(AirportWords.gal) ?? (refused ? "?" : "—"),
+                stripFigure("DIST", distance.map { Format.distance($0) } ?? "—", spoken: distance.map(SpokenFigures.nauticalMiles))
+                stripFigure("ETE", plan.totals?.eteMin.map(Format.duration) ?? "—", spoken: plan.totals?.eteMin.map(SpokenFigures.minutes))
+                stripFigure("FUEL", fuel.requiredGal.map { Format.fuel($0) } ?? (refused ? "?" : "—"),
                             spoken: fuel.requiredGal.map(SpokenFigures.gallons) ?? (refused ? "Fuel not worked out" : nil), warn: warn)
             }
         }

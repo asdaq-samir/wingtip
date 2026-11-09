@@ -255,7 +255,7 @@ struct StripSheetView: View {
     /// The nav log as a page: each leg's row (FPL's LegRow) into its detail.
     private var navLog: some View {
         List {
-            Section(plan.altitudeFt.map { "Nav log · \(Int($0).formatted()) ft" } ?? "Nav log") {
+            Section(plan.altitudeFt.map { "Nav Log · \(Format.cruiseAltitude($0))" } ?? "Nav Log") {
                 ForEach(plan.legs) { leg in
                     NavigationLink(value: StripPage.leg(leg)) { LegRow(leg: leg) }
                 }

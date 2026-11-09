@@ -22,7 +22,7 @@ struct AirspaceCard: View {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(AirportWords.degreesMinutes(lat: lat, lon: lon)
-                         + (here?.groundFt.map { " · ground \(AirportWords.feet($0))" } ?? ""))
+                         + (here?.groundFt.map { " · ground \(Format.altitude($0))" } ?? ""))
                         .monospacedDigit()
                     if let named = here?.point {
                         Text("\(named.ident) · \(named.name)").foregroundStyle(.secondary)
@@ -79,7 +79,7 @@ struct AirspaceCard: View {
                         // of an airport in part 91's appendix D, section 1,
                         // from the surface to 10,000 ft MSL.
                         CardRow(badge: RowBadge(systemImage: "dot.radiowaves.left.and.right", colour: Badge.rule), title: "In a Mode C veil",
-                                detail: "\(AirportWords.plain(veil.distanceNm)) nm from \(veil.ident): a transponder with altitude reporting and ADS-B Out from the surface to 10,000 ft (91.215, 91.225).")
+                                detail: "\(Format.distance(veil.distanceNm)) from \(veil.ident): a transponder with altitude reporting and ADS-B Out from the surface to 10,000 ft (91.215, 91.225).")
                     }
                 }
                 Section("Special use") {

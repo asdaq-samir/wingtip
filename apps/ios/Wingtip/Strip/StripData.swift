@@ -125,17 +125,6 @@ enum StripData {
         return address?.first.map { String($0).uppercased() } ?? ""
     }
 
-    /// A duration as the web app writes every one, "1h 5m", "45m", "3h",
-    /// and "0m" for none (lib/format duration, Intl's narrow style): the
-    /// minutes rounded first, so 119.6 is "2h", not "1h 60m".
-    static func duration(_ minutes: Double) -> String {
-        let whole = Int(minutes.rounded())
-        let h = whole / 60, m = whole % 60
-        if h > 0 && m > 0 { return "\(h)h \(m)m" }
-        if h > 0 { return "\(h)h" }
-        return "\(m)m"
-    }
-
     /// A route's name as the capsule and a saved flight name it, "C81 →
     /// KMSN → KDLH"; one field to itself with no stop, "KDLH local".
     static func routeName(dep: String, dest: String, stops: [String]) -> String {
@@ -149,15 +138,15 @@ enum StripData {
     static func headLine(dep: String, dest: String, stops: [String], airplane: String, cruiseFt: Double?, departAt: Date?) -> String {
         var parts = [routeName(dep: dep, dest: dest, stops: stops)]
         if !airplane.isEmpty { parts.append(airplane) }
-        if let cruiseFt { parts.append(flightLevel(cruiseFt)) }
-        parts.append(departAt.map { "leaving \(Formats.time($0))" } ?? "leaving now")
+        if let cruiseFt { parts.append(Format.cruiseAltitude(cruiseFt)) }
+        parts.append(departAt.map { "leaving \(Format.time($0))" } ?? "leaving now")
         return parts.joined(separator: " · ")
     }
 
     /// The ribbon's figures at the right: the time and the fuel, "2h 45m ·
     /// 29.1 gal"; "" with neither.
     static func figures(eteMin: Double?, fuelGal: Double?) -> String {
-        [eteMin.map(duration), fuelGal.map { Formats.gal($0) }].compactMap { $0 }.joined(separator: " · ")
+        [eteMin.map(Format.duration), fuelGal.map { Format.fuel($0) }].compactMap { $0 }.joined(separator: " · ")
     }
 
     /// The verdict's tag, as the ribbon wears it; nil for a finding with

@@ -191,7 +191,7 @@ struct TrafficExtrasTests {
     @Test func theCardsWords() throws {
         #expect(FlightWords.nameCase("CESSNA 172S") == "Cessna 172S")
         #expect(FlightWords.nameCase("UNITED AIRLINES INC") == "United Airlines Inc")
-        #expect(FlightWords.lasted(3 * 3600 + 13 * 60) == "3 h 13 min" && FlightWords.lasted(41 * 60) == "41 min")
+        #expect(FlightWords.lasted(3 * 3600 + 13 * 60) == "3h 13m" && FlightWords.lasted(41 * 60) == "41m")
         #expect(FlightWords.place(PastFlightField(city: "Rochester", ident: "KDAW", region: "US-NH")) == "Rochester, NH")
         #expect(FlightWords.place(PastFlightField(city: "London", ident: "EGLL", region: "GB-ENG")) == "London")
         #expect(FlightWords.against(480) == "500 ft above" && FlightWords.against(-1240) == "1,200 ft below" && FlightWords.against(20) == "level")

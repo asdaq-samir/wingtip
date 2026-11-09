@@ -23,6 +23,6 @@ enum Altitudes {
     /// where the engine refuses (logged by Engine.rule) the feet are
     /// written plainly, which says the same altitude.
     static func said(_ ft: Double) -> String {
-        (try? Engine.altitudeSaid(ft: ft)) ?? "\(Int(ft)) ft"
+        (try? Engine.altitudeSaid(ft: ft)) ?? Format.altitude(ft)
     }
 }

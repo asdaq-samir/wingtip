@@ -71,10 +71,10 @@ extension ProcedureFix: Identifiable {
     func charted() throws -> String? {
         let set = try Engine.altitudeLines(minFt: minFt.map(Double.init), maxFt: maxFt.map(Double.init))
         guard let crossing = set.crossing, let top = set.lines.first else { return nil }
-        let feet = { (ft: Double) in "\(Int(ft).formatted()) ft" }
+        let feet = { (ft: Double) in Format.altitude(ft) }
         switch crossing {
         case "at": return "at \(feet(top.ft))"
-        case "between": return "between \(Int(set.lines.last?.ft ?? top.ft).formatted()) and \(feet(top.ft))"
+        case "between": return "between \(Format.grouped(set.lines.last?.ft ?? top.ft)) and \(feet(top.ft))"
         case "at_or_above": return "at or above \(feet(top.ft))"
         case "at_or_below": return "at or below \(feet(top.ft))"
         default: return nil

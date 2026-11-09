@@ -30,8 +30,8 @@ struct NavLogTests {
     }
 
     @Test func minutesReadAsHoursAndMinutes() throws {
-        #expect(hoursMinutes(165) == "2h 45m")
-        #expect(hoursMinutes(5.4) == "0h 05m")
+        #expect(Format.duration(165) == "2h 45m")
+        #expect(Format.duration(5.4) == "5m")
     }
 }
 
@@ -45,8 +45,8 @@ struct AltitudeTests {
     }
 
     @Test func altitudesReadAsTheOwnersFlightLevels() throws {
-        #expect(flightLevel(6500) == "FL-065")
-        #expect(flightLevel(15500) == "FL-155")
+        #expect(Format.cruiseAltitude(6500) == "FL-065")
+        #expect(Format.cruiseAltitude(15500) == "FL-155")
     }
 }
 

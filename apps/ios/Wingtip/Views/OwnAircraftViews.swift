@@ -92,7 +92,7 @@ struct AircraftFormView: View {
             // The cruise figures are the airplane's at this power at the
             // engine's reference altitude on a standard day, a row of its
             // handbook's cruise table (planning_figures' cruise_reference_ft).
-            Section(Self.cruiseReferenceFt.map { "Cruise figures at \(AirportWords.feet($0)), standard day" } ?? "Cruise figures, standard day") {
+            Section(Self.cruiseReferenceFt.map { "Cruise figures at \(Format.altitude($0)), standard day" } ?? "Cruise figures, standard day") {
                 number("Cruise power", unit: "%", text: $form.cruisePowerPct, placeholder: "65", key: "cruisePowerPct", problems: problems)
             }
             // Without usable fuel the nav log makes no fuel check.
@@ -345,8 +345,8 @@ struct InspectionsSection: View {
     /// The gateway's due hours, and how many are left by the hours recorded.
     private var hundredHourLine: String {
         guard form.forHire == true, let due = record.inspections.hundredHourDueAtHours else { return "Time in service, at the last annual or 100-hour" }
-        var line = "Due at \(Formats.hours(due))"
-        if let now = record.inspections.hoursNow { line += now < due ? ", \(Formats.hours(due - now)) to go" : ", due now" }
+        var line = "Due at \(Format.hours(due))"
+        if let now = record.inspections.hoursNow { line += now < due ? ", \(Format.hours(due - now)) to go" : ", due now" }
         return line
     }
 
