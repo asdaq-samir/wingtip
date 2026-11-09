@@ -134,7 +134,7 @@ fun StripLayout(
             FieldScreen.SETUP, FieldScreen.MAP -> { model.open(StripModel.Over.Setup); null }
             FieldScreen.NAVLOG -> if (state.routed) null else "Plan a route first."
             FieldScreen.BRIEF -> if (state.routed) { briefOpen = true; null } else "Plan a route first, then say \"Brief me\"."
-            FieldScreen.RADIO, FieldScreen.CLEARANCE -> "Tap the mic and say it; the clearance card is the web app's for now."
+            FieldScreen.RADIO, FieldScreen.CLEARANCE -> { model.open(StripModel.Over.Clearance); null }
             else -> "${screen.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' ')} isn't on this phone yet."
         }
     }
@@ -203,6 +203,7 @@ fun StripLayout(
                     unfolded = unfolded, onUnfold = { unfolded = true },
                     onField = { model.open(StripModel.Over.Airport(it)) },
                     onCheckpoint = { leg = it },
+                    onClearance = { model.open(StripModel.Over.Clearance) },
                 )
             }
         }

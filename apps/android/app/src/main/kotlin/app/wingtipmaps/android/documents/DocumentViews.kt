@@ -37,9 +37,9 @@ import app.wingtipmaps.android.ui.LocalInk
 /** The row a screen opens "Add from a Photo" with, in its own list: a
  *  row, not a floating control. */
 @Composable
-fun AddFromPhotoRow(line: String, onOpen: () -> Unit) {
+fun AddFromPhotoRow(line: String, title: String = stringResource(R.string.add_from_photo), onOpen: () -> Unit) {
     ListItem(
-        headlineContent = { Text(stringResource(R.string.add_from_photo)) },
+        headlineContent = { Text(title) },
         supportingContent = { Text(line, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         leadingContent = { Icon(Icons.Outlined.DocumentScanner, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),

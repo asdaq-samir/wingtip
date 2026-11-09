@@ -73,6 +73,7 @@ private fun FieldCardRow(
     first: Boolean,
     last: Boolean,
     onOpen: () -> Unit,
+    onClearance: (() -> Unit)? = null,
 ) {
     Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).height(IntrinsicSize.Min).padding(end = 16.dp)) {
         Box(Modifier.width(24.dp).fillMaxHeight()) { Timeline(field = true, first = first, last = last, dotAt = 24.dp) }
@@ -101,13 +102,21 @@ private fun FieldCardRow(
                     Text(said.joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
                 }
                 val chips = card?.chips.orEmpty()
-                if (chips.isNotEmpty()) {
+                if (chips.isNotEmpty() || onClearance != null) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         chips.forEach { chip ->
                             AssistChip(
                                 onClick = onOpen,
                                 label = { Text(chip.label, style = MaterialTheme.typography.labelMedium) },
                                 modifier = Modifier.semantics { contentDescription = chip.words },
+                            )
+                        }
+                        // The departure's clearance step, as the iPhone's strip has it.
+                        if (onClearance != null) {
+                            AssistChip(
+                                onClick = onClearance,
+                                label = { Text("Clearance", style = MaterialTheme.typography.labelMedium) },
+                                modifier = Modifier.semantics { contentDescription = "The clearance card" },
                             )
                         }
                     }
@@ -162,6 +171,7 @@ fun LazyListScope.stripList(
     onUnfold: () -> Unit,
     onField: (String) -> Unit,
     onCheckpoint: (StripRow.Checkpoint) -> Unit,
+    onClearance: (() -> Unit)? = null,
     after: (LazyListScope.() -> Unit)? = null,
 ) {
     val first = rows.firstOrNull() as? StripRow.Departure ?: return
@@ -175,7 +185,7 @@ fun LazyListScope.stripList(
     item(key = first.key) {
         FieldCardRow(
             ident = first.ident, card = cards[first.ident], at = StripData.timeAt(leaveMs, 0.0), atLabel = "leaving",
-            detail = departDetail, first = true, last = false, onOpen = { onField(first.ident) },
+            detail = departDetail, first = true, last = false, onOpen = { onField(first.ident) }, onClearance = onClearance,
         )
     }
     shown.forEach { row ->

@@ -8,14 +8,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantSource
+import app.wingtipmaps.android.clearance.ClearanceSheet
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.strip.StripModel
@@ -28,11 +31,18 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  */
 @Composable
 fun StripOver(over: StripModel.Over, plan: Plan, session: Session, ownShip: OwnShip, assistant: AssistantClient, onClose: () -> Unit) {
+    // The clearance card is its own sheet, with Listen in its bar.
+    if (over == StripModel.Over.Clearance) {
+        val fix by ownShip.fix.collectAsStateWithLifecycle()
+        ClearanceSheet(plan, fix, onClose)
+        return
+    }
     val title = when (over) {
         is StripModel.Over.Airport -> over.ident
         StripModel.Over.Airplane -> stringResource(R.string.tab_airplane)
         StripModel.Over.Setup -> stringResource(R.string.tab_setup)
         StripModel.Over.Ask -> stringResource(R.string.ask)
+        StripModel.Over.Clearance -> stringResource(R.string.clearance)
     }
     WingtipSheet(title = title, onClose = onClose, full = true) {
         when (over) {
@@ -40,6 +50,7 @@ fun StripOver(over: StripModel.Over, plan: Plan, session: Session, ownShip: OwnS
             StripModel.Over.Airplane -> AirplaneScreen(plan)
             StripModel.Over.Setup -> SetupScreen(session, onToMap = onClose)
             StripModel.Over.Ask -> AskScreen(plan = plan, session = session, ownShip = ownShip, client = assistant)
+            StripModel.Over.Clearance -> {}
         }
     }
 }
