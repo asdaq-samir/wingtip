@@ -102,7 +102,8 @@ def block_text(data):
     lines = [INDENT + BEGIN]
     for name, paths in filters(data).items():
         lines.append(f"{INDENT}{name}:")
-        lines.extend(f"{INDENT}  - {p}" for p in paths)
+        # Quoted where YAML would read it otherwise: a leading * is an alias.
+        lines.extend(f"{INDENT}  - '{p}'" if p.startswith("*") else f"{INDENT}  - {p}" for p in paths)
     lines.append(INDENT + END)
     return "\n".join(lines) + "\n"
 

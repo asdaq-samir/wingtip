@@ -160,6 +160,20 @@ areas:
       - scripts/build/engine-contract-apps.*
       - design/**
       - .github/workflows/native-android-build.yml
+  arch:
+    ci: arch
+    check: scripts/ci/file_sizes.py --base origin/main (no new or grown source file over 400 lines)
+    paths:
+      # Every source file the budget counts, and the budget itself.
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.py"
+      - "**/*.rs"
+      - "**/*.swift"
+      - "**/*.kt"
+      - "**/*.java"
+      - scripts/ci/file_sizes.py
+      - scripts/ci/file_sizes_allow.txt
 ci_only:
   # A change here can change what any job does: all of them.
   global:

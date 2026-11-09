@@ -437,6 +437,7 @@ jobs:
       android: ${{ steps.plan.outputs.android }}
       ios: ${{ steps.plan.outputs.ios }}
       api: ${{ steps.plan.outputs.api }}
+      arch: ${{ steps.plan.outputs.arch }}
       docs-only: ${{ steps.docsonly.outputs.only }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
@@ -643,6 +644,16 @@ jobs:
                 - scripts/build/engine-contract-apps.*
                 - design/**
                 - .github/workflows/native-android-build.yml
+              arch:
+                - '**/*.ts'
+                - '**/*.tsx'
+                - '**/*.py'
+                - '**/*.rs'
+                - '**/*.swift'
+                - '**/*.kt'
+                - '**/*.java'
+                - scripts/ci/file_sizes.py
+                - scripts/ci/file_sizes_allow.txt
               # END generated
       - name: What this run builds and tests
         id: plan
@@ -662,7 +673,7 @@ jobs:
           images = [{"service": s} for s in IMAGES if due(s)]
           outputs = {"images": json.dumps(images)}
           for name in ("test-root", "test-web", "test-gateway", "test-planner", "test-ingest", "test-assistant", "test-weather",
-                       "docs", "infra", "api"):
+                       "docs", "infra", "api", "arch"):
               outputs[name] = "true" if due(name) else "false"
           # The phones' builds gate a merge: a pull request, or a run
           # started by hand on one's branch. Main's pushes and the nights
@@ -1712,6 +1723,24 @@ jobs:
       - name: No aviation rule outside the engine
         run: python3 scripts/ci/rules_boundary.py
 
+  # No source file new or grown past 400 lines (scripts/ci/file_sizes.py),
+  # past what scripts/ci/file_sizes_allow.txt lists of the files over it
+  # when the budget came in; and that list only shrinks against the base
+  # branch's. Seconds, the standard library only.
+  architecture:
+    name: File sizes
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes]
+    if: needs.changes.outputs.arch == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - name: No new or grown source file over the budget
+        env:
+          BASE: ${{ github.base_ref || 'main' }}
+        run: |
+          git fetch -q --depth=1 origin "$BASE"
+          python3 scripts/ci/file_sizes.py --base FETCH_HEAD
+
   # Every relative link and #anchor in the Markdown resolves: a doc moved
   # or a heading renamed breaks the links to it silently otherwise.
   # External links are not fetched (slow, and flaky for reasons no change
@@ -2135,7 +2164,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, links]
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, architecture, links]
     if: always()
     steps:
       - name: Every job passed or was not needed

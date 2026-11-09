@@ -6,7 +6,7 @@
 #
 #   scripts/dev/check.sh <area>...       an area of scripts/areas.yml (the table of areas, their
 #                                    paths and checks): web py planner ingest assistant
-#                                    weather jobs engine java ios android
+#                                    weather jobs engine java ios android arch
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas
@@ -256,6 +256,13 @@ run_area() {
       export ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)}
       phone_engine android apps/android/app/engine engine/bindings/ffi/build-android.sh
       (cd "$here/apps/android" && ./gradlew --quiet testDebugUnitTest lintDebug assembleDebug)
+      ;;
+    arch)
+      # No new or grown source file over 400 lines (seconds); the allow-list
+      # compared with main's where this clone has it.
+      local base=()
+      git -C "$here" rev-parse -q --verify origin/main >/dev/null && base=(--base origin/main)
+      python3 "$here/scripts/ci/file_sizes.py" "${base[@]+"${base[@]}"}"
       ;;
     *) echo "check: no area '$1' (one of: $AREAS, all-changed)" >&2; return 64 ;;
   esac
