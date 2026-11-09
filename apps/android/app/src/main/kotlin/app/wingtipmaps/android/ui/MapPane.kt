@@ -1,7 +1,9 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -52,6 +54,7 @@ import app.wingtipmaps.android.map.MapRest
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.TrafficDrawing
+import app.wingtipmaps.android.map.WeatherLoopBar
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.receiver.ReceiverChip
 import app.wingtipmaps.android.route.RouteLegModel
@@ -201,8 +204,16 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         )
         MapLoading(shown = !revealed, bottomInset = covered, problem = if (info == null) chartProblem else null, modifier = Modifier.fillMaxSize())
         MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
-        // The receiver heard: "Stratux · 12 targets · GPS".
-        ReceiverChip(Modifier.align(Alignment.TopCenter).padding(top = WingtipSpace.Sm))
+        // The receiver heard: "Stratux · 12 targets · GPS"; under it the
+        // radar or satellite loop's bar while one is on.
+        Column(
+            Modifier.align(Alignment.TopCenter).padding(top = WingtipSpace.Sm),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+        ) {
+            ReceiverChip()
+            WeatherLoopBar()
+        }
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of
             // the buttons where nothing else was (#218).

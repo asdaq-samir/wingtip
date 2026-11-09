@@ -22,6 +22,8 @@ object AboutCredits {
         Credit("FAA SWIM: NOTAMs, flow programs, terminal data and airspace status", PUBLIC_DOMAIN),
         Credit("NOAA Aviation Weather Center: METARs, TAFs, PIREPs, SIGMETs and G-AIRMETs", PUBLIC_DOMAIN),
         Credit("NOAA models: GFS winds and temperatures aloft, GLMP, magnetic declination", PUBLIC_DOMAIN),
+        Credit("NWS NEXRAD radar mosaic loop, via the Iowa Environmental Mesonet (Iowa State University); not for navigation, check official weather", PUBLIC_DOMAIN),
+        Credit("NOAA GOES East and West satellite loop, via NOAA nowCOAST; not for navigation, check official weather", PUBLIC_DOMAIN),
         Credit("USGS The National Map imagery", PUBLIC_DOMAIN),
         Credit("US Census Bureau geocoder and gazetteer", PUBLIC_DOMAIN),
         Credit("OurAirports: runways, frequencies and fields abroad", PUBLIC_DOMAIN),

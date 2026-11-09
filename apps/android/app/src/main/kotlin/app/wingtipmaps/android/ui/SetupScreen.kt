@@ -58,6 +58,7 @@ import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.map.MapLayersStore
+import app.wingtipmaps.android.map.WeatherLoopRows
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.offline.DownloadsScreen
@@ -166,6 +167,8 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         MinimumsRows()
 
         SectionTitle(stringResource(R.string.map))
+        // The radar and satellite loop and its speed (map/WeatherLoop).
+        WeatherLoopRows()
         MapLayerRows()
         val traffic = remember(context) { Traffic.of(context) }
         val trafficOn by traffic.on.collectAsStateWithLifecycle()
