@@ -1631,6 +1631,13 @@ export interface EngineContract {
     answer: ForecastHourAnswer;
   };
   /**
+   * The dry run played against the forecast: for each point of the run (its time, place and altitude), the forecast ceiling and visibility then (the TAF that speaks for it, within 25 nm, and the NWS Gridded LAMP's hour, the worse of the two), the winds aloft at its altitude from the GFS period for that time, and the SIGMETs, G-AIRMET snapshots (90 minutes either side) and SPC Day 1 convective outlook areas over it then; each leg's worst flight category (AIM 7-1-7); each landing's TAF from an hour before to an hour after it is in (14 CFR 91.169(a)(2)'s window) and the departure's an hour on; and an alert, cited, where it first meets forecast weather under 14 CFR 91.155's VFR minimums (flown VFR; Class C, D and E's figures and 91.155(c)'s 1,000 ft ceiling held throughout, the safer reading) or under the pilot's own, or enters an advisory area. Warned, never refused.
+   */
+  forecast_run: {
+    input: ForecastRunInput;
+    answer: ForecastRunAnswer;
+  };
+  /**
    * A point named as the pilot's own point off the nearest fix a pilot knows (a navaid or a VFR waypoint) within max_nm (40 by default), else the nearest of any kind: its course magnetic, a VOR's radial by the station's own variation (AIM 1-1-3), any other by the World Magnetic Model's at now_s, to the degree, and its distance to a tenth of a mile; null with no fix near.
    */
   frd_near: {
@@ -5614,6 +5621,144 @@ export interface FloorCautionInput {
 }
 export interface ForecastHourInput {
   hours_ahead?: number | null;
+}
+export interface ForecastRunInput {
+  /**
+   * The run's points, in time order.
+   */
+  track: {
+    /**
+     * s since 1970.
+     */
+    t: number;
+    lat: number;
+    lon: number;
+    /**
+     * ft MSL.
+     */
+    alt_ft: number | null;
+    /**
+     * The nav log's row the airplane is flying to: its leg.
+     */
+    row: number;
+    /**
+     * The Gridded LAMP's forecast hours at this point.
+     */
+    modelled?: {
+      valid: number;
+      ceiling_ft: number | null;
+      visibility_sm: number | null;
+    }[];
+    /**
+     * Each GFS period's winds at the station nearest this point.
+     */
+    winds?: {
+      use_from: number;
+      use_to: number;
+      levels: {
+        [k: string]: {};
+      };
+    }[];
+  }[];
+  fields?: {
+    ident: string;
+    role: "departure" | "stop" | "destination";
+    t: number;
+    lat: number;
+    lon: number;
+  }[];
+  /**
+   * TAF stations as the weather store keeps them.
+   */
+  tafs?: {}[];
+  sigmets?: {}[];
+  gairmets?: {}[];
+  /**
+   * SPC outlook areas: {label, valid_from, valid_to, coords}.
+   */
+  outlooks?: {}[];
+  rules?: "VFR" | "IFR";
+  minimums?: {
+    ceiling_ft?: number | null;
+    visibility_sm?: number | null;
+  } | null;
+}
+export interface ForecastRunAnswer {
+  samples: {
+    t: number;
+    lat: number;
+    lon: number;
+    /**
+     * AIM 7-1-7's flight category; null where the forecast does not settle it.
+     */
+    category: "VFR" | "MVFR" | "IFR" | "LIFR" | null;
+    /**
+     * Feet above the ground.
+     */
+    ceiling_ft: number | null;
+    ceiling_unknown: boolean;
+    visibility_sm: number | null;
+    /**
+     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+     */
+    source: string | null;
+    wind_dir_true_deg: number | null;
+    wind_speed_kt: number | null;
+    /**
+     * Indexes into areas.
+     */
+    areas: number[];
+  }[];
+  legs: {
+    row: number;
+    from_t: number;
+    to_t: number;
+    /**
+     * AIM 7-1-7's flight category; null where the forecast does not settle it.
+     */
+    category: "VFR" | "MVFR" | "IFR" | "LIFR" | null;
+    worst_t: number | null;
+  }[];
+  fields: {
+    ident: string;
+    role: "departure" | "stop" | "destination";
+    t: number;
+    /**
+     * AIM 7-1-7's flight category; null where the forecast does not settle it.
+     */
+    category: "VFR" | "MVFR" | "IFR" | "LIFR" | null;
+    /**
+     * Feet above the ground.
+     */
+    ceiling_ft: number | null;
+    ceiling_unknown: boolean;
+    visibility_sm: number | null;
+    /**
+     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+     */
+    source: string | null;
+  }[];
+  areas: {
+    kind: "vfr_minimums" | "pilot_minimums" | "sigmet" | "gairmet" | "outlook";
+    words: string;
+    source: string;
+    low_ft: number | null;
+    high_ft: number | null;
+    valid_from: number | null;
+    valid_to: number | null;
+    coords: [number, number][];
+  }[];
+  alerts: {
+    t: number;
+    lat: number;
+    lon: number;
+    kind: "vfr_minimums" | "pilot_minimums" | "sigmet" | "gairmet" | "outlook";
+    words: string;
+    /**
+     * The rule and the product it is held to.
+     */
+    source: string;
+  }[];
 }
 export interface FrdNearInput {
   lat: number;

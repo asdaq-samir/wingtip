@@ -3046,6 +3046,198 @@ object EngineContract {
     )
 
     @Serializable
+    data class ForecastRunAnswer(
+        val samples: List<EngineContract.ForecastRunAnswerSamplesItem>,
+        val legs: List<EngineContract.ForecastRunAnswerLegsItem>,
+        val fields: List<EngineContract.ForecastRunAnswerFieldsItem>,
+        val areas: List<EngineContract.ForecastRunAnswerAreasItem>,
+        val alerts: List<EngineContract.ForecastRunAnswerAlertsItem>,
+    )
+
+    @Serializable
+    data class ForecastRunAnswerAlertsItem(
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        val kind: String,
+        val words: String,
+        /**
+         * The rule and the product it is held to.
+         */
+        val source: String,
+    )
+
+    @Serializable
+    data class ForecastRunAnswerAreasItem(
+        val kind: String,
+        val words: String,
+        val source: String,
+        @SerialName("low_ft")
+        val lowFt: Double? = null,
+        @SerialName("high_ft")
+        val highFt: Double? = null,
+        @SerialName("valid_from")
+        val validFrom: Double? = null,
+        @SerialName("valid_to")
+        val validTo: Double? = null,
+        val coords: List<List<Double>>,
+    )
+
+    @Serializable
+    data class ForecastRunAnswerFieldsItem(
+        val ident: String,
+        val role: String,
+        val t: Double,
+        /**
+         * AIM 7-1-7's flight category; null where the forecast does not settle it.
+         */
+        val category: String? = null,
+        /**
+         * Feet above the ground.
+         */
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        @SerialName("ceiling_unknown")
+        val ceilingUnknown: Boolean,
+        @SerialName("visibility_sm")
+        val visibilitySm: Double? = null,
+        /**
+         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+         */
+        val source: String? = null,
+    )
+
+    @Serializable
+    data class ForecastRunAnswerLegsItem(
+        val row: Int,
+        @SerialName("from_t")
+        val fromT: Double,
+        @SerialName("to_t")
+        val toT: Double,
+        /**
+         * AIM 7-1-7's flight category; null where the forecast does not settle it.
+         */
+        val category: String? = null,
+        @SerialName("worst_t")
+        val worstT: Double? = null,
+    )
+
+    @Serializable
+    data class ForecastRunAnswerSamplesItem(
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        /**
+         * AIM 7-1-7's flight category; null where the forecast does not settle it.
+         */
+        val category: String? = null,
+        /**
+         * Feet above the ground.
+         */
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        @SerialName("ceiling_unknown")
+        val ceilingUnknown: Boolean,
+        @SerialName("visibility_sm")
+        val visibilitySm: Double? = null,
+        /**
+         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+         */
+        val source: String? = null,
+        @SerialName("wind_dir_true_deg")
+        val windDirTrueDeg: Double? = null,
+        @SerialName("wind_speed_kt")
+        val windSpeedKt: Double? = null,
+        /**
+         * Indexes into areas.
+         */
+        val areas: List<Int>,
+    )
+
+    @Serializable
+    data class ForecastRunInput(
+        /**
+         * The run's points, in time order.
+         */
+        val track: List<EngineContract.ForecastRunInputTrackItem>,
+        val fields: List<EngineContract.ForecastRunInputFieldsItem>? = null,
+        /**
+         * TAF stations as the weather store keeps them.
+         */
+        val tafs: List<Map<String, JsonElement>>? = null,
+        val sigmets: List<Map<String, JsonElement>>? = null,
+        val gairmets: List<Map<String, JsonElement>>? = null,
+        /**
+         * SPC outlook areas: {label, valid_from, valid_to, coords}.
+         */
+        val outlooks: List<Map<String, JsonElement>>? = null,
+        val rules: String? = null,
+        val minimums: EngineContract.ForecastRunInputMinimums? = null,
+    )
+
+    @Serializable
+    data class ForecastRunInputFieldsItem(
+        val ident: String,
+        val role: String,
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+    )
+
+    @Serializable
+    data class ForecastRunInputMinimums(
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        @SerialName("visibility_sm")
+        val visibilitySm: Double? = null,
+    )
+
+    @Serializable
+    data class ForecastRunInputTrackItem(
+        /**
+         * s since 1970.
+         */
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        /**
+         * ft MSL.
+         */
+        @SerialName("alt_ft")
+        val altFt: Double? = null,
+        /**
+         * The nav log's row the airplane is flying to: its leg.
+         */
+        val row: Int,
+        /**
+         * The Gridded LAMP's forecast hours at this point.
+         */
+        val modelled: List<EngineContract.ForecastRunInputTrackItemModelledItem>? = null,
+        /**
+         * Each GFS period's winds at the station nearest this point.
+         */
+        val winds: List<EngineContract.ForecastRunInputTrackItemWindsItem>? = null,
+    )
+
+    @Serializable
+    data class ForecastRunInputTrackItemModelledItem(
+        val valid: Double,
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        @SerialName("visibility_sm")
+        val visibilitySm: Double? = null,
+    )
+
+    @Serializable
+    data class ForecastRunInputTrackItemWindsItem(
+        @SerialName("use_from")
+        val useFrom: Double,
+        @SerialName("use_to")
+        val useTo: Double,
+        val levels: Map<String, Map<String, JsonElement>>,
+    )
+
+    @Serializable
     data class FrdNearAnswer(
         val base: String,
         @SerialName("course_deg")

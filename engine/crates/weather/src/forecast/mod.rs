@@ -6,13 +6,15 @@
 //! cache files read into the shapes the weather service stores (awc), and
 //! what they say along a route (route) -- a TAF over a window of time, the
 //! worst forecast near the route, the SIGMETs, PIREPs and G-AIRMETs it
-//! meets. The hosts fetch; what the products mean is decided here, once.
+//! meets -- and the dry run played against the forecast for the hours it
+//! flies (run). The hosts fetch; what the products mean is decided here, once.
 
 pub mod awc;
 pub mod calls;
 pub mod field;
 pub mod hours;
 pub mod route;
+pub mod run;
 
 /// A category's place from best to worst, VFR 0 to LIFR 3; -1 for none or
 /// one not known, below them all.
