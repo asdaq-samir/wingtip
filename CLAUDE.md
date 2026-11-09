@@ -254,6 +254,11 @@ Guidelines first.
   rows sit at `gap-2` so the areas meet.
 - Stock components (shadcn/ui, Radix) over hand-rolled ones.
 - Tappable things are the blue tint; type sizes come from `lib/text.ts`.
+- Every colour, type role, spacing, corner, material, motion and tap
+  target is a token in `design/tokens.json`, generated into each app by
+  `scripts/build/design-tokens.sh` (CI fails on a stale copy): change a
+  value there, never in `styles/tokens.css`, `lib/tokens.ts`,
+  `Design/Generated` or `design/generated`.
 - Panels are Liquid Glass sheets with detents, like Apple Maps.
 - Errors show where they happen (`lib/problems`), not in a toast.
 - Discrete settings are menus or segmented controls, not sliders.

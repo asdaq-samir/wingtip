@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.wingtipmaps.android.design.generated.WingtipColors
 
 /**
  * Wingtip Maps' mark turning in the middle of the map while it loads, as
@@ -91,9 +92,9 @@ const val REVEAL_FADE_MS = 150
 
 /** The app icon's colours (docs/brand, the web's MapLoading): the ring's
  *  magenta and the airplane's navy, lighter and white in the dark. */
-private val RING = Color(0xFFA3266F)
-private val RING_DARK = Color(0xFFE37BB5)
-private val PLANE = Color(0xFF14284B)
+private val RING = WingtipColors.Brand.MarkRing
+private val RING_DARK = WingtipColors.Brand.MarkRingNight
+private val PLANE = WingtipColors.Brand.MarkPlane
 private val PLANE_DARK = Color.White
 
 @Composable

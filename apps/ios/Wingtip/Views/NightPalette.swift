@@ -2,31 +2,23 @@ import MapKit
 import UIKit
 
 /// Night: the cockpit palette the owner picked (26 October 2026), the
-/// same as the web app's dark theme (web index.css .dark), for the colours
-/// the app sets itself -- the map's marks, the course line, the chart's
-/// dimming. Everything else is the system's, which follows dark
-/// appearance by itself; the tint stays iOS's blue.
+/// web app's dark theme (design/tokens.json color.theme.dark, generated
+/// into WingtipPalette), for the colours the app sets itself -- the map's
+/// marks, the chart's dimming. Everything else is the system's, which
+/// follows dark appearance by itself; the tint is the AccentColor the
+/// same tokens make.
 enum NightPalette {
     /// The night's ground and surface (web --background, --card).
-    static let ground = UIColor(hex: 0x0B1422)
-    static let surface = UIColor(hex: 0x17283A)
-    /// The course over a dimmed chart: a lighter magenta than the
-    /// printed one, which goes dull on the dimmed paper.
-    static let route = UIColor(hex: 0xF277E6)
-    /// What is live or in hand: other traffic, as the web app's cyan.
-    static let active = UIColor(hex: 0x78D9FF)
-    /// Caution, as web --caution in dark.
-    static let caution = UIColor(hex: 0xF5B85E)
-    /// A check passed, as web --go in dark.
-    static let positive = UIColor(hex: 0x75D7A3)
+    static let ground = WingtipPalette.dark.background
+    static let surface = WingtipPalette.dark.card
+    /// Caution and a check passed, at night (web --caution, --go).
+    static let caution = WingtipPalette.dark.caution
+    static let positive = WingtipPalette.dark.go
 
-    /// The course line's magenta by day, as the web app's COURSE_MAGENTA
-    /// (lib/map/chartColors).
-    static let courseByDay = UIColor(hex: 0xE600E6)
-
-    /// The course line's colour: the printed magenta, or the night's over
-    /// a dimmed chart (as web index.css's course-core).
-    static func course(night: Bool) -> UIColor { night ? route : courseByDay }
+    /// The course line's magenta, by day and over a dimmed chart alike,
+    /// as the web draws it (its green casing and light edge carry it at
+    /// night).
+    static let course = WingtipColor.Chart.course
 
     /// The green either side of a selected course, as ForeFlight cases its
     /// magenta line (the owner's screenshot, 8 November 2026; it shows the
@@ -35,14 +27,14 @@ enum NightPalette {
     /// ROUTE_GREEN and ROUTE_GREEN_NIGHT (lib/map/chartColors): a shade
     /// deeper over the dimmed chart so it does not glare.
     static func routeGreen(night: Bool) -> UIColor {
-        night ? UIColor(hex: 0x3F9A1C).withAlphaComponent(0.9) : UIColor(hex: 0x52C41A)
+        night ? WingtipColor.Chart.routeGreenNight.withAlphaComponent(0.9) : WingtipColor.Chart.routeGreen
     }
 
     /// The thin edge round the course's magenta: dark by day, faint and
     /// light over the dimmed chart, where dark would vanish (web
     /// routeEdgePaint).
     static func routeEdge(night: Bool) -> UIColor {
-        night ? UIColor.white.withAlphaComponent(0.35) : UIColor(hex: 0x0B0F0A).withAlphaComponent(0.6)
+        night ? UIColor.white.withAlphaComponent(0.35) : WingtipColor.Chart.routeEdge.withAlphaComponent(0.6)
     }
 
     /// The casing under a line on the chart: white by day, the night's
@@ -62,9 +54,9 @@ enum NightPalette {
     static let markFill = UIColor(light: UIColor.white.withAlphaComponent(0.85), dark: surface.withAlphaComponent(0.9))
 
     /// Traffic: near (within the alert's band) and the rest, the web app's
-    /// amber and cyan by day, the palette's at night.
-    static let trafficNear = UIColor(light: UIColor(red: 0.96, green: 0.62, blue: 0.04, alpha: 1), dark: caution)
-    static let trafficFar = UIColor(light: UIColor(red: 0.02, green: 0.71, blue: 0.83, alpha: 1), dark: active)
+    /// amber and cyan, by day and at night.
+    static let trafficNear = WingtipColor.Chart.trafficNear
+    static let trafficFar = WingtipColor.Chart.trafficFar
 
     /// WCAG 2's contrast ratio between two opaque colours, 1 to 21, as the
     /// web app's lib/contrast measures its tokens (WCAG 1.4.3 asks 4.5:1

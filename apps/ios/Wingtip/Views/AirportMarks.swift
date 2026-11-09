@@ -69,11 +69,11 @@ final class AirportAnnotation: NSObject, MKAnnotation {
 
     static func colour(_ category: String?) -> UIColor {
         switch category {
-        case "VFR": return UIColor(red: 0.13, green: 0.62, blue: 0.27, alpha: 1)
-        case "MVFR": return UIColor(red: 0.16, green: 0.45, blue: 0.85, alpha: 1)
-        case "IFR": return UIColor(red: 0.85, green: 0.18, blue: 0.18, alpha: 1)
-        case "LIFR": return UIColor(red: 0.75, green: 0.12, blue: 0.65, alpha: 1)
-        default: return UIColor.systemGray
+        case "VFR": return WingtipColor.Category.vfr
+        case "MVFR": return WingtipColor.Category.mvfr
+        case "IFR": return WingtipColor.Category.ifr
+        case "LIFR": return WingtipColor.Category.lifr
+        default: return WingtipColor.Category.unknown
         }
     }
 }

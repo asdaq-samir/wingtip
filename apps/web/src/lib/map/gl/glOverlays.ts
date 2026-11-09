@@ -12,6 +12,7 @@ import { overlaySource } from "../overlayTiles";
 import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot, type Stretch } from "./glLayer";
 import { AIRSPACE_INK, OVERLAY_SOURCE, SUA_INK, SUA_LAYERS, airspaceLayers, airspaceTab, glZoom, specialUseLayers, suaHatch } from "./glStyle";
 import { GL_FONT_BOLD, LABEL_HALO } from "./layers/common";
+import { CHART } from "../../tokens";
 
 export { OVERLAY_SOURCE };
 
@@ -32,14 +33,14 @@ export { OVERLAY_SOURCE };
 // ---- The marks' pictures --------------------------------------------------
 
 /** The chart's own ink for a fix's ident. */
-export const FIX_INK = "#1c1a17";
+export const FIX_INK = CHART.fixInk;
 /** A fix's star, ForeFlight's blue (the owner's screenshot over Lake
  *  Michigan, 2026-11-08), the Class B's. */
-export const FIX_BLUE = "#2f8cff";
+export const FIX_BLUE = CHART.airspaceBlue;
 /** A VFR waypoint's ink on the WebGL map: ForeFlight's green triangle, at
  *  the owner's ask (2026-11-07, from its screenshots), where the
  *  sectional prints a magenta flag (Chart User's Guide, VFR waypoints). */
-export const VFR_GREEN = "#148a3b";
+export const VFR_GREEN = CHART.vfrGreen;
 
 type Picture = [id: string, svg: () => string, stretch?: Stretch];
 

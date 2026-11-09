@@ -28,6 +28,7 @@ on:
       - engine/**
       - services/planner/tests_wingtip/fixtures/native/**
       - scripts/build/api-models-apps.*
+      - design/**
       - .github/workflows/native-ios.yml
       - .github/workflows/native-ios-test.yml
   workflow_dispatch:

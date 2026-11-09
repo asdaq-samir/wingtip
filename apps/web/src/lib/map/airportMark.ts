@@ -1,5 +1,6 @@
 import type { AirspaceClass } from "../preferences";
 import { BLUE, MAGENTA } from "../useAirspace";
+import { CHART } from "../tokens";
 
 // Apart from icons.ts, which holds every map mark: Nearest's rows draw
 // this one too, and so would have kept all of them in the page's first
@@ -17,7 +18,7 @@ export function text(value: string | number): string {
 export const AIRPORT_MARK = 26;
 
 /** The sectional's ink for a mark whose class is not known yet. */
-const UNKNOWN_GREY = "#6b7280";
+const UNKNOWN_GREY = CHART.fieldUnknown;
 
 /** The mark itself, as an SVG's markup (airportMarkIcon's, without the
  *  ident beside it): the same symbol off the map, as Nearest's rows lead

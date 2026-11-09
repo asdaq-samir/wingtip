@@ -25,15 +25,13 @@ struct NightPaletteTests {
     @Test func thePaletteIsTheOwnersCockpitColours() {
         #expect(hex(NightPalette.ground, day) == 0x0B1422)
         #expect(hex(NightPalette.surface, day) == 0x17283A)
-        #expect(hex(NightPalette.route, day) == 0xF277E6)
-        #expect(hex(NightPalette.active, day) == 0x78D9FF)
         #expect(hex(NightPalette.caution, day) == 0xF5B85E)
         #expect(hex(NightPalette.positive, day) == 0x75D7A3)
     }
 
-    @Test func theCourseIsThePrintedMagentaByDayAndTheNightsOverADimmedChart() {
-        #expect(hex(NightPalette.course(night: false), day) == 0xE600E6)
-        #expect(hex(NightPalette.course(night: true), day) == 0xF277E6)
+    @Test func theCourseIsThePrintedMagentaByDayAndAtNight() {
+        #expect(hex(NightPalette.course, day) == 0xE600E6)
+        #expect(hex(NightPalette.course, night) == 0xE600E6)
         #expect(hex(NightPalette.casing(night: false), day) == 0xFFFFFF)
         #expect(hex(NightPalette.casing(night: true), day) == 0x0B1422)
     }
@@ -43,8 +41,8 @@ struct NightPaletteTests {
         #expect(hex(NightPalette.halo, night) == 0x0B1422)
         #expect(hex(NightPalette.markFill, night) == 0x17283A)
         #expect(alpha(NightPalette.halo, night) > 0.85)
-        #expect(hex(NightPalette.trafficFar, night) == 0x78D9FF)
-        #expect(hex(NightPalette.trafficNear, night) == 0xF5B85E)
+        #expect(hex(NightPalette.trafficFar, night) == 0x06B6D4)
+        #expect(hex(NightPalette.trafficNear, night) == 0xF59E0B)
     }
 
     @Test func theChartIsDimmedOnlyAtNightAndOnlyWhenTheSettingSaysSo() {
@@ -71,7 +69,7 @@ struct NightPaletteTests {
         #expect(NightPalette.contrast(UIColor(hex: 0xEEF3F9), NightPalette.surface) >= 4.5)
         // The course and the traffic stand off the night's ground (WCAG
         // 1.4.11's 3:1 for what is not words).
-        #expect(NightPalette.contrast(NightPalette.route, NightPalette.ground) >= 3)
-        #expect(NightPalette.contrast(NightPalette.active, NightPalette.ground) >= 3)
+        #expect(NightPalette.contrast(NightPalette.course, NightPalette.ground) >= 3)
+        #expect(NightPalette.contrast(NightPalette.trafficFar, NightPalette.ground) >= 3)
     }
 }

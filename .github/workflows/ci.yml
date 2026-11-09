@@ -212,6 +212,14 @@ jobs:
             echo "::error title=Phone API models out of date::the phones' generated API models are not what the OpenAPI documents give: run scripts/build/api-models-apps.sh and commit the files."
             exit 1
           fi
+      # The design tokens (design/tokens.json), generated into each app's
+      # theme by scripts/build/design-tokens.sh and committed: generated
+      # again here, they must be the committed files byte for byte, or a
+      # colour changed in one generated file and not the source drifts
+      # from the other two apps.
+      - name: The design tokens are the committed ones
+        working-directory: .
+        run: scripts/build/design-tokens.sh --check
       - run: npx tsc --noEmit
       - run: npx eslint .
       - run: npx vitest run
@@ -498,6 +506,13 @@ jobs:
               - engine/contract/**
               # The phones' models of the two documents, checked there.
               - scripts/build/api-models-apps.*
+              # The design tokens and every app's generated copy, checked there.
+              - design/**
+              - scripts/build/design-tokens.sh
+              - scripts/build/design_tokens.py
+              - apps/ios/Wingtip/Design/Generated/**
+              - apps/ios/Wingtip/Assets.xcassets/AccentColor.colorset/**
+              - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/**
               - apps/ios/Wingtip/API/Generated/**
               - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
             test-gateway:
@@ -547,6 +562,7 @@ jobs:
               - engine/**
               - apps/web/src/lib/fixtures/**
               - scripts/build/api-models-apps.*
+              - design/**
               - .github/workflows/native-android-build.yml
             # And the web's files apps/ios/project.yml bundles.
             ios:
@@ -556,6 +572,7 @@ jobs:
               - apps/web/src/lib/acs.json
               - services/planner/tests_wingtip/fixtures/native/**
               - scripts/build/api-models-apps.*
+              - design/**
               - .github/workflows/native-ios-test.yml
             # Javadoc; each Python suite's job makes its pdoc.
             docs:

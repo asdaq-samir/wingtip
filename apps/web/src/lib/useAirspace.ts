@@ -2,6 +2,7 @@ import { useEffect, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { usePreferences, type AirspaceClass, type RecentAirport } from "./preferences";
 import { airportQuery } from "./queryClient";
+import { CHART } from "./tokens";
 
 /**
  * An airport drawn as the sectional draws its airspace -- the Favorites'
@@ -15,8 +16,8 @@ type Space = AirspaceClass;
  *  as well (lib/map/icons). The magenta nearer the chart's ink, at the
  *  owner's ask ("Why is class C color red instead of magenta?"): it was
  *  #b02e7c, which read as red beside IFR's. */
-export const BLUE = "#2465b8";
-export const MAGENTA = "#c0309f";
+export const BLUE = CHART.towered;
+export const MAGENTA = CHART.untowered;
 
 /**
  * A field's airspace as the sectional draws it, on its tile: Class B a
