@@ -21,6 +21,7 @@ import app.wingtipmaps.android.api.ahead
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.underway
+import app.wingtipmaps.android.logbook.FlightRecorder
 import app.wingtipmaps.android.notify.Notifications
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -228,6 +229,8 @@ class OwnShip private constructor(private val context: Context) {
         // off only while flying: the service is started as the airplane
         // reaches flying speed and stopped as it slows below it.
         serve(OwnTrail.of(context).took(fix))
+        // The track the logbook is drawn from, ground and air alike.
+        FlightRecorder.of(context).took(fix)
     }
 
     /** The foreground service on while flying, off otherwise. Android 12

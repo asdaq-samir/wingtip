@@ -50,6 +50,7 @@ import app.wingtipmaps.android.copilot.CopilotSetting
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
+import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.pilot.MinimumsRows
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
@@ -68,6 +69,7 @@ fun SetupScreen(session: Session) {
     // passenger briefing's flight.
     val plan: Plan = viewModel()
     var briefing by rememberSaveable { mutableStateOf(false) }
+    var logbook by rememberSaveable { mutableStateOf(false) }
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val loaded by session.loaded.collectAsStateWithLifecycle()
     val problem by session.problem.collectAsStateWithLifecycle()
@@ -116,6 +118,15 @@ fun SetupScreen(session: Session) {
         // What falls due, the pilot's and their airplanes': under the
         // account it belongs to.
         signedIn?.let { ComingUpSection(signedInAs = it.email ?: it.displayName ?: "") }
+        // The pilot's logbook and its currency, with their account.
+        if (signedIn != null) {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.logbook)) },
+                supportingContent = { Text(stringResource(R.string.logbook_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { logbook = true },
+            )
+        }
         // The pilot's own minimums, kept on this phone (no sign-in), as
         // the web keeps them with the pilot's own things.
         SectionTitle(stringResource(R.string.personal_minimums))
@@ -156,6 +167,9 @@ fun SetupScreen(session: Session) {
             Text(stringResource(R.string.server), style = MaterialTheme.typography.bodyMedium)
             Text(Config.host, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+    if (logbook) {
+        WingtipSheet(title = stringResource(R.string.logbook), onClose = { logbook = false }, full = true) { LogbookScreen() }
     }
     if (briefing) {
         WingtipSheet(title = stringResource(R.string.passenger_briefing), onClose = { briefing = false }, full = true) {

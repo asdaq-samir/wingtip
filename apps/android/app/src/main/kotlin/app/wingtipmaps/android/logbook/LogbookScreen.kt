@@ -1,0 +1,56 @@
+package app.wingtipmaps.android.logbook
+
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.ProblemLine
+import app.wingtipmaps.android.ui.SectionTitle
+
+/**
+ * The pilot's logbook, at its least (LogbookModel): what the currency
+ * says, then each entry, newest first, its date over its route, hours
+ * and landings. Entries are added from a recorded flight ("Flight
+ * Logged"), or on the web.
+ */
+@Composable
+fun LogbookScreen(model: LogbookModel = viewModel()) {
+    val state by model.state.collectAsStateWithLifecycle()
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg)) {
+        item {
+            if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+            ProblemLine(state.problem)
+            if (state.currency.isNotEmpty()) SectionTitle(stringResource(R.string.currency))
+        }
+        items(state.currency) { Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = WingtipSpace.Xs)) }
+        item {
+            SectionTitle(stringResource(R.string.logbook_entries))
+            if (!state.loading && state.entries.isEmpty() && state.problem == null) {
+                Text(stringResource(R.string.logbook_empty), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        items(state.entries, key = { it.id }) { e ->
+            ListItem(
+                overlineContent = { Text(e.flownOn) },
+                headlineContent = { Text(LogbookModel.line(e)) },
+                supportingContent = e.aircraft?.let { { Text(it) } },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            )
+        }
+    }
+}
