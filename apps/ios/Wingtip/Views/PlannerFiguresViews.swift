@@ -144,13 +144,11 @@ struct DebriefSections: View {
 
 // MARK: - The diversion drill
 
-/// The diversion drill (the web app's DiversionDrill, ACS PA.VI.C): where
-/// the airplane is, the examiner says divert. The clock starts, the
-/// student picks one of the nearest fields (with their runways and
-/// weather, and not how far or which way: that is off the chart),
-/// estimates the heading, ground speed, time and fuel, and checks them
-/// against the planner's exact solution in its forecast air on the way
-/// (GET /api/diversion), each estimate marked reasonable or not.
+/// The diversion drill (the web app's DiversionDrill, ACS PA.VI.C): where the airplane is, the
+/// examiner says divert. The clock starts, the student picks one of the nearest fields (with their
+/// runways and weather, and not how far or which way: that is off the chart), estimates the heading,
+/// ground speed, time and fuel, and checks them against the planner's exact solution in its forecast
+/// air on the way (GET /api/diversion), each estimate marked reasonable or not.
 struct DiversionDrillView: View {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
@@ -182,7 +180,9 @@ struct DiversionDrillView: View {
 
     var body: some View {
         List {
-            if started == nil {
+            if !plan.airplaneChosen { // No airplane: no speed to work at, and the planner not asked (it answers 422).
+                Section { PickAirplaneRow(detail: "Its heading, ground speed, time and fuel are worked at its speed and burn") }
+            } else if started == nil {
                 Section {
                     Text("Where you are, at \(Format.altitude(altitudeFt)), the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind.")
                     Picker("Altitude", selection: $altitudeFt) {
