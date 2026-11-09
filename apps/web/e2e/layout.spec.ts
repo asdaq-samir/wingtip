@@ -58,7 +58,7 @@ test.describe("/app/plan", () => {
   });
 
   // The grabber steps the three sizes. A route's link lands at rest; a
-  // reload forgets it (lib/freshLoad).
+  // reload forgets it (features/shell/freshLoad).
   test("a fresh load opens as the pill, a route's link at rest, and a reload forgets the route", async ({ page }) => {
     await page.goto("/app/plan");
     await settle(page);

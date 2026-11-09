@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { Area, ComposedChart, Line, ReferenceArea, XAxis, YAxis, usePlotArea, useXAxisScale, useYAxisScale } from "recharts";
 import { ChartContainer, type ChartConfig } from "../../../components/ui/chart";
-import { usePastFlight } from "../../../lib/map/pastFlight";
+import { usePastFlight } from "../map/pastFlight";
 import type { PastFlightPoint, RouteProfile } from "../../../lib/api/types";
 import { clockTime } from "../../../lib/format";
 import { altFt, grouped } from "../../../lib/format";

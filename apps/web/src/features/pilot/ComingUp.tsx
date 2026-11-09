@@ -4,7 +4,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import QueryState from "../../components/QueryState";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
-import { dueTitle, dueTone, whenWords } from "../../lib/paperwork";
+import { dueTitle, dueTone, whenWords } from "./paperwork";
 import { paperworkQuery } from "../../lib/queryClient";
 
 /**

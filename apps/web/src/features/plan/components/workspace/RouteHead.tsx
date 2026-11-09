@@ -1,5 +1,5 @@
 import { Suspense, type ReactNode } from "react";
-import { placeName } from "../../../../lib/radio";
+import { placeName } from "../../lib/radio";
 import { SearchNear } from "../../../../lib/useAirportSearch";
 import { RouteLine, RouteEnds, RouteSplit } from "../../routePanelParts";
 // The search, on a chunk of its own: the first screen draws it.

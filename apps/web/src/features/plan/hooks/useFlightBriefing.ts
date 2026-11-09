@@ -13,23 +13,23 @@ import { armText } from "../../../lib/weightBalance";
 import { underMinimums } from "../../../lib/minimums";
 import { usePreferences } from "../../../lib/preferences";
 import { faaWords, gairmetTitle, sigmetHazard, suaAltitudes } from "../../../lib/advisories";
-import { passTime, suaWhen, tfrWhen, type SuaWhen } from "../../../lib/passTimes";
-import { pickedEnd, runwayFlown, runwayNumber } from "../../../lib/pattern";
-import { useRunwayPicks } from "../../../lib/useRunwayPicks";
-import { runwayChecks } from "../../../lib/runwayCheck";
+import { passTime, suaWhen, tfrWhen, type SuaWhen } from "../lib/passTimes";
+import { pickedEnd, runwayFlown, runwayNumber } from "../lib/pattern";
+import { useRunwayPicks } from "../lib/useRunwayPicks";
+import { runwayChecks } from "../lib/runwayCheck";
 import { worstOf } from "../../../lib/findings";
 import { useVerdict, verdictItems, type VerdictItem } from "../../../lib/verdict";
-import { callSign, fieldPhases } from "../../../lib/radio";
-import { useGlance, type BriefGlance, type FieldGlance } from "../../../lib/glance";
+import { callSign, fieldPhases } from "../lib/radio";
+import { useGlance, type BriefGlance, type FieldGlance } from "../lib/glance";
 import { shortName } from "../../../lib/aircraftChoice";
-import { usePrinting } from "../../../lib/usePrinting";
+import { usePrinting } from "../lib/usePrinting";
 import { fieldCategory } from "../components/briefing/fieldWeather";
-import { flightPlanForms, type FiledProcedure } from "../../../lib/flightPlanForm";
+import { flightPlanForms, type FiledProcedure } from "../lib/flightPlanForm";
 import { alternateFinding, useAlternate } from "./useAlternate";
 import { flowQuery, itwsLines, itwsQuery, liveWhen, programLines, saaQuery } from "../../../lib/liveReports";
-import { icingAtAltitude, icingLine } from "../../../lib/icing";
+import { icingAtAltitude, icingLine } from "../lib/icing";
 import { useIcingForecast } from "./useIcingForecast";
-import { planFacts } from "../../../lib/oral";
+import { planFacts } from "../lib/oral";
 import { assess, riskLine, useRisk } from "../../../lib/frat";
 import type { BriefingPart } from "../components/briefing/sections";
 
@@ -195,7 +195,7 @@ export function useFlightBriefing({
   // The least margin of the route's flights: one figure, for the risk
   // assessment, the Go / No-Go's fuel and the glance alike.
   const leastMarginGal = margins.length ? Math.min(...margins) : null;
-  // Under IFR, in cloud at or above the freezing level (lib/icing).
+  // Under IFR, in cloud at or above the freezing level (features/plan/lib/icing).
   const icing = ifr && nav && briefing ? icingAtAltitude(nav.altitude_selection, legs.map(l => l.altitude_ft), briefing.pireps) : null;
   // Under IFR, the AWC's forecast icing (CIP and FIP) on each leg at the
   // altitude flown (useIcingForecast): its line joins the one above in the
@@ -221,7 +221,7 @@ export function useFlightBriefing({
     ticked,
   }) : null;
   const destStation = briefing?.forecast.stations.find(st => st.icaoId === dest);
-  // The flight in plain lines, for the mock oral's examiner (lib/oral):
+  // The flight in plain lines, for the mock oral's examiner (features/plan/lib/oral):
   // what the briefing already holds.
   const planText = briefing ? planFacts({
     route: landings.filter(i => briefing.airports[i]).map(i => {
@@ -248,7 +248,7 @@ export function useFlightBriefing({
   }, [assessmentKey, setAssessment, publish]);
   useEffect(() => () => { if (publish) setAssessment(null); }, [setAssessment, publish]);
 
-  // The runway check at each field (lib/runwayCheck), for the
+  // The runway check at each field (features/plan/lib/runwayCheck), for the
   // Performance tab and the Go / No-Go.
   const checks = runwayChecks(nav?.aircraft, briefing, course, loaded?.takeoff.weightLb ?? null, loaded?.landing.weightLb ?? null, picks);
   const hops = totals?.hops ?? [];
@@ -323,7 +323,7 @@ export function useFlightBriefing({
   }, [itemsKey, setItems, publish]);
   useEffect(() => () => { if (publish) setItems([]); }, [setItems, publish]);
 
-  // The Brief's glance (lib/glance): each part of the flight in a few
+  // The Brief's glance (features/plan/lib/glance): each part of the flight in a few
   // figures, from what the pages say -- the runway checks, the radio's
   // first call, the forecast at each field and along the way -- published
   // by the one instance outside the pages, as the findings are.

@@ -3,7 +3,7 @@ import { Navigation, Route } from "lucide-react";
 import { showError } from "../lib/problems";
 import { cn } from "cn";
 import IconButton from "./IconButton";
-import { APPROXIMATE_M, ownShipAvailable, useOwnShip } from "../lib/map/ownShip";
+import { APPROXIMATE_M, ownShipAvailable, useOwnShip } from "../lib/map/position/ownShip";
 
 /**
  * My position, among the map's buttons, as Maps and every map app has

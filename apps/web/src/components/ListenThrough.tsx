@@ -81,7 +81,7 @@ export default function ListenThrough() {
   const value = input?.lost ? "" : chosen ?? matchInput(inputs, kept)?.id ?? "";
   const remembered = kept && isOutside(kept.label) ? kept.label : null;
   const lost = input?.lost ? lostWords(input) : null;
-  // What the input chosen brings (InputGuide, lib/audioGear): the one
+  // What the input chosen brings (InputGuide, components/audioGear): the one
   // heard, or before listening the one picked or remembered -- not one
   // lost, whose words say what is heard instead.
   const guideLabel = input

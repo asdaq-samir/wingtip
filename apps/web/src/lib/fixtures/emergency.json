@@ -1,5 +1,5 @@
 {
-  "about": "The emergency assistant's rules: best_fields (the fields within a glide, or for a diversion), mayday_call (AIM 6-3-2(a)(3)'s order, 6-2-2's code, 6-3-1(d)'s frequencies) and checklist_section. The fields are OurAirports' around Lake Geneva, Wisconsin (positions, elevations, runways as its tables give them); WI89's private flag and Burlington's METAR are made up for the test. The airplane is the Cessna 172S profile (data/aircraft/c172.json): 68 KIAS, 9 to 1. engine/facade/tests/emergency.rs and the web's lib/emergency.test.ts hold the engine to it.",
+  "about": "The emergency assistant's rules: best_fields (the fields within a glide, or for a diversion), mayday_call (AIM 6-3-2(a)(3)'s order, 6-2-2's code, 6-3-1(d)'s frequencies) and checklist_section. The fields are OurAirports' around Lake Geneva, Wisconsin (positions, elevations, runways as its tables give them); WI89's private flag and Burlington's METAR are made up for the test. The airplane is the Cessna 172S profile (data/aircraft/c172.json): 68 KIAS, 9 to 1. engine/facade/tests/emergency.rs and the web's features/emergency/emergency.test.ts hold the engine to it.",
   "lakeGeneva": {
     "input": {
       "mode": "glide",

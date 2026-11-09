@@ -181,7 +181,7 @@ function LessonDetail({ lesson, studentId, onDone }: { lesson: ApproachLesson; s
 
 /** The student's flights put to the instructor that landed at the field
  *  with a track, newest first: the one picked -- the newest to start --
- *  debriefed against the lesson's approach (lib/approachDebrief). */
+ *  debriefed against the lesson's approach (components/approachDebriefModel). */
 function LessonDebrief({ lesson, studentId }: { lesson: ApproachLesson; studentId: number }) {
   const [picked, setPicked] = useState<number | null>(null);
   const flight = lesson.flights.find(f => f.id === picked) ?? lesson.flights[0] ?? null;

@@ -4,7 +4,7 @@ import { library, openConsole, showTabs } from "./helpers";
 
 /**
  * A flown approach debriefed against its procedure (components/
- * ApproachDebrief, lib/approachDebrief): a saved flight to KBUR, its GPX
+ * ApproachDebrief, components/approachDebriefModel): a saved flight to KBUR, its GPX
  * track down the ILS Y RWY 08's final -- a mile left of it from 4.5 to
  * 2.5 nm out -- and a missed approach begun 12 s past the runway. The
  * flight's page finds the approach among KBUR's, draws it, and lists

@@ -12,7 +12,7 @@ import org.springframework.lang.Nullable;
 
 /**
  * A flight plan to file, FAA Form 7233-4's items as AIM Appendix 4 writes
- * each (the Brief's flight plan form, lib/flightPlanForm): POST
+ * each (the Brief's flight plan form, features/plan/lib/flightPlanForm): POST
  * /api/flight-service/flight-plans. The identifiers are up to 11
  * characters, as Flight Service takes an FAA identifier (C81) where an
  * ICAO one is wanted.

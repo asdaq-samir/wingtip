@@ -24,9 +24,9 @@ import { usePreferences, type AirspaceClass, type RecentAirport } from "../../..
 import { useAirportSearch, type AirportSearchRow } from "../../../lib/useAirportSearch";
 import { useKeyboardInset } from "../../../hooks/use-viewport";
 import { useAirspace } from "../../../lib/useAirspace";
-import { airportMarkSvg } from "../../../lib/map/airportMark";
-import { colourOf } from "../../../lib/map/flightCategory";
-import { WAYPOINT_MAGENTA } from "../../../lib/map/chartColors";
+import { airportMarkSvg } from "../../../lib/map/marks/airportMark";
+import { colourOf } from "../../../lib/map/marks/flightCategory";
+import { WAYPOINT_MAGENTA } from "../../../lib/map/marks/chartColors";
 import { altFt, bearing, flightLevel } from "../../../lib/format";
 import { sameField, TYPED_PROCEDURE, type TypedProcedure } from "../../../lib/procedures";
 import { TEXT } from "../../../lib/text";

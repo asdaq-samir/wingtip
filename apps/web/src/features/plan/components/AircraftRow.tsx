@@ -3,7 +3,7 @@ import { ListRow } from "../../../components/GroupedList";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import type { LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
-import { trafficLabel } from "../../../lib/map/traffic";
+import { trafficLabel } from "../map/traffic";
 import { altFt } from "../../../lib/format";
 
 /** One airplane in a list: its name, what it is and how it flies, and

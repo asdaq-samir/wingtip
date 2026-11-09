@@ -7,7 +7,7 @@ import { TEXT } from "../lib/text";
 
 /**
  * Under the Hearing line of Listen through (ListenThrough): what the live
- * input brings, from the audio gear catalogue (lib/audioGear) by its
+ * input brings, from the audio gear catalogue (components/audioGear) by its
  * label -- the owner's look and go (2026-11-03): one line at a glance,
  * the steps folded under a tap. The radio: "Hears the radio". A voice --
  * a headset's boom mic, a panel's phone mode -- "Hears your voice, not

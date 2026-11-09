@@ -10,7 +10,7 @@ import { CardMark, CardThread, EmptyMark } from "../routeCard";
 import { CARD_GAP, POINT_CARD, ROUTE_LINE } from "../routeListStyle";
 import { TEXT } from "../../../../lib/text";
 import type { Detour, LegHold } from "../../../../lib/api/types";
-import { holdWords, type Hold } from "../../../../lib/routeHolds";
+import { holdWords, type Hold } from "../../lib/routeHolds";
 import { pointName } from "../../../../lib/identSchema";
 
 // The rows down FPL's route list (ProceduresRoute) other than a field's

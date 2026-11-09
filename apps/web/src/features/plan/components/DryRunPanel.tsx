@@ -2,12 +2,12 @@ import { Suspense, lazy, memo, useEffect, useMemo, useRef, type ComponentProps, 
 import { useQuery } from "@tanstack/react-query";
 import { Mountain, Pause, Play } from "lucide-react";
 import { callEngine } from "../../../lib/engine/engine";
-import { setPilotView, usePilotView } from "../../../lib/map/gl/terrain/pilotView";
+import { setPilotView, usePilotView } from "../map/terrain/pilotView";
 import { cn } from "cn";
 import CloseButton from "../../../components/CloseButton";
 import RoundButton from "../../../components/RoundButton";
 import { Slider } from "../../../components/ui/slider";
-import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight } from "../../../lib/map/pastFlight";
+import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight } from "../map/pastFlight";
 import { routeProfileQuery } from "../../../lib/queryClient";
 import { TEXT } from "../../../lib/text";
 import { altFt, feet } from "../../../lib/format";
@@ -59,7 +59,7 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
   // a segmented control took a row of its own.
   const nextSpeed = REPLAY_SPEEDS[(REPLAY_SPEEDS.indexOf(speed as (typeof REPLAY_SPEEDS)[number]) + 1) % REPLAY_SPEEDS.length]!;
   // The run seen from the pilot's seat over the 3D ground, or the chart
-  // from above (lib/map/gl/terrain's PilotCamera): a toggle among the
+  // from above (features/plan/map/terrain's PilotCamera): a toggle among the
   // run's own controls, put back to the chart as the run is put away.
   const pilotView = usePilotView(s => s.on);
   useEffect(() => () => setPilotView(false), []);

@@ -7,7 +7,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import Segmented from "../../components/Segmented";
 import { Input } from "../../components/ui/input";
 import TogglePill from "../../components/TogglePill";
-import { leaveLimit, lostCommsWords, segmentAltitudes, type RouteKey, type Segment } from "../../lib/lostComms";
+import { leaveLimit, lostCommsWords, segmentAltitudes, type RouteKey, type Segment } from "./lostComms";
 import { TEXT } from "../../lib/text";
 import { RemoveMinus } from "../../components/Favorites";
 

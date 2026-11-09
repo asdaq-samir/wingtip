@@ -3,7 +3,7 @@ import { SCORE_STEPS } from "../../lib/scoreScale";
 import { altFt, bearing, flightLevel, one } from "../../lib/format";
 import { clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
-import { calmOnRunway, isCalm } from "../../lib/wind";
+import { calmOnRunway, isCalm } from "./lib/wind";
 import { modelledWinds } from "../../lib/windsAloft";
 
 export { altFt, bearing, one };
@@ -167,7 +167,7 @@ export function surfaceName(surface: string | null | undefined): string | null {
 
 /** A runway's wind in its parts, signed as wingtip.runway_wind's are (a
  *  tailwind negative, a crosswind from the right positive): the planner's
- *  Runway["wind"] and lib/pattern's WindPick alike. */
+ *  Runway["wind"] and features/plan/lib/pattern's WindPick alike. */
 export interface WindParts {
   headwindKt: number;
   crosswindKt: number;
@@ -206,7 +206,7 @@ export function windOnRunway(wind: NonNullable<Runway["wind"]>): string {
 }
 
 /** The wind as a METAR reports it, true: "240° at 15 kt, gusts 25",
- *  "Calm" (00000KT, lib/wind's isCalm), "Variable at 4 kt" (VRB) --
+ *  "Calm" (00000KT, features/plan/lib/wind's isCalm), "Variable at 4 kt" (VRB) --
  *  FAA Order JO 7900.5's codes as the planner reads them; "Not reported"
  *  with no speed. The airport's card's and the Brief's. */
 export function windLine(metar: { wind_speed_kt?: number | null; wind_dir_true_deg?: number | null; wind_gust_kt?: number | null }): string {

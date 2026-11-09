@@ -143,7 +143,7 @@ export function useProcedurePicks({ planned, searchParams, setSearchParams, setP
   const flownPatterns = useMemo(() => patterns.filter(p => !routeProcedures.some(r => r.kind === "approach" && sameField(r.ident, p.ident))),
     [patterns, routeProcedures]);
   // The departure and the arrival picked at the route's ends, filed in
-  // the flight plan's route (lib/flightPlanForm).
+  // the flight plan's route (features/plan/lib/flightPlanForm).
   const filedProcedures = useMemo(() => {
     const at = (ident: string, kind: "departure" | "arrival") => {
       const d = procedureDrawings.find(p => p.kind === kind && sameField(p.airport, ident));

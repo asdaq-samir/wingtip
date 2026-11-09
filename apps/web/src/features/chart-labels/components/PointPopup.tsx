@@ -3,7 +3,7 @@ import IconButton from "../../../components/IconButton";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import PullDown from "../../../components/PullDown";
-import { MapCard } from "../../../lib/map/MapCard";
+import { MapCard } from "../../../lib/map/cards/MapCard";
 import { isEndpoint, type Point, type Rating } from "../../../lib/api/types";
 import { inkOn } from "../../../lib/scoreScale";
 import { CATEGORIES, COLORS, RATINGS, compassPoint, modelNote, roleOf, sourceOf } from "../logic";

@@ -1,4 +1,4 @@
-import { AirspaceCardBody } from "../../AirspaceCard";
+import { AirspaceCardBody } from "../../cards/AirspaceCard";
 import { useGlMap, useGlTap } from "../glLayer";
 import { volumeOfTile } from "../glOverlays";
 import { AIRSPACE_LINE_LAYERS, airspaceText } from "../glStyle";

@@ -1,6 +1,6 @@
 // First: the browser's kept "vfr." keys renamed "wingtip." before any
-// store below reads its own (lib/storageRename).
-import "./lib/storageRename";
+// store below reads its own (features/shell/storageRename).
+import "./features/shell/storageRename";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, Navigate, redirect, RouterProvider } from "react-router-dom";
@@ -15,8 +15,8 @@ import ErrorAlert from "./components/ErrorAlert";
 import PageError from "./components/PageError";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { registerSW } from "virtual:pwa-register";
-import { followDynamicType } from "./lib/dynamicType";
-import { keepAddressThroughReload, startFresh } from "./lib/freshLoad";
+import { followDynamicType } from "./features/shell/dynamicType";
+import { keepAddressThroughReload, startFresh } from "./features/shell/freshLoad";
 import { installErrorReports, reportOf, sendReport } from "./lib/errorReports";
 import { startSpeedReports } from "./lib/speed";
 import { startLoadLog } from "./lib/loadLog";
@@ -80,7 +80,7 @@ startLoadLog();
 // is away, and the app brought back showed the build it was left on
 // until a minute after. The check is one small request for sw.js. That
 // reload keeps the route on screen; a person's starts clean
-// (lib/freshLoad).
+// (features/shell/freshLoad).
 // Registered once the page has loaded, not during it: the worker's
 // install fetches every chunk it precaches (2.7 MB), which competed
 // with the map, its tiles and the planner on a cold start and after
@@ -166,10 +166,10 @@ void queryClient.prefetchQuery({ ...chartQuery, meta: { silent: true } });
 // And the overlay tiles' archive's name, for the map's vector source; with
 // it, the archive's header and root directory (its first 16 KB, one range
 // request), so the map's first overlay tile goes straight to its bytes
-// (lib/map/overlayTiles warmOverlayArchive). The module is the map
+// (lib/map/sources/overlayTiles warmOverlayArchive). The module is the map
 // chunk's, asked for here on its own.
 void queryClient.fetchQuery(overlayTilesQuery)
-  .then(tiles => import("./lib/map/overlayTiles").then(m => m.warmOverlayArchive(tiles)))
+  .then(tiles => import("./lib/map/sources/overlayTiles").then(m => m.warmOverlayArchive(tiles)))
   .catch(() => { /* no archive yet: the map adds the overlays once there is one */ });
 
 const opening = new URLSearchParams(window.location.search);

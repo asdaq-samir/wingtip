@@ -3,7 +3,7 @@ import type { SetURLSearchParams } from "react-router-dom";
 import { toast } from "../lib/toast";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
-import { observed, planStateOf, redone, restored, started, undone, type PlanHistory } from "../lib/planHistory";
+import { observed, planStateOf, redone, restored, started, undone, type PlanHistory } from "./planHistory";
 
 /** One Undo bar at a time: the next edit's takes its place. */
 const UNDO_TOAST = "plan-undo";
@@ -16,7 +16,7 @@ const typing = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 
 /**
- * The plan's Undo and Redo (lib/planHistory), from the address the page
+ * The plan's Undo and Redo (hooks/planHistory), from the address the page
  * keeps it in: each change of the route taken in as it lands, whichever
  * button made it. One that took something away -- the route cleared, a
  * stop removed, the route replaced by Fly Here or a Direct to, a

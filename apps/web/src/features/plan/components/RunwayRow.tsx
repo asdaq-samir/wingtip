@@ -3,12 +3,12 @@ import type { Runway } from "../../../lib/api/types";
 import { cn } from "cn";
 import { runwayWind, surfaceName } from "../format";
 import { usePreferences } from "../../../lib/preferences";
-import { runwayNumber } from "../../../lib/pattern";
+import { runwayNumber } from "../lib/pattern";
 import { RowBadge } from "../../../components/RowBadge";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
 import { grouped } from "../../../lib/format";
-import { runwayCrosswindKt } from "../../../lib/wind";
+import { runwayCrosswindKt } from "../lib/wind";
 
 /** A runway drawn on its badge, laid along its true heading as the
  *  chart lays it (north up), its centre line dashed; upright where its

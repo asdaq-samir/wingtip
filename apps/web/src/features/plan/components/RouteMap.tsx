@@ -10,20 +10,20 @@ import type { Candidate, Course, Leg, ProcedureDrawing } from "../../../lib/api/
 import type { BriefingState } from "../hooks/usePlan";
 import { proceduresOf, sameField } from "../../../lib/procedures";
 import type { TrafficPattern } from "../../../lib/trafficPattern";
-import { chipColourOf } from "../../../lib/map/flightCategory";
-import type { RouteWay } from "../../../lib/map/routeWays";
-import { checkpointColour } from "../../../lib/map/chartColors";
+import { chipColourOf } from "../../../lib/map/marks/flightCategory";
+import type { RouteWay } from "../../../lib/map/route/routeWays";
+import { checkpointColour } from "../../../lib/map/marks/chartColors";
 import { useInkLook } from "../../../lib/brand";
-import { MapCard } from "../../../lib/map/MapCard";
-import GlRouteMap, { type GlCandidate, type GlCheckpoint, type GlEndpoint, type GlLeg } from "../../../lib/map/gl/GlRouteMap";
+import { MapCard } from "../../../lib/map/cards/MapCard";
+import GlRouteMap, { type GlCandidate, type GlCheckpoint, type GlEndpoint, type GlLeg } from "../map/GlRouteMap";
 import { usePreferences } from "../../../lib/preferences";
 import type { StopKind } from "../../../lib/stopKinds";
-import type { StopPin } from "../../../lib/map/stopPins";
+import type { StopPin } from "../../../lib/map/marks/stopPins";
 import { inkOn } from "../../../lib/scoreScale";
 import { feet } from "../../../lib/format";
 import { scoreColor } from "../format";
 import type { NavLogRow, RouteLeg } from "./navlog/rows";
-import { useTerrainView } from "../../../lib/map/gl/terrain/useTerrainView";
+import { useTerrainView } from "../map/terrain/useTerrainView";
 import { useRouteAloft } from "../hooks/useRouteAloft";
 
 const NO_PATTERNS: TrafficPattern[] = [];
@@ -358,4 +358,4 @@ export default memo(function RouteMap({
 });
 
 // The map drawn before the engine is there (MapPage), on this chunk too.
-export { GlBootMap as BootMap } from "../../../lib/map/gl/GlRouteMap";
+export { GlBootMap as BootMap } from "../map/GlRouteMap";

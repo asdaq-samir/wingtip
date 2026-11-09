@@ -12,7 +12,7 @@ import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../../l
 import { clockTime } from "../../../lib/format";
 import { compassPoint } from "../../../lib/compass";
 import { distanceNm } from "../../../lib/geo";
-import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, stopPastFlight, usePastFlight } from "../../../lib/map/pastFlight";
+import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
 import { altFt, bearing, grouped } from "../../../lib/format";
@@ -27,7 +27,7 @@ const LOG_ROWS = 60;
  * (`?past=`), at the pilot's ask: "when a flight is selected it should
  * open another card with replay options and data". Its replay -- the
  * airplane flown along its path again on the map at 10, 50 or 200 times
- * (lib/map/pastFlight) -- then its figures (off, on, how long, how high,
+ * (features/plan/map/pastFlight) -- then its figures (off, on, how long, how high,
  * how far and how fast), then its track log, as FlightAware's: its height
  * and speed over the flight and each report. Its close goes back to the
  * airplane's card, on its Activity.
@@ -169,7 +169,7 @@ const ApproachDebriefs = lazy(() => import("../../../components/ApproachDebrief"
 
 /**
  * The flight's approach into the field it landed at, debriefed against
- * the procedure (lib/approachDebrief), so an instructor following a
+ * the procedure (components/approachDebriefModel), so an instructor following a
  * student's airplane can go over it after: at a tap, as it asks for the
  * field's procedures, each drawn.
  */

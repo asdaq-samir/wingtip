@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
 import { searchIndex, useAirportIndex } from "./airportIndex";
-import { useOwnShipNear } from "./map/ownShip";
+import { useOwnShipNear } from "./map/position/ownShip";
 
 /** 100ms, not on every keystroke -- a lookup this app already treats
  *  as cheap server-side (an index of idents and words) still isn't worth

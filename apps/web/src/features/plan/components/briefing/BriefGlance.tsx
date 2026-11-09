@@ -6,8 +6,8 @@ import FindingIcon from "../../../../components/FindingIcon";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { clockTime, duration } from "../../../../lib/format";
 import { dataWarning } from "../../../../lib/dataCycles";
-import { useDataCycles } from "../../../../lib/map/layerAges";
-import { glanceLines, useGlance, type FieldGlance, type GlanceLine } from "../../../../lib/glance";
+import { useDataCycles } from "../../../../lib/map/sources/layerAges";
+import { glanceLines, useGlance, type FieldGlance, type GlanceLine } from "../../lib/glance";
 import { pilotQuery, trainingQuery } from "../../../../lib/queryClient";
 import { FINDING_TONE, type Finding } from "../../../../lib/findings";
 import { TEXT } from "../../../../lib/text";
@@ -97,7 +97,7 @@ function FieldCard({ tab, label, field, landing, onOpen }: { tab: PanelTab; labe
 const TRIGGER = "group flex w-full items-start gap-2.5 px-3.5 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /** A line a pilot acts on: the finding and what to do about it, in one
- *  sentence (lib/glance), and under a tap why it matters with the rule it
+ *  sentence (features/plan/lib/glance), and under a tap why it matters with the rule it
  *  rests on, the reports it was read from as sent, and the way to its
  *  page. Folded, since the owner's rule is to look and go. */
 function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTab) => void }) {
@@ -168,7 +168,7 @@ function InstructorNote() {
  * each unfolding to why it matters and the reports behind it, the rest
  * of the findings folded into one row; then a card for each part of the
  * flight -- before you go, the departure, en route, the arrival -- each
- * two or three figures at a glance (lib/glance), a tap on one opening
+ * two or three figures at a glance (features/plan/lib/glance), a tap on one opening
  * its page. Stacked, not swiped: a swipe only ever goes back (the owner's
  * rule), and a pager showed one part at a time, as the tabs did.
  */

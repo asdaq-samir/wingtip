@@ -1,7 +1,7 @@
 import type { AheadAlert, CopilotAround, Currency } from "../../lib/api/types";
 import type { CopilotFlight } from "../../lib/copilot/flight";
 import { callEngine, type EngineAnswer, type EngineInput } from "../../lib/engine/engine";
-import type { Fix } from "../../lib/map/ownShip";
+import type { Fix } from "../../lib/map/position/ownShip";
 import type { Minimums } from "../../lib/minimums";
 
 export type CopilotInput = EngineInput<"copilot_watch">;

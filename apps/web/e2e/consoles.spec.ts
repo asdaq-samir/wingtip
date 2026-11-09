@@ -154,7 +154,7 @@ test("the navigation bar's edge is a setting: the panel moves to it, the map's b
   await expect(pilot).toHaveCount(0);
 
   // Remembered per browser: the route opened again (a reload would
-  // forget it, lib/freshLoad).
+  // forget it, features/shell/freshLoad).
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // To the pixel, once the panel has settled: it measures its head and

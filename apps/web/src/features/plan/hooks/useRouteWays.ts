@@ -4,7 +4,7 @@ import type { AircraftChoice, RouteOptions } from "../../../lib/api/types";
 import { routeOf } from "../../../lib/identSchema";
 import { usePreferences } from "../../../lib/preferences";
 import { queryClient, routeOptionsQuery } from "../../../lib/queryClient";
-import { sameStops } from "../../../lib/routeWays";
+import { sameStops } from "../lib/routeWays";
 import type { PlannedRoute } from "./planAddress";
 
 /** The route with the fuel stops it needs put in (RouteOptions.own), for

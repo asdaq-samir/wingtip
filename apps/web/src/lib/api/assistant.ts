@@ -28,7 +28,7 @@ export interface AssistantPlan {
   depart: string | null;
 }
 
-/** Where the airplane is (lib/map/ownShip's fix), where the phone has one. */
+/** Where the airplane is (lib/map/position/ownShip's fix), where the phone has one. */
 export interface AssistantOwnShip {
   lat: number;
   lon: number;

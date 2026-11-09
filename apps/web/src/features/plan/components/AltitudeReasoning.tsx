@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../components/ui/accordion";
-import { usePrinting } from "../../../lib/usePrinting";
+import { usePrinting } from "../lib/usePrinting";
 import type { AltitudeSegment, Leg, NavLogAltitude } from "../../../lib/api/types";
 import { cruiseReferenceFt } from "../../../lib/performance";
 import { TEXT } from "../../../lib/text";

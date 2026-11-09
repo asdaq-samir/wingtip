@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { editionOf } from "../lib/chartEdition";
+import { editionOf } from "./chartEdition";
 import { FileText, Hand, LifeBuoy } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "./GroupedList";
 import { RowBadge } from "./RowBadge";
-import { DATA_SOURCES } from "../lib/dataSources";
-import { PLANNING_AID } from "../lib/planningAid";
+import { DATA_SOURCES } from "./dataSources";
+import { PLANNING_AID } from "./planningAid";
 import { LEGAL_PAGES } from "../lib/legal";
 import { chartQuery } from "../lib/queryClient";
 import { SETTING_BADGE } from "../lib/rowBadges";

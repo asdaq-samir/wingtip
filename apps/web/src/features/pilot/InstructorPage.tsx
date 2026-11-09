@@ -16,12 +16,12 @@ import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
 import { api } from "../../lib/api/client";
 import { hm } from "../../lib/format";
-import { z } from "../../lib/formSchema";
+import { z } from "./formSchema";
 import type { CrossCountryReview, EndorsementKind, Instructor, InstructorRequest, StudentRow } from "../../lib/api/types";
 import { planHrefOf } from "../../lib/flightLink";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../lib/frat";
 import { FINDING_TONE, type Finding } from "../../lib/findings";
-import { studentLines, type StudentLine } from "../../lib/students";
+import { studentLines, type StudentLine } from "./students";
 import { TEXT } from "../../lib/text";
 import { localDay } from "../../lib/format";
 import { feet, gal, nm } from "../../lib/format";
@@ -246,7 +246,7 @@ function StudentPage({ row, instructor }: { row: StudentRow; instructor: Instruc
 }
 
 /** A finding as a dot, for a row's two: the solo endorsement's standing
- *  and the next flight's Go / No-Go (lib/students). */
+ *  and the next flight's Go / No-Go (features/pilot/students). */
 const DOT_FILL: Record<Finding, string> = {
   ok: "bg-go-ink", caution: "bg-caution", stop: "bg-destructive-ink", unknown: "bg-muted-foreground/40", pending: "bg-muted-foreground/40",
 };
@@ -312,7 +312,7 @@ export default function InstructorPage() {
         )}
 
         {students.needs.length > 0 && (
-          // Who needs the instructor today (lib/students): a solo
+          // Who needs the instructor today (features/pilot/students): a solo
           // cross-country flown today or before still waiting on its
           // sign-off, a solo endorsement lapsing within the week.
           <ListGroup title="Needs you today">

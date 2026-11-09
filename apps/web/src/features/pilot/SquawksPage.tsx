@@ -15,7 +15,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { api } from "../../lib/api/client";
 import type { Aircraft, Squawk, SquawkRequest } from "../../lib/api/types";
 import { localDay } from "../../lib/format";
-import { requiredPastDay, z } from "../../lib/formSchema";
+import { requiredPastDay, z } from "./formSchema";
 
 const today = () => localDay();
 

@@ -5,18 +5,18 @@ import { cruiseTasOf, shortName } from "../../../lib/aircraftChoice";
 import { clockTime } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
 import { legsWithoutWind, windsOutOfDate } from "../format";
-import { placeName } from "../../../lib/radio";
+import { placeName } from "../lib/radio";
 import { bestStopIndex, distanceNm, type LatLon } from "../../../lib/geo";
 import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
-import { useKeepOffline } from "../../../lib/map/keepStatus";
-import { useOwnShip } from "../../../lib/map/ownShip";
+import { useKeepOffline } from "../map/keepStatus";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePanelTabs, type PanelTab, type TabList } from "./useTabCards";
 import { usePreferences } from "../../../lib/preferences";
 import { useProgressToast } from "../../../lib/useProgressToast";
 import { patched, useSearchParamsNow } from "../../../lib/useSearchParamsNow";
 import { usePlanHistory } from "../../../hooks/use-plan-history";
 import { useCardTitle, usePanelDragging } from "../../../components/mapChrome";
-import { holdsOf, holdsParam } from "../../../lib/routeHolds";
+import { holdsOf, holdsParam } from "../lib/routeHolds";
 import { picksOf } from "../../../lib/flightLink";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
 import { checkpointsQuery, courseQuery, nearestQuery, procedureQuery, queryClient } from "../../../lib/queryClient";
@@ -182,7 +182,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const groundParamText = searchParams.get("ground");
   const ground = useMemo(() => groundOf(groundParamText), [groundParamText]);
   const groundText = altitudesParam(ground);
-  // The pilot's holds (`holds`, lib/routeHolds), each flown on the leg leaving
+  // The pilot's holds (`holds`, features/plan/lib/routeHolds), each flown on the leg leaving
   // its point (plan.with_holds), set from a point's menu in FPL's list.
   const holdsParamText = searchParams.get("holds");
   const holds = useMemo(() => holdsOf(holdsParamText), [holdsParamText]);

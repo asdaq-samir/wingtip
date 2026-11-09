@@ -43,7 +43,7 @@ function TerminalChartRow({ chart, airport }: { chart: TerminalChart; airport: s
  */
 export function PlaceChartsTab({ place, sketched, startOn }: {
   place: AirportPlace;
-  /** Its runways can be sketched (lib/runwaySketch). */
+  /** Its runways can be sketched (features/plan/lib/runwaySketch). */
   sketched: boolean;
   /** Opened on its approaches (the route's Approaches). */
   startOn?: "approaches";

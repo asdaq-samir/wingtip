@@ -1,5 +1,5 @@
 import StatusBadge from "../../../../components/StatusBadge";
-import { colourOf } from "../../../../lib/map/flightCategory";
+import { colourOf } from "../../../../lib/map/marks/flightCategory";
 
 /** A flight category as the app's status badge, its dot in the
  *  category's own colour. It was a badge filled in the colour with white

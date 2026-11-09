@@ -13,7 +13,7 @@ import { TakeoffLandingSection } from "./PreflightSections";
 import AirportSections from "./AirportSections";
 import WeatherAlongRoute from "./WeatherAlongRoute";
 import AlternateSection from "./AlternateSection";
-import type { FiledProcedure } from "../../../../lib/flightPlanForm";
+import type { FiledProcedure } from "../../lib/flightPlanForm";
 import type { BriefingPart } from "./sections";
 import { Pending } from "./BriefingBits";
 import PreflightPart from "./PreflightPart";

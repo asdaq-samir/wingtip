@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ComponentProps, type MouseEvent, type
 import { cn } from "cn";
 import { Button } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import { EXPANDED_BUTTON } from "../lib/expandedButton";
+import { EXPANDED_BUTTON } from "./expandedButton";
 
 interface Props extends ComponentProps<typeof Button> {
   /** Names the button once: the tooltip's text and the accessible name. */

@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { library, openConsole, showTabs } from "./helpers";
 
 /**
- * The Logbook to and from a file (lib/logbookCsv): ForeFlight's export
+ * The Logbook to and from a file (features/pilot/logbookCsv): ForeFlight's export
  * read on the device and its flights sent together, what was already
  * there and what could not be read said under the rows; and the logbook
  * out as a CSV in ForeFlight's column names. The gateway's answers are

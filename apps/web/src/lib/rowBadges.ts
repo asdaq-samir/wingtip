@@ -1,5 +1,5 @@
 /** The badges' colours, by what a row is about: one per kind, the same
- *  on every card. Not the weather's colours (lib/map/flightCategory), so
+ *  on every card. Not the weather's colours (lib/map/marks/flightCategory), so
  *  a badge is never read as a flight category. */
 export const BADGE = {
   tower: CHART.towered,

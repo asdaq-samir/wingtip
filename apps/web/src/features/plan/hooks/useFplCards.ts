@@ -8,7 +8,7 @@ import { usePreferences } from "../../../lib/preferences";
 import { sameField } from "../../../lib/procedures";
 import { stopsAlongQuery, stopsNearQuery } from "../../../lib/queryClient";
 import { kindsOf, type StopKind } from "../../../lib/stopKinds";
-import { useStopsAlong } from "../../../lib/stopsAlong";
+import { useStopsAlong } from "../lib/stopsAlong";
 import { patched } from "../../../lib/useSearchParamsNow";
 import type { ProceduresAt } from "../components/ProceduresRoute";
 import { panelNow } from "./panelNow";
@@ -207,7 +207,7 @@ export function useFplCards({
       return patched(prev, { near: null, nearAt: null, nearName: null });
     }, { replace: true });
   }, [setSearchParams]);
-  // The microphone's own commands (lib/pilotCommand, RadioLayer): the
+  // The microphone's own commands (components/pilotCommand, RadioLayer): the
   // Nearest list over Airport, and an approach's page in the procedures
   // sheet, whose lists are the route's fields' alone.
   const plannedStops = planned.stops;

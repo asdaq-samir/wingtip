@@ -8,8 +8,8 @@ import type { LogbookEntry } from "../../lib/api/types";
 import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { shareFile } from "../../lib/flightPlanFiles";
-import { COLUMN_TARGETS, csvRows, guessColumns, headerRowOf, missingColumns, remapped, type Columns } from "../../lib/logbookColumns";
-import { importLogbook, logbookCsv, type Imported } from "../../lib/logbookCsv";
+import { COLUMN_TARGETS, csvRows, guessColumns, headerRowOf, missingColumns, remapped, type Columns } from "./logbookColumns";
+import { importLogbook, logbookCsv, type Imported } from "./logbookCsv";
 import { showError } from "../../lib/problems";
 
 /** A file read and its columns as the pilot gave them, kept so the
@@ -33,7 +33,7 @@ const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
  * the flights read shown -- how many, the first few, the rows left out and
  * why -- before any is sent, and those already in the logbook (the same
  * day, airplane, route and time) not added twice. Out, the logbook in
- * ForeFlight's column names (lib/logbookCsv).
+ * ForeFlight's column names (features/pilot/logbookCsv).
  */
 export default function LogbookFile({ entries, onImported }: { entries: LogbookEntry[] | undefined; onImported: () => void }) {
   const fileInput = useRef<HTMLInputElement>(null);

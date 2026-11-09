@@ -3,7 +3,7 @@ import { cn } from "cn";
 import { OctagonAlert, TriangleAlert } from "lucide-react";
 import { TEXT } from "../../../../lib/text";
 import SectionTitle from "../../../../components/SectionTitle";
-import { passLine, type TfrWhen } from "../../../../lib/passTimes";
+import { passLine, type TfrWhen } from "../../lib/passTimes";
 import { FINDING_TONE } from "../../../../lib/findings";
 import { TFR_WORDS } from "./briefingWords";
 

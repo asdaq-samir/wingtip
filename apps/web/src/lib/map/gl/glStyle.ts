@@ -3,9 +3,9 @@ import type {
   RasterSourceSpecification, SymbolLayerSpecification,
 } from "maplibre-gl";
 import type { ChartInfo } from "../../api/types";
-import type { AirspaceVolume } from "../overlayTypes";
-import { chartPair, tileTemplate } from "../tiles";
-import { COURSE_MAGENTA, ROUTE_GREEN, ROUTE_GREEN_NIGHT } from "../chartColors";
+import type { AirspaceVolume } from "../sources/overlayTypes";
+import { chartPair, tileTemplate } from "../sources/tiles";
+import { COURSE_MAGENTA, ROUTE_GREEN, ROUTE_GREEN_NIGHT } from "../marks/chartColors";
 import { CHART } from "../../tokens";
 
 /**
@@ -157,7 +157,7 @@ export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map(c => `airspac
  *  the layer that draws it. */
 export const airspaceTab = (cls: string) => `airspace|tab|${cls}`;
 
-/** The cycle's overlay tiles' source (glOverlays, lib/map/overlayTiles),
+/** The cycle's overlay tiles' source (glOverlays, lib/map/sources/overlayTiles),
  *  in the map's first style. */
 export const OVERLAY_SOURCE = "faa-overlays";
 

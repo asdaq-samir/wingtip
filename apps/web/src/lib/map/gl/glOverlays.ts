@@ -3,12 +3,12 @@ import type {
   SymbolLayerSpecification,
 } from "maplibre-gl";
 import type { OverlayTiles } from "../../api/types";
-import type { AirspaceVolume, VorPin } from "../overlayTypes";
+import type { AirspaceVolume, VorPin } from "../sources/overlayTypes";
 import { usePreferences } from "../../preferences";
 import { BLUE } from "../../useAirspace";
-import { sectionalAirportSvg, TOWERED_BLUE, UNTOWERED_MAGENTA } from "../airportMark";
-import { colourOf } from "../flightCategory";
-import { overlaySource } from "../overlayTiles";
+import { sectionalAirportSvg, TOWERED_BLUE, UNTOWERED_MAGENTA } from "../marks/airportMark";
+import { colourOf } from "../marks/flightCategory";
+import { overlaySource } from "../sources/overlayTiles";
 import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot, type Stretch } from "./glLayer";
 import { AIRSPACE_INK, OVERLAY_SOURCE, SUA_INK, SUA_LAYERS, airspaceLayers, airspaceTab, glZoom, specialUseLayers, suaHatch } from "./glStyle";
 import { GL_FONT_BOLD, LABEL_HALO } from "./layers/common";
@@ -17,7 +17,7 @@ import { CHART } from "../../tokens";
 export { OVERLAY_SOURCE };
 
 /**
- * The cycle's FAA overlays from its vector tiles (lib/map/overlayTiles,
+ * The cycle's FAA overlays from its vector tiles (lib/map/sources/overlayTiles,
  * wingtip.vector_tiles), as the map's first style holds them
  * (GlMapShell): the Class B, C and D, the airports, the VORs, the low
  * enroute chart's fixes, the VFR waypoints and the runways, each drawn

@@ -1,5 +1,5 @@
 import { keptStore, wasKept } from "../../lib/storage";
-import type { Fix } from "../../lib/map/ownShip";
+import type { Fix } from "../../lib/map/position/ownShip";
 
 /** A point of the recorded track as the engine reads one (TrackPoint):
  *  ms since 1970, GPS altitude in feet MSL where the phone gave one. */

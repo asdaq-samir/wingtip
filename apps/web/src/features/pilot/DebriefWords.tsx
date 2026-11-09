@@ -3,7 +3,7 @@ import { Check, Copy } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { words } from "../../lib/api/words";
-import type { Debrief } from "../../lib/debrief";
+import type { Debrief } from "./debrief";
 import { pilotQuery, trainingQuery } from "../../lib/queryClient";
 import { useCopied } from "../../lib/share";
 import { TEXT } from "../../lib/text";

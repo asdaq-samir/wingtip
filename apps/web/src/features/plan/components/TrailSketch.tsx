@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { colourRuns } from "../../../lib/map/traffic";
+import { colourRuns } from "../map/traffic";
 
 /** A field the flight left or is bound for, drawn on the sketch. */
 export interface SketchField {

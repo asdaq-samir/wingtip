@@ -2,9 +2,9 @@ import type { CircleLayerSpecification, SymbolLayerSpecification } from "maplibr
 import { useEffect, useMemo, type ReactNode } from "react";
 import type { Course } from "../../../api/types";
 import type { AirspaceClass } from "../../../preferences";
-import { courseColour } from "../../chartColors";
-import { dotIcon, fixMarkIcon } from "../../icons";
-import { routeFieldIcon } from "../../routeMarks";
+import { courseColour } from "../../marks/chartColors";
+import { dotIcon, fixMarkIcon } from "../../marks/icons";
+import { routeFieldIcon } from "../../marks/routeMarks";
 import { usePreferences } from "../../../preferences";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";

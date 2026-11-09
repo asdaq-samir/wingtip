@@ -134,7 +134,7 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   await card(page).getByTestId("place-tab-weather").click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   // The sentence, written from the TAF: when it goes MVFR and what does
-  // it, until when, and the gust (lib/hourly).
+  // it, until when, and the gust (features/plan/lib/hourly).
   await expect(card(page).getByTestId("place-forecast-sentence"))
     .toHaveText(/^Ceilings lowering to 2,500 ft around \d\d:00, MVFR until \d\d:00\. Gusts up to 22 kt\.$/);
   // Under it the hours, Now first from the report, then each hour of the
@@ -921,7 +921,7 @@ test("a military field's card shows 'permission required' whole in its line, not
 
 /**
  * Listen to ATIS on the Weather tab: one broadcast heard through the
- * microphone and read by the engine (lib/atis, read_atis), the runway in
+ * microphone and read by the engine (features/plan/lib/atis, read_atis), the runway in
  * use and the altimeter in one line, the figures under it, the
  * transcript folded. The browser's recognizer is a stand-in saying the
  * broadcast.

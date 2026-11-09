@@ -10,7 +10,7 @@ import type { EmergencyModel } from "./useEmergency";
 /**
  * The airplane's own emergency checklist (lib/checklists, the pilot's
  * copy of its handbook's Section 3), opened at the emergency asked --
- * "Engine failure in flight" by default (lib/emergency checklistSection)
+ * "Engine failure in flight" by default (features/emergency/emergency checklistSection)
  * -- with a menu of its other sections, each item ticked as it is done.
  * The app writes none: with no list kept it says so.
  */

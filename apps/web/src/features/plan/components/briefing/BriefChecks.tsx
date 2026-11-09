@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { ExternalLink, Info } from "lucide-react";
 import { cn } from "cn";
 import FindingIcon from "../../../../components/FindingIcon";
-import { useTicked, usePreflight } from "../../../../lib/preflight";
+import { useTicked, usePreflight } from "./preflight";
 import { FINDING_TONE, type Finding } from "../../../../lib/findings";
 import { TEXT } from "../../../../lib/text";
 import { verdictLine, type VerdictItem, type Where } from "../../../../lib/verdict";
@@ -40,7 +40,7 @@ const ELSEWHERE: Elsewhere[] = [
  * were the Go / No-Go's rows and a 91.103 list to tick under them, the
  * same weather, fuel and runways said twice; one tile now, and a tile
  * opened is a check looked at, counted over them for this flight
- * (lib/preflight's ticks: another route or time starts again).
+ * (features/plan/components/briefing/preflight's ticks: another route or time starts again).
  */
 export default function BriefChecks({ items, flight, here, onOpen }: {
   items: VerdictItem[];

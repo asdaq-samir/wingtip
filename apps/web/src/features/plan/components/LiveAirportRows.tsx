@@ -6,10 +6,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../co
 import { RowBadge } from "../../../components/RowBadge";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { atisRows, glanceWords, heardAny, type AtisReading } from "../../../lib/atis";
+import { atisRows, glanceWords, heardAny, type AtisReading } from "../lib/atis";
 import { datisQuery, rvrQuery } from "../../../lib/liveReports";
 import { usePreferences } from "../../../lib/preferences";
-import { rvrRows } from "../../../lib/rvrRows";
+import { rvrRows } from "../lib/rvrRows";
 
 /**
  * The field's D-ATIS, on the card's Weather tab, where the tower's data

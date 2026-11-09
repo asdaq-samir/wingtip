@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ChartInfo } from "../../api/types";
-import type { AirspaceVolume } from "../overlayTypes";
+import type { AirspaceVolume } from "../sources/overlayTypes";
 import type { LineLayerSpecification } from "maplibre-gl";
 import { absoluteTiles, airspaceLayers, airspaceText, OVERLAY_SOURCE, chartPaint, chartStyle, DAY_CONTRAST, DAY_SATURATION, glZoom, legPiece, routeFeature, routeLayers, selectedLegFilter, specialUseLayers } from "./glStyle";
 

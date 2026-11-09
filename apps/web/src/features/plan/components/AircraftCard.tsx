@@ -5,16 +5,16 @@ import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { api } from "../../../lib/api/client";
 import type { AircraftRegistration, TrafficAircraft } from "../../../lib/api/types";
-import { useOwnFix } from "../../../lib/map/ownShip";
+import { useOwnFix } from "../../../lib/map/position/ownShip";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
-import { pickKeptAircraft, useTabSearch } from "../../../lib/tabSearch";
+import { pickKeptAircraft, useTabSearch } from "../lib/tabSearch";
 import { HomePlane, ListPageHead, PLANE_TILE, PillSection, PillStrip, PlaneMark, SmallMark, SmallTile, StripNote } from "../../../components/Favorites";
 import { planeLink } from "../../../lib/flightLink";
 import TabPage from "../../../components/TabPage";
 import { ClearList, SwipeToDelete } from "../../../components/SwipeToDelete";
 import AircraftRow from "./AircraftRow";
 
-import { useTracking } from "../../../lib/map/tracking";
+import { useTracking } from "../../../lib/map/position/tracking";
 import { TEXT } from "../../../lib/text";
 import { aircraftKind, keptKind } from "../../../lib/aircraftKind";
 

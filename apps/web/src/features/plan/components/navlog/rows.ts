@@ -101,7 +101,7 @@ export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: 
       const { point } = on;
       // Not flown by the leg's procedure: its minutes are the piece that
       // ends the leg's (procedureOf), and the leg's workings would count
-      // them where they are not (lib/workings).
+      // them where they are not (features/plan/components/navlog/workings).
       const part = { ...piece(leg, from, { nm: point.along_nm, min: point.ete_min, gal: point.fuel_gal }), procedure: null };
       const key = `${on.kind}-${at}`;
       // Up to a top of climb, the climb's speeds rather than the cruise's.

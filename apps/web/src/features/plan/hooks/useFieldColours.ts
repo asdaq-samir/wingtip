@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { identOf } from "../../../lib/identSchema";
-import { chipColourOf } from "../../../lib/map/flightCategory";
+import { chipColourOf } from "../../../lib/map/marks/flightCategory";
 import { airportQuery } from "../../../lib/queryClient";
 import { approximateOf, type PlannedRoute } from "./planAddress";
 import type { PlanAnswer } from "./planTypes";

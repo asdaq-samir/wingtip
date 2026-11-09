@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
 import { ROUTE_LINE } from "./routeListStyle";
-import { colourOf } from "../../../lib/map/flightCategory";
+import { colourOf } from "../../../lib/map/marks/flightCategory";
 import { AirportMark } from "./navlog/PointMark";
 
 /**

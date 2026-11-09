@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
-import { useRouteLineOpen } from "../../../../lib/routeLine";
+import { useRouteLineOpen } from "../../lib/routeLine";
 
 /** FPL's route line's choices (PlanWorkspace's routeLine): each chip's
  *  key and words, and what its way meets, in amber; the one picked. */
