@@ -85,9 +85,16 @@ final class FlowTests: XCTestCase {
     func testARouteIsPlannedAndItsNavLogShown() throws {
         let app = launch(tab: "fpl")
         plan(app)
-        // The nav log's section, "Nav log" or "Nav log · 4,500 ft", once
-        // the planner has streamed the legs.
-        let navLog = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nav log'")).firstMatch
+        // The nav log behind the route box's ••• (docs/decisions/0029),
+        // there once the planner has streamed the legs: its page's header,
+        // "Nav Log · FL-045".
+        let more = app.buttons["More"]
+        XCTAssertTrue(more.waitForExistence(timeout: Self.planner), "no route menu")
+        more.tap()
+        let item = app.buttons["Nav Log"]
+        XCTAssertTrue(item.waitForExistence(timeout: Self.planner), "no Nav Log in the route menu")
+        item.tap()
+        let navLog = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nav Log'")).firstMatch
         XCTAssertTrue(navLog.waitForExistence(timeout: Self.planner), "the nav log did not appear")
         keep(app, "nav log")
     }

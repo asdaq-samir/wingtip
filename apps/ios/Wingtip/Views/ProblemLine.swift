@@ -1,8 +1,11 @@
 import SwiftUI
 
 /// A problem said where it happened, as the web app's lib/problems says
-/// it: the call's own words in red at the footnote's size under what
-/// failed, and nothing at all without one.
+/// it: the call's own words in the tokens' problem ink at the note's size
+/// under what failed, a mark beside them for a pilot who does not see the
+/// red, and nothing at all without one. The app's one error style (the UI
+/// audit of 2026-11-09, item 10, found orange text on one screen and red
+/// on another).
 struct ProblemLine: View {
     let problem: String?
 
@@ -15,7 +18,11 @@ struct ProblemLine: View {
     }
 
     var body: some View {
-        if let problem { Text(problem).foregroundStyle(.red).font(.footnote) }
+        if let problem {
+            Label(problem, systemImage: "exclamationmark.circle.fill")
+                .font(WingtipType.note)
+                .foregroundStyle(WingtipInk.problem)
+        }
     }
 }
 

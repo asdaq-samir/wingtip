@@ -90,24 +90,6 @@ private func stripFigureName(_ name: String) -> String {
     }
 }
 
-/// The route's own bar items, FPL's on the iPhone and in the iPad's
-/// column alike: the stops' Edit, and with a route, Share and Clear.
-struct RouteToolbar: ToolbarContent {
-    let plan: Plan
-
-    var body: some ToolbarContent {
-        if !plan.stops.isEmpty {
-            ToolbarItem(placement: .topBarLeading) { EditButton() }
-        }
-        if plan.routed {
-            ToolbarItem(placement: .topBarTrailing) { ShareMenu() }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Clear", role: .destructive) { plan.clear() }
-            }
-        }
-    }
-}
-
 #Preview("FiguresStrip") {
     // The totals come with the planner's nav log, so the figures past the
     // destination show as dashes here.

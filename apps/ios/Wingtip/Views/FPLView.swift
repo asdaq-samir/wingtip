@@ -1,18 +1,25 @@
 import SwiftUI
 
-/// FPL: the route box, the figures for the whole flight, and the nav log
-/// as the planner streams it.
+/// FPL: the route box -- the route's ends, its Routes, and the airplane,
+/// the altitude and the route's buttons (RouteBoxRow) -- then the stops,
+/// the route's own edits, the figures for the whole flight and the
+/// procedures. The nav log is behind the route box's ••• and Share at the
+/// bar's left, as the web has them (the owner, 2026-11-09).
 struct FPLView: View {
     @Environment(Plan.self) private var plan
     @Environment(Charts.self) private var charts
+    /// Opens a card in the iPad's inspector; nil on the iPhone.
+    @Environment(\.openCard) private var openCard
     @FocusState private var focused: Field?
+    @State private var path = NavigationPath()
 
     enum Field { case dep, dest, altitude }
+    /// FPL's own pages.
+    enum Page: String { case profile, brief, navLog = "navlog", flights }
     @State private var altitude = ""
-    /// The fields' widths follow the type size, so three figures or an
-    /// ident still fit at the larger sizes.
+    /// The fields' widths follow the type size, so an ident still fits at
+    /// the larger sizes.
     @ScaledMetric(relativeTo: .body) private var identWidth = 110.0
-    @ScaledMetric(relativeTo: .body) private var altitudeWidth = 64.0
 
     /// The hundreds typed, flown; nothing typed, the planner's own pick.
     private func flyAltitude() {
@@ -22,12 +29,23 @@ struct FPLView: View {
         plan.plan()
     }
 
+    /// A page pushed on the iPhone; the profile, the brief and the flights
+    /// in the inspector on the iPad, as CardLink opens them.
+    private func open(_ page: Page) {
+        switch (page, openCard) {
+        case (.profile, let card?): card(.profile)
+        case (.brief, let card?): card(.brief)
+        case (.flights, let card?): card(.flights)
+        default: path.append(page.rawValue)
+        }
+    }
+
     var body: some View {
         @Bindable var plan = plan
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 Section {
-                    HStack(spacing: 8) {
+                    HStack(spacing: WingtipSpace.sm) {
                         routeField("From", text: $plan.dep, field: .dep)
                         Image(systemName: "arrow.right").foregroundStyle(.secondary)
                         routeField("To", text: $plan.dest, field: .dest)
@@ -44,95 +62,38 @@ struct FPLView: View {
                             .disabled(!plan.routed || plan.planning)
                     }
                     if plan.routed && plan.course != nil && RouteLine.shows(plan.routes, picked: plan.pickedChip, problem: plan.routesProblem) {
-                        // The ways to fly it, right under the route's
+                        // Routes: the ways to fly it, right under the route's
                         // ends, folding as a runway line does.
                         RouteLineRow()
                     }
                     if let stage = plan.stage {
-                        Label(stage, systemImage: "ellipsis").font(.footnote).foregroundStyle(.secondary)
+                        Label(stage, systemImage: "ellipsis").font(WingtipType.note).foregroundStyle(.secondary)
                     } else if let at = plan.plannedAt, !plan.planning, Date().timeIntervalSince(at) > 3600 {
                         // A plan an hour old or more, as the web app says it:
                         // the winds and the weather were read then.
-                        Label("Planned \(at.formatted(.relative(presentation: .named)))", systemImage: "clock").font(.footnote).foregroundStyle(.secondary)
+                        Label("Planned \(at.formatted(.relative(presentation: .named)))", systemImage: "clock").font(WingtipType.note).foregroundStyle(.secondary)
                     }
-                    if let problem = plan.problem {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(problem.brief ?? problem.detail).font(.subheadline.weight(.semibold))
-                            ForEach(problem.reasons ?? [], id: \.self) { Text($0).font(.footnote) }
-                            if let advice = problem.advice { Text(advice).font(.footnote).foregroundStyle(.secondary) }
-                            // The ways round the planner found: a Class B's
-                            // waypoint, or the way round high ground.
-                            ForEach(problem.detours ?? []) { detour in
-                                let added = "+\(Format.distance(detour.addedNm, decimals: 0))"
-                                let words: String = (detour.via ?? []).isEmpty ? "Fly via \(detour.ident) · \(added)" : "Go Round · \(added)"
-                                Button {
-                                    plan.goRound(detour)
-                                } label: {
-                                    Label(words, systemImage: "arrow.triangle.turn.up.right.diamond")
-                                }
-                                .buttonStyle(.bordered)
-                            }
-                        }
-                        .foregroundStyle(Color.orange)
-                    }
-                    // Where the tanks do not hold a flight, said; the
-                    // fuel stops themselves are the route line's "Your
-                    // Route" chip.
+                    if let problem = plan.problem { PlanProblemView(problem: problem) }
+                    // Where the tanks do not hold a flight, said; the fuel
+                    // stops themselves are the route line's "Your Route" chip.
                     ForEach(plan.totals?.fuelStops ?? []) { suggestion in
                         Label("\(suggestion.departure) → \(suggestion.destination) needs fuel on the way", systemImage: "fuelpump")
-                            .font(.subheadline.weight(.semibold)).foregroundStyle(.orange)
+                            .font(WingtipType.detail.weight(.semibold)).foregroundStyle(.orange)
                     }
-                }
-                if plan.routed {
-                    // The altitude beside the airplane, as the web app has
-                    // them: the planner's pick until one is typed, in
-                    // hundreds of feet ("065" for 6,500 ft, the owner's
-                    // FL-style figure); cleared, the planner's again.
-                    HStack {
-                        Text(plan.tail ?? plan.aircraft.uppercased()).font(.body.monospaced())
-                        Spacer()
-                        Text("Altitude").foregroundStyle(.secondary)
-                        TextField(Format.cruiseAltitude(plan.altitudeFt), text: $altitude)
-                            .textFieldStyle(.roundedBorder).keyboardType(.numberPad).font(.body.monospaced())
-                            .frame(width: altitudeWidth).multilineTextAlignment(.trailing)
-                            .focused($focused, equals: .altitude)
-                            .onSubmit(flyAltitude)
-                            .accessibilityLabel("Altitude, hundreds of feet")
-                            .accessibilityValue(plan.altitudeFt.map(SpokenFigures.feet) ?? "the planner's pick")
-                        // The profile, with the altitude's warning tick where
-                        // the pilot's own breaks a limit: in the inspector
-                        // on the iPad (CardLink), as the brief is.
-                        let cautioned = !(plan.altitude?.cautions?.isEmpty ?? true)
-                        CardLink(.profile) {
-                            Image(systemName: cautioned ? "exclamationmark.triangle.fill" : "chart.xyaxis.line")
-                                .foregroundStyle(cautioned ? Color.orange : Color.accentColor)
-                                .contentShape(Rectangle().inset(by: -10))
-                        }
-                        .accessibilityLabel(cautioned ? "Profile, with cautions on the altitude" : "Profile")
-                        .buttonStyle(.plain)
-                        // The Brief, marked where the planner says VFR is
-                        // not recommended: in the glyph too, for a pilot who
-                        // does not see the red.
-                        let notRecommended = !(plan.briefing?.vfrNotRecommended?.isEmpty ?? true)
-                        CardLink(.brief) {
-                            Image(systemName: notRecommended ? "doc.text.fill" : "doc.text")
-                                .foregroundStyle(notRecommended ? Color.red : Color.accentColor)
-                                .contentShape(Rectangle().inset(by: -10))
-                        }
-                        .accessibilityLabel(notRecommended ? "Brief, VFR flight not recommended" : "Brief")
-                        .buttonStyle(.plain)
-                    }
-                    .toolbar {
-                        if focused == .altitude {
-                            ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Fly") { flyAltitude() } }
-                        }
+                    if plan.routed {
+                        RouteBoxRow(altitude: $altitude, focused: $focused, open: open, fly: flyAltitude)
+                            .toolbar {
+                                if focused == .altitude {
+                                    ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Fly") { flyAltitude() } }
+                                }
+                            }
                     }
                 }
                 if !plan.stops.isEmpty {
                     // The stops in order, each a swipe from going and all
                     // of them draggable into another order, as the web
                     // app's route list has them.
-                    Section("Stops") {
+                    Section(title: "Stops") {
                         ForEach(Array(plan.stops.enumerated()), id: \.offset) { _, stop in
                             RoutePointMenu(ident: stop)
                         }
@@ -147,9 +108,9 @@ struct FPLView: View {
                         HStack {
                             stripFigure("TO", plan.dest)
                             stripFigure("DIST", Format.distance(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
-                            stripFigure("ETE", totals.eteMin.map(Format.duration) ?? "—", spoken: totals.eteMin.map(SpokenFigures.minutes))
-                            stripFigure("FUEL", totals.fuelGal.map { Format.fuel($0) } ?? "—", spoken: totals.fuelGal.map(SpokenFigures.gallons),
-                                   warn: (totals.fuelMarginGal ?? 0) < 0)
+                            stripFigure("ETE", totals.eteMin.map(Format.duration) ?? Format.none, spoken: totals.eteMin.map(SpokenFigures.minutes))
+                            stripFigure("FUEL", Format.fuel(totals.fuelGal), spoken: totals.fuelGal.map(SpokenFigures.gallons),
+                                        warn: (totals.fuelMarginGal ?? 0) < 0)
                         }
                         .accessibilityElement(children: .combine)
                         // As the sheet's strip: four across stop at this size.
@@ -160,7 +121,7 @@ struct FPLView: View {
                     // Each field's procedures, pull-downs as the web app's
                     // route list has them: the departure's departures, every
                     // landing's arrivals and approaches.
-                    Section("Procedures") {
+                    Section(title: "Procedures") {
                         ProceduresRow(ident: plan.dep, kinds: ["departure"])
                         ForEach(plan.stops + [plan.dest], id: \.self) { field in
                             ProceduresRow(ident: field, kinds: ["arrival", "approach"])
@@ -175,43 +136,31 @@ struct FPLView: View {
                             plan.keepForTheAir(template: template, minZoom: charts.base?.minZoom ?? 6)
                         } label: {
                             if let keeping = plan.keeping {
-                                Label(keeping.kept >= keeping.wanted ? "Kept for the air: \(keeping.wanted) tiles" : "Keeping for the air: \(keeping.kept) of \(keeping.wanted)", systemImage: keeping.kept >= keeping.wanted ? "checkmark.icloud" : "icloud.and.arrow.down")
+                                Label(keeping.kept >= keeping.wanted ? "Kept for the Air: \(keeping.wanted) tiles" : "Keeping for the Air: \(keeping.kept) of \(keeping.wanted)", systemImage: keeping.kept >= keeping.wanted ? "checkmark.icloud" : "icloud.and.arrow.down")
                             } else {
-                                Label("Keep for the air", systemImage: "icloud.and.arrow.down")
+                                Label("Keep for the Air", systemImage: "icloud.and.arrow.down")
                             }
                         }
                         .disabled(plan.keeping.map { $0.kept < $0.wanted } ?? false)
                     }
                 }
-                if !plan.legs.isEmpty {
-                    Section(plan.altitudeFt.map { "Nav Log · \(Format.cruiseAltitude($0))" } ?? "Nav Log") {
-                        ForEach(plan.legs) { leg in
-                            NavigationLink(value: leg) { LegRow(leg: leg) }
-                        }
-                    }
-                }
             }
-            .navigationTitle("Flight plan")
+            .navigationTitle("Flight Plan")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    // The pilot's saved flights, and the plan saved among them.
-                    NavigationLink(value: "flights") { Label("Flights", systemImage: "tray.full") }
-                }
-            }
+            .toolbar { FPLToolbar(plan: plan, flights: { open(.flights) }) }
             .navigationDestination(for: Leg.self) { leg in LegDetailView(leg: leg).closesBack() }
             .navigationDestination(for: String.self) { page in
                 Group {
-                    switch page {
-                    case "profile": ProfileCard()
-                    case "brief": BriefView()
-                    case "flights": FlightsView()
-                    default: FlightPage(name: page)
+                    switch Page(rawValue: page) {
+                    case .profile: ProfileCard()
+                    case .brief: BriefView()
+                    case .flights: FlightsView()
+                    case .navLog: NavLogPage()
+                    case nil: FlightPage(name: page)
                     }
                 }
                 .closesBack()
             }
-            .toolbar { RouteToolbar(plan: plan) }
             .sheet(isPresented: Binding(get: { ClearanceListener.shared.sheetShown }, set: { ClearanceListener.shared.sheetShown = $0 })) {
                 ClearanceSheet().presentationDetents([.medium, .large])
             }
@@ -223,64 +172,78 @@ struct FPLView: View {
             .textFieldStyle(.roundedBorder)
             .textInputAutocapitalization(.characters)
             .autocorrectionDisabled()
-            .font(.body.monospaced())
+            .font(WingtipType.row.monospaced())
             .frame(maxWidth: identWidth)
             .focused($focused, equals: field)
             .onSubmit { if field == .dep { focused = .dest } else { plan.plan() } }
     }
 }
 
-/// A leg's row: where to, the magnetic heading, the distance, the time
-/// and the fuel, the figures the kneeboard wants at a glance.
-struct LegRow: View {
-    let leg: Leg
+/// FPL's bar, on the iPhone and in the iPad's column alike: Share at the
+/// left, as the web's minimized bar has it (docs/decisions/0015, the
+/// owner's of 2026-11-09), the pilot's saved flights beside it, and the
+/// stops' Edit at the right. Clear is in the route box's ••• (RouteBoxRow).
+struct FPLToolbar: ToolbarContent {
+    let plan: Plan
+    let flights: () -> Void
 
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(leg.to).font(.headline)
-                HStack(spacing: 10) {
-                    // No heading without an airplane: the planner sends
-                    // none, and the row shows the figures it has.
-                    if let heading = leg.magneticHeadingDeg { Text(Format.heading(heading)) }
-                    if let gs = leg.groundspeedKt { Text(Format.speed(gs)) }
-                    if let wind = leg.wind {
-                        let (dir, kt) = (wind.windDirTrueDeg, wind.windSpeedKt)
-                        Text("\(Format.heading(dir)) \(Format.speed(kt))")
-                    }
-                }
-                .font(.footnote.monospacedDigit())
-                .foregroundStyle(.secondary)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(Format.distance(leg.distanceNm)).font(.subheadline.monospacedDigit())
-                HStack(spacing: 8) {
-                    if let ete = leg.eteMin { Text(Format.duration(ete)) }
-                    if let fuel = leg.fuelGal { Text(Format.fuel(fuel)) }
-                }
-                .font(.footnote.monospacedDigit())
-                .foregroundStyle(.secondary)
-            }
+    var body: some ToolbarContent {
+        if plan.routed {
+            ToolbarItem(placement: .topBarLeading) { ShareMenu() }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(spoken)
+        ToolbarItem(placement: .topBarLeading) {
+            Button(action: flights) { Label("Flights", systemImage: "tray.full") }
+        }
+        if !plan.stops.isEmpty {
+            ToolbarItem(placement: .topBarTrailing) { EditButton() }
+        }
+    }
+}
+
+/// What the planner could not do with the route, said where it happened in
+/// the app's one error style (ProblemLine's red), with the ways round it
+/// the planner found and, where a point of the route is not known, Remove,
+/// as the web's route box offers it.
+struct PlanProblemView: View {
+    @Environment(Plan.self) private var plan
+    let problem: NavLogError
+
+    /// The route's point the planner names as not known ("No airport goes
+    /// by 'ZZZZ'."), where there is one.
+    private var unknown: String? {
+        plan.idents.first { problem.detail.contains("'\($0)'") || (problem.brief ?? "").contains("'\($0)'") }
     }
 
-    /// The row as a pilot reads a nav log aloud: "To KHIB, heading zero
-    /// nine zero, ninety-eight knots, wind two seven zero at twelve, twenty
-    /// nautical miles, twelve minutes, one point four gallons".
-    private var spoken: String {
-        var parts = ["To \(leg.to)"]
-        if let heading = leg.magneticHeadingDeg { parts.append("heading \(SpokenFigures.degrees(heading))") }
-        if let gs = leg.groundspeedKt { parts.append(SpokenFigures.knots(gs)) }
-        if let wind = leg.wind {
-            let (dir, kt) = (wind.windDirTrueDeg, wind.windSpeedKt)
-            parts.append("wind \(SpokenFigures.digits(String(format: "%03.0f", dir))) at \(SpokenFigures.number(kt))")
+    var body: some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+            ProblemLine(problem.brief ?? problem.detail)
+            ForEach(problem.reasons ?? [], id: \.self) { ProblemLine($0) }
+            if let advice = problem.advice { Text(advice).font(WingtipType.note).foregroundStyle(.secondary) }
+            HStack(spacing: WingtipSpace.sm) {
+                if let unknown {
+                    Button("Remove", role: .destructive) { plan.remove(unknown) }
+                }
+                // The ways round the planner found: a Class B's waypoint,
+                // or the way round high ground.
+                ForEach(problem.detours ?? []) { detour in
+                    let added = "+\(Format.distance(detour.addedNm, decimals: 0))"
+                    Button { plan.goRound(detour) } label: {
+                        Label((detour.via ?? []).isEmpty ? "Fly via \(detour.ident) · \(added)" : "Go Round · \(added)",
+                              systemImage: "arrow.triangle.turn.up.right.diamond")
+                    }
+                }
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
         }
-        parts.append(SpokenFigures.nauticalMiles(leg.distanceNm))
-        if let ete = leg.eteMin { parts.append(SpokenFigures.minutes(ete)) }
-        if let fuel = leg.fuelGal { parts.append(SpokenFigures.gallons(fuel)) }
-        return parts.joined(separator: ", ")
+    }
+}
+
+extension Plan {
+    /// A point taken out of the route wherever it is: a stop removed, an
+    /// end emptied for the pilot to type again. Undo brings it back.
+    func remove(_ ident: String) {
+        if dep == ident { dep = "" } else if dest == ident { dest = "" } else { stops.removeAll { $0 == ident } }
+        if routed { plan() }
     }
 }
