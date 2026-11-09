@@ -558,16 +558,32 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
     def nasr(file: str) -> Path:
         return faa_data.ensure_nasr_file(file, cache_dir)
 
-    with tempfile.TemporaryDirectory(dir=out_dir, prefix=".build-") as tmp:
+    # The layers and tippecanoe's own temporary files are worked on the
+    # container's disk (the system's temporary folder, TMPDIR), never in
+    # out_dir: on the owner's Mac out_dir is the data folder bind-mounted
+    # from macOS, and tippecanoe opens each temporary file twice, unlinks
+    # it, and asks its size back through the other descriptor (fstat),
+    # which Docker Desktop's file share can answer with "No such file or
+    # directory" once the file is gone on the Mac's side: "tippecanoe
+    # failed (117): stat geom" on a whole-country build, 2026-11-08, with a
+    # second build and a stack restart under way (two builds side by side
+    # there passed after, so it comes and goes). Only the finished archive
+    # is copied over, beside its final name, and renamed into place.
+    with tempfile.TemporaryDirectory(prefix="wingtip-overlays-") as tmp:
         folder = Path(tmp)
         counts = write_layers(folder, pack, apt_path=nasr("APT_BASE.csv"), rwy_path=nasr("APT_RWY.csv"),
                               rwy_end_path=nasr("APT_RWY_END.csv"), nav_path=nasr("NAV_BASE.csv"),
                               nav_rmk_path=nasr("NAV_RMK.csv"), fix_path=nasr("FIX_BASE.csv"), bbox=bbox)
-        part = folder / "out.pmtiles"
-        run = subprocess.run(tippecanoe_args(folder, part, pack.cycle, tippecanoe), capture_output=True, text=True)
+        built = folder / "out.pmtiles"
+        run = subprocess.run(tippecanoe_args(folder, built, pack.cycle, tippecanoe), capture_output=True, text=True)
         if run.returncode != 0:
             raise RuntimeError(f"tippecanoe failed ({run.returncode}): {run.stderr[-2000:]}")
-        os.replace(part, path)
+        part = out_dir / f".{name}.pmtiles.part"
+        try:
+            shutil.copyfile(built, part)
+            os.replace(part, path)
+        finally:
+            part.unlink(missing_ok=True)
     index = {
         "cycle": pack.cycle, "name": name, "version": VERSION, "bytes": path.stat().st_size, "built_at": time.time(),
         "min_zoom": MIN_ZOOM, "max_zoom": MAX_ZOOM, "tolerance_m": TOLERANCE_M,

@@ -19,6 +19,8 @@ import math
 import shutil
 import struct
 import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -486,6 +488,40 @@ def test_a_due_archive_with_no_tippecanoe_fails_the_job(sources, tmp_path, monke
     monkeypatch.setattr(overlays, "TIPPECANOE", "no-such-tippecanoe")
     with pytest.raises(RuntimeError, match="no-such-tippecanoe"):
         overlays.ensure(tmp_path, out_dir=tmp_path)
+
+
+def test_tippecanoe_works_on_the_containers_disk_not_in_the_archives_folder(sources, tmp_path, monkeypatch):
+    """The archive's folder is the data folder bind-mounted from the Mac on
+    the owner's stack, where tippecanoe's unlinked temporary files could
+    not be asked their size ("tippecanoe failed (117): stat geom",
+    2026-11-08). Its inputs, its --temporary-directory and its output are
+    all in the system's temporary folder; only the finished archive is
+    put in out_dir, with nothing else left there. A stand-in tippecanoe
+    notes where it was told to work, so this runs without the real one."""
+    pack, nasr = sources
+    work, out = tmp_path / "container-tmp", tmp_path / "tiles"
+    work.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(work))
+    seen = tmp_path / "args.json"
+    fake = tmp_path / "fake-tippecanoe"
+    fake.write_text(f"""#!{sys.executable}
+import json, sys
+args = sys.argv[1:]
+json.dump(args, open({str(seen)!r}, "w"))
+open(args[args.index("-o") + 1], "wb").write(b"PMTiles")
+""")
+    fake.chmod(0o755)
+    index = overlays.build(pack, nasr, out, bbox=BBOX, tippecanoe=str(fake))
+    args = json.loads(seen.read_text())
+    places = [Path(args[args.index("-o") + 1]), Path(args[args.index("--temporary-directory") + 1])]
+    places += [Path(a.split(":", 1)[1]) for a, flag in zip(args[1:], args) if flag == "-L"]
+    assert len(places) == 2 + len(vector_tiles.LAYERS)
+    for place in places:
+        assert place.is_relative_to(work), place
+        assert not place.is_relative_to(out), place
+    assert sorted(p.name for p in out.iterdir()) == sorted([f"{index['name']}.pmtiles", vector_tiles.INDEX])
+    assert (out / f"{index['name']}.pmtiles").read_bytes() == b"PMTiles"
+    assert list(work.iterdir()) == []
 
 
 def test_the_browser_suites_archive_is_of_this_version():
