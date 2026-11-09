@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.flight
 
 import android.content.Context
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,7 +28,7 @@ object GlideRing {
     }
 
     fun set(context: Context, on: Boolean) {
-        context.getSharedPreferences("wingtip", Context.MODE_PRIVATE).edit().putBoolean(KEY, on).apply()
+        context.getSharedPreferences("wingtip", Context.MODE_PRIVATE).edit { putBoolean(KEY, on) }
         kept.value = on
     }
 

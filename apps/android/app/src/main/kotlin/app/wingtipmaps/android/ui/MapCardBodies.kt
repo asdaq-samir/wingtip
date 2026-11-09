@@ -85,7 +85,7 @@ internal fun AirspaceCard(volume: MapPick.Airspace) {
     asked.exceptionOrNull()?.let { ProblemLine("The entry rules failed: ${it.message}") }
     if (!rules?.rules.isNullOrEmpty()) {
         SectionTitle(stringResource(R.string.to_enter))
-        for (r in rules!!.rules) {
+        for (r in rules.rules) {
             ListItem(
                 headlineContent = { Text(r.rule, style = MaterialTheme.typography.bodyMedium) },
                 supportingContent = { Text(r.cite) },

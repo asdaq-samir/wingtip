@@ -28,9 +28,11 @@ class LogbookDraftModelTest {
     @get:Rule val main = MainRule()
 
     companion object {
+        private val JSON = Json { ignoreUnknownKeys = true }
+
         /** A draft as the planner answers one (POST /api/logbook-draft):
          *  KDPA to KMSN, 1.4 h, an approach, no hold. */
-        val DRAFT: LogbookDraft = Json { ignoreUnknownKeys = true }.decodeFromString(
+        val DRAFT: LogbookDraft = JSON.decodeFromString(
             LogbookDraft.serializer(),
             """{"approaches":[{"airport":"KMSN","also_fits":[],"faf_at":1,"id":"I18","name":"ILS 18","outcome":"landed"}],
             "block":{"from":0,"to":600000},"cross_country":{"farthest_nm":70,"landed_elsewhere":true,"over_50_nm":true},"ends_airborne":false,

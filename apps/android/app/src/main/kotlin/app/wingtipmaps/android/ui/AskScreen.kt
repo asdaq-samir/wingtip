@@ -101,10 +101,10 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
 
     // The context as the app has it: the plan on the page, the airplane's
     // last fix, and the pilot where one is signed in. The departure time
-    // is the planner's own now: the plan has none of its own.
+    // is the plan's, else the planner's own now.
     val context = AssistantContext(
         dep = planState.dep, dest = planState.dest, stops = planState.stops, aircraft = planState.aircraft,
-        altitudeFt = planState.legs.firstOrNull()?.altitudeFt,
+        altitudeFt = planState.altitudeFt ?: planState.legs.firstOrNull()?.altitudeFt, depart = planState.depart,
         ownShip = fix?.let { AssistantContext.OwnShipFix(it.lat, it.lon, it.altitudeFt, it.trackDeg, it.groundspeedKt) },
         pilot = pilot?.let { AssistantContext.PilotRecord(homeBase = it.homeBase) },
     )
@@ -135,12 +135,12 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
                         tripModel,
                         context = {
                             Context(
-                                aircraft = context.aircraft, altitudeFt = context.altitudeFt, dep = context.dep, dest = context.dest,
+                                aircraft = context.aircraft, altitudeFt = context.altitudeFt, dep = context.dep, depart = context.depart, dest = context.dest,
                                 stops = context.stops, rules = "vfr",
                                 pilot = context.pilot?.let { Gateway.json.encodeToJsonElement(it).jsonObject },
                             )
                         },
-                        onUse = { leg -> plan.plan(leg.change.dep, leg.change.dest, leg.change.stops) },
+                        onUse = { leg -> with(leg.change) { plan.useLeg(dep, dest, stops, altitudeFt, depart) } },
                         onSource = { source = AssistantSource(it.id, it.label, it.text) },
                         onClose = { trip = false },
                     )

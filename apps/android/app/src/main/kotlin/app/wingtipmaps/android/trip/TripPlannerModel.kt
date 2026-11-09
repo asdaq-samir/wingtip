@@ -73,8 +73,8 @@ object TripPlan {
             .header("Accept", "application/x-ndjson").post(body)
         Gateway.csrfToken?.let { builder.header("X-XSRF-TOKEN", it) }
         Gateway.client.newCall(builder.build()).execute().use { response ->
-            if (response.code != 200) throw Planner.Failure(response.code, Planner.detail(response.body?.string() ?: ""))
-            val source = response.body?.source() ?: return@use
+            if (response.code != 200) throw Planner.Failure(response.code, Planner.detail(response.body.string()))
+            val source = response.body.source()
             while (true) {
                 val line = source.readUtf8Line() ?: break
                 if (line.isEmpty()) continue

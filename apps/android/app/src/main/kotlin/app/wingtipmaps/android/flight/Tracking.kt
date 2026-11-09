@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.flight
 
+import android.annotation.SuppressLint
 import android.content.Context
 import app.wingtipmaps.android.api.FlightStatus
 import app.wingtipmaps.android.api.PathPoint
@@ -252,6 +253,8 @@ class Tracking private constructor(
          *  app's PATH_POINTS. */
         const val PATH_POINTS = 2000
 
+        // The application's context alone (of), which lives as long as the process.
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var shared: Tracking? = null
 

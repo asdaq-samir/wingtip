@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.aircraft.AircraftFormFields
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.ui.ProblemLine
@@ -32,9 +33,10 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  * The airplane's "Add from a Photo" sheet: which page (Performance or
  * Weight & Balance, a choice of two as segmented buttons), Scan the Page,
  * then each item the engine made of it to confirm, then the airplane's
- * figures from the confirmed ones to change and Save. The registration
- * the pilot gave and `type` (the planner's airplane picked) start the
- * form, which no page gives.
+ * figures from the confirmed ones to change and Save, in the same
+ * "Your Airplane" form as Your Airplanes. The registration the pilot gave
+ * and `type` (the planner's airplane picked) start the form, which no
+ * page gives.
  */
 @Composable
 fun HandbookPhotoSheet(type: String, onClose: () -> Unit, model: HandbookPhotoModel = viewModel()) {
@@ -107,18 +109,12 @@ private fun AirplaneFiguresForm(state: HandbookPhotoModel.State, model: Handbook
             Text(stringResource(R.string.cruise_from_row, it.title), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-    FormField(R.string.registration, f.tail, text = true) { v -> model.edit { it.copy(tail = v.uppercase()) } }
-    FormField(R.string.airplane_type, f.type, text = true) { v -> model.edit { it.copy(type = v.uppercase()) } }
-    FormField(R.string.field_cruise_tas, f.cruiseTas) { v -> model.edit { it.copy(cruiseTas = v) } }
-    FormField(R.string.field_burn, f.burn) { v -> model.edit { it.copy(burn = v) } }
-    FormField(R.string.field_power, f.power) { v -> model.edit { it.copy(power = v) } }
-    FormField(R.string.field_climb_burn, f.climbBurn) { v -> model.edit { it.copy(climbBurn = v) } }
-    FormField(R.string.field_usable_fuel, f.usableFuel) { v -> model.edit { it.copy(usableFuel = v) } }
+    AircraftFormFields(f, showProblems = state.tried, onChange = model::edit)
     ProblemLine(state.problem)
     if (state.saved) Text(stringResource(R.string.airplane_saved), style = MaterialTheme.typography.bodyMedium)
     Button(
         onClick = model::save,
-        enabled = !state.saving && !state.saved && model.request(f, null) != null,
+        enabled = !state.saving && !state.saved,
         modifier = Modifier.fillMaxWidth(),
     ) { Text(stringResource(R.string.save_airplane)) }
     TextButton(onClick = model::review) { Text(stringResource(R.string.back_to_items)) }

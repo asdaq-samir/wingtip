@@ -3,6 +3,7 @@ package app.wingtipmaps.android.offline
 import android.app.Application
 import android.content.Context
 import android.os.StatFs
+import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
@@ -58,12 +59,12 @@ class DownloadsModel(app: Application) : AndroidViewModel(app) {
 
     fun setPicked(kind: String, on: Boolean) {
         _picked.value = if (on) _picked.value + kind else _picked.value - kind
-        prefs.edit().putStringSet(KINDS, _picked.value).apply()
+        prefs.edit { putStringSet(KINDS, _picked.value) }
     }
 
     fun setScale(value: Int) {
         _scale.value = value
-        prefs.edit().putInt(SCALE, value).apply()
+        prefs.edit { putInt(SCALE, value) }
     }
 
     /** The archive names the picks give ("sec@2x", "tac@2x"). */

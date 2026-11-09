@@ -153,7 +153,7 @@ class CyclePacks(private val root: File) {
         val request = Planner.get("/api/cycle-pack/$cycle/$region.pack")
         return runCatching {
             Gateway.client.newCall(request).await().use { response ->
-                if (response.code != 200) null else response.body?.bytes()
+                if (response.code != 200) null else response.body.bytes()
             }
         }.getOrNull()
     }

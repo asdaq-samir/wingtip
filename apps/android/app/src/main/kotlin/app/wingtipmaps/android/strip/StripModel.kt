@@ -71,6 +71,10 @@ class StripModel : ViewModel() {
         data object Ask : Over {
             override val title get() = "Ask"
         }
+
+        data object Clearance : Over {
+            override val title get() = "Clearance"
+        }
     }
 
     data class State(

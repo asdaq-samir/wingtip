@@ -15,7 +15,8 @@ scripts that keep the owner's Mac tidy. What the services are is
   (gitignored; Compose reads it). Without one those features say the
   model cannot be reached and everything else works: the key is read
   with `${ANTHROPIC_API_KEY:-}`, so a missing key fails no command.
-- **Xcode and XcodeGen**, or **the Android SDK and JetBrains' JDK 21**,
+- **Xcode and XcodeGen**, or **the Android SDK and a JDK 25** (the Android build's, as the gateway's;
+  Gradle fetches a Temurin 25 into `~/.gradle/jdks` itself where there is none),
   only for the phone apps ([NATIVE.md](NATIVE.md), [NATIVE-ANDROID.md](NATIVE-ANDROID.md)).
 - **The AWS CLI**, only for a deploy ([README-AWS.md](README-AWS.md)).
 

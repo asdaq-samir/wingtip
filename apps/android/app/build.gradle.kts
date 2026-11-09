@@ -7,8 +7,9 @@ import java.util.Properties
 // (src/main/cpp). Nothing of the owner's is kept here: the host and the
 // package name come in from outside, as the shell's build takes them.
 plugins {
+    // AGP 9 compiles the Kotlin itself (built-in Kotlin): no Kotlin
+    // Android plugin.
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     // Room's compiler (records/Records.kt) runs through KSP.
@@ -44,7 +45,8 @@ val appId: String =
 
 android {
     namespace = "app.wingtipmaps.android"
-    compileSdk = 36
+    // Android 17, the newest stable API.
+    compileSdk = 37
 
     defaultConfig {
         applicationId = appId
@@ -52,7 +54,7 @@ android {
         // the notification channels the later phases want, all without
         // the support library's shims.
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         // Google Play wants each upload's version code above the last
         // one's: the workflow's run number, once there is a Play lane.
         versionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "1").toInt()
@@ -92,9 +94,23 @@ android {
         buildConfig = true
     }
 
+    // Every lint warning fails the build, as the Kotlin compiler's do
+    // below: a deprecation or a slip is fixed when it is written.
+    lint {
+        warningsAsErrors = true
+        abortOnError = true
+        // Timber's own check, which comes in with a library's lint rules:
+        // the app logs through android.util.Log (Engine.rule), not Timber.
+        disable += "LogNotTimber"
+    }
+
+    // Java 25, the gateway's LTS and the JDK the build runs on
+    // (gradle/gradle-daemon-jvm.properties): AGP 9.5's D8 dexes its class
+    // files (major version 69) for minSdk 26, records, sealed types and
+    // pattern switches included.
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
     }
 
     sourceSets {
@@ -105,19 +121,20 @@ android {
         // phone is held to the same examples as everywhere else, and a
         // copy cannot drift.
         getByName("androidTest") {
-            assets.srcDirs("../../web/src/lib/fixtures")
+            assets.directories.add("../../web/src/lib/fixtures")
         }
         // The shared fixtures on the JVM tests' classpath too: the
         // formatter is held to formats.json there (FormatTest).
         getByName("test") {
-            resources.srcDirs("../../web/src/lib/fixtures")
+            resources.directories.add("../../web/src/lib/fixtures")
         }
     }
 }
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_21)
+        jvmTarget.set(JvmTarget.JVM_25)
+        allWarningsAsErrors.set(true)
     }
 }
 

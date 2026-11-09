@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.AddLocation
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Call
@@ -17,7 +18,6 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.NearMe
@@ -47,7 +47,7 @@ object WingtipIcons {
     val myLocation = Icons.Filled.NearMe
     val brief = Icons.Filled.AutoAwesome
     val navLog = Icons.Filled.FormatListNumbered
-    val profile = Icons.Filled.ShowChart
+    val profile = Icons.AutoMirrored.Filled.ShowChart
     val mapLayers = Icons.Filled.Layers
     val flightPlan = Icons.Filled.Route
     val nearest = Icons.Filled.MyLocation

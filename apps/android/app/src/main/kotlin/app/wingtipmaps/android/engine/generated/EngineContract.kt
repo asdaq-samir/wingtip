@@ -8700,7 +8700,7 @@ object EngineContract {
     @Serializable
     data class RunwayEndsTrafficInput(
         @SerialName("end_headings")
-        val endHeadings: List<List<JsonElement>>?? = null,
+        val endHeadings: List<List<JsonElement>>? = null,
         @SerialName("variation_deg")
         val variationDeg: Double,
         /**
@@ -8761,7 +8761,7 @@ object EngineContract {
     @Serializable
     data class RunwayWithWindsInputRunwaysItem(
         @SerialName("end_headings")
-        val endHeadings: List<List<JsonElement>>?? = null,
+        val endHeadings: List<List<JsonElement>>? = null,
     )
 
     @Serializable

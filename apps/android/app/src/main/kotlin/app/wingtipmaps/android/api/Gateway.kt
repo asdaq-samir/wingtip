@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.api
 
+import android.annotation.SuppressLint
 import android.content.Context
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.generated.gateway.MagicLinkRequest
@@ -34,6 +35,7 @@ import kotlin.coroutines.resumeWithException
  * session cookie the gateway sets kept by CookieStore, so a call made
  * after signing in is the pilot's, as in Chrome.
  */
+@SuppressLint("StaticFieldLeak") // the application's context alone (attach), which lives as long as the process
 object Gateway {
     /** The coder for the servers' JSON: a key not modelled is passed
      *  over, and a null is left out of a body. The planner's snake case
@@ -109,7 +111,7 @@ object Gateway {
      *  or `read` in the gateway's own words. */
     suspend fun call(method: String, path: String, json: String? = null, form: Map<String, String>? = null): Pair<String, Int> =
         client.newCall(request(method, path, json, form)).await().use { response ->
-            (response.body?.string() ?: "") to response.code
+            response.body.string() to response.code
         }
 
     /** A call whose answer is read, or nothing where the server sends no

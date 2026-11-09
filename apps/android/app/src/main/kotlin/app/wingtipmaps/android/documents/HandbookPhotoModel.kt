@@ -4,14 +4,13 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.aircraft.AircraftForm
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.addAircraft
 import app.wingtipmaps.android.api.aircraft
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
 import app.wingtipmaps.android.api.generated.assistant.HandbookCheck
 import app.wingtipmaps.android.api.generated.assistant.HandbookRead
-import app.wingtipmaps.android.api.generated.gateway.AircraftDto
-import app.wingtipmaps.android.api.generated.gateway.AircraftRequest
 import app.wingtipmaps.android.api.saveHandbook
 import app.wingtipmaps.android.api.updateAircraft
 import app.wingtipmaps.android.engine.Engine
@@ -35,17 +34,6 @@ import kotlinx.coroutines.launch
 class HandbookPhotoModel(
     private val check: (HandbookRead) -> Result<HandbookCheck> = { Engine.rule("handbook_read_check", it) },
 ) : ViewModel() {
-    /** The airplane's figures as typed, each a field's text. */
-    data class Form(
-        val tail: String = "",
-        val type: String = "",
-        val cruiseTas: String = "",
-        val burn: String = "",
-        val power: String = "",
-        val climbBurn: String = "",
-        val usableFuel: String = "",
-    )
-
     data class State(
         val page: Documents.Kind = Documents.Kind.PERFORMANCE,
         val reading: Boolean = false,
@@ -54,7 +42,10 @@ class HandbookPhotoModel(
         val confirmed: Set<String> = emptySet(),
         /** The engine's check of the confirmed items alone: what is kept. */
         val kept: HandbookCheck? = null,
-        val form: Form = Form(),
+        /** The airplane's figures as typed: the "Your Airplane" form. */
+        val form: AircraftForm = AircraftForm(),
+        /** Save was tried, so each field's problem is shown under it. */
+        val tried: Boolean = false,
         val saving: Boolean = false,
         val saved: Boolean = false,
     )
@@ -104,63 +95,37 @@ class HandbookPhotoModel(
         val read = s.answer?.handbook ?: return
         check(HandbookReview.confirmed(read, s.confirmed)).fold(
             onSuccess = { kept ->
-                val p = kept.profile
-                fun pick(v: Double?, was: String) = v?.let(HandbookReview::tenth) ?: was
-                val f = s.form
                 _state.update {
-                    it.copy(
-                        kept = kept, problem = null,
-                        form = f.copy(
-                            tail = f.tail.ifEmpty { tail.orEmpty() },
-                            type = f.type.ifEmpty { type.uppercase() },
-                            cruiseTas = pick(p.cruiseTasKt, f.cruiseTas),
-                            burn = pick(p.fuelBurnGph, f.burn),
-                            power = pick(p.cruisePowerPct, f.power),
-                            climbBurn = pick(p.climbFuelBurnGph, f.climbBurn),
-                            usableFuel = pick(p.usableFuelGal, f.usableFuel),
-                        ),
-                    )
+                    val f = it.form
+                    val named = f.copy(tailNumber = f.tailNumber.ifEmpty { tail.orEmpty().uppercase() }, typeDesignator = f.typeDesignator.ifEmpty { type.uppercase() })
+                    it.copy(kept = kept, problem = null, form = named.filled(kept.profile))
                 }
             },
             onFailure = { e -> _state.update { it.copy(problem = "The confirmed figures could not be checked: ${e.message}") } },
         )
     }
 
-    fun edit(how: (Form) -> Form) = _state.update { it.copy(form = how(it.form), saved = false) }
+    fun edit(how: (AircraftForm) -> AircraftForm) = _state.update { it.copy(form = how(it.form), saved = false) }
 
     /** Back to the items, to confirm another or take one back. */
     fun review() = _state.update { it.copy(kept = null, saved = false) }
-
-    /** The airplane's figures as the gateway takes them, or null until the
-     *  registration, the type, the cruise speed and the burn are given. */
-    fun request(form: Form, was: AircraftDto?): AircraftRequest? {
-        val tas = form.cruiseTas.toDoubleOrNull() ?: return null
-        val burn = form.burn.toDoubleOrNull() ?: return null
-        val tail = form.tail.trim().uppercase().ifEmpty { return null }
-        val type = form.type.trim().uppercase().ifEmpty { return null }
-        return AircraftRequest(
-            tailNumber = tail, typeDesignator = type, cruiseTasKt = tas, fuelBurnGph = burn,
-            cruisePowerPct = form.power.toDoubleOrNull(),
-            climbFuelBurnGph = form.climbBurn.toDoubleOrNull() ?: was?.climbFuelBurnGph,
-            climbTasKt = was?.climbTasKt,
-            usableFuelGal = form.usableFuel.toDoubleOrNull() ?: was?.usableFuelGal,
-            // Kept as the pilot set them on the web: not on this page.
-            colour = was?.colour, equipment = was?.equipment, surveillance = was?.surveillance,
-        )
-    }
 
     /** The pilot's Save: the airplane by its registration replaced or
      *  added, then, once that is saved, its handbook figures. */
     fun save() {
         val s = _state.value
         val kept = s.kept ?: return
-        if (request(s.form, null) == null) return
-        _state.update { it.copy(saving = true, problem = null) }
+        if (s.form.request == null) {
+            _state.update { it.copy(tried = true) }
+            return
+        }
+        _state.update { it.copy(saving = true, tried = true, problem = null) }
         viewModelScope.launch {
             try {
-                val tail = s.form.tail.trim().uppercase()
+                val tail = s.form.tailNumber.trim()
                 val was = Gateway.aircraft().orEmpty().firstOrNull { it.tailNumber.equals(tail, ignoreCase = true) }
-                val ask = checkNotNull(request(s.form, was))
+                // What the page does not give is kept as the pilot set it.
+                val ask = checkNotNull((was?.let(s.form::over) ?: s.form).request)
                 val saved = if (was != null) Gateway.updateAircraft(was.id, ask) else Gateway.addAircraft(ask)
                 Gateway.saveHandbook(saved.id, HandbookReview.forGateway(kept.handbook))
                 _state.update { it.copy(saving = false, saved = true) }

@@ -65,7 +65,7 @@ jobs:
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
       - name: The SDK's licences
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
       # The engine's libraries as the last run that built this engine left

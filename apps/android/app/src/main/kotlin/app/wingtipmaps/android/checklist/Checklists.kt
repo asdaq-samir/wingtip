@@ -2,6 +2,7 @@ package app.wingtipmaps.android.checklist
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.checklistPhases
@@ -50,11 +51,11 @@ class PreferencesStore(private val prefs: SharedPreferences) : TextStore {
     override fun read(key: String): String? = prefs.getString(key, null)
 
     override fun write(key: String, value: String?) {
-        prefs.edit().apply { if (value == null) remove(key) else putString(key, value) }.apply()
+        prefs.edit { if (value == null) remove(key) else putString(key, value) }
     }
 
     override fun clear() {
-        prefs.edit().clear().apply()
+        prefs.edit { clear() }
     }
 }
 
