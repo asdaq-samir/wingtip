@@ -20,6 +20,7 @@ import QueryState from "../../components/QueryState";
 import InstructorPage from "./InstructorPage";
 import ComingUp from "./ComingUp";
 import LogbookFile from "./LogbookFile";
+import { LogbookPhotoRow } from "../document-photo";
 import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
@@ -254,6 +255,9 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
       {/* To and from a CSV file, its flights shown before they go in
           (LogbookFile). */}
       <LogbookFile entries={entries} onImported={refresh} />
+      {/* A page of a paper logbook, photographed: each flight checked and
+          ticked before it is logged (features/document-photo). */}
+      <ListGroup><LogbookPhotoRow /></ListGroup>
 
       {/* A row opens its flight's form, placed by the list. */}
       <ResponsivePopover open={!!changing} onOpenChange={open => { if (!open) setChanging(null); }}>

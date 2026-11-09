@@ -30,7 +30,8 @@ import { api, describeError } from "../../lib/api/client";
 import { cancelled, shareOrCopy } from "../../lib/share";
 import { showError } from "../../lib/problems";
 import RowMenu from "../../components/RowMenu";
-import type { Aircraft, AircraftRequest, FlightSummary, InspectionsRequest, VorCheckRequest } from "../../lib/api/types";
+import type { Aircraft, AircraftRequest, FlightSummary, HandbookFigures, InspectionsRequest, VorCheckRequest } from "../../lib/api/types";
+import { HandbookPhotoRow, mergeHandbook, type ConfirmedHandbook } from "../document-photo";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { usePreferences } from "../../lib/preferences";
 import { TEXT } from "../../lib/text";
@@ -372,15 +373,19 @@ export function AircraftPanel() {
   const formOpen = adding || editingId !== null;
   const formId = useId();
   const {
-    register, handleSubmit, reset, formState: { errors },
+    register, handleSubmit, reset, setValue, formState: { errors },
   } = useForm<AircraftFormValues>({
     resolver: zodResolver(aircraftSchema),
     defaultValues: EMPTY_AIRCRAFT_FORM,
   });
 
+  // Handbook figures confirmed from a photo (features/document-photo),
+  // kept with the airplane when the pilot saves it, never before.
+  const [handbook, setHandbook] = useState<HandbookFigures | null>(null);
   const cancelEdit = () => {
     setEditingId(null);
     setAdding(false);
+    setHandbook(null);
     reset(EMPTY_AIRCRAFT_FORM);
   };
 
@@ -389,8 +394,10 @@ export function AircraftPanel() {
   // finished, so an add still in flight when Edit was clicked on another
   // row toasted "updated" and wiped the form just opened.
   const save = useMutation({
-    mutationFn: ({ id, request }: { id: number | null; request: AircraftRequest }) =>
-      id ? api.aircraft.update(id, request) : api.aircraft.add(request),
+    mutationFn: async ({ id, request, figures }: { id: number | null; request: AircraftRequest; figures: HandbookFigures | null }) => {
+      const saved = id ? await api.aircraft.update(id, request) : await api.aircraft.add(request);
+      return figures ? api.aircraft.handbook(saved.id, figures) : saved;
+    },
     // The only other feedback a save gets is a row quietly changing in
     // a table below the form -- easy to miss with your eyes still on
     // the inputs you just submitted, unlike Plan/Label's own toasts
@@ -416,6 +423,7 @@ export function AircraftPanel() {
 
   const edit = (a: Aircraft) => {
     setEditingId(a.id);
+    setHandbook(null);
     reset({
       tailNumber: a.tailNumber, typeDesignator: a.typeDesignator,
       cruiseTasKt: String(a.cruiseTasKt), fuelBurnGph: String(a.fuelBurnGph),
@@ -427,7 +435,21 @@ export function AircraftPanel() {
     });
   };
 
-  const onSubmit = (values: AircraftFormValues) => save.mutate({ id: editingId, request: {
+  // The confirmed figures put in the form's fields, for the pilot to see
+  // and save; the rest of the page's figures go with that save.
+  const fromPhoto = ({ handbook: figures, profile }: ConfirmedHandbook) => {
+    const fill = (name: keyof AircraftFormValues, v: number | null | undefined) => {
+      if (v != null) setValue(name, String(Math.round(v * 10) / 10), { shouldDirty: true, shouldValidate: true });
+    };
+    fill("cruiseTasKt", profile.cruise_tas_kt);
+    fill("fuelBurnGph", profile.fuel_burn_gph);
+    fill("cruisePowerPct", profile.cruise_power_pct);
+    fill("climbFuelBurnGph", profile.climb_fuel_burn_gph);
+    fill("usableFuelGal", profile.usable_fuel_gal);
+    setHandbook(now => mergeHandbook(now ?? list?.find(a => a.id === editingId)?.handbook, figures));
+  };
+
+  const onSubmit = (values: AircraftFormValues) => save.mutate({ id: editingId, figures: handbook, request: {
     tailNumber: values.tailNumber.trim(), typeDesignator: values.typeDesignator.trim(),
     cruiseTasKt: Number(values.cruiseTasKt), fuelBurnGph: Number(values.fuelBurnGph),
     cruisePowerPct: orNull(values.cruisePowerPct),
@@ -569,6 +591,7 @@ export function AircraftPanel() {
                   /></FieldHit>
                 </ListRow>
               </ListGroup>
+              <ListGroup><HandbookPhotoRow onConfirmed={fromPhoto} pending={!!handbook} /></ListGroup>
               <ListGroup title="True airspeed">
                 <NumberRow
                   id={`${formId}-climb-tas`} title="Climb" unit="kt" placeholder="74" name="Climb TAS in knots"

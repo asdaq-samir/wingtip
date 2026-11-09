@@ -118,6 +118,10 @@ export type ChartPages = Schemas["ChartPages"];
 /** The mock oral's question, its answer graded, and what each is asked with. */
 export type OralQuestion = Assistant["OralQuestion"];
 export type OralQuestionRequest = Assistant["OralQuestionRequest"];
+/** A photographed page read and checked (the assistant's app.documents):
+ *  what is sent, and the read with the engine's checks. */
+export type ReadAsk = Assistant["ReadAsk"];
+export type DocumentRead = Assistant["DocumentRead"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];
 export type ClearancePlaces = Schemas["ClearancePlaces"];
 /** "When should I go?": the hours and the windows (app.window). */
@@ -320,6 +324,9 @@ export type DeviceCode = Gateway["DeviceCode"];
  *  fuel check. */
 export type Aircraft = Gateway["AircraftDto"];
 export type AircraftRequest = Gateway["AircraftRequest"];
+/** An airplane's handbook figures as its pilot confirmed them from a
+ *  photographed page (the engine contract's HandbookFigures). */
+export type HandbookFigures = Gateway["HandbookFigures"];
 /** A VOR check for IFR as the pilot records it (14 CFR 91.171(d)). */
 export type VorCheckRequest = Gateway["VorCheckRequest"];
 export type InspectionsRequest = Gateway["InspectionsRequest"];

@@ -5,6 +5,7 @@ import { Check, Mic, Square, TriangleAlert } from "lucide-react";
 import { cn } from "cn";
 import IconButton from "./IconButton";
 import ListenThrough from "./ListenThrough";
+import ClearancePhoto from "./ClearancePhoto";
 import { ListGroup, ListRow } from "./GroupedList";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
@@ -327,6 +328,9 @@ export default function ClearanceCard({ onDone }: {
             aria-label="The clearance as heard" data-testid="clearance-text"
             className={cn(TEXT.detail, "resize-none font-mono")}
           />
+          {/* A clearance copied down on paper, read into the words typed
+              here, for the reader below as a typed one (ClearancePhoto). */}
+          <ClearancePhoto onRead={pick} />
           {heardIt && (
             <div className="flex flex-col gap-1">
               {limit && <Line name="Cleared to">{limit}</Line>}

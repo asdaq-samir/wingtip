@@ -441,6 +441,55 @@ export type GonogoUnderMinimumsAnswer = string[];
 export type GonogoVerdictItemsAnswer = GonogoItem[];
 export type GonogoWithAlternateAnswer = GonogoItem[];
 export type GroundspeedKtAnswer = number;
+export type HandbookClimbRead = {
+  /**
+   * Best rate of climb speed, Vy, indicated, in speed_unit.
+   */
+  speed?: number | null;
+  rate_fpm?: number | null;
+  /**
+   * In burn_unit.
+   */
+  burn?: number | null;
+} | null;
+export type HandbookGlideRead = {
+  /**
+   * Best glide speed, indicated, in speed_unit.
+   */
+  speed?: number | null;
+  /**
+   * Feet forward for each foot down.
+   */
+  ratio?: number | null;
+} | null;
+export type HandbookEmptyRead = {
+  /**
+   * In weight_unit.
+   */
+  weight?: number | null;
+  /**
+   * In arm_unit.
+   */
+  arm?: number | null;
+  /**
+   * As printed.
+   */
+  moment?: number | null;
+  /**
+   * What the printed moment is divided by (1,000 for "moment/1000"); 1 where none.
+   */
+  moment_divisor?: number | null;
+} | null;
+export type HandbookFuelRead = {
+  /**
+   * In fuel_unit.
+   */
+  total?: number | null;
+  /**
+   * In fuel_unit.
+   */
+  usable?: number | null;
+} | null;
 export type HandbookWithinAnswer = boolean;
 export type HighestUnderCloudsFtAnswer = number;
 export type HoldEntryAnswer = "direct" | "teardrop" | "parallel";
@@ -508,6 +557,21 @@ export type IsaTempCAnswer = number;
 export type KneeboardRadioAnswer = [string, number][];
 export type LegalCruisingAltitudesAnswer = number[];
 export type LogbookCsvWriteAnswer = string;
+/**
+ * The page's "total this page" row, where it has one.
+ */
+export type LogbookPageTotals = {
+  total?: number | null;
+  night?: number | null;
+  cross_country?: number | null;
+  dual?: number | null;
+  solo?: number | null;
+  instrument_actual?: number | null;
+  instrument_simulated?: number | null;
+  day_landings?: number | null;
+  night_landings?: number | null;
+  approaches?: number | null;
+} | null;
 export type LowestVfrCruisingAltitudeAnswer = number;
 export type MagneticVariationAnswer = number;
 export type ModeCVeilAnswer = {
@@ -1839,6 +1903,13 @@ export interface EngineContract {
     answer: HandbookFiguresAnswer;
   };
   /**
+   * A handbook's performance and weight and balance figures as read off a photographed page (POH sections 5 and 6), put in the app's units (knots, feet, pounds, inches, gallons) and checked, as items for the pilot to confirm: each against the band light airplanes' handbooks give (14 CFR 1.1's small airplane, 12,500 lb), and against the others (more power, more speed and burn; the distance over 50 ft no shorter than the ground roll; thinner air, longer distances, FAA-H-8083-25C chapter 11; weight times arm the moment; the CG envelope closed, at least three corners, sides not crossing; usable fuel no more than the total). Asked again with only the confirmed items, its handbook and profile are what is saved.
+   */
+  handbook_read_check: {
+    input: HandbookReadCheckInput;
+    answer: HandbookReadCheck;
+  };
+  /**
    * Whether an airplane's figure, typed in or read off its handbook's page, is within the bounds a light airplane's is believed within; outside them it is a misreading.
    */
   handbook_within: {
@@ -2026,6 +2097,13 @@ export interface EngineContract {
   logbook_from_track: {
     input: LogbookFromTrackInput;
     answer: LogbookFromTrackAnswer;
+  };
+  /**
+   * A paper logbook page as read off a photograph, each row a draft of the gateway's logbook entry with what to check (14 CFR 61.51(b): the date, total time, where from and to, the airplane; each kind of time no longer than the flight; dual and solo not overlapping, 61.51(d); approaches and holds with instrument time, 61.51(g)(1), 61.57(c); night landings with night time, 61.57(b); cross-country with a landing elsewhere, 61.1), and the page's own totals against its rows.
+   */
+  logbook_read_check: {
+    input: LogbookReadCheckInput;
+    answer: LogbookReadCheck;
   };
   /**
    * Where a flown track took off, landed or came down low, for the host to find the fields within `within_nm` of each (the logbook entry drawn from the track, pilot's autolog).
@@ -5969,6 +6047,206 @@ export interface HandbookFigure {
    */
   words: string;
 }
+export interface HandbookReadCheckInput {
+  /**
+   * The speeds' unit as printed; knots where none.
+   */
+  speed_unit?: "kt" | "mph" | "kmh" | null;
+  /**
+   * What the cruise table's speeds are: true, indicated or calibrated; true where none.
+   */
+  cruise_speed_kind?: "tas" | "ias" | "cas" | null;
+  /**
+   * The takeoff and landing distances' unit.
+   */
+  distance_unit?: "ft" | "m" | null;
+  /**
+   * The weights' unit.
+   */
+  weight_unit?: "lb" | "kg" | null;
+  /**
+   * The arms' unit.
+   */
+  arm_unit?: "in" | "cm" | "mm" | null;
+  /**
+   * The fuel quantities' unit (US gallons or litres).
+   */
+  fuel_unit?: "gal" | "l" | null;
+  /**
+   * The fuel burns' unit; pounds an hour are taken as avgas, 6 lb a gallon.
+   */
+  burn_unit?: "gph" | "lph" | "pph" | null;
+  /**
+   * The cruise performance table's rows.
+   */
+  cruise?: HandbookCruiseRead[] | null;
+  climb?: HandbookClimbRead;
+  glide?: HandbookGlideRead;
+  /**
+   * The takeoff distance table's rows.
+   */
+  takeoff?: HandbookDistanceRead[] | null;
+  /**
+   * The landing distance table's rows.
+   */
+  landing?: HandbookDistanceRead[] | null;
+  empty?: HandbookEmptyRead;
+  /**
+   * In weight_unit.
+   */
+  max_takeoff_weight?: number | null;
+  /**
+   * The CG envelope's corners, going round.
+   */
+  envelope?: HandbookCornerRead[] | null;
+  fuel?: HandbookFuelRead;
+}
+export interface HandbookCruiseRead {
+  /**
+   * Pressure altitude.
+   */
+  altitude_ft?: number | null;
+  power_pct?: number | null;
+  rpm?: number | null;
+  /**
+   * In speed_unit.
+   */
+  tas?: number | null;
+  /**
+   * In burn_unit.
+   */
+  burn?: number | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "HandbookDistanceRead".
+ */
+export interface HandbookDistanceRead {
+  pressure_altitude_ft?: number | null;
+  temp_c?: number | null;
+  /**
+   * In distance_unit.
+   */
+  ground_roll?: number | null;
+  /**
+   * Total over a 50 ft obstacle, in distance_unit.
+   */
+  over_obstacle?: number | null;
+}
+export interface HandbookCornerRead {
+  /**
+   * In arm_unit.
+   */
+  arm?: number | null;
+  /**
+   * In weight_unit.
+   */
+  weight?: number | null;
+}
+export interface HandbookReadCheck {
+  items: HandbookItem[];
+  handbook: HandbookFigures;
+  profile: HandbookProfile;
+}
+export interface HandbookItem {
+  /**
+   * "cruise.2", "climb", "envelope": what the pilot confirms.
+   */
+  key: string;
+  group: "cruise" | "climb" | "glide" | "takeoff" | "landing" | "empty" | "weight" | "envelope" | "fuel";
+  title: string;
+  figures: HandbookFigure1[];
+  flags: DocumentFlag[];
+}
+export interface HandbookFigure1 {
+  /**
+   * Where it is in the read: "cruise.2.tas".
+   */
+  path: string;
+  label: string;
+  /**
+   * As read.
+   */
+  value: number;
+  /**
+   * As read.
+   */
+  unit: string;
+  app_value: number;
+  app_unit: string;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "DocumentFlag".
+ */
+export interface DocumentFlag {
+  /**
+   * "check": outside what light airplanes' handbooks give, or at odds with another figure; "wrong": cannot be right as read.
+   */
+  level: "check" | "wrong";
+  /**
+   * The figure it is about where it is one: a logbook entry's member ("nightHours").
+   */
+  field: string | null;
+  /**
+   * What to check, a sentence the pilot reads.
+   */
+  says: string;
+}
+/**
+ * Every figure in the app's units, for the airplane's record.
+ */
+export interface HandbookFigures {
+  cruise: HandbookCruise[];
+  climb_speed_kias: number | null;
+  climb_rate_fpm: number | null;
+  climb_burn_gph: number | null;
+  glide_speed_kias: number | null;
+  glide_ratio: number | null;
+  takeoff: HandbookDistance[];
+  landing: HandbookDistance[];
+  empty_weight_lb: number | null;
+  empty_arm_in: number | null;
+  max_takeoff_weight_lb: number | null;
+  envelope: HandbookCorner[];
+  fuel_total_gal: number | null;
+  usable_fuel_gal: number | null;
+}
+export interface HandbookCruise {
+  altitude_ft: number;
+  power_pct: number | null;
+  rpm: number | null;
+  tas_kt: number;
+  burn_gph: number;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "HandbookDistance".
+ */
+export interface HandbookDistance {
+  pressure_altitude_ft: number;
+  temp_c: number;
+  ground_roll_ft: number;
+  over_obstacle_ft: number;
+}
+export interface HandbookCorner {
+  arm_in: number;
+  weight_lb: number;
+}
+/**
+ * The airplane form's figures: the cruise row at the cruise reference altitude (6,000 ft, within 1,000 ft) and the power nearest 65%, free of wrong flags.
+ */
+export interface HandbookProfile {
+  cruise_tas_kt: number | null;
+  fuel_burn_gph: number | null;
+  cruise_power_pct: number | null;
+  /**
+   * The cruise item the cruise figures come from.
+   */
+  cruise_from: string | null;
+  climb_fuel_burn_gph: number | null;
+  usable_fuel_gal: number | null;
+}
 export interface HandbookWithinInput {
   key:
     | "cruiseTasKt"
@@ -6593,6 +6871,88 @@ export interface LogbookReason {
   item: string;
   says: string;
   source: string;
+}
+export interface LogbookReadCheckInput {
+  /**
+   * The page's rows, in order.
+   */
+  rows?: LogbookRowRead[] | null;
+  page_totals?: LogbookPageTotals;
+  /**
+   * The caller's date, YYYY-MM-DD: a row dated after it is wrong.
+   */
+  today?: string | null;
+}
+export interface LogbookRowRead {
+  /**
+   * YYYY-MM-DD.
+   */
+  date?: string | null;
+  aircraft_type?: string | null;
+  aircraft_id?: string | null;
+  from?: string | null;
+  to?: string | null;
+  via?: string[] | null;
+  total?: number | null;
+  night?: number | null;
+  cross_country?: number | null;
+  /**
+   * Dual received.
+   */
+  dual?: number | null;
+  solo?: number | null;
+  instrument_actual?: number | null;
+  instrument_simulated?: number | null;
+  day_landings?: number | null;
+  /**
+   * Night landings to a full stop.
+   */
+  night_landings?: number | null;
+  approaches?: number | null;
+  holding?: boolean | null;
+  remarks?: string | null;
+}
+export interface LogbookReadCheck {
+  rows: LogbookRowCheck[];
+  /**
+   * The page's: its totals against its rows.
+   */
+  flags: DocumentFlag[];
+}
+export interface LogbookRowCheck {
+  entry: LogbookEntryDraft;
+  flags: DocumentFlag[];
+}
+/**
+ * The gateway's LogbookEntryRequest, as the page gives it.
+ */
+export interface LogbookEntryDraft {
+  /**
+   * YYYY-MM-DD; null where no date was read.
+   */
+  flownOn: string | null;
+  aircraft: string | null;
+  aircraftType: string | null;
+  route: string | null;
+  totalHours: number;
+  nightHours: number;
+  crossCountryHours: number;
+  dayLandings: number;
+  nightLandings: number;
+  remarks: string | null;
+  dualHours: number;
+  soloHours: number;
+  instrumentHours: number;
+  toweredLandings: number;
+  distanceNm: number;
+  longestLegNm: number;
+  approaches: number;
+  holding: boolean;
+  tracking: boolean;
+  airHours: number;
+  touchAndGoes: number;
+  fromTrack: boolean;
+  flightId: null;
 }
 export interface LogbookTrackPlacesInput {
   /**
