@@ -5,14 +5,11 @@ the owner's call of 2026-11-08). It holds the Anthropic key and the model
 settings, and computes no figure: everything an answer rests on comes from
 the planner's HTTP API (`app/planner.py`), which asks the engine every rule.
 
-| Endpoint | What | Module |
-|---|---|---|
-| `POST /api/assistant` | The pilot's assistant: the SDK's tool runner over the planner's endpoints (the plan, the briefing, the Go / No-Go, a field's card, the nearest fields, a hold, a diversion, a proposed change), streamed as NDJSON | `app/assistant.py` |
-| `POST /api/briefing/narrative` | The Brief's narrative of the nav log on screen: one streamed Messages call (`NARRATIVE_MODEL`, Haiku by default), as NDJSON `delta` lines, then `done` or `error`, so a cut-off briefing is never taken as whole | `app/narrative.py` |
-| `POST /api/words/{notams,weather,risk,debrief,changes}` | A few sentences over the planner's sources (`POST /api/words/{kind}/sources` there), each citing what it rests on; a sentence with no source is dropped. `changes` diffs two briefings first, for the gateway's flight watch (a saved flight re-briefed every half hour up to departure, what changed mailed to the pilot) | `app/words.py` |
-| `POST /api/checkpoint-notes/generate` | A "how to spot it" line for each checkpoint without one, streamed; the checkpoints and the notes are the planner's (`/api/checkpoint-notes/pending`, `/seed`) | `app/notes.py` |
-| `POST /api/oral/question`, `/api/oral/grade` | The mock oral, over 14 CFR 61 and 91 and the AIM, fetched once into `data/raw/references` (`app/references.py`); `python -m app.oral_review` writes a CFI's review sheet | `app/oral.py` |
-| `GET /` | Health: the service, the planner it asks, the models | `app/main.py` |
+Its endpoints (the assistant, the briefing narrative, the words, the
+checkpoint notes, the mock oral, health) are in
+[the API reference](../../docs/api/README.md), written from the code
+(`openapi.json`, here). The routes are served from `app/assistant.py`,
+`narrative.py`, `words.py`, `notes.py`, `oral.py` and `main.py`.
 
 ## How it is reached
 

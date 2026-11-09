@@ -22,7 +22,8 @@ Each fact lives in one doc; the others link to it.
 | Doc | Read it for |
 |---|---|
 | [engine/README.md](../engine/README.md) | The Rust engine's crates, the contract, and the steps to add a rule |
-| [services/planner/README.md](../services/planner/README.md) | The planner: every endpoint, the chart tiles and cycle, learning FastAPI from it |
+| [api/README.md](api/README.md) | Every endpoint of the three services, from their OpenAPI documents |
+| [services/planner/README.md](../services/planner/README.md) | The planner: the chart tiles and cycle, learning FastAPI from it |
 | [services/planner/wingtip/README.md](../services/planner/wingtip/README.md) | wingtip, the planner's Python package, module by module |
 | [services/ingest/README.md](../services/ingest/README.md) | The live feeds: what each SWIM feed sends and how the live store is shared |
 | [services/weather/README.md](../services/weather/README.md) | The weather service: products, schedule and health |

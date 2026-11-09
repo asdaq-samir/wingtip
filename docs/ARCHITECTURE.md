@@ -143,7 +143,7 @@ Each service fetches its own; the engine never fetches.
 
 | For | Read |
 |---|---|
-| Every planner endpoint | [services/planner/README.md](../services/planner/README.md#the-endpoints) |
+| Every endpoint of the planner, the assistant and the gateway | [api/README.md](api/README.md) |
 | wingtip, the planner's Python package | [services/planner/wingtip/README.md](../services/planner/wingtip/README.md) |
 | The engine's crates and how a rule is added | [engine/README.md](../engine/README.md) |
 | The web app's layout and map | [apps/web/README.md](../apps/web/README.md) |

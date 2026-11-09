@@ -489,6 +489,9 @@ jobs:
                 - infra/docker-compose.prod.yml
               docs:
                 - services/gateway/**
+                - services/planner/openapi.json
+                - services/assistant/openapi.json
+                - scripts/build/api-reference.sh
               base:
                 - services/Dockerfile.base
                 - services/planner/requirements-wingtip.txt
@@ -1715,6 +1718,18 @@ jobs:
           name: documentation
           retention-days: 30
           path: services/gateway/target/reports/apidocs
+
+      # The API reference: each service's committed openapi.json, rendered
+      # by Redoc (scripts/build/api-reference.sh). An artifact, not a
+      # committed page: GitHub shows .html as source, and the page's bytes
+      # change with Redoc's bundle.
+      - name: API reference (planner, gateway, assistant)
+        run: scripts/build/api-reference.sh "$RUNNER_TEMP"/api-reference
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7
+        with:
+          name: api-reference
+          retention-days: 30
+          path: ${{ runner.temp }}/api-reference
 
   # The production stack's files, each checked by its own tool: the
   # CloudFormation template by cfn-lint, the server's scripts by

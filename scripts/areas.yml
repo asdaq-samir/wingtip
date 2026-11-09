@@ -173,9 +173,12 @@ ci_only:
     - infra/cloudformation/**
     - infra/server/**
     - infra/docker-compose.prod.yml
-  # Javadoc; each Python suite's job makes its pdoc.
+  # Javadoc and the API reference; each Python suite's job makes its pdoc.
   docs:
     - services/gateway/**
+    - services/planner/openapi.json
+    - services/assistant/openapi.json
+    - scripts/build/api-reference.sh
   # The images, each by what its Dockerfile reads: the base
   # (services/Dockerfile.base, wingtip's requirements and engine/)
   # for every one built FROM it.
