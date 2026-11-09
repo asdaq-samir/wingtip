@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useEffectEvent } from "react";
 import type { SetURLSearchParams } from "react-router-dom";
 import type { PanelState } from "../../../lib/mapChrome";
 import { takePlace, useWanted } from "../../../lib/navigation/wanted";
@@ -94,15 +94,12 @@ export function usePlaceCards({
   // A field's card asked for from anywhere -- its name tapped in the nav
   // log (lib/navigation/wanted) -- opened as a tap on the chart opens it.
   // Listened for as the store changes, not read in a render.
-  const selectWanted = useRef(selectPlace);
-  useEffect(() => {
-    selectWanted.current = selectPlace;
-  });
+  const selectWanted = useEffectEvent(selectPlace);
   useEffect(
     () =>
       useWanted.subscribe((s) => {
         const ident = s.place && takePlace();
-        if (ident) selectWanted.current(ident);
+        if (ident) selectWanted(ident);
       }),
     [],
   );

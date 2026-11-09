@@ -1,6 +1,6 @@
 import { useQueries } from "@tanstack/react-query";
 import type { CircleLayerSpecification } from "maplibre-gl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState, useEffectEvent } from "react";
 import type { Leg, ProcedureDrawing } from "../../../api/types";
 import { bearingDeg, type LatLon } from "../../../geo";
 import { pointName } from "../../../identSchema";
@@ -25,19 +25,19 @@ import { useGlLines, type GlRun } from "../useGlLines";
 import { ROUTE_PRIORITY } from "../declutter";
 import { useGlMarks, type GlMark } from "../useGlMarks";
 
+const levelOf = (map: ReturnType<typeof useGlMap>["map"]) => Math.floor(appZoomOf(map.getZoom()) + 1e-9);
+
 /** The level the map is at, the app's, as it changes: what the words on
  *  the procedures and the patterns come in at. */
 function useGlLevel(): number {
   const { map } = useGlMap();
-  const read = () => Math.floor(appZoomOf(map.getZoom()) + 1e-9);
-  const [level, setLevel] = useState(read);
+  const [level, setLevel] = useState(() => levelOf(map));
   useEffect(() => {
-    const zoomed = () => setLevel(read());
+    const zoomed = () => setLevel(levelOf(map));
     map.on("zoomend", zoomed);
     return () => {
       map.off("zoomend", zoomed);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- read is the map's
   }, [map]);
   return level;
 }
@@ -404,12 +404,9 @@ export function PickedGl({
     [focus, held],
   );
   useGlData(RING_SOURCE, data);
-  const hold = useRef(onHold);
+  const hold = useEffectEvent(onHold);
   useEffect(() => {
-    hold.current = onHold;
-  });
-  useEffect(() => {
-    const menu = (e: { lngLat: { lat: number; lng: number } }) => hold.current({ lat: e.lngLat.lat, lon: e.lngLat.lng });
+    const menu = (e: { lngLat: { lat: number; lng: number } }) => hold({ lat: e.lngLat.lat, lon: e.lngLat.lng });
     map.on("contextmenu", menu);
     return () => {
       map.off("contextmenu", menu);

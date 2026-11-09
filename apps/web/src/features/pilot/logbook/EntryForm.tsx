@@ -16,12 +16,15 @@ export default function EntryForm({
   onSave,
   onCancel,
   saving,
+  problem,
 }: {
   initial: LogbookEntryRequest;
   onSave: (r: LogbookEntryRequest) => void;
   /** In a row: the row back, nothing saved. */
   onCancel?: () => void;
   saving: boolean;
+  /** Why the gateway refused the last save, said over the form's buttons. */
+  problem?: string | null;
 }) {
   const [entry, setEntry] = useState(initial);
   // In a row, Escape in a field puts the row back: the row's own, not the
@@ -94,6 +97,11 @@ export default function EntryForm({
         </span>
       </div>
       {field("remarks", "Remarks")}
+      {problem && (
+        <p role="alert" className={cn("text-destructive", TEXT.note)} data-testid="logbook-problem">
+          {problem}
+        </p>
+      )}
       <div className="flex justify-end gap-2 pt-1">
         {onCancel && (
           <Button type="button" size="sm" variant="ghost" onClick={onCancel} data-testid="logbook-cancel">

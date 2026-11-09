@@ -69,6 +69,7 @@ function SavedFlightRow({ f, vm, askDelete }: { f: FlightSummary; vm: SavedFligh
     return (
       <FlightFields
         flight={f}
+        draft={vm.draft}
         problem={vm.problem}
         saving={vm.saving}
         onSave={(name, notes) => vm.saveChange(f, name, notes)}

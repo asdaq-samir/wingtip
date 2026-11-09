@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { startTransition, useMemo, useOptimistic, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { choiceOf, profileOfRegistered, tailOf } from "../../lib/aircraftChoice";
 import { api } from "../../lib/api/client";
@@ -9,7 +9,7 @@ import { fromDevice, type FigureChanges } from "../../lib/airplane/saveFigures";
 import { useSaveFigures } from "../../lib/airplane/useSaveFigures";
 import { usePreferences } from "../../lib/preferences";
 import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../lib/queryClient";
-import { ownOfRecord, resettable, typeWords } from "./profileModel";
+import { ownOfRecord, ownWith, resettable, typeWords } from "./profileModel";
 import { usePhotoRead } from "./usePhotoRead";
 
 /** `map` without `key`. */
@@ -57,28 +57,34 @@ export function useAirplaneProfile() {
         ? (profileOfRegistered(registered) ?? "")
         : "";
   const book = bookOf(profileName, profiles);
-  const figures = useMemo(
-    () => airplaneFigures(book, handbookOf(record?.handbook), record ? ownOfRecord(record) : fromDevice(device)),
-    [book, record, device],
-  );
+  const own = useMemo(() => (record ? ownOfRecord(record) : fromDevice(device)), [record, device]);
+  // A figure kept shows as the pilot's at once (useOptimistic), worked out
+  // again over it while it is saved; refused, the record's comes back by
+  // itself, the typed text left in its field with why under it.
+  const [shownOwn, changeOwn] = useOptimistic(own, ownWith);
+  const figures = useMemo(() => airplaneFigures(book, handbookOf(record?.handbook), shownOwn), [book, record, shownOwn]);
   const save = useSaveFigures();
   const [drafts, setDrafts] = useState<Partial<Record<FigureKey, string>>>({});
   const [problems, setProblems] = useState<Partial<Record<FigureKey, string>>>({});
   const [busy, setBusy] = useState<FigureKey | null>(null);
-  /** Figures kept as the pilot's (null: the book's put back), at once. */
-  const keep = async (changes: FigureChanges) => {
+  /** Figures kept as the pilot's (null: the book's put back), at once:
+   *  an Action, the figures shown changed while the record is saved. */
+  const keep = (changes: FigureChanges) => {
     const keys = Object.keys(changes) as FigureKey[];
     setBusy(keys[0] ?? null);
-    try {
-      await save(tail, changes, record?.typeDesignator ?? null, profileName);
-      setDrafts((d) => keys.reduce(without, d));
-      setProblems((p) => keys.reduce(without, p));
-    } catch (err) {
-      const problem = err instanceof Error ? err.message : "Not saved: try again.";
-      setProblems((p) => ({ ...p, ...Object.fromEntries(keys.map((k) => [k, problem])) }));
-    } finally {
-      setBusy(null);
-    }
+    startTransition(async () => {
+      changeOwn(changes);
+      try {
+        await save(tail, changes, record?.typeDesignator ?? null, profileName);
+        setDrafts((d) => keys.reduce(without, d));
+        setProblems((p) => keys.reduce(without, p));
+      } catch (err) {
+        const problem = err instanceof Error ? err.message : "Not saved: try again.";
+        setProblems((p) => ({ ...p, ...Object.fromEntries(keys.map((k) => [k, problem])) }));
+      } finally {
+        setBusy(null);
+      }
+    });
   };
   /** The fields' text, those given, kept as the pilot's figures where they
    *  changed; one out of its bounds said under it and not kept. */
@@ -93,7 +99,7 @@ export function useAirplaneProfile() {
       else if (read && read.value !== now) changes[key] = read.value;
       else setDrafts((d) => without(d, key));
     }
-    if (Object.keys(changes).length) void keep(changes);
+    if (Object.keys(changes).length) keep(changes);
   };
   const photo = usePhotoRead((typed) => setDrafts((d) => ({ ...d, ...typed })));
   return {
@@ -108,7 +114,7 @@ export function useAirplaneProfile() {
     commit,
     /** Every field changed kept at once: the figures read off a photo. */
     commitAll: () => commit(...(Object.keys(drafts) as FigureKey[])),
-    reset: (key: FigureKey) => void keep({ [key]: null }),
+    reset: (key: FigureKey) => keep({ [key]: null }),
     photo,
     problems,
     busy,

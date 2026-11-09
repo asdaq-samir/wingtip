@@ -1,5 +1,5 @@
 import type { MapGeoJSONFeature } from "maplibre-gl";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { useGlMap } from "./glLayer";
 
 /**
@@ -11,10 +11,7 @@ import { useGlMap } from "./glLayer";
  */
 export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSONFeature) => Record<string, unknown>) {
   const { map } = useGlMap();
-  const pick = useRef(fields);
-  useEffect(() => {
-    pick.current = fields;
-  });
+  const pick = useEffectEvent(fields);
   const ids = layers.join();
   useEffect(() => {
     const el = document.createElement("div");
@@ -39,9 +36,7 @@ export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSO
                 f.geometry.type === "LineString"
                 ? map.project(f.geometry.coordinates[Math.floor(f.geometry.coordinates.length / 2)] as [number, number])
                 : null;
-        const row: Record<string, unknown> = at
-          ? { ...pick.current(f), x: Math.round(at.x * 10) / 10, y: Math.round(at.y * 10) / 10 }
-          : pick.current(f);
+        const row: Record<string, unknown> = at ? { ...pick(f), x: Math.round(at.x * 10) / 10, y: Math.round(at.y * 10) / 10 } : pick(f);
         // An area's box on the map too, for a test to find a place inside it.
         if (f.geometry.type === "Polygon") {
           const ring = (f.geometry.coordinates[0] as [number, number][]).map((p) => map.project(p));

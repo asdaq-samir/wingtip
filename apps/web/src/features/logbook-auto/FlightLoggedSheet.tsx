@@ -5,7 +5,7 @@ import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
 import SheetDialog from "../../components/SheetDialog";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { Spinner } from "../../components/ui/spinner";
+import SkeletonLines from "../../components/SkeletonLines";
 import type { LogbookDraft } from "../../lib/api/types";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
@@ -199,7 +199,7 @@ export default function FlightLoggedSheet({ log }: { log: AutoLogbook }) {
           </Button>
         )}
         {debrief && (
-          <Suspense fallback={<Spinner />}>
+          <Suspense fallback={<SkeletonLines />}>
             <ApproachDebriefs
               fields={logged.fields}
               points={logged.points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, altFt: p.alt_ft }))}
@@ -227,9 +227,12 @@ export default function FlightLoggedSheet({ log }: { log: AutoLogbook }) {
     >
       {!log.signedIn && <p className={TEXT.prose}>Sign in to log it: the track is kept on this device until then.</p>}
       {log.pending && (
-        <p className={cn("flex items-center gap-2", TEXT.prose)}>
-          <Spinner /> Drawing the entry from the track…
-        </p>
+        <>
+          <p role="status" className={cn("text-muted-foreground", TEXT.prose)}>
+            Drawing the entry from the track…
+          </p>
+          <SkeletonLines lines={4} />
+        </>
       )}
       {log.draftError && (
         <p className={cn(FINDING_TONE.stop, TEXT.prose)} role="alert">

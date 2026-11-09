@@ -33,7 +33,12 @@ describe("contrast", () => {
 describe("the night theme's tokens (styles/tokens.css .dark)", () => {
   const dark = tokensOf(css, ".dark");
   const light = tokensOf(css, ":root");
-  const t = (name: string) => colour(dark[name] ?? light[name] ?? "");
+  // A token that names another (the ring is the tint's) read as that one.
+  const t = (name: string): Linear => {
+    const value = dark[name] ?? light[name] ?? "";
+    const named = /^var\((--[\w-]+)\)$/.exec(value)?.[1];
+    return named ? t(named) : colour(value);
+  };
 
   it("is the cockpit palette's navy", () => {
     expect(dark["--background"]).toBe("#0b1422");

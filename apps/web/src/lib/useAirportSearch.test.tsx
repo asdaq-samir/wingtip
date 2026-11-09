@@ -80,6 +80,11 @@ describe("the phone's own copy, where the search is off or only typed into", () 
   });
 
   test("is read when something is typed, with no field focused", async () => {
+    // The planner is asked while the copy is still coming: an answer, not
+    // the bare mock's undefined, which TanStack Query reports as an error
+    // and the console guard failed the test on whenever the debounce won
+    // the race with the copy's import.
+    vi.mocked(api.airportSearch).mockResolvedValue([]);
     renderHook(() => useAirportSearch("osh", true), { wrapper: wrapper() });
     // Read after the search's debounce and a dynamic import, which a Mac
     // busy with builds took past waitFor's default second to finish.
