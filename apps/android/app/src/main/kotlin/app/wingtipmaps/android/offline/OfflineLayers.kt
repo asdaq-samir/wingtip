@@ -1,5 +1,11 @@
 package app.wingtipmaps.android.offline
 
+import android.content.Context
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.tiles.TileTemplate
 import java.io.File
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -62,4 +68,17 @@ object OfflineLayers {
         val list = layers.toMutableList().apply { addAll(chart + 1, added) }
         return JsonObject(root + mapOf("sources" to JsonObject(sources), "layers" to JsonArray(list))).toString()
     }
+
+    /** The map restyles when a region finishes or goes (Setup → Downloads):
+     *  the tiles done in each kept region, read as the effect's key. */
+    @Composable
+    fun rememberDownloadsKey(context: Context): List<List<String>> {
+        val kept by remember(context) { OfflineStore.of(context) }.kept.collectAsStateWithLifecycle()
+        return kept.map { it.done }
+    }
+
+    /** `json`, the map's style for `template`, with the regions downloaded
+     *  for the air drawn over the network's chart. */
+    fun styled(context: Context, template: TileTemplate, json: String, terminal: Boolean): String =
+        withDownloads(json, archives(OfflineStore.of(context), template.cycle, template.kind, template.scale, terminal))
 }
