@@ -106,6 +106,8 @@ struct RootView: View {
                         .modifier(WelcomeHost(opened: { tab = .fpl; detent = .medium }))
                         // Ready to fly over a dry run's or a flight's start (ReadyToFlyHost).
                         .modifier(ReadyToFlyHost())
+                        // A flight another pilot sent, previewed (SharedFlightHost).
+                        .modifier(SharedFlightHost())
                         // The sheet settling at a size, felt (WingtipHaptic.detent).
                         .sensoryFeedback(WingtipHaptic.detent, trigger: detent) { _, _ in !reduceMotion }
                     }
@@ -114,6 +116,7 @@ struct RootView: View {
                     .sheet(isPresented: $asking) { AskView() }
                     .modifier(WelcomeHost(opened: { tab = .fpl }))
                     .modifier(ReadyToFlyHost())
+                    .modifier(SharedFlightHost())
             }
         }
         // The scene's tab kept and brought back (SceneStorage); a launch

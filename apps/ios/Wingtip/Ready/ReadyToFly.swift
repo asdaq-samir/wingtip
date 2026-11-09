@@ -46,9 +46,11 @@ final class ReadyToFly {
     @ObservationIgnored weak var plan: Plan?
     @ObservationIgnored weak var charts: Charts?
     @ObservationIgnored weak var ownShip: OwnShip?
+    @ObservationIgnored weak var verdict: Verdict?
+    @ObservationIgnored weak var session: Session?
 
-    func attach(plan: Plan, charts: Charts, ownShip: OwnShip) {
-        self.plan = plan; self.charts = charts; self.ownShip = ownShip
+    func attach(plan: Plan, charts: Charts, ownShip: OwnShip, verdict: Verdict, session: Session) {
+        self.plan = plan; self.charts = charts; self.ownShip = ownShip; self.verdict = verdict; self.session = session
     }
 
     /// A flight's key: its route, so the check comes up once per flight.
@@ -76,11 +78,19 @@ final class ReadyToFly {
             briefing: EngineContract.ReadyToFlyInputBriefing(fetchedAt: plan.briefedAt?.timeIntervalSince1970),
             fields: ReadyFacts.fields(dep: plan.dep, dest: plan.dest, briefing: plan.briefing),
             notams: EngineContract.ReadyToFlyInputNotams(fetchedAt: notamsAt?.timeIntervalSince1970),
+            kept: plan.routed ? kept(plan, routeKey: routeKey) : nil,
             device: EngineContract.ReadyToFlyInputDevice(
                 batteryPct: battery.pct, charging: battery.charging,
                 location: ReadyFacts.location(CLLocationManager().authorizationStatus),
                 planSaved: plan.routed ? ReadyFacts.saved(dep: plan.dep, dest: plan.dest, stops: plan.stops, kept: Kept.load()) : nil),
             receiver: ReadyFacts.receiver(used: Receiver.used, listening: Receiver.shared.mode == .auto, live: Receiver.shared.live))
+    }
+
+    /// What Keep for the Air holds for this route, looked for on disk.
+    private func kept(_ plan: Plan, routeKey: String) -> EngineContract.ReadyToFlyInputKept {
+        let saved = ReadyFacts.saved(dep: plan.dep, dest: plan.dest, stops: plan.stops, kept: Kept.load())
+        return ReadyFacts.kept(manifest: KeptForAir.manifest(route: routeKey), saved: saved, briefed: plan.briefing != nil,
+                               notams: KeptForAir.has(.notams, key: routeKey), goNoGo: KeptForAir.has(.goNoGo, key: routeKey))
     }
 
     /// The facts gathered and the engine asked: the disk looked at first
@@ -95,7 +105,7 @@ final class ReadyToFly {
     func ask(_ input: ReadyFacts.Input) {
         do {
             answer = try Engine.readyToFly(now: input.now, plan: input.plan, charts: input.charts, packs: input.packs, briefing: input.briefing,
-                                           fields: input.fields, notams: input.notams, device: input.device, receiver: input.receiver)
+                                           fields: input.fields, notams: input.notams, kept: input.kept, device: input.device, receiver: input.receiver)
             problem = nil
         } catch {
             problem = "Ready to fly couldn't be checked: \(error.localizedDescription)"
@@ -124,9 +134,11 @@ final class ReadyToFly {
         guard force || notamsFor != key else { return }
         let ask = APINotamsRankedAsk(altitudeFt: plan.altitudeFt, dep: plan.dep, depart: nil, dest: plan.dest, eteMin: plan.totals?.eteMin, runways: nil, stops: plan.stops)
         do {
-            let found = try await Planner.postRead(APINotamsRanked.self, "/api/notams/ranked", ask)
+            // The last good ranking kept, and given back with its time when
+            // there is no signal (KeptForAir): its age is ready to fly's.
+            let found = try await KeptForAir.answer(.notams, key: key) { try await Planner.postRead(APINotamsRanked.self, "/api/notams/ranked", ask) }
             guard Self.flightKey(plan) == key else { return }
-            notams = found; notamsAt = Date(); notamsFor = key; notamsProblem = nil
+            notams = found.value; notamsAt = found.keptAt ?? Date(); notamsFor = key; notamsProblem = nil
         } catch {
             guard !(error is CancellationError) else { return }
             notamsProblem = "The NOTAMs couldn't be fetched: \(error.localizedDescription)"
@@ -146,9 +158,9 @@ final class ReadyToFly {
         fixing.insert(fix)
         defer { fixing.remove(fix) }
         switch fix {
-        case "download_charts":
+        case "download_charts", "keep_for_air":
             if let charts, let template = charts.template {
-                plan.keepForTheAir(template: template, minZoom: charts.base?.minZoom ?? 6)
+                KeepForAir.shared.keep(plan: plan, template: template, minZoom: charts.base?.minZoom ?? 6, verdict: verdict, signedIn: session?.signedIn ?? false)
             }
         case "update_packs":
             await CyclePacks.shared.keep(regions: plan.course.map { CyclePacks.regions(along: $0.coordinates) } ?? [])
@@ -175,7 +187,7 @@ final class ReadyToFly {
         await refresh()
     }
 
-    /// The chart kept along the route as Plan.keepForTheAir finishes:
+    /// The chart kept along the route as KeepForAir finishes:
     /// looked for on disk again.
     func chartsKeptChanged() async {
         await lookAtStore(force: true)

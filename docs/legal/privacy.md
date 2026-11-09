@@ -16,6 +16,7 @@ When you sign in, our server keeps, in its database:
 - **What you save:** your airplanes (tail number, type, performance figures, inspections and checks, due items and squawks), your saved flights with their nav logs and risk assessments, your logbook, your endorsements, the approaches an instructor sets you as lessons, and the checkpoint notes you write for yourself.
 - **Flown tracks**, as GPS points, only when you choose to save one to a flight.
 - **Your instructor and students:** the instructors you ask in by address, the saved flights you put to them, and the endorsements signed in the app between you.
+- **Flights you share:** when you share a saved flight, a random link to it, whether its N-number goes with it, and when you shared it. Anyone with the link can read the flight's route, stops, altitudes, departure time, airplane type and nav log, but never your name, email, notes or risk assessment, and the N-number only if you choose to include it. Stop Sharing in the flight's menu ends the link for everyone; deleting the flight or your account does too. A plan you share as a plain link is carried in the link itself and is not stored by us.
 - **Flight watch:** for a saved flight you ask us to watch, its departure time and the last briefing we checked it against, so we can email you when the weather or NOTAMs on it change.
 - **Reminders:** whether you want email before your currency or an airplane's due item runs out, and which reminders we have sent.
 - **The features Claude writes:** a count, each month, of how many times you used each of them, for its monthly allowance.
@@ -67,10 +68,10 @@ Some phones write a few of these on the device instead, with Apple's own on-devi
 So we hear when the app breaks without you having to write in, each app sends us a report when something goes wrong:
 
 - **the web app:** an error nobody caught, with its message and where in the app's code it happened;
-- **the iPhone app:** the crash, hang and exception reports Apple's MetricKit gives the app, and its daily launch time, hang time and scrolling smoothness;
+- **the iPhone app:** the crash, hang and exception reports Apple's MetricKit gives the app, and its daily launch time, hang time, scrolling smoothness, most memory used and how often the system closed it for using too much;
 - **the Android app:** why the app last stopped when the system stopped it (a crash, an app not responding, low memory), a crash's stack trace, and how long it took to start and how many frames were slow.
 
-Each report carries the app's version, the system's version and whether the device is a phone, tablet or computer. It carries nothing of yours: no account, no address, no route, no position. Our server takes out any web address's query, any email address, any user name in a folder's path and any per-install identifier before keeping it. Faults are kept 90 days.
+Each report carries the app's version, the system's version and whether the device is a phone, tablet or computer. It carries nothing of yours: no account, no address, no route, no position. Our server takes out any web address's query, any email address, any user name in a folder's path and any per-install identifier before keeping it. Faults are kept 30 days.
 
 The web app also sends, when you leave a page, how fast it was on your device (Google's Core Web Vitals and how long the browser was busy), with the page's name, the kind of device and the app's version, nothing else. Speed figures from all three apps are kept 400 days, to see whether the app is getting faster or slower.
 

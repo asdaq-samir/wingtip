@@ -13,6 +13,7 @@ Each fact lives in one doc; the others link to it.
 | [LOCAL-DEV.md](LOCAL-DEV.md) | Running the stack, signing in through Mailpit, the phone over HTTPS, the jobs, the developer scripts, the nightly backup, gotchas |
 | [CI.md](CI.md) | What CI runs and when, every job and test suite, what gates a merge, flaky tests |
 | [README-AWS.md](README-AWS.md) | The AWS design (not deployed yet), its cost, the first deploy and running it |
+| [OPERATIONS.md](OPERATIONS.md) | What is monitored (services, live feeds, faults and speed from devices), the thresholds, and where alerts go |
 | [decisions/](decisions/README.md) | The owner's standing decisions, one page each with the reason, so none is undone by accident |
 | [LEARNING-GUIDE.md](LEARNING-GUIDE.md) | Why it is built this way, concept by concept, to build something like it yourself |
 | [privacy-inventory.md](privacy-inventory.md) | What the app collects, what leaves the device, and the stores' privacy forms |

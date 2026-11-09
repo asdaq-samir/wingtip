@@ -18,7 +18,7 @@ internal object OpenScreen {
             Screen.AIRPORT, Screen.NEAREST -> Tabs.AIRPORT
             Screen.AIRPLANE, Screen.CHECKLISTS -> Tabs.AIRPLANE
             Screen.SETUP, Screen.LOGBOOK, Screen.COACH, Screen.MINIMUMS, Screen.DOWNLOADS, Screen.PASSENGERS, Screen.ABOUT -> Tabs.SETUP
-            Screen.ASK, Screen.EMERGENCY -> null
+            Screen.ASK, Screen.EMERGENCY, Screen.SHARED -> null
         }
 
     /** The screens a tab's own screen opens (Setup's Logbook, the Airplane

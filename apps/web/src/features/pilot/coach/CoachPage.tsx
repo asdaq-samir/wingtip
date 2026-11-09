@@ -103,7 +103,7 @@ function Plan({ plan, words, wording }: { plan: ProficiencyPlan; words: CoachWor
                   .filter((e) => w.evidence.includes(e.id))
                   .map((e) => (
                     <li key={e.id}>
-                      {said(e.flown_on)} at {e.place}: {e.text}
+                      {said(e.flown_on)} at {e.procedure ? `${e.place}, ${e.procedure}` : e.place}: {e.text}
                     </li>
                   ))}
               </ul>

@@ -225,12 +225,10 @@ public class SecurityConfig {
                             .permitAll()
                             .requestMatchers(HttpMethod.GET, "/tv")
                             .permitAll()
-                            // Who is signed in, asked by every page as it
-                            // opens: signed out is an answer (204), not a
-                            // refusal -- a 401 here was an error in the
-                            // browser's console on every signed-out visit,
-                            // which Lighthouse's best practices count
-                            // (PilotController).
+                            // Who is signed in, asked by every page as it opens: signed out is an
+                            // answer (204), not a refusal -- a 401 here was an error in the browser's
+                            // console on every signed-out visit, which Lighthouse's best practices
+                            // count (PilotController).
                             .requestMatchers(HttpMethod.GET, "/api/me")
                             .permitAll()
                             // Asked before any session exists, to decide
@@ -251,13 +249,15 @@ public class SecurityConfig {
                             .permitAll()
                             .requestMatchers(HttpMethod.GET, "/", "/error")
                             .permitAll()
-                            // What iOS and Android read to open this site's
-                            // links in the app (AppSiteAssociationController,
-                            // AssetLinksController).
+                            // What iOS and Android read to open this site's links in the app
+                            // (AppSiteAssociationController, AssetLinksController), and a flight
+                            // shared by link, read by whoever has it (FlightShareController).
                             .requestMatchers(
                                     HttpMethod.GET,
                                     "/.well-known/apple-app-site-association",
-                                    "/.well-known/assetlinks.json")
+                                    "/.well-known/assetlinks.json",
+                                    "/api/shared-flights/*",
+                                    "/api/shared-flights/*/image.png")
                             .permitAll()
                             // Everything else that exists is pilot-scoped.
                             .anyRequest()

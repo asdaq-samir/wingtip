@@ -859,6 +859,11 @@ extension Engine {
         try rule("isa_temp_c", EngineContract.IsaTempCInput(altitudeFt: altitudeFt))
     }
 
+    /// A kept answer's age, as the apps show it with no signal ("Fetched 42 min ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
+    static func keptAge(now: Double, fetchedAt: Double, kind: String) throws -> EngineContract.KeptAgeAnswer {
+        try rule("kept_age", EngineContract.KeptAgeInput(now: now, fetchedAt: fetchedAt, kind: kind))
+    }
+
     /// A field's radio as the kneeboard lists it, [short name, MHz] in its order (the tower's before the CTAF's).
     static func kneeboardRadio(frequencies: [EngineContract.FieldFrequency]) throws -> [[JSONValue]] {
         try rule("kneeboard_radio", EngineContract.KneeboardRadioInput(frequencies: frequencies))
@@ -1239,9 +1244,9 @@ extension Engine {
         try rule("readback_check", EngineContract.ReadbackCheckInput(cleared: cleared, said: said, tail: tail))
     }
 
-    /// Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
-    static func readyToFly(now: Double, plan: EngineContract.ReadyToFlyInputPlan? = nil, charts: EngineContract.ReadyToFlyInputCharts? = nil, packs: EngineContract.ReadyToFlyInputPacks? = nil, briefing: EngineContract.ReadyToFlyInputBriefing? = nil, fields: [EngineContract.ReadyToFlyInputFieldsItem]? = nil, notams: EngineContract.ReadyToFlyInputNotams? = nil, device: EngineContract.ReadyToFlyInputDevice? = nil, receiver: EngineContract.ReadyToFlyInputReceiver? = nil) throws -> EngineContract.ReadyToFlyAnswer {
-        try rule("ready_to_fly", EngineContract.ReadyToFlyInput(now: now, plan: plan, charts: charts, packs: packs, briefing: briefing, fields: fields, notams: notams, device: device, receiver: receiver))
+    /// Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), what Keep for the Air holds for the route (its ages are kept_age's), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
+    static func readyToFly(now: Double, plan: EngineContract.ReadyToFlyInputPlan? = nil, charts: EngineContract.ReadyToFlyInputCharts? = nil, packs: EngineContract.ReadyToFlyInputPacks? = nil, briefing: EngineContract.ReadyToFlyInputBriefing? = nil, fields: [EngineContract.ReadyToFlyInputFieldsItem]? = nil, notams: EngineContract.ReadyToFlyInputNotams? = nil, kept: EngineContract.ReadyToFlyInputKept? = nil, device: EngineContract.ReadyToFlyInputDevice? = nil, receiver: EngineContract.ReadyToFlyInputReceiver? = nil) throws -> EngineContract.ReadyToFlyAnswer {
+        try rule("ready_to_fly", EngineContract.ReadyToFlyInput(now: now, plan: plan, charts: charts, packs: packs, briefing: briefing, fields: fields, notams: notams, kept: kept, device: device, receiver: receiver))
     }
 
     /// FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.

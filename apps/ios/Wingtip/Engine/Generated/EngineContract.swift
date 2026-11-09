@@ -1714,6 +1714,8 @@ enum EngineContract {
         var flownOn: String
         /// Where: the approach's field, or the flight's route ("KMSN-KJVL").
         var place: String?
+        /// An approach's procedure as the chart names it ("ILS Y RWY 08"); none for a flight.
+        var procedure: String?
         /// The field's elevation, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4); without it the gate is not checked.
         var elevationFt: Double?
         /// An approach's profile.track as its debrief gives it.
@@ -1729,6 +1731,7 @@ enum EngineContract {
             case kind
             case flownOn = "flown_on"
             case place
+            case procedure
             case elevationFt = "elevation_ft"
             case profile
             case findings
@@ -5249,6 +5252,43 @@ enum EngineContract {
         }
     }
 
+    struct KeptAgeAnswer: Codable, Equatable, Sendable {
+        var kind: String
+        var ageMin: Double
+        /// "Fetched 42 min ago".
+        var line: String
+        /// Caution once past its freshness: the line drawn in the caution colour.
+        var finding: String
+        /// How long it is fresh, minutes; null for the kinds kept for their AIRAC cycle.
+        var freshMin: Double?
+        var detail: String
+        var source: String
+
+        enum CodingKeys: String, CodingKey {
+            case kind
+            case ageMin = "age_min"
+            case line
+            case finding
+            case freshMin = "fresh_min"
+            case detail
+            case source
+        }
+    }
+
+    struct KeptAgeInput: Codable, Equatable, Sendable {
+        /// Unix seconds, UTC: the engine has no clock.
+        var now: Double
+        /// When the network gave the kept answer, Unix seconds.
+        var fetchedAt: Double
+        var kind: String
+
+        enum CodingKeys: String, CodingKey {
+            case now
+            case fetchedAt = "fetched_at"
+            case kind
+        }
+    }
+
     struct KneeboardRadioInput: Codable, Equatable, Sendable {
         var frequencies: [EngineContract.FieldFrequency]
     }
@@ -7461,6 +7501,8 @@ enum EngineContract {
         var id: String
         var flownOn: String
         var place: String
+        /// The approach procedure flown ("ILS Y RWY 08"), where the line is an approach's.
+        var procedure: String?
         /// The weak area's key.
         var area: String
         var text: String
@@ -7469,6 +7511,7 @@ enum EngineContract {
             case id
             case flownOn = "flown_on"
             case place
+            case procedure
             case area
             case text
         }
@@ -7907,6 +7950,8 @@ enum EngineContract {
         /// The departure, destination and alternate: each METAR's observed time (Unix seconds) and whether a TAF is in.
         var fields: [EngineContract.ReadyToFlyInputFieldsItem]?
         var notams: EngineContract.ReadyToFlyInputNotams?
+        /// What Keep for the Air holds for the route beside its charts. Null leaves the item out.
+        var kept: EngineContract.ReadyToFlyInputKept?
         /// What the platform tells: a member null or missing leaves its item out.
         var device: EngineContract.ReadyToFlyInputDevice?
         var receiver: EngineContract.ReadyToFlyInputReceiver?
@@ -7962,6 +8007,22 @@ enum EngineContract {
             case role
             case metarObserved = "metar_observed"
             case taf
+        }
+    }
+
+    /// What Keep for the Air holds for the route beside its charts. Null leaves the item out.
+    struct ReadyToFlyInputKept: Codable, Equatable, Sendable {
+        /// The kinds kept on the device for this route.
+        var onBoard: [String]?
+        /// The kinds the route has and the device does not yet.
+        var missing: [String]?
+        /// What Keep for the Air downloads or holds for them, megabytes.
+        var sizeMb: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case onBoard = "on_board"
+            case missing
+            case sizeMb = "size_mb"
         }
     }
 

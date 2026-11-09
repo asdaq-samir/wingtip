@@ -27,6 +27,9 @@ class KeptPlan(app: Application) {
         val totals: NavLogTotals? = null,
         val altitudeFt: Double? = null,
         val depart: String? = null,
+        /** When it was planned (epoch ms), for its age with no signal;
+         *  none in a plan kept before it was. */
+        val plannedAtMs: Long? = null,
     )
 
     private val prefs = app.getSharedPreferences("plan", Context.MODE_PRIVATE)

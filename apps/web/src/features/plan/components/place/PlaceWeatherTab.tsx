@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import PlaceAge from "./PlaceAge";
 import { Cloud, CloudSun, Eye, Gauge, Thermometer, Wind } from "lucide-react";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { RowBadge } from "../../../../components/RowBadge";
@@ -66,6 +67,7 @@ export function PlaceWeatherTab({
   const modelled = place && !metar ? (place.modelled_weather ?? null) : null;
   return (
     <>
+      <PlaceAge ident={ident} kind="weather" />
       {/* The weather's card at the top of its tab, as Apple's Weather
           has its hourly one: its category in the FAA's colour, the
           forecast in a sentence and the report's age over a hairline,

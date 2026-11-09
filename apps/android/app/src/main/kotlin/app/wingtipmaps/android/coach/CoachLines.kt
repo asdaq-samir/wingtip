@@ -75,6 +75,7 @@ object CoachLines {
     /** The evidence a weak area rests on, in the plan's order. */
     fun evidence(plan: ProficiencyPlan, w: CoachWeakArea): List<CoachEvidence> = plan.evidence.filter { it.id in w.evidence }
 
-    /** One line of evidence: "2 Nov 2026 at KMSN: …". */
-    fun evidenceLine(e: CoachEvidence): String = "${day(e.flownOn)} at ${e.place}: ${e.text}"
+    /** One line of evidence: "2 Nov 2026 at KMSN, ILS Y RWY 08: …", the
+     *  approach's procedure beside its field where the line is one's. */
+    fun evidenceLine(e: CoachEvidence): String = "${day(e.flownOn)} at ${listOfNotNull(e.place, e.procedure).joinToString(", ")}: ${e.text}"
 }

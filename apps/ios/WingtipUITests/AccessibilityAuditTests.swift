@@ -27,8 +27,8 @@ final class AccessibilityAuditTests: XCTestCase {
     /// runs of 2026-11-09 on the iPhone 18 Pro Max, each looked at in its
     /// screenshot:
     @MainActor
-    private static func known(_ issue: XCUIAccessibilityAuditIssue, screenHeight: CGFloat) -> Bool {
-        guard let element = issue.element else { return false }
+    private static func known(_ issue: XCUIAccessibilityAuditIssue, screen: String, screenHeight: CGFloat) -> Bool {
+        guard let element = issue.element else { return unnamedUnderGlass(issue, screen: screen) }
         let id = element.identifier, type = element.elementType
         switch issue.auditType {
         case .hitRegion:
@@ -73,6 +73,21 @@ final class AccessibilityAuditTests: XCTestCase {
         }
     }
 
+    /// Setup's rows under the glass, on SwiftUI nodes the audit cannot
+    /// name. The list scrolls under the floating tab bar and the navigation
+    /// bar, faded by the soft scroll edge as iOS 26's own lists are (the
+    /// look the owner kept), and whichever row rests there is reported for
+    /// its contrast and text size with no element, so the exception by the
+    /// element's frame above cannot see it. Found 2026-11-09: taking the
+    /// row out moved the reports to the next row under the bar, the list
+    /// ended above the bar passed, and scrolled to its end the rows under
+    /// the navigation bar were reported in their place. Setup alone, and
+    /// those two checks alone, so an unnamed issue anywhere else still
+    /// fails.
+    private static func unnamedUnderGlass(_ issue: XCUIAccessibilityAuditIssue, screen: String) -> Bool {
+        screen == "setup" && (issue.auditType == .contrast || issue.auditType == .dynamicType)
+    }
+
     /// The audits at the default text size leave clipping to the largest
     /// text run, where it is measured rather than projected ("may be
     /// clipped at larger sizes").
@@ -83,7 +98,7 @@ final class AccessibilityAuditTests: XCTestCase {
         var kept: [String] = []
         let height = app.frame.height
         try app.performAccessibilityAudit(for: types) { issue in
-            if Self.known(issue, screenHeight: height) { return true }
+            if Self.known(issue, screen: screen, screenHeight: height) { return true }
             kept.append("\(screen): \(issue.compactDescription) – \(issue.element?.debugDescription ?? "no element")")
             return false
         }

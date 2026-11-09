@@ -1,6 +1,8 @@
 package app.wingtipmaps.android
 
+import app.wingtipmaps.android.navigation.generated.LinkKey
 import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.share.SharedPlan
 import java.net.URI
 import java.net.URLDecoder
 
@@ -29,6 +31,11 @@ object Links {
     /** A field to open in the Airport tab. */
     data class Place(val ident: String) : Link
 
+    /** A flight another pilot sent (`open=shared`): its plan in the link,
+     *  or a saved flight's share token to read it by. Previewed first,
+     *  never planned by itself over the receiver's own plan. */
+    data class Shared(val plan: SharedPlan?, val token: String?) : Link
+
     fun parse(url: String?): Link? {
         if (url.isNullOrBlank()) return null
         val uri = runCatching { URI(url) }.getOrNull() ?: return null
@@ -48,6 +55,13 @@ object Links {
         query: Map<String, String>,
         screen: Screen?,
     ): Link? {
+        // A shared flight before the route: its keys are a route's, but it
+        // is shown first and planned only at Use This Plan.
+        if (screen == Screen.SHARED) {
+            val token = query[LinkKey.SHARE.key]?.trim()?.takeIf { it.isNotEmpty() && it.length <= 32 }
+            if (token != null) return Shared(null, token)
+            return SharedPlan.of(query)?.let { Shared(it, null) }
+        }
         val dep = ident(query["dep"])
         val dest = ident(query["dest"])
         // A route is the address's main thing: with both ends it is

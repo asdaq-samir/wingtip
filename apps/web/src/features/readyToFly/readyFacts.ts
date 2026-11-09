@@ -52,6 +52,9 @@ export interface ReadyParts {
   briefing: { data: Briefing; atMs: number } | null;
   alternate: string | null;
   notamsAtMs: number | null;
+  /** What Keep for the Air holds of the route beside its charts
+   *  (features/keptForAir); null where nothing can be kept here. */
+  kept: ReadyInput["kept"];
   device: { batteryPct: number | null; charging: boolean | null; location: "granted" | "denied" | "prompt" | null };
 }
 
@@ -97,6 +100,7 @@ export function readyInput(parts: ReadyParts): ReadyInput {
     briefing: { fetched_at: parts.briefing ? seconds(parts.briefing.atMs) : null },
     fields: fields(parts),
     notams: { fetched_at: seconds(parts.notamsAtMs) },
+    kept: parts.kept,
     device: { battery_pct: parts.device.batteryPct, charging: parts.device.charging, location: parts.device.location },
   };
 }

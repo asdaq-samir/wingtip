@@ -92,11 +92,10 @@ def render(markdown: str) -> str:
         heading = re.match(r"(#{1,3}) (.*)", first)
         if heading and len(lines) == 1:
             level = len(heading[1])
-            # "## Title {#anchor}" gives the heading an id, for the links
-            # other pages keep to a section (the site's /terms/#planning-aid).
-            words, anchor = re.match(r"(.*?)(?:\s*\{#([\w-]+)\})?$", heading[2]).groups()
-            ident = f' id="{anchor}"' if anchor else ""
-            out.append(f"<h{level}{ident}>{inline(words)}</h{level}>")
+            # An id from the heading's words, so a page can link to a section
+            # (the site's link is /terms/#a-planning-aid-not-for-navigation).
+            slug = "-".join(re.sub(r"[^a-z0-9 ]", "", heading[2].lower()).split())
+            out.append(f'<h{level} id="{slug}">{inline(heading[2])}</h{level}>')
         elif first.startswith("- "):
             items, current = [], []
             for line in lines:

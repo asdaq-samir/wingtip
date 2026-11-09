@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import PlaceAge from "./PlaceAge";
 import { Lightbulb, Radio } from "lucide-react";
 import { cn } from "cn";
 import { PillSection } from "../../../../components/Favorites";
@@ -80,6 +81,7 @@ export function PlaceInfoTab({
   const longest = place.runways.filter((r) => !r.closed && r.length_ft != null).sort((a, b) => b.length_ft! - a.length_ft!)[0] ?? null;
   return (
     <>
+      <PlaceAge ident={place.ident} kind="airports" />
       {/* Before the Details, at the owner's ask (2026-10-29: "move
           details after frequencies"). The first few, the title the
           way to every one, as every

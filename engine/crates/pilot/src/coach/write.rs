@@ -124,6 +124,8 @@ pub fn plan(today: &str, due: &[Due], evidence: &[Evidence], weak: &[(Weak, Vec<
         str_(out, "id", &e.id);
         str_(out, "flown_on", &e.flown_on);
         str_(out, "place", &e.place);
+        key(out, "procedure");
+        json::opt_string(out, e.procedure.as_deref());
         str_(out, "area", e.weak.key());
         str_(out, "text", &e.text);
     });

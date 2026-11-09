@@ -12404,6 +12404,85 @@
       ],
       "additionalProperties": false
     },
+    "kept_age": {
+      "description": "A kept answer's age, as the apps show it with no signal (\"Fetched 42 min ago\"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "KeptAgeInput",
+          "type": "object",
+          "properties": {
+            "now": {
+              "type": "number",
+              "description": "Unix seconds, UTC: the engine has no clock."
+            },
+            "fetched_at": {
+              "type": "number",
+              "description": "When the network gave the kept answer, Unix seconds."
+            },
+            "kind": {
+              "$ref": "#/definitions/KeptKind"
+            }
+          },
+          "required": [
+            "now",
+            "fetched_at",
+            "kind"
+          ]
+        },
+        "answer": {
+          "title": "KeptAgeAnswer",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "$ref": "#/definitions/KeptKind"
+            },
+            "age_min": {
+              "type": "number"
+            },
+            "line": {
+              "type": "string",
+              "description": "\"Fetched 42 min ago\"."
+            },
+            "finding": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "caution"
+              ],
+              "description": "Caution once past its freshness: the line drawn in the caution colour."
+            },
+            "fresh_min": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "How long it is fresh, minutes; null for the kinds kept for their AIRAC cycle."
+            },
+            "detail": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "age_min",
+            "line",
+            "finding",
+            "fresh_min",
+            "detail",
+            "source"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "kneeboard_radio": {
       "description": "A field's radio as the kneeboard lists it, [short name, MHz] in its order (the tower's before the CTAF's).",
       "type": "object",
@@ -17720,6 +17799,13 @@
                   "place": {
                     "type": "string"
                   },
+                  "procedure": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The approach procedure flown (\"ILS Y RWY 08\"), where the line is an approach's."
+                  },
                   "area": {
                     "type": "string",
                     "description": "The weak area's key."
@@ -17732,6 +17818,7 @@
                   "id",
                   "flown_on",
                   "place",
+                  "procedure",
                   "area",
                   "text"
                 ],
@@ -18730,7 +18817,7 @@
       "additionalProperties": false
     },
     "ready_to_fly": {
-      "description": "Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.",
+      "description": "Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), what Keep for the Air holds for the route (its ages are kept_age's), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.",
       "type": "object",
       "properties": {
         "input": {
@@ -18867,6 +18954,36 @@
                   ]
                 }
               }
+            },
+            "kept": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "on_board": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/KeptKind"
+                  },
+                  "description": "The kinds kept on the device for this route."
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/KeptKind"
+                  },
+                  "description": "The kinds the route has and the device does not yet."
+                },
+                "size_mb": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "What Keep for the Air downloads or holds for them, megabytes."
+                }
+              },
+              "description": "What Keep for the Air holds for the route beside its charts. Null leaves the item out."
             },
             "device": {
               "type": [
@@ -23499,6 +23616,7 @@
     "inspections_due",
     "is_eastbound",
     "isa_temp_c",
+    "kept_age",
     "kneeboard_radio",
     "legal_cruising_altitudes",
     "logbook_csv_read",
@@ -25410,6 +25528,13 @@
         "place": {
           "type": "string",
           "description": "Where: the approach's field, or the flight's route (\"KMSN-KJVL\")."
+        },
+        "procedure": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "An approach's procedure as the chart names it (\"ILS Y RWY 08\"); none for a flight."
         },
         "elevation_ft": {
           "type": [
@@ -27324,6 +27449,21 @@
         "approaches"
       ]
     },
+    "KeptKind": {
+      "title": "KeptKind",
+      "type": "string",
+      "enum": [
+        "briefing",
+        "weather",
+        "notams",
+        "airports",
+        "plates",
+        "plan",
+        "go_no_go",
+        "weather_loop"
+      ],
+      "description": "A kind of answer the apps keep for the air: the briefing, the route's METARs and TAFs, the ranked NOTAMs, the route's airport cards, the destination's and alternate's plates, the plan with its nav log, the Go / No-Go and the weather loop's frame list."
+    },
     "LessonFocus": {
       "title": "LessonFocus",
       "type": "object",
@@ -28824,6 +28964,7 @@
             "save_plan",
             "allow_location",
             "connect_receiver",
+            "keep_for_air",
             null
           ],
           "description": "What the app does in place for it; null where nothing on the device fixes it."

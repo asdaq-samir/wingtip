@@ -113,6 +113,11 @@ class CoachModelTest {
         assertEquals("Stabilized approaches · 2 · ACS IR.VI.B", CoachLines.weakTitle(weak))
         assertEquals(listOf("ev:1", "ev:2"), CoachLines.evidence(plan, weak).map { it.id })
         assertEquals("2 Nov 2026 at KMSN: Below glidepath at 420 ft above the field", CoachLines.evidenceLine(plan.evidence[0]))
+        // An approach's line names the procedure flown beside its field.
+        assertEquals(
+            "2 Nov 2026 at KMSN, ILS Y RWY 08: Below glidepath at 420 ft above the field",
+            CoachLines.evidenceLine(plan.evidence[0].copy(procedure = "ILS Y RWY 08")),
+        )
     }
 
     @Test

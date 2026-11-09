@@ -1,0 +1,113 @@
+{
+  "why": "kept_age's cases, held by the engine (engine/facade/tests/kept_age.rs), the web (lib/kept) and both phones. Now is 2026-11-09 18:00Z: AIRAC 2611 began 29 Oct 2026.",
+  "cases": [
+    {
+      "why": "A briefing 42 minutes old: fresh, the hour's",
+      "input": {
+        "now": 1794247200,
+        "fetched_at": 1794244680,
+        "kind": "briefing"
+      },
+      "expected": {
+        "line": "Fetched 42 min ago",
+        "finding": "ok",
+        "age_min": 42,
+        "fresh_min": 60
+      }
+    },
+    {
+      "why": "A briefing an hour old has missed a METAR: caution (AIM 7-1-28)",
+      "input": {
+        "now": 1794247200,
+        "fetched_at": 1794243600,
+        "kind": "briefing"
+      },
+      "expected": {
+        "line": "Fetched 60 min ago",
+        "finding": "caution",
+        "age_min": 60,
+        "fresh_min": 60
+      }
+    },
+    {
+      "why": "METARs and TAFs three hours old: caution",
+      "input": {
+        "now": 1794247200,
+        "fetched_at": 1794236400,
+        "kind": "weather"
+      },
+      "expected": {
+        "line": "Fetched 3 h ago",
+        "finding": "caution",
+        "age_min": 180,
+        "fresh_min": 60
+      }
+    },
+    {
+      "why": "NOTAMs just fetched",
+      "input": {
+        "now": 1794247200,
+        "fetched_at": 1794247180,
+        "kind": "notams"
+      },
+      "expected": {
+        "line": "Fetched just now",
+        "finding": "ok",
+        "age_min": 0,
+        "fresh_min": 60
+      }
+    },
+    {
+      "why": "An airport card fetched in this AIRAC cycle, two days ago: still good",
+      "input": {
+        "now": 1794247200,
+        "fetched_at": 1794074400,
+        "kind": "airports"
+      },
+      "expected": {
+        "line": "Fetched 48 h ago",
+        "finding": "ok",
+        "age_min": 2880,
+        "fresh_min": null
+      }
+    },
+    {
+      "why": "A plate fetched before AIRAC 2611 began (29 Oct 2026): caution",
+      "input": {
+        "now": 1794247200,
+        "fetched_at": 1793145600,
+        "kind": "plates"
+      },
+      "expected": {
+        "finding": "caution",
+        "fresh_min": null,
+        "detail": "From before FAA data cycle 2611"
+      }
+    },
+    {
+      "why": "The nav log is as fresh as the briefing's winds",
+      "input": {
+        "now": 1794247200,
+        "fetched_at": 1794241800,
+        "kind": "plan"
+      },
+      "expected": {
+        "line": "Fetched 90 min ago",
+        "finding": "caution"
+      }
+    },
+    {
+      "why": "A fetch time ahead of the clock reads as just now",
+      "input": {
+        "now": 1794247200,
+        "fetched_at": 1794247500,
+        "kind": "weather_loop"
+      },
+      "expected": {
+        "line": "Fetched just now",
+        "finding": "ok",
+        "age_min": 0
+      }
+    }
+  ]
+}

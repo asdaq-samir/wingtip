@@ -590,10 +590,19 @@ data class FlightSummaryDto (
     val picks: String? = null,
     val plannedFor: String? = null,
     val risk: RiskAssessmentDto? = null,
+    val share: FlightShareDto? = null,
     val stops: List<String>,
     val totalDistanceNm: Double? = null,
     val totalEteMin: Double? = null,
     val totalFuelGal: Double? = null
+)
+
+@Serializable
+data class FlightShareDto (
+    val includeTail: Boolean,
+    val sharedAt: String,
+    val token: String,
+    val url: String
 )
 
 @Serializable
@@ -1117,6 +1126,29 @@ data class SaveFlightCheckpointRequest (
     val name: String,
     val sequenceNo: Int,
     val trueCourseDeg: Double? = null
+)
+
+@Serializable
+data class ShareFlightRequest (
+    val includeTail: Boolean
+)
+
+@Serializable
+data class SharedFlightDto (
+    val aircraftTailNumber: String? = null,
+    val aircraftType: String? = null,
+    val altitudes: String? = null,
+    val checkpoints: List<FlightCheckpointDto>,
+    val cruiseAltitudeFt: Int? = null,
+    val departureIdent: String,
+    val destinationIdent: String,
+    val picks: String? = null,
+    val plannedFor: String? = null,
+    val sharedAt: String,
+    val stops: List<String>,
+    val totalDistanceNm: Double? = null,
+    val totalEteMin: Double? = null,
+    val totalFuelGal: Double? = null
 )
 
 @Serializable

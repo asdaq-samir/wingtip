@@ -14,9 +14,19 @@ final class SavedFlightsModel {
         var save: @Sendable (SaveFlightRequest) async throws -> Void
         var update: @Sendable (Int, GWUpdateFlightRequest) async throws -> SavedFlight
         var delete: @Sendable (Int) async throws -> Void
+        /// Shared by link, its N-number with it or not (POST /api/flights/{id}/share).
+        var share: @Sendable (Int, Bool) async throws -> GWFlightShareDto = { try await Gateway.shareFlight($0, includeTail: $1) }
+        /// No longer shared (DELETE /api/flights/{id}/share).
+        var stopSharing: @Sendable (Int) async throws -> Void = { try await Gateway.stopSharing($0) }
 
         static let gateway = Calls(list: { try await Gateway.flights() }, save: { try await Gateway.save($0) },
                                    update: { try await Gateway.updateFlight($0, $1) }, delete: { try await Gateway.deleteFlight($0) })
+    }
+
+    /// A link to send, from Share: the system's share sheet takes it.
+    struct Sending: Identifiable {
+        let id = UUID()
+        let url: URL
     }
 
     /// The gateway's own limits on the two (UpdateFlightRequest), said in
@@ -39,6 +49,8 @@ final class SavedFlightsModel {
     /// Why the name and notes were not kept, said in their row.
     private(set) var rowProblem: String?
     private(set) var sending = false
+    /// The link just made, for the share sheet; nil once it is put away.
+    var sendingLink: Sending?
     @ObservationIgnored private let calls: Calls
 
     init(calls: Calls = .gateway) { self.calls = calls }
@@ -145,6 +157,30 @@ final class SavedFlightsModel {
         if removed?.flight.id == flight.id { removed = nil }
         do { try await calls.delete(flight.id) } catch {
             problem = "\(Self.title(flight)) could not be deleted: \(error.localizedDescription)"
+        }
+    }
+
+    /// Shared by link (the same link while it stays shared), the N-number
+    /// with it only where the pilot chose; the share sheet then opens with it.
+    func share(_ flight: SavedFlight, includeTail: Bool) async {
+        do {
+            let share = try await calls.share(flight.id, includeTail)
+            if let at = flights.firstIndex(where: { $0.id == flight.id }) { flights[at].share = share }
+            if let url = URL(string: share.url) { sendingLink = Sending(url: url) }
+            problem = nil
+        } catch {
+            problem = "\(Self.title(flight)) could not be shared: \(error.localizedDescription)"
+        }
+    }
+
+    /// No longer shared: its link says so to everyone it went to.
+    func stopSharing(_ flight: SavedFlight) async {
+        do {
+            try await calls.stopSharing(flight.id)
+            if let at = flights.firstIndex(where: { $0.id == flight.id }) { flights[at].share = nil }
+            problem = nil
+        } catch {
+            problem = "\(Self.title(flight)) is still shared: \(error.localizedDescription)"
         }
     }
 }

@@ -3,6 +3,7 @@ package app.wingtipmaps.android.ready
 import app.wingtipmaps.android.MainRule
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.offline.OfflineKept
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -35,7 +36,8 @@ class ReadyToFlyModelTest {
             asked += ident
             return ReadyFacts.FieldWeather(ident, role, metarObservedS = 1_794_245_400.0, taf = ident == "KMSN")
         }
-        override suspend fun notams(plan: Plan.State, cruiseFt: Double?) = listOf("!OSH 11/001 OSH RWY 18/36 CLSD")
+        override suspend fun notams(plan: Plan.State, cruiseFt: Double?) =
+            KeptForAir.Had(listOf("!OSH 11/001 OSH RWY 18/36 CLSD"), fetchedAtMs = 1_794_247_200_000L, kept = false)
     }
 
     @Test

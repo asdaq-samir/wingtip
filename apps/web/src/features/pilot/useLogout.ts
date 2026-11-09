@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api/client";
 import { forgetChecklists } from "../../lib/checklists";
 import { forgetPilot } from "../../lib/preferences";
+import { forgetKeptRecord } from "../keptForAir";
 import { pilotQuery } from "../../lib/queryClient";
 
 /** Logging out: the session ended on the server, then the pilot and
@@ -17,6 +18,9 @@ export function useLogout() {
     onSuccess: () => {
       forgetPilot();
       forgetChecklists();
+      // Which route was kept for the air is theirs; the briefing, NOTAMs,
+      // cards and plates it lists are public FAA and weather data, and stay.
+      forgetKeptRecord();
       // The service worker's copy of their account, airplanes and
       // flights (vite.config.ts, pilot-own), which a start with no
       // signal would otherwise show the next person to pick up the phone.

@@ -38,6 +38,8 @@ import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.live.LiveAirportRows
+import app.wingtipmaps.android.offline.KeptAgeLine
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.receiver.ReceiverReports
 
 /**
@@ -83,7 +85,7 @@ fun AirportScreen(ident: String, plan: Plan, onDone: () -> Unit = {}, model: Air
                                 if (action == CardAction.FLY_HERE || action == CardAction.ADD_STOP) onDone()
                             },
                         )
-                        PlaceCard(place)
+                        PlaceCard(place, keptAtMs = state.keptAtMs)
                     }
                 }
             }
@@ -105,13 +107,15 @@ internal fun SuggestionRow(found: AirportSuggestion, onOpen: () -> Unit) {
 
 /** The field's card: its name, where it is, its elevation, its diagram
  *  with the airplane on it, and its METAR as sent under its flight
- *  category's chip. */
+ *  category's chip; how old it is where it is the card kept for the air
+ *  (`keptAtMs`, KeptAgeLine). */
 @Composable
-fun PlaceCard(place: AirportPlace) {
+fun PlaceCard(place: AirportPlace, keptAtMs: Long? = null) {
     Column(Modifier.fillMaxWidth().padding(vertical = WingtipSpace.Md), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         Text(place.name, style = MaterialTheme.typography.headlineSmall)
         val where = listOfNotNull(place.ident, place.municipality, place.region).joinToString(" · ")
         Text(where, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        KeptAgeLine(KeptForAir.AIRPORTS, keptAtMs)
         place.elevationFt?.let { Text(stringResource(R.string.elevation_is, Format.altitude(it)), style = MaterialTheme.typography.bodyMedium) }
         // The FAA's diagram with the airplane on it, by the diagram's own
         // latitude and longitude marks (#218).

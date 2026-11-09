@@ -25,6 +25,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.offline.DownloadsModel
+import app.wingtipmaps.android.offline.KeepForAirModel
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.receiver.ReceiverMode
 import app.wingtipmaps.android.ui.AirplaneModel
@@ -55,6 +56,7 @@ class ReadyFixer internal constructor(
     private val brief: BriefModel,
     private val downloads: DownloadsModel,
     private val packs: CyclePacks,
+    private val keeper: KeepForAirModel,
     private val receiver: Receiver,
     private val scope: CoroutineScope,
     private val askLocation: () -> Unit,
@@ -88,6 +90,7 @@ class ReadyFixer internal constructor(
                 model.fetchFields()
             }
             "fetch_notams" -> model.fetchNotams()
+            "keep_for_air" -> keepForAir()
             "save_plan" -> {
                 plan.save()
                 doneState.intValue++
@@ -113,6 +116,19 @@ class ReadyFixer internal constructor(
             val lons = line.map { it[1] }
             downloads.downloadBox(lons.min() - PAD_DEG, lats.min() - PAD_DEG, lons.max() + PAD_DEG, lats.max() + PAD_DEG).join()
             model.busy("download_charts", false)
+            doneState.intValue++
+        }
+    }
+
+    /** Keep for the Air in one tap, as the flight plan's row does it
+     *  (KeepForAirModel), its charts left to their own fix; then the
+     *  NOTAMs read back from what was kept, so their item has their time. */
+    private fun keepForAir() {
+        model.busy("keep_for_air", true)
+        scope.launch {
+            keeper.keep(plan).join()
+            model.busy("keep_for_air", false)
+            model.fetchNotams()
             doneState.intValue++
         }
     }
@@ -158,13 +174,14 @@ fun rememberReadyFixer(plan: Plan, onSetRoute: (() -> Unit)?, model: ReadyToFlyM
     val context = LocalContext.current
     val brief: BriefModel = viewModel()
     val downloads: DownloadsModel = viewModel()
+    val keeper: KeepForAirModel = viewModel()
     val scope = rememberCoroutineScope()
     val done = remember { mutableIntStateOf(0) }
     // Whatever the system answers, the location is read again.
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { done.intValue++ }
     return remember(plan, model, onSetRoute != null) {
         ReadyFixer(
-            plan, model, brief, downloads, CyclePacks.of(context), Receiver.of(context), scope,
+            plan, model, brief, downloads, CyclePacks.of(context), keeper, Receiver.of(context), scope,
             askLocation = { ask.launch(OwnShipControl.LOCATION) }, onSetRoute = onSetRoute, doneState = done,
         )
     }

@@ -23,6 +23,7 @@ enum Screen: String, CaseIterable, Sendable {
     case guide
     case downloads
     case passengers
+    case shared
     case about
 
     /// The screen's title, as its row and its page name it.
@@ -48,6 +49,7 @@ enum Screen: String, CaseIterable, Sendable {
         case .guide: "Guide"
         case .downloads: "Downloads"
         case .passengers: "Passenger Briefing"
+        case .shared: "Shared Flight"
         case .about: "About"
         }
     }
@@ -56,4 +58,19 @@ enum Screen: String, CaseIterable, Sendable {
     static let linkKey = "open"
     static let scheme = "wingtipmaps"
     static let schemeHost = "plan"
+}
+
+/// The plan's own keys a link carries beside `open` (a shared flight's among them).
+enum LinkKey: String, CaseIterable, Sendable {
+    case dep
+    case dest
+    case stops
+    case place
+    case flight
+    case altitudeFt = "altitude_ft"
+    case depart
+    case type
+    case rules
+    case tail
+    case share
 }

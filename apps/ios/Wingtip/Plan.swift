@@ -66,11 +66,6 @@ final class Plan {
     private(set) var stage: String?
     private(set) var problem: NavLogError?
     private(set) var planning = false
-    /// The chart along the route being kept for the air: tiles kept of
-    /// tiles wanted; nil when not keeping.
-    private(set) var keeping: (kept: Int, wanted: Int)?
-    private var keepTask: Task<Void, Never>?
-
     private var running: Task<Void, Never>?
 
     /// When the plan shown was made; nil while it is being made now.
@@ -192,22 +187,10 @@ final class Plan {
         undoManager?.removeAllActions(withTarget: self)
     }
 
-    /// The chart along the route kept for the air (KeepRoute), the
-    /// zooms a pilot flies at: the chart's lowest to 10; and the cycle
-    /// packs of the regions it crosses (CyclePacks), so a held finger on
-    /// the map is answered with the airspace there with no connection.
-    func keepForTheAir(template: TileTemplate, minZoom: Int) {
-        guard let course else { return }
-        keepTask?.cancel()
-        let tiles = KeepRoute.tiles(along: course.coordinates, minZoom: max(minZoom, 6), maxZoom: 10)
-        let regions = CyclePacks.regions(along: course.coordinates)
-        keeping = (0, tiles.count)
-        keepTask = Task { [weak self] in
-            await CyclePacks.shared.keep(regions: regions)
-            await KeepRoute.keep(tiles, template: template) { kept, wanted in
-                Task { @MainActor in self?.keeping = (kept, wanted) }
-            }
-        }
+    /// The plan's own kept answers (Kept) shown, from `at`, or fresh again
+    /// (nil): said on the Brief and the nav log by KeptAgeLine.
+    private func noteKept(_ at: Date?, _ kinds: KeptForAir.Kind...) {
+        for kind in kinds { KeptShown.shared.note(kind, key: idents.joined(separator: " "), at: at) }
     }
 
     /// A way round what stops the route put in: the points to fly by,
@@ -290,9 +273,12 @@ final class Plan {
             briefing = try await Planner.briefing(dep: dep, dest: dest, stops: stops, eteMin: eteMin, legs: legs)
             briefedAt = Date()
             briefingProblem = nil
+            noteKept(nil, .briefing, .weather)
             keep()
         } catch {
             briefingProblem = error.localizedDescription
+            // The briefing kept stands, said with its age (KeptAgeLine).
+            if briefing != nil, KeptForAir.fallsBack(error) { noteKept(briefedAt, .briefing, .weather) }
             Log.planner.notice("the briefing for \(dep, privacy: .public) to \(dest, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -371,6 +357,7 @@ final class Plan {
                         self.totals = totals
                         self.stage = nil
                         self.plannedAt = Date()
+                        self.noteKept(nil, .plan)
                         self.keep()
                         // The briefing for the flight's own hours, once
                         // the nav log says how long it takes.
@@ -387,7 +374,7 @@ final class Plan {
                     // said as it is.
                     if self.legs.isEmpty || !(error is URLError) {
                         self.problem = NavLogError(advice: nil, brief: nil, detail: error.localizedDescription, reasons: nil)
-                    }
+                    } else { self.noteKept(self.plannedAt, .plan) }
                     self.stage = nil
                 }
             }

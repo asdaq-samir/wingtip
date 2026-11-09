@@ -104,7 +104,11 @@ final class WeatherLoop {
     private func fetchForever() async {
         while !Task.isCancelled {
             do {
-                let answer = try await Planner.fetch(APIWeatherLoop.self, "/api/weather/loop", ["kind": kind.rawValue])
+                // The last list kept, with its age, when there is no signal (KeptForAir).
+                let asked = kind.rawValue
+                let answer = try await KeptForAir.answer(.weatherLoop, key: asked) {
+                    try await Planner.fetch(APIWeatherLoop.self, "/api/weather/loop", ["kind": asked])
+                }.value
                 if answer.frames.map(\.valid) != frames.map(\.valid) { ready = false }
                 frames = answer.frames
                 oldAfterS = answer.oldAfterS

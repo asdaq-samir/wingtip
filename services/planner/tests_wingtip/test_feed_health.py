@@ -112,3 +112,22 @@ def test_the_watch_alerts_once_after_the_wait_and_ends_once():
     # Stale again: the wait starts over.
     lines, began, ended = watch.see(stale, NOW + 1100)
     assert lines[0]["stale_since"] == NOW + 1100 and not lines[0]["alerting"]
+
+
+def test_an_faa_data_set_past_its_cycle_is_stale():
+    """The charts of 29 Oct 2026 are in force until 24 Dec (the 56-day
+    cycle); NASR of 1 Oct ended 29 Oct (the 28-day AIRAC), one behind on
+    6 Nov: that one is the stale line (wingtip.data_cycles, the engine's)."""
+    from datetime import date
+
+    from wingtip import data_cycles
+
+    on = date(2026, 11, 6)
+    entries = [
+        data_cycles.entry("nasr", "Airports, frequencies and navaids", "airac", date(2026, 10, 1), on),
+        data_cycles.entry("charts", "Charts", "chart", date(2026, 10, 29), on),
+    ]
+    lines = _by_name(feed_health.cycles(entries))
+    assert lines["nasr"]["state"] == "stale" and lines["nasr"]["kind"] == "cycle"
+    assert "ended 2026-10-29" in lines["nasr"]["detail"]
+    assert lines["charts"]["state"] == "ok" and "2026-12-24" in lines["charts"]["detail"]

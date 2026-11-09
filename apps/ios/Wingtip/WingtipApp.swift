@@ -63,7 +63,10 @@ struct WingtipApp: App {
                 .onOpenURL { url in
                     if let command = Links.command(for: url) {
                         // A screen named beside a route opens once it is in.
-                        if case .open = command {} else { PendingCommand.shared.then = Links.screen(for: url) }
+                        switch command {
+                        case .open, .sharedFlight: break
+                        default: PendingCommand.shared.then = Links.screen(for: url)
+                        }
                         PendingCommand.shared.command = command
                     } else {
                         Task { await session.open(url) }

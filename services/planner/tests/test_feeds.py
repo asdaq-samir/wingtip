@@ -74,3 +74,23 @@ def test_the_endpoint_answers_the_last_check(monkeypatch):
     tfms = body["feeds"][0]
     assert tfms["name"] == "TFMS" and tfms["state"] == "stale" and not tfms["alerting"]
     assert tfms["last_at"].endswith("+00:00") and tfms["stale_since"]
+
+
+def test_the_status_page_rows_say_which_feeds_are_not_updating():
+    """The weather rows by the watch's lines, and the NOTAMs, radar and
+    satellite rows of their own; a feed not set up has none."""
+    from app.feeds import status_rows
+
+    sources = [{"name": "METARs", "key": "metars", "fetched_at": None, "kept_until": None, "failing": False}]
+    lines = [
+        {"name": "metars", "kind": "weather", "state": "stale", "last_at": NOW - 9000},
+        {"name": "radar", "kind": "weather", "state": "ok", "last_at": NOW - 120},
+        {"name": "FNS", "kind": "swim", "state": "stale", "last_at": NOW - 3 * 3600},
+        {"name": "satellite", "kind": "weather", "state": "off", "last_at": None},
+        {"name": "TFMS", "kind": "swim", "state": "stale", "last_at": NOW - 600},
+    ]
+    rows = {r["name"]: r for r in status_rows.mark(sources, lines)}
+    assert rows["METARs"]["stale"] is True
+    assert rows["Radar (NEXRAD)"]["stale"] is False and rows["Radar (NEXRAD)"]["fetched_at"] == "2027-01-15T07:58:00Z"
+    assert rows["NOTAMs"]["stale"] is True
+    assert "Satellite (GOES)" not in rows and "TFMS" not in rows

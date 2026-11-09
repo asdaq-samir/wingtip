@@ -178,20 +178,33 @@ def test_the_maps_layers_say_when_their_data_was_fetched(monkeypatch):
         "sources_status",
         lambda: [
             {"name": "METARs", "fetched_at": T0, "kept_until": None, "failing": False},
-            {"name": "TAFs", "fetched_at": None, "kept_until": None, "failing": True},
+            {"name": "TAFs", "key": "tafs", "fetched_at": None, "kept_until": None, "failing": True},
         ],
     )
     monkeypatch.setattr(tfr, "fetched_at", lambda: None)
     monkeypatch.setattr(tfr, "failing", lambda: False)
     monkeypatch.setattr(data_cycles, "held", lambda: [])
-    # And each source kept through an outage, for the pilot's Status page.
+    # The feed watch's last check: the TAFs not updating, the NOTAMs coming in.
+    from app.feeds import watch as feeds_watch
+
+    monkeypatch.setattr(
+        feeds_watch,
+        "last_lines",
+        lambda: [
+            {"name": "tafs", "kind": "weather", "state": "stale", "last_at": None},
+            {"name": "FNS", "kind": "swim", "state": "ok", "last_at": T0},
+        ],
+    )
+    # And each source kept through an outage, for the pilot's Status page,
+    # said where it has stopped updating.
     assert TestClient(app).get("/api/map/ages").json() == {
         "metars_at": "2026-10-04T14:00:00Z",
         "tfrs_at": None,
         "sources": [
-            {"name": "METARs", "fetched_at": "2026-10-04T14:00:00Z", "kept_until": None, "failing": False},
-            {"name": "TAFs", "fetched_at": None, "kept_until": None, "failing": True},
-            {"name": "TFRs", "fetched_at": None, "kept_until": None, "failing": False},
+            {"name": "METARs", "fetched_at": "2026-10-04T14:00:00Z", "kept_until": None, "failing": False, "stale": False},
+            {"name": "TAFs", "fetched_at": None, "kept_until": None, "failing": True, "stale": True},
+            {"name": "TFRs", "fetched_at": None, "kept_until": None, "failing": False, "stale": False},
+            {"name": "NOTAMs", "fetched_at": "2026-10-04T14:00:00Z", "kept_until": None, "failing": False, "stale": False},
         ],
         "data_cycles": [],
     }

@@ -92,7 +92,8 @@ struct ReadyToFlySection: View {
 
     /// What the facts hang on: asked again when any of it changes.
     private var key: String {
-        let keeping = plan.keeping.map { $0.kept >= $0.wanted ? "kept" : "keeping" } ?? ""
+        let keep = KeepForAir.shared
+        let keeping = keep.sizeMb.map { "kept \($0)" } ?? keep.keeping.map { $0.kept >= $0.wanted ? "tiles" : "keeping" } ?? ""
         return [ReadyToFly.flightKey(plan), plan.airplaneName ?? "", "\(plan.altitudeFt ?? 0)", "\(plan.briefedAt?.timeIntervalSince1970 ?? 0)",
                 "\(plan.totals?.eteMin ?? 0)", keeping, "\(Receiver.shared.live)"].joined(separator: "|")
     }
@@ -104,7 +105,7 @@ struct ReadyToFlySection: View {
             SectionTitle("Ready to Fly")
         }
         .task(id: key) {
-            if plan.keeping.map({ $0.kept >= $0.wanted }) == true { await model.chartsKeptChanged() }
+            if KeepForAir.shared.keeping.map({ $0.kept >= $0.wanted }) == true { await model.chartsKeptChanged() }
             await model.refresh()
             await model.fetchNotams()
             while !Task.isCancelled {
@@ -124,6 +125,8 @@ struct ReadyToFlyHost: ViewModifier {
     @Environment(Plan.self) private var plan
     @Environment(Charts.self) private var charts
     @Environment(OwnShip.self) private var ownShip
+    @Environment(Verdict.self) private var verdict
+    @Environment(Session.self) private var session
     private var model: ReadyToFly { .shared }
 
     func body(content: Content) -> some View {
@@ -140,7 +143,7 @@ struct ReadyToFlyHost: ViewModifier {
                 }
                 .presentationDetents([.medium, .large])
             }
-            .task { model.attach(plan: plan, charts: charts, ownShip: ownShip) }
+            .task { model.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session) }
     }
 }
 
@@ -155,6 +158,7 @@ extension View {
 /// The route's NOTAMs in the Brief (POST /api/notams/ranked, the
 /// engine's ranking): the ones said first, each as sent, the rest folded.
 struct NotamsSection: View {
+    @Environment(Plan.self) private var plan
     private var model: ReadyToFly { .shared }
 
     var body: some View {
@@ -162,6 +166,7 @@ struct NotamsSection: View {
             let top = ranked.notams.filter(\.top)
             let rest = ranked.notams.filter { !$0.top }
             Section(title: "NOTAMs") {
+                KeptAgeLine(kind: .notams, key: ReadyToFly.flightKey(plan))
                 ForEach(top, id: \.id) { notam in row(notam) }
                 if !rest.isEmpty {
                     DisclosureGroup("\(rest.count) more") { ForEach(rest, id: \.id) { notam in row(notam) } }

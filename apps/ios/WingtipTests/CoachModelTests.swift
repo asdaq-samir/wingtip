@@ -75,6 +75,13 @@ struct CoachModelTests {
         #expect(model.wordsProblem?.hasPrefix("No words for now") == true)
     }
 
+    @Test func anApproachsEvidenceNamesItsProcedureAndAFlightsItsRouteAlone() throws {
+        let approach = APICoachEvidence(area: "unstable_approach", flownOn: "2026-11-02", id: "ev:1", place: "KMSN", procedure: "ILS Y RWY 08", text: "Below the glidepath")
+        #expect(CoachModel.evidenceLine(approach) == "2 Nov 2026 at KMSN, ILS Y RWY 08: Below the glidepath")
+        let flight = APICoachEvidence(area: "pattern_altitude", flownOn: "2026-11-02", id: "ev:2", place: "KMSN-KJVL", procedure: nil, text: "Downwind 300 ft low")
+        #expect(CoachModel.evidenceLine(flight) == "2 Nov 2026 at KMSN-KJVL: Downwind 300 ft low")
+    }
+
     @Test func theStatusWordsAreTheEnginesStatus() throws {
         let plan = try Planner.snakeCase.decode(ProficiencyPlan.self, from: Data(Self.plan.utf8))
         #expect(plan.due.map(CoachModel.statusWords) == ["9 days left", "To 31 May 2027", "Lapsed", "Not on record"])
