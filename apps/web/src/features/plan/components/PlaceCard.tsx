@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { ACTION } from "../../../lib/cardActions";
-import { FAVORITE_STAR_ON } from "../../../components/mapChrome";
+import { FAVORITE_STAR_ON } from "../../../lib/mapChrome";
 import { cn } from "cn";
 import { useKeptAirport, usePreferences } from "../../../lib/preferences";
 import { useOwnShip } from "../../../lib/map/position/ownShip";

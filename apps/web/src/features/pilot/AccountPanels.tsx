@@ -23,7 +23,7 @@ import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger }
 import { useConfirm } from "../../components/useConfirm";
 import { ConsolePages, PageRow } from "../../components/ConsolePages";
 import FlightPage from "./FlightPage";
-import ChecklistPage from "./ChecklistPage";
+import ChecklistPage from "../../components/ChecklistPage";
 import SquawksPage from "./SquawksPage";
 import { aircraftKey, choiceOf } from "../../lib/aircraftChoice";
 import { api, describeError } from "../../lib/api/client";

@@ -19,9 +19,8 @@ import GlRouteMap, { type GlCandidate, type GlCheckpoint, type GlEndpoint, type 
 import { usePreferences } from "../../../lib/preferences";
 import type { StopKind } from "../../../lib/stopKinds";
 import type { StopPin } from "../../../lib/map/marks/stopPins";
-import { inkOn } from "../../../lib/scoreScale";
+import { inkOn, scoreColor } from "../../../lib/scoreScale";
 import { feet } from "../../../lib/format";
-import { scoreColor } from "../format";
 import type { NavLogRow, RouteLeg } from "./navlog/rows";
 import { useTerrainView } from "../map/terrain/useTerrainView";
 import { useRouteAloft } from "../hooks/useRouteAloft";

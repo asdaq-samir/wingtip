@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import type { Candidate, Course, Leg, NavLogAltitude, SaveFlightRequest, Totals } from "../../../../lib/api/types";
+import type { SaveFlightRequest } from "../../../../lib/api/types";
+import type { FlightToSave } from "../../../../lib/briefPlan";
 import { withoutAltitude } from "../../../../lib/identSchema";
 import { useRisk } from "../../../../lib/frat";
 import { navLogRows, savedCheckpoints } from "../navlog/rows";
@@ -14,29 +15,6 @@ export const SAVE_FLIGHT = ["saveFlight"];
 /** A plan as Save compares it: the same plan with its risk assessment
  *  made again is not another (SaveFlightButton). */
 export const planOf = (r: SaveFlightRequest) => JSON.stringify({ ...r, risk: null });
-
-/** The plan on screen as a flight to save: what Save files, and what a
- *  solo cross-country's review is asked of (ReviewAskSheet). */
-export interface FlightToSave {
-  course: Course | null;
-  totals: Totals | null;
-  nav: NavLogAltitude | null;
-  legs: Leg[];
-  selected: Candidate[];
-  /** The airplane the nav log was computed for: a pilot's own, or
-   *  null for a stock profile. */
-  aircraftId: number | null;
-  /** The departure time as an ISO instant, or "" -- what the saved
-   *  flight is planned for. */
-  depart: string;
-  /** The altitudes the pilot set at points of the route, as the URL's
-   *  `altitudes` writes them ("VPBNG:4500"), or "": filed with the
-   *  flight, so opened again it is planned at them. */
-  altitudes?: string;
-  /** The address's other picks for the flight (lib/flightLink picksOf):
-   *  filed too, so it opens again as it was planned. */
-  picks?: string;
-}
 
 /** What would be filed, and only once there is a whole plan to file: the
  *  course (the airports' own idents and places, not a route being

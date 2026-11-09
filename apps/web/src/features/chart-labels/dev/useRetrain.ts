@@ -1,0 +1,89 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { done } from "../../../lib/doneNote";
+import { api } from "../../../lib/api/client";
+import { statusQuery } from "../../../lib/queryClient";
+import type { Status } from "../../../lib/api/types";
+import { useConfirm } from "../../../components/useConfirm";
+import { useConsoleOpen } from "../../../lib/mapChrome";
+import { useDevTab } from "../devTab";
+
+/**
+ * The one action that changes the model, and what a button for it
+ * needs to know: whether the planner can start the training run, whether
+ * a run is already going, and how the last one ended. Shared by the side
+ * drawer's own Retrain (in its More menu, with Reset, in the drawer
+ * where the ratings it learns from are made) and the developer console's
+ * Performance tab, which reports the run on each route's card and
+ * offers it there too. The status snapshot is the same query both
+ * poll, so a run started from either shows in both.
+ */
+/** Whether a snapshot's last run is still going. */
+function underWay(status: Status | undefined): boolean {
+  const state = status?.pipeline?.last_run?.state;
+  return state === "running";
+}
+
+export function useRetrain() {
+  const queryClient = useQueryClient();
+  // Every five seconds while a run is going, so its badge turns from
+  // Training to how it ended when it does, not up to half a minute on.
+  const { data: status } = useQuery({ ...statusQuery, refetchInterval: query => (underWay(query.state.data) ? 5_000 : 30_000) });
+  const start = useMutation({
+    mutationFn: api.retrain,
+    onSuccess: () => {
+      done("Retrain Started", {
+        detail: "Follow it in Performance",
+      });
+      // Returned, so the mutation stays pending until the snapshot shows
+      // the run: Retrain was enabled again in between, for a second press.
+      return queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+  });
+  const pipeline = status?.pipeline;
+  const lastRun = pipeline?.last_run ?? null;
+  // From the moment it is confirmed: the planner writes the chart
+  // model's table and starts the run's container before it answers, and the run shows
+  // in the snapshot only after that -- the badge waited on both.
+  const running = start.isPending || underWay(status);
+  // Whether the ratings are enough to learn from, worked out by the
+  // planner before any run (wingtip.pipeline.training_readiness): too few,
+  // and the button says why instead of starting a run that fails
+  // minutes later. Unknown (no corridor read yet) leaves it to the run.
+  const training = pipeline?.training ?? null;
+  const blocked = training && !training.ready ? training.message : null;
+  // Asks first, wherever the button is: a retrain is minutes of the
+  // machine's time and, when it ends, a new model serving in place of
+  // this one -- not something a stray tap should start.
+  const [ask, confirmDialog] = useConfirm({
+    title: "Retrain the model?",
+    description: "It learns from every rating. When it finishes, the new model replaces the one serving. It takes a few minutes.",
+    confirmLabel: "Retrain",
+    // The run is followed on the page's Perf tab: up, from wherever the
+    // retrain was asked for -- the side panel's More menu, or Perf itself
+    // -- the console put away.
+    onConfirm: () => {
+      useDevTab.getState().pick("perf");
+      useConsoleOpen.getState().setOpen(false);
+      start.mutate();
+    },
+  });
+  return {
+    status,
+    pipeline,
+    lastRun,
+    /** Whether the planner can start a run here (the compose stack's dev-services sidecar). */
+    startable: pipeline?.startable ?? false,
+    running,
+    starting: start.isPending,
+    /** The ratings against what training needs, and what became of the rest. */
+    training,
+    /** Why a retrain would have too little to learn from, or null. */
+    blocked,
+    /** Whether the button should be enabled: enough ratings, a run startable, none in progress, none just asked for. */
+    canStart: (pipeline?.startable ?? false) && !running && !start.isPending && !blocked,
+    /** Opens the confirmation; the retrain starts from its button. */
+    start: ask,
+    /** The confirmation itself, rendered by whichever panel has the button. */
+    confirmDialog,
+  };
+}

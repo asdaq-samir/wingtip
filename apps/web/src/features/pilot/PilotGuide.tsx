@@ -12,7 +12,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { TEXT } from "../../lib/text";
 import { altFt } from "../../lib/format";
-import { scoreColor } from "../plan/format";
+import { scoreColor } from "../../lib/scoreScale";
 
 const BUCKETS: [string, string][] = [
   [scoreColor(4.5), "4.5 and up: you will see it and know it"],

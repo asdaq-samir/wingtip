@@ -2,7 +2,7 @@ import type { AircraftKind } from "./aircraftKind";
 import { NO_FILTER, type AircraftFilter } from "./fbo";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { DEFAULT_FILTERS, type FilterKey, type Filters } from "../features/chart-labels/logic";
+import { DEFAULT_FILTERS, type FilterKey, type Filters } from "./pointFilters";
 import type { AircraftAlert, AircraftAlertKind } from "./aircraftAlerts";
 import type { AircraftChoice } from "./api/types";
 import { NO_MINIMUMS, type Minimums } from "./minimums";

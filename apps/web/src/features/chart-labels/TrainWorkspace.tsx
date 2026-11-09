@@ -4,11 +4,13 @@ import { useSearchParams } from "react-router-dom";
 import { identOf, routeOf } from "../../lib/identSchema";
 import { statusQuery } from "../../lib/queryClient";
 import { useProgressToast } from "../../lib/useProgressToast";
-import type { WorkspaceProps } from "../shell/workspace";
+import type { WorkspaceProps } from "../shell";
+import { loadPilotPanel } from "../pilot";
 import { ChartColumn, GraduationCap } from "lucide-react";
 import TabBar, { type BarTab } from "../../components/TabBar";
 import { fromLucide } from "../../components/fromLucide";
 import { useDevTab, type DevTab } from "./devTab";
+import type { PilotPanelPart } from "./dev/DevPanel";
 import ChartMap from "./components/ChartMap";
 import WaypointPanel, { WaypointActions } from "./components/WaypointPanel";
 import RatingCard from "./components/RatingCard";
@@ -21,6 +23,10 @@ import {
 import { useTraining } from "./hooks/useTraining";
 
 const FOCUS_ZOOM = 12;
+
+/** The dev console's chunk, with the pilot console it is drawn in: both
+ *  asked for together, so the console draws at once when opened. */
+type DevChunk = typeof import("./dev/DevPanel") & { PilotPanel: PilotPanelPart };
 
 /** The developer's places (TabBar), at their ask: the ratings, and how
  *  good the models are; Settings, the console, the bar's own last. */
@@ -75,9 +81,10 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // the console sat empty for that long with everything it needed
   // already here.
   const queryClient = useQueryClient();
-  const [devPanel, setDevPanel] = useState<typeof import("../dev/DevPanel") | null>(null);
+  const [devPanel, setDevPanel] = useState<DevChunk | null>(null);
   useEffect(() => {
-    void import("../dev/DevPanel").then(setDevPanel);
+    void Promise.all([import("./dev/DevPanel"), loadPilotPanel()])
+      .then(([dev, pilot]) => setDevPanel({ ...dev, PilotPanel: pilot.PilotPanel }));
     void queryClient.prefetchQuery(statusQuery);
   }, [queryClient]);
 
@@ -313,7 +320,7 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
     // The point to rate, under the route all the way up, where the pill
     // has it.
     controls: devTab === "perf" ? undefined : ratingCard,
-    console: devPanel ? <devPanel.DevPanel /> : <div className="h-40" />,
+    console: devPanel ? <devPanel.DevPanel pilotPanel={devPanel.PilotPanel} /> : <div className="h-40" />,
     submit,
     loading: store.loading,
   });

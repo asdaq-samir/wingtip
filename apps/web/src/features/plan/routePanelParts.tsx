@@ -1,5 +1,6 @@
 import { lazy, memo, useState, type ComponentType } from "react";
 import { fromChunk } from "../../lib/fromChunk";
+import { loadPilotPanel } from "../pilot";
 
 // The planner's parts drawn from chunks of their own (PlanWorkspace and its
 // sub-views, components/workspace): the pilot console and the route's panel.
@@ -9,7 +10,7 @@ import { fromChunk } from "../../lib/fromChunk";
 // first load. Asked for once the page has drawn (below), so the gear
 // opens it at once, drawn straight from the chunk (fromChunk); MapPage's
 // AfterTheSheet holds its place meanwhile.
-export const { Part: PilotPanel, prefetch: prefetchPilotPanel } = fromChunk(() => import("../pilot/PilotPanel"), m => m.PilotPanel);
+export const { Part: PilotPanel, prefetch: prefetchPilotPanel } = fromChunk(loadPilotPanel, m => m.PilotPanel);
 // The route's own panel, a chunk of its own (routePanel), fetched once
 // the page is idle and drawn where a route is. Its parts drawn straight
 // from the chunk once it is in hand, and waited for (lazy) only until

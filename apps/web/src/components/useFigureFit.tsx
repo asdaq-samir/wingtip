@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn } from "cn";
-import { usePanelDragging } from "./mapChrome";
+import { usePanelDragging } from "../lib/mapChrome";
 import { useRoom } from "./useRoom";
 
 /** As small as a figure is set to fit before it is cut short: three

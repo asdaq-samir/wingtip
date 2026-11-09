@@ -8,11 +8,11 @@ import ZoomBanner from "./ZoomBanner";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useAtcListen } from "../lib/atc/listenSetting";
 import { cn } from "cn";
-import { useFlying } from "./mapChrome";
+import { useFlying } from "../lib/mapChrome";
 
 const RadioLayer = lazy(() => import("./RadioLayer"));
 // The in-flight copilot, fetched with its first flight.
-const CopilotBanner = lazy(() => import("../features/copilot/CopilotBanner"));
+const CopilotBanner = lazy(() => import("../features/copilot").then(m => ({ default: m.CopilotBanner })));
 // The ATC copilot (features/atc), fetched once the pilot turns it on.
 const AtcCopilot = lazy(() => import("../features/atc").then(m => ({ default: m.AtcCopilot })));
 

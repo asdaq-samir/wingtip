@@ -2,7 +2,7 @@
 import { act, cleanup, render } from "@testing-library/react";
 import { useCallback, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MapInsets, PanelState } from "../mapChrome";
+import type { MapInsets, PanelState } from "../../lib/mapChrome";
 import type { Detents } from "./engine";
 import { useSheetMotion, type SheetParts } from "./useSheetMotion";
 

@@ -1,7 +1,7 @@
 import AccordionSection from "../../../../components/AccordionSection";
 import { aircraftKey, shortName } from "../../../../lib/aircraftChoice";
 import { usePreferences } from "../../../../lib/preferences";
-import ChecklistPage from "../../../pilot/ChecklistPage";
+import ChecklistPage from "../../../../components/ChecklistPage";
 
 /**
  * The Brief's Checklists: the flight's airplane's own, normal and

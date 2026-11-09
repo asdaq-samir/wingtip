@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api/client";
-import { useFlying } from "../../components/mapChrome";
+import { useFlying } from "../../lib/mapChrome";
 import { useCopilotFlight } from "../../lib/copilot/flight";
 import { copilotVoice } from "../../lib/copilot/voice";
 import { useAhead } from "../../lib/map/position/ahead";

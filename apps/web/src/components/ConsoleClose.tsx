@@ -1,5 +1,5 @@
 import { Children, cloneElement, useContext, type MouseEvent, type ReactElement } from "react";
-import { ConsoleInPanelContext } from "./mapChrome";
+import { ConsoleInPanelContext } from "../lib/mapChrome";
 
 /**
  * Its one child puts Setup away as it is tapped -- a row that goes to the

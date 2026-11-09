@@ -15,6 +15,16 @@
  */
 export const SCORE_STEPS = ["#d99a1e", "#b98014", "#96660e", "#724d09", "#4e3406"] as const;
 
+/** Score bands, on the rating scale's own steps (above) so a
+ *  colour means one thing across both views. */
+export function scoreColor(s: number): string {
+  if (s >= 4.5) return SCORE_STEPS[4];
+  if (s >= 4.0) return SCORE_STEPS[3];
+  if (s >= 3.5) return SCORE_STEPS[2];
+  if (s >= 3.0) return SCORE_STEPS[1];
+  return SCORE_STEPS[0];
+}
+
 /** Text or a number drawn on a step: white where it reads, ink where
  *  the step is too pale for white (the two palest). */
 export function inkOn(fill: string): string {

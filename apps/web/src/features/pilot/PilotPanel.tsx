@@ -33,7 +33,7 @@ import TabPage, { TAB_PAGE_GAP } from "../../components/TabPage";
 
 // Loaded when it is drawn, as PaidPrompt does: imported here it put the
 // sign-in sheet in the first load for every pilot already signed in.
-const SignInModal = lazy(() => import("./SignInModal"));
+const SignInModal = lazy(() => import("../../components/SignInModal"));
 
 /** Who is signed in, or why nobody is: null signed out, "loading"
  *  while the check is in flight, "error" when it failed. */

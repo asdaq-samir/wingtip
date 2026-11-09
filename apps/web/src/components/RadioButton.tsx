@@ -7,7 +7,7 @@ import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } 
 import { useAtcRadio } from "../lib/atcRadio";
 import { canListen } from "../lib/listen";
 
-const ClearanceCard = lazy(() => import("../features/plan/components/ClearanceCard"));
+const ClearanceCard = lazy(() => import("./ClearanceCard"));
 
 /** The listening code, fetched as the map is drawn so a tap starts it at
  *  once: Safari lets a page listen only straight from the tap. */

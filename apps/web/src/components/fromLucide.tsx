@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import type { TabGlyph } from "./tabGlyphs";
+import type { TabGlyph } from "../lib/glyphs/tabGlyphs";
 
 /** A tab glyph from one of lucide's icons, for a bar whose tabs are not
  *  drawn here (the developer's Train and Perf): the one weight the tabs

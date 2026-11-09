@@ -1,4 +1,4 @@
-import type { PanelState } from "../../../components/mapChrome";
+import type { PanelState } from "../../../lib/mapChrome";
 
 /** The panel's size as of now (PlanWorkspace): one workspace is open at a
  *  time. A holder, not a ref, as the handlers that read it go out through

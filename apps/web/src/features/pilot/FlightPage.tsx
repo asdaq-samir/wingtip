@@ -21,7 +21,7 @@ import { mayUse, useEntitlement } from "../../lib/subscription";
 import PaidPrompt from "../../components/PaidPrompt";
 import { hm, localDay } from "../../lib/format";
 import { reviewState, said } from "../../lib/endorsements";
-import { ReviewAskForm, type ReviewAsk } from "./ReviewAsk";
+import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
 import { FINDING_TONE } from "../../lib/findings";
 import { airportQuery, trainingQuery } from "../../lib/queryClient";
 import { proceduresOf, sameField } from "../../lib/procedures";

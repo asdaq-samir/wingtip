@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Map as GlMap } from "maplibre-gl";
 import { cn } from "cn";
-import { GLASS } from "./mapChrome";
+import { GLASS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 
 /** How long the zoom stays said once the map has stopped zooming. */

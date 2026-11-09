@@ -1,6 +1,6 @@
 import { Marker } from "maplibre-gl";
 import { useEffect, useRef } from "react";
-import { SHEET_SECONDS } from "../../../../components/mapChrome";
+import { SHEET_SECONDS } from "../../../mapChrome";
 import { prefersReducedMotion } from "../../../motion";
 import { usePreferences } from "../../../preferences";
 import { underway } from "../../position/glide";

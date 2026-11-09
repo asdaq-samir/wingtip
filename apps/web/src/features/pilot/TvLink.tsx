@@ -8,7 +8,7 @@ import { pilotQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 
 // Loaded when it is drawn: the sign-in sheet out of the first load.
-const SignInModal = lazy(() => import("./SignInModal"));
+const SignInModal = lazy(() => import("../../components/SignInModal"));
 
 /** Whether the page was opened from a TV's address (/tv, WebMvcConfig). */
 function fromTvAddress(): boolean {

@@ -2,7 +2,7 @@ import { ArrowRight, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "../../../components/CloseButton";
 import { CardAction } from "../../../components/CardAction";
-import DirectToIcon from "../../../components/DirectToIcon";
+import DirectToIcon from "../../../lib/glyphs/DirectToIcon";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../../components/ResponsivePopover";
 import { Badge } from "../../../components/ui/badge";

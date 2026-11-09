@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { useEmergencyOpen } from "./emergencyStore";
+import { useEmergencyOpen } from "../../lib/emergencyStore";
 
 /** The sheet's own chunk, fetched the first time it opens: nothing of it
  *  in the map page's first load (the web's bundle budget). */

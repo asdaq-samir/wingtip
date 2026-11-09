@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import { useFlying } from "../../../components/mapChrome";
-import type { PanelState } from "../../../components/mapChrome";
+import { useFlying } from "../../../lib/mapChrome";
+import type { PanelState } from "../../../lib/mapChrome";
 import { underway } from "../../../lib/map/position/glide";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { DRY_RUN, usePastFlight } from "../map/pastFlight";

@@ -1,4 +1,4 @@
-import { MATERIAL } from "../mapChrome";
+import { MATERIAL } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
 
 /**

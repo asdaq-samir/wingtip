@@ -1,5 +1,4 @@
 import type { AltitudeOption, Leg, Runway, Totals } from "../../lib/api/types";
-import { SCORE_STEPS } from "../../lib/scoreScale";
 import { altFt, bearing, flightLevel, one } from "../../lib/format";
 import { clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
@@ -23,17 +22,6 @@ export function feetBelowClouds(ceilingFt: number | null | undefined): number {
  * flown, a route whose nav log has not arrived yet), and they are only
  * testable while they have no map and no DOM attached.
  */
-
-/** Score bands, on the rating scale's own steps (lib/scoreScale) so a
- *  colour means one thing across both views. */
-export function scoreColor(s: number): string {
-  if (s >= 4.5) return SCORE_STEPS[4];
-  if (s >= 4.0) return SCORE_STEPS[3];
-  if (s >= 3.5) return SCORE_STEPS[2];
-  if (s >= 3.0) return SCORE_STEPS[1];
-  return SCORE_STEPS[0];
-}
-
 
 /** Total time in decimal hours, as a logbook keeps it: "19.9h", where
  *  the flight's line has no room for "19h 50m" (FlightLine). Up to the
