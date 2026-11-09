@@ -3,10 +3,14 @@ package app.wingtipmaps.gateway.service;
 import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.VorCheck;
+import app.wingtipmaps.gateway.dto.HandbookFigures;
 import app.wingtipmaps.gateway.dto.InspectionsRequest;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
@@ -62,6 +66,22 @@ public class AircraftService {
                 r.staticCheckOn(), r.transponderCheckOn(), r.eltInspectedOn(), r.eltBatteryDueOn())
                 .forHire(r.forHire() == null ? a.isForHire() : r.forHire())));
     }
+
+    /** Its handbook figures as its pilot confirmed them, kept as sent (the
+     *  engine checked them, through the assistant); null takes them away. */
+    public Optional<Aircraft> keepHandbook(Pilot pilot, Long id, HandbookFigures figures) {
+        Map<String, Object> kept = figures == null ? null : JSON.convertValue(figures, AS_MAP);
+        return get(pilot, id).map(a -> aircraft.save(a.keepHandbook(kept)));
+    }
+
+    /** The handbook figures kept with an airplane, as the API gives them;
+     *  null where none were. */
+    public static HandbookFigures handbookOf(Aircraft a) {
+        return a.getHandbook() == null ? null : JSON.convertValue(a.getHandbook(), HandbookFigures.class);
+    }
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final TypeReference<Map<String, Object>> AS_MAP = new TypeReference<>() { };
 
     /** @return true if an aircraft was actually deleted */
     public boolean delete(Pilot pilot, Long id) {

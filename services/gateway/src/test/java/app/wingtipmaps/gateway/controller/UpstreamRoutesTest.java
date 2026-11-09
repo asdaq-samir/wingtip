@@ -54,7 +54,10 @@ class UpstreamRoutesTest {
             "GET /api/terrain/obstacles", "planner public csrf",
             // A logbook entry drawn from the app's own track: the pilot's,
             // and it changes nothing (the phones hold no CSRF cookie).
-            "POST /api/logbook-draft", "planner signed-in no-csrf");
+            "POST /api/logbook-draft", "planner signed-in no-csrf",
+            // A photographed page read and checked: a billed call against
+            // the pilot's allowance, so a forged one is refused.
+            "POST /api/read-document", "assistant signed-in csrf");
 
     @Test
     void theEmergencyFieldsArePublicFromThePlanner() {

@@ -88,6 +88,284 @@ struct ASDebriefWordsAnswer: Codable, Equatable, Sendable {
     var unavailable: String?
 }
 
+/// The page read and checked: the read (the engine rule's input, for
+/// the app to edit and ask again), the engine's answer, what could not be
+/// read, and the model. `unreadable` with nothing else where the page
+/// could not be read at all.
+// MARK: - ASDocumentRead
+struct ASDocumentRead: Codable, Equatable, Sendable {
+    var clearance: ASClearanceNote?
+    var handbook: ASHandbookRead?
+    var handbookCheck: ASHandbookCheck?
+    var kind: String
+    var logbook: ASLogbookPageRead?
+    var logbookCheck: ASLogbookCheck?
+    var model: String
+    var notes: [String]?
+    var unreadable: String?
+}
+
+/// A clearance or ATIS copied down in a pilot's shorthand, as written
+/// and as a controller would say it, for the app's clearance reader.
+// MARK: - ASClearanceNote
+struct ASClearanceNote: Codable, Equatable, Sendable {
+    /// The same clearance as the controller said it, in words, figures as digits, nothing added.
+    var said: String
+    /// The note as written, line by line, shorthand kept.
+    var written: String
+}
+
+/// A handbook's performance or weight and balance page, as read:
+/// every figure in the units the page prints, the units named once.
+/// What the page does not show is null or left empty.
+// MARK: - ASHandbookRead
+struct ASHandbookRead: Codable, Equatable, Sendable {
+    var armUnit: String?
+    /// Gallons, litres or pounds an hour.
+    var burnUnit: String?
+    var climb: ASClimb?
+    /// Every row of the cruise performance table.
+    var cruise: [ASCruiseRow]?
+    /// What the cruise table's speeds are: KTAS tas, KIAS ias, KCAS cas.
+    var cruiseSpeedKind: String?
+    var distanceUnit: String?
+    var empty: ASEmpty?
+    /// The CG envelope's corners, in order going round its outline.
+    var envelope: [ASCorner]?
+    var fuel: ASFuel?
+    /// US gallons or litres.
+    var fuelUnit: String?
+    var glide: ASGlide?
+    /// Every row of the landing distance table.
+    var landing: [ASDistanceRow]?
+    /// Maximum takeoff (or ramp, where only that is printed) weight, in weight_unit.
+    var maxTakeoffWeight: Double?
+    /// The speeds' unit as printed: KTAS/KIAS are kt, MPH mph.
+    var speedUnit: String?
+    /// Every row of the takeoff distance table.
+    var takeoff: [ASDistanceRow]?
+    var weightUnit: String?
+}
+
+// MARK: - ASClimb
+struct ASClimb: Codable, Equatable, Sendable {
+    /// The climb's fuel flow, in burn_unit.
+    var burn: Double?
+    /// Rate of climb, feet a minute, at sea level where the page has several.
+    var rateFpm: Double?
+    /// Best rate of climb speed (Vy), indicated, in speed_unit.
+    var speed: Double?
+}
+
+// MARK: - ASCruiseRow
+struct ASCruiseRow: Codable, Equatable, Sendable {
+    /// Pressure altitude, feet.
+    var altitudeFt: Double?
+    /// Fuel flow, in burn_unit.
+    var burn: Double?
+    /// Percent brake horsepower.
+    var powerPct: Double?
+    var rpm: Double?
+    /// True airspeed, in speed_unit.
+    var tas: Double?
+}
+
+// MARK: - ASEmpty
+struct ASEmpty: Codable, Equatable, Sendable {
+    /// Its arm (CG), in arm_unit.
+    var arm: Double?
+    /// Its moment exactly as printed.
+    var moment: Double?
+    /// 1000 where the column is moment/1000; 1 where it is the moment itself.
+    var momentDivisor: Double?
+    /// Basic empty weight, in weight_unit.
+    var weight: Double?
+}
+
+// MARK: - ASCorner
+struct ASCorner: Codable, Equatable, Sendable {
+    /// In arm_unit.
+    var arm: Double?
+    /// In weight_unit.
+    var weight: Double?
+}
+
+// MARK: - ASFuel
+struct ASFuel: Codable, Equatable, Sendable {
+    /// Total capacity, in fuel_unit.
+    var total: Double?
+    /// Usable fuel, in fuel_unit.
+    var usable: Double?
+}
+
+// MARK: - ASGlide
+struct ASGlide: Codable, Equatable, Sendable {
+    /// Glide ratio, feet forward for each foot down (9 for 9:1).
+    var ratio: Double?
+    /// Best glide speed, indicated, in speed_unit.
+    var speed: Double?
+}
+
+// MARK: - ASDistanceRow
+struct ASDistanceRow: Codable, Equatable, Sendable {
+    /// In distance_unit.
+    var groundRoll: Double?
+    var pressureAltitudeFt: Double?
+    /// Outside air temperature, degrees Celsius.
+    var tempC: Double?
+}
+
+/// handbook_read_check's answer: the items to confirm, every figure in
+/// the app's units, and the airplane form's figures from them.
+// MARK: - ASHandbookCheck
+struct ASHandbookCheck: Codable, Equatable, Sendable {
+    var handbook: ASHandbookFigures
+    var items: [ASHandbookItem]
+    var profile: ASHandbookProfile
+}
+
+/// Every figure in the app's units (knots, feet, pounds, inches,
+/// gallons), as the airplane's record keeps them.
+// MARK: - ASHandbookFigures
+struct ASHandbookFigures: Codable, Equatable, Sendable {
+    var climbBurnGph, climbRateFpm, climbSpeedKias: Double?
+    var cruise: [ASHandbookCruise]?
+    var emptyArmIn, emptyWeightLb: Double?
+    var envelope: [ASHandbookCorner]?
+    var fuelTotalGal, glideRatio, glideSpeedKias: Double?
+    var landing: [ASHandbookDistance]?
+    var maxTakeoffWeightLb: Double?
+    var takeoff: [ASHandbookDistance]?
+    var usableFuelGal: Double?
+}
+
+// MARK: - ASHandbookCruise
+struct ASHandbookCruise: Codable, Equatable, Sendable {
+    var altitudeFt, burnGph: Double
+    var powerPct, rpm: Double?
+    var tasKt: Double
+}
+
+// MARK: - ASHandbookCorner
+struct ASHandbookCorner: Codable, Equatable, Sendable {
+    var armIn, weightLb: Double
+}
+
+// MARK: - ASHandbookDistance
+struct ASHandbookDistance: Codable, Equatable, Sendable {
+    var groundRollFt, pressureAltitudeFt, tempC: Double
+}
+
+// MARK: - ASHandbookItem
+struct ASHandbookItem: Codable, Equatable, Sendable {
+    var figures: [ASHandbookFigure]
+    var flags: [ASDocumentFlag]
+    var group, key, title: String
+}
+
+// MARK: - ASHandbookFigure
+struct ASHandbookFigure: Codable, Equatable, Sendable {
+    var appUnit: String
+    var appValue: Double
+    var label, path, unit: String
+    var value: Double
+}
+
+// MARK: - ASDocumentFlag
+struct ASDocumentFlag: Codable, Equatable, Sendable {
+    var field: String?
+    var level, says: String
+}
+
+// MARK: - ASHandbookProfile
+struct ASHandbookProfile: Codable, Equatable, Sendable {
+    var climbFuelBurnGph: Double?
+    var cruiseFrom: String?
+    var cruisePowerPct, cruiseTasKt, fuelBurnGph, usableFuelGal: Double?
+}
+
+/// A paper logbook page, as read: a row for each flight written on it,
+/// and the page's "total this page" row where it has one (not the amount
+/// forwarded, nor the total to date).
+// MARK: - ASLogbookPageRead
+struct ASLogbookPageRead: Codable, Equatable, Sendable {
+    var pageTotals: ASPageTotals?
+    var rows: [ASLogbookRow]?
+}
+
+// MARK: - ASPageTotals
+struct ASPageTotals: Codable, Equatable, Sendable {
+    var approaches, crossCountry, dayLandings, dual: Double?
+    var instrumentActual, instrumentSimulated, night, nightLandings: Double?
+    var solo, total: Double?
+}
+
+// MARK: - ASLogbookRow
+struct ASLogbookRow: Codable, Equatable, Sendable {
+    /// The registration as written: N12345.
+    var aircraftId: String?
+    /// As written: C172, PA-28-181.
+    var aircraftType: String?
+    /// Instrument approaches, the count.
+    var approaches: Double?
+    var crossCountry: Double?
+    /// YYYY-MM-DD; null where the day, month or year cannot be read.
+    var date: String?
+    var dayLandings: Double?
+    /// Dual received.
+    var dual: Double?
+    /// Departure point as written: KANE.
+    var from: String?
+    var holding: Bool?
+    var instrumentActual: Double?
+    /// Simulated instrument (hood).
+    var instrumentSimulated: Double?
+    var night: Double?
+    /// Night landings to a full stop.
+    var nightLandings: Double?
+    var remarks: String?
+    var solo: Double?
+    /// Arrival point as written.
+    var to: String?
+    /// Total flight time, hours and tenths.
+    var total: Double?
+    /// Points between, as written.
+    var via: [String]?
+}
+
+// MARK: - ASLogbookCheck
+struct ASLogbookCheck: Codable, Equatable, Sendable {
+    var flags: [ASDocumentFlag]
+    var rows: [ASLogbookRowCheck]
+}
+
+// MARK: - ASLogbookRowCheck
+struct ASLogbookRowCheck: Codable, Equatable, Sendable {
+    var entry: ASLogbookEntryDraft
+    var flags: [ASDocumentFlag]
+}
+
+/// The gateway's LogbookEntryRequest as the row gives it; `flownOn`
+/// is null where no date was read, and such a row cannot be saved.
+// MARK: - ASLogbookEntryDraft
+struct ASLogbookEntryDraft: Codable, Equatable, Sendable {
+    var aircraft, aircraftType: String?
+    var airHours: Double?
+    var approaches: Int?
+    var crossCountryHours: Double?
+    var dayLandings: Int?
+    var distanceNm, dualHours: Double?
+    var flightId: Int?
+    var flownOn: String?
+    var fromTrack, holding: Bool?
+    var instrumentHours, longestLegNm, nightHours: Double?
+    var nightLandings: Int?
+    var remarks, route: String?
+    var soloHours, totalHours: Double?
+    var touchAndGoes, toweredLandings: Int?
+    var tracking: Bool?
+}
+
 // MARK: - ASGenerateNotesRequest
 struct ASGenerateNotesRequest: Codable, Equatable, Sendable {
     var departureIdent, destinationIdent: String
@@ -319,6 +597,18 @@ struct ASOralQuestionRequest: Codable, Equatable, Sendable {
 struct ASOralFocus: Codable, Equatable, Sendable {
     var code: String
     var text: String
+}
+
+/// A photo of a page and what it is of. `image` is the photo's bytes in
+/// base64 (a JPEG the phone's scanner or the browser made, its long edge
+/// about 2,000 px); `today` the app's own date, which a logbook row may
+/// not be after.
+// MARK: - ASReadAsk
+struct ASReadAsk: Codable, Equatable, Sendable {
+    var image: String
+    var kind: String
+    var mediaType: String?
+    var today: String?
 }
 
 /// A words endpoint's answer: the sentences that passed the check, the

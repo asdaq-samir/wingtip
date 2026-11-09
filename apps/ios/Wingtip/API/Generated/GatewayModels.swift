@@ -17,6 +17,9 @@ struct GWAircraftDto: Codable, Equatable, Sendable {
     /// Appendix 4, TBL 4-2)
     var equipment: String?
     var fuelBurnGph: Double
+    /// Its handbook figures as its pilot confirmed them from a photographed page: the engine
+    /// contract's HandbookFigures, in the app's units; null until then
+    var handbook: GWHandbookFigures?
     var id: Int
     /// Its inspections and tests, as recorded, each with the last day it is good for
     var inspections: GWInspectionsDto
@@ -44,6 +47,76 @@ struct GWDueItemDto: Codable, Equatable, Sendable {
     /// An AD's number and revision date, or the item's own reference
     var reference: String?
     var title: String
+}
+
+/// An airplane's handbook figures in the app's units (the engine contract's HandbookFigures)
+// MARK: - GWHandbookFigures
+struct GWHandbookFigures: Codable, Equatable, Sendable {
+    var climbBurnGph, climbRateFpm, climbSpeedKias: Double?
+    var cruise: [GWCruise]
+    var emptyArmIn, emptyWeightLb: Double?
+    var envelope: [GWCorner]
+    var fuelTotalGal, glideRatio, glideSpeedKias: Double?
+    var landing: [GWDistance]
+    var maxTakeoffWeightLb: Double?
+    var takeoff: [GWDistance]
+    var usableFuelGal: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case climbBurnGph = "climb_burn_gph"
+        case climbRateFpm = "climb_rate_fpm"
+        case climbSpeedKias = "climb_speed_kias"
+        case cruise
+        case emptyArmIn = "empty_arm_in"
+        case emptyWeightLb = "empty_weight_lb"
+        case envelope
+        case fuelTotalGal = "fuel_total_gal"
+        case glideRatio = "glide_ratio"
+        case glideSpeedKias = "glide_speed_kias"
+        case landing
+        case maxTakeoffWeightLb = "max_takeoff_weight_lb"
+        case takeoff
+        case usableFuelGal = "usable_fuel_gal"
+    }
+}
+
+/// A cruise performance table's row: pressure altitude, power, RPM, true airspeed, fuel burn
+// MARK: - GWCruise
+struct GWCruise: Codable, Equatable, Sendable {
+    var altitudeFt, burnGph: Double
+    var powerPct, rpm: Double?
+    var tasKt: Double
+
+    enum CodingKeys: String, CodingKey {
+        case altitudeFt = "altitude_ft"
+        case burnGph = "burn_gph"
+        case powerPct = "power_pct"
+        case rpm
+        case tasKt = "tas_kt"
+    }
+}
+
+/// A corner of the CG envelope: arm aft of the datum and weight
+// MARK: - GWCorner
+struct GWCorner: Codable, Equatable, Sendable {
+    var armIn, weightLb: Double
+
+    enum CodingKeys: String, CodingKey {
+        case armIn = "arm_in"
+        case weightLb = "weight_lb"
+    }
+}
+
+/// A takeoff or landing distance table's row: ground roll and total over a 50 ft obstacle
+// MARK: - GWDistance
+struct GWDistance: Codable, Equatable, Sendable {
+    var groundRollFt, pressureAltitudeFt, tempC: Double
+
+    enum CodingKeys: String, CodingKey {
+        case groundRollFt = "ground_roll_ft"
+        case pressureAltitudeFt = "pressure_altitude_ft"
+        case tempC = "temp_c"
+    }
 }
 
 /// Its inspections and tests, as recorded, each with the last day it is good for
@@ -320,6 +393,11 @@ struct GWBriefingSourceDto: Codable, Equatable, Sendable {
 // MARK: - GWFullNameRequest
 struct GWFullNameRequest: Codable, Equatable, Sendable {
     var fullName: String
+}
+
+// MARK: - GWHandbookRequest
+struct GWHandbookRequest: Codable, Equatable, Sendable {
+    var figures: GWHandbookFigures?
 }
 
 // MARK: - GWInspectionsRequest

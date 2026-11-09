@@ -36,6 +36,13 @@ data class AircraftDto (
     val equipment: String? = null,
 
     val fuelBurnGph: Double,
+
+    /**
+     * Its handbook figures as its pilot confirmed them from a photographed page: the engine
+     * contract's HandbookFigures, in the app's units; null until then
+     */
+    val handbook: HandbookFigures? = null,
+
     val id: Long,
 
     /**
@@ -90,6 +97,100 @@ data class DueItemDto (
     val reference: String? = null,
 
     val title: String
+)
+
+/**
+ * An airplane's handbook figures in the app's units (the engine contract's HandbookFigures)
+ */
+@Serializable
+data class HandbookFigures (
+    @SerialName("climb_burn_gph")
+    val climbBurnGph: Double? = null,
+
+    @SerialName("climb_rate_fpm")
+    val climbRateFpm: Double? = null,
+
+    @SerialName("climb_speed_kias")
+    val climbSpeedKias: Double? = null,
+
+    val cruise: List<Cruise>,
+
+    @SerialName("empty_arm_in")
+    val emptyArmIn: Double? = null,
+
+    @SerialName("empty_weight_lb")
+    val emptyWeightLb: Double? = null,
+
+    val envelope: List<Corner>,
+
+    @SerialName("fuel_total_gal")
+    val fuelTotalGal: Double? = null,
+
+    @SerialName("glide_ratio")
+    val glideRatio: Double? = null,
+
+    @SerialName("glide_speed_kias")
+    val glideSpeedKias: Double? = null,
+
+    val landing: List<Distance>,
+
+    @SerialName("max_takeoff_weight_lb")
+    val maxTakeoffWeightLb: Double? = null,
+
+    val takeoff: List<Distance>,
+
+    @SerialName("usable_fuel_gal")
+    val usableFuelGal: Double? = null
+)
+
+/**
+ * A cruise performance table's row: pressure altitude, power, RPM, true airspeed, fuel burn
+ */
+@Serializable
+data class Cruise (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("burn_gph")
+    val burnGph: Double,
+
+    @SerialName("power_pct")
+    val powerPct: Double? = null,
+
+    val rpm: Double? = null,
+
+    @SerialName("tas_kt")
+    val tasKt: Double
+)
+
+/**
+ * A corner of the CG envelope: arm aft of the datum and weight
+ */
+@Serializable
+data class Corner (
+    @SerialName("arm_in")
+    val armIn: Double,
+
+    @SerialName("weight_lb")
+    val weightLb: Double
+)
+
+/**
+ * A takeoff or landing distance table's row: ground roll and total over a 50 ft obstacle
+ */
+@Serializable
+data class Distance (
+    @SerialName("ground_roll_ft")
+    val groundRollFt: Double,
+
+    @SerialName("over_50ft_ft")
+    val over50FtFt: Double,
+
+    @SerialName("pressure_altitude_ft")
+    val pressureAltitudeFt: Double,
+
+    @SerialName("temp_c")
+    val tempC: Double
 )
 
 /**
@@ -456,6 +557,11 @@ data class BriefingSourceDto (
 @Serializable
 data class FullNameRequest (
     val fullName: String
+)
+
+@Serializable
+data class HandbookRequest (
+    val figures: HandbookFigures? = null
 )
 
 @Serializable

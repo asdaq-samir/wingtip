@@ -14,7 +14,10 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Map;
 import lombok.Getter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * One aeroplane, belonging to one pilot.
@@ -124,6 +127,13 @@ public class Aircraft {
     @Column(length = 40)
     private String colour;
 
+    /** Its handbook figures as its pilot confirmed them from a photographed
+     *  page (V35; the engine contract's HandbookFigures), kept as sent;
+     *  null until then. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> handbook;
+
     protected Aircraft() {
         // JPA
     }
@@ -160,6 +170,12 @@ public class Aircraft {
 
     /** Its flight plan's items 10a, 10b and 19 A/, all at once, as the
      *  airplane's form saves them; null for one not said. */
+    /** Its handbook figures, as confirmed; null takes them away. */
+    public Aircraft keepHandbook(Map<String, Object> figures) {
+        this.handbook = figures;
+        return this;
+    }
+
     public Aircraft describeForFlightPlan(String equipment, String surveillance, String colour) {
         this.equipment = equipment;
         this.surveillance = surveillance;

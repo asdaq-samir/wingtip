@@ -44,6 +44,14 @@
             "format" : "double",
             "type" : "number"
           },
+          "handbook" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/HandbookFigures"
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "Its handbook figures as its pilot confirmed them from a photographed page: the engine contract's HandbookFigures, in the app's units; null until then"
+          },
           "id" : {
             "format" : "int64",
             "type" : "integer"
@@ -83,7 +91,7 @@
             "description" : "Its last VOR check for IFR (14 CFR 91.171): when, how, where, the bearing error, and the last day it is good for -- 30 days on, if the error was within the check's limit"
           }
         },
-        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "dueItems", "equipment", "fuelBurnGph", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
+        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "dueItems", "equipment", "fuelBurnGph", "handbook", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
         "type" : "object"
       },
       "AircraftRequest" : {
@@ -410,6 +418,21 @@
         "required" : [ "kind", "message", "page", "stack", "userAgent" ],
         "type" : "object"
       },
+      "Corner" : {
+        "description" : "A corner of the CG envelope: arm aft of the datum and weight",
+        "properties" : {
+          "arm_in" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "weight_lb" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "required" : [ "arm_in", "weight_lb" ],
+        "type" : "object"
+      },
       "CrossCountryReviewDto" : {
         "properties" : {
           "answeredAt" : {
@@ -465,6 +488,33 @@
           }
         },
         "required" : [ "answeredAt", "askedAt", "checks", "declinedNote", "endorsement", "flight", "flightOn", "id", "instructorName", "makeModel", "note", "studentId", "studentName" ],
+        "type" : "object"
+      },
+      "Cruise" : {
+        "description" : "A cruise performance table's row: pressure altitude, power, RPM, true airspeed, fuel burn",
+        "properties" : {
+          "altitude_ft" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "burn_gph" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "power_pct" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "rpm" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "tas_kt" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "required" : [ "altitude_ft", "burn_gph", "power_pct", "rpm", "tas_kt" ],
         "type" : "object"
       },
       "CurrencyDatesRequest" : {
@@ -596,6 +646,29 @@
           }
         },
         "required" : [ "deviceCode", "expiresIn", "interval", "userCode", "verificationPath" ],
+        "type" : "object"
+      },
+      "Distance" : {
+        "description" : "A takeoff or landing distance table's row: ground roll and total over a 50 ft obstacle",
+        "properties" : {
+          "ground_roll_ft" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "over_50ft_ft" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "pressure_altitude_ft" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "temp_c" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "required" : [ "ground_roll_ft", "over_50ft_ft", "pressure_altitude_ft", "temp_c" ],
         "type" : "object"
       },
       "DueDto" : {
@@ -1198,6 +1271,98 @@
           }
         },
         "required" : [ "fullName" ],
+        "type" : "object"
+      },
+      "HandbookFigures" : {
+        "description" : "An airplane's handbook figures in the app's units (the engine contract's HandbookFigures)",
+        "properties" : {
+          "climb_burn_gph" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "climb_rate_fpm" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "climb_speed_kias" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "cruise" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Cruise"
+            },
+            "maxItems" : 60,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "empty_arm_in" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "empty_weight_lb" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "envelope" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Corner"
+            },
+            "maxItems" : 30,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "fuel_total_gal" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "glide_ratio" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "glide_speed_kias" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "landing" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Distance"
+            },
+            "maxItems" : 60,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "max_takeoff_weight_lb" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "takeoff" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Distance"
+            },
+            "maxItems" : 60,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "usable_fuel_gal" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          }
+        },
+        "required" : [ "climb_burn_gph", "climb_rate_fpm", "climb_speed_kias", "cruise", "empty_arm_in", "empty_weight_lb", "envelope", "fuel_total_gal", "glide_ratio", "glide_speed_kias", "landing", "max_takeoff_weight_lb", "takeoff", "usable_fuel_gal" ],
+        "type" : "object"
+      },
+      "HandbookRequest" : {
+        "properties" : {
+          "figures" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/HandbookFigures"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "figures" ],
         "type" : "object"
       },
       "InspectionsDto" : {
@@ -2670,6 +2835,43 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/DueItemDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "aircraft-controller" ]
+      }
+    },
+    "/api/aircraft/{id}/handbook" : {
+      "put" : {
+        "operationId" : "handbook",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/HandbookRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AircraftDto"
                 }
               }
             },

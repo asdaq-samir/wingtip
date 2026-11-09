@@ -38,7 +38,10 @@ public record AircraftDto(
         @Nullable String colour,
         @Schema(description = "What else falls due on it as its owner keeps it: ADs (14 CFR 91.417(a)(2)(v)) and "
                 + "other items")
-        List<DueItemDto> dueItems) {
+        List<DueItemDto> dueItems,
+        @Schema(description = "Its handbook figures as its pilot confirmed them from a photographed page: the engine "
+                + "contract's HandbookFigures, in the app's units; null until then")
+        @Nullable HandbookFigures handbook) {
 
     @Schema(description = "A VOR check for IFR (14 CFR 91.171)")
     public record VorCheckDto(

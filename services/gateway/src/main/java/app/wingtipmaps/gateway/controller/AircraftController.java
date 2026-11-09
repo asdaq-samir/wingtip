@@ -6,6 +6,7 @@ import app.wingtipmaps.gateway.dto.AircraftRequest;
 import app.wingtipmaps.gateway.dto.DueItemDto;
 import app.wingtipmaps.gateway.dto.DueItemRequest;
 import app.wingtipmaps.gateway.service.DueItemService;
+import app.wingtipmaps.gateway.dto.HandbookRequest;
 import app.wingtipmaps.gateway.dto.InspectionsRequest;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckOutput;
@@ -101,6 +102,16 @@ public class AircraftController {
                 .map(this::toDto));
     }
 
+    /** The airplane's handbook figures, as its pilot confirmed them from a
+     *  photographed page; kept as sent. */
+    @PutMapping("/{id}/handbook")
+    public ResponseEntity<AircraftDto> handbook(
+            Authentication authentication, @PathVariable Long id, @Valid @RequestBody HandbookRequest request) {
+        return PilotResponses.found(pilots, authentication, pilot -> aircraftService
+                .keepHandbook(pilot, id, request.figures())
+                .map(this::toDto));
+    }
+
     /** The airplane's squawks, newest first. */
     @GetMapping("/{id}/squawks")
     public ResponseEntity<List<SquawkDto>> squawks(Authentication authentication, @PathVariable Long id) {
@@ -155,7 +166,8 @@ public class AircraftController {
                 a.getFuelBurnGph(), a.getCruisePowerPct(), a.getClimbTasKt(), a.getClimbFuelBurnGph(), a.getUsableFuelGal(),
                 a.getCreatedAt(), vorCheckOf(a, due), inspectionsOf(a, due), a.getId() == null ? List.of() : squawks.open(a.getId()),
                 a.getEquipment(), a.getSurveillance(), a.getColour(),
-                a.getId() == null ? List.of() : dueItems.of(a.getId()).stream().map(DueItemService::toDto).toList());
+                a.getId() == null ? List.of() : dueItems.of(a.getId()).stream().map(DueItemService::toDto).toList(),
+                AircraftService.handbookOf(a));
     }
 
     /** When the airplane's inspections and checks fall due, and its VOR
