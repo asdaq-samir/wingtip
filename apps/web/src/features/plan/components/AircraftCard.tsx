@@ -219,10 +219,15 @@ export function AircraftFavoriteStrip({ onOpen, onAddMine, onAddFavorite }: {
         label={mine ? `Airplane, ${mine.name}` : "Add your Airplane"} onClick={mine ? () => onOpen(mine.hex) : onAddMine} testId="pill-aircraft-mine"
       />
       {favorites.map(a => <KeptAircraftTile key={a.hex} aircraft={a} onClick={() => onOpen(a.hex)} testId="pill-aircraft-favorite" />)}
-      <SmallTile
-        mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />} title="Add" label="Add a Favorite"
-        onClick={onAddFavorite} testId="pill-aircraft-favorite-add"
-      />
+      {/* One Add at a time: with no airplane of the pilot's own, its tile's
+          Add is the strip's, where a second Add tile beside it read as the
+          same twice (the UI audit, 2026-11-09). */}
+      {(mine || favorites.length > 0) && (
+        <SmallTile
+          mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />} title="Add" label="Add a Favorite"
+          onClick={onAddFavorite} testId="pill-aircraft-favorite-add"
+        />
+      )}
     </PillStrip>
   );
 }

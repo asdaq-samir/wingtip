@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { numberOrNull, optionalHours, pastDay, requiredPastDay, textOrNull, z } from "../../lib/formSchema";
-import { toast } from "../../lib/toast";
+import { done } from "../../lib/doneNote";
 import { Info, Plus, Route, Share, Trash2 } from "lucide-react";
 import EmptyState from "../../components/EmptyState";
 import FieldHit from "../../components/FieldHit";
@@ -148,7 +148,7 @@ function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
   });
   const record = useMutation({
     mutationFn: (request: VorCheckRequest) => api.aircraft.vorCheck(aircraft.id, request),
-    onSuccess: () => { toast.success("VOR Check Saved"); void queryClient.invalidateQueries({ queryKey: ["aircraft"] }); },
+    onSuccess: () => { done("VOR Check Saved"); void queryClient.invalidateQueries({ queryKey: ["aircraft"] }); },
   });
   // Inside the airplane's own form, so its Record is a button, not a
   // second <form>: handleSubmit checks the fields, then sends them, or
@@ -269,7 +269,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
   const save = useMutation({
     mutationFn: (request: InspectionsRequest) => api.aircraft.inspections(aircraft.id, request),
     onSuccess: () => {
-      toast.success("Inspections Saved");
+      done("Inspections Saved");
       void queryClient.invalidateQueries({ queryKey: ["aircraft"] });
       void queryClient.invalidateQueries({ queryKey: ["paperwork"] });
     },
@@ -398,7 +398,7 @@ export function AircraftPanel() {
     // (a route, a rating). This is the one place in the app a genuine
     // list-editing success has nothing else to announce it.
     onSuccess: (_data, { id }) => {
-      toast.success(id ? "Airplane Saved" : "Airplane Added");
+      done(id ? "Airplane Saved" : "Airplane Added");
       // Cleared only while it still shows what was saved.
       if (editingId === id) cancelEdit();
       void queryClient.invalidateQueries({ queryKey: ["aircraft"] });
@@ -408,7 +408,7 @@ export function AircraftPanel() {
   const remove = useMutation({
     mutationFn: (id: number) => api.aircraft.remove(id),
     onSuccess: (_data, id) => {
-      toast.success("Airplane Deleted");
+      done("Airplane Deleted");
       if (editingId === id) cancelEdit();
       void queryClient.invalidateQueries({ queryKey: ["aircraft"] });
     },
@@ -723,7 +723,7 @@ export function FlightsPanel({ onBack }: {
   const remove = useMutation({
     mutationFn: (id: number) => api.flights.remove(id),
     onSuccess: () => {
-      toast.success("Flight Deleted");
+      done("Flight Deleted");
       setFlightToDelete(null);
       void queryClient.invalidateQueries({ queryKey: ["flights"] });
     },

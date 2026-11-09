@@ -111,15 +111,15 @@ function Personal({ pilot, dev }: {
           <div data-testid="library-section">
           <ListGroup>
               <PageRow
-                page="aircraft" title="Airplanes" disabled={!signedIn} value={aircraft.label ? shortName(aircraft.label) : undefined}
+                page="aircraft" title="Airplanes" disabled={!signedIn} value={!signedIn ? SIGNED_OUT : aircraft.label ? shortName(aircraft.label) : undefined}
                 media={<RowBadge colour={SETTING_BADGE.aircraft}><Plane /></RowBadge>}
               />
               <PageRow
-                page="flights" title="Flights" disabled={!signedIn} value={flights ? `${flights.length} saved` : undefined}
+                page="flights" title="Flights" disabled={!signedIn} value={!signedIn ? SIGNED_OUT : flights ? `${flights.length} saved` : undefined}
                 media={<RowBadge colour={SETTING_BADGE.flights}><Route /></RowBadge>}
               />
               <PageRow
-                page="logbook" title="Logbook" disabled={!signedIn} value={hours !== undefined && entries?.length ? `${hours.toFixed(1)} h` : undefined}
+                page="logbook" title="Logbook" disabled={!signedIn} value={!signedIn ? SIGNED_OUT : hours !== undefined && entries?.length ? `${hours.toFixed(1)} h` : undefined}
                 media={<RowBadge colour={SETTING_BADGE.logbook}><BookOpen /></RowBadge>}
               />
               <PageRow
@@ -144,6 +144,10 @@ function Personal({ pilot, dev }: {
     </>
   );
 }
+
+/** What a row kept to an account says while no one is signed in: why it
+ *  is greyed, where it only looked broken (the UI audit, 2026-11-09). */
+const SIGNED_OUT = "Sign In to Use";
 
 /** The personal minimums in a few words, the ceiling and visibility
  *  first; none set, nothing. */

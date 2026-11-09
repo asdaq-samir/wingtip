@@ -84,7 +84,7 @@ test("the Brief's words come with their chips, and a reading the model could not
   const panel = sideDrawer(page);
   await expect(panel.getByTestId("brief-notam-words-words")).toHaveText("Nothing in the NOTAMs bears on this flight.", { timeout: slow(30000) });
   await expect(panel.getByTestId("brief-notam-words-source")).toHaveText("NOTAMs C81, KDLH");
-  await expect(panel.getByTestId("brief-weather-words-unavailable")).toHaveText("Words unavailable: the model could not be reached");
+  await expect(panel.getByTestId("brief-weather-words-unavailable")).toHaveText("The model could not be reached.");
   await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
 });
 

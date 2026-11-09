@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { BrainCircuit, ExternalLink, RefreshCw } from "lucide-react";
-import { toast } from "../../lib/toast";
+import { done } from "../../lib/doneNote";
 import { showError } from "../../lib/problems";
 import { Bar, BarChart, Cell, LabelList, XAxis, YAxis } from "recharts";
 import { cn } from "cn";
@@ -479,7 +479,7 @@ function StackLink({ link }: { link: { label: string; href: string; service?: st
         if (tab) tab.opener = null;
         start.mutate(link.service!, {
           onSuccess: () => {
-            toast.success(`${(link.service ?? "").replace(/^./, c => c.toUpperCase())} Started`);
+            done(`${(link.service ?? "").replace(/^./, c => c.toUpperCase())} Started`);
             // So the control goes back to being a plain link rather
             // than still offering to start what is now running.
             void queryClient.invalidateQueries({ queryKey: ["devServices"] });
@@ -676,7 +676,7 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
   const refreshCharts = useMutation({
     mutationFn: api.refreshCharts,
     onSuccess: r => {
-      toast.success(r.started ? `Fetching Charts ${r.current_cycle}` : "Charts Already Fetching");
+      done(r.started ? `Fetching Charts ${r.current_cycle}` : "Charts Already Fetching");
       void queryClient.invalidateQueries({ queryKey: ["status"] });
     },
   });

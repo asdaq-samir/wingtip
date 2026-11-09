@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "../../lib/toast";
+import { done } from "../../lib/doneNote";
 import FieldHit from "../../components/FieldHit";
 import RowField from "../../components/RowField";
 import { invalidProps } from "../../lib/fieldError";
@@ -80,7 +80,7 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
     mutationFn: (request: SquawkRequest) => api.aircraft.addSquawk(aircraft.id, request),
     // Ready for the next, on the same day.
     onSuccess: (_data, request) => {
-      toast.success("Squawk Saved");
+      done("Squawk Saved");
       reset({ text: "", reportedOn: request.reportedOn, inoperative: false, deferredFor: "none" });
       refresh();
     },

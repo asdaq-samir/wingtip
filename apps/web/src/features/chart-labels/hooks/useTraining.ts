@@ -7,7 +7,7 @@ import { ended } from "../../../lib/api/streams";
 import type { Course, Detection, Endpoint, LoosePick, PickSaved, Point, Rating, Role } from "../../../lib/api/types";
 import { usePreferences } from "../../../lib/preferences";
 import { pointKey, type PointKind } from "../logic";
-import { toast } from "../../../lib/toast";
+import { done } from "../../../lib/doneNote";
 
 /**
  * The training workspace's data: what the chart reader found for the
@@ -79,7 +79,7 @@ const withoutDisplaced = (e: Edits, saved: PickSaved, points: Map<string, { poin
     if (was) overrides[key] = { ...editOf(was), ...overrides[key], rating: null, rated: false };
   }
   const what = saved.displaced.map(d => d.category.replace(/_/g, " ")).join(", ");
-  toast.success("Nearby Pick Replaced", { description: `The ${what} beside it: one pick per place` });
+  done("Nearby Pick Replaced", { detail: `The ${what} beside it: one pick per place` });
   return { ...e, overrides };
 };
 

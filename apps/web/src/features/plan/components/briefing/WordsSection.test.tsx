@@ -27,7 +27,7 @@ describe("a section of words", () => {
   test("with the model unreachable it says so in the note's size and shows nothing else, no toast", () => {
     const unavailable: WordsAnswer = { sentences: [], sources: [], model: null, unavailable: "the model did not answer in time" };
     render(<WordsSection title="Risk picture" testId="w" state={wordsState({ data: unavailable, error: null })} />);
-    expect(screen.getByTestId("w-unavailable").textContent).toBe("Words unavailable: the model did not answer in time");
+    expect(screen.getByTestId("w-unavailable").textContent).toBe("The model did not answer in time.");
     expect(screen.queryByTestId("w-words")).toBeNull();
     expect(screen.queryByTestId("w-source")).toBeNull();
     expect(document.querySelector("[data-sonner-toast]")).toBeNull();
@@ -35,7 +35,7 @@ describe("a section of words", () => {
 
   test("a failed request reads the same way, with the error's own words", () => {
     render(<WordsSection title="Risk picture" testId="w" state={wordsState({ data: undefined, error: new Error("The planner is not answering") })} />);
-    expect(screen.getByTestId("w-unavailable").textContent).toBe("Words unavailable: The planner is not answering");
+    expect(screen.getByTestId("w-unavailable").textContent).toBe("The planner is not answering.");
   });
 
   test("the sentences read as one paragraph, each source one chip that opens the report as sent", () => {
