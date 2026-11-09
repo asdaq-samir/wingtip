@@ -71,15 +71,19 @@ test("a route rests as its figures in the tabs' place, the pill's own height, an
   await expect(panel.getByTestId("tab-bar")).toBeHidden();
   await expect(panel.getByTestId("mini-profile")).toBeHidden();
   await settled(panel);
-  // The row's 62 and the eight it keeps clear of the screen's edge (a
-  // phone's home indicator adds its own inset). The sheet is laid out at
-  // its full height and slid, so its box is that height: its pill is the
-  // first of its three heights (data-detents).
-  // The sheet is laid out at its full height and slid, so its box is that
-  // height: the pill is the first of its three heights (data-detents). A
-  // desktop's top sheet has eight more, its grabber's band under the row.
+  // The row's 62 and nothing under it: on a phone the pill ends at the
+  // row's foot, the screen's edge, with no sliver of sheet below (the
+  // owner, 2026-11-08; a home indicator adds its own inset). The sheet is
+  // laid out at its full height and slid, so its box is that height: the
+  // pill is the first of its three heights (data-detents). A desktop's top
+  // sheet has its grabber's band under the row.
   const [pill] = (await panel.getAttribute("data-detents"))!.split(",").map(Number);
-  expect(pill).toBeLessThan((page.viewportSize()?.width ?? 0) < 768 ? 72 : 80);
+  const phone = (page.viewportSize()?.width ?? 0) < 768;
+  expect(pill).toBeLessThan(phone ? 66 : 80);
+  if (phone) {
+    const row = (await panel.getByTestId("panel-foot").boundingBox())!;
+    expect(Math.abs(row.y + row.height - page.viewportSize()!.height)).toBeLessThanOrEqual(1);
+  }
   await panel.getByTestId("panel-foot").click();
   await expect(panel).toHaveAttribute("data-panel", "half");
   // Half way, the tabs still the sheet's first row.

@@ -333,6 +333,12 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   // its own row), the figures where they are its row, and the grabber's
   // or the home indicator's room.
   const halfChrome = fromBottom ? edgeInset : GRABBER;
+  // The pill ends at its row's foot, the line under a card's name or the
+  // tabs' own band, as Maps' collapsed sheet does: the eight points kept
+  // clear of an edge with no home indicator showed as a sliver of sheet
+  // under that line in Safari, over its toolbar (the owner, 2026-11-08:
+  // "taking it down up to the separator"). A home indicator's inset stays.
+  const pillChrome = fromBottom ? (keyboard ? 0 : Math.round(safe.bottom)) : GRABBER;
   // Whether the sheet is laid out as the pill at rest this commit, set as
   // the commit is made: the observer below can fire after a commit that
   // laid the sheet out for half, before this effect's cleanup has run,
@@ -346,20 +352,20 @@ export default function MapPanel({ label, top, kept, controls, compact, children
     if (!atPill || moving || !headBand) return;
     const measure = () => {
       if (!pillLaid.current || movingRef.current) return;
-      setPillHeight(Math.ceil(headBand.offsetHeight + (footShown && footNode ? footNode.offsetHeight : 0) + halfChrome));
+      setPillHeight(Math.ceil(headBand.offsetHeight + (footShown && footNode ? footNode.offsetHeight : 0) + pillChrome));
     };
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(headBand);
     if (footShown && footNode) watch.observe(footNode);
     return () => watch.disconnect();
-  }, [atPill, moving, headBand, footNode, footShown, halfChrome]);
+  }, [atPill, moving, headBand, footNode, footShown, pillChrome]);
 
   const footHalf = footHeights.half ?? footHeights.other ?? 0;
   const footFull = footHeights.other ?? footHeights.half ?? 0;
   // Where it comes to rest: the pill, half and all the way up, in px.
   const detents = useMemo<Detents>(() => {
-    const peek = pillHeight ?? Math.round(4.25 * rootPx()) + halfChrome;
+    const peek = pillHeight ?? Math.round(4.25 * rootPx()) + pillChrome;
     const whole = Math.max(peek, room);
     const askedHalf = Math.max(peek, Math.min(Math.round(HALF_REM * rootPx()) + halfChrome, Math.round(whole * HALF_MOST)));
     const body = askedHalf - headHeight - halfChrome - footHalf;
@@ -368,7 +374,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
     // a fix's card was a line and an empty sheet up to the status bar.
     const full = cardFit === null ? whole : Math.max(Math.min(half, whole), Math.min(whole, headHeight + halfChrome + cardFit));
     return { peek, half: Math.min(half, full), full };
-  }, [pillHeight, room, halfChrome, headHeight, footHalf, cardFit]);
+  }, [pillHeight, pillChrome, room, halfChrome, headHeight, footHalf, cardFit]);
   const detentsRef = useRef(detents);
   const halfBody = Math.max(0, detents.half - headHeight - halfChrome - footHalf);
   const fullBody = Math.max(0, detents.full - headHeight - halfChrome - footFull);
