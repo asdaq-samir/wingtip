@@ -2907,13 +2907,21 @@ class ShortField(BaseModel):
     grass_ground_roll_pct: Annotated[
         float | None, Field(title='Grass Ground Roll Pct')
     ] = None
+    headwind_kt_per_10pct: Annotated[
+        float | None, Field(title='Headwind Kt Per 10Pct')
+    ] = None
     pressure_altitudes_ft: Annotated[
         list[float] | None, Field(title='Pressure Altitudes Ft')
     ] = None
     source: Annotated[str | None, Field(title='Source')] = None
     tables: Annotated[list[DistanceTable] | None, Field(title='Tables')] = None
+    tailwind_kt_per_10pct: Annotated[
+        float | None, Field(title='Tailwind Kt Per 10Pct')
+    ] = None
+    tailwind_max_kt: Annotated[float | None, Field(title='Tailwind Max Kt')] = None
     temperatures_c: Annotated[list[float] | None, Field(title='Temperatures C')] = None
     weights_lb: Annotated[list[float] | None, Field(title='Weights Lb')] = None
+    wind_source: Annotated[str | None, Field(title='Wind Source')] = None
 
 
 class SpecialUse(BaseModel):

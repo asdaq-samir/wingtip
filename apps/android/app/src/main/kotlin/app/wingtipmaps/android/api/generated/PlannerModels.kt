@@ -2856,17 +2856,29 @@ data class ShortField (
     @SerialName("grass_ground_roll_pct")
     val grassGroundRollPct: Double,
 
+    @SerialName("headwind_kt_per_10pct")
+    val headwindKtPer10Pct: Double? = null,
+
     @SerialName("pressure_altitudes_ft")
     val pressureAltitudesFt: List<Double>,
 
     val source: String,
     val tables: List<DistanceTable>,
 
+    @SerialName("tailwind_kt_per_10pct")
+    val tailwindKtPer10Pct: Double? = null,
+
+    @SerialName("tailwind_max_kt")
+    val tailwindMaxKt: Double? = null,
+
     @SerialName("temperatures_c")
     val temperaturesC: List<Double>,
 
     @SerialName("weights_lb")
-    val weightsLb: List<Double>
+    val weightsLb: List<Double>,
+
+    @SerialName("wind_source")
+    val windSource: String? = null
 )
 
 /**

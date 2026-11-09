@@ -1738,7 +1738,9 @@ struct APIShortField: Codable, Equatable, Sendable {
     var pressureAltitudesFt: [Double]
     var source: String
     var tables: [APIDistanceTable]
+    var tailwindMaxKt: Double?
     var temperaturesC, weightsLb: [Double]
+    var windSource: String?
 }
 
 /// One weight's distances, by pressure altitude (rows) and

@@ -398,7 +398,7 @@ export type GonogoRunwayChecksAnswer = {
      */
     total_ft: number;
     /**
-     * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
+     * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, a tailwind past the POH's figures, or no wind correction in the airplane's profile.
      */
     caveats: string[];
     kind: "takeoff" | "landing";
@@ -1652,7 +1652,7 @@ export interface EngineContract {
     answer: FrequencyOfAnswer;
   };
   /**
-   * The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the start and taxi allowance (the Cessna 172S handbook's 1.4 gal, the planner's default) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short. Null where the book gives no speed, or no burn for the fuel.
+   * The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the airplane's own start and taxi allowance (taxi_fuel_gal, its profile's; left out where it has none, never a stock airplane's) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short of a reserve. Null where the book gives no speed, or no burn for the fuel.
    */
   fuel_estimate: {
     input: FuelEstimateInput;
@@ -1701,21 +1701,21 @@ export interface EngineContract {
     answer: GairmetsAlongRouteAnswer;
   };
   /**
-   * Still-air glide range, nm (1.5 nm per 1,000 ft, the C172S POH figure 3-1), or null on the ground or with no height.
+   * Still-air glide range, nm, at the picked airplane's own glide ratio (glide_ratio: feet forward for each foot down, its POH's Section 3 maximum glide, as its profile gives it), or null on the ground, with no height, or with no glide ratio: no airplane, or none in its profile, has no glide worked out.
    */
   glide_range: {
     input: GlideRangeInput;
     answer: GlideRangeAnswer;
   };
   /**
-   * Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft).
+   * Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft), at the picked airplane's own glide_ratio; false with no glide ratio (no airplane, or none in its profile).
    */
   glide_reaches: {
     input: GlideReachesInput;
     answer: GlideReachesAnswer;
   };
   /**
-   * The still-air glide ring about own ship (#218): glide_range's radius (1.5 nm per 1,000 ft, the C172S POH figure 3-1) over the higher of the ground under the airplane (a pack's terrain) and the nearest field's elevation, and its outline as 73 points on the sphere, the first repeated last. Null on the ground, under flying speed or with no height.
+   * The still-air glide ring about own ship (#218): glide_range's radius at the picked airplane's own glide_ratio over the higher of the ground under the airplane (a pack's terrain) and the nearest field's elevation, and its outline as 73 points on the sphere, the first repeated last. Null on the ground, under flying speed, with no height, or with no glide ratio (no airplane, or none in its profile).
    */
   glide_ring: {
     input: GlideRingInput;
@@ -2191,7 +2191,7 @@ export interface EngineContract {
     answer: NavLogCandidatesAnswer;
   };
   /**
-   * The fuel required: the start, taxi and takeoff allowance (the C172S POH's 1.4 gal where the profile has none), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
+   * The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
    */
   navlog_fuel_plan: {
     input: NavLogFuelPlanInput;
@@ -3890,6 +3890,18 @@ export interface ShortFieldTable {
     total_50ft_ft: number[][];
   }[];
   grass_ground_roll_pct: number;
+  /**
+   * The POH's note to the chart: the knots of headwind that take 10% off the distances. Null or missing: no correction for a headwind.
+   */
+  headwind_kt_per_10pct?: number | null;
+  /**
+   * The POH's note to the chart: the knots of tailwind that add 10% to the distances. Null or missing: no correction, and a caveat with a tailwind.
+   */
+  tailwind_kt_per_10pct?: number | null;
+  /**
+   * The strongest tailwind the POH gives figures for, kt; past it a caveat.
+   */
+  tailwind_max_kt?: number | null;
 }
 /**
  * A runway as the planner sends one.
@@ -5561,6 +5573,10 @@ export interface FuelEstimateInput {
   distance_nm: number;
   cruise_tas_kt?: number | null;
   fuel_burn_gph?: number | null;
+  /**
+   * The airplane's own fuel for engine start, taxi and takeoff, gallons (its profile's taxi_fuel_gal); null or missing for none.
+   */
+  taxi_fuel_gal?: number | null;
 }
 export interface FuelEstimateAnswer {
   minutes: number | null;
@@ -5654,12 +5670,20 @@ export interface GlideRangeInput {
   altitude_ft?: number | null;
   speed_kt?: number | null;
   ground_ft?: number | null;
+  /**
+   * The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
+   */
+  glide_ratio?: number | null;
 }
 export interface GlideReachesInput {
   altitude_ft?: number | null;
   speed_kt?: number | null;
   distance_nm: number;
   elevation_ft?: number | null;
+  /**
+   * The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
+   */
+  glide_ratio?: number | null;
 }
 export interface GlideRingInput {
   lat: number;
@@ -5668,6 +5692,10 @@ export interface GlideRingInput {
   speed_kt?: number | null;
   terrain_ft?: number | null;
   field_ft?: number | null;
+  /**
+   * The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
+   */
+  glide_ratio?: number | null;
 }
 export interface GonogoAlternateFindingInput {
   /**
@@ -5780,7 +5808,7 @@ export interface GonogoEndDistanceAnswer {
    */
   total_ft: number;
   /**
-   * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
+   * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, a tailwind past the POH's figures, or no wind correction in the airplane's profile.
    */
   caveats: string[];
   over: boolean;
@@ -9919,7 +9947,7 @@ export interface GonogoDistances {
    */
   total_ft: number;
   /**
-   * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
+   * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, a tailwind past the POH's figures, or no wind correction in the airplane's profile.
    */
   caveats: string[];
 }

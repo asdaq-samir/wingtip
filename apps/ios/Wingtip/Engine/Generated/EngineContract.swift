@@ -3205,11 +3205,14 @@ enum EngineContract {
         var distanceNm: Double
         var cruiseTasKt: Double?
         var fuelBurnGph: Double?
+        /// The airplane's own fuel for engine start, taxi and takeoff, gallons (its profile's taxi_fuel_gal); null or missing for none.
+        var taxiFuelGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case distanceNm = "distance_nm"
             case cruiseTasKt = "cruise_tas_kt"
             case fuelBurnGph = "fuel_burn_gph"
+            case taxiFuelGal = "taxi_fuel_gal"
         }
     }
 
@@ -3367,11 +3370,14 @@ enum EngineContract {
         var altitudeFt: Double?
         var speedKt: Double?
         var groundFt: Double?
+        /// The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
+        var glideRatio: Double?
 
         enum CodingKeys: String, CodingKey {
             case altitudeFt = "altitude_ft"
             case speedKt = "speed_kt"
             case groundFt = "ground_ft"
+            case glideRatio = "glide_ratio"
         }
     }
 
@@ -3380,12 +3386,15 @@ enum EngineContract {
         var speedKt: Double?
         var distanceNm: Double
         var elevationFt: Double?
+        /// The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
+        var glideRatio: Double?
 
         enum CodingKeys: String, CodingKey {
             case altitudeFt = "altitude_ft"
             case speedKt = "speed_kt"
             case distanceNm = "distance_nm"
             case elevationFt = "elevation_ft"
+            case glideRatio = "glide_ratio"
         }
     }
 
@@ -3408,6 +3417,8 @@ enum EngineContract {
         var speedKt: Double?
         var terrainFt: Double?
         var fieldFt: Double?
+        /// The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
+        var glideRatio: Double?
 
         enum CodingKeys: String, CodingKey {
             case lat
@@ -3416,6 +3427,7 @@ enum EngineContract {
             case speedKt = "speed_kt"
             case terrainFt = "terrain_ft"
             case fieldFt = "field_ft"
+            case glideRatio = "glide_ratio"
         }
     }
 
@@ -3535,7 +3547,7 @@ enum EngineContract {
         var groundRollFt: Double
         /// Over a 50 ft obstacle.
         var totalFt: Double
-        /// What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
+        /// What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, a tailwind past the POH's figures, or no wind correction in the airplane's profile.
         var caveats: [String]
         var over: Bool
 
@@ -3992,7 +4004,7 @@ enum EngineContract {
         var groundRollFt: Double
         /// Over a 50 ft obstacle.
         var totalFt: Double
-        /// What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
+        /// What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, a tailwind past the POH's figures, or no wind correction in the airplane's profile.
         var caveats: [String]
         var kind: String
         var over: Bool
@@ -8985,6 +8997,12 @@ enum EngineContract {
         /// One per weight, each a grid of altitudes by temperatures.
         var tables: [EngineContract.ShortFieldTableTablesItem]
         var grassGroundRollPct: Double
+        /// The POH's note to the chart: the knots of headwind that take 10% off the distances. Null or missing: no correction for a headwind.
+        var headwindKtPer10pct: Double?
+        /// The POH's note to the chart: the knots of tailwind that add 10% to the distances. Null or missing: no correction, and a caveat with a tailwind.
+        var tailwindKtPer10pct: Double?
+        /// The strongest tailwind the POH gives figures for, kt; past it a caveat.
+        var tailwindMaxKt: Double?
 
         enum CodingKeys: String, CodingKey {
             case pressureAltitudesFt = "pressure_altitudes_ft"
@@ -8992,6 +9010,9 @@ enum EngineContract {
             case weightsLb = "weights_lb"
             case tables
             case grassGroundRollPct = "grass_ground_roll_pct"
+            case headwindKtPer10pct = "headwind_kt_per_10pct"
+            case tailwindKtPer10pct = "tailwind_kt_per_10pct"
+            case tailwindMaxKt = "tailwind_max_kt"
         }
     }
 

@@ -3059,6 +3059,11 @@ object EngineContract {
         val cruiseTasKt: Double? = null,
         @SerialName("fuel_burn_gph")
         val fuelBurnGph: Double? = null,
+        /**
+         * The airplane's own fuel for engine start, taxi and takeoff, gallons (its profile's taxi_fuel_gal); null or missing for none.
+         */
+        @SerialName("taxi_fuel_gal")
+        val taxiFuelGal: Double? = null,
     )
 
     /**
@@ -3206,6 +3211,11 @@ object EngineContract {
         val speedKt: Double? = null,
         @SerialName("ground_ft")
         val groundFt: Double? = null,
+        /**
+         * The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
+         */
+        @SerialName("glide_ratio")
+        val glideRatio: Double? = null,
     )
 
     @Serializable
@@ -3218,6 +3228,11 @@ object EngineContract {
         val distanceNm: Double,
         @SerialName("elevation_ft")
         val elevationFt: Double? = null,
+        /**
+         * The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
+         */
+        @SerialName("glide_ratio")
+        val glideRatio: Double? = null,
     )
 
     @Serializable
@@ -3241,6 +3256,11 @@ object EngineContract {
         val terrainFt: Double? = null,
         @SerialName("field_ft")
         val fieldFt: Double? = null,
+        /**
+         * The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
+         */
+        @SerialName("glide_ratio")
+        val glideRatio: Double? = null,
     )
 
     /**
@@ -3366,7 +3386,7 @@ object EngineContract {
         @SerialName("total_ft")
         val totalFt: Double,
         /**
-         * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
+         * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, a tailwind past the POH's figures, or no wind correction in the airplane's profile.
          */
         val caveats: List<String>,
         val over: Boolean,
@@ -3863,7 +3883,7 @@ object EngineContract {
         @SerialName("total_ft")
         val totalFt: Double,
         /**
-         * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
+         * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, a tailwind past the POH's figures, or no wind correction in the airplane's profile.
          */
         val caveats: List<String>,
         val kind: String,
@@ -8778,6 +8798,21 @@ object EngineContract {
         val tables: List<EngineContract.ShortFieldTableTablesItem>,
         @SerialName("grass_ground_roll_pct")
         val grassGroundRollPct: Double,
+        /**
+         * The POH's note to the chart: the knots of headwind that take 10% off the distances. Null or missing: no correction for a headwind.
+         */
+        @SerialName("headwind_kt_per_10pct")
+        val headwindKtPer10pct: Double? = null,
+        /**
+         * The POH's note to the chart: the knots of tailwind that add 10% to the distances. Null or missing: no correction, and a caveat with a tailwind.
+         */
+        @SerialName("tailwind_kt_per_10pct")
+        val tailwindKtPer10pct: Double? = null,
+        /**
+         * The strongest tailwind the POH gives figures for, kt; past it a caveat.
+         */
+        @SerialName("tailwind_max_kt")
+        val tailwindMaxKt: Double? = null,
     )
 
     @Serializable
