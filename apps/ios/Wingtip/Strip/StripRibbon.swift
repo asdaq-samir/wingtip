@@ -37,7 +37,7 @@ struct RibbonLine: View {
                 if let at {
                     GeometryReader { geo in
                         Image(systemName: "airplane")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(WingtipType.note.weight(.bold))
                             .foregroundStyle(ink.magenta)
                             .rotationEffect(.degrees(-45))
                             .position(x: geo.size.width * CGFloat(at / Double(legs)), y: geo.size.height / 2)

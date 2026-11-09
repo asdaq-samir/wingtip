@@ -109,6 +109,39 @@ object WingtipColors {
         /** The emergency assistant's line to the field picked: the system red a pilot reads as now. */
         val Emergency = Color(0xFFFF3B30)
         const val EMERGENCY_HEX = "#ff3b30"
+        /** The white a mark, a line or a label is cased and haloed in so it reads over any part of the chart, and the paper under a diagram. */
+        val Casing = Color(0xFFFFFFFF)
+        const val CASING_HEX = "#ffffff"
+        /** The dark ground a label sits on over the chart: an airport's name halo, a field's tag on the route, a traffic label, an airspace's chip. */
+        val Tag = Color(0xFF14181F)
+        const val TAG_HEX = "#14181f"
+        /** The dark ring round a checkpoint's halo and the edge of a map control, at about half strength. */
+        val Shade = Color(0xFF0A141C)
+        const val SHADE_HEX = "#0a141c"
+        /** Something in the way on the chart and in the side view: terrain or an obstacle at or above the airplane, a track off the route (iOS's accessible system red). */
+        val Warning = Color(0xFFD70015)
+        const val WARNING_HEX = "#d70015"
+        /** The side view's and the pilot's-eye view's amber: ground within the engine's caution band below the airplane. */
+        val Caution = Color(0xFFFFB000)
+        const val CAUTION_HEX = "#ffb000"
+        /** The ground in a profile, the nav log's and the side view's. */
+        val Terrain = Color(0xFF8B6F47)
+        const val TERRAIN_HEX = "#8b6f47"
+        /** The ring round the field whose card is open and round a point picked on the chart. */
+        val Selected = Color(0xFFFF3B00)
+        const val SELECTED_HEX = "#ff3b00"
+        /** The course's magenta a step darker, for a chip with white words on it (6:1; the course's own is 3.8:1): a way's name and time on its line. */
+        val CourseChip = Color(0xFFB000B0)
+        const val COURSE_CHIP_HEX = "#b000b0"
+        /** A traffic pattern's legs and arrows, in teal so they stand apart from the route's magenta (ForeFlight draws its in a cyan). */
+        val Pattern = Color(0xFF0E8F8A)
+        const val PATTERN_HEX = "#0e8f8a"
+        /** A pattern leg's name ground, a step darker: white words on it 5.2:1, where the line's teal is 3.95:1 (WCAG 1.4.3). */
+        val PatternLabel = Color(0xFF0B7A75)
+        const val PATTERN_LABEL_HEX = "#0b7a75"
+        /** An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red. */
+        val Obstacle = Color(0xFF7A1F1F)
+        const val OBSTACLE_HEX = "#7a1f1f"
     }
     object Category {
         val Vfr = Color(0xFF1A7F37)
@@ -154,6 +187,101 @@ object WingtipColors {
         val Flown = Color(0xFF8E8E93)
         const val FLOWN_HEX = "#8e8e93"
     }
+    object Badge {
+        val Tower = Color(0xFF2465B8)
+        const val TOWER_HEX = "#2465b8"
+        val Ground = Color(0xFF0F766E)
+        const val GROUND_HEX = "#0f766e"
+        val Weather = Color(0xFF0284C7)
+        const val WEATHER_HEX = "#0284c7"
+        val Approach = Color(0xFF5B5BD6)
+        const val APPROACH_HEX = "#5b5bd6"
+        val Traffic = Color(0xFFC2410C)
+        const val TRAFFIC_HEX = "#c2410c"
+        val Other = Color(0xFF6B7280)
+        const val OTHER_HEX = "#6b7280"
+        val Runway = Color(0xFF3F4652)
+        const val RUNWAY_HEX = "#3f4652"
+        val Chart = Color(0xFF475569)
+        const val CHART_HEX = "#475569"
+        val Rule = Color(0xFF64748B)
+        const val RULE_HEX = "#64748b"
+        val Hazard = Color(0xFFB42318)
+        const val HAZARD_HEX = "#b42318"
+        val Lights = Color(0xFFA16207)
+        const val LIGHTS_HEX = "#a16207"
+        /** A stop's services: the fuel, a car, food, a bed. */
+        val Fuel = Color(0xFFB45309)
+        const val FUEL_HEX = "#b45309"
+        val Car = Color(0xFF2563EB)
+        const val CAR_HEX = "#2563eb"
+        val Food = Color(0xFFBE185D)
+        const val FOOD_HEX = "#be185d"
+        val Lodging = Color(0xFF7E3FB8)
+        const val LODGING_HEX = "#7e3fb8"
+        /** The Stops sheet's kinds, one colour each for a pill, a line, a Find Nearby tile and the map's pin (the owner's picks on the Stops canvas, 2026-10-27): fuel. */
+        val StopFuel = Color(0xFFD97706)
+        const val STOP_FUEL_HEX = "#d97706"
+        val StopFood = Color(0xFFDC2626)
+        const val STOP_FOOD_HEX = "#dc2626"
+        val StopRepair = Color(0xFF0F766E)
+        const val STOP_REPAIR_HEX = "#0f766e"
+        val StopTraining = Color(0xFF0369A1)
+        const val STOP_TRAINING_HEX = "#0369a1"
+    }
+    object Weather {
+        val Convective = Color(0xFFC2410C)
+        const val CONVECTIVE_HEX = "#c2410c"
+        val Icing = Color(0xFF2563EB)
+        const val ICING_HEX = "#2563eb"
+        val Turbulence = Color(0xFFD97706)
+        const val TURBULENCE_HEX = "#d97706"
+        val Ifr = Color(0xFF7C3AED)
+        const val IFR_HEX = "#7c3aed"
+        /** Mountains obscured. */
+        val Mountains = Color(0xFF78716C)
+        const val MOUNTAINS_HEX = "#78716c"
+        /** Low-level wind shear. */
+        val Shear = Color(0xFFBE185D)
+        const val SHEAR_HEX = "#be185d"
+        /** Strong surface winds. */
+        val Wind = Color(0xFF0F766E)
+        const val WIND_HEX = "#0f766e"
+        /** Volcanic ash, and a PIREP of nothing in particular. */
+        val Ash = Color(0xFF57534E)
+        const val ASH_HEX = "#57534e"
+        /** An area whose hazard has no colour of its own. */
+        val Other = Color(0xFF9333EA)
+        const val OTHER_HEX = "#9333ea"
+        /** An urgent PIREP (UUA). */
+        val Urgent = Color(0xFFDC2626)
+        const val URGENT_HEX = "#dc2626"
+    }
+    object Score {
+        /** Under 3. */
+        val Step1 = Color(0xFFD99A1E)
+        const val STEP_1_HEX = "#d99a1e"
+        /** 3 to 3.5. */
+        val Step2 = Color(0xFFB98014)
+        const val STEP_2_HEX = "#b98014"
+        /** 3.5 to 4. */
+        val Step3 = Color(0xFF96660E)
+        const val STEP_3_HEX = "#96660e"
+        /** 4 to 4.5. */
+        val Step4 = Color(0xFF724D09)
+        const val STEP_4_HEX = "#724d09"
+        /** 4.5 and up. */
+        val Step5 = Color(0xFF4E3406)
+        const val STEP_5_HEX = "#4e3406"
+    }
+    object Signal {
+        val Green = Color(0xFF16A34A)
+        const val GREEN_HEX = "#16a34a"
+        val Red = Color(0xFFDC2626)
+        const val RED_HEX = "#dc2626"
+        val White = Color(0xFFF8FAFC)
+        const val WHITE_HEX = "#f8fafc"
+    }
 }
 
 /** One scheme's surfaces, words and states, as the web's cascade resolves them. */
@@ -184,6 +312,7 @@ class WingtipPalette(
     val secondary: Color,
     val secondaryForeground: Color,
     val muted: Color,
+    val mutedForegroundShade: Color,
     val mutedForeground: Color,
     val accent: Color,
     val accentForeground: Color,
@@ -233,6 +362,7 @@ object WingtipPalettes {
         secondary = Color(0xFFF5F5F5),
         secondaryForeground = Color(0xFF171717),
         muted = Color(0xFFF5F5F5),
+        mutedForegroundShade = Color(0xFF636363),
         mutedForeground = Color(0xFF696969),
         accent = Color(0xFFF5F5F5),
         accentForeground = Color(0xFF171717),
@@ -280,6 +410,7 @@ object WingtipPalettes {
         secondary = Color(0xFF20354C),
         secondaryForeground = Color(0xFFEEF3F9),
         muted = Color(0xFF20354C),
+        mutedForegroundShade = Color(0xFFA9B8CA),
         mutedForeground = Color(0xFFA9B8CA),
         accent = Color(0xFF20354C),
         accentForeground = Color(0xFFEEF3F9),
@@ -327,6 +458,7 @@ object WingtipPalettes {
         secondary = Color(0xFFEEEEEE),
         secondaryForeground = Color(0xFF000000),
         muted = Color(0xFFEEEEEE),
+        mutedForegroundShade = Color(0xFF636363),
         mutedForeground = Color(0xFF333333),
         accent = Color(0xFFEEEEEE),
         accentForeground = Color(0xFF000000),
@@ -374,6 +506,7 @@ object WingtipPalettes {
         secondary = Color(0xFFF5F5F5),
         secondaryForeground = Color(0xFF171717),
         muted = Color(0xFFF5F5F5),
+        mutedForegroundShade = Color(0xFF636363),
         mutedForeground = Color(0xFF696969),
         accent = Color(0xFFF5F5F5),
         accentForeground = Color(0xFF171717),
@@ -421,6 +554,7 @@ object WingtipPalettes {
         secondary = Color(0xFF20354C),
         secondaryForeground = Color(0xFFEEF3F9),
         muted = Color(0xFF20354C),
+        mutedForegroundShade = Color(0xFFA9B8CA),
         mutedForeground = Color(0xFFA9B8CA),
         accent = Color(0xFF20354C),
         accentForeground = Color(0xFFEEF3F9),
@@ -468,6 +602,7 @@ object WingtipPalettes {
         secondary = Color(0xFFEFE8DA),
         secondaryForeground = Color(0xFF1F1A14),
         muted = Color(0xFFEFE8DA),
+        mutedForegroundShade = Color(0xFF636363),
         mutedForeground = Color(0xFF5A5048),
         accent = Color(0xFFEFE8DA),
         accentForeground = Color(0xFF1F1A14),
@@ -515,6 +650,7 @@ object WingtipPalettes {
         secondary = Color(0xFF262A33),
         secondaryForeground = Color(0xFFEEF1F5),
         muted = Color(0xFF262A33),
+        mutedForegroundShade = Color(0xFFA9AEB8),
         mutedForeground = Color(0xFFA9AEB8),
         accent = Color(0xFF262A33),
         accentForeground = Color(0xFFEEF1F5),
@@ -567,6 +703,7 @@ val WingtipTypography = Typography(
 
 object WingtipSpace {
     val Unit = 4.dp
+    val Xxs = 2.dp
     val Xs = 4.dp
     val Sm = 8.dp
     val Md = 12.dp
@@ -579,7 +716,10 @@ object WingtipRadius {
     val Base = 10.dp
     val Cockpit = 8.dp
     val Ink = 12.dp
+    val Badge = 7.dp
+    val Control = 14.dp
     val Card = 18.dp
+    val Banner = 22.dp
     val Dialog = 28.dp
     val Sheet = 36.dp
 }

@@ -32,13 +32,11 @@ export { OVERLAY_SOURCE };
 
 /**
  * The cycle's FAA overlays from its vector tiles (lib/map/sources/overlayTiles,
- * wingtip.vector_tiles), as the map's first style holds them
- * (GlMapShell): the Class B, C and D, the airports, the VORs, the low
+ * wingtip.vector_tiles), as the map's first style holds them (GlMapShell): the Class B, C and D, the airports, the VORs, the low
  * enroute chart's fixes, the VFR waypoints and the runways, each drawn
  * per tile as the chart is, with nothing asked of the planner for the
  * view and no wait on the engine. What changes over them -- which fields
- * the settings hide, the route's own fields, each field's weather -- is
- * set on the layers here (applyOverlayFilters, setOverlayExclusion,
+ * the settings hide, the route's own fields, each field's weather -- is set on the layers here (applyOverlayFilters, setOverlayExclusion,
  * setAirportWeather); their taps and cards are the layers' components'
  * (AirportsGl, AirspaceGl, NavaidsGl), which build what a card needs from
  * the tapped feature's fields.
@@ -68,17 +66,17 @@ const NAVAID_PICTURES: Picture[] = [
   [
     "nav|vor",
     () =>
-      `<svg width="16" height="16" viewBox="0 0 16 16"><polygon points="15,8 11.5,14.06 4.5,14.06 1,8 4.5,1.94 11.5,1.94" fill="#fff" stroke="${BLUE}" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="${BLUE}"/></svg>`,
+      `<svg width="16" height="16" viewBox="0 0 16 16"><polygon points="15,8 11.5,14.06 4.5,14.06 1,8 4.5,1.94 11.5,1.94" fill="${CHART.casing}" stroke="${BLUE}" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="${BLUE}"/></svg>`,
   ],
   [
     "nav|fix",
     () =>
-      `<svg width="20" height="20" viewBox="-10 -10 20 20"><path d="M0 -9L2.2 -2.2L9 0L2.2 2.2L0 9L-2.2 2.2L-9 0L-2.2 -2.2Z" fill="${FIX_BLUE}" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>`,
+      `<svg width="20" height="20" viewBox="-10 -10 20 20"><path d="M0 -9L2.2 -2.2L9 0L2.2 2.2L0 9L-2.2 2.2L-9 0L-2.2 -2.2Z" fill="${FIX_BLUE}" stroke="${CHART.casing}" stroke-width="1.2" stroke-linejoin="round"/></svg>`,
   ],
   [
     "nav|vfr",
     () =>
-      `<svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,1 11.2,10.4 0.8,10.4" fill="${VFR_GREEN}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
+      `<svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,1 11.2,10.4 0.8,10.4" fill="${VFR_GREEN}" stroke="${CHART.casing}" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
   ],
   [
     "nav|tag",
@@ -93,7 +91,7 @@ const NAVAID_PICTURES: Picture[] = [
 const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map((c) => [
   airspaceTab(c),
   () =>
-    `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.75" y="0.75" width="10.5" height="10.5" rx="3" fill="#14181f" fill-opacity="0.92" stroke="${AIRSPACE_INK[c].colour}" stroke-width="1.5"/></svg>`,
+    `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.75" y="0.75" width="10.5" height="10.5" rx="3" fill="${CHART.tag}" fill-opacity="0.92" stroke="${AIRSPACE_INK[c].colour}" stroke-width="1.5"/></svg>`,
   { inset: 4 },
 ]);
 
@@ -225,12 +223,10 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }, ic
     layout: {
       "icon-image": icon,
       // Smaller out at a state's width, a field's own size closer in: the
-      // small fields don't crowd the chart, and the size follows a pinch
-      // frame by frame (a zoom expression, not the page's state).
+      // small fields don't crowd the chart, and the size follows a pinch frame by frame (a zoom expression, not the page's state).
       "icon-size": ["interpolate", ["linear"], ["zoom"], glZoom(AIRPORTS_FARTHEST_ZOOM), 0.7, glZoom(10), 1, glZoom(13), 1.25],
       "icon-allow-overlap": false,
-      // Out at a few states, a mark keeps some 80 px from the next;
-      // closer in, its own: every field at a field's own scale.
+      // Out at a few states, a mark keeps some 80 px from the next; closer in, its own: every field at a field's own scale.
       "icon-padding": ["step", ["zoom"], 27, glZoom(7), 2],
       "symbol-sort-key": ["get", "rank"],
       "text-field": ["get", "ident"],
@@ -287,8 +283,8 @@ function navaidMarks(
         "icon-text-fit-padding": [1, 4, 1, 4],
       },
       paint: {
-        "text-color": ["match", kind, "vor", "#ffffff", "vfr", VFR_GREEN, FIX_INK] as ExpressionSpecification,
-        "text-halo-color": ["match", kind, "vor", "rgba(0,0,0,0)", LABEL_HALO["text-halo-color"]] as ExpressionSpecification,
+        "text-color": ["match", kind, "vor", CHART.casing, "vfr", VFR_GREEN, FIX_INK] as ExpressionSpecification,
+        "text-halo-color": ["match", kind, "vor", "transparent", LABEL_HALO["text-halo-color"]] as ExpressionSpecification,
         "text-halo-width": LABEL_HALO["text-halo-width"],
       },
     },
@@ -322,7 +318,11 @@ function runwayLayers(): LayerSpecification[] {
       ...from,
       minzoom: RUNWAYS_FROM,
       filter: ["==", ["get", "part"], "surface"],
-      paint: { "fill-color": ["case", ["get", "hard"], "#4a4f57", "#7d8a6a"], "fill-outline-color": "#ffffff", "fill-opacity": 0.95 },
+      paint: {
+        "fill-color": ["case", ["get", "hard"], CHART.runwayHard, CHART.runwaySoft],
+        "fill-outline-color": CHART.casing,
+        "fill-opacity": 0.95,
+      },
     },
     {
       id: "runway-centreline",
@@ -330,7 +330,7 @@ function runwayLayers(): LayerSpecification[] {
       ...from,
       minzoom: RUNWAYS_FROM + 1,
       filter: ["==", ["get", "part"], "centreline"],
-      paint: { "line-color": "#ffffff", "line-width": ["interpolate", ["linear"], ["zoom"], 13, 0.75, 16, 2], "line-dasharray": [4, 3] },
+      paint: { "line-color": CHART.casing, "line-width": ["interpolate", ["linear"], ["zoom"], 13, 0.75, 16, 2], "line-dasharray": [4, 3] },
     },
     {
       id: "runway-ends",
@@ -348,7 +348,7 @@ function runwayLayers(): LayerSpecification[] {
         "text-offset": [0, -1.1],
         "text-allow-overlap": true,
       },
-      paint: { "text-color": "#ffffff", "text-halo-color": "#1c1a17", "text-halo-width": 1.75 },
+      paint: { "text-color": CHART.casing, "text-halo-color": CHART.fixInk, "text-halo-width": 1.75 },
     },
   ];
 }

@@ -35,7 +35,7 @@ export function useMicPrimer(): [ReactNode, (then: () => void) => void] {
       testId="mic-primer"
     >
       <div className="grid gap-2">
-        <Button type="button" size="lg" className="h-12 rounded-[14px] font-semibold" onClick={allow} data-testid="mic-allow">
+        <Button type="button" size="lg" className="h-12 rounded-(--radius-control) font-semibold" onClick={allow} data-testid="mic-allow">
           Allow
         </Button>
         <Button type="button" variant="ghost" onClick={() => setWaiting(null)} data-testid="mic-not-now">

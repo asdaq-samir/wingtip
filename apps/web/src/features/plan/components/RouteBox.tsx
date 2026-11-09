@@ -567,7 +567,7 @@ export default function RouteBox({
         // TEXT.row, whose 14 with a mouse would be under it on a narrow
         // window; 17 to a finger, a row's, and 14 from md up.
         className={cn(
-          "h-7 bg-transparent font-mono text-base uppercase outline-none placeholder:font-sans placeholder:normal-case placeholder:text-muted-foreground md:text-sm pointer-coarse:text-[1.0625rem]",
+          "h-7 bg-transparent font-mono text-base uppercase outline-none placeholder:font-sans placeholder:normal-case placeholder:text-muted-foreground md:text-sm pointer-coarse:text-(length:--type-row)",
           // The departure's field wide enough for its word: at a stop's width
           // it read "Departu".
           // After the last point, clear of it, as a field's words are of
@@ -664,7 +664,7 @@ export default function RouteBox({
             // now 28 tall, reached past the box's top and foot (the iOS
             // audit's P1 on an approach's page).
             className={cn(
-              "h-auto flex-wrap items-start rounded-[20.5px] border-0 pt-1 pb-0 pr-1.5 pl-1 shadow-none has-[[data-slot=input-group-control]:focus-visible]:ring-0",
+              "h-auto flex-wrap items-start rounded-(--radius-banner) border-0 pt-1 pb-0 pr-1.5 pl-1 shadow-none has-[[data-slot=input-group-control]:focus-visible]:ring-0",
               !footer && "pb-1",
               PANEL_FIELD,
             )}
@@ -1040,7 +1040,7 @@ function ProcedureChip({
       aria-label={`${procedure.spoken}: the route's procedures`}
       className={cn(
         before ? "relative mr-1" : "relative ml-1",
-        "inline-flex h-7 shrink-0 after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] items-center gap-1 rounded-full px-1 font-semibold whitespace-nowrap text-[#4343b8] outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-[#c3c3fa]",
+        "inline-flex h-7 shrink-0 after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] items-center gap-1 rounded-full px-1 font-semibold whitespace-nowrap text-procedure outline-none focus-visible:ring-2 focus-visible:ring-ring",
         TEXT.note,
       )}
     >
@@ -1215,7 +1215,7 @@ function Pill({
         // Five letters wide whatever its ident, the ident centred, so the
         // pills line up (the owner, 2026-11-06: "make the route box a fixed
         // width of 5 letters"); a longer one, a pilot's own point, wider.
-        className={cn("h-7 min-w-[calc(5ch+6px)] rounded-full px-[3px]", TEXT.detail, "font-semibold", unknown && "text-destructive")}
+        className={cn("h-7 min-w-[calc(5ch+6px)] rounded-full px-0.75", TEXT.detail, "font-semibold", unknown && "text-destructive")}
         onChange={onChange}
         invalid={unknown || undefined}
         open={changing}

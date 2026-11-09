@@ -63,7 +63,7 @@ export function PickerGroup({ heading, children }: { heading: string; children: 
 // attribute's selector, so GROUP_HEADING's note sizes (TEXT.note, 12 and
 // 13) are written out here under it.
 const GROUP =
-  "p-0 **:[[cmdk-group-heading]]:px-1 **:[[cmdk-group-heading]]:pb-1.5 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wide **:[[cmdk-group-heading]]:text-xs pointer-coarse:**:[[cmdk-group-heading]]:text-[0.8125rem]";
+  "p-0 **:[[cmdk-group-heading]]:px-1 **:[[cmdk-group-heading]]:pb-1.5 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wide **:[[cmdk-group-heading]]:text-xs pointer-coarse:**:[[cmdk-group-heading]]:text-(length:--type-note)";
 
 /** The search's own rows: the airports, then a stop's waypoints -- flown
  *  through, not kept among the recent airports. */
@@ -135,7 +135,7 @@ export function AirportRow({
       {/* Its magenta as fill and stroke, not the text colour: a row's
           highlight recolours its icons' text, and the diamond went black. */}
       {waypoint ? (
-        <Diamond className="size-5 fill-[#c0309f] stroke-[#c0309f] dark:fill-[#e070b0] dark:stroke-[#e070b0]" />
+        <Diamond className="size-5 fill-(--airspace-magenta-text) stroke-(color:--airspace-magenta-text)" />
       ) : recent ? (
         <History className="size-5 text-muted-foreground" />
       ) : (

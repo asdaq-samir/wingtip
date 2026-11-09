@@ -31,7 +31,7 @@ struct WeatherLoopBar: View {
             }
             .disabled(loop.frames.count < 2)
             .accessibilityLabel(loop.playing ? "Pause" : "Play")
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 if let status {
                     Text(status).font(.footnote).foregroundStyle(loop.failed ? .red : .primary)
                 } else {
@@ -57,7 +57,7 @@ struct WeatherLoopBar: View {
         }
         .padding(.leading, WingtipSpace.xs).padding(.trailing, WingtipSpace.md).padding(.vertical, WingtipSpace.xs)
         .frame(maxWidth: 380)
-        .floatingGlass(in: RoundedRectangle(cornerRadius: 22))
+        .floatingGlass(in: RoundedRectangle(cornerRadius: WingtipRadius.banner))
         .padding(.horizontal, WingtipSpace.md)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(loop.kind.label) loop")

@@ -141,7 +141,7 @@ struct StripHead: View {
                             .accessibilityAddTraits(picked ? .isSelected : [])
                     }
                 }
-                .padding(.horizontal, 2).padding(.vertical, WingtipSpace.sm)
+                .padding(.horizontal, WingtipSpace.xxs).padding(.vertical, WingtipSpace.sm)
             }
             .accessibilityLabel("The route's ways")
         }

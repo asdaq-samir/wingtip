@@ -40,8 +40,7 @@ import { Spinner } from "../../../../components/ui/spinner";
 
 // TanStack Table's own extension point for arbitrary per-column data --
 // used below to carry each numeric column's shared className (bordered,
-// right-aligned) instead of repeating it on every column definition's
-// own `cell`/`header`, the same way `meta` is meant to be used.
+// right-aligned) instead of repeating it on every column definition's own `cell`/`header`, the same way `meta` is meant to be used.
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature must match the real ColumnMeta's own type params for the module augmentation to merge
   interface ColumnMeta<TFeatures extends TableFeatures, TData extends RowData, TValue extends CellData = CellData> {
@@ -196,7 +195,7 @@ export function DescriptionCell({
     // (index.css). Positioned, so the band lies over the leg's figures it
     // reaches into rather than under them. The box keeps a name of its
     // own: through the label it would be named with its own text.
-    <label htmlFor={id} className="relative -my-[9px] block py-[9px]">
+    <label htmlFor={id} className="relative -my-2.25 block py-2.25">
       <Textarea
         id={id}
         aria-label="How to spot it"
@@ -327,7 +326,8 @@ function LegLine({ leg, at }: { leg: Leg; at: { name: string; lat: number; lon: 
 
 /** A heading's unit, under its name, in its own small letters: 11, and
  *  a note's 13 to a finger. */
-const UNIT = "text-[0.6875rem] font-normal normal-case tracking-normal pointer-coarse:text-[0.8125rem] pointer-coarse:leading-[1.125rem]";
+const UNIT =
+  "text-(length:--type-caption) font-normal normal-case tracking-normal pointer-coarse:text-(length:--type-note) pointer-coarse:leading-[1.125rem]";
 
 /** A column's heading: its short name over its unit, small, so both
  *  fit a phone's narrow columns ("Alt" over "ft", "MH" over "mag"), and

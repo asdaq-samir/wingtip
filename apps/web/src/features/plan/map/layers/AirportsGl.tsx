@@ -10,6 +10,7 @@ import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
+import { CHART } from "../../../../lib/tokens";
 
 const SELECTED = "airport-selected";
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
@@ -19,7 +20,7 @@ const RING: CircleLayerSpecification = {
   id: "airport-selected",
   type: "circle",
   source: SELECTED,
-  paint: { "circle-radius": 20, "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": "#ff3b00", "circle-stroke-width": 3 },
+  paint: { "circle-radius": 20, "circle-color": "transparent", "circle-stroke-color": CHART.selected, "circle-stroke-width": 3 },
 };
 /** The open card's field's ident, larger and bolder than the chart's
  *  others, white on a dark rim over the ring, as ForeFlight
@@ -39,7 +40,7 @@ const SELECTED_IDENT: SymbolLayerSpecification = {
     "text-allow-overlap": true,
     "text-ignore-placement": true,
   },
-  paint: { "text-color": "#ffffff", "text-halo-color": "#14181f", "text-halo-width": 2.25 },
+  paint: { "text-color": CHART.casing, "text-halo-color": CHART.tag, "text-halo-width": 2.25 },
 };
 /** Ten minutes, as a METAR's colour can change by the hour. */
 const WEATHER_EVERY_MS = 10 * 60_000;

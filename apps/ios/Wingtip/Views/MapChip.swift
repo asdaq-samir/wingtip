@@ -24,7 +24,7 @@ struct MapChip: View {
         }
         .font(.caption2)
         .foregroundStyle(colour ?? .primary)
-        .padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
+        .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xxs)
         .floatingGlass(in: Capsule(), material: .thinMaterial)
     }
 }

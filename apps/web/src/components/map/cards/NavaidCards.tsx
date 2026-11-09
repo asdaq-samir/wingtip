@@ -24,14 +24,14 @@ import { CHART } from "../../../lib/tokens";
 /** A VOR's mark on its card: the sectional's blue hexagon. */
 const HEXAGON = (
   <svg className="mx-1 shrink-0" width="18" height="18" viewBox="0 0 16 16" aria-hidden="true">
-    <polygon points="15,8 11.5,14.06 4.5,14.06 1,8 4.5,1.94 11.5,1.94" fill="#fff" stroke={BLUE} strokeWidth="2" />
+    <polygon points="15,8 11.5,14.06 4.5,14.06 1,8 4.5,1.94 11.5,1.94" fill={CHART.casing} stroke={BLUE} strokeWidth="2" />
     <circle cx="8" cy="8" r="1.6" fill={BLUE} />
   </svg>
 );
 /** An enroute fix's on its card: the low chart's triangle, as the map's. */
 const TRIANGLE = (
   <svg className="mx-1 shrink-0" width="16" height="16" viewBox="0 0 10 10" aria-hidden="true">
-    <polygon points="5,1 9.4,8.8 0.6,8.8" fill="#fff" stroke="#1c1a17" strokeWidth="1.2" strokeLinejoin="round" />
+    <polygon points="5,1 9.4,8.8 0.6,8.8" fill={CHART.casing} stroke={CHART.fixInk} strokeWidth="1.2" strokeLinejoin="round" />
   </svg>
 );
 

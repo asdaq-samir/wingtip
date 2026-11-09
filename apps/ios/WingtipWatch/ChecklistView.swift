@@ -75,7 +75,7 @@ struct ChecklistSectionView: View {
                     HStack(alignment: .firstTextBaseline) {
                         Image(systemName: done ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(done ? Color.green : Color.secondary)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading) {
                             Text(item.challenge)
                                 .strikethrough(done)
                                 .foregroundStyle(done ? .secondary : .primary)

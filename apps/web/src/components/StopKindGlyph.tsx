@@ -1,5 +1,6 @@
 import { cn } from "cn";
 import { STOP_KINDS, type StopKind } from "../lib/stopKinds";
+import { CHART } from "../lib/tokens";
 
 /**
  * A kind of stop's round mark -- fuel's pump, food's fork and knife,
@@ -20,7 +21,7 @@ export default function StopKindGlyph({ kind, className }: { kind: StopKind; cla
       <svg
         viewBox="0 0 24 24"
         fill="none"
-        stroke="#fff"
+        stroke={CHART.casing}
         strokeWidth={2.4}
         strokeLinecap="round"
         strokeLinejoin="round"

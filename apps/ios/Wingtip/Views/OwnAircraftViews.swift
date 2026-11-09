@@ -21,7 +21,7 @@ struct OwnAircraftListView: View {
                         OwnAircraftPage(record: airplane, onChange: { Task { await load() } }).closesBack()
                     } label: {
                         HStack {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 HStack(spacing: WingtipSpace.sm) {
                                     Text(airplane.tailNumber).font(.headline.monospaced())
                                     Text(airplane.typeDesignator).foregroundStyle(.secondary)
@@ -127,7 +127,7 @@ struct AircraftFormView: View {
     }
 
     private func field(_ title: String, text: Binding<String>, placeholder: String, key: String, problems: [String: String], codes: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             LabeledContent(title) {
                 TextField(placeholder, text: text)
                     .multilineTextAlignment(.trailing)
@@ -140,7 +140,7 @@ struct AircraftFormView: View {
     }
 
     private func number(_ title: String, unit: String, text: Binding<String>, placeholder: String, key: String, problems: [String: String]) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             LabeledContent(title) {
                 HStack(spacing: WingtipSpace.xs) {
                     TextField(placeholder, text: text).multilineTextAlignment(.trailing).keyboardType(.decimalPad)
@@ -267,7 +267,7 @@ struct InspectionsSection: View {
         // ELT's not on a training flight within 50 nm (91.207(f)).
         Section(title: "Inspections") {
             ForEach(dated, id: \.title) { d in
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     OptionalDayRow(title: d.title, day: Binding(get: { form[keyPath: d.on] }, set: { form[keyPath: d.on] = $0 }), upTo: Date())
                     HStack(spacing: WingtipSpace.xs) {
                         Text(d.rule)
@@ -276,7 +276,7 @@ struct InspectionsSection: View {
                     .font(.footnote).foregroundStyle(.secondary)
                 }
             }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 OptionalDayRow(title: "ELT battery replace by", day: $form.eltBatteryDueOn)
                 HStack(spacing: WingtipSpace.xs) {
                     Text("As marked on the transmitter, 91.207(c)")
@@ -290,7 +290,7 @@ struct InspectionsSection: View {
                 Text("Flown for hire")
                 Text("Hire or instruction for hire: the 100-hour, 91.409(b)")
             }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 LabeledContent("Hours at last 100-hour") {
                     TextField("0", text: $hoursAt).multilineTextAlignment(.trailing).keyboardType(.decimalPad)
                 }
@@ -413,7 +413,7 @@ struct SquawksView: View {
                             fixing = s
                             fixNote = ""
                         } label: {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(s.text).foregroundStyle(.primary)
                                 Text([Day.said(s.reportedOn), Deferral.standing(s)].compactMap { $0 }.joined(separator: " · "))
                                     .font(.footnote).foregroundStyle(s.inoperative && s.deferredFor == nil ? Color.red : Color.secondary)
@@ -449,7 +449,7 @@ struct SquawksView: View {
                 if !fixed.isEmpty {
                     Section(title: "Fixed") {
                         ForEach(fixed) { s in
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(s.text)
                                 Text((["Fixed \(Day.said(s.fixedOn ?? ""))"] + [s.fixNote].compactMap { $0 }).joined(separator: " · "))
                                     .font(.footnote).foregroundStyle(.secondary)

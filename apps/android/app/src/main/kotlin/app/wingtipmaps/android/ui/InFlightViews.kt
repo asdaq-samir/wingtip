@@ -49,6 +49,7 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.design.RollingFigure
 import app.wingtipmaps.android.design.generated.WingtipHaptic
+import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.emergency.EmergencyOpen
@@ -83,8 +84,8 @@ fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () ->
     Column(
         modifier
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-            .padding(top = 8.dp, start = 8.dp, end = 64.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(top = WingtipSpace.Sm, start = WingtipSpace.Sm, end = (WingtipSize.TapTarget + WingtipSpace.Lg)),
+        verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
     ) {
         AlertsBanner(ahead)
         // The copilot's one message, under what is ahead (CopilotBanner).
@@ -117,10 +118,10 @@ fun AlertsBanner(alerts: List<AheadAlert>) {
     Surface(color = if (danger) LocalWingtipPalette.current.destructive else LocalWingtipPalette.current.caution, contentColor = Color.White, shape = MaterialTheme.shapes.medium) {
         Row(
             Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = stringResource(R.string.said_show_ahead)) { open = true }
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm)
                 .semantics(mergeDescendants = true) {},
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
         ) {
             Icon(Icons.Filled.Warning, contentDescription = if (danger) "Danger ahead" else "Caution ahead")
             Column(Modifier.weight(1f)) {
@@ -149,7 +150,7 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
     if (!state.underway) return
     val progress = state.progress
     Surface(shape = MaterialTheme.shapes.large, tonalElevation = 3.dp, shadowElevation = 2.dp) {
-        Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.fillMaxWidth().padding(WingtipSpace.Md), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             Row {
                 Cell("GS", Format.speed(fix.groundspeedKt), "Groundspeed", Spoken.speed(fix.groundspeedKt))
                 Cell("TRK", InstrumentsWords.track(fix.trackDeg, progress?.trackMagDeg), "Track", InstrumentsWords.trackSaid(fix.trackDeg, progress?.trackMagDeg))
@@ -176,7 +177,7 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
                     Text(InstrumentsWords.arrival(dest, dest.etaS), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 // Material's tonal button: 40 dp drawn, its 48-dp touch
                 // target its own, nothing grown.
                 FilledTonalButton(onClick = onNearest) { Text(stringResource(R.string.nearest)) }
@@ -301,7 +302,7 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
                 items(fields.orEmpty(), key = { it.ident }) { field ->
                     // A glide the engine could not judge says so, never "out of reach".
                     val reach = fix?.let { glideReaches(it, field, InFlight.shared.glideRatio) }
-                    Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = openWord) { onOpen(field.ident) }.padding(vertical = 10.dp)) {
+                    Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = openWord) { onOpen(field.ident) }.padding(vertical = WingtipSpace.Md)) {
                         Text("${field.ident}  ${field.name}", style = MaterialTheme.typography.bodyLarge, maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis)
                         val parts = listOfNotNull(
                             "${Format.distance(field.distanceNm)} ${Format.heading(field.bearingDeg)}T",

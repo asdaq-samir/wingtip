@@ -47,7 +47,7 @@ export const HILLSHADE_LAYER: HillshadeLayerSpecification = {
     "hillshade-exaggeration": 0.35,
     "hillshade-shadow-color": "rgba(40, 32, 20, 0.55)",
     "hillshade-highlight-color": "rgba(255, 255, 255, 0.18)",
-    "hillshade-accent-color": "rgba(0, 0, 0, 0)",
+    "hillshade-accent-color": "transparent",
     "hillshade-illumination-direction": 315,
   },
 };

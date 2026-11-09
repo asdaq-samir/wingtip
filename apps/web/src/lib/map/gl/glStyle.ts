@@ -282,7 +282,7 @@ export function airspaceLayers(font: string[], labelPoints = true): LayerSpecifi
           "text-rotation-alignment": "map",
           "icon-rotation-alignment": "map",
         },
-        paint: { "text-color": "#ffffff" },
+        paint: { "text-color": CHART.casing },
       }
     : {
         id: "airspace-labels",
@@ -299,7 +299,7 @@ export function airspaceLayers(font: string[], labelPoints = true): LayerSpecifi
           "text-keep-upright": true,
           "text-max-angle": 30,
         },
-        paint: { "text-color": "#ffffff" },
+        paint: { "text-color": CHART.casing },
       };
   return [...lines, labels];
 }
@@ -523,18 +523,18 @@ export function routeCasingPaint(night: boolean): Record<string, unknown> {
  *  contrast against the sectional in each look: a soft rim by day, a
  *  stronger and wider one in sunlight, and at night a faint light one. */
 export function routeOuterPaint(night: boolean, sunlight: boolean): Record<string, unknown> {
-  if (night) return { "line-color": "#ffffff", "line-opacity": 0.35, "line-width": EDGE_WIDTH };
-  if (sunlight) return { "line-color": "#0b0f0a", "line-opacity": 0.95, "line-width": EDGE_WIDTH_SUN };
-  return { "line-color": "#0b0f0a", "line-opacity": 0.6, "line-width": EDGE_WIDTH };
+  if (night) return { "line-color": CHART.casing, "line-opacity": 0.35, "line-width": EDGE_WIDTH };
+  if (sunlight) return { "line-color": CHART.routeEdge, "line-opacity": 0.95, "line-width": EDGE_WIDTH_SUN };
+  return { "line-color": CHART.routeEdge, "line-opacity": 0.6, "line-width": EDGE_WIDTH };
 }
 
 /** The thin edge round the magenta alone, the whole course, selected or
  *  not: dark by day and in sunlight (the lifted chart's pastels wash a
  *  bare magenta out), a faint light one at night. No green. */
 export function routeEdgePaint(night: boolean, sunlight: boolean): Record<string, unknown> {
-  if (night) return { "line-color": "#ffffff", "line-opacity": 0.35, "line-width": THIN_EDGE_WIDTH };
-  if (sunlight) return { "line-color": "#0b0f0a", "line-opacity": 0.9, "line-width": THIN_EDGE_WIDTH_SUN };
-  return { "line-color": "#0b0f0a", "line-opacity": 0.55, "line-width": THIN_EDGE_WIDTH };
+  if (night) return { "line-color": CHART.casing, "line-opacity": 0.35, "line-width": THIN_EDGE_WIDTH };
+  if (sunlight) return { "line-color": CHART.routeEdge, "line-opacity": 0.9, "line-width": THIN_EDGE_WIDTH_SUN };
+  return { "line-color": CHART.routeEdge, "line-opacity": 0.55, "line-width": THIN_EDGE_WIDTH };
 }
 
 /** The course line: the magenta core with a thin edge, and under them the

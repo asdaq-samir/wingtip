@@ -2,28 +2,33 @@ import type { MapPirep, WeatherArea } from "../../../lib/api/types";
 import { callEngine } from "../../../lib/engine/engine";
 import { bearingDeg, destination, distanceNm, type LatLon } from "../../../lib/geo";
 import { hundreds, mapLevel } from "../../../lib/format";
+import { CHART, WEATHER } from "../../../lib/tokens";
+
+// A wind barb's ink and the white it is cased in, the chart's own.
+const INK = CHART.fixInk;
+const CASING = CHART.casing;
 
 /** Each area's colour by what it warns of, as aviationweather.gov's own
  *  map tells them apart: convective red-orange, icing blue, turbulence
  *  amber, IFR and mountains obscured violet and stone, the winds teal. */
 const AREA_COLOURS: Record<string, string> = {
-  convective: "#c2410c",
-  Icing: "#2563eb",
-  ICE: "#2563eb",
-  Turbulence: "#d97706",
-  TURB: "#d97706",
-  "IFR conditions": "#7c3aed",
-  IFR: "#7c3aed",
-  "Mountains obscured": "#78716c",
-  "MTN OBSCN": "#78716c",
-  "Low-level wind shear": "#be185d",
-  "Strong surface winds": "#0f766e",
-  ASH: "#57534e",
+  convective: WEATHER.convective,
+  Icing: WEATHER.icing,
+  ICE: WEATHER.icing,
+  Turbulence: WEATHER.turbulence,
+  TURB: WEATHER.turbulence,
+  "IFR conditions": WEATHER.ifr,
+  IFR: WEATHER.ifr,
+  "Mountains obscured": WEATHER.mountains,
+  "MTN OBSCN": WEATHER.mountains,
+  "Low-level wind shear": WEATHER.shear,
+  "Strong surface winds": WEATHER.wind,
+  ASH: WEATHER.ash,
 };
 
 export function areaColour(area: Pick<WeatherArea, "kind" | "hazard">): string {
   if (area.kind === "convective") return AREA_COLOURS.convective!;
-  return AREA_COLOURS[area.hazard ?? ""] ?? "#9333ea";
+  return AREA_COLOURS[area.hazard ?? ""] ?? WEATHER.other;
 }
 
 /** What an area is, in words: its title ("G-AIRMET · Icing", "Convective
@@ -90,10 +95,10 @@ export function routeThrough(
  *  PIREP writes it ("065"). */
 export function pirepMark(p: MapPirep): { glyph: string; colour: string; level: string } {
   const level = p.altitude_ft == null ? "---" : hundreds(p.altitude_ft);
-  if (p.urgent) return { glyph: "!", colour: "#dc2626", level };
-  if (p.turbulence && !/NEG|NONE/i.test(p.turbulence)) return { glyph: "⌁\uFE0E", colour: "#d97706", level };
-  if (p.icing && !/NEG|NONE/i.test(p.icing)) return { glyph: "❄\uFE0E", colour: "#2563eb", level };
-  return { glyph: "☁\uFE0E", colour: "#57534e", level };
+  if (p.urgent) return { glyph: "!", colour: WEATHER.urgent, level };
+  if (p.turbulence && !/NEG|NONE/i.test(p.turbulence)) return { glyph: "⌁\uFE0E", colour: WEATHER.turbulence, level };
+  if (p.icing && !/NEG|NONE/i.test(p.icing)) return { glyph: "❄\uFE0E", colour: WEATHER.icing, level };
+  return { glyph: "☁\uFE0E", colour: WEATHER.ash, level };
 }
 
 /**
@@ -105,24 +110,24 @@ export function pirepMark(p: MapPirep): { glyph: string; colour: string; level: 
 export function barbSvg(dirTrueDeg: number, speedKt: number): string {
   const c = 22;
   if (speedKt < 3)
-    return `<svg width="44" height="44" viewBox="0 0 44 44"><circle cx="${c}" cy="${c}" r="5" fill="none" stroke="#111" stroke-width="2"/></svg>`;
+    return `<svg width="44" height="44" viewBox="0 0 44 44"><circle cx="${c}" cy="${c}" r="5" fill="none" stroke="${INK}" stroke-width="2"/></svg>`;
   let left = Math.round(speedKt / 5) * 5;
   const marks: string[] = [];
   let y = c - 20;
   while (left >= 50) {
-    marks.push(`<path d="M${c} ${y} L${c + 10} ${y + 3} L${c} ${y + 6} Z" fill="#111"/>`);
+    marks.push(`<path d="M${c} ${y} L${c + 10} ${y + 3} L${c} ${y + 6} Z" fill="${INK}"/>`);
     y += 7;
     left -= 50;
   }
   while (left >= 10) {
-    marks.push(`<line x1="${c}" y1="${y}" x2="${c + 10}" y2="${y - 4}" stroke="#111" stroke-width="2"/>`);
+    marks.push(`<line x1="${c}" y1="${y}" x2="${c + 10}" y2="${y - 4}" stroke="${INK}" stroke-width="2"/>`);
     y += 4;
     left -= 10;
   }
-  if (left >= 5) marks.push(`<line x1="${c}" y1="${y}" x2="${c + 5}" y2="${y - 2}" stroke="#111" stroke-width="2"/>`);
+  if (left >= 5) marks.push(`<line x1="${c}" y1="${y}" x2="${c + 5}" y2="${y - 2}" stroke="${INK}" stroke-width="2"/>`);
   return (
     `<svg width="44" height="44" viewBox="0 0 44 44"><g transform="rotate(${Math.round(dirTrueDeg)} ${c} ${c})" stroke-linecap="round">` +
-    `<line x1="${c}" y1="${c}" x2="${c}" y2="${c - 20}" stroke="#fff" stroke-width="4"/><line x1="${c}" y1="${c}" x2="${c}" y2="${c - 20}" stroke="#111" stroke-width="2"/>` +
-    `${marks.join("")}</g><circle cx="${c}" cy="${c}" r="2.5" fill="#111"/></svg>`
+    `<line x1="${c}" y1="${c}" x2="${c}" y2="${c - 20}" stroke="${CASING}" stroke-width="4"/><line x1="${c}" y1="${c}" x2="${c}" y2="${c - 20}" stroke="${INK}" stroke-width="2"/>` +
+    `${marks.join("")}</g><circle cx="${c}" cy="${c}" r="2.5" fill="${INK}"/></svg>`
   );
 }

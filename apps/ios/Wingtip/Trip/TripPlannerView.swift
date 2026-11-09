@@ -19,7 +19,7 @@ struct TripPlannerView: View {
             if !trip.asked.isEmpty {
                 Text(trip.asked)
                     .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
-                    .background(Color.accentColor, in: .rect(cornerRadius: 16))
+                    .background(Color.accentColor, in: .rect(cornerRadius: WingtipRadius.card))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
@@ -44,7 +44,7 @@ struct TripPlannerView: View {
                     }
                 }
                 .padding(WingtipSpace.md)
-                .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
+                .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: WingtipRadius.card))
             }
             ProblemLine(trip.problem)
             HStack(spacing: WingtipSpace.sm) {

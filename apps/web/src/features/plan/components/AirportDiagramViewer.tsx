@@ -10,6 +10,7 @@ import { chartPagePicture } from "../../../lib/diagram";
 import { TEXT } from "../../../lib/text";
 import { cn } from "cn";
 import FullScreenViewer from "./FullScreenViewer";
+import { CHART } from "../../../lib/tokens";
 
 /** Between one page and the next, in the pages' own pixels. */
 const GAP = 60;
@@ -75,7 +76,7 @@ function Pages({ placed, all }: ReturnType<typeof laidOut>) {
       ),
       layers: [
         // The chart's paper round the pages.
-        { id: "paper", type: "background", paint: { "background-color": "#ffffff" } },
+        { id: "paper", type: "background", paint: { "background-color": CHART.casing } },
         ...placed.map((_, i) => ({ id: `page-${i}`, type: "raster" as const, source: `page-${i}`, paint: { "raster-fade-duration": 0 } })),
       ],
     };

@@ -1,5 +1,6 @@
 import { divIcon, made } from "../marks/icons";
 import { text } from "../marks/airportMark";
+import { CHART } from "../../tokens";
 
 /** A way FPL's route line offers beside the route (its chips), as the map
  *  draws it: its line and the words on its chip. */
@@ -19,7 +20,7 @@ export interface RouteWay {
 export const WAY_SHARES = [0.35, 0.6, 0.8];
 /** The chip's fill: the line's magenta a step darker, white words at 13
  *  points on it 6:1 (WCAG 1.4.3 asks 4.5; the line's own #e600e6 is 3.8). */
-const WAY_CHIP = "#b000b0";
+const WAY_CHIP = CHART.courseChip;
 
 /** The chip on a way's line: its names and time, as Maps marks the
  *  routes beside the one picked, in the line's magenta; 24 tall, its
@@ -32,14 +33,14 @@ export const wayIcon = made(function wayIcon(key: string, label: string, name: s
   const lines = shown && name ? 2 : 1;
   const width = Math.ceil(Math.max(label.length, shown ? name.length : 0) * 7.6) + 22;
   const height = lines === 2 ? 40 : 24;
-  const fill = shown ? WAY_CHIP : "#ffffff";
-  const ink = shown ? "#ffffff" : WAY_CHIP;
+  const fill = shown ? WAY_CHIP : CHART.casing;
+  const ink = shown ? CHART.casing : WAY_CHIP;
   return divIcon({
     className: "",
     iconSize: [width, height],
     iconAnchor: [14, height + 7],
     html:
-      `<span data-route-way="${text(key)}" class="relative flex h-full w-full flex-col justify-center rounded-xl px-2.5 text-[13px] leading-4 font-semibold shadow-[0_1px_4px_rgba(0,0,0,.35)] after:absolute after:-inset-x-1 after:-inset-y-1 after:content-['']" style="background-color:${fill};color:${ink}">` +
+      `<span data-route-way="${text(key)}" class="relative flex h-full w-full flex-col justify-center rounded-xl px-2.5 text-(length:--type-note) leading-4 font-semibold shadow-(--depth-mark) after:absolute after:-inset-x-1 after:-inset-y-1 after:content-['']" style="background-color:${fill};color:${ink}">` +
       `<span class="whitespace-nowrap tabular-nums">${text(label)}</span>` +
       (lines === 2 ? `<span class="whitespace-nowrap font-medium">${text(name)}</span>` : "") +
       `<span aria-hidden="true" class="absolute left-2 top-full h-0 w-0 border-x-[6px] border-t-[8px] border-x-transparent" style="border-top-color:${fill}"></span></span>`,
