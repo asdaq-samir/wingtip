@@ -125,7 +125,7 @@ struct AirplaneCard: View {
                             Toggle("Tell me when it takes off", isOn: watchBinding(.takeoff))
                             Toggle("Tell me when it lands", isOn: watchBinding(.land))
                         } label: {
-                            Label("Alert", systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell")
+                            Label("Alert", systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell").symbolSwap()
                         }
                         ShareLink(item: link, subject: Text(name)) { Label("Share", systemImage: "square.and.arrow.up") }
                     }

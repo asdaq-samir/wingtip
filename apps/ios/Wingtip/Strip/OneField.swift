@@ -22,7 +22,6 @@ struct StripFieldRow: View {
     let onMic: (() -> Void)?
     @FocusState.Binding var focused: Bool
     @Environment(\.chartInk) private var ink
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var placeholder: String {
         if flying { return listening ? "Listening…" : "Tap the mic and say it" }
@@ -59,7 +58,8 @@ struct StripFieldRow: View {
                         Image(systemName: listening ? "mic.fill" : "mic")
                             .font(.body.weight(.medium))
                             .foregroundStyle(listening ? ink.tint : ink.muted)
-                            .symbolEffect(.pulse, isActive: listening && !reduceMotion)
+                            .symbolListening(listening)
+                            .symbolSwap()
                             // The 44-point hit area round the glyph, which does not grow.
                             .frame(width: 28, height: 28)
                             .contentShape(Rectangle().inset(by: -8))

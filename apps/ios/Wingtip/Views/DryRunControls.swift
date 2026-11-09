@@ -9,7 +9,7 @@ struct DryRunControls: View {
         @Bindable var dryRun = dryRun
         HStack(spacing: WingtipSpace.sm) {
             Button { dryRun.running ? dryRun.pause() : dryRun.resume() } label: {
-                Image(systemName: dryRun.running ? "pause.fill" : "play.fill").frame(width: 32, height: 32)
+                Image(systemName: dryRun.running ? "pause.fill" : "play.fill").symbolSwap().frame(width: 32, height: 32)
                     // The 44-point hit area round the 32-point glyph, which does not grow.
                     .contentShape(Rectangle().inset(by: -6))
             }

@@ -147,7 +147,7 @@ struct AskView: View {
                     } label: {
                         Image(systemName: "mic.fill")
                             .foregroundStyle(listener.hearingOnce ? Color.accentColor : .secondary)
-                            .symbolEffect(.pulse, isActive: listener.hearingOnce && !reduceMotion)
+                            .symbolListening(listener.hearingOnce)
                             .frame(width: 28, height: 28)
                     }
                     .contentShape(Rectangle().inset(by: -8))

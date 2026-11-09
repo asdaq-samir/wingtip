@@ -20,7 +20,7 @@ struct ReplaySection: View {
         Section {
             HStack(spacing: WingtipSpace.md) {
                 Button { replay.playing ? replay.pause() : play() } label: {
-                    Image(systemName: replay.playing ? "pause.fill" : "play.fill").frame(width: 32, height: 32)
+                    Image(systemName: replay.playing ? "pause.fill" : "play.fill").symbolSwap().frame(width: 32, height: 32)
                         // The 44-point hit area round the 32-point glyph, which does not grow.
                         .contentShape(Rectangle().inset(by: -6))
                 }

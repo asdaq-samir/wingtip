@@ -56,6 +56,7 @@ struct FPLView: View {
                         let voice = ClearanceListener.shared.canListen
                         Button { focused = nil; ClearanceListener.shared.sheetText = nil; ClearanceListener.shared.sheetShown = true } label: {
                             Image(systemName: !voice ? "text.bubble" : ClearanceListener.shared.listening ? "mic.fill" : "mic")
+                                .symbolListening(ClearanceListener.shared.listening).symbolSwap()
                                 // The 44-point hit area round the glyph, which does not grow.
                                 .contentShape(Rectangle().inset(by: -10))
                         }

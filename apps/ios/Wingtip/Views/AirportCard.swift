@@ -73,7 +73,7 @@ struct AirportCard: View {
                     let kept = shelf.isFavorite(place.ident)
                     Button { shelf.toggleFavorite(KeptAirport(place)) } label: {
                         Image(systemName: kept ? "star.fill" : "star")
-                            .foregroundStyle(kept ? Color.yellow : Color.accentColor)
+                            .foregroundStyle(kept ? Color.yellow : Color.accentColor).symbolSwap()
                     }
                     .accessibilityLabel(kept ? "Remove from Favorites" : "Add to Favorites")
                 }

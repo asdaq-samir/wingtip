@@ -62,6 +62,7 @@ struct EmergencyFieldsSection: View {
     private func row(_ field: Emergency.Field, picked: Bool) -> some View {
         HStack(alignment: .top, spacing: WingtipSpace.md) {
             Image(systemName: picked ? "checkmark.circle.fill" : "circle")
+                .symbolSwap()
                 .foregroundStyle(picked ? Color.accentColor : Color.secondary)
             VStack(alignment: .leading, spacing: 2) {
                 (Text(field.ident).fontWeight(.semibold) + Text(" \(field.name)")).foregroundStyle(Color.primary)

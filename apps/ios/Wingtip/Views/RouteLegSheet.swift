@@ -57,6 +57,7 @@ struct RouteLegSheet: View {
                 if let direct = sheet.direct {
                     Button { model.direct(sheet, plan: plan, from: dryRun.fix ?? ownShip.fix) } label: {
                         Label(direct.on ? "Cancel Direct" : "Direct \(direct.ident)", systemImage: WingtipIcon.directTo)
+                            .symbolBounce(on: Feel.shared.directTo)
                             .frame(maxWidth: .infinity)
                     }
                     .glassProminentButton()

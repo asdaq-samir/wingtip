@@ -583,7 +583,7 @@ struct WatchBanner: View {
     var body: some View {
         if let words = Tracking.shared.fired {
             HStack(spacing: WingtipSpace.sm) {
-                Image(systemName: "bell.fill").accessibilityHidden(true)
+                Image(systemName: "bell.fill").symbolRing(on: words).accessibilityHidden(true)
                 Text(words).font(.subheadline.weight(.semibold)).lineLimit(2)
                 Button { Tracking.shared.fired = nil } label: {
                     // The 44-point hit area round the glyph, which does not grow.

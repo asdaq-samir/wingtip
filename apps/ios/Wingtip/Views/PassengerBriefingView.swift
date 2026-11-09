@@ -29,7 +29,7 @@ struct PassengerBriefingView: View {
                         model.toggle(item.key)
                     } label: {
                         HStack(alignment: .firstTextBaseline) {
-                            Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Color.accentColor : Color.secondary)
+                            Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Color.accentColor : Color.secondary).symbolSwap()
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(item.title).foregroundStyle(.primary)
                                 Text(item.source).font(.footnote).foregroundStyle(.secondary)

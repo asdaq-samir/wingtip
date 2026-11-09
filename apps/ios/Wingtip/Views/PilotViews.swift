@@ -11,6 +11,8 @@ struct FlightsView: View {
     @State private var flights: [SavedFlight] = []
     @State private var problem: String?
     @State private var saving = false
+    /// The plans saved here, each drawing the button's checkmark (SaveLabel).
+    @State private var saves = 0
     /// The flight just deleted, kept back until its Undo is gone.
     @State private var removed: (flight: SavedFlight, at: Int)?
 
@@ -62,14 +64,16 @@ struct FlightsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(saving ? "Saving…" : "Save This Plan") {
+                Button {
                     guard let request = plan.saved() else { return }
                     saving = true
                     Task {
-                        do { try await Gateway.save(request); flights = try await Gateway.flights(); problem = nil }
+                        do { try await Gateway.save(request); saves += 1; flights = try await Gateway.flights(); problem = nil }
                         catch { problem = error.localizedDescription }
                         saving = false
                     }
+                } label: {
+                    SaveLabel(title: "Save This Plan", saving: saving, saves: saves)
                 }
                 .disabled(saving || !session.signedIn || plan.totals == nil)
             }
