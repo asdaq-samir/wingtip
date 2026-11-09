@@ -35,7 +35,8 @@ class DepartureWindowTest {
         model.ask(plan, signedIn = true)
         model.ask(plan, signedIn = true)
         assertEquals(1, asks.size)
-        assertEquals("none", asks[0].aircraft)
+        // No airplane is no `aircraft` at all, as the planner takes it.
+        assertNull(asks[0].aircraft)
         assertEquals(false, asks[0].airplane)
         assertEquals("ETE and fuel need an airplane", HourWords.hourFigures(model.state.value.answer!!.hours[0], model.state.value.airplane))
         model.pick("2026-11-09T13:00:00Z")
