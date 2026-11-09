@@ -839,3 +839,30 @@ export async function drawn(page: Page, name: string): Promise<Record<string, un
 export async function chartZoom(page: Page): Promise<number> {
   return Number(await page.getByTestId("gl-map").first().getAttribute("data-chart-zoom"));
 }
+
+/** A dry run started from its button, and Ready to fly's prompt, which
+ *  comes once a route when the device lacks something for the flight
+ *  (features/readyToFly), passed with Fly Anyway as a pilot may: the
+ *  suite's device never has the route's charts kept or the briefing
+ *  fresh. Started again on the same route, there is no prompt. */
+export async function pressDryRunStart(page: Page, start: Locator) {
+  await start.click();
+  const prompt = page.getByTestId("ready-prompt");
+  await prompt.waitFor({ timeout: slow(3000) }).catch(() => {});
+  if (await prompt.count()) {
+    await prompt.getByTestId("ready-fly-anyway").click();
+    await expect(prompt).toHaveCount(0);
+  }
+}
+
+/** An airplane's own handbook figures as the gateway answers them
+ *  (AircraftDto's figures, OwnFigures), none given: every saved airplane
+ *  a mock returns carries them, as the app reads them. */
+export const NO_OWN_FIGURES = {
+  climbRateFpm: null,
+  emptyMomentLbIn: null,
+  emptyWeightLb: null,
+  glideRatio: null,
+  serviceCeilingFt: null,
+  taxiFuelGal: null,
+};

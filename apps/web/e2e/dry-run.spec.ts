@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { chartZoom, grabberTo, openPanel, openProfile, closeProfile, settle, settled, sideDrawer, slow } from "./helpers";
+import { chartZoom, grabberTo, openPanel, openProfile, closeProfile, settle, settled, sideDrawer, slow, pressDryRunStart } from "./helpers";
 
 /**
  * The planned flight's dry run flies own ship, as if a pilot were flying
@@ -17,7 +17,7 @@ test("the dry run flies own ship along the route, and gives it back as it was", 
   await expect(start).toBeVisible({ timeout: slow(60_000) });
   await expect(page.locator("[data-own-ship]")).toHaveCount(0);
 
-  await start.click();
+  await pressDryRunStart(page, start);
   const ship = page.locator('[data-own-ship="on"]');
   await expect(ship).toHaveCount(1);
   // The airplane followed: the location arrow is the whole route's button
@@ -71,7 +71,7 @@ test("the dry run's chart draws the airspace the course passes through, named as
   const names = (await side.allTextContents()).map((t) => t.trim()).sort();
   expect(names.some((n) => n.startsWith("KMSN "))).toBe(true);
 
-  await sideDrawer(page).getByTestId("dry-run-start").click();
+  await pressDryRunStart(page, sideDrawer(page).getByTestId("dry-run-start"));
   const run = sideDrawer(page).getByTestId("dry-run");
   // Each piece drawn, and each name once, as the side view had them (the
   // chart's only labels: recharts draws them in a layer of their own).
@@ -118,7 +118,7 @@ test("the dry run waits for the legs: no way to it until the plan is in, and the
   await openProfile(page);
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeEnabled({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
 });
 
@@ -151,7 +151,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
     .toBe(true);
   const plannedNm = parseFloat(await distNow());
 
-  await start.click();
+  await pressDryRunStart(page, start);
   const figures = sideDrawer(page).getByTestId("dry-run-figures");
   await expect(figures.locator("dt")).toHaveText(planned);
   await expect(figures.getByTestId("navlog-to")).toHaveText("KDLH");
@@ -194,7 +194,7 @@ test("the dry run's airplane is brought back to the middle of what the panel lea
   await openProfile(page);
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
   // Panned by hand, off the middle: the map no longer follows it.
   const viewport = page.viewportSize()!;
@@ -239,7 +239,7 @@ test("half way a dry run started from the profile's card plays in the card, in o
   await openProfile(page);
   const start = panel.getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   // In the card, in the side view's place (the owner's "profile should play
   // the dry run within profile card").
   const run = page.getByTestId("profile-card").getByTestId("dry-run");
@@ -305,7 +305,7 @@ test("the profile is a card from its button beside the AI brief's, no swipe at t
   // again.
   const start = card.getByTestId("dry-run-start");
   await expect(start).toBeEnabled({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(card.getByTestId("dry-run")).toBeVisible();
   await expect(card.getByTestId("mini-profile")).toHaveCount(0);
   await card.getByTestId("dry-run-close").click();
@@ -325,7 +325,7 @@ test("the dry run is the Profile card's: closed, the run is put away and FPL's f
   await openProfile(page);
   const start = panel.getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(panel.getByTestId("dry-run")).toBeVisible();
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
   await closeProfile(page);
@@ -398,7 +398,7 @@ test("with an approach picked, the dry run flies it into the field: out to its f
   await expect(start).toBeVisible({ timeout: slow(60_000) });
   // The approach drawn, so in hand as the run starts.
   await expect(page.locator('[data-procedure-fix="CIRUS"]')).toHaveCount(1, { timeout: slow(10_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
   // Held at its end, then ten miles back: on the final, between HOMUV and
   // CIRUS -- where straight in it was still south-east of the field.
