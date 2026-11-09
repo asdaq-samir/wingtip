@@ -43,9 +43,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val dep: String = "",
         val dest: String = "",
         val stops: List<String> = emptyList(),
-        /** The planner's aircraft profile; the airplane by N-number is a
-         *  later phase. */
-        val aircraft: String = "c172",
+        /** The planner's aircraft profile; "" for none, the default:
+         *  no airplane is ever assumed (decision 0011), and the figures
+         *  that need one are left out until one is chosen. */
+        val aircraft: String = "",
         /** The holds the pilot put on the route, as the planner reads them
          *  (the engine's hold_write: "VPBNG/090/30:270:R:1M:2T"). */
         val holds: List<String> = emptyList(),
@@ -63,6 +64,9 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val was: RouteEdits.Route? = null,
     ) {
         val routed: Boolean get() = dep.isNotEmpty() && dest.isNotEmpty()
+
+        /** An airplane is chosen: time, fuel and groundspeed can be had. */
+        val airplane: Boolean get() = aircraft.isNotEmpty()
     }
 
     private val prefs = app.getSharedPreferences("plan", Context.MODE_PRIVATE)

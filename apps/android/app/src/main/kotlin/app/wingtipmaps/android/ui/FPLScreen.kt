@@ -111,8 +111,12 @@ private fun LegRow(leg: Leg, onOpen: () -> Unit) {
             Text(Format.cruiseAltitude(leg.altitudeFt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Figure(stringResource(R.string.figure_dist), Format.distance(leg.distanceNm))
-        Figure(stringResource(R.string.figure_mh), leg.magneticHeadingDeg?.let(Format::heading) ?: Format.NONE)
-        Figure(stringResource(R.string.figure_ete), leg.eteMin?.let(Format::navLogTime) ?: Format.NONE)
+        // The heading needs the airplane's airspeed against the wind: with
+        // none chosen, the leg's magnetic course instead (decision 0011).
+        val heading = leg.magneticHeadingDeg
+        if (heading != null) Figure(stringResource(R.string.figure_mh), Format.heading(heading))
+        else Figure(stringResource(R.string.figure_mc), Format.heading(leg.magneticCourseDeg))
+        leg.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.navLogTime(it)) }
     }
 }
 
@@ -122,9 +126,11 @@ private fun TotalsRows(totals: NavLogTotals) {
     val warn = (totals.fuelMarginGal ?: 0.0) < 0
     Row(Modifier.fillMaxWidth()) {
         Figure(stringResource(R.string.figure_dist), Format.distance(totals.distanceNm))
-        Figure(stringResource(R.string.figure_ete), totals.eteMin?.let(Format::duration) ?: Format.NONE)
-        Figure(stringResource(R.string.figure_fuel), Format.fuel(totals.fuelGal), warn = warn)
-        Figure(stringResource(R.string.figure_required), Format.fuel(totals.fuelRequiredGal), warn = warn)
+        // Time and fuel only with an airplane: the planner sends none
+        // without one, and none is guessed (decision 0011).
+        totals.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.duration(it)) }
+        totals.fuelGal?.let { Figure(stringResource(R.string.figure_fuel), Format.fuel(it), warn = warn) }
+        totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn) }
     }
     if (warn) ProblemLine(stringResource(R.string.under_reserve), Modifier.padding(top = WingtipSpace.Xs))
 }

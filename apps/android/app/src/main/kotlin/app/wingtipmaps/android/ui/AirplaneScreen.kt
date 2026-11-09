@@ -88,7 +88,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
             OutlinedTextField(
-                value = picked?.let(::label) ?: state.aircraft.uppercase(),
+                value = picked?.let(::label) ?: state.aircraft.uppercase().ifEmpty { stringResource(R.string.no_airplane) },
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(stringResource(R.string.tab_airplane)) },
@@ -96,6 +96,14 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
                 modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
             )
             ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                // None is a choice, and the default: no airplane is assumed.
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.no_airplane)) },
+                    onClick = {
+                        plan.setAircraft("")
+                        expanded = false
+                    },
+                )
                 profiles.forEach { profile ->
                     DropdownMenuItem(
                         text = { Text(label(profile)) },
@@ -109,6 +117,10 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         }
         ProblemLine(problem)
         picked?.let { ProfileFigures(it) }
+        if (!state.airplane) {
+            Text(stringResource(R.string.no_airplane_line), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@Column
+        }
         // The airplane's own checklists (#220), kept on this phone: the
         // normal procedures, and the emergency ones a tap away.
         SectionTitle(stringResource(R.string.checklists))

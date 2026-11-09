@@ -30,6 +30,7 @@
     <string name="figure_ete">ETE</string>
     <string name="figure_fuel">FUEL</string>
     <string name="figure_mh">MH</string>
+    <string name="figure_mc">MC</string>
     <string name="figure_required">REQUIRED</string>
     <string name="figure_cruise">CRUISE</string>
     <string name="figure_burn">BURN</string>
@@ -215,4 +216,8 @@
     <string name="copilot_on">On</string>
     <string name="copilot_spoken">Spoken</string>
     <string name="ok">OK</string>
+
+    <!-- No airplane chosen (decision 0011). -->
+    <string name="no_airplane">No Airplane</string>
+    <string name="no_airplane_line">Distances and courses only: choose an airplane for times, fuel and headings.</string>
 </resources>
