@@ -81,7 +81,7 @@ export default function FlightInputs({ aircraftValue, aircraftOptions, onAircraf
           // starts with it. In the field's own text, not a label beside it:
           // iOS keeps a few points inside an input's edge, which set the
           // number apart from it ("N- 654FL" on the owner's phone).
-          autoCapitalize: "characters", autoCorrect: "off", spellCheck: false, value: `N-${shown.replace(/^N-?/, "")}`, "aria-label": shown ? "Airplane, N-number" : "Airplane, N-number: none picked",
+          autoCapitalize: "characters", autoCorrect: "off", spellCheck: false, value: `N-${shown.replace(/^N-?/, "")}`, "aria-label": shown ? "Airplane, N-number" : "Airplane, N-number: none picked; pick one for times and fuel",
           onChange: e => {
             const rest = e.target.value.toUpperCase().replace(/^N-?/, "").replace(/[^A-Z0-9]/g, "").slice(0, 5);
             setTyped(rest ? `N${rest}` : "");

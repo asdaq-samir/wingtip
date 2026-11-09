@@ -1,3 +1,4 @@
+import { useAirplaneChosen } from "../../../../lib/preferences";
 import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import { zoneName } from "../../../../lib/clock";
@@ -75,7 +76,7 @@ function railOf(rows: NavLogRow[]): { wind: string | null; airway: string | null
  * does, and opens its note under it -- the leg's working and the
  * checkpoint's description (NavLogView's `note`) -- as the table's did.
  */
-export function NavLogList({ rows, label, numberOf, weather, isSelected, onSelect, onDeselect, flying, selectedRef, flyingRef, depart, note }: {
+export function NavLogList({ rows: allRows, label, numberOf, weather, isSelected, onSelect, onDeselect, flying, selectedRef, flyingRef, depart, note }: {
   rows: NavLogRow[];
   /** The table's name: "Navigation log from C81 to KDLH". */
   label: string;
@@ -99,6 +100,12 @@ export function NavLogList({ rows, label, numberOf, weather, isSelected, onSelec
   note: (row: NavLogRow, selected: boolean) => ReactNode;
 }) {
   const from = depart || new Date().toISOString();
+  // No airplane picked: each leg's course, miles and altitude, which no
+  // airplane changes; not its heading (the wind's correction is at the
+  // airplane's speed), minutes, groundspeed, arrival or the tops of climb
+  // and descent (the owner, 2026-11-08: "don't assume").
+  const airplane = useAirplaneChosen();
+  const rows = airplane ? allRows : allRows.filter(r => !isLegPoint(r));
   const rail = railOf(rows);
   return (
     <div role="table" aria-label={label} className="relative pt-1 pb-2" data-testid="navlog-list">
@@ -119,8 +126,8 @@ export function NavLogList({ rows, label, numberOf, weather, isSelected, onSelec
           reader's names are the row group's above. */}
       <div aria-hidden="true" className={cn("grid grid-cols-[2.125rem_minmax(0,1fr)_auto] gap-x-2.5 px-1.5 pb-0.5 text-right text-muted-foreground", TEXT.note)} data-testid="navlog-list-heads">
         {/* The clock's zone, once over the column (the FPL audit's A19). */}
-        <span className="col-start-3">ETA {zoneName()}</span>
-        <span className="col-start-3">GS kt</span>
+        {airplane && <span className="col-start-3">ETA {zoneName()}</span>}
+        {airplane && <span className="col-start-3">GS kt</span>}
       </div>
       <div role="rowgroup">
         {rows.map((row, at) => {
@@ -188,7 +195,7 @@ export function NavLogList({ rows, label, numberOf, weather, isSelected, onSelec
                   </span>
                   <span role="rowheader" className={cn("min-w-0 font-medium text-foreground [overflow-wrap:anywhere]", TEXT.row)}>{name}</span>
                   <span role="cell" className={cn("text-right font-semibold text-foreground tabular-nums", TEXT.row)} data-testid="navlog-row-eta">
-                    {etaAt(from, row.minutesFlown)}
+                    {airplane ? etaAt(from, row.minutesFlown) : null}
                   </span>
                   {/* Grey, and the text's own colour on the selection's tint,
                       where grey fell under 4.5:1 (the iPhone audit's P15). */}
@@ -209,7 +216,7 @@ export function NavLogList({ rows, label, numberOf, weather, isSelected, onSelec
                               <path d="M8 1.5 12.5 13 8 10.5 3.5 13z" fill="currentColor" />
                             </svg>
                           )}
-                          {leg ? bearing(leg.magnetic_heading_deg) : "—"}
+                          {leg ? bearing(airplane ? leg.magnetic_heading_deg : leg.magnetic_course_deg) : "—"}
                         </span>
                         <span aria-hidden="true"> · </span>
                         {/* With a procedure's miles where the leg ends (procedureOf),
@@ -219,14 +226,14 @@ export function NavLogList({ rows, label, numberOf, weather, isSelected, onSelec
                           {procedureOf(row) && <span className="whitespace-nowrap"> incl. {procedureOf(row)!.word}</span>}
                         </span>
                         <span aria-hidden="true"> · </span>
-                        <span role="cell">{leg ? (leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min`) : "—"}</span>
+                        <span role="cell">{!airplane ? null : leg ? (leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min`) : "—"}</span>
                         {altitude && <span aria-hidden="true"> · </span>}
                         <span role="cell">{altitude}</span>
                       </>
                     )}
                   </span>
                   <span role="cell" className={cn("text-right tabular-nums", selected ? "text-foreground" : "text-muted-foreground", TEXT.note)} data-testid="navlog-row-gs">
-                    {row.kind === "departure" ? "Takeoff" : leg?.groundspeed_kt != null ? Math.round(leg.groundspeed_kt) : ""}
+                    {row.kind === "departure" ? (airplane ? "Takeoff" : "") : airplane && leg?.groundspeed_kt != null ? Math.round(leg.groundspeed_kt) : ""}
                   </span>
                 </div>
                 {selected && (

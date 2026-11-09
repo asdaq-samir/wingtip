@@ -9,7 +9,7 @@ import { InlineField } from "../../../../components/InlineField";
 import Segmented from "../../../../components/Segmented";
 import { faaWords } from "../../../../lib/advisories";
 import type { AltitudeChoice, Detour, Leg, NavLogAltitude } from "../../../../lib/api/types";
-import type { FlightRules } from "../../../../lib/preferences";
+import { useAirplaneChosen, type FlightRules } from "../../../../lib/preferences";
 import { routeProfileQuery } from "../../../../lib/queryClient";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
 import { altFt, flightLevel, one } from "../../../../lib/units";
@@ -272,6 +272,7 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
   rules?: FlightRules;
   onRulesChange?: (rules: FlightRules) => void;
 }) {
+  const airplane = useAirplaneChosen();
   const route = ends ? [ends.departure.ident, ...(ends.stops ?? []).map(s => s.ident), ends.destination.ident].join(" ") : "";
   // The plan before a pick is planned anew, kept on the card till the new
   // one's altitude comes: the stream starts over, and the wheel and its
@@ -489,8 +490,10 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
               <span className={cn("font-bold tabular-nums", TEXT.heading)} data-testid="altitude-picked">{flightLevel(shownAt)}</span>
               {names[shownAt] && <span className={cn("truncate font-semibold text-muted-foreground", TEXT.detail)}>{names[shownAt]}</span>}
             </div>
+            {/* No airplane picked: not its time and fuel at the altitude
+                (the owner, 2026-11-08: "don't assume"); the wind is the air's. */}
             <span className={cn("shrink-0 tabular-nums", TEXT.detail)} data-testid="altitude-figures">
-              {figure?.ete_min != null ? duration(figure.ete_min) : "—"} · {figure?.fuel_gal != null ? `${one(figure.fuel_gal)} gal` : "—"}
+              {airplane && <>{figure?.ete_min != null ? duration(figure.ete_min) : "—"} · {figure?.fuel_gal != null ? `${one(figure.fuel_gal)} gal` : "—"}</>}
               {figure?.tailwind_kt != null && ` · ${figure.tailwind_kt >= 0 ? "+" : "−"}${Math.abs(Math.round(figure.tailwind_kt))} kt`}
             </span>
           </div>

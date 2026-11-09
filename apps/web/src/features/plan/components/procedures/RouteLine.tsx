@@ -1,3 +1,4 @@
+import { useAirplaneChosen } from "../../../../lib/preferences";
 import { ChevronDown, Route } from "lucide-react";
 import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
@@ -34,8 +35,12 @@ export interface RouteLineChoices {
 const figures = (c: RouteLineChoices["chips"][number]) =>
   [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? `${c.gal.toFixed(1)} gal` : null].filter(Boolean).join(" · ");
 
-export function RouteLine({ line, grouped = false }: { line: RouteLineChoices; grouped?: boolean }) {
+export function RouteLine({ line: asked, grouped = false }: { line: RouteLineChoices; grouped?: boolean }) {
   const open = useRouteLineOpen(s => s.open);
+  // No airplane picked: each way's miles, not its time or fuel, which are
+  // an airplane's (the owner, 2026-11-08: "don't assume").
+  const airplane = useAirplaneChosen();
+  const line = airplane ? asked : { ...asked, chips: asked.chips.map(c => ({ ...c, time: null, gal: null })) };
   const picked = line.chips.find(c => c.key === line.picked) ?? line.chips[0]!;
   const words = (c: RouteLineChoices["chips"][number]) =>
     `${c.key === "none" ? "As typed, the route as typed" : c.label}${c.time ? `, ${c.time}` : ""}${figures(c) ? `, ${figures(c)}` : ""}${c.warning ? `, ${c.warning.toLowerCase()}` : ""}`;
@@ -73,7 +78,7 @@ export function RouteLine({ line, grouped = false }: { line: RouteLineChoices; g
                 "data-[state=on]:border-2 data-[state=on]:border-tint data-[state=on]:bg-tint/12",
               )}
             >
-              <span className={cn("font-semibold", TEXT.row, c.key === line.picked && "text-tint")}>{c.time ?? "—"}</span>
+              {(airplane || c.time) && <span className={cn("font-semibold", TEXT.row, c.key === line.picked && "text-tint")}>{c.time ?? "—"}</span>}
               <span className={cn("whitespace-normal", TEXT.note, c.warning ? "text-amber-700 dark:text-amber-400" : "text-foreground")}>{c.label}</span>
               {figures(c) && <span className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="route-line-figures">{figures(c)}</span>}
             </ToggleGroupItem>

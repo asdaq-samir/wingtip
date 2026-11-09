@@ -5,7 +5,7 @@ import type { Leg, ProcedureDrawing } from "../../../api/types";
 import { bearingDeg, type LatLon } from "../../../geo";
 import { pointName } from "../../../identSchema";
 import { prefersReducedMotion } from "../../../motion";
-import { usePreferences } from "../../../preferences";
+import { useAirplaneChosen, usePreferences } from "../../../preferences";
 import { airportQuery, plateQuery } from "../../../queryClient";
 import { STOP_KINDS, type StopKind } from "../../../stopKinds";
 import type { TrafficPattern } from "../../../trafficPattern";
@@ -158,7 +158,11 @@ export function HoldTracksGl({ legs }: { legs: Leg[] }) {
  *  the course, a tap brings the map to it. MapLibre's markers keep no
  *  room of their own: a pill on a checkpoint's badge or a field's ident
  *  moves a little clear of it, or is left out (declutter). */
-export function LegPointsGl({ legs, onSelectPoint }: { legs: Leg[]; onSelectPoint: (lat: number, lon: number) => void }) {
+export function LegPointsGl({ legs: allLegs, onSelectPoint }: { legs: Leg[]; onSelectPoint: (lat: number, lon: number) => void }) {
+  // No airplane picked, no tops of climb and descent: they are its climb
+  // and descent (the owner, 2026-11-08: "don't assume").
+  const airplane = useAirplaneChosen();
+  const legs = airplane ? allLegs : NO_LEGS;
   const marks = useMemo<GlMark[]>(() => legs.flatMap((leg, i) => [
     ...(leg.toc ? [{ key: `toc-${i}`, lat: leg.toc.lat, lon: leg.toc.lon, icon: fixMarkIcon("TOC"), title: `Top of climb`, priority: ROUTE_PRIORITY.legPoint, nudge: true, onTap: () => onSelectPoint(leg.toc!.lat, leg.toc!.lon) }] : []),
     ...(leg.tod ? [{ key: `tod-${i}`, lat: leg.tod.lat, lon: leg.tod.lon, icon: fixMarkIcon("TOD"), title: `Top of descent`, priority: ROUTE_PRIORITY.legPoint, nudge: true, onTap: () => onSelectPoint(leg.tod!.lat, leg.tod!.lon) }] : []),
@@ -273,3 +277,5 @@ export function LessonGl() {
   return null;
 }
 
+
+const NO_LEGS: Leg[] = [];

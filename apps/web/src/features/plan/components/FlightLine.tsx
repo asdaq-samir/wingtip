@@ -1,3 +1,4 @@
+import { useAirplaneChosen } from "../../../lib/preferences";
 import { useState } from "react";
 import { zoneName } from "../../../lib/clock";
 import { cn } from "cn";
@@ -101,7 +102,13 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
   // Each figure on its own: the one too wide for its column rounded, the
   // rest as they are, and set smaller together where that is not enough
   // (useFigureFit).
-  const { room, shown, sized, fitted, probes } = useFigureFit(exact, rounded, valueType, unitType);
+  // No airplane picked: the route's own figures alone, To and Dist --
+  // the time and the fuel are an airplane's, and none is assumed (the
+  // owner, 2026-11-08: "only show the distance and the things you can
+  // without airplane profile, don't assume").
+  const airplane = useAirplaneChosen();
+  const ours = (fs: typeof exact) => (airplane ? fs : fs.filter(f => f.name === "To" || f.name === "Dist"));
+  const { room, shown, sized, fitted, probes } = useFigureFit(ours(exact), ours(rounded), valueType, unitType);
   // Which figures are buttons (below), each its 44-point area round it.
   const tapped = (name: string) => (name === "Fuel" && !!breakdown) || (name === "To" && stops && !local) || ((name === "ETE" || name === "ETA") && !local);
   return (
@@ -112,7 +119,7 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
     <div className="relative" data-slot="section-summary" data-tip="flight-line">
       {/* Each figure centred in its column, at the owner's ask ("Can the
           calculations be center aligned?"), as FigureStrip's are. */}
-      <dl className={cn("grid gap-3", shown.length === 3 ? "grid-cols-3" : "grid-cols-4")}>
+      <dl className={cn("grid gap-3", shown.length === 2 ? "grid-cols-2" : shown.length === 3 ? "grid-cols-3" : "grid-cols-4")}>
         {shown.map((f, i) => (
           <div key={f.name} className="min-w-0 text-center">
             {/* Its names and units a grey that reads on the pill's glass
