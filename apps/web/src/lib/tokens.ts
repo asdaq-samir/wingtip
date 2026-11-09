@@ -105,6 +105,16 @@ export const MOTION = {
   sheetBackEase: [0.2, 0.9, 0.3, 1],
   fade: 0.2,
   quick: 0.15,
+  page: 0.25,
+  skeletonPulse: 1.5,
+} as const;
+
+/** The taps felt on a key action: navigator.vibrate patterns in milliseconds (lib/haptics plays them). */
+export const HAPTIC = {
+  altitude: [8],
+  directTo: [14],
+  warning: [40, 60, 40],
+  detent: [6],
 } as const;
 
 /** Corners, in points. */
@@ -139,4 +149,5 @@ export const SIZE = {
   panel: 384,
   panelWide: 448,
   desktop: 1024,
+  refreshPull: 64,
 } as const;

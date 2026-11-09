@@ -526,6 +526,22 @@ enum WingtipMotion {
     static let sheetBackEase = Animation.timingCurve(0.2, 0.9, 0.3, 1, duration: 0.3)
     static let fade: TimeInterval = 0.2
     static let quick: TimeInterval = 0.15
+    static let page: TimeInterval = 0.25
+    static let skeletonPulse: TimeInterval = 1.5
+}
+
+/// The taps felt on a key action, as SwiftUI's sensory feedback
+/// (`.sensoryFeedback(WingtipHaptic.altitude, trigger:)`); the system
+/// leaves them out where the pilot has turned system haptics off.
+enum WingtipHaptic {
+    /// An altitude set: a wheel's detent, as a picker ticks.
+    static let altitude: SensoryFeedback = .selection
+    /// Direct To or Fly Here taken: the route has changed under the pilot.
+    static let directTo: SensoryFeedback = .impact(weight: .medium)
+    /// An alert or a copilot warning shown: felt as well as seen, in a busy cockpit.
+    static let warning: SensoryFeedback = .warning
+    /// The sheet settling at a detent (pill, half, full).
+    static let detent: SensoryFeedback = .impact(weight: .light)
 }
 
 enum WingtipSize {
@@ -535,5 +551,6 @@ enum WingtipSize {
     static let panel: CGFloat = 384
     static let panelWide: CGFloat = 448
     static let desktop: CGFloat = 1024
+    static let refreshPull: CGFloat = 64
     static let glassBlur: CGFloat = 15
 }

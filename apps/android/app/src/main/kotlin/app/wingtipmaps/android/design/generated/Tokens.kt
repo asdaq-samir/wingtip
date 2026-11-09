@@ -2,6 +2,8 @@
 
 package app.wingtipmaps.android.design.generated
 
+import android.os.Build
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Immutable
@@ -550,6 +552,21 @@ object WingtipMotion {
     val SheetBackEase = CubicBezierEasing(0.2f, 0.9f, 0.3f, 1f)
     const val FADE_MS = 200
     const val QUICK_MS = 150
+    const val PAGE_MS = 250
+    const val SKELETON_PULSE_MS = 1500
+}
+
+/** The taps felt on a key action, as View.performHapticFeedback's constants; one
+ *  from API 30 has its fallback below that. */
+object WingtipHaptic {
+    /** An altitude set: a wheel's detent, as a picker ticks. */
+    const val ALTITUDE = HapticFeedbackConstants.CLOCK_TICK
+    /** Direct To or Fly Here taken: the route has changed under the pilot. */
+    val DIRECT_TO: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+    /** An alert or a copilot warning shown: felt as well as seen, in a busy cockpit. */
+    val WARNING: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
+    /** The sheet settling at a detent (pill, half, full). */
+    const val DETENT = HapticFeedbackConstants.CONTEXT_CLICK
 }
 
 object WingtipSize {
@@ -559,4 +576,5 @@ object WingtipSize {
     val Panel = 384.dp
     val PanelWide = 448.dp
     val Desktop = 1024.dp
+    val RefreshPull = 64.dp
 }

@@ -25,12 +25,15 @@
   --motion-sheet-back-ease: cubic-bezier(0.2, 0.9, 0.3, 1);
   --motion-fade: 0.2s;
   --motion-quick: 0.15s;
+  --motion-page: 0.25s;
+  --motion-skeleton-pulse: 1.5s;
   --tap-target: 44px;
   --size-chip: 32px;
   --size-tab-bar: 64px;
   --size-panel: 384px;
   --size-panel-wide: 448px;
   --size-desktop: 1024px;
+  --size-refresh-pull: 64px;
   --airspace-blue-text: #2465b8;
   --airspace-magenta-text: #c0309f;
   --course: #e600e6;
