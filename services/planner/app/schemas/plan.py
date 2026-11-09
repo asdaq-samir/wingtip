@@ -673,17 +673,22 @@ class AircraftProfile(BaseModel):
     """The aircraft's name plus its performance profile -- every field a
     data/aircraft/*.json file carries, declared, so a page reads them as
     fields rather than guessing at a dict. The three figures after the
-    name are required when a profile is loaded (REQUIRED_FIELDS in
-    wingtip.aircraft); the rest fall back to defaults in wingtip.navlog when a
-    profile leaves them out. `extra="allow"` keeps a field a newer
-    profile adds on its way through."""
+    name are required when a stock profile is loaded (REQUIRED_FIELDS in
+    wingtip.aircraft); a pilot's own airplane of no stock type ("own",
+    wingtip.planning.OWN_AIRPLANE) has its record's alone, and no service
+    ceiling where the record gives none. A figure left out is missing,
+    and each rule that needs it says so. `extra="allow"` keeps a field a
+    newer profile adds on its way through."""
 
     model_config = ConfigDict(extra="allow")
 
     name: str
     cruise_tas_kt: float
     fuel_burn_gph: float
-    service_ceiling_ft: float
+    service_ceiling_ft: float | None = None
+    #: Its start, taxi and takeoff fuel, gal, its POH's (or its pilot's
+    #: own); None where it has none, and none is then counted.
+    taxi_fuel_gal: float | None = None
     type: str | None = None
     #: Its type designator as FAA Order JO 7360.1 lists it, what a flight
     #: plan's item 9 takes: C172 for the Cessna 172, P28A for the PA-28s

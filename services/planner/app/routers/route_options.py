@@ -17,7 +17,7 @@ from ..router_basics import load_route, resolve
 from wingtip.planning import aircraft_profile, forecast_hour_for
 from ..schemas.route_options import RouteOptions
 from ..gateway import PUBLIC
-from ..plan_query import CruiseTas, ServiceCeiling
+from ..plan_query import CruiseTas, GlideRatio, ServiceCeiling, TaxiFuel
 
 router = APIRouter()
 
@@ -109,7 +109,8 @@ def route_options(
     dest: str,
     #: The pilot's own route's stops, "KDSM,VPBNG": what it meets is said.
     stops: str = "",
-    #: A stock profile's name; none for no airplane picked: the ways are
+    #: A stock profile's name, or "own" for a pilot's own airplane of no
+    #: stock type on its figures alone; none for no airplane picked: the ways are
     #: then the route's own, with no minutes, fuel or fuel stops (the
     #: engine's route_options with a null profile).
     aircraft: str | None = None,
@@ -117,6 +118,10 @@ def route_options(
     fuel_burn_gph: Annotated[float | None, Query(gt=0, le=200)] = None,
     usable_fuel_gal: Annotated[float | None, Query(gt=0, le=2000)] = None,
     service_ceiling_ft: ServiceCeiling = None,
+    #: A pilot's own airplane's start and taxi fuel and glide ratio
+    #: (PlanQuery's), for the fuel stops and the water out of glide.
+    taxi_fuel_gal: TaxiFuel = None,
+    glide_ratio: GlideRatio = None,
     depart: datetime | None = None,
     #: The pilot's own minimums (Settings), never under 14 CFR 91.155's:
     #: none given, the rules' alone.
@@ -138,6 +143,8 @@ def route_options(
         fuel_burn_gph,
         usable_fuel_gal,
         service_ceiling_ft,
+        taxi_fuel_gal,
+        glide_ratio,
         depart.isoformat() if depart else None,
         min_ceiling_ft,
         min_visibility_sm,
@@ -156,6 +163,8 @@ def route_options(
             fuel_burn_gph=fuel_burn_gph,
             usable_fuel_gal=usable_fuel_gal,
             service_ceiling_ft=service_ceiling_ft,
+            taxi_fuel_gal=taxi_fuel_gal,
+            glide_ratio=glide_ratio,
         )
     )
     # The pilot's own route, its points by ident: what it meets, and it with

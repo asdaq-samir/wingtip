@@ -204,7 +204,7 @@
       },
       "AircraftProfile": {
         "additionalProperties": true,
-        "description": "The aircraft's name plus its performance profile -- every field a\ndata/aircraft/*.json file carries, declared, so a page reads them as\nfields rather than guessing at a dict. The three figures after the\nname are required when a profile is loaded (REQUIRED_FIELDS in\nwingtip.aircraft); the rest fall back to defaults in wingtip.navlog when a\nprofile leaves them out. `extra=\"allow\"` keeps a field a newer\nprofile adds on its way through.",
+        "description": "The aircraft's name plus its performance profile -- every field a\ndata/aircraft/*.json file carries, declared, so a page reads them as\nfields rather than guessing at a dict. The three figures after the\nname are required when a stock profile is loaded (REQUIRED_FIELDS in\nwingtip.aircraft); a pilot's own airplane of no stock type (\"own\",\nwingtip.planning.OWN_AIRPLANE) has its record's alone, and no service\nceiling where the record gives none. A figure left out is missing,\nand each rule that needs it says so. `extra=\"allow\"` keeps a field a\nnewer profile adds on its way through.",
         "properties": {
           "climb_fuel_burn_gph": {
             "anyOf": [
@@ -324,8 +324,16 @@
             "title": "Pressurized"
           },
           "service_ceiling_ft": {
-            "title": "Service Ceiling Ft",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Service Ceiling Ft"
           },
           "supplemental_oxygen": {
             "anyOf": [
@@ -349,6 +357,18 @@
               }
             ],
             "default": null
+          },
+          "taxi_fuel_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Taxi Fuel Gal"
           },
           "type": {
             "anyOf": [
@@ -378,8 +398,7 @@
         "required": [
           "name",
           "cruise_tas_kt",
-          "fuel_burn_gph",
-          "service_ceiling_ft"
+          "fuel_burn_gph"
         ],
         "title": "AircraftProfile",
         "type": "object"
@@ -6301,6 +6320,19 @@
             ],
             "title": "Climb Fuel Burn Gph"
           },
+          "climb_rate_fpm": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 5000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climb Rate Fpm"
+          },
           "climb_tas_kt": {
             "anyOf": [
               {
@@ -6397,6 +6429,19 @@
               }
             ],
             "title": "Fuel Burn Gph"
+          },
+          "glide_ratio": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 1.0,
+                "maximum": 80.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Glide Ratio"
           },
           "ground": {
             "default": "",
@@ -6497,6 +6542,19 @@
             "default": "",
             "title": "Stops",
             "type": "string"
+          },
+          "taxi_fuel_gal": {
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxi Fuel Gal"
           },
           "ticked": {
             "default": [],
@@ -9639,25 +9697,31 @@
         "type": "object"
       },
       "GlideFigures": {
-        "description": "The POH's best-glide speed and glide ratio (Section 3).",
+        "description": "The POH's best-glide speed and glide ratio (Section 3). A pilot's\nown airplane of no stock type has its glide ratio alone, as its pilot\ngave it: no best-glide speed (none is taken from another airplane) and\nits source the pilot.",
         "properties": {
           "best_glide_kias": {
-            "title": "Best Glide Kias",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Glide Kias"
           },
           "ratio": {
             "title": "Ratio",
             "type": "number"
           },
           "source": {
+            "default": "The pilot's own figure, from the airplane's handbook",
             "title": "Source",
             "type": "string"
           }
         },
         "required": [
-          "best_glide_kias",
-          "ratio",
-          "source"
+          "ratio"
         ],
         "title": "GlideFigures",
         "type": "object"
@@ -9793,6 +9857,19 @@
             ],
             "title": "Climb Fuel Burn Gph"
           },
+          "climb_rate_fpm": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 5000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climb Rate Fpm"
+          },
           "climb_tas_kt": {
             "anyOf": [
               {
@@ -9890,6 +9967,19 @@
             ],
             "title": "Fuel Burn Gph"
           },
+          "glide_ratio": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 1.0,
+                "maximum": 80.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Glide Ratio"
+          },
           "ground": {
             "default": "",
             "title": "Ground",
@@ -9970,6 +10060,19 @@
             "default": "",
             "title": "Stops",
             "type": "string"
+          },
+          "taxi_fuel_gal": {
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxi Fuel Gal"
           },
           "ticked": {
             "default": [],
@@ -23641,7 +23744,7 @@
             }
           },
           {
-            "description": "A stock profile's name (c172).",
+            "description": "A stock profile's name (c172), or own.",
             "in": "query",
             "name": "aircraft",
             "required": false,
@@ -23655,8 +23758,26 @@
                   "type": "null"
                 }
               ],
-              "description": "A stock profile's name (c172).",
+              "description": "A stock profile's name (c172), or own.",
               "title": "Aircraft"
+            }
+          },
+          {
+            "in": "query",
+            "name": "glide_ratio",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 1,
+                  "maximum": 80,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Glide Ratio"
             }
           },
           {
@@ -24751,6 +24872,60 @@
           },
           {
             "in": "query",
+            "name": "climb_rate_fpm",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 0,
+                  "maximum": 5000,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Climb Rate Fpm"
+            }
+          },
+          {
+            "in": "query",
+            "name": "taxi_fuel_gal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 50,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Taxi Fuel Gal"
+            }
+          },
+          {
+            "in": "query",
+            "name": "glide_ratio",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 1,
+                  "maximum": 80,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Glide Ratio"
+            }
+          },
+          {
+            "in": "query",
             "name": "depart",
             "required": false,
             "schema": {
@@ -25285,6 +25460,60 @@
                 }
               ],
               "title": "Service Ceiling Ft"
+            }
+          },
+          {
+            "in": "query",
+            "name": "climb_rate_fpm",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 0,
+                  "maximum": 5000,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Climb Rate Fpm"
+            }
+          },
+          {
+            "in": "query",
+            "name": "taxi_fuel_gal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 50,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Taxi Fuel Gal"
+            }
+          },
+          {
+            "in": "query",
+            "name": "glide_ratio",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 1,
+                  "maximum": 80,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Glide Ratio"
             }
           },
           {
@@ -26391,6 +26620,60 @@
           },
           {
             "in": "query",
+            "name": "climb_rate_fpm",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 0,
+                  "maximum": 5000,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Climb Rate Fpm"
+            }
+          },
+          {
+            "in": "query",
+            "name": "taxi_fuel_gal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 50,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Taxi Fuel Gal"
+            }
+          },
+          {
+            "in": "query",
+            "name": "glide_ratio",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 1,
+                  "maximum": 80,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Glide Ratio"
+            }
+          },
+          {
+            "in": "query",
             "name": "depart",
             "required": false,
             "schema": {
@@ -26758,6 +27041,42 @@
                 }
               ],
               "title": "Service Ceiling Ft"
+            }
+          },
+          {
+            "in": "query",
+            "name": "taxi_fuel_gal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 50,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Taxi Fuel Gal"
+            }
+          },
+          {
+            "in": "query",
+            "name": "glide_ratio",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 1,
+                  "maximum": 80,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Glide Ratio"
             }
           },
           {
