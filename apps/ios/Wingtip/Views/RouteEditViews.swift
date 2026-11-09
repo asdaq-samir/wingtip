@@ -214,7 +214,7 @@ struct RoutePointMenu: View {
                 Button {
                     if plan.extras.direct == ident { plan.cancelDirect() } else { plan.directTo(ident, from: dryRun.fix ?? ownShip.fix) }
                 } label: {
-                    Label(plan.extras.direct == ident ? "Fly as Planned" : "Direct To", systemImage: "arrow.up.right")
+                    Label(plan.extras.direct == ident ? "Fly as Planned" : "Direct To", systemImage: WingtipIcon.directTo)
                 }
                 Button { FlightUI.shared.altitudeAt = ident } label: {
                     Label(plan.extras.altitudes[ident.uppercased()].map { "Set Altitude… (\(Format.altitude(Double($0))))" } ?? "Set Altitude…", systemImage: "arrow.up.and.down")
@@ -222,7 +222,7 @@ struct RoutePointMenu: View {
             }
             Button { FlightUI.shared.fixFrom = ident } label: { Label("Create a Fix from Here…", systemImage: "scope") }
             Button { FlightUI.shared.card = .hold(ident) } label: {
-                Label(plan.hold(at: ident) == nil ? "Hold Here…" : "Change Hold…", systemImage: "repeat")
+                Label(plan.hold(at: ident) == nil ? "Hold Here…" : "Change Hold…", systemImage: WingtipIcon.holdHere)
             }
             if role == .stop {
                 Divider()
@@ -238,9 +238,9 @@ struct RoutePointMenu: View {
                 if let feet = plan.extras.altitudes[ident.uppercased()] {
                     Text(Format.altitude(Double(feet))).font(.footnote.monospacedDigit()).foregroundStyle(.tint)
                 }
-                if plan.hold(at: ident) != nil { Image(systemName: "repeat").foregroundStyle(.tint) }
+                if plan.hold(at: ident) != nil { Image(systemName: WingtipIcon.holdHere).foregroundStyle(.tint) }
                 if plan.extras.direct == ident { Image(systemName: "arrow.up.right").foregroundStyle(.tint) }
-                Image(systemName: "ellipsis.circle").foregroundStyle(.tint)
+                Image(systemName: WingtipIcon.more).foregroundStyle(.tint)
             }
         }
         .accessibilityLabel(spoken)
@@ -287,9 +287,9 @@ struct RouteExtrasSection: View {
                 SectionTitle("Route")
             }
             Section(title: "In Flight") {
-                NavigationLink(value: "nearest") { Label("Nearest for a diversion", systemImage: "airplane.arrival") }
-                NavigationLink(value: "notes") { Label("Checkpoint notes", systemImage: "text.bubble") }
-                NavigationLink(value: "file") { Label("File flight plan", systemImage: "doc.text") }
+                NavigationLink(value: "nearest") { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
+                NavigationLink(value: "notes") { Label("Checkpoint Notes", systemImage: "text.bubble") }
+                NavigationLink(value: "file") { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             }
         }
     }

@@ -95,11 +95,11 @@ struct StripHead: View {
     private var menu: some View {
         Menu {
             ShareMenu()
-            Button { onFile() } label: { Label("File flight plan", systemImage: "paperplane") }
+            Button { onFile() } label: { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             Divider()
-            Button(role: .destructive) { plan.clear() } label: { Label("Clear route", systemImage: "xmark") }
+            Button(role: .destructive) { plan.clear() } label: { Label("Clear Route", systemImage: WingtipIcon.close) }
         } label: {
-            Image(systemName: "ellipsis.circle")
+            Image(systemName: WingtipIcon.more)
                 .font(.body.weight(.medium))
                 .foregroundStyle(ink.tint)
                 .frame(width: 32, height: 32)

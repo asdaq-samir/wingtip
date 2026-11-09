@@ -65,7 +65,7 @@ struct AirportCard: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if let place {
                     ShareLink(item: URL(string: "https://\(Config.host)/app/plan?place=\(place.ident)")!,
-                              subject: Text(place.name)) { Image(systemName: "square.and.arrow.up") }
+                              subject: Text(place.name)) { Image(systemName: WingtipIcon.share) }
                         .accessibilityLabel("Share")
                     let kept = shelf.isFavorite(place.ident)
                     Button { shelf.toggleFavorite(KeptAirport(place)) } label: {

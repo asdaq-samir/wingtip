@@ -20,7 +20,7 @@ struct MapButtons: View {
             Button {
                 if routeAway && !following { fitRoute() } else { following.toggle() }
             } label: {
-                Image(systemName: routeAway && !following ? "point.topleft.down.to.point.bottomright.curvepath" : following ? "location.fill" : "location")
+                Image(systemName: routeAway && !following ? WingtipIcon.flightPlan : following ? WingtipIcon.myLocationOn : WingtipIcon.myLocation)
                     // The body style, so the glyph follows Dynamic Type; the
                     // 44-point round button itself does not grow.
                     .font(.body.weight(.medium))
@@ -33,7 +33,7 @@ struct MapButtons: View {
             .foregroundStyle(.primary)
             if let ask {
                 Button(action: ask) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: WingtipIcon.brief)
                         .font(.body.weight(.medium))
                         .frame(width: WingtipSize.tapTarget, height: WingtipSize.tapTarget)
                 }

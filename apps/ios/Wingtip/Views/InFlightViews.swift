@@ -238,7 +238,7 @@ struct FlightServiceView: View {
                 Link(destination: URL(string: "tel:18009927433")!) { LabeledContent("Flight Service", value: "1-800-WX-BRIEF") }
             }
         }
-        .navigationTitle("File flight plan")
+        .navigationTitle("File Flight Plan")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             status = try? await Gateway.flightService()
@@ -421,14 +421,14 @@ struct ShareMenu: View {
     var body: some View {
         Menu {
             ShareLink(item: RouteShare.link(plan)) { Label("Share Link", systemImage: "link") }
-            ShareLink(item: RouteShare.navLogText(plan)) { Label("Nav Log as Text", systemImage: "list.number") }
+            ShareLink(item: RouteShare.navLogText(plan)) { Label("Nav Log as Text", systemImage: WingtipIcon.navLog) }
             Button { pdf() } label: { Label("Nav Log as PDF", systemImage: "doc.richtext") }
             // ForeFlight sends the route on to the panel wirelessly (Garmin's
             // Connext, Avidyne, Dynon): the owner's pick (2026-11-02), as most
             // pilots have ForeFlight and not Garmin Pilot.
-            Button { foreflight() } label: { Label("Open in ForeFlight", systemImage: "paperplane") }
+            Button { foreflight() } label: { Label("Open in ForeFlight", systemImage: WingtipIcon.send) }
         } label: {
-            Image(systemName: "square.and.arrow.up")
+            Image(systemName: WingtipIcon.share)
         }
         .accessibilityLabel("Share")
         .disabled(plan.legs.isEmpty)
