@@ -16331,6 +16331,246 @@
       ],
       "additionalProperties": false
     },
+    "proficiency_plan": {
+      "description": "A pilot's proficiency plan: what is due and when (the flight review, 14 CFR 61.56(c); passengers by day and at night, 61.57(a), (b); instrument currency, 61.57(c), (d); a student's solo endorsement, 61.87(n), (p); the medical as given), the reminders for those lapsing within remind_days, the weak areas the pilot's own debriefs show (an approach off course or glidepath under the 500 ft gate, AC 61-98D 2.1.4; an approach past full scale or under a minimum; a downwind off pattern altitude, ACS PA.III.B; a leg not held, PA.VI.A), each with its evidence, and up to four sessions: what to practise, why, the nearest suited field of `places`, how long, and whether it may count toward a WINGS flight activity (AC 61-91K 7.3). Every decision is the engine's; a model only words it, citing the ids.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProficiencyPlanInput",
+          "type": "object",
+          "properties": {
+            "today": {
+              "type": "string",
+              "description": "YYYY-MM-DD."
+            },
+            "entries": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LogbookEntry"
+              }
+            },
+            "flight_review_on": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The last flight review, YYYY-MM-DD."
+            },
+            "medical_expires_on": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "YYYY-MM-DD, as the pilot gives it."
+            },
+            "ipc_on": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The last instrument proficiency check, YYYY-MM-DD."
+            },
+            "ratings": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "student",
+                  "private",
+                  "commercial",
+                  "atp",
+                  "instrument",
+                  "cfi"
+                ]
+              },
+              "description": "\"student\" holds the pilot to the solo endorsement instead of the flight review (61.56(g)); \"instrument\" adds instrument currency."
+            },
+            "held": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "AC 61-65K's, as endorsement_kinds names it."
+                  },
+                  "on": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD."
+                  }
+                },
+                "required": [
+                  "code",
+                  "on"
+                ]
+              },
+              "description": "A student's endorsements."
+            },
+            "debriefs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CoachDebrief"
+              }
+            },
+            "places": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PracticePlace"
+              }
+            },
+            "remind_days": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "How many days before a currency lapses its reminder shows; 30 where null."
+            }
+          },
+          "required": [
+            "today",
+            "entries"
+          ]
+        },
+        "answer": {
+          "title": "ProficiencyPlanAnswer",
+          "type": "object",
+          "properties": {
+            "today": {
+              "type": "string"
+            },
+            "due": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ProficiencyDue"
+              }
+            },
+            "reminders": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "until": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "days_left": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "key",
+                  "text",
+                  "until",
+                  "days_left"
+                ],
+                "additionalProperties": false
+              },
+              "description": "The currencies lapsing within remind_days, in a sentence each."
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "\"ev:1\"..., newest first."
+                  },
+                  "flown_on": {
+                    "type": "string"
+                  },
+                  "place": {
+                    "type": "string"
+                  },
+                  "area": {
+                    "type": "string",
+                    "description": "The weak area's key."
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "flown_on",
+                  "place",
+                  "area",
+                  "text"
+                ],
+                "additionalProperties": false
+              },
+              "description": "The lines from the pilot's debriefs of the last half year."
+            },
+            "weak_areas": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "enum": [
+                      "unstable_approach",
+                      "approach_deviation",
+                      "pattern_altitude",
+                      "cruise_holding"
+                    ]
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "acs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "key",
+                  "label",
+                  "acs",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "description": "The most evidence first."
+            },
+            "sessions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ProficiencySession"
+              }
+            }
+          },
+          "required": [
+            "today",
+            "due",
+            "reminders",
+            "evidence",
+            "weak_areas",
+            "sessions"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "prohibited_caution": {
       "description": "Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.",
       "type": "object",
@@ -21824,6 +22064,7 @@
     "procedure_turn",
     "procedures_read",
     "procedures_write",
+    "proficiency_plan",
     "prohibited_caution",
     "radial_of",
     "radio_call_sign",
@@ -23647,6 +23888,128 @@
         "dep",
         "stops",
         "dest"
+      ]
+    },
+    "CoachDebrief": {
+      "title": "CoachDebrief",
+      "type": "object",
+      "description": "One of the pilot's own debriefed flights, trimmed to what proficiency_plan reads.",
+      "properties": {
+        "kind": {
+          "enum": [
+            "approach",
+            "flight"
+          ],
+          "description": "An approach debriefed (route's approach_debrief) or a flight against its plan (debrief)."
+        },
+        "flown_on": {
+          "type": "string",
+          "description": "YYYY-MM-DD, the pilot's own calendar."
+        },
+        "place": {
+          "type": "string",
+          "description": "Where: the approach's field, or the flight's route (\"KMSN-KJVL\")."
+        },
+        "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The field's elevation, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4); without it the gate is not checked."
+        },
+        "profile": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "to_go_nm": {
+                "type": "number"
+              },
+              "alt_ft": {
+                "type": "number"
+              },
+              "off": {
+                "type": "boolean",
+                "description": "Past full scale, or under a minimum, there."
+              }
+            },
+            "required": [
+              "alt_ft",
+              "off"
+            ]
+          },
+          "description": "An approach's profile.track as its debrief gives it."
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ApproachFinding"
+          },
+          "description": "An approach debrief's findings, as worded."
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "altitude_within": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "course_within": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "ok": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "from",
+              "to",
+              "ok"
+            ]
+          },
+          "description": "A flight debrief's legs."
+        },
+        "patterns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "off_ft": {
+                "type": "number",
+                "description": "Its altitude less pattern altitude, ft (+ high)."
+              },
+              "ok": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "ident",
+              "off_ft",
+              "ok"
+            ]
+          },
+          "description": "A flight debrief's pattern entries."
+        }
+      },
+      "required": [
+        "kind",
+        "flown_on"
       ]
     },
     "CopilotAlternative": {
@@ -26402,6 +26765,54 @@
       ],
       "description": "A point, degrees."
     },
+    "PracticePlace": {
+      "title": "PracticePlace",
+      "type": "object",
+      "description": "A field near the pilot's home, as the host found it in its data.",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "distance_nm": {
+          "type": "number",
+          "description": "From the pilot's home field."
+        },
+        "lighted": {
+          "type": "boolean",
+          "description": "A lighted runway (NASR), for night landings."
+        },
+        "towered": {
+          "type": "boolean"
+        },
+        "approaches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "precision": {
+                "type": "boolean",
+                "description": "Has an electronic glidepath by its name: an ILS or a GLS."
+              }
+            },
+            "required": [
+              "name",
+              "precision"
+            ]
+          },
+          "description": "Its instrument approaches (the FAA's CIFP)."
+        }
+      },
+      "required": [
+        "ident",
+        "distance_nm"
+      ]
+    },
     "ProcedureDrawing": {
       "title": "ProcedureDrawing",
       "type": "object",
@@ -26599,6 +27010,189 @@
         }
       },
       "description": "A procedure as the planner draws it from the FAA's CIFP (/api/procedure's answer as it comes); only the members the engine reads."
+    },
+    "ProficiencyDue": {
+      "title": "ProficiencyDue",
+      "type": "object",
+      "properties": {
+        "key": {
+          "enum": [
+            "flight_review",
+            "solo",
+            "day_passengers",
+            "night_passengers",
+            "instrument",
+            "medical"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "description": "\"due:<key>\", what a plan's words cite."
+        },
+        "label": {
+          "type": "string"
+        },
+        "rule": {
+          "type": "string",
+          "description": "The 14 CFR section."
+        },
+        "until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The last day it is good, YYYY-MM-DD; null with nothing on record."
+        },
+        "from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "A currency not begun yet: its first day (61.57(c)(1)'s month after)."
+        },
+        "days_left": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Days from today to until; negative where lapsed."
+        },
+        "status": {
+          "enum": [
+            "current",
+            "due_soon",
+            "lapsed",
+            "pending",
+            "unknown"
+          ]
+        },
+        "detail": {
+          "type": "string",
+          "description": "What it takes, in a sentence, with its rule."
+        }
+      },
+      "required": [
+        "key",
+        "id",
+        "label",
+        "rule",
+        "until",
+        "from",
+        "days_left",
+        "status",
+        "detail"
+      ],
+      "additionalProperties": false
+    },
+    "ProficiencySession": {
+      "title": "ProficiencySession",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "\"session:1\"..."
+        },
+        "key": {
+          "type": "string",
+          "description": "The currency (\"night_passengers\", \"ipc\") or weak area (\"unstable_approach\") it answers."
+        },
+        "practise": {
+          "type": "string",
+          "description": "What to practise, with its source."
+        },
+        "why": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The ids it answers: \"due:<key>\" and evidence ids."
+        },
+        "place": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "ident": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "distance_nm": {
+                  "type": "number"
+                },
+                "approach": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "The approach to fly there."
+                }
+              },
+              "required": [
+                "ident",
+                "name",
+                "distance_nm",
+                "approach"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The nearest field suited to it; null where any will do or none was given."
+        },
+        "minutes": {
+          "type": "integer",
+          "description": "The plan's suggestion of its length, not a rule."
+        },
+        "instructor": {
+          "type": "boolean",
+          "description": "Flown with an instructor."
+        },
+        "wings": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "area": {
+                  "type": "string",
+                  "description": "The accident causal factor's area (AC 61-91K 6)."
+                },
+                "acs": {
+                  "type": "string",
+                  "description": "The ACS task flown to."
+                },
+                "note": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "area",
+                "acs",
+                "note"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where it may count toward a WINGS flight activity; never a claim that it does."
+        }
+      },
+      "required": [
+        "id",
+        "key",
+        "practise",
+        "why",
+        "place",
+        "minutes",
+        "instructor",
+        "wings"
+      ],
+      "additionalProperties": false
     },
     "ReceiverBlock": {
       "title": "ReceiverBlock",

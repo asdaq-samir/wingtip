@@ -294,6 +294,26 @@
     <string name="logbook_entries">Entries</string>
     <string name="logbook_empty">Nothing logged yet. A flight recorded by the app is offered here once it ends.</string>
     <string name="currency">Currency</string>
+    <!-- The Logbook's Coach, the pilot's proficiency plan (coach/). -->
+    <string name="coach">Coach</string>
+    <string name="coach_line">What is due, and sessions to fly for it</string>
+    <string name="coach_certificate">Your Certificate</string>
+    <string name="coach_certificate_short">Certificate</string>
+    <string name="certificate_student">Student</string>
+    <string name="certificate_private">Private or Higher</string>
+    <string name="certificate_instrument">Instrument Rated</string>
+    <string name="coach_make">Make My Plan</string>
+    <string name="coach_make_again">Make It Again</string>
+    <string name="coach_make_line">From your logbook and the fields near %1$s</string>
+    <string name="coach_home_none">your home base</string>
+    <string name="coach_making">Reading your logbook…</string>
+    <string name="coach_reminders">Reminders</string>
+    <string name="coach_wording">Putting your plan into words…</string>
+    <string name="coach_no_words">No words for now: %1$s</string>
+    <string name="coach_sessions">Sessions</string>
+    <string name="coach_nothing">Nothing to practise for now: every currency is good past the reminders, and no debrief shows a weak area.</string>
+    <string name="coach_due">What Is Due</string>
+    <string name="coach_debriefs">From Your Debriefs</string>
     <string name="flight_logged">Flight Logged</string>
     <string name="flight_logged_line">Drawn from this flight\'s track. Change anything, then Log it.</string>
     <string name="flight_logged_sign_in">Sign in to log it: the track is kept on this phone until then.</string>

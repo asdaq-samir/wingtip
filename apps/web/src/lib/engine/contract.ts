@@ -2442,6 +2442,13 @@ export interface EngineContract {
     answer: ProceduresWriteAnswer;
   };
   /**
+   * A pilot's proficiency plan: what is due and when (the flight review, 14 CFR 61.56(c); passengers by day and at night, 61.57(a), (b); instrument currency, 61.57(c), (d); a student's solo endorsement, 61.87(n), (p); the medical as given), the reminders for those lapsing within remind_days, the weak areas the pilot's own debriefs show (an approach off course or glidepath under the 500 ft gate, AC 61-98D 2.1.4; an approach past full scale or under a minimum; a downwind off pattern altitude, ACS PA.III.B; a leg not held, PA.VI.A), each with its evidence, and up to four sessions: what to practise, why, the nearest suited field of `places`, how long, and whether it may count toward a WINGS flight activity (AC 61-91K 7.3). Every decision is the engine's; a model only words it, citing the ids.
+   */
+  proficiency_plan: {
+    input: ProficiencyPlanInput;
+    answer: ProficiencyPlanAnswer;
+  };
+  /**
    * Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
    */
   prohibited_caution: {
@@ -7763,6 +7770,265 @@ export interface ProceduresWriteInput {
     transition?: string | null;
     direct?: string | null;
   }[];
+}
+export interface ProficiencyPlanInput {
+  /**
+   * YYYY-MM-DD.
+   */
+  today: string;
+  entries: LogbookEntry[];
+  /**
+   * The last flight review, YYYY-MM-DD.
+   */
+  flight_review_on?: string | null;
+  /**
+   * YYYY-MM-DD, as the pilot gives it.
+   */
+  medical_expires_on?: string | null;
+  /**
+   * The last instrument proficiency check, YYYY-MM-DD.
+   */
+  ipc_on?: string | null;
+  /**
+   * "student" holds the pilot to the solo endorsement instead of the flight review (61.56(g)); "instrument" adds instrument currency.
+   */
+  ratings?: ("student" | "private" | "commercial" | "atp" | "instrument" | "cfi")[];
+  /**
+   * A student's endorsements.
+   */
+  held?: {
+    /**
+     * AC 61-65K's, as endorsement_kinds names it.
+     */
+    code: string;
+    /**
+     * YYYY-MM-DD.
+     */
+    on: string;
+  }[];
+  debriefs?: CoachDebrief[];
+  places?: PracticePlace[];
+  /**
+   * How many days before a currency lapses its reminder shows; 30 where null.
+   */
+  remind_days?: number | null;
+}
+/**
+ * One of the pilot's own debriefed flights, trimmed to what proficiency_plan reads.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "CoachDebrief".
+ */
+export interface CoachDebrief {
+  /**
+   * An approach debriefed (route's approach_debrief) or a flight against its plan (debrief).
+   */
+  kind: "approach" | "flight";
+  /**
+   * YYYY-MM-DD, the pilot's own calendar.
+   */
+  flown_on: string;
+  /**
+   * Where: the approach's field, or the flight's route ("KMSN-KJVL").
+   */
+  place?: string;
+  /**
+   * The field's elevation, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4); without it the gate is not checked.
+   */
+  elevation_ft?: number | null;
+  /**
+   * An approach's profile.track as its debrief gives it.
+   */
+  profile?: {
+    to_go_nm?: number;
+    alt_ft: number;
+    /**
+     * Past full scale, or under a minimum, there.
+     */
+    off: boolean;
+  }[];
+  /**
+   * An approach debrief's findings, as worded.
+   */
+  findings?: ApproachFinding[];
+  /**
+   * A flight debrief's legs.
+   */
+  legs?: {
+    from: string;
+    to: string;
+    altitude_within?: number | null;
+    course_within?: number | null;
+    ok: boolean;
+  }[];
+  /**
+   * A flight debrief's pattern entries.
+   */
+  patterns?: {
+    ident: string;
+    /**
+     * Its altitude less pattern altitude, ft (+ high).
+     */
+    off_ft: number;
+    ok: boolean;
+  }[];
+}
+/**
+ * A field near the pilot's home, as the host found it in its data.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "PracticePlace".
+ */
+export interface PracticePlace {
+  ident: string;
+  name?: string;
+  /**
+   * From the pilot's home field.
+   */
+  distance_nm: number;
+  /**
+   * A lighted runway (NASR), for night landings.
+   */
+  lighted?: boolean;
+  towered?: boolean;
+  /**
+   * Its instrument approaches (the FAA's CIFP).
+   */
+  approaches?: {
+    name: string;
+    /**
+     * Has an electronic glidepath by its name: an ILS or a GLS.
+     */
+    precision: boolean;
+  }[];
+}
+export interface ProficiencyPlanAnswer {
+  today: string;
+  due: ProficiencyDue[];
+  /**
+   * The currencies lapsing within remind_days, in a sentence each.
+   */
+  reminders: {
+    key: string;
+    text: string;
+    until: string | null;
+    days_left: number;
+  }[];
+  /**
+   * The lines from the pilot's debriefs of the last half year.
+   */
+  evidence: {
+    /**
+     * "ev:1"..., newest first.
+     */
+    id: string;
+    flown_on: string;
+    place: string;
+    /**
+     * The weak area's key.
+     */
+    area: string;
+    text: string;
+  }[];
+  /**
+   * The most evidence first.
+   */
+  weak_areas: {
+    key: "unstable_approach" | "approach_deviation" | "pattern_altitude" | "cruise_holding";
+    label: string;
+    acs: string[];
+    evidence: string[];
+  }[];
+  sessions: ProficiencySession[];
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ProficiencyDue".
+ */
+export interface ProficiencyDue {
+  key: "flight_review" | "solo" | "day_passengers" | "night_passengers" | "instrument" | "medical";
+  /**
+   * "due:<key>", what a plan's words cite.
+   */
+  id: string;
+  label: string;
+  /**
+   * The 14 CFR section.
+   */
+  rule: string;
+  /**
+   * The last day it is good, YYYY-MM-DD; null with nothing on record.
+   */
+  until: string | null;
+  /**
+   * A currency not begun yet: its first day (61.57(c)(1)'s month after).
+   */
+  from: string | null;
+  /**
+   * Days from today to until; negative where lapsed.
+   */
+  days_left: number | null;
+  status: "current" | "due_soon" | "lapsed" | "pending" | "unknown";
+  /**
+   * What it takes, in a sentence, with its rule.
+   */
+  detail: string;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ProficiencySession".
+ */
+export interface ProficiencySession {
+  /**
+   * "session:1"...
+   */
+  id: string;
+  /**
+   * The currency ("night_passengers", "ipc") or weak area ("unstable_approach") it answers.
+   */
+  key: string;
+  /**
+   * What to practise, with its source.
+   */
+  practise: string;
+  /**
+   * The ids it answers: "due:<key>" and evidence ids.
+   */
+  why: string[];
+  /**
+   * The nearest field suited to it; null where any will do or none was given.
+   */
+  place: {
+    ident: string;
+    name: string;
+    distance_nm: number;
+    /**
+     * The approach to fly there.
+     */
+    approach: string | null;
+  } | null;
+  /**
+   * The plan's suggestion of its length, not a rule.
+   */
+  minutes: number;
+  /**
+   * Flown with an instructor.
+   */
+  instructor: boolean;
+  /**
+   * Where it may count toward a WINGS flight activity; never a claim that it does.
+   */
+  wings: {
+    /**
+     * The accident causal factor's area (AC 61-91K 6).
+     */
+    area: string;
+    /**
+     * The ACS task flown to.
+     */
+    acs: string;
+    note: string;
+  } | null;
 }
 export interface ProhibitedCautionInput {
   selection: {};

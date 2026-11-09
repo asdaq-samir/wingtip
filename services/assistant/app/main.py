@@ -31,7 +31,7 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, TypeAdapter
 
-from . import assistant, narrative, notam_rank, notes, oral, tracing, words
+from . import assistant, coach, narrative, notam_rank, notes, oral, tracing, words
 from .schemas import STREAM_MESSAGES
 from .trip import agent as trip
 from .trip.schemas import TripMessage
@@ -41,7 +41,7 @@ logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="Wingtip Maps assistant")
 
-for module in (assistant, narrative, words, notam_rank, notes, oral, trip):
+for module in (assistant, narrative, words, notam_rank, coach, notes, oral, trip):
     app.include_router(module.router)
 
 # Traces, where an OTLP endpoint is set (app.tracing).
