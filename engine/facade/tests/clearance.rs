@@ -110,14 +110,14 @@ fn a_readback_is_checked_as_the_web_checks_it() {
     let cleared = f["cleared"].as_str().unwrap();
     for case in f["cases"].as_array().unwrap() {
         let said = case["said"].as_str().unwrap();
-        let ours: Value = serde_json::from_str(&wingtip_engine::readback::check_json(cleared, said)).unwrap();
+        let ours: Value = serde_json::from_str(&wingtip_engine::readback::check_json(cleared, said, None)).unwrap();
         assert_eq!(ours["items"], case["items"], "{said}");
         assert_eq!(ours["words"], case["words"], "{said}");
     }
     let fl = &f["flightLevel"];
     for case in fl["cases"].as_array().unwrap() {
         let said = case["said"].as_str().unwrap();
-        let ours: Value = serde_json::from_str(&wingtip_engine::readback::check_json(fl["cleared"].as_str().unwrap(), said)).unwrap();
+        let ours: Value = serde_json::from_str(&wingtip_engine::readback::check_json(fl["cleared"].as_str().unwrap(), said, None)).unwrap();
         assert_eq!(ours["items"], case["items"], "{said}");
     }
 }

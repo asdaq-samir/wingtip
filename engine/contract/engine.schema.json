@@ -3430,8 +3430,78 @@
       ],
       "additionalProperties": false
     },
+    "atc_call": {
+      "description": "A transmission heard by the ATC copilot: who said it, by our call sign's place (AIM 4-2-3 c, 4-2-4), and its items in the order said (AIM 4-4-7 b.2).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AtcCallInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "tail": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "prior": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "ago_s": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "text",
+                "ago_s"
+              ]
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "AtcCallAnswer",
+          "type": "object",
+          "properties": {
+            "who": {
+              "enum": [
+                "to_us",
+                "from_us",
+                "other"
+              ]
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AtcItem"
+              }
+            }
+          },
+          "required": [
+            "who",
+            "items"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "readback_check": {
-      "description": "A readback against the clearance heard (AIM 4-4-7): what was missed or said otherwise, and the warning line.",
+      "description": "A readback against the clearance or instruction heard (AIM 4-4-7 b): what was missed or said otherwise, each marked where 4-4-7 b asks it be read back, and the warning line; with `tail`, the call sign too (4-4-7 b.1).",
       "type": "object",
       "properties": {
         "input": {
@@ -3443,6 +3513,12 @@
             },
             "said": {
               "type": "string"
+            },
+            "tail": {
+              "type": [
+                "string",
+                "null"
+              ]
             }
           },
           "required": [
@@ -3466,7 +3542,15 @@
                       "altitude",
                       "expect",
                       "frequency",
-                      "squawk"
+                      "squawk",
+                      "heading",
+                      "runway",
+                      "approach",
+                      "hold",
+                      "direct",
+                      "altimeter",
+                      "call sign",
+                      "order"
                     ]
                   },
                   "cleared": {
@@ -3477,12 +3561,16 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "required": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
                   "item",
                   "cleared",
-                  "said"
+                  "said",
+                  "required"
                 ]
               }
             },
@@ -21991,6 +22079,7 @@
     "call_pattern",
     "tokens",
     "place_words",
+    "atc_call",
     "readback_check",
     "magnetic_variation",
     "data_cycle",
@@ -28146,6 +28235,326 @@
         "sources",
         "elsewhere",
         "alternative"
+      ]
+    },
+    "AtcItem": {
+      "title": "AtcItem",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "altitude"
+            },
+            "ft": {
+              "type": "integer"
+            },
+            "verb": {
+              "enum": [
+                "climb",
+                "descend",
+                "maintain",
+                "cruise"
+              ]
+            },
+            "limit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "ft",
+            "verb",
+            "limit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "expect"
+            },
+            "ft": {
+              "type": "integer"
+            },
+            "min": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "ft",
+            "min"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "heading"
+            },
+            "deg": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "turn": {
+              "enum": [
+                "left",
+                "right",
+                null
+              ]
+            },
+            "by_deg": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "deg",
+            "turn",
+            "by_deg"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "direct"
+            },
+            "said": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "said"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "route"
+            },
+            "limit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "places": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "as_filed": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "limit",
+            "places",
+            "as_filed"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "class_b"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "hold"
+            },
+            "fix": {
+              "type": "string"
+            },
+            "direction": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "on": {
+              "enum": [
+                "radial",
+                "course",
+                "bearing",
+                "track",
+                null
+              ]
+            },
+            "on_deg": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "turns": {
+              "enum": [
+                "left",
+                "right",
+                null
+              ]
+            },
+            "published": {
+              "type": "boolean"
+            },
+            "efc": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "fix",
+            "direction",
+            "on",
+            "on_deg",
+            "turns",
+            "published",
+            "efc"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "frequency"
+            },
+            "mhz": {
+              "type": "string"
+            },
+            "facility": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "mhz",
+            "facility"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "squawk"
+            },
+            "code": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "code"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "altimeter"
+            },
+            "inhg": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "inhg"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "approach"
+            },
+            "name": {
+              "type": "string"
+            },
+            "runway": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cleared": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "name",
+            "runway",
+            "cleared"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "runway"
+            },
+            "runway": {
+              "type": "string"
+            },
+            "what": {
+              "enum": [
+                "land",
+                "takeoff",
+                "option",
+                "hold short",
+                "line up and wait",
+                null
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "runway",
+            "what"
+          ],
+          "additionalProperties": false
+        }
       ]
     }
   }

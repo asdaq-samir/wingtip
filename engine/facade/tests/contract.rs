@@ -87,6 +87,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/brief/src/alternates.rs"),
         include_str!("../../crates/brief/src/fields/calls.rs"),
         include_str!("../../crates/radio/src/mayday.rs"),
+        include_str!("../../crates/radio/src/atc.rs"),
         include_str!("../../crates/brief/src/icing_forecast.rs"),
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
         include_str!("../../crates/route/src/approach/calls.rs"),
@@ -186,6 +187,17 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     }
     for case in readbacks["flightLevel"]["cases"].as_array().unwrap() {
         c.ask("readback_check", json!({ "cleared": readbacks["flightLevel"]["cleared"], "said": case["said"] }));
+    }
+
+    let atc = fixture("atcCalls.json");
+    for case in atc["calls"].as_array().unwrap() {
+        c.ask("atc_call", json!({ "text": case["heard"], "tail": atc["tail"] }));
+    }
+    for case in atc["prior"].as_array().unwrap() {
+        c.ask("atc_call", json!({ "text": case["heard"], "tail": atc["tail"], "prior": { "text": case["prior"], "ago_s": case["ago_s"] } }));
+    }
+    for case in atc["readbacks"].as_array().unwrap() {
+        c.ask("readback_check", json!({ "cleared": case["cleared"], "said": case["said"], "tail": atc["tail"] }));
     }
 
     for case in fixture("checklist.json")["cases"].as_array().unwrap() {

@@ -87,9 +87,12 @@
 //!   4-2-8, 4-2-9), `[{"word", "num"?}]`, from `{"text"}`;
 //! - `place_words`: words for a place as the planner looks them up, the
 //!   ICAO alphabet's spelled, from `{"tokens": [{"word", "num"?}]}`;
-//! - `readback_check`: a readback against the clearance heard (AIM
-//!   4-4-7), `{"items": [{"item", "cleared", "said"}], "words"}`, from
-//!   `{"cleared", "said"}`, both as heard.
+//! - the ATC copilot (radio's atc, its own block): `atc_call`, a
+//!   transmission's speaker (to us, from us, other) and its items in the
+//!   order said, from `{"text", "tail"?, "prior"?: {"text", "ago_s"}}`;
+//!   `readback_check`, a readback against the clearance or instruction
+//!   heard (AIM 4-4-7 b), `{"items": [{"item", "cleared", "said",
+//!   "required"}], "words"}`, from `{"cleared", "said", "tail"?}`.
 //!
 //! The Brief's Go / No-Go (crate::gonogo, the web's lib/verdict and the
 //! modules it is fed from), each from the planner's and the web's own
@@ -1075,7 +1078,6 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             json::string(&mut out, &crate::clearance::place_words(&toks));
             Ok(out)
         }
-        "readback_check" => Ok(crate::readback::check_json(ask.str("cleared")?, ask.str("said")?)),
         // Runways, the wind on them and the traffic pattern (runway::calls).
         "wind_components" | "wind_steady_or_gust" | "runway_crosswind" | "wind_calm" | "runway_calm" | "runway_end_heading"
         | "runway_favoured_end" | "runway_with_winds" | "wind_pick" | "runway_end_key" | "faa_ids" | "pattern_side" | "compass_word"
@@ -1186,6 +1188,9 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         _ if crate::inflight::NAMES.contains(&name) => crate::inflight::call(name, ask.v),
         // The distress call, its code and frequencies (radio's mayday).
         _ if crate::mayday::NAMES.contains(&name) => crate::mayday::call(name, ask.v),
+        // The ATC copilot: a call heard, who said it and its items, and
+        // the readback checked (radio's atc).
+        _ if crate::atc::NAMES.contains(&name) => crate::atc::call(name, ask.v),
         // The best fields to land at, in a glide or a diversion (brief's fields).
         _ if crate::fields::NAMES.contains(&name) => crate::fields::call(name, ask.v),
         // The IFR alternate, 14 CFR 91.169 (alternates).

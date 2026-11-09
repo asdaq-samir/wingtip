@@ -1,18 +1,28 @@
-//! The pilot's readback of a clearance checked against it (AIM 4-4-7 b:
-//! pilots read back "those parts of ATC clearances and instructions
-//! containing altitude assignments, vectors, or runway assignments", and
-//! 4-4-7 b.3 the altimeter, frequencies and codes): the limit, the places
-//! of the route, the altitude to maintain and the one to expect, the
-//! frequency and the squawk, each as the clearance reader finds it in the
-//! readback (crate::clearance) or, said bare as a readback often is ("five
-//! thousand, one two five point three five, four five one two"), as its
-//! figures among the readback's. What was missed or said differently is a
-//! warning in the microphone's pill (the web's RadioLayer); it never stops
-//! anything. The web's lib/readback asks for it as `readback_check`; held
-//! to apps/web/src/lib/fixtures/readbacks.json (the engine's
-//! tests/clearance.rs).
+//! The pilot's readback of a clearance or instruction checked against it.
+//! AIM 4-4-7 b: "Pilots of airborne aircraft should read back those parts
+//! of ATC clearances and instructions containing altitude assignments,
+//! vectors, or runway assignments"; b.1 "Include the aircraft
+//! identification in all readbacks and acknowledgments"; b.2 "Read back
+//! altitudes, altitude restrictions, and vectors in the same sequence as
+//! they are given". Those are marked `required`. The rest -- the limit,
+//! the places of the route, a direct, a hold, the frequency, the code and
+//! the altimeter -- pilots read back as good practice, not because 4-4-7
+//! asks it, and a miss there is said as one but not `required`. (This
+//! comment cited "4-4-7 b.3 the altimeter, frequencies and codes" before
+//! 2026-11-09; the current AIM's b.3 is about charted altitudes.)
+//!
+//! Each item as the clearance and instruction readers find it in the
+//! readback (crate::clearance, crate::instruction) or, said bare as a
+//! readback often is ("five thousand, one two five point three five, four
+//! five one two"), as its figures among the readback's. What was missed
+//! or said differently is a warning on the card and in the microphone's
+//! pill; it never stops anything. Asked as `readback_check` (crate::atc);
+//! held to apps/web/src/lib/fixtures/readbacks.json (the engine's
+//! tests/clearance.rs and tests/atc.rs).
 
-use crate::clearance::{place_words, read, tokens, Clearance, Item};
+use crate::callsign;
+use crate::clearance::{figures_by_phrase, place_words, read, tokens, Clearance, Item};
+use crate::instruction::{self, Item as Said};
 use crate::json;
 
 /// One item missed or said differently: which, what was cleared, and
@@ -22,6 +32,20 @@ pub struct Missed {
     pub item: &'static str,
     pub cleared: String,
     pub said: Option<String>,
+    /// AIM 4-4-7 b asks for it: an altitude, a vector, a runway, the call
+    /// sign, the order of altitudes and vectors.
+    pub required: bool,
+}
+
+/// The items AIM 4-4-7 b asks be read back: altitude assignments (an
+/// altitude to expect is one), vectors, runway assignments (an approach
+/// names its runway), b.1 the call sign and b.2 the order.
+pub fn required(item: &str) -> bool {
+    matches!(item, "altitude" | "expect" | "heading" | "runway" | "approach" | "call sign" | "order")
+}
+
+fn missed(item: &'static str, cleared: String, said: Option<String>) -> Missed {
+    Missed { item, cleared, said, required: required(item) }
 }
 
 /// A whole number with its thousands grouped ("4,000"), as the web's
@@ -52,6 +76,11 @@ pub fn altitude_words(ft: i64) -> String {
     }
 }
 
+/// A heading as said, three figures (AIM 4-2-10: "heading one zero zero").
+pub fn heading_words(deg: i64) -> String {
+    format!("heading {deg:03}")
+}
+
 /// A place's words as they are compared: lower case, "the" and "airport"
 /// left out.
 fn place_key(said: &str) -> String {
@@ -59,11 +88,15 @@ fn place_key(said: &str) -> String {
 }
 
 /// The items of `cleared` the readback `said` missed or had differently;
-/// none where it matches.
+/// none where it matches: the clearance's own items (limit, route,
+/// altitudes, frequency, code).
 pub fn check(cleared: &Clearance, said: &str) -> Vec<Missed> {
     let back = read(said);
     let toks = tokens(said);
-    let figures: Vec<&str> = toks.iter().filter_map(|t| t.num.as_deref()).collect();
+    // The figures as one run and phrase by phrase: "two seven zero, three
+    // thousand" is 270 and 3000 where the recognizer wrote its comma.
+    let by_phrase = figures_by_phrase(said);
+    let figures: Vec<&str> = toks.iter().filter_map(|t| t.num.as_deref()).chain(by_phrase.iter().map(String::as_str)).collect();
     let words = format!(" {} ", place_key(&place_words(&toks)));
     let mut out = Vec::new();
     // A figure read bare counts as read back (a flight level as its own
@@ -77,7 +110,7 @@ pub fn check(cleared: &Clearance, said: &str) -> Vec<Missed> {
         let Some(c) = cleared_ft else { return };
         let heard = said_ft.or(if bare_ft(c) { Some(c) } else { None });
         if heard != Some(c) {
-            out.push(Missed { item, cleared: altitude_words(c), said: heard.map(altitude_words) });
+            out.push(missed(item, altitude_words(c), heard.map(altitude_words)));
         }
     };
     figure_ft("altitude", cleared.maintain_ft, back.maintain_ft);
@@ -86,7 +119,7 @@ pub fn check(cleared: &Clearance, said: &str) -> Vec<Missed> {
         let Some(c) = cleared_text else { return };
         let heard = said_text.or(if bare_text(c) { Some(c) } else { None });
         if heard != Some(c) {
-            out.push(Missed { item, cleared: c.to_owned(), said: heard.map(str::to_owned) });
+            out.push(missed(item, c.to_owned(), heard.map(str::to_owned)));
         }
     };
     figure_text("frequency", cleared.frequency.as_deref(), back.frequency.as_deref());
@@ -102,7 +135,7 @@ pub fn check(cleared: &Clearance, said: &str) -> Vec<Missed> {
             None => None,
         };
         if heard.as_deref() != Some(key.as_str()) {
-            first.push(Missed { item: "limit", cleared: limit.clone(), said: heard.and(back.limit.clone()) });
+            first.push(missed("limit", limit.clone(), heard.and(back.limit.clone())));
         }
     }
     for item in &cleared.route {
@@ -111,18 +144,18 @@ pub fn check(cleared: &Clearance, said: &str) -> Vec<Missed> {
                 for place in place_key(said_places).split(' ').filter(|p| !p.is_empty()) {
                     if !words.contains(&format!(" {place} ")) {
                         let cleared = if place.to_uppercase() == place { place.to_owned() } else { said_places.clone() };
-                        first.push(Missed { item: "route", cleared, said: None });
+                        first.push(missed("route", cleared, None));
                     }
                 }
             }
             Item::Airway(ident) => {
                 if !words.contains(&format!(" {} ", ident.to_lowercase())) {
-                    first.push(Missed { item: "route", cleared: ident.clone(), said: None });
+                    first.push(missed("route", ident.clone(), None));
                 }
             }
             Item::Heading(degrees) => {
                 if !figures.contains(&degrees.to_string().as_str()) {
-                    first.push(Missed { item: "route", cleared: format!("heading {degrees}"), said: None });
+                    first.push(missed("route", format!("heading {degrees}"), None));
                 }
             }
             Item::Vectors | Item::Procedure { .. } => {}
@@ -130,6 +163,161 @@ pub fn check(cleared: &Clearance, said: &str) -> Vec<Missed> {
     }
     first.extend(out);
     first
+}
+
+/// What a readback said, as the checks below look for it: its figures as
+/// whole numbers and as said, its place words, its tokens' words.
+struct Back {
+    figures: Vec<String>,
+    words: String,
+    plain: Vec<String>,
+}
+
+impl Back {
+    fn of(said: &str) -> Back {
+        let toks = tokens(said);
+        Back {
+            figures: toks.iter().filter_map(|t| t.num.clone()).chain(figures_by_phrase(said)).collect(),
+            words: format!(" {} ", place_key(&place_words(&toks))),
+            plain: toks.iter().map(|t| t.word.clone()).collect(),
+        }
+    }
+
+    /// A figure said, by its value: "zero niner zero" is 90, as is "90".
+    fn number(&self, n: i64) -> bool {
+        self.figures.iter().any(|f| !f.contains('.') && f.parse::<i64>().ok() == Some(n))
+    }
+
+    fn text(&self, s: &str) -> bool {
+        self.figures.iter().any(|f| f == s)
+    }
+
+    fn place(&self, said: &str) -> bool {
+        place_key(said).split(' ').filter(|p| !p.is_empty()).all(|p| self.words.contains(&format!(" {p} ")))
+    }
+
+    fn word(&self, w: &str) -> bool {
+        self.plain.iter().any(|x| x == w)
+    }
+}
+
+/// A runway as said back: its number and its side's word.
+fn runway_back(back: &Back, runway: &str) -> bool {
+    let digits: String = runway.chars().take_while(char::is_ascii_digit).collect();
+    let side = match runway.chars().last() {
+        Some('L') => Some("left"),
+        Some('R') => Some("right"),
+        Some('C') => Some("center"),
+        _ => None,
+    };
+    digits.parse::<i64>().is_ok_and(|n| back.number(n)) && side.is_none_or(|w| back.word(w) || (w == "center" && back.word("centre")))
+}
+
+/// The instruction's items besides the clearance's own (crate::instruction):
+/// a vector, a runway, an approach, a hold, a direct, the altimeter.
+fn check_instruction(items: &[Said], cleared: &Clearance, said: &str) -> Vec<Missed> {
+    let back = Back::of(said);
+    let heard = instruction::read(said);
+    let mut out = Vec::new();
+    // A heading already in a clearance's route is checked with the route.
+    let in_route = |deg: i64| cleared.route.iter().any(|i| *i == Item::Heading(deg));
+    let route_places: Vec<String> = cleared.place_runs().iter().map(|s| place_key(s)).collect();
+    for item in items {
+        match item {
+            Said::Heading { deg: Some(d), .. } if !in_route(*d) => {
+                if !back.number(*d) {
+                    let other = heard.iter().find_map(|h| if let Said::Heading { deg: Some(x), .. } = h { Some(*x) } else { None });
+                    out.push(missed("heading", heading_words(*d), other.map(heading_words)));
+                }
+            }
+            Said::Heading { by_deg: Some(by), turn, .. } => {
+                if !back.number(*by) {
+                    out.push(missed("heading", format!("turn {} {by} degrees", turn.unwrap_or("")), None));
+                }
+            }
+            Said::Runway { runway, .. } => {
+                if !runway_back(&back, runway) {
+                    out.push(missed("runway", format!("runway {runway}"), None));
+                }
+            }
+            Said::Approach { name, runway, .. } => {
+                let kind = name.split([' ', '(']).next().unwrap_or("").to_lowercase();
+                let ok = runway.as_deref().is_none_or(|r| runway_back(&back, r)) && (kind.is_empty() || back.word(&kind) || (kind == "loc" && back.word("localizer")));
+                if !ok {
+                    let cleared = match runway {
+                        Some(r) => format!("{name} runway {r}"),
+                        None => name.clone(),
+                    };
+                    out.push(missed("approach", cleared, None));
+                }
+            }
+            Said::Hold { fix, on, .. } => {
+                let ok = back.place(fix) && on.is_none_or(|(_, d)| back.number(d));
+                if !ok {
+                    out.push(missed("hold", format!("hold at {fix}"), None));
+                }
+            }
+            Said::Direct { said: place } if !route_places.contains(&place_key(place)) => {
+                if !back.place(place) {
+                    out.push(missed("direct", place.clone(), None));
+                }
+            }
+            Said::Altimeter { inhg } => {
+                if !(back.text(inhg) || back.text(&inhg.replace('.', ""))) {
+                    out.push(missed("altimeter", inhg.clone(), None));
+                }
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
+/// Where an altitude or a vector was said back, as its figure's place.
+fn first_figure(back: &[String], wanted: &[i64]) -> Option<usize> {
+    back.iter().position(|f| !f.contains('.') && f.parse::<i64>().is_ok_and(|n| wanted.contains(&n)))
+}
+
+/// AIM 4-4-7 b.2: altitudes and vectors read back in the order given. Only
+/// where both were given and both read back.
+fn check_order(items: &[Said], said: &str) -> Option<Missed> {
+    let alt_at = items.iter().position(|i| matches!(i, Said::Altitude { .. }))?;
+    let vec_at = items.iter().position(|i| matches!(i, Said::Heading { deg: Some(_), .. } | Said::Heading { by_deg: Some(_), .. }))?;
+    let ft = match &items[alt_at] {
+        Said::Altitude { ft, .. } => *ft,
+        _ => return None,
+    };
+    let deg = match &items[vec_at] {
+        Said::Heading { deg: Some(d), .. } => *d,
+        Said::Heading { by_deg: Some(b), .. } => *b,
+        _ => return None,
+    };
+    let figures = figures_by_phrase(said);
+    let alt_back = first_figure(&figures, &[ft, ft / 100])?;
+    let vec_back = first_figure(&figures, &[deg])?;
+    let given_alt_first = alt_at < vec_at;
+    let said_alt_first = alt_back < vec_back;
+    (given_alt_first != said_alt_first).then(|| {
+        let order = |alt_first: bool| if alt_first { "altitude then heading" } else { "heading then altitude" }.to_owned();
+        missed("order", order(given_alt_first), Some(order(said_alt_first)))
+    })
+}
+
+/// Every item of what was `cleared` (a clearance or an instruction, as
+/// heard) the readback `said` missed or had differently; with `tail`, the
+/// call sign too (AIM 4-4-7 b.1), said at either end (AIM 4-2-3 c).
+pub fn check_all(cleared_text: &str, said: &str, tail: Option<&str>) -> Vec<Missed> {
+    let cleared = read(cleared_text);
+    let items = instruction::read(cleared_text);
+    let mut out = check(&cleared, said);
+    out.extend(check_instruction(&items, &cleared, said));
+    out.extend(check_order(&items, said));
+    if let Some(tail) = tail.filter(|t| !t.trim().is_empty()) {
+        if callsign::spans(said, tail).is_empty() {
+            out.push(missed("call sign", tail.trim().to_uppercase(), None));
+        }
+    }
+    out
 }
 
 /// The warning line: "Readback: altitude 5,000 ft said, 4,000 ft cleared;
@@ -155,9 +343,9 @@ pub fn words(items: &[Missed]) -> String {
 }
 
 /// The check as JSON for the apps: `{"items": [{"item", "cleared",
-/// "said"}], "words"}`.
-pub fn check_json(cleared_text: &str, said: &str) -> String {
-    let items = check(&read(cleared_text), said);
+/// "said", "required"}], "words"}`.
+pub fn check_json(cleared_text: &str, said: &str, tail: Option<&str>) -> String {
+    let items = check_all(cleared_text, said, tail);
     let mut o = String::from("{\"items\":[");
     for (i, m) in items.iter().enumerate() {
         if i > 0 {
@@ -169,6 +357,8 @@ pub fn check_json(cleared_text: &str, said: &str) -> String {
         json::string(&mut o, &m.cleared);
         o.push_str(",\"said\":");
         json::opt_string(&mut o, m.said.as_deref());
+        o.push_str(",\"required\":");
+        o.push_str(if m.required { "true" } else { "false" });
         o.push('}');
     }
     o.push_str("],\"words\":");

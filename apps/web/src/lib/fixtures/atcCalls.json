@@ -1,0 +1,176 @@
+{
+  "$comment": "The ATC copilot's transmissions (the engine's atc_call and readback_check, radio/src/atc.rs), written for these tests: no recording or transcript of real ATC is in them. Each expected answer is a plain reading of the words against AIM 4-2-3 c (a pilot's call sign at either end), 4-2-4 (its forms), 4-4-7 b (readback), 5-3-8 (a hold's items) and 4-2-12 (UTC). Held by the engine's tests/atc.rs and the web's features/atc tests.",
+  "tail": "N123AB",
+  "calls": [
+    {
+      "name": "a descent and a vector, with the altimeter",
+      "heard": "Cessna one two three alpha bravo, turn left heading two seven zero, descend and maintain three thousand, Chicago altimeter two niner niner two",
+      "who": "to_us",
+      "items": [
+        { "kind": "heading", "deg": 270, "turn": "left", "by_deg": null },
+        { "kind": "altitude", "ft": 3000, "verb": "descend", "limit": null },
+        { "kind": "altimeter", "inhg": "29.92" }
+      ]
+    },
+    {
+      "name": "a hand-off and a code",
+      "heard": "November three alpha bravo, squawk four five one two, contact Chicago Approach one two five point three five",
+      "who": "to_us",
+      "items": [
+        { "kind": "squawk", "code": "4512" },
+        { "kind": "frequency", "mhz": "125.35", "facility": "approach" }
+      ]
+    },
+    {
+      "name": "a direct and a climb",
+      "heard": "November one two three alpha bravo proceed direct Gopher, climb and maintain seven thousand",
+      "who": "to_us",
+      "items": [
+        { "kind": "direct", "said": "gopher" },
+        { "kind": "altitude", "ft": 7000, "verb": "climb", "limit": null }
+      ]
+    },
+    {
+      "name": "a hold not charted (AIM 5-3-8's items)",
+      "heard": "Cessna three alpha bravo, hold northeast of Gopher on the zero four five radial, left turns, expect further clearance one four three zero",
+      "who": "to_us",
+      "items": [
+        { "kind": "hold", "fix": "gopher", "direction": "northeast", "on": "radial", "on_deg": 45, "turns": "left", "published": false, "efc": "1430" }
+      ]
+    },
+    {
+      "name": "an approach cleared, its runway's side",
+      "heard": "Cessna three alpha bravo, three miles from Rozie, maintain two thousand five hundred until established, cleared ILS runway two seven left approach",
+      "who": "to_us",
+      "items": [
+        { "kind": "altitude", "ft": 2500, "verb": "maintain", "limit": null },
+        { "kind": "approach", "name": "ILS", "runway": "27L", "cleared": true }
+      ]
+    },
+    {
+      "name": "an approach to expect, a lettered RNAV",
+      "heard": "Cessna three alpha bravo, expect RNAV GPS zulu runway three one approach",
+      "who": "to_us",
+      "items": [
+        { "kind": "approach", "name": "RNAV (GPS) Z", "runway": "31", "cleared": false }
+      ]
+    },
+    {
+      "name": "a runway to land on",
+      "heard": "Cessna three alpha bravo, runway two seven, cleared to land",
+      "who": "to_us",
+      "items": [
+        { "kind": "runway", "runway": "27", "what": "land" }
+      ]
+    },
+    {
+      "name": "into Class B (14 CFR 91.131(a)(1))",
+      "heard": "Cessna one two three alpha bravo, cleared into the Class Bravo airspace, maintain VFR at or above four thousand five hundred",
+      "who": "to_us",
+      "items": [
+        { "kind": "class_b" },
+        { "kind": "altitude", "ft": 4500, "verb": "maintain", "limit": "at or above" }
+      ]
+    },
+    {
+      "name": "someone else's longer call sign that ends the same (AIM 4-2-4 a.1)",
+      "heard": "Cessna six three alpha bravo descend and maintain four thousand",
+      "who": "other",
+      "items": [
+        { "kind": "altitude", "ft": 4000, "verb": "descend", "limit": null }
+      ]
+    },
+    {
+      "name": "our readback, the call sign at the end (AIM 4-2-3 c)",
+      "heard": "left heading two seven zero, descending to three thousand, two niner niner two, Cessna three alpha bravo",
+      "who": "from_us",
+      "items": [
+        { "kind": "heading", "deg": 270, "turn": "left", "by_deg": null }
+      ]
+    },
+    {
+      "name": "our acknowledgment, the call sign first",
+      "heard": "Cessna three alpha bravo, wilco",
+      "who": "from_us",
+      "items": []
+    }
+  ],
+  "prior": [
+    {
+      "name": "a readback with no call sign, just after our call, saying its figures",
+      "prior": "Cessna three alpha bravo, turn left heading two seven zero, descend and maintain three thousand",
+      "ago_s": 4,
+      "heard": "left two seven zero, down to three thousand",
+      "who": "from_us"
+    },
+    {
+      "name": "the same words long after are no one's we know",
+      "prior": "Cessna three alpha bravo, turn left heading two seven zero, descend and maintain three thousand",
+      "ago_s": 90,
+      "heard": "left two seven zero, down to three thousand",
+      "who": "other"
+    },
+    {
+      "name": "after a call to someone else, nothing is ours",
+      "prior": "Cessna six three alpha bravo, turn left heading two seven zero",
+      "ago_s": 4,
+      "heard": "left two seven zero",
+      "who": "other"
+    }
+  ],
+  "readbacks": [
+    {
+      "name": "in full, in order, with the call sign",
+      "cleared": "Cessna one two three alpha bravo, turn left heading two seven zero, descend and maintain three thousand, Chicago altimeter two niner niner two",
+      "said": "left heading two seven zero, descend and maintain three thousand, two niner niner two, Cessna three alpha bravo",
+      "items": [],
+      "words": "Readback complete."
+    },
+    {
+      "name": "the altitude wrong and the call sign left off (AIM 4-4-7 b, b.1)",
+      "cleared": "Cessna one two three alpha bravo, turn left heading two seven zero, descend and maintain three thousand, Chicago altimeter two niner niner two",
+      "said": "left heading two seven zero, descend and maintain four thousand, two niner niner two",
+      "items": [
+        { "item": "altitude", "cleared": "3,000 ft", "said": "4,000 ft", "required": true },
+        { "item": "call sign", "cleared": "N123AB", "said": null, "required": true }
+      ],
+      "words": "Readback: altitude 4,000 ft said, 3,000 ft cleared; call sign N123AB not read back."
+    },
+    {
+      "name": "the vector and the altitude swapped (AIM 4-4-7 b.2), the altimeter missed",
+      "cleared": "Cessna one two three alpha bravo, turn left heading two seven zero, descend and maintain three thousand, Chicago altimeter two niner niner two",
+      "said": "descend and maintain three thousand, left heading two seven zero, Cessna three alpha bravo",
+      "items": [
+        { "item": "altimeter", "cleared": "29.92", "said": null, "required": false },
+        { "item": "order", "cleared": "heading then altitude", "said": "altitude then heading", "required": true }
+      ],
+      "words": "Readback: altimeter 29.92 not read back; order altitude then heading said, heading then altitude cleared."
+    },
+    {
+      "name": "a hand-off read back with the frequency wrong, the call sign without its prefix (AIM 4-2-4 a.2: the prefix and the last three)",
+      "cleared": "November three alpha bravo, squawk four five one two, contact Chicago Approach one two five point three five",
+      "said": "four five one two, one two five point five three, three alpha bravo",
+      "items": [
+        { "item": "frequency", "cleared": "125.35", "said": null, "required": false },
+        { "item": "call sign", "cleared": "N123AB", "said": null, "required": true }
+      ],
+      "words": "Readback: frequency 125.35 not read back; call sign N123AB not read back."
+    },
+    {
+      "name": "an approach read back without its runway's side",
+      "cleared": "Cessna three alpha bravo, three miles from Rozie, maintain two thousand five hundred until established, cleared ILS runway two seven left approach",
+      "said": "two thousand five hundred until established, cleared ILS two seven approach, Cessna three alpha bravo",
+      "items": [
+        { "item": "approach", "cleared": "ILS runway 27L", "said": null, "required": true }
+      ],
+      "words": "Readback: approach ILS runway 27L not read back."
+    },
+    {
+      "name": "a hold read back whole",
+      "cleared": "Cessna three alpha bravo, hold northeast of Gopher on the zero four five radial, left turns, expect further clearance one four three zero",
+      "said": "hold northeast of Gopher, zero four five radial, left turns, one four three zero, Cessna three alpha bravo",
+      "items": [],
+      "words": "Readback complete."
+    }
+  ]
+}
