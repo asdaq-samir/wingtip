@@ -1,0 +1,22 @@
+# What scripts/ci/rules_boundary.py finds outside the engine and is not an
+# aviation rule, as "<path> <count>" with why. A rule found here is moved
+# into the engine (engine/README.md) and its line taken out; issue #482
+# lists what is still to move.
+
+# The owner's FL-045 way of writing a cruise altitude (2026-11-04): how a
+# figure is written stays with each app (CLAUDE.md).
+apps/web/src/lib/units.ts 1
+apps/ios/Wingtip/Views/ProfileCard.swift 1
+apps/android/app/src/main/kotlin/app/wingtipmaps/android/strip/StripData.kt 1
+services/planner/app/gonogo/words.py 1
+
+# A typed wrapper over the engine's wind_triangle, not a copy of it.
+apps/web/src/lib/diversion.ts 1
+
+# The airport card's hours: a day of hourly rows, a display span.
+apps/web/src/lib/hourly.ts 1
+
+# How far back the instructor's page lists what they signed: 14 CFR
+# 61.189(c)'s three years of an instructor's own records, which the gateway
+# keeps (records are its job, not a figure a flight is planned by).
+services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 1
