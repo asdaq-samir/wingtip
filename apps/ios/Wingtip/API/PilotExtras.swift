@@ -131,12 +131,14 @@ extension LogbookEntryRequest {
     init(flownOn: String, aircraft: String? = nil, aircraftType: String? = nil, route: String? = nil, remarks: String? = nil,
          totalHours: Double = 0, nightHours: Double = 0, crossCountryHours: Double = 0, dualHours: Double = 0, soloHours: Double = 0,
          instrumentHours: Double = 0, dayLandings: Int = 0, nightLandings: Int = 0, toweredLandings: Int = 0,
-         distanceNm: Double = 0, longestLegNm: Double = 0, approaches: Int = 0, holding: Bool = false, tracking: Bool = false) {
-        self.init(aircraft: aircraft, aircraftType: aircraftType, approaches: approaches, crossCountryHours: crossCountryHours,
-                  dayLandings: dayLandings, distanceNm: distanceNm, dualHours: dualHours, flownOn: flownOn, holding: holding,
+         distanceNm: Double = 0, longestLegNm: Double = 0, approaches: Int = 0, holding: Bool = false, tracking: Bool = false,
+         airHours: Double = 0, touchAndGoes: Int = 0, fromTrack: Bool = false, flightId: Int? = nil) {
+        self.init(aircraft: aircraft, aircraftType: aircraftType, airHours: airHours, approaches: approaches,
+                  crossCountryHours: crossCountryHours, dayLandings: dayLandings, distanceNm: distanceNm, dualHours: dualHours,
+                  flightId: flightId, flownOn: flownOn, fromTrack: fromTrack, holding: holding,
                   instrumentHours: instrumentHours, longestLegNm: longestLegNm, nightHours: nightHours, nightLandings: nightLandings,
-                  remarks: remarks, route: route, soloHours: soloHours, totalHours: totalHours, toweredLandings: toweredLandings,
-                  tracking: tracking)
+                  remarks: remarks, route: route, soloHours: soloHours, totalHours: totalHours, touchAndGoes: touchAndGoes,
+                  toweredLandings: toweredLandings, tracking: tracking)
     }
 
     /// An entry as its form opens it.
@@ -146,7 +148,8 @@ extension LogbookEntryRequest {
                   dualHours: e.dualHours, soloHours: e.soloHours, instrumentHours: e.instrumentHours,
                   dayLandings: e.dayLandings, nightLandings: e.nightLandings, toweredLandings: e.toweredLandings,
                   distanceNm: e.distanceNm, longestLegNm: e.longestLegNm, approaches: e.approaches,
-                  holding: e.holding, tracking: e.tracking)
+                  holding: e.holding, tracking: e.tracking, airHours: e.airHours, touchAndGoes: e.touchAndGoes,
+                  fromTrack: e.fromTrack, flightId: e.flightId)
     }
 
     /// Blank words sent as null, not as "".
