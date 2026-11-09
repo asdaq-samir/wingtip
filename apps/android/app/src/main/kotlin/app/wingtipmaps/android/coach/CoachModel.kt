@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.generated.CoachAsk
+import app.wingtipmaps.android.api.generated.CoachDebrief
 import app.wingtipmaps.android.api.generated.CoachEndorsement
 import app.wingtipmaps.android.api.generated.CoachLogbookEntry
 import app.wingtipmaps.android.api.generated.ProficiencyPlan
@@ -105,10 +106,10 @@ class CoachModel(
     fun make() {
         val s = _state.value
         if (!s.ready || s.making) return
-        val ask = askOf(entries, currency, training, s.certificate, s.home, today().toString())
         making?.cancel()
         making = viewModelScope.launch {
             _state.update { it.copy(making = true, problem = null, plan = null, words = null, noWords = null) }
+            val ask = askOf(entries, currency, training, s.certificate, s.home, today().toString(), source.debriefs())
             val plan = try {
                 source.plan(ask)
             } catch (e: CancellationException) {
@@ -132,11 +133,11 @@ class CoachModel(
     companion object {
         /** The plan's ask from what the app holds, as the web's askOf: the
          *  logbook's columns the currency rules read, the dates as the
-         *  gateway gives them, and a student's endorsements. No debriefs
-         *  yet: the phone does not debrief a saved flight's track. */
+         *  gateway gives them, a student's endorsements, and the saved
+         *  flights' debriefs (CoachDebriefs). */
         fun askOf(
             entries: List<LogbookEntryDto>, currency: CurrencyDto?, training: TrainingDto?, certificate: Certificate,
-            home: String?, today: String,
+            home: String?, today: String, debriefs: List<CoachDebrief> = emptyList(),
         ): CoachAsk = CoachAsk(
             entries = entries.map(::entryOf),
             flightReviewOn = currency?.flightReviewOn,
@@ -144,7 +145,7 @@ class CoachModel(
             ipcOn = currency?.ipcOn,
             ratings = certificate.ratings,
             held = if (certificate == Certificate.STUDENT) training?.endorsements.orEmpty().map { CoachEndorsement(code = it.code, on = it.endorsedOn) } else emptyList(),
-            debriefs = emptyList(),
+            debriefs = debriefs,
             home = home,
             today = today,
         )

@@ -9,6 +9,7 @@ import app.wingtipmaps.android.api.coach
 import app.wingtipmaps.android.api.coachWords
 import app.wingtipmaps.android.api.currency
 import app.wingtipmaps.android.api.generated.CoachAsk
+import app.wingtipmaps.android.api.generated.CoachDebrief
 import app.wingtipmaps.android.api.generated.ProficiencyPlan
 import app.wingtipmaps.android.api.generated.assistant.CoachWordsAnswer
 import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
@@ -26,6 +27,8 @@ interface CoachSource {
     suspend fun home(): String?
     suspend fun plan(ask: CoachAsk): ProficiencyPlan
     suspend fun words(plan: ProficiencyPlan): CoachWordsAnswer
+    /** The saved flights' debriefs (CoachDebriefs); none by default. */
+    suspend fun debriefs(): List<CoachDebrief> = emptyList()
 }
 
 object ServerCoach : CoachSource {
@@ -35,6 +38,7 @@ object ServerCoach : CoachSource {
     override suspend fun home() = Gateway.me()?.homeBase
     override suspend fun plan(ask: CoachAsk) = Planner.coach(ask)
     override suspend fun words(plan: ProficiencyPlan) = Planner.coachWords(plan)
+    override suspend fun debriefs() = CoachDebriefs.fetch()
 }
 
 /** The certificate the pilot picked, kept on this phone as the web keeps
