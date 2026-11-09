@@ -46,11 +46,10 @@ struct TimersView: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
-            ScrollView {
-                VStack(spacing: 12) {
-                    TimerRow(title: "Flight", stopwatch: $flight, now: timeline.date)
-                    TimerRow(title: "Hold / Approach", stopwatch: $hold, now: timeline.date)
-                }
+            // A stock list: watchOS's own rows, spacing and corners.
+            List {
+                TimerRow(title: "Flight", stopwatch: $flight, now: timeline.date)
+                TimerRow(title: "Hold / Approach", stopwatch: $hold, now: timeline.date)
             }
         }
         .navigationTitle("Timers")
@@ -63,7 +62,7 @@ struct TimerRow: View {
     let now: Date
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading) {
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -82,9 +81,7 @@ struct TimerRow: View {
                 .accessibilityLabel(stopwatch.running ? "Stop \(title) timer" : "Start \(title) timer")
             }
         }
-        .padding(10)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
-        .contentShape(RoundedRectangle(cornerRadius: 12))
+        .contentShape(.rect)
         .onLongPressGesture { stopwatch.reset() }
         .accessibilityHint("Hold to reset")
     }

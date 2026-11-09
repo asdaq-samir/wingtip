@@ -5,25 +5,23 @@ import SwiftUI
 /// the name, a line under it, and the figure a pilot looks for at the
 /// right in the text's own colour.
 
-/// The badges' colours, the web app's (lib/rowBadges).
+/// The badges' colours (design/tokens.json color.badge), the web app's too.
 enum Badge {
-    static func hex(_ rgb: UInt32) -> Color { Color(uiColor: UIColor(hex: rgb)) }
-
-    static let tower = hex(0x2465b8)
-    static let ground = hex(0x0f766e)
-    static let weather = hex(0x0284c7)
-    static let approach = hex(0x5b5bd6)
-    static let traffic = hex(0xc2410c)
-    static let other = hex(0x6b7280)
-    static let runway = hex(0x3f4652)
-    static let chart = hex(0x475569)
-    static let rule = hex(0x64748b)
-    static let hazard = hex(0xb42318)
-    static let lights = hex(0xa16207)
-    static let fuel = hex(0xb45309)
-    static let car = hex(0x2563eb)
-    static let food = hex(0xbe185d)
-    static let lodging = hex(0x7e3fb8)
+    static let tower = Color(uiColor: WingtipColor.Badge.tower)
+    static let ground = Color(uiColor: WingtipColor.Badge.ground)
+    static let weather = Color(uiColor: WingtipColor.Badge.weather)
+    static let approach = Color(uiColor: WingtipColor.Badge.approach)
+    static let traffic = Color(uiColor: WingtipColor.Badge.traffic)
+    static let other = Color(uiColor: WingtipColor.Badge.other)
+    static let runway = Color(uiColor: WingtipColor.Badge.runway)
+    static let chart = Color(uiColor: WingtipColor.Badge.chart)
+    static let rule = Color(uiColor: WingtipColor.Badge.rule)
+    static let hazard = Color(uiColor: WingtipColor.Badge.hazard)
+    static let lights = Color(uiColor: WingtipColor.Badge.lights)
+    static let fuel = Color(uiColor: WingtipColor.Badge.fuel)
+    static let car = Color(uiColor: WingtipColor.Badge.car)
+    static let food = Color(uiColor: WingtipColor.Badge.food)
+    static let lodging = Color(uiColor: WingtipColor.Badge.lodging)
 }
 
 /// A glyph on a rounded square of colour, as Settings' rows have them.
@@ -39,7 +37,7 @@ struct RowBadge: View {
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.white)
             .frame(width: side, height: side)
-            .background(colour, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .background(colour, in: RoundedRectangle(cornerRadius: WingtipRadius.badge, style: .continuous))
             .accessibilityHidden(true)
     }
 }
@@ -54,7 +52,7 @@ struct CardRow<Value: View>: View {
     var body: some View {
         HStack(spacing: WingtipSpace.md) {
             if let badge { badge }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(title)
                 if let detail, !detail.isEmpty { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
             }
@@ -112,13 +110,13 @@ struct RunwayRowView: View {
         let heading = (runway.runwayEnds ?? []).compactMap(\.headingTrueDeg).first
         HStack(spacing: WingtipSpace.md) {
             ZStack {
-                RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Badge.runway)
+                RoundedRectangle(cornerRadius: WingtipRadius.badge, style: .continuous).fill(Badge.runway)
                 RoundedRectangle(cornerRadius: 1).fill(.white).frame(width: side / 5.6, height: side * 0.64)
                     .rotationEffect(.degrees(heading ?? 0))
             }
             .frame(width: side, height: side)
             .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text("Runway \(runway.ends ?? "—")")
                 let detail = AirportWords.runwayDetail(runway)
                 if !detail.isEmpty { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
@@ -127,7 +125,7 @@ struct RunwayRowView: View {
                 }
             }
             Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
                 Text(Format.altitude(runway.lengthFt.map(Double.init))).fontWeight(.semibold).monospacedDigit()
                     .accessibilityLabel(runway.lengthFt.map { "\(SpokenFigures.feet(Double($0))) long" } ?? "length not listed")
                 if let width = runway.widthFt {

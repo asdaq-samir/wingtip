@@ -61,7 +61,7 @@ struct EmergencyFieldsSection: View {
             Image(systemName: picked ? "checkmark.circle.fill" : "circle")
                 .symbolSwap()
                 .foregroundStyle(picked ? Color.accentColor : Color.secondary)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 (Text(field.ident).fontWeight(.semibold) + Text(" \(field.name)")).foregroundStyle(Color.primary)
                 ForEach(Array(field.reasons.enumerated()), id: \.offset) { i, reason in
                     let lead = i == 0 && field.reach != "unknown"
@@ -71,7 +71,7 @@ struct EmergencyFieldsSection: View {
                 }
             }
             Spacer(minLength: WingtipSpace.sm)
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
                 // The heading to fly, magnetic where the variation is known, else true.
                 if let heading = field.headingMagDeg ?? field.headingTrueDeg {
                     Text(Format.heading(heading) + (field.headingMagDeg == nil ? " T" : "")).fontWeight(.semibold)
@@ -118,7 +118,7 @@ struct EmergencyRadioSections: View {
                 }
             }
             Section(title: "MAYDAY") {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     ForEach(Array(call.lines.enumerated()), id: \.offset) { _, line in
                         Text(line).fontWeight(.medium).foregroundStyle(line.hasPrefix("[") ? Color.secondary : Color.primary)
                     }

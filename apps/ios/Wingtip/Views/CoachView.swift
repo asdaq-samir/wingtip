@@ -24,7 +24,7 @@ struct CoachView: View {
                 }
                 Section {
                     Button { Task { await model.make(home: session.pilot?.homeBase) } } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(model.plan == nil ? "Make My Plan" : "Make It Again")
                             Text(model.making ? "Reading your logbook…" : "From your logbook and the fields near \(home)")
                                 .font(WingtipType.note).foregroundStyle(.secondary)
@@ -99,7 +99,7 @@ struct CoachView: View {
     }
 
     private func sessionRow(_ s: CoachSession, line: String?) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             Text(s.practise).font(WingtipType.row)
             Text(CoachModel.sessionDetail(s)).font(WingtipType.note).foregroundStyle(.secondary)
             if let wings = s.wings {

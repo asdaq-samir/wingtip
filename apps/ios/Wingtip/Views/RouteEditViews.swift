@@ -221,7 +221,7 @@ struct RouteExtrasSection: View {
                 RoutePointMenu(ident: plan.dest, role: .destination)
                 ForEach(plan.extras.holds) { hold in
                     Button { FlightUI.shared.card = .hold(hold.fix) } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text("Hold at \(hold.fix)").foregroundStyle(.primary)
                             Text(hold.words).font(.footnote).foregroundStyle(.secondary)
                         }

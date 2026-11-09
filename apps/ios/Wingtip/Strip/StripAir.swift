@@ -20,7 +20,7 @@ struct StripAir: View {
             RibbonLine(points: points, position: position).padding(.horizontal, WingtipSpace.xs)
             if let next {
                 HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.md) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text("Next").condensedCaps(.caption).foregroundStyle(ink.muted)
                         Text(next.name)
                             .font(ChartInk.figure(28))
@@ -32,7 +32,7 @@ struct StripAir: View {
                     // wind; with no airplane chosen the planner sends none,
                     // and the strip shows no heading rather than a guess.
                     if let heading = next.leg?.magneticHeadingDeg {
-                        VStack(alignment: .trailing, spacing: 2) {
+                        VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
                             Text("MH").condensedCaps(.caption).foregroundStyle(ink.muted)
                             Text(Format.heading(heading)).font(ChartInk.figure(28))
                         }
@@ -41,7 +41,7 @@ struct StripAir: View {
                     }
                     if let fix, let at = next.coordinate {
                         let nm = Flight.nm(from: fix.coordinate, to: at)
-                        VStack(alignment: .trailing, spacing: 2) {
+                        VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
                             Text("To go").condensedCaps(.caption).foregroundStyle(ink.muted)
                             Text(Format.number(nm, decimals: nm < 10 ? 1 : 0)).font(ChartInk.figure(28))
                         }

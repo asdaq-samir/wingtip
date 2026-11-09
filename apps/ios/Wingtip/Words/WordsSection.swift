@@ -79,7 +79,7 @@ struct WordsSection: View {
                     .accessibilityHint("Shows the report as sent")
                 }
             }
-            .padding(.vertical, 2)
+            .padding(.vertical, WingtipSpace.xxs)
         }
         .scrollClipDisabled()
     }

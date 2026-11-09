@@ -197,7 +197,7 @@ struct VerdictRow: View {
         HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.md) {
             Image(systemName: FindingStyle.symbol(item.finding)).foregroundStyle(FindingStyle.colour(item.finding))
                 .accessibilityLabel(FindingStyle.word(item.finding))
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(item.label).font(.body.weight(.semibold))
                 Text(item.detail).font(.subheadline)
                     .foregroundStyle(item.finding == "stop" ? Color.red : Color.secondary)
@@ -281,7 +281,7 @@ struct RiskView: View {
                                 Text(factor.value)
                             } label: {
                                 Label {
-                                    VStack(alignment: .leading, spacing: 2) {
+                                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                         Text(factor.label)
                                         if let why = factor.why { Text(why).font(.footnote).foregroundStyle(.secondary) }
                                     }
@@ -305,7 +305,7 @@ struct RiskView: View {
                 Section(group) {
                     ForEach(checks.filter { $0.group == group }) { check in
                         Toggle(isOn: Binding(get: { verdict.ticked.contains(check.key) }, set: { verdict.tick(check.key, $0) })) {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(check.label)
                                 Text([check.why, check.value].compactMap { $0 }.joined(separator: " · "))
                                     .font(.footnote).foregroundStyle(.secondary)

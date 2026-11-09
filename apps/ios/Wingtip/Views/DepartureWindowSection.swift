@@ -47,14 +47,14 @@ struct DepartureWindowSection: View {
     private func tile(_ hour: WindowHour) -> some View {
         let on = model.picked == hour.depart
         return Button { model.pick(hour.depart) } label: {
-            VStack(spacing: 2) {
+            VStack(spacing: WingtipSpace.xxs) {
                 Text(String(DepartureWindow.clock(hour.depart).prefix(2))).font(.subheadline).monospacedDigit().foregroundStyle(Color.primary)
                 Image(systemName: Self.symbol(hour.verdict)).foregroundStyle(Self.ink(hour.verdict))
                 Image(systemName: "moon.fill").font(.caption2).foregroundStyle(.secondary).opacity(hour.night ? 1 : 0)
             }
             .frame(width: 44, height: 64)
-            .background(Self.ink(hour.verdict).opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.accentColor, lineWidth: on ? 2 : 0))
+            .background(Self.ink(hour.verdict).opacity(0.14), in: RoundedRectangle(cornerRadius: WingtipRadius.base))
+            .overlay(RoundedRectangle(cornerRadius: WingtipRadius.base).strokeBorder(Color.accentColor, lineWidth: on ? 2 : 0))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(DepartureWindow.label(hour))
