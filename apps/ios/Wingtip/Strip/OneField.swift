@@ -17,7 +17,9 @@ struct StripFieldRow: View {
     var listening = false
     var busy = false
     let onSubmit: () -> Void
-    let onMic: () -> Void
+    /// Nil where speech cannot be recognised on the iPhone: no microphone
+    /// is shown (ClearanceListener.canListen).
+    let onMic: (() -> Void)?
     @FocusState.Binding var focused: Bool
     @Environment(\.chartInk) private var ink
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -52,18 +54,20 @@ struct StripFieldRow: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Clear")
                 }
-                Button(action: onMic) {
-                    Image(systemName: listening ? "mic.fill" : "mic")
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(listening ? ink.tint : ink.muted)
-                        .symbolEffect(.pulse, isActive: listening && !reduceMotion)
-                        // The 44-point hit area round the glyph, which does not grow.
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle().inset(by: -8))
+                if let onMic {
+                    Button(action: onMic) {
+                        Image(systemName: listening ? "mic.fill" : "mic")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(listening ? ink.tint : ink.muted)
+                            .symbolEffect(.pulse, isActive: listening && !reduceMotion)
+                            // The 44-point hit area round the glyph, which does not grow.
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle().inset(by: -8))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(listening || busy)
+                    .accessibilityLabel(listening ? "Listening" : "Say it")
                 }
-                .buttonStyle(.plain)
-                .disabled(listening || busy)
-                .accessibilityLabel(listening ? "Listening" : "Say it")
             }
             .padding(.horizontal, WingtipSpace.md)
             .frame(height: 44)

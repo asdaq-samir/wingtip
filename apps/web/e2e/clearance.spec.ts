@@ -13,18 +13,22 @@ import { openPanel, settle, sideDrawer, slow } from "./helpers";
  * (AIM 4-4-3, 5-2-6).
  */
 test("a clearance read is shown in its items and entered as the route", async ({ page }) => {
-  // A browser with no recognizer, as Firefox: the microphone opens the
-  // card to type in.
+  // A browser whose recognizer cannot keep speech on the device, as
+  // Safari's (no on-device ask): no voice is offered, and the comms
+  // button opens the card to type in, with no microphone in it.
   await page.addInitScript(() => {
+    class ServerOnly { start() {} stop() {} }
     const w = window as unknown as Record<string, unknown>;
     delete w.SpeechRecognition;
-    delete w.webkitSpeechRecognition;
+    w.webkitSpeechRecognition = ServerOnly;
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
   const box = sideDrawer(page).getByTestId("route-box");
   await page.getByTestId("radio-button").click();
+  await expect(page.getByTestId("clearance-text")).toBeVisible();
+  await expect(page.getByTestId("clearance-toggle")).toHaveCount(0);
   await page.getByTestId("clearance-text").fill(
     "Cessna one two three alpha bravo cleared to the Duluth airport via Gopher then as filed, climb and maintain three thousand, "
     + "expect seven thousand one zero minutes after departure, departure frequency one two five point three five, squawk four five two one",
@@ -72,7 +76,8 @@ test("the microphone listens once into a pill, and its chip flies the altitude s
       stop() { setTimeout(() => this.onend?.(), 50); }
     }
     // Both names: this Chromium has the unprefixed one as well.
-    Object.assign(window, { SpeechRecognition: Heard, webkitSpeechRecognition: Heard });
+    // `available`, Chrome's on-device ask (lib/speechLocal): voice is offered only where speech stays on the device.
+    Object.assign(window, { SpeechRecognition: Object.assign(Heard, { available: async () => "available" }), webkitSpeechRecognition: Heard });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -103,7 +108,7 @@ test("the pilot's own words are chips: the nearest airports and a timer", { tag:
       }
       stop() { setTimeout(() => this.onend?.(), 50); }
     }
-    Object.assign(window, { SpeechRecognition: Heard, webkitSpeechRecognition: Heard });
+    Object.assign(window, { SpeechRecognition: Object.assign(Heard, { available: async () => "available" }), webkitSpeechRecognition: Heard });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -131,7 +136,7 @@ test("with nothing heard the pill stays and says so until put away", async ({ pa
       start() { setTimeout(() => { this.onerror?.({ error: "audio-capture" }); this.onend?.(); }, 300); }
       stop() { setTimeout(() => this.onend?.(), 50); }
     }
-    Object.assign(window, { SpeechRecognition: Quiet, webkitSpeechRecognition: Quiet });
+    Object.assign(window, { SpeechRecognition: Object.assign(Quiet, { available: async () => "available" }), webkitSpeechRecognition: Quiet });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

@@ -23,6 +23,7 @@ import { ALERT_MODES, useAlertMode, type AlertMode } from "./alertMode";
 import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "./copilotMode";
 import { useMicPrimer } from "./MicPrimer";
 import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../lib/atc/listenSetting";
+import { useCanListen } from "../lib/speechLocal";
 
 /**
  * The map's settings, the whole of the map's own button's sheet
@@ -62,6 +63,7 @@ export default function MapSettings() {
   const [alertMode, setAlertMode] = useAlertMode();
   const [copilotMode, setCopilotMode] = useCopilotMode();
   const atcListen = useAtcListen(s => s.value);
+  const voice = useCanListen();
   // Why the microphone, before the browser asks (MicPrimer).
   const [micPrimer, primeMic] = useMicPrimer();
   return (
@@ -166,13 +168,14 @@ export default function MapSettings() {
         </ListRow>
         {/* The ATC copilot (features/atc): the radio listened to while
             flying, calls to us read into cards. Off until the pilot
-            turns it on. */}
-        <ListRow title="ATC">
+            turns it on. Not offered where speech cannot be recognised
+            on the device (lib/speechLocal). */}
+        {voice && <ListRow title="ATC">
           <Segmented
             label="ATC" value={atcListen} onChange={v => (v === "flying" ? primeMic(() => setAtcListen("flying")) : setAtcListen(v as AtcListen))} testId="atc-listen-mode"
             options={ATC_LISTEN_MODES}
           />
-        </ListRow>
+        </ListRow>}
       </ListGroup>
       <ListGroup title="Appearance">
         {/* The white paper chart dimmed in the dark theme, so it does not

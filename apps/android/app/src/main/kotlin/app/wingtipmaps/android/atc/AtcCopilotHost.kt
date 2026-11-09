@@ -60,11 +60,13 @@ fun AtcCopilotHost(plan: Plan, flying: Boolean, fix: OwnShip.Fix?) {
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { allowed = it }
     // Allowed from Setup meanwhile: read again as the flight or the mode changes.
     LaunchedEffect(mode, flying) { allowed = micAllowed(context) }
-    LaunchedEffect(mode, flying, tail, allowed) { model.follow(mode, flying && allowed, tail) }
+    LaunchedEffect(mode, flying, tail, allowed) { model.follow(mode, flying && allowed && RadioListener.canListen(context), tail) }
     val state by model.state.collectAsStateWithLifecycle()
     val listening by model.listening.collectAsStateWithLifecycle()
     val error by model.error.collectAsStateWithLifecycle()
-    if (mode == AtcMode.OFF) return
+    // Heard on the phone or not offered at all (RadioListener.canListen).
+    val voice = remember(context) { RadioListener.canListen(context) }
+    if (mode == AtcMode.OFF || !voice) return
     val card = state.card
     val noPosition = stringResource(R.string.atc_direct_needs_position)
     val haptics = rememberHaptics()

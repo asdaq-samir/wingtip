@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { TooltipProvider } from "./ui/tooltip";
 import clearances from "../lib/fixtures/clearances.json";
 import readbacks from "../lib/fixtures/readbacks.json";
+import { LocalSpeech, speechAnswered } from "../test/localSpeech";
 
 vi.mock("../lib/api/client", async importOriginal => ({
   ...(await importOriginal<typeof import("../lib/api/client")>()),
@@ -148,8 +149,9 @@ describe("the clearance card", () => {
   });
 
   test("Read back again listens once and takes the words as the microphone ends; nothing heard is the card's error line", async () => {
-    // A browser that can listen: the microphones are shown.
-    vi.stubGlobal("SpeechRecognition", class {});
+    // A browser that can listen on the device: the microphones are shown.
+    vi.stubGlobal("SpeechRecognition", LocalSpeech);
+    await speechAnswered();
     useAtcRadio.setState({ cardText: CLEARED });
     const { state } = card();
     await waitFor(() => expect(state("compare")).toBe("1 difference"));
@@ -174,10 +176,32 @@ describe("the clearance card", () => {
   });
 });
 
+describe("on the device or not at all", () => {
+  test("a browser that cannot keep speech on the device (Safari, Firefox): no microphone, no picker, the clearance typed", async () => {
+    // A recognizer without Chrome's on-device ask: it would send the audio to a server.
+    vi.stubGlobal("SpeechRecognition", undefined);
+    vi.stubGlobal("webkitSpeechRecognition", class { start() {} stop() {} });
+    await speechAnswered();
+    card();
+    expect(screen.queryByTestId("clearance-toggle")).toBeNull();
+    expect(screen.queryByTestId("clearance-readback-mic")).toBeNull();
+    expect(screen.queryByTestId("listen-find")).toBeNull();
+    expect((screen.getByTestId("clearance-text") as HTMLTextAreaElement).placeholder).toMatch(/^Type it as read: /);
+  });
+
+  test("on-device recognition unavailable for English: the same", async () => {
+    vi.stubGlobal("SpeechRecognition", class extends LocalSpeech { static override available = async () => "unavailable"; });
+    await speechAnswered();
+    card();
+    expect(screen.queryByTestId("clearance-toggle")).toBeNull();
+  });
+});
+
 describe("Listen through, in the Hear row", () => {
-  beforeEach(() => {
-    // A browser that can listen: the microphones and the picker are shown.
-    vi.stubGlobal("SpeechRecognition", class {});
+  beforeEach(async () => {
+    // A browser that can listen on the device: the microphones and the picker are shown.
+    vi.stubGlobal("SpeechRecognition", LocalSpeech);
+    await speechAnswered();
     // Radix's menu measures itself, which jsdom cannot.
     vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   });
@@ -225,9 +249,10 @@ describe("Listen through, in the Hear row", () => {
     expect(within(screen.getByTestId("listen-hearing")).queryByTestId("waveform")).toBeNull();
   });
 
-  test("in Safari, whose recognizer is not known to hear the input, the field still asks for the phone at the speaker", () => {
+  test("where the recognizer is not known to hear the input (named webkitSpeechRecognition alone), the field still asks for the phone at the speaker", async () => {
     vi.stubGlobal("SpeechRecognition", undefined);
-    vi.stubGlobal("webkitSpeechRecognition", class {});
+    vi.stubGlobal("webkitSpeechRecognition", LocalSpeech);
+    await speechAnswered();
     card();
     act(() => useAtcRadio.setState({ input: { label: "GMA 350c", outside: true, lost: false, why: null, instead: null, paused: false } }));
     expect((screen.getByTestId("clearance-text") as HTMLTextAreaElement).placeholder).toMatch(/^Tap the microphone and hold the phone to the speaker, /);

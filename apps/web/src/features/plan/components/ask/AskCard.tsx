@@ -8,6 +8,7 @@ import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import { Spinner } from "../../../../components/ui/spinner";
 import { useAtcRadio } from "../../../../lib/atcRadio";
+import { useCanListen } from "../../../../lib/speechLocal";
 import { TEXT } from "../../../../lib/text";
 import SourceChips from "../../../../components/SourceChips";
 import { useAsk, type AskTurn } from "../../../../lib/ask/useAsk";
@@ -88,6 +89,8 @@ export default function AskSection() {
   const turns = useAsk(s => s.turns);
   const busy = useAsk(s => s.busy);
   const listeningFor = useAsk(s => s.listeningFor);
+  // Asked by voice only where speech stays on the device (lib/speechLocal).
+  const voice = useCanListen();
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
   // "Plan a trip…": the trip planner in the section's place until closed.
@@ -162,12 +165,12 @@ export default function AskSection() {
           onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
           className={cn("h-12 rounded-full border-0 px-4", PANEL_FIELD)}
         />
-        <IconButton
+        {voice && <IconButton
           label="Ask by voice" variant="outline" size="icon-lg" onClick={hear} disabled={listeningFor === "ask"} data-testid="ask-mic"
           className="size-12 shrink-0 rounded-full border-0 bg-card shadow-[0_1px_4px_rgb(0_0_0/0.12)]"
         >
           <Mic className={cn("size-5", listeningFor === "ask" && "animate-pulse")} strokeWidth={2.4} />
-        </IconButton>
+        </IconButton>}
         {busy ? (
           <IconButton label="Stop" variant="secondary" size="icon-lg" className="size-12 shrink-0 rounded-full" onClick={() => useAsk.getState().stop()} data-testid="ask-stop">
             <Square className="size-4" />

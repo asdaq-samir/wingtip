@@ -50,14 +50,17 @@ struct FPLView: View {
                         routeField("From", text: $plan.dep, field: .dep)
                         Image(systemName: "arrow.right").foregroundStyle(.secondary)
                         routeField("To", text: $plan.dest, field: .dest)
-                        // A clearance heard into the route (ClearanceSheet).
+                        // A clearance heard into the route (ClearanceSheet); where
+                        // speech cannot be recognised on the iPhone, no microphone:
+                        // the same sheet, the clearance typed.
+                        let voice = ClearanceListener.shared.canListen
                         Button { focused = nil; ClearanceListener.shared.sheetText = nil; ClearanceListener.shared.sheetShown = true } label: {
-                            Image(systemName: ClearanceListener.shared.listening ? "mic.fill" : "mic")
+                            Image(systemName: !voice ? "text.bubble" : ClearanceListener.shared.listening ? "mic.fill" : "mic")
                                 // The 44-point hit area round the glyph, which does not grow.
                                 .contentShape(Rectangle().inset(by: -10))
                         }
                             .buttonStyle(.borderless)
-                            .accessibilityLabel(ClearanceListener.shared.listening ? "Listening to the radio" : "Listen to the radio")
+                            .accessibilityLabel(!voice ? "Enter a clearance" : ClearanceListener.shared.listening ? "Listening to the radio" : "Listen to the radio")
                         Button("Plan") { focused = nil; plan.plan() }
                             .buttonStyle(.borderedProminent)
                             // ⌘Return plans from an iPad's keyboard; Return

@@ -5,7 +5,7 @@ import { cn } from "cn";
 import IconButton from "./IconButton";
 import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "./ResponsivePopover";
 import { useAtcRadio } from "../lib/atcRadio";
-import { canListen } from "../lib/listen";
+import { useCanListen } from "../lib/speechLocal";
 
 const ClearanceCard = lazy(() => import("./ClearanceCard"));
 
@@ -22,16 +22,18 @@ const load = () => import("../lib/atcListening").then(m => (listening = m));
  * MapControls) -- and a pause or a second tap ends it, the pill then
  * offering what can be done of what was heard. While the radio is
  * listened to on and on (the Radio card's Listen) a tap opens the card,
- * the log; where nothing can listen (Firefox), the card to type in.
+ * the log; where speech cannot be recognised on the device (Safari,
+ * Firefox, lib/speechLocal), the card to type in, nothing listening.
  */
 export default function RadioButton() {
   const open = useAtcRadio(s => s.cardOpen);
   const busy = useAtcRadio(s => s.listening);
   const mode = useAtcRadio(s => s.mode);
+  const voice = useCanListen();
   const setOpen = (cardOpen: boolean) => useAtcRadio.setState({ cardOpen });
   useEffect(() => { void load(); }, []);
   const tap = () => {
-    if (!canListen() || mode === "radio") {
+    if (!voice || mode === "radio") {
       setOpen(true);
       return;
     }
@@ -46,7 +48,7 @@ export default function RadioButton() {
     <ResponsivePopover open={open} onOpenChange={setOpen}>
       <ResponsivePopoverAnchor asChild>
         <IconButton
-          label={mode === "once" ? "Stop listening" : mode === "radio" ? "The radio, listening: open the log" : "Comms assist: listen"}
+          label={mode === "once" ? "Stop listening" : mode === "radio" ? "The radio, listening: open the log" : voice ? "Comms assist: listen" : "Comms assist"}
           aria-pressed={busy} data-testid="radio-button" onClick={tap}
           className={cn(busy && "text-tint", mode === "radio" && "animate-pulse")}
         >

@@ -4,9 +4,9 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -67,12 +66,11 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = viewModel(), charts: Cha
         verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
-            // The launcher's mark: its two layers, the airplane on the navy.
-            Image(
-                painterResource(R.drawable.ic_launcher_foreground), contentDescription = null,
-                modifier = Modifier.size(WingtipSize.TapTarget + WingtipSpace.Lg).clip(RoundedCornerShape(WingtipRadius.Base))
-                    .background(colorResource(R.color.ic_launcher_background)),
-            )
+            // The launcher's mark: its two layers, the mark on the piece of sectional.
+            Box(Modifier.size(WingtipSize.TapTarget + WingtipSpace.Lg).clip(RoundedCornerShape(WingtipRadius.Base))) {
+                Image(painterResource(R.mipmap.ic_launcher_background), contentDescription = null, modifier = Modifier.matchParentSize())
+                Image(painterResource(R.mipmap.ic_launcher_foreground), contentDescription = null, modifier = Modifier.matchParentSize())
+            }
             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)
         }
         Figure(stringResource(R.string.about_version), model.version)
