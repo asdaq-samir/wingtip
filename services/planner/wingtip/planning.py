@@ -60,6 +60,16 @@ class StillComputing(RuntimeError):
         self.stages = sorted(stages)
 
 
+#: The aircraft asked for when none is picked: the plan is made with no
+#: airplane -- the route's own figures (its course, miles, legs,
+#: checkpoints, altitudes, weather and airspace) and none that needs one
+#: (times, ground speeds, fuel, the tops of climb and descent), never a
+#: stock airplane's in its place. The owner (2026-11-09): "If no airplane
+#: is entered, only show the distance and the things you can without
+#: airplane profile, don't assume."
+NO_AIRPLANE = "none"
+
+
 class UnknownAircraft(ValueError):
     """No stock profile goes by the name asked: the planner answers it a
     422 (app.main), as it did when this was wingtip.planning's HTTPException."""
@@ -238,7 +248,7 @@ def now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def flight_totals(leg_list: list, profile: dict, r, depart: datetime | None, rules: str = "vfr",
+def flight_totals(leg_list: list, profile: dict | None, r, depart: datetime | None, rules: str = "vfr",
                   alternate: dict | None = None) -> dict:
     """The legs' totals plus the fuel check, the engine's (navlog_totals,
     navlog_fuel_plan). Night is judged at both ends
@@ -275,7 +285,7 @@ def flight_totals(leg_list: list, profile: dict, r, depart: datetime | None, rul
     return t
 
 
-def alternate_leg(dest: dict, alternate: dict, altitude_ft: float, profile: dict, fcst_hr: str) -> dict:
+def alternate_leg(dest: dict, alternate: dict, altitude_ft: float, profile: dict | None, fcst_hr: str) -> dict:
     """The leg from the destination on to the IFR alternate, for 14 CFR
     91.167(a)(2)'s fuel: the engine's (navlog_alternate_leg), flown at the
     route's last altitude in its winds, or in still air where the winds
@@ -327,22 +337,24 @@ def _altitude_key(start: tuple, end: tuple, aircraft: str, fixes: list | None, f
     )
 
 
-def flight_window(depart: datetime | None, distance_nm: float, cruise_tas_kt: float) -> tuple:
+def flight_window(depart: datetime | None, distance_nm: float, cruise_tas_kt: float | None) -> tuple:
     """(start, end) in unix seconds: from the hour the departure falls in
     (now, when none is given) to an hour past the arrival at cruise TAS.
     The go/no-go forecast is read over this rather than at the moment of
-    asking. Whole hours, so one hour's requests share a cached selection."""
+    asking. Whole hours, so one hour's requests share a cached selection.
+    With no airplane (`cruise_tas_kt` None) the arrival is not known: the
+    departure's hour and the next."""
     if depart is None:
         start = time.time()
     else:
         start = (depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)).timestamp()
     start -= start % 3600
-    hours = distance_nm / max(cruise_tas_kt, 1.0) + 1.0
+    hours = (distance_nm / max(cruise_tas_kt, 1.0) if cruise_tas_kt is not None else 0.0) + 1.0
     return (start, start + math.ceil(hours) * 3600)
 
 
 def cruise_altitude(
-    start: tuple, end: tuple, profile: dict, aircraft: str, fixes: list | None = None, fcst_hr: str = "06",
+    start: tuple, end: tuple, profile: dict | None, aircraft: str, fixes: list | None = None, fcst_hr: str = "06",
     window: tuple | None = None, class_b_cleared: bool = False, rules: str = "vfr", airway: dict | None = None,
 ) -> dict:
     """`fixes`, the nav log's own (lat, lon) fixes, add the leg-by-leg
@@ -401,12 +413,16 @@ _PLANS_CACHE = SingleFlightTTLCache(maxsize=512, ttl=_ALTITUDE_TTL_S)
 
 
 def altitude_plans(
-    fix_list: list, selection: dict, profile: dict, aircraft: str, fcst_hr: str = "06",
+    fix_list: list, selection: dict, profile: dict | None, aircraft: str, fcst_hr: str = "06",
     departure_elevation_ft: float | None = None,
 ) -> dict:
+    """The four plans (wingtip.navlog.altitude_profiles), held per route,
+    fixes and airplane; with none (`profile` None), the lowest and highest
+    alone."""
+    figures = profile or {}
     key = (
-        aircraft, profile.get("cruise_tas_kt"), profile.get("fuel_burn_gph"),
-        profile.get("climb_tas_kt"), profile.get("climb_fuel_burn_gph"), profile.get("cruise_power_pct"),
+        aircraft, figures.get("cruise_tas_kt"), figures.get("fuel_burn_gph"),
+        figures.get("climb_tas_kt"), figures.get("climb_fuel_burn_gph"), figures.get("cruise_power_pct"),
         fcst_hr, departure_elevation_ft,
         tuple((round(f["lat"], 4), round(f["lon"], 4)) for f in fix_list),
         tuple(tuple(s["candidates_ft"]) for s in selection.get("segments", [])),

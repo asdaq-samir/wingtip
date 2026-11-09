@@ -216,7 +216,7 @@ export function NavLogList({ rows: allRows, label, numberOf, weather, isSelected
                               <path d="M8 1.5 12.5 13 8 10.5 3.5 13z" fill="currentColor" />
                             </svg>
                           )}
-                          {leg ? bearing(airplane ? leg.magnetic_heading_deg : leg.magnetic_course_deg) : "—"}
+                          {leg ? bearing(airplane ? leg.magnetic_heading_deg ?? leg.magnetic_course_deg : leg.magnetic_course_deg) : "—"}
                         </span>
                         <span aria-hidden="true"> · </span>
                         {/* With a procedure's miles where the leg ends (procedureOf),

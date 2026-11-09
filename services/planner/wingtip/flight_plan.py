@@ -51,7 +51,9 @@ class Asked:
 
     `profile` is the airplane's (wingtip.planning.aircraft_profile) and
     `aircraft_key` what the altitude selection is cached by (its name and
-    any ceiling of the pilot's own). `altitude_ft`, a pilot's own cruise,
+    any ceiling of the pilot's own); `profile` None is no airplane
+    (wingtip.planning.NO_AIRPLANE): the route's own figures, and none that
+    needs an airplane. `altitude_ft`, a pilot's own cruise,
     is flown on every leg -- or, `altitude_nearest` (the wheel's pick), at
     each leg's legal altitude nearest it; without it the plan
     `altitude_choice` is flown. `own_altitudes` are points' own altitudes
@@ -63,7 +65,7 @@ class Asked:
     legs run by the chart's checkpoints, and `alternate` the IFR alternate
     filed, as the airports table has it with its ident."""
 
-    profile: dict
+    profile: dict | None
     aircraft_key: str
     altitude_ft: float | None = None
     altitude_nearest: bool = False
@@ -154,7 +156,7 @@ class NoWinds:
 
 
 def resolve_altitude(
-    r, fix_list: list, profile: dict, aircraft: str, altitude_ft: float | None, choice: str,
+    r, fix_list: list, profile: dict | None, aircraft: str, altitude_ft: float | None, choice: str,
     fcst_hr: str = "06", window: tuple | None = None, class_b_cleared: bool = False, rules: str = "vfr",
     nearest: bool = False,
 ) -> Flown | Unflyable | NoWinds:
@@ -208,6 +210,9 @@ def resolve_altitude(
         caution = {**caution, "reasons": [*prohibited_caution(selection), *caution["reasons"]]}
         return Flown(selection, options, None, anyway, legs, cautions=(caution,) if caution["reasons"] else (),
                      figures=figures)
+    # With no airplane there is no fastest or most economical plan (the
+    # engine's navlog_plans makes the band's two): the lowest is flown.
+    choice = choice if choice in plans else "lowest"
     legs = plans[choice]["legs"]
     return Flown(selection, options, choice, legs[0]["altitude_ft"], legs, figures=figures)
 
@@ -244,7 +249,7 @@ def ground_min_at(ground: dict[str, float] | None, ident: str) -> float:
     return (ground or {}).get(ident.upper(), TURNAROUND_MIN)
 
 
-def hop_runs(r, by_hop: list, depart: datetime | None, profile: dict,
+def hop_runs(r, by_hop: list, depart: datetime | None, profile: dict | None,
              ground: dict[str, float] | None = None, held: list[vfr_holds.Hold] | None = None) -> list[HopRun]:
     """Each hop of `r` ready to plan, `by_hop` its selected checkpoints.
     A hop after the first is flown when the ones before it are done, at
@@ -254,13 +259,16 @@ def hop_runs(r, by_hop: list, depart: datetime | None, profile: dict,
     own: a route without stops is planned exactly as it always was. A
     hold (`held`) is flown on the hop leaving its point, so the hops after
     it leave the later by its minutes (as with_holds puts them there); a
-    round trip's field is held at on arrival, after the last hop."""
+    round trip's field is held at on arrival, after the last hop.
+
+    With no airplane (`profile` None) no flight's time is known: every hop
+    is read for the departure's hour, and the holds add nothing."""
     ground = ground or {}
     runs, elapsed_h = [], 0.0
-    tas = max(profile["cruise_tas_kt"], 1.0)
+    tas = max(profile["cruise_tas_kt"], 1.0) if profile else None
     idents = [ident.upper() for ident in r.idents]
     holding = {}
-    for hold in held or ():
+    for hold in held if tas else ():
         if hold.fix in idents[:-1] and not (hold.fix == idents[0] == idents[-1] and hold.fix not in idents[1:-1]):
             holding[hold.fix] = holding.get(hold.fix, 0.0) + vfr_holds.held_minutes(hold, tas)
     for i, (hop, selected) in enumerate(zip(r.hops, by_hop)):
@@ -277,6 +285,8 @@ def hop_runs(r, by_hop: list, depart: datetime | None, profile: dict,
             # judged at now, as the first's is.
             when if depart is not None or i > 0 else None,
         ))
+        if tas is None:
+            continue
         elapsed_h += hop.length_nm / tas + holding.get(hop.dep_ident.upper(), 0.0) / 60
         if hop.lands and i < len(r.hops) - 1:
             elapsed_h += ground_min_at(ground, hop.dest_ident) / 60
@@ -555,6 +565,13 @@ def with_procedures(r, runs: list[HopRun], outcome: Flown, drawn: list[tuple[str
             path = procedure_paths.flown((start["lat"], start["lon"]), (end["lat"], end["lon"]), *picks[:3],
                                          runway=runways.get(dep_field) if picks[0] else None,
                                          takeoff_circuit=takeoff, landing_circuit=landing)
+            if path is not None and leg.get("tas_kt") is None:
+                # No airplane: the path and its miles more, flown in no
+                # time and on no fuel anyone knows.
+                more_nm = max(0.0, path["nm"] - leg["distance_nm"])
+                leg["procedure"] = {**path, "nm": round(path["nm"], 1), "more_nm": round(more_nm, 1),
+                                    "more_min": None, "more_gal": None}
+                continue
             if path is None or not leg["groundspeed_kt"] or leg["ete_min"] is None:
                 continue
             # Never fewer miles than the leg: a path that cuts a corner of
@@ -682,8 +699,10 @@ def with_holds(r, runs: list[HopRun], outcome: Flown, held: list[vfr_holds.Hold]
     fuel required (14 CFR 91.151, 91.167) are the flight's with the hold.
     The leg says its hold for the map and the dry run: the entry from the
     course flown to the point (AIM 5-3-8), one turn round the racetrack in
-    true degrees, and the minutes and fuel. New legs, as with_procedures'."""
-    if not held:
+    true degrees, and the minutes and fuel. New legs, as with_procedures'.
+    With no airplane (no leg's true airspeed) a hold is not flown: its
+    racetrack and fuel are an airplane's."""
+    if not held or all(leg.get("tas_kt") is None for leg in outcome.legs):
         return outcome
     hops = [[dict(leg) for leg in legs] for legs in outcome.hop_legs]
     idents = [ident.upper() for ident in r.idents]

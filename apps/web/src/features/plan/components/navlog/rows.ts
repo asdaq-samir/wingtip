@@ -154,7 +154,7 @@ export const legOf = (row: NavLogRow): Leg | undefined => (row.kind === "departu
  * at 86 kt, a minute, with 2.3 unsaid (the FPL audit's A4, 2026-11-08).
  * What it is: a departure, a pattern landed by, or an approach.
  */
-export function procedureOf(row: NavLogRow): { nm: number; min: number; word: "departure" | "pattern" | "approach" } | null {
+export function procedureOf(row: NavLogRow): { nm: number; min: number | null; word: "departure" | "pattern" | "approach" } | null {
   if (row.kind === "departure" || isLegPoint(row)) return null;
   const p = row.leg?.procedure;
   if (!p || !(p.more_nm > 0.05)) return null;

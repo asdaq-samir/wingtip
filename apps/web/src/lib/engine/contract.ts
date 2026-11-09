@@ -6729,7 +6729,10 @@ export interface SelectCruiseAltitudeInput {
     maa_ft?: number | null;
   } | null;
   airspace_ceilings_ft?: (number | null)[];
-  service_ceilings_ft: number[];
+  /**
+   * Null on a leg: no airplane, no ceiling of its own.
+   */
+  service_ceilings_ft: (number | null)[];
   variation_deg?: number | null;
   leg_variations_deg?: number[];
   stations?: {
@@ -6758,7 +6761,7 @@ export interface SelectCruiseAltitudeAnswer {
   floor_ft: number;
   airspace_ceiling_ft?: number | null;
   class_b_cleared?: boolean;
-  service_ceiling_ft: number;
+  service_ceiling_ft: number | null;
   cloud_base_ft?: number | null;
   cloud_station?: string | null;
   cloud_ceiling_ft?: number | null;
@@ -6781,7 +6784,7 @@ export interface AltitudeSegment {
   to_nm: number;
   floor_ft: number;
   airspace_ceiling_ft?: number | null;
-  service_ceiling_ft: number;
+  service_ceiling_ft: number | null;
   cloud_base_ft?: number | null;
   cloud_station?: string | null;
   cloud_ceiling_ft?: number | null;
@@ -6875,7 +6878,10 @@ export interface NavLogLegOneInput {
     lon: number;
   };
   altitude_ft: number;
-  profile: NavLogProfile;
+  /**
+   * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
+   */
+  profile: NavLogProfile | null;
   wind?: NavLogWind | null;
   oat_c?: number | null;
   variation_deg: number;
@@ -6901,19 +6907,19 @@ export interface NavLogLegOneAnswer {
   distance_nm: number;
   altitude_ft: number;
   wind?: NavLogWind | null;
-  wca_deg?: number;
-  true_heading_deg?: number;
+  wca_deg?: number | null;
+  true_heading_deg?: number | null;
   magnetic_variation_deg?: number;
-  magnetic_heading_deg?: number;
+  magnetic_heading_deg?: number | null;
   magnetic_course_deg?: number;
   groundspeed_kt?: number | null;
   ete_min?: number | null;
   fuel_gal?: number | null;
-  tas_kt?: number;
-  fuel_burn_gph?: number;
-  power_pct?: number;
+  tas_kt?: number | null;
+  fuel_burn_gph?: number | null;
+  power_pct?: number | null;
   oat_c?: number | null;
-  density_altitude_ft?: number;
+  density_altitude_ft?: number | null;
   climb_min?: number | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
@@ -6943,7 +6949,10 @@ export interface NavLogTop {
 export interface NavLogLegsInput {
   fixes: NavLogFix[];
   altitude_ft: number;
-  profile: NavLogProfile;
+  /**
+   * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
+   */
+  profile: NavLogProfile | null;
   air: NavLogLegAir[];
 }
 /**
@@ -6992,19 +7001,19 @@ export interface NavLogLeg {
   distance_nm: number;
   altitude_ft: number;
   wind?: NavLogWind | null;
-  wca_deg?: number;
-  true_heading_deg?: number;
+  wca_deg?: number | null;
+  true_heading_deg?: number | null;
   magnetic_variation_deg?: number;
-  magnetic_heading_deg?: number;
+  magnetic_heading_deg?: number | null;
   magnetic_course_deg?: number;
   groundspeed_kt?: number | null;
   ete_min?: number | null;
   fuel_gal?: number | null;
-  tas_kt?: number;
-  fuel_burn_gph?: number;
-  power_pct?: number;
+  tas_kt?: number | null;
+  fuel_burn_gph?: number | null;
+  power_pct?: number | null;
   oat_c?: number | null;
-  density_altitude_ft?: number;
+  density_altitude_ft?: number | null;
   climb_min?: number | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
@@ -7013,7 +7022,10 @@ export interface NavLogLeg {
 export interface NavLogWithClimbsInput {
   legs: NavLogLeg[];
   start_altitude_ft?: number | null;
-  profile: NavLogProfile;
+  /**
+   * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
+   */
+  profile: NavLogProfile | null;
 }
 export interface NavLogWithDescentsInput {
   legs: NavLogLeg[];
@@ -7035,15 +7047,18 @@ export interface NavLogTotalsOfAnswer {
 }
 export interface NavLogFuelPlanInput {
   total_fuel_gal?: number | null;
-  profile: NavLogProfile;
+  /**
+   * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
+   */
+  profile: NavLogProfile | null;
   night?: boolean | null;
   rules?: "vfr" | "ifr" | null;
   alternate_gal?: number | null;
 }
 export interface NavLogFuelPlanAnswer {
   reserve_min: number;
-  reserve_gal: number;
-  taxi_gal: number;
+  reserve_gal: number | null;
+  taxi_gal: number | null;
   fuel_required_gal: number | null;
   usable_fuel_gal: number | null;
   fuel_margin_gal: number | null;
@@ -7064,7 +7079,10 @@ export interface NavLogAlternateLegInput {
     [k: string]: unknown;
   };
   altitude_ft: number;
-  profile: NavLogProfile;
+  /**
+   * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
+   */
+  profile: NavLogProfile | null;
   air?: {
     variation_deg: number;
     wind?: NavLogWind | null;
@@ -7074,15 +7092,18 @@ export interface NavLogAlternateLegInput {
 export interface NavLogAlternateLegAnswer {
   ident: string;
   distance_nm: number;
-  ete_min: number;
-  fuel_gal: number;
+  ete_min: number | null;
+  fuel_gal: number | null;
   altitude_ft: number;
   still_air: boolean;
 }
 export interface NavLogCandidatesInput {
   segments: NavLogSegment[];
   legs: number;
-  profile: NavLogProfile;
+  /**
+   * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
+   */
+  profile: NavLogProfile | null;
 }
 /**
  * The altitude selection's segment for a leg: its legal altitudes (14 CFR 91.119, 91.159, the airspace, the clouds and the service ceiling).
@@ -7097,7 +7118,10 @@ export interface NavLogSegment {
 export interface NavLogPlansInput {
   fixes: NavLogFix[];
   segments: NavLogSegment[];
-  profile: NavLogProfile;
+  /**
+   * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
+   */
+  profile: NavLogProfile | null;
   departure_elevation_ft?: number | null;
   air: NavLogLegAir[];
 }
@@ -7117,7 +7141,7 @@ export interface NavLogPlan {
   needs_oxygen: boolean;
   ete_min: number | null;
   fuel_gal: number | null;
-  climb_penalty_min: number;
+  climb_penalty_min: number | null;
   tailwind_kt: number | null;
   unflyable_legs: number;
   legs_without_wind: number;
@@ -7163,7 +7187,10 @@ export interface NavLogFigure {
 export interface NavLogLegsAtInput {
   fixes: NavLogFix[];
   segments: NavLogSegment[];
-  profile: NavLogProfile;
+  /**
+   * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
+   */
+  profile: NavLogProfile | null;
   departure_elevation_ft?: number | null;
   air: NavLogLegAir[];
   target_ft: number;
@@ -7205,19 +7232,19 @@ export interface NavLogLeg1 {
   distance_nm: number;
   altitude_ft: number;
   wind?: NavLogWind | null;
-  wca_deg?: number;
-  true_heading_deg?: number;
+  wca_deg?: number | null;
+  true_heading_deg?: number | null;
   magnetic_variation_deg?: number;
-  magnetic_heading_deg?: number;
+  magnetic_heading_deg?: number | null;
   magnetic_course_deg?: number;
   groundspeed_kt?: number | null;
   ete_min?: number | null;
   fuel_gal?: number | null;
-  tas_kt?: number;
-  fuel_burn_gph?: number;
-  power_pct?: number;
+  tas_kt?: number | null;
+  fuel_burn_gph?: number | null;
+  power_pct?: number | null;
   oat_c?: number | null;
-  density_altitude_ft?: number;
+  density_altitude_ft?: number | null;
   climb_min?: number | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;

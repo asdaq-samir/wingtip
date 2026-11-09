@@ -66,11 +66,11 @@ fn lowest(values: impl IntoIterator<Item = Option<f64>>) -> Option<f64> {
 /// IFR altitudes from the floor to the service ceiling alone: an IFR
 /// clearance takes the flight into Class B, the clouds and Class A.
 #[allow(clippy::too_many_arguments)]
-fn band(rules: &Rules, floor: f64, airspace: Option<f64>, service: f64, cloud_base: Option<f64>, course: f64, areas: &[&Area], rule_from: f64) -> Band {
+fn band(rules: &Rules, floor: f64, airspace: Option<f64>, service: Option<f64>, cloud_base: Option<f64>, course: f64, areas: &[&Area], rule_from: f64) -> Band {
     if rules.ifr {
-        let top = rules.maa_ft.map_or(service, |m| service.min(m));
-        let altitudes = cruising::legal_ifr(floor, Some(top), course).into_iter().filter(|&a| !blocked(a, areas)).collect();
-        return Band { ceiling: Some(top), altitudes, cloud_kept: true, tight: false };
+        let top = lowest([service, rules.maa_ft]);
+        let altitudes = cruising::legal_ifr(floor, top, course).into_iter().filter(|&a| !blocked(a, areas)).collect();
+        return Band { ceiling: top, altitudes, cloud_kept: true, tight: false };
     }
     let legal = |ceiling: Option<f64>| -> (Vec<f64>, bool) {
         let found: Vec<f64> = cruising::legal_vfr(floor, ceiling, course, Some(rule_from)).into_iter().filter(|&a| !blocked(a, areas)).collect();
@@ -82,12 +82,12 @@ fn band(rules: &Rules, floor: f64, airspace: Option<f64>, service: f64, cloud_ba
             _ => (Vec::new(), false),
         }
     };
-    let ceiling = lowest([airspace, Some(service), cloud_base.map(clouds::highest_under_ft)]);
+    let ceiling = lowest([airspace, service, cloud_base.map(clouds::highest_under_ft)]);
     let (altitudes, tight) = legal(ceiling);
     if !altitudes.is_empty() || cloud_base.is_none() {
         return Band { ceiling, altitudes, cloud_kept: true, tight };
     }
-    let ceiling = lowest([airspace, Some(service)]);
+    let ceiling = lowest([airspace, service]);
     let (altitudes, tight) = legal(ceiling);
     Band { ceiling, altitudes, cloud_kept: false, tight }
 }
@@ -175,7 +175,10 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
         let given = list(v, "airspace_ceilings_ft");
         (0..count).map(|i| given.get(i).and_then(Value::as_f64)).collect()
     };
-    let service: Vec<f64> = list(v, "service_ceilings_ft").iter().filter_map(Value::as_f64).collect();
+    // A leg's service ceiling null is no airplane: no ceiling of its own,
+    // the band then the rules' and the airspace's alone (the owner,
+    // 2026-11-09: "don't assume").
+    let service: Vec<Option<f64>> = list(v, "service_ceilings_ft").iter().map(Value::as_f64).collect();
     if service.len() != count {
         return Err(format!("{name}: {} service ceilings for {count} legs", service.len()));
     }
@@ -217,7 +220,7 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
     let floor_ft = floors_ft.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     let rule_from = rules_from.iter().copied().fold(f64::INFINITY, f64::min);
     let airspace_ceiling = lowest(airspace.iter().copied());
-    let service_ceiling = service.iter().copied().fold(f64::INFINITY, f64::min);
+    let service_ceiling = lowest(service.iter().copied());
     let route = band(&rules, floor_ft, airspace_ceiling, service_ceiling, cloud.as_ref().map(|c| c.0), course, &all_areas, rule_from);
 
     // Leg by leg, for the stepped plans, each against its own magnetic
@@ -245,7 +248,7 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
                 ("to_nm", num(tenth(breaks[i + 1]))),
                 ("floor_ft", num(floors_ft[i])),
                 ("airspace_ceiling_ft", opt(airspace[i])),
-                ("service_ceiling_ft", num(service[i])),
+                ("service_ceiling_ft", opt(service[i])),
                 ("cloud_base_ft", opt(base.map(|c| c.0))),
                 ("cloud_station", base.map_or(Value::Null, |c| Value::String(c.1.clone()))),
                 ("cloud_ceiling_ft", opt(base.map(|c| clouds::highest_under_ft(c.0)))),
@@ -309,7 +312,7 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
         ("floor_ft", num(floor_ft)),
         ("airspace_ceiling_ft", opt(airspace_ceiling)),
         ("class_b_cleared", Value::Bool(class_b_cleared)),
-        ("service_ceiling_ft", num(service_ceiling)),
+        ("service_ceiling_ft", opt(service_ceiling)),
         ("cloud_base_ft", opt(cloud.as_ref().map(|c| c.0))),
         ("cloud_station", cloud.as_ref().map_or(Value::Null, |c| Value::String(c.1.clone()))),
         ("cloud_ceiling_ft", opt(cloud.as_ref().map(|c| clouds::highest_under_ft(c.0)))),

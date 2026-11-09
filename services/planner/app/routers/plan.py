@@ -89,6 +89,9 @@ class PlanQuery:
     #: not, with its cautions.
     altitude_nearest: bool = False
     altitude_choice: AltitudeChoice = "fastest"
+    #: A stock profile's name, or "none" for no airplane picked
+    #: (wingtip.planning.NO_AIRPLANE): the route's own figures and none
+    #: that needs an airplane, the pilot's own figures below then unread.
     aircraft: str = DEFAULT_AIRCRAFT
     cruise_tas_kt: CruiseTas = None
     fuel_burn_gph: float | None = None
@@ -159,7 +162,12 @@ class PlanQuery:
     #: map shows no waypoints flies it; and nothing is scored for them.
     checkpoints: bool = True
 
-    def profile(self) -> dict:
+    def profile(self) -> dict | None:
+        """The airplane: a stock profile with the pilot's own figures over
+        it; None for no airplane (`aircraft=none`, wingtip.planning.NO_AIRPLANE),
+        which plans the route's own figures and none that needs one."""
+        if self.aircraft == planning.NO_AIRPLANE:
+            return None
         return aircraft_profile(
             self.aircraft, self.cruise_tas_kt, self.fuel_burn_gph, self.usable_fuel_gal,
             self.climb_tas_kt, self.climb_fuel_burn_gph, self.cruise_power_pct, self.service_ceiling_ft,
@@ -568,7 +576,7 @@ def plan(q: Annotated[PlanQuery, Depends()]) -> Plan:
         altitude_cautions=list(outcome.cautions),
         class_b_detours=fp.class_b_detours_of(runs, outcome, asked),
         altitude_figures=list(outcome.figures),
-        aircraft={"name": q.aircraft, **asked.profile},
+        aircraft=None if asked.profile is None else {"name": q.aircraft, **asked.profile},
         **_chart_info(),
     )
 
@@ -586,12 +594,13 @@ def local_flight(q: Annotated[PlanQuery, Depends()], duration_min: LocalMinutes 
     VFR reserve by day or by night, the usable fuel). Night is judged at
     the field at both ends of the time aloft, from now where no
     departure time is given (planning.flight_totals). A 422 for a route
-    that is not one airport to itself."""
+    that is not one airport to itself. With no airplane, the time aloft and
+    the reserve's minutes alone: no fuel is worked out."""
     r = load_route(q.dep, q.dest, q.stops)
     if r.dep_ident != r.dest_ident or len(r.idents) != 2:
         raise HTTPException(422, "A local flight leaves and lands at the same airport, with no stops.")
     profile = q.profile()
-    fuel = round(profile["fuel_burn_gph"] * duration_min / 60, 1)
+    fuel = round(profile["fuel_burn_gph"] * duration_min / 60, 1) if profile else None
     depart = planning.now() if q.depart is None else q.depart if q.depart.tzinfo else q.depart.replace(tzinfo=timezone.utc)
     night = engine("night_at_either_end", start=list(r.start), depart_s=depart.timestamp(), end=list(r.start),
                    arrive_s=(depart + timedelta(minutes=duration_min)).timestamp())
@@ -681,7 +690,7 @@ def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
             altitude_pool.shutdown(wait=False)
         outcome = fp.join_outcomes(runs, outcomes)
 
-        aircraft_line = {"name": q.aircraft, **asked.profile}
+        aircraft_line = None if asked.profile is None else {"name": q.aircraft, **asked.profile}
         if isinstance(outcome, fp.Unflyable):
             why, detours = fp.unflyable_parts(outcome, runs)
             yield line(NavLogError(detail=why["title"], brief=why["brief"], reasons=why["reasons"],

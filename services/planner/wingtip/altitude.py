@@ -63,14 +63,18 @@ def _timed(label: str, fn, pending: set | None = None):
     return wrapped
 
 
-def _service_ceiling_ft(aircraft_profile: dict, a: tuple, b: tuple, fcst_hr: str, temperatures: bool) -> float:
+def _service_ceiling_ft(aircraft_profile: dict | None, a: tuple, b: tuple, fcst_hr: str, temperatures: bool) -> float | None:
     """The profile's service ceiling as an altitude over the leg from a
     to b: a density altitude -- the height where the best climb has
     fallen to 100 fpm on any day -- found in the forecast temperatures
     at the leg's midpoint, to the nearest 100 ft: the engine's
     service_ceiling_on_the_day (wingtip_flight::performance). The book
     figure, a standard day's, where there are none: `temperatures` False
-    (the forecast could not be read), or no station near."""
+    (the forecast could not be read), or no station near. None with no
+    airplane (`aircraft_profile` None): no ceiling of its own, the band
+    then the rules' and the airspace's (the engine's select_cruise_altitude)."""
+    if aircraft_profile is None:
+        return None
     book_ft = float(aircraft_profile["service_ceiling_ft"])
     if not temperatures:
         return book_ft

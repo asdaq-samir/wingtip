@@ -219,7 +219,9 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
 
     # The loading (lib/weightBalance): the pilot's, else the POH's sample
     # airplane with the usable fuel aboard.
-    profile = (nav or {}).get("aircraft") or {"name": q.aircraft, **q.profile()}
+    # With no airplane (aircraft=none) there is no loading to balance.
+    airplane = q.profile()
+    profile = (nav or {}).get("aircraft") or ({"name": q.aircraft, **airplane} if airplane else {})
     loading = profile.get("loading")
     usable = profile.get("usable_fuel_gal")
     load = ask.load.model_dump() if ask.load else (
@@ -272,7 +274,7 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
         },
         "runways": {
             "pending": not nav or not briefing,
-            "worked": not nav or (bool(nav["aircraft"].get("takeoff")) and bool(nav["aircraft"].get("landing"))),
+            "worked": not nav or (bool((nav["aircraft"] or {}).get("takeoff")) and bool((nav["aircraft"] or {}).get("landing"))),
             "short": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["over"] for d in c["distances"]))),
             "crosswind": list(dict.fromkeys(c["field"]["ident"] for c in checks if c["crosswind_over"])),
             "beyond": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["beyond"] for d in c["distances"]))),
@@ -290,7 +292,7 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
     # Under IFR, the alternate (14 CFR 91.169), its ETA the nav log's.
     if ifr and totals and totals.get("ete_min") is not None:
         eta = depart + timedelta(minutes=totals["ete_min"])
-        tas = (nav or {}).get("aircraft", {}).get("cruise_tas_kt") or 110
+        tas = ((nav or {}).get("aircraft") or {}).get("cruise_tas_kt") or 110
         items = with_alternate(items, alternate_finding(alternate_for(dest, eta, tas, q.alternate)))
 
     return GoNoGo(

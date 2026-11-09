@@ -281,8 +281,8 @@ function LegLine({ leg, at }: { leg: Leg; at: { name: string; lat: number; lon: 
   const figures: [string, string][] = [
     ["TC", bearing(leg.true_course_deg)],
     ["Wind", leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data"],
-    ["WCA", windCorrection(leg.wca_deg, 1)],
-    ["TH", bearing(leg.true_heading_deg)],
+    ["WCA", leg.wca_deg != null ? windCorrection(leg.wca_deg, 1) : "—"],
+    ["TH", leg.true_heading_deg != null ? bearing(leg.true_heading_deg) : "—"],
     ["Var", magneticVariation(leg.magnetic_variation_deg, 1)],
     ["TAS", tas(leg)],
     ["GS", leg.groundspeed_kt === null ? "—" : String(Math.round(leg.groundspeed_kt))],
@@ -515,13 +515,13 @@ export default function NavLogView({
       id: "wca",
       header: () => <Heading name="WCA" unit="°" spoken="Wind correction angle" />,
       meta: { className: "hidden print:table-cell" },
-      cell: ({ row }) => (legOf(row.original) ? windCorrection(legOf(row.original)!.wca_deg, 1) : "—"),
+      cell: ({ row }) => (legOf(row.original)?.wca_deg != null ? windCorrection(legOf(row.original)!.wca_deg!, 1) : "—"),
     },
     {
       id: "th",
       header: () => <Heading name="TH" unit="true" spoken="True heading" />,
       meta: { className: "hidden print:table-cell" },
-      cell: ({ row }) => (legOf(row.original) ? bearing(legOf(row.original)!.true_heading_deg) : "—"),
+      cell: ({ row }) => (legOf(row.original)?.true_heading_deg != null ? bearing(legOf(row.original)!.true_heading_deg!) : "—"),
     },
     {
       id: "var",
@@ -532,7 +532,7 @@ export default function NavLogView({
     {
       id: "mh",
       header: () => <Heading name="MH" unit="mag" spoken="Magnetic heading" />,
-      cell: ({ row }) => (legOf(row.original) ? bearing(legOf(row.original)!.magnetic_heading_deg) : "—"),
+      cell: ({ row }) => (legOf(row.original)?.magnetic_heading_deg != null ? bearing(legOf(row.original)!.magnetic_heading_deg!) : "—"),
     },
     {
       // Each leg's own: the airplane's cruise in the forecast air at the

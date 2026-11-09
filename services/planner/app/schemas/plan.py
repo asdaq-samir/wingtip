@@ -207,7 +207,8 @@ class LegProcedure(BaseModel):
     of the runway's threshold, where the path ends, on a VOR's or a LOC's
     approach); and the approach's missed approach. The miles it is more than the leg's own, and the time and
     fuel they take at the leg's ground speed and cruise burn, are in the
-    leg's `ete_min` and `fuel_gal` (plan.with_procedures)."""
+    leg's `ete_min` and `fuel_gal` (wingtip.flight_plan.with_procedures);
+    with no airplane, the time and fuel None."""
 
     path: list[list[float]]
     ft: list[float | None]
@@ -217,8 +218,8 @@ class LegProcedure(BaseModel):
     map_at: int | None = None
     missed: MissedApproachPath | None = None
     more_nm: float
-    more_min: float
-    more_gal: float
+    more_min: float | None
+    more_gal: float | None
 
 
 class LegHold(BaseModel):
@@ -266,21 +267,21 @@ class Leg(BaseModel):
     altitude_ft: float
     true_course_deg: float
     wind: Wind | None
-    wca_deg: float
-    true_heading_deg: float
+    wca_deg: float | None
+    true_heading_deg: float | None
     magnetic_variation_deg: float
-    magnetic_heading_deg: float
+    magnetic_heading_deg: float | None
     # The true course less the variation (east is least, west is best,
     # FAA-H-8083-25C ch. 16), the engine's: what the map's Route Leg sheet shows.
     magnetic_course_deg: float
     groundspeed_kt: float | None
     ete_min: float | None
     fuel_gal: float | None
-    tas_kt: float
-    fuel_burn_gph: float
-    power_pct: float
+    tas_kt: float | None
+    fuel_burn_gph: float | None
+    power_pct: float | None
     oat_c: float | None = None
-    density_altitude_ft: float
+    density_altitude_ft: float | None
     # How much of the leg's time is climb -- from the field on the first
     # leg, and up to a new level where a plan steps -- flown at climb
     # speed and burn, and already in `ete_min` and `fuel_gal`.
@@ -310,12 +311,13 @@ class Leg(BaseModel):
 class AlternateLeg(BaseModel):
     """The leg from the destination on to the IFR alternate: flown at the
     route's last altitude in its winds, or in still air where they could
-    not be read (`still_air`)."""
+    not be read (`still_air`). With no airplane, its miles alone: the
+    time and fuel None."""
 
     ident: str
     distance_nm: float
-    ete_min: float
-    fuel_gal: float
+    ete_min: float | None
+    fuel_gal: float | None
     altitude_ft: float
     still_air: bool = False
 
@@ -634,13 +636,14 @@ class AltitudeOption(BaseModel):
     flown (`climb_penalty_min` is how many of those minutes are climb),
     the figure the plans are compared on; `tailwind_kt` the
     distance-weighted wind component along the course, positive helping,
-    over the legs that had wind data."""
+    over the legs that had wind data. With no airplane, the lowest and
+    highest alone, their times, fuel, climb and wind None."""
 
     kind: AltitudeChoice
     steps: list[AltitudeStep]
     ete_min: float | None
     fuel_gal: float | None
-    climb_penalty_min: float
+    climb_penalty_min: float | None
     tailwind_kt: float | None
     unflyable_legs: int
     legs_without_wind: int
@@ -753,7 +756,8 @@ class Plan(BaseModel):
     #: The route flown at each altitude any leg may fly (AltitudeFigure),
     #: lowest first: the altitude wheel's figures.
     altitude_figures: list[AltitudeFigure] = []
-    aircraft: AircraftProfile
+    #: None with no airplane picked (aircraft=none).
+    aircraft: AircraftProfile | None
     max_zoom: int
     min_zoom: int
     chart_cycle: str
@@ -859,7 +863,8 @@ class NavLogAltitude(BaseModel):
     altitude_ft: float | None
     altitude_selection: AltitudeBreakdown
     options: list[AltitudeOption] = []
-    aircraft: AircraftProfile
+    #: None with no airplane picked (aircraft=none).
+    aircraft: AircraftProfile | None
     #: The altitudes the pilot set that the planner would not have flown,
     #: and why (AltitudeCaution); none for the planner's own plans.
     cautions: list[AltitudeCaution] = []

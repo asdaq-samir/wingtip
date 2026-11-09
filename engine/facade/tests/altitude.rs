@@ -161,3 +161,20 @@ fn under_ifr_along_an_airway_the_mea_is_the_floor_and_the_maa_a_ceiling() {
     assert_eq!(leg["candidates_ft"], json!([7000.0, 9000.0]));
     assert_eq!(leg["airway"]["id"], json!("V100"));
 }
+
+
+#[test]
+fn with_no_airplane_no_service_ceiling_caps_the_band() {
+    // A 14,000 ft ceiling stops a VFR leg at 13,500; with no airplane the
+    // band is the rules' -- up to 17,500 under Class A (14 CFR 71.33,
+    // 91.159) -- and the segments say no ceiling.
+    let capped = selected(json!({}));
+    let free = selected(json!({ "service_ceilings_ft": [null, null] }));
+    let top = |r: &Value, i: usize| r["segments"][i]["candidates_ft"].as_array().unwrap().iter().filter_map(Value::as_f64).fold(0.0, f64::max);
+    assert!(top(&capped, 0) <= 14000.0);
+    assert!(top(&free, 0) > 14000.0 && top(&free, 0) <= 17500.0, "{}", free["segments"][0]);
+    assert!(free["segments"][0]["service_ceiling_ft"].is_null() && free["service_ceiling_ft"].is_null());
+    // Under IFR, up to FL410 (14 CFR 91.179(b)).
+    let ifr = selected(json!({ "service_ceilings_ft": [null, null], "rules": "ifr" }));
+    assert!(top(&ifr, 0) > 17500.0 && top(&ifr, 0) <= 41000.0);
+}
