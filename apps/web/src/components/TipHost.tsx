@@ -4,7 +4,7 @@ import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 import { TEXT } from "../lib/text";
-import { TIPS, unseen, useTips, type TipSpec } from "../lib/firstRunTips";
+import { TIPS, unseen, useTips, useWelcomeOpen, type TipSpec } from "../lib/firstRunTips";
 
 /** In sight and not under anything: the point at its middle is its own.
  *  Not in the panel at rest: there the pill is the tab bar and a strip
@@ -40,7 +40,9 @@ export default function TipHost() {
   const see = useTips(s => s.see);
   const [current, setCurrent] = useState<TipSpec | null>(null);
   const anchor = useRef<HTMLElement | null>(null);
-  const waiting = TIPS.filter(t => unseen(seen, t.id) && (!t.after || seen.includes(t.after)));
+  // None over the welcome, which says its own first words.
+  const welcoming = useWelcomeOpen(s => s.open);
+  const waiting = welcoming ? [] : TIPS.filter(t => unseen(seen, t.id) && (!t.after || seen.includes(t.after)));
   const waitingKey = waiting.map(t => t.id).join(",");
 
   useEffect(() => {

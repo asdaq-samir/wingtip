@@ -484,4 +484,15 @@ export const SCREENS: Screen[] = [
       await expect(sideDrawer(page).getByTestId("ask-source")).toBeVisible({ timeout: slow(15000) });
     },
   },
+  {
+    // The welcome's first page (features/plan/components/welcome): a new
+    // device, no route, every tip but the welcome seen.
+    name: "welcome",
+    ready: async page => {
+      await page.goto("/app/plan");
+      await page.evaluate(() => localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: [] }, version: 0 })));
+      await page.reload();
+      await expect(page.getByTestId("welcome-airplane")).toBeVisible({ timeout: slow(30000) });
+    },
+  },
 ];
