@@ -24,8 +24,9 @@
 #   (CI's `ci` profile). Built when either changes; uv's downloads and the
 #   wheel's Rust in BuildKit's caches.
 # - Volumes: wingtip-cargo-registry and wingtip-cargo-git (Cargo's
-#   downloads), wingtip-cargo-target-tests-<rust>-<arch> (the engine tests'
-#   build), wingtip-check-raw (the FAA files the Python tests fetch into
+#   downloads), wingtip-cargo-target-tests-<rust>-<arch>-<hash of the worktree's path>
+#   (the engine tests' build, one per worktree; tidy-local.sh removes those
+#   of worktrees that are gone), wingtip-check-raw (the FAA files the Python tests fetch into
 #   data/raw, as CI's cache keeps them), fp-m2 (Maven's repository).
 # The test build is never scripts/build/build-engine-wasm.sh's: that one stays a
 # clean, reproducible build in its pinned image. Each worktree is mounted at
@@ -127,12 +128,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\
     && apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
 RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv pip install -q uv && uv pip install --system -q maturin==1.9.4
 COPY engine /engine
-# Touched, so a shared target dir never takes an older worktree's crate for
-# this one's: the third-party crates stay built, ours compile again.
+# The target is this worktree's own (the id carries its path's hash): Cargo
+# fingerprints by mtime, so a target shared with another worktree took its
+# older build of a crate for this one's and served stale code (2026-11-08).
 RUN --mount=type=cache,id=wingtip-cargo-registry,target=/usr/local/cargo/registry \\
-    --mount=type=cache,id=wingtip-check-wheel-target,target=/target,sharing=locked \\
-    find /engine -type f -exec touch {} + \\
-    && CARGO_TARGET_DIR=/target maturin build --profile ci --compatibility linux -m /engine/bindings/py/Cargo.toml -o /wheels
+    --mount=type=cache,id=wingtip-check-wheel-target-$(worktree_hash),target=/target,sharing=locked \\
+    CARGO_TARGET_DIR=/target maturin build --profile ci --compatibility linux -m /engine/bindings/py/Cargo.toml -o /wheels
 
 FROM python:$py-slim
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -160,6 +161,7 @@ EOF
 }
 
 # The worktree's own path in the engine's container (see the top).
+worktree_hash() { echo "$here" | sha | cut -c1-8; }
 worktree_key() { echo "$(basename "$here")-$(echo "$here" | sha | cut -c1-8)"; }
 
 run_py() {
@@ -218,9 +220,13 @@ run_area() {
       local cmd
       cmd=$(grep -oE 'cargo test --profile ci [^#]*' "$here/.github/workflows/ci.yml" | head -1)
       key=$(worktree_key)
+      # The target is a volume of this worktree's own, labelled with its path
+      # so tidy-local.sh can remove it when the worktree is gone.
+      local tvol=wingtip-cargo-target-tests-1.89-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
+      docker volume inspect "$tvol" >/dev/null 2>&1 || docker volume create --label "wingtip.worktree=$here" "$tvol" >/dev/null
       docker run --rm -v "$here:/w/$key" \
         -v wingtip-cargo-registry:/usr/local/cargo/registry -v wingtip-cargo-git:/usr/local/cargo/git \
-        -v "wingtip-cargo-target-tests-1.89-$(docker version -f '{{.Server.Arch}}')":/target \
+        -v "$tvol":/target \
         -e CARGO_TARGET_DIR=/target -w "/w/$key" "$RUST_IMAGE" sh -c "$cmd"
       ;;
     java)

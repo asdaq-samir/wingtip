@@ -69,5 +69,18 @@ while read -r id project oneoff; do
   run docker rm "$id" >/dev/null
 done < <(docker ps -a --filter status=exited --filter status=dead \
   --format '{{.ID}} {{.Label "com.docker.compose.project"}} {{.Label "com.docker.compose.oneoff"}}' 2>/dev/null)
+# Cargo targets are one per worktree (check.sh, the pre-push hook): those of
+# a worktree that no longer exists go. The volumes carry the worktree's path
+# as a label, the hook's directories as a .worktree file.
+for vol in $(docker volume ls -q --filter name=wingtip-cargo-target-tests- 2>/dev/null); do
+  path=$(docker volume inspect -f '{{index .Labels "wingtip.worktree"}}' "$vol" 2>/dev/null)
+  if [ -n "$path" ] && [ ! -d "$path" ]; then run docker volume rm "$vol" >/dev/null; echo "cargo target removed: $vol"; fi
+done
+for d in "$HOME"/Library/Caches/wingtip-pre-push-cargo/*/; do
+  if [ -f "$d.worktree" ] && [ ! -d "$(cat "$d.worktree")" ]; then run rm -rf "$d"; echo "cargo target removed: $d"; fi
+done
+# The wheel's targets are BuildKit cache mounts, which cannot be named in a
+# prune: the ones unused for two weeks go (a cold wheel build at worst).
+run docker builder prune -f --filter type=exec.cachemount --filter until=336h >/dev/null 2>&1 || true
 run docker image prune -f >/dev/null
 df -h /System/Volumes/Data | tail -1
