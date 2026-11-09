@@ -1,5 +1,5 @@
 // A VS Code dev container for the editor's side of the work: Node (the web
-// app's version, apps/web/.nvmrc), Python 3.14 (services/Dockerfile.base's),
+// app's version, apps/web/.nvmrc), Python 3.15 (services/Dockerfile.base's),
 // Rust stable (the engine) and the Docker CLI, so language servers, the
 // formatter and `make` work inside it.
 //

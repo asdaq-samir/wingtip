@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
+from collections.abc import Callable
 
 from anthropic import beta_tool
 

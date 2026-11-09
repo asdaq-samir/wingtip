@@ -233,7 +233,7 @@ mod tests {
         let start = HEADER + ENTRY * sections.len();
         let (mut table, mut body) = (Vec::new(), Vec::new());
         for (name, data) in &sections {
-            while (start + body.len()) % 8 != 0 {
+            while !(start + body.len()).is_multiple_of(8) {
                 body.push(0);
             }
             let mut n = [0u8; 16];

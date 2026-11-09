@@ -28,7 +28,7 @@ import os
 import threading
 from collections import OrderedDict
 from pathlib import Path
-from typing import Callable, Iterable
+from collections.abc import Callable, Iterable
 
 from pmtiles.tile import (
     Compression,

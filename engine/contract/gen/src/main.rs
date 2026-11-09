@@ -24,11 +24,11 @@ fn main() -> ExitCode {
         eprintln!("{}: not what the rules' contract files give; run `cargo run -p wingtip-contract-gen` in engine/", path.display());
         return ExitCode::FAILURE;
     }
-    if have != want {
-        if let Err(e) = std::fs::write(&path, want) {
-            eprintln!("{}: {e}", path.display());
-            return ExitCode::FAILURE;
-        }
+    if have != want
+        && let Err(e) = std::fs::write(&path, want)
+    {
+        eprintln!("{}: {e}", path.display());
+        return ExitCode::FAILURE;
     }
     let rules = assemble(&engine).ok().and_then(|v| v["properties"].as_object().map(|p| p.len())).unwrap_or(0);
     println!("{}: {rules} rules", path.display());

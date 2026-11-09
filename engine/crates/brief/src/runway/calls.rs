@@ -112,7 +112,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "runway_end_fit" => end_fit_rule(i, v),
         "traffic_pattern" => (|| {
             let r = circuit_runway(i, v)?;
-            Ok(pattern_json(i, v, circuit::arrival(&r, &i.str(v, "end_ident")?).as_ref())?)
+            pattern_json(i, v, circuit::arrival(&r, &i.str(v, "end_ident")?).as_ref())
         })(),
         "departure_pattern" => (|| {
             let r = circuit_runway(i, v)?;
@@ -120,7 +120,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 None => None,
                 Some(t) => Some((i.num(t, "lat")?, i.num(t, "lon")?)),
             };
-            Ok(pattern_json(i, v, circuit::departure(&r, &i.str(v, "end_ident")?, toward).map(|(p, _)| p).as_ref())?)
+            pattern_json(i, v, circuit::departure(&r, &i.str(v, "end_ident")?, toward).map(|(p, _)| p).as_ref())
         })(),
         "arrival_circuit" => (|| {
             let r = circuit_runway(i, v)?;

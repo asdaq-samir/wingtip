@@ -93,12 +93,12 @@ fn bare(line: &str) -> String {
     let mut out = String::with_capacity(line.len());
     let mut i = 0;
     while i < c.len() {
-        if c[i] == '(' {
-            if let Some(close) = c[i + 1..].iter().position(|&x| x == ')') {
-                out.push(' ');
-                i += close + 2;
-                continue;
-            }
+        if c[i] == '('
+            && let Some(close) = c[i + 1..].iter().position(|&x| x == ')')
+        {
+            out.push(' ');
+            i += close + 2;
+            continue;
         }
         out.push(c[i]);
         i += 1;

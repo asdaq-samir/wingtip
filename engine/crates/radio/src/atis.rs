@@ -188,11 +188,11 @@ impl Read<'_> {
         } else {
             return None;
         };
-        if self.word(j) == "and" {
-            if let Some((f, k)) = self.num(j + 1).and_then(|n| n.parse::<f64>().ok()).and_then(|n| frac(j + 1, n)) {
-                v += f;
-                j = k;
-            }
+        if self.word(j) == "and"
+            && let Some((f, k)) = self.num(j + 1).and_then(|n| n.parse::<f64>().ok()).and_then(|n| frac(j + 1, n))
+        {
+            v += f;
+            j = k;
         }
         while matches!(self.word(j), "statute" | "miles" | "mile" | "sm") {
             j += 1;
@@ -248,13 +248,13 @@ impl Read<'_> {
                 }
             }
         }
-        if self.word(j) == "at" {
-            if let Some(kt) = self.int(j + 1) {
-                w.kt = Some(kt);
-                j += 2;
-                if self.word(j) == "knots" {
-                    j += 1;
-                }
+        if self.word(j) == "at"
+            && let Some(kt) = self.int(j + 1)
+        {
+            w.kt = Some(kt);
+            j += 2;
+            if self.word(j) == "knots" {
+                j += 1;
             }
         }
         if matches!(self.word(j), "gust" | "gusts" | "gusting") {
@@ -352,13 +352,13 @@ impl Read<'_> {
         if self.word(j) == "in" && self.word(j + 1) == "use" {
             j += 2;
         }
-        if self.word(j) == "runway" {
-            if let Some((r, next)) = self.runway_at(j + 1) {
-                runways.push(r);
-                j = next;
-                if self.word(j) == "in" && self.word(j + 1) == "use" {
-                    j += 2;
-                }
+        if self.word(j) == "runway"
+            && let Some((r, next)) = self.runway_at(j + 1)
+        {
+            runways.push(r);
+            j = next;
+            if self.word(j) == "in" && self.word(j + 1) == "use" {
+                j += 2;
             }
         }
         let mut said = kinds.join(" and ");
@@ -389,12 +389,12 @@ impl Read<'_> {
             },
         };
         let mut j = i + 1;
-        if self.word(j) == "and" {
-            if let Some((l, d)) = mode(self.word(j + 1)) {
-                landing |= l;
-                departing |= d;
-                j += 2;
-            }
+        if self.word(j) == "and"
+            && let Some((l, d)) = mode(self.word(j + 1))
+        {
+            landing |= l;
+            departing |= d;
+            j += 2;
         }
         while matches!(self.word(j), "runway" | "runways" | "on" | "in" | "use" | "is" | "are") {
             j += 1;

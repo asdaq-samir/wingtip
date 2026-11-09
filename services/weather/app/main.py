@@ -35,7 +35,7 @@ import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Callable
+from collections.abc import Callable
 
 from wingtip import tracing, weather_store
 

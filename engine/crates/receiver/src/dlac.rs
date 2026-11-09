@@ -42,7 +42,7 @@ pub fn decode(bytes: &[u8]) -> String {
         let code = (pair >> (10 - shift)) as usize & 0x3F;
         at += 6;
         if tab {
-            out.extend(std::iter::repeat(' ').take(code));
+            out.extend(std::iter::repeat_n(' ', code));
             tab = false;
         } else if code == 28 {
             tab = true;

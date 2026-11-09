@@ -67,7 +67,7 @@ DATAMODEL_ARGS = [
     "--output-model-type",
     "pydantic_v2.BaseModel",
     "--target-python-version",
-    "3.14",
+    "3.15",
     "--disable-timestamp",
     "--formatters",
     "builtin",
@@ -380,6 +380,9 @@ def generate() -> dict[Path, str]:
     models = planner_models()
     # Every model the client names is one the models file has.
     module = types.ModuleType("planner_models")
+    # Registered, as an import would: pydantic 2.14 looks a generic
+    # RootModel's module up in sys.modules when the class is made.
+    sys.modules[module.__name__] = module
     exec(compile(models, "planner_models.py", "exec"), module.__dict__)  # noqa: S102 -- our own generated source
     client = planner_client(spec)
     missing = sorted({n for n in re.findall(r"\bm\.(\w+)", client) if not hasattr(module, n)})

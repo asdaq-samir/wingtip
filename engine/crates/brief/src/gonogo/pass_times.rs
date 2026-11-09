@@ -24,7 +24,7 @@ pub fn pass_minutes(legs: &[(f64, Option<f64>)], along_nm: f64) -> Option<f64> {
     for (i, &(leg_nm, ete)) in legs.iter().enumerate() {
         let ete = ete?;
         if along_nm <= distance + leg_nm || i == legs.len() - 1 {
-            let share = if leg_nm > 0.0 { ((along_nm - distance) / leg_nm).max(0.0).min(1.0) } else { 0.0 };
+            let share = if leg_nm > 0.0 { ((along_nm - distance) / leg_nm).clamp(0.0, 1.0) } else { 0.0 };
             return Some(minutes + share * ete);
         }
         distance += leg_nm;

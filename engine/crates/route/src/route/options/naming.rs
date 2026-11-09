@@ -37,7 +37,7 @@ fn fix_like(ident: &str) -> bool {
     (2..=5).contains(&ident.len()) && ident.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
 }
 
-fn within<'a>(fixes: &'a [Fix], at: Point, nm: f64) -> impl Iterator<Item = &'a Fix> {
+fn within(fixes: &[Fix], at: Point, nm: f64) -> impl Iterator<Item = &Fix> {
     let dlat = nm / 60.0;
     let dlon = nm / (60.0 * at.0.to_radians().cos().max(0.1));
     fixes

@@ -227,15 +227,15 @@ pub fn point(said: &str, places: &[Place]) -> Option<Found> {
     let spaced = words.join(" ").to_uppercase();
     let wanted: Vec<&Place> = places.iter().filter(|p| kind.is_none_or(|k| p.what == k)).collect();
     let exact: Vec<&&Place> = wanted.iter().filter(|p| p.ident.to_uppercase() == joined).collect();
-    if let Some(p) = exact.first() {
-        if p.what != "fix" {
-            return Some(row(said, p, true));
-        }
+    if let Some(p) = exact.first()
+        && p.what != "fix"
+    {
+        return Some(row(said, p, true));
     }
-    if kind == Some("airport") {
-        if let Some(a) = airport_named(&words, places) {
-            return Some(row(said, a, true));
-        }
+    if kind == Some("airport")
+        && let Some(a) = airport_named(&words, places)
+    {
+        return Some(row(said, a, true));
     }
     if let Some(p) = wanted.iter().find(|p| p.name.as_deref().is_some_and(|n| name_words(n) == spaced)) {
         return Some(row(said, p, true));
@@ -268,13 +268,13 @@ pub fn points(said: &str, places: &[Place]) -> Vec<Found> {
     while i < words.len() {
         let mut took = false;
         for j in (i + 1..=words.len()).rev() {
-            if let Some(found) = point(&words[i..j].join(" "), places) {
-                if found.sure || j == i + 1 {
-                    out.push(found);
-                    i = j;
-                    took = true;
-                    break;
-                }
+            if let Some(found) = point(&words[i..j].join(" "), places)
+                && (found.sure || j == i + 1)
+            {
+                out.push(found);
+                i = j;
+                took = true;
+                break;
             }
         }
         if !took {

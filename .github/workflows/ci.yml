@@ -111,7 +111,7 @@ jobs:
           restore-keys: tests-raw-root-v1-
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.14"
+          python-version: "3.15"
       - run: pip install uv
       - run: uv pip install --system -r services/planner/requirements-dev-wingtip.txt
       # wingtip's Rust extension (engine/), which wingtip.route_options and
@@ -121,7 +121,7 @@ jobs:
       # The runner's own temp, not /tmp: the Mac mini's runners share one
       # machine, and two jobs building into /tmp/native would install each
       # other's wheel.
-      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
+      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
       # The engine's own tests, on the shared fixtures the Python reads too:
       # the facade's and each of its crates' (engine/crates), and that the
       # committed engine/contract/engine.schema.json is the one the rules'
@@ -140,6 +140,10 @@ jobs:
       - run: cargo machete engine
       # The Rust as rustfmt writes it (engine/rustfmt.toml).
       - run: rustup component add rustfmt && scripts/dev/format.sh --check rust
+      # No warning stands (the owner, 2026-11-09): rustc's are denied in the
+      # workspace (engine/Cargo.toml's [workspace.lints]), clippy's here,
+      # every crate and the bindings, tests and all.
+      - run: rustup component add clippy && cargo clippy --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings
       - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot -p wingtip-altitude -p wingtip-contract-gen
       # The web app's copy of the engine (apps/web/src/lib/engine), committed
       # because the web build has no Rust: built again in the script's
@@ -358,11 +362,11 @@ jobs:
           restore-keys: tests-raw-planner-v2-
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.14"
+          python-version: "3.15"
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
       # The planner imports wingtip's Rust extension (engine/), as in the test job.
-      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
+      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
       - run: ruff check app tests
       # The planner's import contracts (.importlinter), as in the test job.
       - run: lint-imports
@@ -382,11 +386,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.14"
+          python-version: "3.15"
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
       # wingtip imports its Rust extension (engine/), as in the test job.
-      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
+      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
       - run: ruff check ingest tests
       - run: pytest tests/ -v
 
@@ -408,7 +412,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.14"
+          python-version: "3.15"
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
       - name: Generated code matches its sources
@@ -430,10 +434,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.14"
+          python-version: "3.15"
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
-      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
+      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
       - run: ruff check app tests
       - run: pytest tests/ -v
 
@@ -1892,8 +1896,8 @@ jobs:
       - uses: ./.github/actions/hub-mirror
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.14"
-      - run: pip install cfn-lint==1.57.2
+          python-version: "3.15"
+      - run: pip install cfn-lint==1.60.0
       - run: cfn-lint infra/cloudformation/template.yaml
       - run: shellcheck infra/server/*.sh
       - name: docker compose config (infra/docker-compose.prod.yml)
@@ -2144,10 +2148,10 @@ jobs:
           restore-keys: tests-raw-planner-v2-
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
-          python-version: "3.14"
+          python-version: "3.15"
       - run: pip install uv
       - run: uv pip install --system -r services/planner/${{ matrix.suite == 'wingtip' && 'requirements-dev-wingtip.txt' || 'requirements-dev.txt' }}
-      - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o /tmp/native && uv pip install --system /tmp/native/*.whl
+      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o /tmp/native && uv pip install --system /tmp/native/*.whl
       # Each run's seed is at the top of its output ("Using --randomly-seed=N").
       - name: Five runs in random order
         working-directory: services/planner
