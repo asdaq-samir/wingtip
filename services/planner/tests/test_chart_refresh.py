@@ -9,7 +9,7 @@ import pytest
 from wingtip import charts, cycle_pack, vector_tiles
 
 from app import chart_refresh
-from app.routers import devservices
+from app import dev_services
 
 
 def _clock(hhmm: str) -> time.struct_time:
@@ -21,7 +21,7 @@ def started(monkeypatch):
     """The job containers started through the sidecar; no overlays due
     and no render running unless a test says so."""
     names: list = []
-    monkeypatch.setattr(devservices, "start", lambda name: names.append(name) or True)
+    monkeypatch.setattr(dev_services, "start", lambda name: names.append(name) or True)
     monkeypatch.setattr(chart_refresh, "AUTO_REFRESH", True)
     monkeypatch.setattr(chart_refresh, "overlays_due", lambda: False)
     monkeypatch.setattr(charts, "refresh_running", lambda: False)
@@ -119,5 +119,5 @@ def test_the_overlays_are_due_until_the_index_names_the_pack(tmp_path, monkeypat
 
 
 def test_no_sidecar_is_none_not_started(monkeypatch):
-    monkeypatch.setattr(devservices, "SIDECAR_URL", None)
+    monkeypatch.setattr(dev_services, "SIDECAR_URL", None)
     assert chart_refresh.refresh_now() is None

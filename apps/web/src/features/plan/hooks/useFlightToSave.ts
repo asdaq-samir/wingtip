@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo } from "react";
 import type { SetURLSearchParams } from "react-router-dom";
-import type { PanelState } from "../../../components/mapChrome";
+import type { PanelState } from "../../../lib/mapChrome";
 import type { AircraftChoice } from "../../../lib/api/types";
 import { NO_PLAN, useBriefPlan } from "../../../lib/briefPlan";
 import { picksOf } from "../../../lib/flightLink";
 import { identOf } from "../../../lib/identSchema";
 import { patched } from "../../../lib/useSearchParamsNow";
 import { useWindPicks } from "../lib/windPicks";
-import { useAsk } from "../components/ask/useAsk";
+import { useAsk } from "../../../lib/ask/useAsk";
 import { useTabAsk } from "../components/navlog/panelTab";
 import { briefingLegs } from "./briefingLegs";
 import type { PlannedRoute } from "./planAddress";

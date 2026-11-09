@@ -37,7 +37,7 @@ from ..schemas.system import (
     WeatherDataset,
 )
 
-from . import devservices
+from .. import dev_services
 from ..gateway import DEVELOPER
 
 router = APIRouter()
@@ -199,7 +199,7 @@ def _pipeline_status() -> PipelineStatus:
     is going: the file still shows the last run until the new one has
     written its first line, and says "running" for ever after a run
     whose container was stopped part-way."""
-    container = devservices.service_state(devservices.RETRAIN_SERVICE)
+    container = dev_services.service_state(dev_services.RETRAIN_SERVICE)
     last = _last_run()
     if container == "running":
         if last is None or last.state != "running":
@@ -268,7 +268,7 @@ def retrain() -> RetrainStarted:
     it has the ratings (collect, engineer features, retrain, evaluate,
     promote), each promoted only if it beats the one serving. The run is
     compose's `retrain` container, started through the dev-services
-    sidecar, the one door onto Docker (routers/devservices.py). This
+    sidecar, the one door onto Docker (app/dev_services.py). This
     service has no scikit-learn of its own on purpose (see
     requirements.txt), so it cannot train in-process; without the
     sidecar the answer says how to run it by hand.
@@ -282,13 +282,13 @@ def retrain() -> RetrainStarted:
     if training is not None and not training.ready:
         raise HTTPException(409, training.message)
     # Before the table is written: a run going now is training on it.
-    if devservices.service_state(devservices.RETRAIN_SERVICE) == "running":
+    if dev_services.service_state(dev_services.RETRAIN_SERVICE) == "running":
         raise HTTPException(409, RUN_GOING)
     try:
         chart_model.write_training_table()
     except (OSError, ValueError, RuntimeError) as err:
         raise HTTPException(500, f"The chart model's training table could not be written: {err}") from err
-    response = devservices._sidecar("POST", f"/services/{devservices.RETRAIN_SERVICE}/start")
+    response = dev_services.ask("POST", f"/services/{dev_services.RETRAIN_SERVICE}/start")
     if response is None:
         raise HTTPException(501, f"Retraining starts through the dev-services sidecar, which this planner has none of. By hand: {BY_HAND}")
     if response.status_code != 200:

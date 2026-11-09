@@ -1,7 +1,7 @@
 import { distanceNm } from "../../../../lib/geo";
 import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 import { useOwnShip } from "../../../../lib/map/position/ownShip";
-import { useFlying } from "../../../../components/mapChrome";
+import { useFlying } from "../../../../lib/mapChrome";
 import { dryRunRow, type DryRun } from "./dryRun";
 import { isLegPoint, rowPoint, type NavLogRow } from "./rows";
 

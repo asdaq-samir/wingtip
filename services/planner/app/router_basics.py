@@ -55,6 +55,19 @@ CHART_CACHE = "public, max-age=60"
 DIAGRAM_CACHE = f"public, max-age={28 * 24 * 3600}, immutable"
 
 
+def near_points(near: str) -> tuple:
+    """"42.2,-88.1;46.8,-92.2" as ((42.2, -88.1), (46.8, -92.2)); what is
+    not a pair of numbers left out."""
+    points = []
+    for pair in near.split(";"):
+        try:
+            lat, lon = (float(v) for v in pair.split(","))
+        except ValueError:
+            continue
+        points.append((lat, lon))
+    return tuple(points)
+
+
 def route_key(dep: str, dest: str) -> tuple:
     return dep.strip().upper(), dest.strip().upper()
 

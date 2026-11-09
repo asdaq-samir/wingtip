@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { Leg, Totals } from "../../lib/api/types";
-import { inkOn, SCORE_STEPS } from "../../lib/scoreScale";
+import { inkOn, SCORE_STEPS, scoreColor } from "../../lib/scoreScale";
 import {
-  bearing, clockTime, cruiseByAltitude, decimalHours, legsWithoutWind, one, plannedWords, reportedWind, runwayWind, scoreColor,
+  bearing, clockTime, cruiseByAltitude, decimalHours, legsWithoutWind, one, plannedWords, reportedWind, runwayWind,
   windAloft, windLine, windsOutOfDate,
 } from "./format";
 

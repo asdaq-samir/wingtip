@@ -16,8 +16,8 @@ web file it mirrors, and the tests are the web's cases.
 - `words`: how figures and the FAA's words are written, as the web's
   lib/format, lib/advisories and features/plan/format write them.
 
-app.routers.gonogo assembles their inputs from the planner's own plan and
-briefing, and POST /api/go-no-go answers with them."""
+`flight` assembles their inputs from the planner's own plan and
+briefing, and POST /api/go-no-go (app.routers.gonogo) answers with them."""
 import json
 
 import wingtip_native

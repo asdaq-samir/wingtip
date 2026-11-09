@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import type { SetURLSearchParams } from "react-router-dom";
-import type { PanelState } from "../../../components/mapChrome";
+import type { PanelState } from "../../../lib/mapChrome";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { useNavEdge } from "../../../hooks/use-nav-edge";
 import { api } from "../../../lib/api/client";

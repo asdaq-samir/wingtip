@@ -2,7 +2,7 @@ import * as React from "react"
 import { cn } from "cn"
 import { Dialog as SheetPrimitive } from "radix-ui"
 
-import { DIM, GLASS_SHEET } from "../mapChrome"
+import { DIM, GLASS_SHEET } from "../../lib/mapChrome"
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />

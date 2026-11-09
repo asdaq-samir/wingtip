@@ -194,6 +194,16 @@ if has_area engine; then
   fi
 fi
 
+# --- the layering and the file budget: seconds, the standard library ---------
+if has_area engine; then
+  note "engine: the crates' layering"
+  out=$(python3 "$here/scripts/ci/engine_layers.py") || { grep "::error" <<<"$out"; fail "engine layers"; }
+fi
+if has_area arch; then
+  note "arch: the file-size budget"
+  out=$(python3 "$here/scripts/ci/file_sizes.py" --base origin/main) || { grep "::error" <<<"$out"; fail "file sizes"; }
+fi
+
 if [ "$failed" -ne 0 ]; then
   echo "pre-push: fix the above, or push anyway with git push --no-verify (or SKIP_HOOKS=1)"
   exit 1

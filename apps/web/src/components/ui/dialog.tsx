@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "cn"
 import { Dialog as DialogPrimitive } from "radix-ui"
-import { DIALOG_CORNERS, DIM, GLASS_SHEET } from "../mapChrome"
+import { DIALOG_CORNERS, DIM, GLASS_SHEET } from "../../lib/mapChrome"
 
 function Dialog({
   ...props

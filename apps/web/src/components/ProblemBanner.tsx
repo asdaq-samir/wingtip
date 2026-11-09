@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { Alert } from "./ui/alert";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
-import { GLASS } from "./mapChrome";
+import { GLASS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 import { useSystemProblems } from "../lib/problems";
 

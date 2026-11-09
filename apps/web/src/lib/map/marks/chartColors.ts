@@ -56,7 +56,7 @@ export function courseColour(ink = isInkLook()): string {
 }
 
 /** A checkpoint's mark on the map (RouteMap's dots) and in the nav log
- *  (PointMark): its score's colour (format's scoreColor), and in the ink
+ *  (PointMark): its score's colour (lib/scoreScale's scoreColor), and in the ink
  *  look the sectional's brown, one ink for every checkpoint as the
  *  chart's own marks are. */
 export function checkpointColour(scoreFill: string, ink = isInkLook()): string {

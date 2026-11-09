@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SetURLSearchParams } from "react-router-dom";
-import type { PanelState } from "../../../components/mapChrome";
+import type { PanelState } from "../../../lib/mapChrome";
 import { identOf } from "../../../lib/identSchema";
 import { usePreferences, type RecentAirport } from "../../../lib/preferences";
 import { airportQuery, queryClient } from "../../../lib/queryClient";

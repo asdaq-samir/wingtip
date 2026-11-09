@@ -8,7 +8,7 @@ import { useKeyboardInset, useSafeArea, useWindowHeight } from "../hooks/use-vie
 import {
   GLASS, MATERIAL, BarOverPicture, PanelSize, PILL_RADIUS, SHEET_MARGIN, TabBarMinimized,
   useTabsShown, type MapInsets, type PanelState,
-} from "./mapChrome";
+} from "../lib/mapChrome";
 import { useOpenCards } from "../lib/openCards";
 import { PillPicture } from "./PillPicture";
 import { SheetCardHost } from "./SheetCard";

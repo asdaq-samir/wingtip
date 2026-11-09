@@ -1,4 +1,4 @@
-import { SETTLE_LEAST, SETTLE_MOST, SETTLE_POINTS, SHEET_MARGIN, SHEET_SECONDS, type MapInsets, type PanelState } from "../mapChrome";
+import { SETTLE_LEAST, SETTLE_MOST, SETTLE_POINTS, SHEET_MARGIN, SHEET_SECONDS, type MapInsets, type PanelState } from "../../lib/mapChrome";
 import { SIZE } from "../../lib/tokens";
 
 /**

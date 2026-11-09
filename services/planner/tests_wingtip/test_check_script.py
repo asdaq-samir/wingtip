@@ -29,7 +29,7 @@ def areas(*paths: str) -> list[str]:
 
 
 def test_a_web_change_is_the_web_alone():
-    assert areas("apps/web/src/components/Map.tsx") == ["web"]
+    assert areas("apps/web/src/components/Map.tsx") == ["web", "arch"]
 
 
 def test_an_openapi_document_reaches_the_web_types():
@@ -39,21 +39,21 @@ def test_an_openapi_document_reaches_the_web_types():
 
 def test_wingtip_reaches_every_python_that_imports_it():
     # ingest, the weather service and the jobs copy wingtip in.
-    assert areas("services/planner/wingtip/airspace.py") == ["py", "planner", "ingest", "weather", "jobs"]
-    assert areas("services/ingest/ingest/swim.py") == ["ingest"]
+    assert areas("services/planner/wingtip/airspace.py") == ["py", "planner", "ingest", "weather", "jobs", "arch"]
+    assert areas("services/ingest/ingest/swim.py") == ["ingest", "arch"]
 
 
 def test_the_weather_service_is_its_own_area():
-    assert areas("services/weather/app/gfs.py") == ["weather"]
+    assert areas("services/weather/app/gfs.py") == ["weather", "arch"]
 
 
 def test_a_job_is_its_own_area():
-    assert areas("services/jobs/charts/overlays.py") == ["jobs"]
+    assert areas("services/jobs/charts/overlays.py") == ["jobs", "arch"]
 
 
 def test_an_engine_rule_reaches_every_shell_of_it():
     assert areas("engine/facade/src/call.rs") == [
-        "py", "planner", "ingest", "weather", "jobs", "engine", "ios", "android"]
+        "py", "planner", "ingest", "weather", "jobs", "engine", "ios", "android", "arch"]
 
 
 def test_the_shared_fixtures_reach_wingtips_tests_the_engine_and_the_phones():
@@ -63,7 +63,7 @@ def test_the_shared_fixtures_reach_wingtips_tests_the_engine_and_the_phones():
 
 def test_each_app_is_its_own_area():
     assert areas("services/gateway/pom.xml") == ["java"]
-    assert areas("apps/ios/Wingtip/App.swift") == ["ios"]
+    assert areas("apps/ios/Wingtip/App.swift") == ["ios", "arch"]
     assert areas("apps/android/app/build.gradle.kts") == ["android"]
 
 
@@ -73,7 +73,7 @@ def test_words_alone_check_nothing():
 
 def test_each_area_once_in_one_order():
     assert areas("services/planner/tests_wingtip/test_geo.py", "services/planner/wingtip/geo.py", "apps/web/src/App.tsx") == [
-        "web", "py", "planner", "ingest", "weather", "jobs"]
+        "web", "py", "planner", "ingest", "weather", "jobs", "arch"]
 
 
 def test_ci_yml_has_the_filters_the_areas_file_makes():
@@ -86,7 +86,7 @@ def test_check_sh_lists_the_areas_the_file_names():
     names = subprocess.run(
         ["python3", str(ROOT / "scripts" / "areas.py"), "names"], capture_output=True, text=True, check=True,
     ).stdout.split()
-    assert names == "web py planner ingest assistant weather jobs engine java ios android".split()
+    assert names == "web py planner ingest assistant weather jobs engine java ios android arch".split()
     for name in names:
         # every area has a branch in check.sh's run_area
         assert f"\n    {name})" in SCRIPT.read_text(), name

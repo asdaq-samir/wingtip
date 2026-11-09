@@ -3,7 +3,7 @@ dev-services sidecar rather than Docker itself."""
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.routers import devservices
+from app import dev_services
 
 client = TestClient(app)
 
@@ -19,7 +19,7 @@ class FakeResponse:
 
 
 def test_no_sidecar_means_nothing_to_offer(monkeypatch):
-    monkeypatch.setattr(devservices, "SIDECAR_URL", None)
+    monkeypatch.setattr(dev_services, "SIDECAR_URL", None)
 
     assert client.get("/api/dev/services").json() == {"available": False, "services": []}
     assert client.post("/api/dev/services/ml/start").status_code == 503
@@ -32,7 +32,7 @@ def test_states_come_from_the_sidecar_with_the_consoles_labels(monkeypatch):
         calls.append((method, path))
         return FakeResponse(200, [{"name": "ml", "state": "running"}])
 
-    monkeypatch.setattr(devservices, "_sidecar", sidecar)
+    monkeypatch.setattr(dev_services, "ask", sidecar)
 
     body = client.get("/api/dev/services").json()
 
@@ -48,14 +48,14 @@ def test_an_unknown_service_is_refused_before_the_sidecar_is_asked(monkeypatch):
     def sidecar(method, path):
         raise AssertionError("the sidecar must not be asked")
 
-    monkeypatch.setattr(devservices, "_sidecar", sidecar)
+    monkeypatch.setattr(dev_services, "ask", sidecar)
 
     assert client.post("/api/dev/services/gateway/start").status_code == 404
 
 
 def test_the_sidecars_refusal_is_passed_on(monkeypatch):
     monkeypatch.setattr(
-        devservices, "_sidecar",
+        dev_services, "ask",
         lambda method, path: FakeResponse(409, {"detail": "ml has no container yet"}),
     )
 
@@ -66,7 +66,7 @@ def test_the_sidecars_refusal_is_passed_on(monkeypatch):
 
 
 def test_a_refusal_with_no_body_still_says_who_refused(monkeypatch):
-    monkeypatch.setattr(devservices, "_sidecar", lambda method, path: FakeResponse(500, ""))
+    monkeypatch.setattr(dev_services, "ask", lambda method, path: FakeResponse(500, ""))
 
     resp = client.post("/api/dev/services/ml/start")
 
@@ -76,7 +76,7 @@ def test_a_refusal_with_no_body_still_says_who_refused(monkeypatch):
 
 def test_a_start_reports_what_happened(monkeypatch):
     monkeypatch.setattr(
-        devservices, "_sidecar",
+        dev_services, "ask",
         lambda method, path: FakeResponse(200, {"name": "ml", "state": "running", "started": True}),
     )
 

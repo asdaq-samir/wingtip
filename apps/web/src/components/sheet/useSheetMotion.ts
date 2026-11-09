@@ -1,5 +1,5 @@
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from "react";
-import { PILL_RADIUS, usePanelDragging, type MapInsets, type PanelState } from "../mapChrome";
+import { PILL_RADIUS, usePanelDragging, type MapInsets, type PanelState } from "../../lib/mapChrome";
 import { prefersReducedMotion } from "../../lib/motion";
 import { insetsOf, restingAt, settleSeconds, type Detents } from "./engine";
 import { useSheetDrag } from "./useSheetDrag";

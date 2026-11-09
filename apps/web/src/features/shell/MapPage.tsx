@@ -5,20 +5,19 @@ import { cn } from "cn";
 import { PagesShown } from "../../components/pagesShown";
 import DevGuard from "../../components/DevGuard";
 import MapPanel from "../../components/MapPanel";
-import { ConsoleInPanelContext, useConsoleOpen, MapInsetsContext, NO_INSETS, type MapInsets, type PanelState } from "../../components/mapChrome";
+import { ConsoleInPanelContext, useConsoleOpen, MapInsetsContext, NO_INSETS, type MapInsets, type PanelState } from "../../lib/mapChrome";
 import RouteForm from "../../components/RouteForm";
 import { EngineGate } from "../../lib/engine/engineGate";
 import { useNavEdge } from "../../hooks/use-nav-edge";
 import { usePreferences } from "../../lib/preferences";
 import { useWarmAirportIndex } from "../../lib/airportIndex";
-import LinkSignIn from "../pilot/LinkSignIn";
-import TvLink from "../pilot/TvLink";
-import EmergencyHost from "../emergency/EmergencyHost";
+import { LinkSignIn, TvLink } from "../pilot";
+import { EmergencyHost } from "../emergency";
 import { AutoLogbookHost } from "../logbook-auto";
-import PlanWorkspace from "../plan/PlanWorkspace";
+import { BootMap, PlanWorkspace } from "../plan";
+import { loadTrainWorkspace } from "../chart-labels";
 import { useIsDesktop } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
-import { BootMap } from "../plan/routeMapChunk";
 import type { WorkspacePieces } from "./workspace";
 
 /** Setup's pill (the switches, the account), with the console's code
@@ -36,7 +35,7 @@ import type { WorkspacePieces } from "./workspace";
  * React's own `lazy`, resolved while the `Suspense` below shows the
  * empty shell.
  */
-const TrainWorkspace = lazy(() => import("../chart-labels/TrainWorkspace"));
+const TrainWorkspace = lazy(loadTrainWorkspace);
 
 export type Mode = "pilot" | "dev";
 

@@ -5,9 +5,8 @@ import { WAYPOINT_MAGENTA, checkpointColour } from "../../../../lib/map/marks/ch
 import { colourOf } from "../../../../lib/map/marks/flightCategory";
 import { AIRPORT_MARK, airportMarkSvg } from "../../../../lib/map/marks/airportMark";
 import type { AirspaceClass } from "../../../../lib/preferences";
-import { inkOn } from "../../../../lib/scoreScale";
+import { inkOn, scoreColor } from "../../../../lib/scoreScale";
 import { TEXT } from "../../../../lib/text";
-import { scoreColor } from "../../format";
 import type { NavLogRow } from "./rows";
 
 /**

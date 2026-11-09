@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "cn"
-import { DIALOG_CORNERS, DIM, GLASS_SHEET } from "../mapChrome"
+import { DIALOG_CORNERS, DIM, GLASS_SHEET } from "../../lib/mapChrome"
 import { AlertDialog as AlertDialogPrimitive } from "radix-ui"
 
 import { Button } from "@/components/ui/button"

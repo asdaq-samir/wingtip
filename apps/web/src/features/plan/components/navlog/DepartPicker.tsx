@@ -10,7 +10,7 @@ const Calendar = lazy(() => import("../../../../components/ui/calendar").then(m 
 import { Input } from "../../../../components/ui/input";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../../components/ResponsivePopover";
 import { cn } from "cn";
-import { CHIP_TEXT, GLASS_BUTTON } from "../../../../components/mapChrome";
+import { CHIP_TEXT, GLASS_BUTTON } from "../../../../lib/mapChrome";
 import { TEXT } from "../../../../lib/text";
 
 interface Props {

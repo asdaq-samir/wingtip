@@ -1,6 +1,6 @@
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { SetURLSearchParams } from "react-router-dom";
-import { useConsoleOpen, type PanelState } from "../../../components/mapChrome";
+import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { pointOf } from "../../../lib/airspace";
 import { identOf } from "../../../lib/identSchema";

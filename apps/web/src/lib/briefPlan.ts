@@ -9,7 +9,30 @@
  * on screen, not one remembered.
  */
 import { create } from "zustand";
-import type { FlightToSave } from "../features/plan/components/briefing/saveFlightRequest";
+import type { Candidate, Course, Leg, NavLogAltitude, Totals } from "./api/types";
+
+/** The plan on screen as a flight to save: what Save files, and what a
+ *  solo cross-country's review is asked of (ReviewAskSheet). */
+export interface FlightToSave {
+  course: Course | null;
+  totals: Totals | null;
+  nav: NavLogAltitude | null;
+  legs: Leg[];
+  selected: Candidate[];
+  /** The airplane the nav log was computed for: a pilot's own, or
+   *  null for a stock profile. */
+  aircraftId: number | null;
+  /** The departure time as an ISO instant, or "" -- what the saved
+   *  flight is planned for. */
+  depart: string;
+  /** The altitudes the pilot set at points of the route, as the URL's
+   *  `altitudes` writes them ("VPBNG:4500"), or "": filed with the
+   *  flight, so opened again it is planned at them. */
+  altitudes?: string;
+  /** The address's other picks for the flight (lib/flightLink picksOf):
+   *  filed too, so it opens again as it was planned. */
+  picks?: string;
+}
 
 export interface BriefPlan {
   dep: string;

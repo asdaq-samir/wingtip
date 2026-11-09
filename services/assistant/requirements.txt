@@ -14,3 +14,11 @@ anthropic==1.11.0
 requests==2.34.2
 pydantic==2.13.5
 pydantic-settings==2.16.2
+# Traces, only where OTEL_EXPORTER_OTLP_ENDPOINT is set (app.tracing):
+# the SDK and exporter as the base pins them, then the FastAPI app's, the
+# planner calls' (requests) and Anthropic's (httpx, the SDK's client).
+opentelemetry-sdk==1.45.0
+opentelemetry-exporter-otlp-proto-http==1.45.0
+opentelemetry-instrumentation-fastapi==0.66b0
+opentelemetry-instrumentation-requests==0.66b0
+opentelemetry-instrumentation-httpx==0.66b0

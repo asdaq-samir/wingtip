@@ -126,6 +126,8 @@ jobs:
       # the facade's and each of its crates' (engine/crates), and that the
       # committed engine/contract/engine.schema.json is the one the rules'
       # contract files give (wingtip-contract-gen).
+      # The crates use only the crates engine/README.md's table says they use.
+      - run: python3 scripts/ci/engine_layers.py
       - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot -p wingtip-altitude -p wingtip-contract-gen
       # The web app's copy of the engine (apps/web/src/lib/engine), committed
       # because the web build has no Rust: built again in the script's
@@ -147,6 +149,11 @@ jobs:
           (sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends tippecanoe) \
             || echo "::warning title=No tippecanoe::the overlay tiles' archive tests are skipped"
       - run: ruff check wingtip tests_wingtip
+        working-directory: services/planner
+      # The planner's import contracts (services/planner/.importlinter):
+      # wingtip never imports app, no router imports another, only
+      # app.main imports the routers.
+      - run: lint-imports
         working-directory: services/planner
       - run: pytest tests_wingtip/ -v
         working-directory: services/planner
@@ -320,6 +327,8 @@ jobs:
       # The planner imports wingtip's Rust extension (engine/), as in the test job.
       - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
       - run: ruff check app tests
+      # The planner's import contracts (.importlinter), as in the test job.
+      - run: lint-imports
       - run: pytest tests/ -v
 
   # ingest's suite (services/ingest, the live feeds split from the planner,
@@ -428,6 +437,7 @@ jobs:
       android: ${{ steps.plan.outputs.android }}
       ios: ${{ steps.plan.outputs.ios }}
       api: ${{ steps.plan.outputs.api }}
+      arch: ${{ steps.plan.outputs.arch }}
       docs-only: ${{ steps.docsonly.outputs.only }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
@@ -586,8 +596,10 @@ jobs:
                 - scripts/areas.yml
                 - scripts/areas.py
                 - scripts/dev/check.sh
+                - services/planner/.importlinter
                 - services/jobs/**
                 - services/planner/requirements-wingtip*.txt
+                - scripts/ci/engine_layers.py
                 - services/planner/tests_wingtip/fixtures/native/**
               test-planner:
                 - services/planner/**
@@ -632,6 +644,16 @@ jobs:
                 - scripts/build/engine-contract-apps.*
                 - design/**
                 - .github/workflows/native-android-build.yml
+              arch:
+                - '**/*.ts'
+                - '**/*.tsx'
+                - '**/*.py'
+                - '**/*.rs'
+                - '**/*.swift'
+                - '**/*.kt'
+                - '**/*.java'
+                - scripts/ci/file_sizes.py
+                - scripts/ci/file_sizes_allow.txt
               # END generated
       - name: What this run builds and tests
         id: plan
@@ -651,7 +673,7 @@ jobs:
           images = [{"service": s} for s in IMAGES if due(s)]
           outputs = {"images": json.dumps(images)}
           for name in ("test-root", "test-web", "test-gateway", "test-planner", "test-ingest", "test-assistant", "test-weather",
-                       "docs", "infra", "api"):
+                       "docs", "infra", "api", "arch"):
               outputs[name] = "true" if due(name) else "false"
           # The phones' builds gate a merge: a pull request, or a run
           # started by hand on one's branch. Main's pushes and the nights
@@ -1701,6 +1723,24 @@ jobs:
       - name: No aviation rule outside the engine
         run: python3 scripts/ci/rules_boundary.py
 
+  # No source file new or grown past 400 lines (scripts/ci/file_sizes.py),
+  # past what scripts/ci/file_sizes_allow.txt lists of the files over it
+  # when the budget came in; and that list only shrinks against the base
+  # branch's. Seconds, the standard library only.
+  architecture:
+    name: File sizes
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes]
+    if: needs.changes.outputs.arch == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - name: No new or grown source file over the budget
+        env:
+          BASE: ${{ github.base_ref || 'main' }}
+        run: |
+          git fetch -q --depth=1 origin "$BASE"
+          python3 scripts/ci/file_sizes.py --base FETCH_HEAD
+
   # Every relative link and #anchor in the Markdown resolves: a doc moved
   # or a heading renamed breaks the links to it silently otherwise.
   # External links are not fetched (slow, and flaky for reasons no change
@@ -2124,7 +2164,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, links]
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, architecture, links]
     if: always()
     steps:
       - name: Every job passed or was not needed

@@ -49,6 +49,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import app.wingtipmaps.gateway.tracing.TraceHeaders;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -123,11 +125,18 @@ public class PlannerClient {
     }
     private final String plannerBaseUrl;
     private final String assistantBaseUrl;
+    /** The trace's and the page's headers on each request (TraceHeaders). */
+    private TraceHeaders traceHeaders = TraceHeaders.NONE;
 
     public PlannerClient(@Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
                          @Value("${assistant-service.base-url:http://assistant:8000}") String assistantBaseUrl) {
         this.plannerBaseUrl = plannerBaseUrl.replaceAll("/+$", "");
         this.assistantBaseUrl = assistantBaseUrl.replaceAll("/+$", "");
+    }
+
+    @Autowired(required = false)
+    void setTraceHeaders(TraceHeaders traceHeaders) {
+        this.traceHeaders = traceHeaders;
     }
 
     /**
@@ -375,9 +384,10 @@ public class PlannerClient {
         return sendAgainOnce(request, what);
     }
 
-    private String sendAgainOnce(HttpRequest request, String what) {
+    private String sendAgainOnce(HttpRequest asked, String what) {
+        HttpRequest request = traceHeaders.traced(asked);
         try {
-            return send(request, "the planner", what);
+            return send(http, request, "the planner", what);
         } catch (Unavailable unreached) {
             if (!(unreached.getCause() instanceof IOException) || unreached.getCause() instanceof HttpTimeoutException) {
                 throw unreached;
@@ -400,7 +410,7 @@ public class PlannerClient {
     }
 
     private String send(HttpRequest request, String who, String what) {
-        return send(http, request, who, what);
+        return send(http, traceHeaders.traced(request), who, what);
     }
 
     private static String send(HttpClient client, HttpRequest request, String who, String what) {

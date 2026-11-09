@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Mic, Radio } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import { GLASS } from "./mapChrome";
+import { GLASS } from "../lib/mapChrome";
 import Waveform from "./Waveform";
 import { Button } from "./ui/button";
 import { api } from "../lib/api/client";
@@ -16,8 +16,8 @@ import { commandsOf } from "./pilotCommand";
 import { altitudeWords, readbackCheck } from "../lib/readback";
 import { say } from "../lib/speech";
 import { TEXT } from "../lib/text";
-import { useAsk } from "../features/plan/components/ask/useAsk";
-import { openEmergency } from "../features/emergency/emergencyStore";
+import { useAsk } from "../lib/ask/useAsk";
+import { openEmergency } from "../lib/emergencyStore";
 
 const capital = (words: string) => words.replace(/\b[a-z]/g, ch => ch.toUpperCase());
 /** A place's words as a chip says them: spelled idents as they are. */

@@ -1,6 +1,6 @@
 import { Mic } from "lucide-react";
 import { cn } from "cn";
-import { GLASS } from "../../components/mapChrome";
+import { GLASS } from "../../lib/mapChrome";
 import { Button } from "../../components/ui/button";
 import { TEXT } from "../../lib/text";
 import AtcCard from "./AtcCard";

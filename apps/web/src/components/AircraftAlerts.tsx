@@ -5,7 +5,7 @@ import { cn } from "cn";
 import { Alert } from "./ui/alert";
 import { Button } from "./ui/button";
 import CloseButton from "./CloseButton";
-import { GLASS } from "./mapChrome";
+import { GLASS } from "../lib/mapChrome";
 import { airborneNow, alertKey, dismissFired as dismiss, fired, useFiredAlerts, type Watched } from "../lib/aircraftAlerts";
 import type { FlightStatus } from "../lib/api/types";
 import { useOwnFix } from "../lib/map/position/ownShip";

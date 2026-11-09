@@ -43,7 +43,7 @@ areas:
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated/**
   py:
     ci: test-root
-    check: ruff check wingtip tests_wingtip && pytest tests_wingtip/ (services/planner)
+    check: ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/ (services/planner)
     paths:
       - services/planner/wingtip/**
       - engine/**
@@ -71,9 +71,11 @@ areas:
       - scripts/areas.yml
       - scripts/areas.py
       - scripts/dev/check.sh
+      # the planner's import contracts (lint-imports), which hold wingtip too
+      - services/planner/.importlinter
   planner:
     ci: test-planner
-    check: ruff check app tests && pytest tests/ (services/planner)
+    check: ruff check app tests && lint-imports && pytest tests/ (services/planner)
     paths:
       - services/planner/**
       - engine/**
@@ -119,9 +121,10 @@ areas:
       - engine/**
   engine:
     ci: test-root
-    check: cargo test --profile ci (ci.yml's line)
+    check: scripts/ci/engine_layers.py, then cargo test --profile ci (ci.yml's line)
     paths:
       - engine/**
+      - scripts/ci/engine_layers.py
       - apps/web/src/lib/fixtures/**
       - services/planner/tests_wingtip/fixtures/native/**
   java:
@@ -157,6 +160,20 @@ areas:
       - scripts/build/engine-contract-apps.*
       - design/**
       - .github/workflows/native-android-build.yml
+  arch:
+    ci: arch
+    check: scripts/ci/file_sizes.py --base origin/main (no new or grown source file over 400 lines)
+    paths:
+      # Every source file the budget counts, and the budget itself.
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.py"
+      - "**/*.rs"
+      - "**/*.swift"
+      - "**/*.kt"
+      - "**/*.java"
+      - scripts/ci/file_sizes.py
+      - scripts/ci/file_sizes_allow.txt
 ci_only:
   # A change here can change what any job does: all of them.
   global:

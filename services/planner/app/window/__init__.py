@@ -7,6 +7,6 @@ forecasts reach, and the best windows to leave in (POST
   engine's departure_window over them all, asked once.
 
 The rules are the engine's (wingtip_engine::gonogo::window over the Go /
-No-Go's own); the findings each hour is fed are app.routers.gonogo's
+No-Go's own); the findings each hour is fed are app.gonogo.flight's
 (findings_for), the very ones POST /api/go-no-go gives the phones; the
 forecast data is wingtip.departure_window's."""

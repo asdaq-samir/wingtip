@@ -1,7 +1,7 @@
 import { Check, CircleAlert, Radio } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
-import { GLASS } from "../../components/mapChrome";
+import { GLASS } from "../../lib/mapChrome";
 import { Button } from "../../components/ui/button";
 import { TEXT } from "../../lib/text";
 import type { AtcCard as Card } from "./atcCards";

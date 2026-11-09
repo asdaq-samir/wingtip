@@ -15,113 +15,19 @@ another -- three separate blocking round trips to aviationweather.gov,
 summed instead of overlapped, was the whole reason this page felt slow to
 open even though no single piece actually is."""
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
-from wingtip import airports, airspace, alternates, altitude, data_cycles, geo, pattern, publications, runway_wind, tfr, weather
+from wingtip import data_cycles, tfr, weather
 from wingtip import icing_forecast
 
-from .. import exposure
-from ..router_basics import load_route
+from .. import exposure, route_briefing
+from ..route_briefing import read_fixes, read_numbers
 from ..schemas.common import Briefing
 from ..schemas.briefing import Alternates, IcingForecast, MapLayerAges, Tfrs
 from ..gateway import PUBLIC
 
-#: How long past the arrival the forecast is read over, and the flight
-#: assumed when the caller does not say how long it is.
-MARGIN_S = 3600
-DEFAULT_ETE_MIN = 120
-#: How far either side of the time the flight gets to a TAF station its
-#: forecast for that place is read over: a TAF's periods start on the
-#: hour, and an estimate of when a place is reached is no closer than
-#: that. The planner's own choice, as MARGIN_S is, not a rule's.
-ETA_MARGIN_S = 3600
-
 router = APIRouter()
-
-
-def _along_hops(r, read) -> list:
-    """`read(start, end)` along each hop of the route, in turn: a route
-    with stops is not the straight line from its departure to its
-    destination."""
-    return [read(hop.start, hop.end) for hop in r.hops]
-
-
-def _least(values):
-    known = [v for v in values if v is not None]
-    return min(known) if known else None
-
-
-def _joined_forecast(forecasts: list[dict]) -> dict:
-    """The hops' forecasts as one: every station once, and the lowest
-    ceiling and visibility any of them forecasts, and every station whose
-    forecast ceiling is not known (a layer with no height, "OVC///")."""
-    return {
-        "min_ceiling_ft": _least(f["min_ceiling_ft"] for f in forecasts),
-        "min_visibility_sm": _least(f["min_visibility_sm"] for f in forecasts),
-        "ceiling_unknown_at": list(dict.fromkeys(i for f in forecasts for i in f.get("ceiling_unknown_at") or [])),
-        "stations": list({s["icaoId"]: s for f in forecasts for s in f["stations"]}.values()),
-    }
-
-
-def _at_each_place(forecast: dict, path: list, start: float, ete_s: float) -> dict:
-    """The route's forecast with each station placed along it: how far
-    along (`along_track_nm`), when the flight gets there (`eta`, ISO
-    UTC), and its TAF read for then (`eta_ceiling_ft`,
-    `eta_ceiling_unknown`, `eta_visibility_sm`) with the forecast as issued (`raw`) -- for the
-    Weather tab, which lays the route out place by place. The time is
-    the flight's share of its ETE at that distance: the briefing is
-    asked with the whole flight's time, not each leg's, and an hour
-    either side (ETA_MARGIN_S) is wider than a climb's difference."""
-    total = sum(geo.distance_nm(*a, *b) for a, b in zip(path, path[1:]))
-    stations = []
-    for station in forecast["stations"]:
-        along = geo.along_path_nm(station["lat"], station["lon"], path) if len(path) > 1 else 0.0
-        eta = start + (ete_s * along / total if total else 0.0)
-        stations.append({**station, "along_track_nm": round(along, 1), "eta_s": eta})
-    read = weather.tafs_over({s["icaoId"]: (s["eta_s"] - ETA_MARGIN_S, s["eta_s"] + ETA_MARGIN_S) for s in stations})
-    placed = []
-    for station in sorted(stations, key=lambda s: s["along_track_nm"]):
-        at = read.get(station["icaoId"]) or {}
-        placed.append({
-            **{k: v for k, v in station.items() if k != "eta_s"},
-            "eta": datetime.fromtimestamp(round(station["eta_s"]), timezone.utc).isoformat().replace("+00:00", "Z"),
-            "eta_ceiling_ft": at.get("ceiling_ft"), "eta_ceiling_unknown": bool(at.get("ceiling_unknown")),
-            "eta_visibility_sm": at.get("visibility_sm"), "raw": at.get("raw"),
-        })
-    return {**forecast, "stations": placed}
-
-
-def _metars_by_route_ident(idents: tuple, source: dict) -> dict:
-    """Each airport's METAR by the ident the route names it by, looked up
-    by its station's (the airports table's, KC81 for C81) or that one."""
-    found = weather.metar_for_idents(list(dict.fromkeys([*(source[i] for i in idents), *idents])))
-    return {i: found.get(source[i]) or found.get(i) for i in idents}
-
-
-def _numbers(text: str, name: str) -> list[float] | None:
-    """A comma-separated list of numbers, None where none was sent."""
-    if not text.strip():
-        return None
-    try:
-        return [float(x) for x in text.split(",")]
-    except ValueError as err:
-        raise HTTPException(422, f"{name} is numbers separated by commas.") from err
-
-
-def _fixes(text: str) -> list[tuple[float, float]] | None:
-    """The nav log's fixes, "lat,lon;lat,lon;...", None where none or
-    fewer than two were sent."""
-    if not text.strip():
-        return None
-    try:
-        points = [(float(a), float(b)) for a, b in (p.split(",") for p in text.split(";"))]
-    except ValueError as err:
-        raise HTTPException(422, "fixes is latitude,longitude pairs separated by semicolons.") from err
-    if any(not (-90 <= lat <= 90 and -180 <= lon <= 180) for lat, lon in points):
-        raise HTTPException(422, "A fix is off the globe.")
-    return points if len(points) >= 2 else None
 
 
 @router.get("/api/map/ages", openapi_extra=PUBLIC)
@@ -181,115 +87,7 @@ def briefing(dep: str, dest: str, stops: str = "", depart: datetime | None = Non
     `ground_min` each leg's minutes on the ground after it -- else on
     the route's own legs, the flight's time shared out by distance.
     """
-    r = load_route(dep, dest, stops)
-    # Every airport landed at, once each -- a round trip lands where it
-    # left -- not a waypoint flown through, which has no weather of its own.
-    idents = tuple(dict.fromkeys(i for i, a in zip(r.idents, r.airports) if not a.get("fix")))
-    where = {i: (a["lat"], a["lon"]) for i, a in zip(r.idents, r.airports)}
-    # Each one's own identifier in the airports table, which its runways,
-    # radio and weather station go by: C81's is KC81, and asked as C81
-    # it had no runways or frequencies.
-    source = {i: a.get("ident") or i for i, a in zip(r.idents, r.airports)}
-    start = time.time() if depart is None else (depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)).timestamp()
-    ete_s = (ete_min if ete_min is not None else DEFAULT_ETE_MIN) * 60
-    window = (start, start + ete_s + MARGIN_S)
-
-    # Runways/frequencies are in this pool too, not just the three
-    # weather calls -- on a freshly started container (an empty
-    # in-memory table cache, see wingtip.airports._TABLE_CACHE) those are
-    # each a multi-megabyte CSV parse, the same order of cost as a
-    # weather round trip, and were previously paying that cost after
-    # the weather pool had already finished instead of alongside it.
-    with ThreadPoolExecutor(max_workers=7) as pool:
-        hazards_future = pool.submit(_along_hops, r, lambda a, b: weather.hazards_along_route(a, b))
-        forecast_future = pool.submit(
-            _along_hops, r, lambda a, b: weather.ceiling_visibility_along_route(a, b, window=window))
-        metars_future = pool.submit(_metars_by_route_ident, idents, source)
-        path = [(a["lat"], a["lon"]) for a in r.airports]
-        tfrs_future = pool.submit(
-            tfr.along_route, path,
-            datetime.fromtimestamp(window[0], timezone.utc), datetime.fromtimestamp(window[1], timezone.utc))
-        pireps_future = pool.submit(weather.pireps_along_route, path)
-        # Every snapshot the route crosses, for each hazard's to be the
-        # one valid nearest when the airplane is in it (app.exposure).
-        gairmets_future = pool.submit(weather.gairmet_snapshots_along_route, path, window)
-        runways = {ident: pool.submit(airports.get_runways, source[ident]) for ident in idents}
-        frequencies = {ident: pool.submit(airports.get_frequencies, source[ident]) for ident in idents}
-
-        # Same reasoning as wingtip.altitude.select_cruise_altitude: these are
-        # three independent live aviationweather.gov calls, and a transient
-        # failure on any one of them (a 504 on a slow bbox query) used to
-        # take the whole briefing down even though the other two -- plus
-        # runways/frequencies, unaffected local lookups -- had already
-        # succeeded. Each is caught on its own and recorded in
-        # weather_unavailable, so the page can say "hazards unavailable"
-        # instead of failing to load at all.
-        weather_unavailable = []
-        try:
-            hazards = list({h.get("raw") or repr(h): h for each in hazards_future.result() for h in each}.values())
-        except weather.WeatherServiceError:
-            hazards = []
-            weather_unavailable.append("hazards")
-        try:
-            forecast = _at_each_place(_joined_forecast(forecast_future.result()), path, start, ete_s)
-        except weather.WeatherServiceError:
-            forecast = {"min_ceiling_ft": None, "min_visibility_sm": None, "ceiling_unknown_at": [], "stations": []}
-            weather_unavailable.append("forecast")
-        try:
-            metars = metars_future.result()
-        except weather.WeatherServiceError:
-            metars = {ident: None for ident in idents}
-            weather_unavailable.append("metars")
-        try:
-            tfrs = tfrs_future.result()
-        except tfr.TfrUnavailable:
-            tfrs = []
-            weather_unavailable.append("tfrs")
-        try:
-            pireps = pireps_future.result()
-        except weather.WeatherServiceError:
-            pireps = []
-            weather_unavailable.append("pireps")
-        try:
-            gairmets = gairmets_future.result()
-        except weather.WeatherServiceError:
-            gairmets = []
-            weather_unavailable.append("gairmets")
-        runways = {ident: f.result() for ident, f in runways.items()}
-        frequencies = {ident: f.result() for ident, f in frequencies.items()}
-
-    navlog_fixes = _fixes(fixes)
-    leg_minutes, ground_minutes = _numbers(leg_min, "leg_min"), _numbers(ground_min, "ground_min")
-    legs = exposure.Legs.of(navlog_fixes or path, start, ete_s, leg_minutes if navlog_fixes else None, ground_minutes)
-    shp_path = airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR)
-    airport_of = dict(zip(r.idents, r.airports))
-    return {
-        "hazards": exposure.sigmets(legs, hazards),
-        "forecast": forecast,
-        "metars": metars,
-        "weather_unavailable": weather_unavailable,
-        "tfrs": exposure.tfrs(legs, tfrs),
-        "pireps": exposure.pireps(legs, pireps),
-        "gairmets": exposure.gairmets(legs, gairmets, list(weather.GAIRMET_HAZARDS.values())),
-        "vfr_not_recommended": weather.vfr_not_recommended_reasons(list(idents), metars, forecast),
-        "fields_below_vfr": exposure.fields_below_vfr(
-            legs, list(idents), r.idents[-1], where, metars, forecast["stations"], weather.below_vfr_minimums),
-        "leg_fixes": [{"lat": lat, "lon": lon} for lat, lon in legs.fixes],
-        "legs_from": "navlog" if legs.from_navlog else "route",
-        "airports": {
-            ident: {"name": airport_of[ident].get("name"),
-                    "elevation_ft": airport_of[ident].get("elevation_ft"),
-                    "airspace_class": airspace.surface_class_at(*where[ident], shp_path),
-                    "pattern": pattern.pattern_at(ident, airport_of[ident].get("elevation_ft")),
-                    "runways": pattern.with_traffic(
-                        runway_wind.with_winds(runways[ident], metars.get(ident), *where[ident]), ident, *where[ident]),
-                    "frequencies": frequencies[ident],
-                    "airport_diagram_url": publications.airport_diagram_url(ident),
-                    "airport_diagram_cycle": publications.airport_diagram_cycle(ident),
-                    "chart_supplement_url": publications.chart_supplement_url(ident)}
-            for ident in idents
-        },
-    }
+    return route_briefing.briefing(dep, dest, stops, depart, ete_min, fixes, leg_min, ground_min)
 
 
 @router.get("/api/alternate", openapi_extra=PUBLIC)
@@ -300,36 +98,7 @@ def alternate(dest: str, eta: datetime, tas_kt: float = 110.0, alternate: str = 
     pilot's `alternate` checked against its minimums at the ETA there
     (91.169(c)), and the nearest fields with a TAF that will do, each
     reached at `tas_kt` from the destination (wingtip.alternates)."""
-    arrival = (eta if eta.tzinfo else eta.replace(tzinfo=timezone.utc)).timestamp()
-    try:
-        dest_airport = airports.get_airport(dest)
-    except ValueError as err:
-        raise HTTPException(404, f"No airport goes by {dest!r}.") from err
-    at = (dest_airport["lat"], dest_airport["lon"])
-    speed = max(tas_kt, 40.0)
-
-    def eta_at(lat: float, lon: float) -> float:
-        return arrival + geo.distance_nm(*at, lat, lon) / speed * 3600
-
-    try:
-        chosen = None
-        if alternate.strip():
-            try:
-                alt_airport = airports.get_airport(alternate)
-            except ValueError as err:
-                raise HTTPException(404, f"No airport goes by {alternate!r}.") from err
-            chosen = {
-                **alternates.alternate(alt_airport.get("ident") or alternate.upper(), eta_at(alt_airport["lat"], alt_airport["lon"])),
-                "distance_nm": round(geo.distance_nm(*at, alt_airport["lat"], alt_airport["lon"]), 1),
-            }
-        ident = dest_airport.get("ident") or dest.upper()
-        return Alternates(
-            destination=alternates.destination(ident, arrival),
-            alternate=chosen,
-            suggestions=alternates.nearby(at, ident, eta_at),
-        )
-    except weather.WeatherServiceError as err:
-        raise HTTPException(502, "aviationweather.gov did not answer, so the alternate could not be checked.") from err
+    return route_briefing.alternate(dest, eta, tas_kt, alternate)
 
 
 @router.get("/api/icing/route", openapi_extra=PUBLIC)
@@ -341,13 +110,13 @@ def icing_on_the_route(fixes: str, alt_ft: str, leg_min: str, ground_min: str = 
     altitude `alt_ft` and ETE `leg_min`, and its minutes on the ground
     after it `ground_min`, the flight leaving at `depart` (now when not
     given; UTC when naive). Each leg is read for the hour of its middle."""
-    path = _fixes(fixes)
-    altitudes, minutes = _numbers(alt_ft, "alt_ft"), _numbers(leg_min, "leg_min")
+    path = read_fixes(fixes)
+    altitudes, minutes = read_numbers(alt_ft, "alt_ft"), read_numbers(leg_min, "leg_min")
     if not path or not altitudes or not minutes:
         raise HTTPException(422, "fixes, alt_ft and leg_min are needed, one more fix than legs.")
     start = time.time() if depart is None else (depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)).timestamp()
     try:
-        return icing_forecast.along(path, altitudes, minutes, _numbers(ground_min, "ground_min"), start)
+        return icing_forecast.along(path, altitudes, minutes, read_numbers(ground_min, "ground_min"), start)
     except ValueError as err:
         raise HTTPException(422, str(err)) from err
     except icing_forecast.IcingForecastUnavailable as err:

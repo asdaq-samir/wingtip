@@ -4,7 +4,7 @@ check (app.main's warm-up loop), a new cycle pack, and the Dev console's
 "refresh now" (app.routers.system). The job does the work -- a new FAA
 chart cycle's download, render and archives, and the map's overlay tiles
 -- in a container of its own, started through the dev-services sidecar
-(app.routers.devservices), so the planner only serves what it built.
+(app.dev_services), so the planner only serves what it built.
 wingtip.charts and wingtip.vector_tiles answer what is on disk; this is
 only the policy of when.
 
@@ -28,7 +28,7 @@ import time
 
 from wingtip import charts, cycle_pack, vector_tiles
 
-from .routers import devservices
+from . import dev_services
 from .settings import CHARTS_REFRESH_WINDOW, get_settings
 
 log = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ def ask_for_overlays() -> None:
     if not AUTO_REFRESH:
         return
     try:
-        if overlays_due() and devservices.start(OVERLAYS_SERVICE):
+        if overlays_due() and dev_services.start(OVERLAYS_SERVICE):
             log.info("overlay tiles due for the new cycle pack; the charts job is building them")
     except Exception:  # noqa: BLE001 -- the next check tries again; the map asks the in-view endpoints meanwhile
         log.warning("overlay tiles not asked for", exc_info=True)
@@ -95,7 +95,7 @@ def maybe_refresh() -> None:
             log.info("chart cycle %s is due; rendering it in the %s window (serving %s until then)",
                      charts.current_cycle(), CHARTS_REFRESH_WINDOW, served)
             return
-        if devservices.start(CHARTS_SERVICE):
+        if dev_services.start(CHARTS_SERVICE):
             log.info("chart cycle %s is not complete on disk; the charts job is fetching and rendering it",
                      charts.current_cycle())
     except Exception:  # noqa: BLE001 -- the next hourly check tries again; the map keeps serving what it has
@@ -106,4 +106,4 @@ def refresh_now() -> bool | None:
     """The Dev console's "refresh now": the whole job at once, whatever
     the window says. False when it is running already, None where there
     is no sidecar to start it through."""
-    return devservices.start(CHARTS_SERVICE)
+    return dev_services.start(CHARTS_SERVICE)

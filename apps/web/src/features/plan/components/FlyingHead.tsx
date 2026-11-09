@@ -1,7 +1,7 @@
 import { cn } from "cn";
-import { GLASS } from "../../../components/mapChrome";
+import { GLASS } from "../../../lib/mapChrome";
 import { Button } from "../../../components/ui/button";
-import { openEmergency } from "../../emergency/emergencyStore";
+import { openEmergency } from "../../../lib/emergencyStore";
 import { clockTime, duration } from "../../../lib/format";
 import { distanceNm } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/position/ownShip";

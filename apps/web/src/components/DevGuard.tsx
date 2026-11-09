@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { routeSearch, useDevMode } from "../hooks/use-dev-mode";
-import { useConsoleOpen } from "./mapChrome";
+import { useConsoleOpen } from "../lib/mapChrome";
 
 /** Dev mode's refusal: someone it is not for, on the dev page, is taken
  *  to the map, with the console put away (it stays out across a change

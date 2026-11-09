@@ -9,7 +9,7 @@ from fastapi import APIRouter, Response
 from wingtip import aircraft, airports, model_registry, places
 from wingtip import fixes as fixes_module
 
-from ..router_basics import SHARED_CACHE
+from ..router_basics import SHARED_CACHE, near_points
 from ..schemas.devml import AircraftProfiles, AirportSearch, ModelComparison
 from ..gateway import DEVELOPER, SHARED, gateway
 
@@ -36,19 +36,6 @@ def _where(fix: dict) -> str | None:
     Bangs Lake, IL" (wingtip.places) -- or the state alone."""
     where = places.describe(fix["lat"], fix["lon"])
     return ", ".join(part for part in (where, fix["state"]) if part) or None
-
-
-def _near(near: str) -> tuple:
-    """"42.2,-88.1;46.8,-92.2" as ((42.2, -88.1), (46.8, -92.2)); what is
-    not a pair of numbers left out."""
-    points = []
-    for pair in near.split(";"):
-        try:
-            lat, lon = (float(v) for v in pair.split(","))
-        except ValueError:
-            continue
-        points.append((lat, lon))
-    return tuple(points)
 
 
 # Sent gzipped, so the gateway passes on what it is encoded in and that
@@ -88,7 +75,7 @@ def airport_search(response: Response, q: str = "", fixes: bool = False, near: s
     response.headers["Cache-Control"] = SHARED_CACHE
     # Of fields alike, the nearest to `near` first: the pilot's position,
     # or the route's ends (wingtip.airports.search_airports).
-    by_route = _near(near)
+    by_route = near_points(near)
     found = airports.search_airports(q, near=[(p[0], p[1]) for p in by_route] if by_route else None)
     if fixes:
         known = {a["ident"] for a in found}
