@@ -149,7 +149,7 @@ export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecificati
 
 /** How long a layer of what changes over the chart -- weather, traffic,
  *  TFRs -- takes to fade in as its first data comes, rather than snap on. */
-export const FADE_IN_MS = 250;
+const FADE_IN_MS = 250;
 
 /** Each layer type's opacities, the paint a fade sets. */
 const OPACITIES: Partial<Record<LayerSpecification["type"], string[]>> = {

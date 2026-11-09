@@ -22,6 +22,7 @@ import type {
   ForecastWind,
   AirportsInView,
   AirspaceAt,
+  WeatherLoop,
   WeatherMap,
   AlertsAhead,
   Alternates,
@@ -846,6 +847,11 @@ export const api = {
    *  radar was made. */
   weatherMap: (box: { south: number; west: number; north: number; east: number }, altitudeFt: number | null) =>
     planner.GET("/api/weather/map", { params: { query: { ...box, altitude_ft: altitudeFt ?? undefined } } }).then(data<WeatherMap>),
+
+  /** The radar or satellite loop's frames (wingtip.weather_loop), oldest
+   *  first, each with its tile templates. */
+  weatherLoop: (kind: "radar" | "ir" | "visible" | "both") =>
+    planner.GET("/api/weather/loop", { params: { query: { kind } } }).then(data<WeatherLoop>),
 
   /** What is ahead of own ship in the air (lib/map/position/ahead): airspace,
    *  special-use areas and TFRs its track goes into, the ground and
