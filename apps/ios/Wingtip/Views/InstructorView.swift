@@ -185,7 +185,7 @@ struct StudentView: View {
                 endorsements(training, name: name)
                 ExperienceSection(items: training.experience)
                 Section(title: "Knowledge Test") {
-                    let codes = training.knowledgeTestCodes ?? []
+                    let codes = training.knowledgeTestCodes
                     if codes.isEmpty { Text("No codes yet").foregroundStyle(.secondary) }
                     ForEach(codes, id: \.self) { code in
                         VStack(alignment: .leading, spacing: 2) {
@@ -210,11 +210,11 @@ struct StudentView: View {
     @ViewBuilder private func endorsements(_ t: Training, name: String) -> some View {
         let inForce = Result { try Endorsing.inForce(t.signed) }
         let signed = (try? inForce.get()) ?? [:]
-        let paper = Dictionary((t.endorsements ?? []).map { ($0.code, $0) }, uniquingKeysWith: { a, _ in a })
+        let paper = Dictionary(t.endorsements.map { ($0.code, $0) }, uniquingKeysWith: { a, _ in a })
         Section(title: "Endorsements") {
             ProblemLine(inForce, "Which endorsements are in force")
             if t.fullName == nil { Text("Waiting for their name as on their certificate").foregroundStyle(.secondary) }
-            ForEach(t.kinds ?? []) { kind in
+            ForEach(t.kinds) { kind in
                 if let e = signed[kind.code] {
                     SignedEndorsementRow(label: kind.label, rule: kind.rule, e: e)
                 } else {

@@ -216,7 +216,7 @@ TOOLS: list[dict] = json.loads(r'''
   },
   {
     "name": "fuel_estimate",
-    "description": "The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the start and taxi allowance (the Cessna 172S handbook's 1.4 gal, the planner's default) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short. Null where the book gives no speed, or no burn for the fuel.",
+    "description": "The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the airplane's own start and taxi allowance (taxi_fuel_gal, its profile's; left out where it has none, never a stock airplane's) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short of a reserve. Null where the book gives no speed, or no burn for the fuel.",
     "input_schema": {
       "type": "object",
       "properties": {
@@ -234,6 +234,13 @@ TOOLS: list[dict] = json.loads(r'''
             "number",
             "null"
           ]
+        },
+        "taxi_fuel_gal": {
+          "description": "The airplane's own fuel for engine start, taxi and takeoff, gallons (its profile's taxi_fuel_gal); null or missing for none.",
+          "type": [
+            "number",
+            "null"
+          ]
         }
       },
       "required": [
@@ -243,7 +250,7 @@ TOOLS: list[dict] = json.loads(r'''
   },
   {
     "name": "glide_range",
-    "description": "Still-air glide range, nm (1.5 nm per 1,000 ft, the C172S POH figure 3-1), or null on the ground or with no height.",
+    "description": "Still-air glide range, nm, at the picked airplane's own glide ratio (glide_ratio: feet forward for each foot down, its POH's Section 3 maximum glide, as its profile gives it), or null on the ground, with no height, or with no glide ratio: no airplane, or none in its profile, has no glide worked out.",
     "input_schema": {
       "type": "object",
       "properties": {
@@ -264,13 +271,20 @@ TOOLS: list[dict] = json.loads(r'''
             "number",
             "null"
           ]
+        },
+        "glide_ratio": {
+          "description": "The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.",
+          "type": [
+            "number",
+            "null"
+          ]
         }
       }
     }
   },
   {
     "name": "glide_reaches",
-    "description": "Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft).",
+    "description": "Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft), at the picked airplane's own glide_ratio; false with no glide ratio (no airplane, or none in its profile).",
     "input_schema": {
       "type": "object",
       "properties": {
@@ -290,6 +304,13 @@ TOOLS: list[dict] = json.loads(r'''
           "type": "number"
         },
         "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "glide_ratio": {
+          "description": "The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.",
           "type": [
             "number",
             "null"

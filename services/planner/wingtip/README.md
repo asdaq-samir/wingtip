@@ -138,7 +138,7 @@ Grouped by what they are for, not alphabetically.
 | `geo.py` | Great-circle distance, bearing, cross/along-track, nearest-neighbour and clustering -- PROJ (`pyproj`) under a thin scalar/array-dispatching layer, not hand-rolled trigonometry. Every function takes a bare float or a whole array the same way. |
 | `navlog.py` | Wind correction angle, heading, ground speed, ETE, fuel -- per leg, and the legs and totals of a whole route, for the planner. |
 | `magnetic.py` | Magnetic variation, for true → magnetic (the World Magnetic Model, evaluated locally). |
-| `aircraft.py` | Performance profiles (a C172, by default), cached by resolved path -- see services/planner/README.md's own note on why a cached profile is handed out as a fresh copy, never the cached object itself. |
+| `aircraft.py` | Performance profiles (none by default: a plan with no airplane picked has none), cached by resolved path -- see services/planner/README.md's own note on why a cached profile is handed out as a fresh copy, never the cached object itself. |
 
 **Reading the world** — each wraps one external source.
 

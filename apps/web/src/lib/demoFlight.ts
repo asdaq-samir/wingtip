@@ -1,5 +1,5 @@
 import type { AircraftChoice } from "./api/types";
-import { DEFAULT_AIRCRAFT } from "./preferences";
+import { STOCK_C172 } from "./preferences";
 
 /**
  * A fixed sample flight, for App Review and for showing the app: Madison
@@ -15,7 +15,7 @@ import { DEFAULT_AIRCRAFT } from "./preferences";
 export const DEMO_FLIGHT = { dep: "KMSN", dest: "KOSH" } as const;
 
 /** The stock Cessna 172, the planner's own profile (c172). */
-export const DEMO_AIRPLANE: AircraftChoice = { ...DEFAULT_AIRCRAFT };
+export const DEMO_AIRPLANE: AircraftChoice = { ...STOCK_C172 };
 
 /** Where the planner opens on it: the route, with nothing else of the
  *  pilot's last plan. */

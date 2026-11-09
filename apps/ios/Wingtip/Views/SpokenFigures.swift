@@ -64,7 +64,7 @@ enum SpokenFigures {
 /// a pan or a zoom steps to its end instead (the UIKit side of SwiftUI's
 /// accessibilityReduceMotion, read where MapKit is driven).
 enum MapMotion {
-    static var animated: Bool { !UIAccessibility.isReduceMotionEnabled }
+    @MainActor static var animated: Bool { !UIAccessibility.isReduceMotionEnabled }
 }
 
 /// A live alert said by VoiceOver as it comes, where a sighted pilot sees

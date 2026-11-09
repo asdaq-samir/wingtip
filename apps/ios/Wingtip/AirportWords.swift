@@ -71,18 +71,16 @@ enum AirportWords {
         return "\(from) at \(Format.speed(speedKt))\(gust)"
     }
 
-    private static let iso = ISO8601DateFormatter()
-    private static let isoFraction: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
+    // Format styles rather than ISO8601DateFormatter: they are Sendable
+    // values, safe to keep in a static and read from any thread.
+    private static let iso = Date.ISO8601FormatStyle()
+    private static let isoFraction = Date.ISO8601FormatStyle(includingFractionalSeconds: true)
 
     /// A time as the servers and GPX files send it, with or without
     /// fractions of a second.
     static func date(_ iso: String?) -> Date? {
         guard let iso else { return nil }
-        return Self.iso.date(from: iso) ?? isoFraction.date(from: iso)
+        return (try? Self.iso.parse(iso)) ?? (try? isoFraction.parse(iso))
     }
 
     /// When a report was made and how long ago: "1255Z · 14 min ago",

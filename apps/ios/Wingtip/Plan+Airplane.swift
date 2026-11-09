@@ -24,7 +24,7 @@ extension Plan {
     /// airplane now (docs/decisions/0011), as the web's preferences took
     /// their stock default to NO_AIRPLANE.
     nonisolated static func airplane(kept: Kept) -> (aircraft: String, tail: String?) {
-        if kept.tail == nil && kept.aircraft == stockProfile { return (noAirplane, nil) }
+        if kept.tail == nil && kept.aircraft == keptDefault { return (noAirplane, nil) }
         return (kept.aircraft, kept.tail)
     }
 
@@ -40,9 +40,10 @@ extension Plan {
         if let mine = own.first(where: { $0.tailNumber.uppercased() == tail }) {
             let wanted = mine.typeDesignator.lowercased().filter { $0.isLetter || $0.isNumber }
             // The pilot's own airplane flies on its own figures over its
-            // type's profile, else over the stock one for the service
-            // ceiling the altitudes need, as the web's baseProfile does.
-            aircraft = profiles.contains(where: { $0.name == wanted }) ? wanted : Plan.stockProfile
+            // type's profile, else over ownAirplaneBase for the service
+            // ceiling and climb the altitudes need, as the web's
+            // baseProfile does (see ownAirplaneBase: still a stock airplane's).
+            aircraft = profiles.contains(where: { $0.name == wanted }) ? wanted : Plan.ownAirplaneBase
             figures = kept.cruiseTasKt == nil && kept.serviceCeilingFt == nil ? Figures(mine) : kept
         } else {
             figures = kept
@@ -56,9 +57,16 @@ extension Plan {
     }
 
     /// The profile a pilot's own airplane of a type the planner has no
-    /// figures for is flown on, under the pilot's figures (the web's
-    /// DEFAULT_AIRCRAFT): never flown with no airplane picked.
-    nonisolated static let stockProfile = "c172"
+    /// figures for is flown on, under the pilot's own cruise, burn, fuel
+    /// and climb: the planner asks a stock profile's name, and its service
+    /// ceiling and climb rate, which the gateway's own-airplane record
+    /// does not carry yet. Never flown with no airplane picked. Left until
+    /// the record carries them (the owner's rule of 2026-11-09 is that no
+    /// Cessna 172 figure fills a gap; this one still does, for this case).
+    nonisolated static let ownAirplaneBase = "c172"
+    /// The stock profile a kept plan once flew on unasked, read back as
+    /// no airplane (`airplane(kept:)`).
+    nonisolated static let keptDefault = "c172"
 
     /// A type flown on the planner's profile for it, with no N-number and
     /// no figures of the pilot's: picked by the pilot by name (the demo

@@ -60,7 +60,7 @@ struct LoadingView: View {
                     Section(title: "Balance") {
                         LabeledContent("Takeoff", value: balance.takeoff.words)
                         LabeledContent("Landing", value: balance.landing.words)
-                        let problems = balance.problems ?? []
+                        let problems = balance.problems
                         if problems.isEmpty {
                             Label("Within the weight and the envelope", systemImage: FindingStyle.symbol("ok"))
                                 .foregroundStyle(FindingStyle.colour("ok"))
@@ -71,8 +71,11 @@ struct LoadingView: View {
                         }
                     }
                 }
+            } else if !plan.airplaneChosen {
+                // No airplane: no loading is assumed (the owner, 2026-11-09).
+                PickAirplaneRow(detail: "Its weight and balance is worked out from its POH's loading")
             } else if verdict.answer != nil {
-                Text("The weight and balance is worked out for an airplane whose loading is built in: the Cessna 172S, from its POH.")
+                Text(MissingFigure.line("The loading") + ": its POH's empty weight, stations and envelope are needed for the weight and balance.")
             } else {
                 ProgressView()
             }

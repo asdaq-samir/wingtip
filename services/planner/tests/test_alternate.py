@@ -57,5 +57,5 @@ def test_an_unknown_alternate_is_a_404(monkeypatch):
         return airport(ident.upper())
 
     monkeypatch.setattr(airports, "get_airport", known)
-    resp = client.get("/api/alternate", params={"dest": "KDLH", "eta": ETA.isoformat(), "alternate": "KXXX"})
+    resp = client.get("/api/alternate", params={"dest": "KDLH", "eta": ETA.isoformat(), "alternate": "KXXX", "tas_kt": 120})
     assert resp.status_code == 404

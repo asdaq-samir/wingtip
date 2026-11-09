@@ -229,7 +229,7 @@ def airspace_at_point(*, lat: float, lon: float) -> m.AirspaceAt:
 _ALTERNATE = _Answer(m.Alternates)
 
 
-def alternate(*, dest: str, eta: str, tas_kt: float | None = None, alternate: str | None = None) -> m.Alternates:
+def alternate(*, dest: str, eta: str, tas_kt: float, alternate: str | None = None) -> m.Alternates:
     """GET /api/alternate: Alternate"""
     found = _send('GET', '/api/alternate', query={'dest': dest, 'eta': eta, 'tas_kt': tas_kt, 'alternate': alternate}, body=None, headers={})
     return _ALTERNATE.validate_python(found)

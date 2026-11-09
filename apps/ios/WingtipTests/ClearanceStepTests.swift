@@ -32,7 +32,7 @@ struct ClearanceStepTests {
     @Test func theReadBackIsCheckedAsTheWebChecksIt() throws {
         let f = try fixture("readbacks", as: ReadbacksFixture.self)
         for c in f.cases {
-            let check = try #require(try ReadbackCheck.check(cleared: f.cleared, said: c.said), "\(c.name)")
+            let check = try ReadbackCheck.check(cleared: f.cleared, said: c.said)
             #expect(check.items == c.items && check.words == c.words, "\(c.name)")
         }
     }
@@ -40,7 +40,7 @@ struct ClearanceStepTests {
     @Test func aFullReadBackIsOneTickNamingEveryPart() throws {
         let f = try fixture("readbacks", as: ReadbacksFixture.self)
         let clearance = try Clearance.read(f.cleared)
-        let check = try #require(try ReadbackCheck.check(cleared: f.cleared, said: f.cases[0].said))
+        let check = try ReadbackCheck.check(cleared: f.cleared, said: f.cases[0].said)
         let lines = ReadbackCheck.lines(clearance, check)
         #expect(lines.map(\.ok) == [true])
         #expect(lines[0].words == "Limit, route, altitude, expected altitude, frequency and squawk read back")
@@ -50,7 +50,7 @@ struct ClearanceStepTests {
         let f = try fixture("readbacks", as: ReadbacksFixture.self)
         let clearance = try Clearance.read(f.cleared)
         // The third case: the altitude said differently, the squawk missed.
-        let check = try #require(try ReadbackCheck.check(cleared: f.cleared, said: f.cases[2].said))
+        let check = try ReadbackCheck.check(cleared: f.cleared, said: f.cases[2].said)
         let lines = ReadbackCheck.lines(clearance, check)
         #expect(lines.map(\.ok) == [true, false, false])
         #expect(lines[0].words == "Limit, route, expected altitude and frequency read back")

@@ -17,8 +17,6 @@ from wingtip.planning import StillComputing
 
 log = logging.getLogger(__name__)
 
-DEFAULT_AIRCRAFT = "c172"
-
 #: How many stops a route may make between its ends: each is a flight of
 #: its own to read the chart along and plan. Sixteen, where it was eight:
 #: a way round high ground (wingtip.terrain_detour) takes several points and a

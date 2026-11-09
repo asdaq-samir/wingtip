@@ -45,12 +45,28 @@ data class AircraftProfileSummary (
     @SerialName("fuel_burn_gph")
     val fuelBurnGph: Double,
 
+    val glide: GlideFigures? = null,
     val name: String,
 
     @SerialName("service_ceiling_ft")
     val serviceCeilingFt: Double,
 
+    @SerialName("taxi_fuel_gal")
+    val taxiFuelGal: Double? = null,
+
     val type: String
+)
+
+/**
+ * The POH's best-glide speed and glide ratio (Section 3).
+ */
+@Serializable
+data class GlideFigures (
+    @SerialName("best_glide_kias")
+    val bestGlideKias: Double,
+
+    val ratio: Double,
+    val source: String
 )
 
 @Serializable
@@ -2836,18 +2852,6 @@ data class DemonstratedCrosswind (
 )
 
 /**
- * The POH's best-glide speed and glide ratio (Section 3).
- */
-@Serializable
-data class GlideFigures (
-    @SerialName("best_glide_kias")
-    val bestGlideKias: Double,
-
-    val ratio: Double,
-    val source: String
-)
-
-/**
  * A POH's short-field takeoff or landing distances: a table per
  * weight, and how much a dry grass runway adds to the ground roll.
  */
@@ -2856,17 +2860,29 @@ data class ShortField (
     @SerialName("grass_ground_roll_pct")
     val grassGroundRollPct: Double,
 
+    @SerialName("headwind_kt_per_10pct")
+    val headwindKtPer10Pct: Double? = null,
+
     @SerialName("pressure_altitudes_ft")
     val pressureAltitudesFt: List<Double>,
 
     val source: String,
     val tables: List<DistanceTable>,
 
+    @SerialName("tailwind_kt_per_10pct")
+    val tailwindKtPer10Pct: Double? = null,
+
+    @SerialName("tailwind_max_kt")
+    val tailwindMaxKt: Double? = null,
+
     @SerialName("temperatures_c")
     val temperaturesC: List<Double>,
 
     @SerialName("weights_lb")
-    val weightsLb: List<Double>
+    val weightsLb: List<Double>,
+
+    @SerialName("wind_source")
+    val windSource: String? = null
 )
 
 /**

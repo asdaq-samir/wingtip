@@ -25,7 +25,7 @@ struct SetupView: View {
             List {
                 Section(title: "Account") {
                     if let pilot = session.pilot {
-                        LabeledContent("Signed in as", value: pilot.displayName ?? pilot.email ?? "you")
+                        LabeledContent("Signed in as", value: pilot.displayName)
                         LabeledContent("Email", value: pilot.email)
                         NavigationLink("Contact") { ContactView().closesBack() }
                         ExportDataButton()

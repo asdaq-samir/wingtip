@@ -51,14 +51,22 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  * 0010).
  */
 @Composable
-fun EmergencySheet(state: EmergencyModel.State, model: EmergencyModel, onShowPosition: () -> Unit, onClose: () -> Unit) {
+fun EmergencySheet(
+    state: EmergencyModel.State,
+    model: EmergencyModel,
+    onShowPosition: () -> Unit,
+    onClose: () -> Unit,
+    airplanePicker: @Composable () -> Unit = {},
+) {
     WingtipSheet(title = stringResource(R.string.emergency), onClose = onClose, full = true) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
         ) {
             FieldsList(state, model::pick, onShowPosition)
-            EmergencyChecklist(state, model::pickSection, model::tick)
+            // No airplane: general guidance and the picker, never an
+            // airplane's checklist (NoAirplaneGuidance).
+            if (state.guidance.isNotEmpty()) NoAirplaneGuidance(state, airplanePicker) else EmergencyChecklist(state, model::pickSection, model::tick)
             ActionsList(state, model::souls, model::fuel)
         }
     }
@@ -88,7 +96,7 @@ private fun FieldsList(state: EmergencyModel.State, onPick: (String) -> Unit, on
     SectionTitle(if (glide != null) stringResource(R.string.best_fields_glide, glide.stillAirNm.toInt()) else stringResource(R.string.best_fields))
     if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
     ProblemLine(state.problem)
-    if (ranked?.needsAirplane == true) {
+    if (ranked?.needsAirplane == true && state.guidance.isEmpty()) {
         ListItem(
             headlineContent = { Text(stringResource(R.string.glide_needs_airplane)) },
             supportingContent = { Text(stringResource(R.string.glide_needs_airplane_line)) },

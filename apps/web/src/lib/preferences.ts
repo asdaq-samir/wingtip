@@ -77,22 +77,21 @@ export type FlightRules = "vfr" | "ifr";
  *  from the head. In Setup's Layout. */
 export type RouteEdit = "box" | "folded" | "plan";
 
-/** The stock C172: the profile a pilot's own airplane rides on where its
- *  type has none of its own (aircraftChoice), and what the planner is
- *  asked with while none is picked (NO_AIRPLANE), whose figures are then
- *  not shown. */
-export const DEFAULT_AIRCRAFT: AircraftChoice = { profile: "c172", label: "C172 · Cessna 172" };
+/** The stock Cessna 172 as a pilot picks it, and as the demo flight
+ *  picks it on purpose (lib/demoFlight). Never a default: nothing falls
+ *  back to it (the owner, 2026-11-09: "Nothing assumes a Cessna 172"). */
+export const STOCK_C172: AircraftChoice = { profile: "c172", label: "C172 · Cessna 172" };
 
-/** No airplane picked: the planner is asked with the stock profile for the
- *  route's own figures -- its course, miles, legs, checkpoints, weather,
- *  airspace and ground, none of which an airplane changes -- and every
- *  figure that needs one (times, fuel, speeds, tops of climb and descent,
- *  weight and balance) is left out, not guessed. The owner (2026-11-08):
+/** No airplane picked: no profile at all, so the planner plans with none
+ *  -- the route's own figures, its course, miles, legs, checkpoints,
+ *  weather, airspace and ground, none of which an airplane changes -- and
+ *  every figure that needs one (times, fuel, speeds, glide, tops of climb
+ *  and descent, weight and balance) is left out, not guessed. The owner (2026-11-08):
  *  "If no airplane is entered, only show the distance and the things you
  *  can without airplane profile, don't assume." It was a C172 at 40 gal
  *  usable whose 18.4 gal a pilot could read as their own (the FPL audit's
  *  A14). */
-export const NO_AIRPLANE: AircraftChoice = { profile: DEFAULT_AIRCRAFT.profile, label: "", none: true };
+export const NO_AIRPLANE: AircraftChoice = { profile: "", label: "", none: true };
 
 /** Whether an airplane has been picked: its figures can be shown. */
 export const airplaneChosen = (aircraft: AircraftChoice): boolean => !aircraft.none;
@@ -104,8 +103,8 @@ export const useAirplaneChosen = (): boolean => usePreferences((s) => airplaneCh
 function isStockDefault(a: AircraftChoice | undefined): boolean {
   return (
     !a ||
-    (a.profile === DEFAULT_AIRCRAFT.profile &&
-      a.label === DEFAULT_AIRCRAFT.label &&
+    (a.profile === STOCK_C172.profile &&
+      a.label === STOCK_C172.label &&
       !a.tail &&
       a.aircraftId === undefined &&
       a.cruiseTasKt === undefined)

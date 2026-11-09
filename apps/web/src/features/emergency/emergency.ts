@@ -9,7 +9,10 @@
  *   (AIM 6-2-2) and the frequencies to try (AIM 6-3-1(d))
  *   (engine/crates/radio/src/mayday.rs);
  * - `checklistSection`: which of the pilot's own emergency checklist's
- *   sections is the one asked, "Engine failure in flight" by default.
+ *   sections is the one asked, "Engine failure in flight" by default;
+ * - `emergencyGuidance`: with no airplane picked, the AIM's and the
+ *   Airplane Flying Handbook's general good practice, each sourced
+ *   (engine/crates/radio/src/guidance.rs), in place of a checklist.
  *
  * Nothing here weighs a field or words a call: it shapes what the planner
  * sent into what the engine reads.
@@ -100,4 +103,10 @@ export function variationAt(at: LatLon): number {
 /** The index of the section of `titles` that is `want`; null where none. */
 export function checklistSection(titles: string[], want: string = ENGINE_FAILURE): number | null {
   return callEngine("checklist_section", { titles, want });
+}
+
+/** What to do with no airplane picked: general guidance only, each item
+ *  with its source (AIM 6-1, 6-2, 6-3; FAA-H-8083-3C ch. 18). */
+export function emergencyGuidance(): EngineAnswer<"emergency_guidance">["items"] {
+  return callEngine("emergency_guidance", {}).items;
 }

@@ -34,7 +34,9 @@ import app.wingtipmaps.android.copilot.CopilotBanner
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.emergency.EmergencyModel
 import app.wingtipmaps.android.emergency.EmergencyOpen
+import app.wingtipmaps.android.flight.AirplaneGlide
 import app.wingtipmaps.android.flight.Geo
+import app.wingtipmaps.android.flight.GlideRing
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnTrail
 import app.wingtipmaps.android.flight.SpokenAlerts
@@ -145,6 +147,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val groundFt by ship.groundFt.collectAsStateWithLifecycle()
     val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
     LaunchedEffect(groundFt) { InFlight.shared.terrainFt = groundFt }
+    // The picked airplane's own glide, none with no airplane (AirplaneGlide).
+    LaunchedEffect(state.aircraft) { InFlight.shared.glideRatio = AirplaneGlide.ratio(state.aircraft) }
+    val ringKept by GlideRing.flow(context).collectAsStateWithLifecycle()
     LaunchedEffect(fix, ownShip.on, state.course, state.legs) { InFlight.shared.took(if (ownShip.on) fix else null, state) }
     LaunchedEffect(ahead) { SpokenAlerts.of(context).hear(ahead) }
     // While the emergency assistant is open, the line from the airplane
@@ -182,7 +187,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             opensAt = opensAt,
             ownShip = if (ownShip.on) fix else null,
             trail = flown,
-            glide = if (ownShip.on) inFlight.glide?.ring.orEmpty() else emptyList(),
+            // Off unless the pilot keeps it on, on by itself while the
+            // emergency assistant is open (GlideRing).
+            glide = if (ownShip.on && GlideRing.shown(ringKept == true, emergencyFrom != null)) inFlight.glide?.ring.orEmpty() else emptyList(),
             emergency = if (emergencyFrom != null && ownShip.on) EmergencyLine.of(emergency) else null,
             follow = ownShip.following,
             onDragged = { ownShip.following = false },
