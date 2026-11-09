@@ -573,6 +573,10 @@ const DATASET_NAMES: Record<string, string> = {
   "winds-06": `Winds aloft, ${WINDS_MODELLED}, next 6 h`,
   "winds-12": `Winds aloft, ${WINDS_MODELLED}, 12 h`,
   "winds-24": `Winds aloft, ${WINDS_MODELLED}, 24 h`,
+  // The weather service's other products, as the Live feeds page lists them.
+  glmp: "Gridded LAMP (GLMP)",
+  tfrs: "TFRs",
+  radar: "Radar mosaic",
 };
 
 /** How the next chart cycle's staging reads at a glance: done green, a
@@ -720,6 +724,8 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
   // The FAA data sets past their cycle, said at the Reference data row's
   // end for the owner (wingtip.data_cycles).
   const staleData = (status?.data_cycles ?? []).filter(c => c.state === "expired").length;
+  // The live feeds stale now (app.feed_health), at the Live feeds row's end.
+  const staleFeeds = (status?.feeds?.feeds ?? []).filter(f => f.state === "stale").length;
 
   // At the services row's end, what is wrong if anything is: how many
   // are down or did not answer, in red, else how many are up; one the
@@ -803,6 +809,42 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
             ? <ChartsSection charts={status.charts} onRefresh={() => refreshCharts.mutate()} refreshing={refreshCharts.isPending} />
             : <ListGroup><ListRow muted title={<>{waiting(failed)}</>} /></ListGroup>,
         },
+        feeds: {
+          title: "Live feeds",
+          content: (
+            // Each live feed as the planner checked it this minute
+            // (app.feed_health): SWIM's through ingest's beats, each
+            // weather product through the weather service. A feed stale
+            // for the alert's minutes reads "alert" and is logged.
+            <div className="flex flex-col gap-5">
+              {(["swim", "weather"] as const).map(kind => {
+                const feeds = (status?.feeds?.feeds ?? []).filter(f => f.kind === kind);
+                return (
+                  <ListGroup
+                    key={kind} title={kind === "swim" ? "FAA SWIM" : "Weather"}
+                    footer={kind === "weather" && status?.feeds
+                      ? `Checked each minute; a feed stale ${status.feeds.alert_after_min} minutes is an alert${status.feeds.webhook ? ", posted to the webhook" : ""}.`
+                      : undefined}
+                  >
+                    {feeds.map(f => (
+                      <ListRow
+                        key={f.name} title={DATASET_NAMES[f.name] ?? f.name} data-testid="dev-feed"
+                        description={`${f.kind === "swim" ? `${f.what} · ` : ""}${f.detail ?? ""}${
+                          f.stale_since ? ` · stale since ${agoOrDate(f.stale_since)}` : ""}`}
+                        value={(
+                          <StatusBadge tone={f.state === "ok" ? "up" : f.state === "stale" ? "down" : "checking"}>
+                            {f.alerting ? "alert" : f.state}
+                          </StatusBadge>
+                        )}
+                      />
+                    ))}
+                    {feeds.length === 0 && <ListRow muted title={<>{status ? "None reported." : waiting(failed)}</>} />}
+                  </ListGroup>
+                );
+              })}
+            </div>
+          ),
+        },
         errors: {
           title: "Recent errors",
           content: (
@@ -862,6 +904,12 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
             value={!status ? undefined : staleData ? <StatusBadge tone="down">{`${staleData} out of date`}</StatusBadge> : `${datasets.length} files`}
           />
           <PageRow page="charts" title="Charts" value={status?.charts ? `cycle ${status.charts.cycle}` : undefined} />
+          <PageRow
+            page="feeds" title="Live feeds"
+            value={!status?.feeds ? undefined : staleFeeds
+              ? <StatusBadge tone="down">{`${staleFeeds} stale`}</StatusBadge>
+              : <StatusBadge tone="up">all fresh</StatusBadge>}
+          />
           <PageRow page="errors" title="Recent errors" value={status ? (status.recent_errors ?? []).length : undefined} />
           <PageRow page="speed" title="Speed" />
           <PageRow page="elsewhere" title="Elsewhere in the stack" value={shown.length} />

@@ -86,6 +86,11 @@ def test_status_reports_every_service_and_the_data_on_disk(monkeypatch):
     # Not the chart model's real count: that reads the real ratings'
     # corridors, a chart read of its own.
     monkeypatch.setattr(system, "_training", lambda: None)
+    # The feeds' own suite is tests/test_feed_health.py: no store or
+    # weather service asked here.
+    monkeypatch.setattr(system.feeds_watch, "snapshot", lambda: {
+        "checked_at": None, "alert_after_min": 15, "feeds": [
+            {"name": "STDDS", "kind": "swim", "what": "terminal radar", "state": "ok"}]})
 
     resp = client.get("/api/status")
 
@@ -104,6 +109,7 @@ def test_status_reports_every_service_and_the_data_on_disk(monkeypatch):
     # Each FAA data set on disk, with whether it is in its cycle.
     for cycle in body["data_cycles"]:
         assert cycle["state"] in {"in_force", "expired", "not_yet", "unknown"} and cycle["current"]
+    assert body["feeds"]["feeds"][0]["name"] == "STDDS"
 
 
 class FakeSidecar:

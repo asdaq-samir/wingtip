@@ -290,6 +290,12 @@ services:
       # how many days ahead it starts.
       CHARTS_CYCLE_AUTO: ${CHARTS_CYCLE_AUTO:-1}
       CHARTS_CYCLE_LEAD_DAYS: ${CHARTS_CYCLE_LEAD_DAYS:-7}
+      # The live feeds watched (app.feed_health): a feed stale this many
+      # minutes is an alert in the log and the console, and POSTed to
+      # FEED_ALERT_WEBHOOK where one is set. The weather service's
+      # freshness is asked at WEATHER_URL (http://weather:8000 by default).
+      FEED_ALERT_AFTER_MIN: ${FEED_ALERT_AFTER_MIN:-15}
+      FEED_ALERT_WEBHOOK: ${FEED_ALERT_WEBHOOK:-}
       # The map's Google overlay (routers/basemaps): a browser key for
       # Google's Map Tiles API, none by default.
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
