@@ -784,6 +784,8 @@ export type RadioPlaceNameAnswer = string;
 export type IsNightAnswer = boolean;
 export type NightOnTheWayAnswer = boolean;
 export type NightAtEitherEndAnswer = boolean;
+export type PassengerNightAnswer = boolean;
+export type PassengerNightOnTheWayAnswer = boolean;
 export type CheckpointsSelectAnswer = number[];
 export type BelowVfrMinimumsAnswer = boolean;
 
@@ -1177,14 +1179,14 @@ export interface EngineContract {
     answer: SkyCeilingAnswer;
   };
   /**
-   * A report's flight category (AC 00-45H, AIM 7-1-7): LIFR under 500 ft or a mile, IFR under 1,000 ft or 3, MVFR to 3,000 ft or 5, else VFR, a missing figure no limit; null where neither is given; with ceiling_unknown (a ceiling reported with no height) LIFR under a mile's visibility, else null.
+   * A report's flight category (AC 00-45H, AIM 7-1-7), metar::flight_category_of, the same rule as flight_category: LIFR under 500 ft or a mile, IFR under 1,000 ft or 3, MVFR to 3,000 ft or 5, else VFR, no ceiling no limit; with no visibility only a ceiling under 500 ft settles it (LIFR), else null; with ceiling_unknown (a ceiling reported with no height) LIFR under a mile's visibility, else null.
    */
   report_flight_category: {
     input: ReportFlightCategoryInput;
     answer: ReportFlightCategoryAnswer;
   };
   /**
-   * The least any VFR minimums come to (14 CFR 91.155(c), (d)): no VFR under a 1,000 ft ceiling or in under 3 statute miles in a surface area.
+   * The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).
    */
   vfr_basic_minimums: {
     input: VfrBasicMinimumsInput;
@@ -3039,6 +3041,20 @@ export interface EngineContract {
     answer: NightAtEitherEndAnswer;
   };
   /**
+   * Whether an instant is in 14 CFR 61.57(b)'s night-passenger period at a point: from 1 hour after sunset to 1 hour before sunrise (the sun's centre 0.833 degrees down, NOAA's solar calculation), its own window rather than 14 CFR 1.1's night, so a high-latitude summer night with no 1.1 night still has it.
+   */
+  passenger_night: {
+    input: PassengerNightInput;
+    answer: PassengerNightAnswer;
+  };
+  /**
+   * Whether any of a flight from `start` to `end` of `minutes`, leaving at `depart_s`, falls in 14 CFR 61.57(b)'s night-passenger period, judged every half hour along the straight line as night_on_the_way judges the night.
+   */
+  passenger_night_on_the_way: {
+    input: PassengerNightOnTheWayInput;
+    answer: PassengerNightOnTheWayAnswer;
+  };
+  /**
    * The nav log's checkpoints from the chart model's scored candidates, as their indices in route order: greedy by score, at least `min_spacing_nm` apart (10), none under `min_score` (2.5; null for every score), at most `max_count`, and with `length_nm` none within 3 nm of a hop's ends.
    */
   checkpoints_select: {
@@ -3669,6 +3685,10 @@ export interface PilotCurrencyAnswer {
    * The last day of instrument currency (61.57(c)(1), or 61.57(d)'s check); in the past where it has lapsed, null where none is logged.
    */
   instrumentCurrentUntil: string | null;
+  /**
+   * The first day of an instrument currency not begun yet: approaches, holding and tracking flown this month count from the first of next month (61.57(c)(1), 'the 6 calendar months preceding the month of the flight'), so until then the pilot is not current and instrumentCurrentUntil is the end of the currency to come. Null when current now, lapsed or none logged.
+   */
+  instrumentCurrentFrom: string | null;
   /**
    * YYYY-MM-DD; null where none can be had.
    */
@@ -4520,6 +4540,10 @@ export interface GonogoRiskInput {
    * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
    */
   night?: boolean | null;
+  /**
+   * Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it.
+   */
+  night_passengers?: boolean | null;
   fuel_margin_gal?: number | null;
   /**
    * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
@@ -4552,6 +4576,10 @@ export interface GonogoRiskInput {
     day_passengers_until?: string | null;
     night_passengers_until?: string | null;
     instrument_current_until?: string | null;
+    /**
+     * pilot_currency's instrumentCurrentFrom: before this day the pilot is not instrument current yet.
+     */
+    instrument_current_from?: string | null;
     ipc_needed_after?: string | null;
     flight_review_until?: string | null;
     medical_expires_on?: string | null;
@@ -8227,6 +8255,35 @@ export interface NightAtEitherEndInput {
    */
   end: [number, number];
   arrive_s: number;
+}
+export interface PassengerNightInput {
+  lat: number;
+  /**
+   * East positive.
+   */
+  lon: number;
+  /**
+   * UNIX seconds.
+   */
+  at_s: number;
+}
+export interface PassengerNightOnTheWayInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  depart_s: number;
+  minutes: number;
 }
 export interface CheckpointsSelectInput {
   candidates: {

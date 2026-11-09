@@ -4188,6 +4188,19 @@
             "title": "Holdinginwindow",
             "type": "boolean"
           },
+          "instrumentCurrentFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The first day of an instrument currency not begun yet: approaches flown this month count from the first of next month (61.57(c)(1)), and until then the pilot is not current. Null when current now.",
+            "title": "Instrumentcurrentfrom"
+          },
           "instrumentCurrentUntil": {
             "anyOf": [
               {
@@ -4280,6 +4293,7 @@
           "landings",
           "flights",
           "instrumentCurrentUntil",
+          "instrumentCurrentFrom",
           "ipcOn",
           "ipcNeededAfter",
           "approachesInWindow",
@@ -11220,6 +11234,17 @@
             "title": "Flights",
             "type": "integer"
           },
+          "instrument_current_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Current From"
+          },
           "instrument_current_until": {
             "anyOf": [
               {
@@ -15233,6 +15258,18 @@
             ],
             "default": null,
             "title": "Night"
+          },
+          "night_passengers": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Night Passengers"
           },
           "planned_at": {
             "anyOf": [
