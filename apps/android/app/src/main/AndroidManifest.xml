@@ -124,6 +124,20 @@
             android:exported="false"
             android:foregroundServiceType="microphone" />
 
+        <!-- The home screen's Next Flight widget (widget/NextFlightWidget.kt),
+             a Glance widget; the launcher talks to its receiver. -->
+        <receiver
+            android:name=".widget.NextFlightReceiver"
+            android:exported="true"
+            android:label="@string/widget_next_flight">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/next_flight_widget_info" />
+        </receiver>
+
         <!-- The cockpit receiver's listening with the screen off (receiver/ReceiverService.kt). -->
         <service
             android:name=".receiver.ReceiverService"

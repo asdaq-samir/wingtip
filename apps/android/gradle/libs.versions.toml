@@ -43,6 +43,9 @@ work = "2.12.0"
 # Material 3 Expressive's loading indicator (design/LoadingIndicator.kt),
 # which the BOM's Material 3 does not have yet.
 graphicsShapes = "1.1.0"
+# Glance, for the home screen's Next Flight widget (widget/), drawn in
+# Material 3's roles from the Wingtip palettes.
+glance = "1.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -107,6 +110,8 @@ play-services-mlkit-document-scanner = { group = "com.google.android.gms", name 
 # window (diagnostics/FrameStats.kt).
 androidx-metrics-performance = { group = "androidx.metrics", name = "metrics-performance", version.ref = "metricsPerformance" }
 androidx-graphics-shapes = { group = "androidx.graphics", name = "graphics-shapes", version.ref = "graphicsShapes" }
+androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
+androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

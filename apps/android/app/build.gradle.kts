@@ -149,6 +149,9 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     // Material 3 Expressive's loading indicator's shapes (design/).
     implementation(libs.androidx.graphics.shapes)
+    // The home screen's Next Flight widget (widget/).
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.kotlinx.serialization.json)

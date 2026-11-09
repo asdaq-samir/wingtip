@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The home screen's Next Flight widget (widget/NextFlightWidget.kt),
+     in the iPhone widget's words. -->
+<resources>
+    <string name="widget_next_flight">Next Flight</string>
+    <string name="widget_description">The route, its distance, time and fuel, as last planned.</string>
+    <string name="widget_no_flight">No Flight Planned</string>
+    <string name="widget_plan_one">Plan one in Wingtip Maps.</string>
+    <string name="widget_nav_log">Nav Log</string>
+</resources>

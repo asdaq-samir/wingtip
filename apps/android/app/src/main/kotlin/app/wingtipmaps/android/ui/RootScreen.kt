@@ -57,6 +57,7 @@ import app.wingtipmaps.android.ui.sheet.SheetStop
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import app.wingtipmaps.android.ui.sheet.rememberDockedSheetState
 import app.wingtipmaps.android.welcome.WelcomeHost
+import app.wingtipmaps.android.widget.NextFlightFeed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -255,6 +256,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     )
     // A flight recorded and ended, offered for the logbook.
     AutoLogbookHost(plan, session)
+    // The home screen's Next Flight widget, kept as the plan settles.
+    NextFlightFeed(plan)
     // The welcome, once per install: at its end the sheet comes up a stop
     // on FPL (or the strip), with the sample flight or the way to plan one.
     WelcomeHost(plan) {
