@@ -113,9 +113,7 @@ def _airport_rows(path: str, _mtime: float) -> dict:
     df = _read_table(path, _mtime)
     rows: dict = {}
     # A missing local code is no code: as "NAN" it would answer a lookup of "NAN".
-    # Cast first, then fill: pandas 3's str keeps a missing value missing,
-    # and a column read all-empty is float64, which "" will not fill in pandas 4.
-    idents = df["ident"].astype(str).fillna("").str.strip().str.upper()
+    idents = df["ident"].astype(str).fillna("").str.strip().str.upper()  # cast, then fill: pandas 4 won't put "" in a float column
     locals_ = df["local_code"].astype(str).fillna("").str.strip().str.upper()
     for i, (ident, local) in enumerate(zip(idents, locals_)):
         if ident:
