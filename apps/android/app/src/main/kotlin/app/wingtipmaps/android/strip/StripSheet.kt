@@ -39,6 +39,7 @@ import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.ui.BriefModel
 import app.wingtipmaps.android.ui.BriefSheet
 import app.wingtipmaps.android.ui.LegSheet
@@ -208,7 +209,13 @@ fun StripLayout(
     }
 
     strip.over?.let { over -> StripOver(over = over, plan = plan, session = session, ownShip = ownShip, assistant = assistant, onClose = { model.open(null) }) }
-    if (briefOpen) BriefSheet(brief, state, signedIn = pilot != null, onClose = { briefOpen = false })
+    // Ready to fly at the Brief's head; a route is typed in the field, so
+    // its Plan the Route closes the Brief to the field.
+    if (briefOpen) {
+        BriefSheet(brief, state, signedIn = pilot != null, onClose = { briefOpen = false }) {
+            ReadyToFlyRow(plan, onSetRoute = { briefOpen = false })
+        }
+    }
     leg?.let { row -> LegSheet(number = row.number, leg = row.leg, onClose = { leg = null }) }
     source?.let { shown -> SourceSheet(shown, onClose = { source = null }) }
 }
