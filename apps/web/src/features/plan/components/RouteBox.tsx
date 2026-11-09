@@ -364,7 +364,23 @@ export default function RouteBox({
       // typed, which is nothing, and the box emptied.
       const word = typed.trim().toUpperCase();
       const exact = rows.some(r => r.ident === word);
-      if (open && rows.length > 0 && (answered || !exact)) return;
+      if (open && rows.length > 0 && (answered || !exact)) {
+        // cmdk takes Enter on its highlighted row, but typed key by key,
+        // as a phone's keyboard does, the rows change under it and none
+        // stays highlighted, so Return did nothing (the FPL audit's A1,
+        // 2026-11-08). With none highlighted the first row shown is the
+        // one Return takes, as Maps' search does; its click is its select.
+        const list = document.getElementById(listId);
+        if (list && !list.querySelector("[cmdk-item][data-selected=true]")) {
+          const first = list.querySelector<HTMLElement>("[cmdk-item]:not([data-disabled=true])");
+          if (first) {
+            e.preventDefault();
+            first.click();
+            return;
+          }
+        }
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       if (typed.trim()) commitTyped();
