@@ -1,0 +1,39 @@
+{
+  "$description": "Wingtip Maps' screens and the one link that opens each, the source for the web, iOS and Android (docs/navigation.md). A link is the web app's own address, https://<host>/app/plan?open=<id>, with the plan's own keys beside it (dep, dest, stops, place, flight); the phones take the same address as a universal link or App Link, and as wingtipmaps://plan?open=<id> from another app. scripts/build/screens.sh generates apps/web/src/lib/navigation/generated/screens.ts, apps/ios/Wingtip/Navigation/Generated/Screens.swift, apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/Screens.kt and docs/navigation.md's table of links from it; CI generates them again and fails on a difference. Each app opens a screen it has in one exhaustive switch over the generated list, so a screen added here fails each app's build until that app opens it. Add a screen here, never in a generated file.",
+  "link": {
+    "path": "/app/plan",
+    "key": "open",
+    "scheme": "wingtipmaps",
+    "schemeHost": "plan"
+  },
+  "params": [
+    { "key": "dep", "about": "The route's departure, an ident." },
+    { "key": "dest", "about": "The route's destination, an ident." },
+    { "key": "stops", "about": "The points between, idents comma-separated." },
+    { "key": "place", "about": "A field's card, by its ident." },
+    { "key": "flight", "about": "An airplane tracked, by its ICAO address (six hex digits)." }
+  ],
+  "screens": [
+    { "id": "fpl", "title": "FPL", "about": "The route, its altitude and its figures: the FPL tab.", "platforms": ["web", "ios", "android"] },
+    { "id": "airport", "title": "Airport", "about": "The Airport tab: search, favorites, recents, nearest.", "platforms": ["web", "ios", "android"] },
+    { "id": "airplane", "title": "Airplane", "about": "The Airplane tab: the airplane picked and the traffic.", "platforms": ["web", "ios", "android"] },
+    { "id": "setup", "title": "Setup", "about": "The Setup tab.", "platforms": ["web", "ios", "android"] },
+    { "id": "brief", "title": "Brief", "about": "The route's Brief and its Go / No-Go (needs a route).", "platforms": ["web", "ios", "android"] },
+    { "id": "navlog", "title": "Nav Log", "about": "The nav log, leg by leg (needs a route). Android's FPL tab is its nav log.", "platforms": ["web", "ios", "android"] },
+    { "id": "profile", "title": "Profile", "about": "The route's side view and its altitudes (needs a route).", "platforms": ["web", "ios"] },
+    { "id": "flights", "title": "Saved Flights", "about": "The pilot's saved flights.", "platforms": ["web", "ios"] },
+    { "id": "favorites", "title": "Favorites", "about": "The pilot's favorite airports.", "platforms": ["web", "ios"] },
+    { "id": "nearest", "title": "Nearest", "about": "The fields nearest the airplane.", "platforms": ["web", "ios", "android"] },
+    { "id": "ask", "title": "Ask", "about": "Ask the assistant about the flight.", "platforms": ["ios", "android"] },
+    { "id": "emergency", "title": "Emergency Assistant", "about": "The emergency assistant: the nearest fields, the checklist, 7700 and 121.5.", "platforms": ["web", "ios", "android"] },
+    { "id": "checklists", "title": "Checklists", "about": "The picked airplane's checklists.", "platforms": ["ios", "android"] },
+    { "id": "airplanes", "title": "Your Airplanes", "about": "The pilot's own airplanes, their figures, checklists and squawks.", "platforms": ["web", "ios"] },
+    { "id": "logbook", "title": "Logbook", "about": "The pilot's logbook and currency.", "platforms": ["web", "ios", "android"] },
+    { "id": "coach", "title": "Coach", "about": "The training coach.", "platforms": ["web", "ios", "android"] },
+    { "id": "minimums", "title": "Personal Minimums", "about": "The weather the pilot will not take off or land in.", "platforms": ["web", "ios", "android"] },
+    { "id": "guide", "title": "Guide", "about": "How the app works, and the practice drills.", "platforms": ["web", "ios"] },
+    { "id": "downloads", "title": "Downloads", "about": "Charts kept for flying with no signal.", "platforms": ["ios", "android"] },
+    { "id": "passengers", "title": "Passenger Briefing", "about": "The passenger briefing.", "platforms": ["ios", "android"] },
+    { "id": "about", "title": "About", "about": "The build, the data's cycles, the credits and the legal pages.", "platforms": ["web", "ios", "android"] }
+  ]
+}

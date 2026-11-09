@@ -141,7 +141,9 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             )))
         }
         "ifr_floors" => {
-            let legs: Vec<((f64, f64), (f64, f64), f64)> = list(name, v, "legs")?
+            // Each leg's two ends and the highest ground along it.
+            type Leg = ((f64, f64), (f64, f64), f64);
+            let legs: Vec<Leg> = list(name, v, "legs")?
                 .iter()
                 .map(|l| Ok((point(name, l.get("a"))?, point(name, l.get("b"))?, num(name, l, "ground_ft")?)))
                 .collect::<R<_>>()?;

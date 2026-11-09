@@ -19,6 +19,10 @@ struct OnDeviceAskTests {
                                                    metar: try Planner.snakeCase.decode(Metar.self, from: Data(metar.utf8)),
                                                    taf: "TAF KMSN 031720Z 0318/0418 27010KT P6SM FEW050")
         facts.figures = Figures(cruiseTasKt: 110, fuelBurnGph: 8.4, usableFuelGal: 53)
+        // The stock c172 picked, with its profile's own glide (9 to 1, its
+        // POH's figure 3-1).
+        facts.aircraft = "c172"
+        facts.glideRatio = 9
         facts.own = OnDeviceFacts.Own(lat: 43.1, lon: -89.3, altitudeFt: 4500, groundspeedKt: 105, trackDeg: 90, groundFt: 900)
         return facts
     }
@@ -68,7 +72,16 @@ struct OnDeviceAskTests {
 
     @Test func theGlideAndEnduranceAreTheEngines() throws {
         let facts = try Self.facts()
-        let range = try #require(try Engine.glideRange(altitudeFt: 4500, speedKt: 105, groundFt: 900))
+        // No airplane, or none with a glide in its profile: no glide, never
+        // a Cessna 172S's (the owner, 2026-11-09).
+        var bare = facts
+        bare.aircraft = nil
+        bare.glideRatio = nil
+        #expect(throws: AskRefused.self) { try FlightFigures.glide(facts: bare) }
+        bare.aircraft = "pa28"
+        #expect(throws: AskRefused.self) { try FlightFigures.glide(facts: bare) }
+        // The c172 profile's own 9 to 1.
+        let range = try #require(try Engine.glideRange(altitudeFt: 4500, speedKt: 105, groundFt: 900, glideRatio: 9))
         #expect(try FlightFigures.glide(facts: facts)[0].said.contains(Format.distance(range)))
         let minutes = try #require(try Engine.filedEndurance(fuelGal: 20, burnGph: 8.4))
         let fuel = try FlightFigures.fuel(onBoardGal: 20, facts: facts)

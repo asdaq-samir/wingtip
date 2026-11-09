@@ -78,7 +78,7 @@ impl Checker {
         let mut asked = Map::new();
         asked.insert(name.to_owned(), json!({ "input": input, "answer": answer }));
         let asked = Value::Object(asked);
-        let errors: Vec<String> = self.validator.iter_errors(&asked).map(|e| format!("{} at {}", e, e.instance_path)).collect();
+        let errors: Vec<String> = self.validator.iter_errors(&asked).map(|e| format!("{} at {}", e, e.instance_path())).collect();
         assert!(errors.is_empty(), "{name}: not of the contract's shape:\n{}\ninput {input}\nanswer {answer}", errors.join("\n"));
         self.checked.insert(name.to_owned());
         answer

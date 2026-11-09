@@ -51,10 +51,10 @@ impl Section<'_> {
     /// The category at `level` over `column`; None where there is no
     /// forecast there or the level is under the ground.
     fn at(&self, column: usize, level: usize, levels_ft: &[f64]) -> Option<u8> {
-        if let Some(ground) = self.ground_m.and_then(|g| g.get(column)).and_then(Value::as_f64) {
-            if levels_ft[level] < ground * FT_PER_M {
-                return None;
-            }
+        if let Some(ground) = self.ground_m.and_then(|g| g.get(column)).and_then(Value::as_f64)
+            && levels_ft[level] < ground * FT_PER_M
+        {
+            return None;
         }
         let v = self.values[level + column * self.levels].as_f64()?;
         (v >= 0.0).then(|| (v.round() as i64).clamp(0, 4) as u8)

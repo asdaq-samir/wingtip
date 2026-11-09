@@ -311,7 +311,7 @@ export const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 export async function library(scope: Page | Locator, section: "Airplanes" | "Flights" | "Logbook" | "Minimums") {
   await consolePage(scope, "Account");
   const list = scope.getByTestId("library-section");
-  const back = scope.getByRole("button", { name: "Back to Account", exact: true });
+  const back = scope.getByRole("button", { name: "Back to Setup", exact: true });
   await expect(list.or(back)).toBeVisible();
   if (!(await list.isVisible())) await back.click();
   await list.getByRole("button", { name: new RegExp(`^${section}`) }).click();
@@ -745,7 +745,7 @@ export async function consolePage(scope: Page | Locator, name: "Account" | "Guid
     return;
   }
   // Back to the page's list from a page open on it, by its close.
-  const back = scope.getByRole("button", { name: "Back to Account", exact: true });
+  const back = scope.getByRole("button", { name: "Back to Setup", exact: true });
   if (await back.isVisible()) await back.click();
   if (name !== "Account") await setup.getByRole("button", { name: new RegExp(`^${name}`) }).click();
 }

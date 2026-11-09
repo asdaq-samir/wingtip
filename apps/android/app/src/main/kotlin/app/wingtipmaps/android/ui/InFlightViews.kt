@@ -251,7 +251,9 @@ object InstrumentsWords {
  * Nearest, one tap from the bar (#218): the fields nearest the airplane,
  * the miles and the way to each, and which are within a still-air glide
  * at pattern height (the engine's glide_reaches, AC 90-66C's 1,000 ft
- * over the field). A tap opens the field's card.
+ * over the field) at the picked airplane's own glide ratio -- with none
+ * (no airplane, or none in its profile) no field is said to be within a
+ * glide. A tap opens the field's card.
  */
 @Composable
 fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Unit) {
@@ -279,7 +281,7 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
             LazyColumn {
                 items(fields.orEmpty(), key = { it.ident }) { field ->
                     // A glide the engine could not judge says so, never "out of reach".
-                    val reach = fix?.let { glideReaches(it, field) }
+                    val reach = fix?.let { glideReaches(it, field, InFlight.shared.glideRatio) }
                     Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = openWord) { onOpen(field.ident) }.padding(vertical = 10.dp)) {
                         Text("${field.ident}  ${field.name}", style = MaterialTheme.typography.bodyLarge, maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis)
                         val parts = listOfNotNull(
@@ -297,6 +299,7 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
 }
 
 /** Whether a field is within a still-air glide at pattern height, by the
- *  engine's glide_reaches over the field's own elevation. */
-fun glideReaches(fix: OwnShip.Fix, field: NearestAirport): Result<Boolean> =
-    Engine.glideReaches(fix.altitudeFt, fix.groundspeedKt, field.distanceNm, field.elevationFt)
+ *  engine's glide_reaches over the field's own elevation, at the airplane's
+ *  own `glideRatio` (false with none). */
+fun glideReaches(fix: OwnShip.Fix, field: NearestAirport, glideRatio: Double?): Result<Boolean> =
+    Engine.glideReaches(fix.altitudeFt, fix.groundspeedKt, field.distanceNm, field.elevationFt, glideRatio)

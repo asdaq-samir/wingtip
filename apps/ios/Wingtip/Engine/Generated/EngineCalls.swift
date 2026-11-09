@@ -389,6 +389,11 @@ extension Engine {
         try rule("dry_run", EngineContract.DryRunInput(rows: rows, startS: startS, line: line, missed: missed))
     }
 
+    /// What to do in an emergency with no airplane picked: general good practice only, each item with its source -- fly the airplane and pick a field within reach (FAA-H-8083-3C ch. 18), ask for help early (AIM 6-1-2), squawk 7700 (AIM 6-2-2), MAYDAY on the frequency in use or 121.5 (AIM 6-3-1, 6-3-2), climb if possible (AIM 6-3-2), stay in VFR conditions and the pilot in command's authority to deviate (AIM 6-2-1, 6-1-1, 14 CFR 91.3(b)). No airplane's checklist, speeds, glide or distances.
+    static func emergencyGuidance() throws -> EngineContract.EmergencyGuidanceAnswer {
+        try rule("emergency_guidance", EngineContract.EmergencyGuidanceInput())
+    }
+
     /// An ADS-B emitter category's name in DO-260B's words (GDL 90 Table 11): A1 to A7 and B1, B2; null for one not sent and for the rest.
     static func emitterCategory(category: String? = nil) throws -> String? {
         try rule("emitter_category", EngineContract.EmitterCategoryInput(category: category))
@@ -549,9 +554,9 @@ extension Engine {
         try rule("frequency_of", EngineContract.FrequencyOfInput(frequencies: frequencies, types: types))
     }
 
-    /// The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the start and taxi allowance (the Cessna 172S handbook's 1.4 gal, the planner's default) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short. Null where the book gives no speed, or no burn for the fuel.
-    static func fuelEstimate(distanceNm: Double, cruiseTasKt: Double? = nil, fuelBurnGph: Double? = nil) throws -> EngineContract.FuelEstimateAnswer {
-        try rule("fuel_estimate", EngineContract.FuelEstimateInput(distanceNm: distanceNm, cruiseTasKt: cruiseTasKt, fuelBurnGph: fuelBurnGph))
+    /// The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the airplane's own start and taxi allowance (taxi_fuel_gal, its profile's; left out where it has none, never a stock airplane's) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short of a reserve. Null where the book gives no speed, or no burn for the fuel.
+    static func fuelEstimate(distanceNm: Double, cruiseTasKt: Double? = nil, fuelBurnGph: Double? = nil, taxiFuelGal: Double? = nil) throws -> EngineContract.FuelEstimateAnswer {
+        try rule("fuel_estimate", EngineContract.FuelEstimateInput(distanceNm: distanceNm, cruiseTasKt: cruiseTasKt, fuelBurnGph: fuelBurnGph, taxiFuelGal: taxiFuelGal))
     }
 
     /// The fuel in the tanks at each point of the route and whether it is under the reserve: full at the departure, the start, taxi and takeoff allowance and each leg's burn taken from them after, filled again at each field landed at, as the planner checks each flight; null at a point past a leg whose burn is not known, until the next fill.
@@ -584,19 +589,19 @@ extension Engine {
         try rule("gairmets_along_route", EngineContract.GairmetsAlongRouteInput(advisories: advisories, path: path, start: start, end: end))
     }
 
-    /// Still-air glide range, nm (1.5 nm per 1,000 ft, the C172S POH figure 3-1), or null on the ground or with no height.
-    static func glideRange(altitudeFt: Double? = nil, speedKt: Double? = nil, groundFt: Double? = nil) throws -> Double? {
-        try rule("glide_range", EngineContract.GlideRangeInput(altitudeFt: altitudeFt, speedKt: speedKt, groundFt: groundFt))
+    /// Still-air glide range, nm, at the picked airplane's own glide ratio (glide_ratio: feet forward for each foot down, its POH's Section 3 maximum glide, as its profile gives it), or null on the ground, with no height, or with no glide ratio: no airplane, or none in its profile, has no glide worked out.
+    static func glideRange(altitudeFt: Double? = nil, speedKt: Double? = nil, groundFt: Double? = nil, glideRatio: Double? = nil) throws -> Double? {
+        try rule("glide_range", EngineContract.GlideRangeInput(altitudeFt: altitudeFt, speedKt: speedKt, groundFt: groundFt, glideRatio: glideRatio))
     }
 
-    /// Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft).
-    static func glideReaches(altitudeFt: Double? = nil, speedKt: Double? = nil, distanceNm: Double, elevationFt: Double? = nil) throws -> Bool {
-        try rule("glide_reaches", EngineContract.GlideReachesInput(altitudeFt: altitudeFt, speedKt: speedKt, distanceNm: distanceNm, elevationFt: elevationFt))
+    /// Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft), at the picked airplane's own glide_ratio; false with no glide ratio (no airplane, or none in its profile).
+    static func glideReaches(altitudeFt: Double? = nil, speedKt: Double? = nil, distanceNm: Double, elevationFt: Double? = nil, glideRatio: Double? = nil) throws -> Bool {
+        try rule("glide_reaches", EngineContract.GlideReachesInput(altitudeFt: altitudeFt, speedKt: speedKt, distanceNm: distanceNm, elevationFt: elevationFt, glideRatio: glideRatio))
     }
 
-    /// The still-air glide ring about own ship (#218): glide_range's radius (1.5 nm per 1,000 ft, the C172S POH figure 3-1) over the higher of the ground under the airplane (a pack's terrain) and the nearest field's elevation, and its outline as 73 points on the sphere, the first repeated last. Null on the ground, under flying speed or with no height.
-    static func glideRing(lat: Double, lon: Double, altitudeFt: Double? = nil, speedKt: Double? = nil, terrainFt: Double? = nil, fieldFt: Double? = nil) throws -> EngineContract.GlideRingAnswer? {
-        try rule("glide_ring", EngineContract.GlideRingInput(lat: lat, lon: lon, altitudeFt: altitudeFt, speedKt: speedKt, terrainFt: terrainFt, fieldFt: fieldFt))
+    /// The still-air glide ring about own ship (#218): glide_range's radius at the picked airplane's own glide_ratio over the higher of the ground under the airplane (a pack's terrain) and the nearest field's elevation, and its outline as 73 points on the sphere, the first repeated last. Null on the ground, under flying speed, with no height, or with no glide ratio (no airplane, or none in its profile).
+    static func glideRing(lat: Double, lon: Double, altitudeFt: Double? = nil, speedKt: Double? = nil, terrainFt: Double? = nil, fieldFt: Double? = nil, glideRatio: Double? = nil) throws -> EngineContract.GlideRingAnswer? {
+        try rule("glide_ring", EngineContract.GlideRingInput(lat: lat, lon: lon, altitudeFt: altitudeFt, speedKt: speedKt, terrainFt: terrainFt, fieldFt: fieldFt, glideRatio: glideRatio))
     }
 
     /// What the IFR alternate comes to for the Go / No-Go (14 CFR 91.169(a)(2), (b)): a stop where the one filed will not do, a caution where one is needed and none is filed or it is the pilot's to check; null where none is needed.
@@ -934,7 +939,7 @@ extension Engine {
         try rule("navlog_candidates", EngineContract.NavlogCandidatesInput(segments: segments, legs: legs, profile: profile))
     }
 
-    /// The fuel required: the start, taxi and takeoff allowance (the C172S POH's 1.4 gal where the profile has none), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
+    /// The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
     static func navlogFuelPlan(totalFuelGal: Double? = nil, profile: EngineContract.NavLogProfile? = nil, night: Bool? = nil, rules: String? = nil, alternateGal: Double? = nil) throws -> EngineContract.NavlogFuelPlanAnswer {
         try rule("navlog_fuel_plan", EngineContract.NavlogFuelPlanInput(totalFuelGal: totalFuelGal, profile: profile, night: night, rules: rules, alternateGal: alternateGal))
     }

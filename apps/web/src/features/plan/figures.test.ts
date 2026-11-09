@@ -80,13 +80,17 @@ describe("tripFigures", () => {
   });
 
   it("marks an estimate's time and fuel with ≈ and rounds the distance up", () => {
-    const est = { totals: null, local: false, destination: "KDLH", estimate: { distanceNm: 100.2, cruiseTasKt: 100, fuelBurnGph: 10 } };
+    const book = { distanceNm: 100.2, cruiseTasKt: 100, fuelBurnGph: 10, taxiFuelGal: 1.4 };
+    const est = { totals: null, local: false, destination: "KDLH", estimate: book };
     const [, dist, ete, fuel] = tripFigures(est, true);
     expect(dist!.value).toBe("101");
     expect(ete!.value.startsWith("≈")).toBe(true);
-    // The trip's 10.0 gal, the 1.4 to start and taxi, and the 45 minutes'
-    // reserve's 7.5, the most the rules ask: 18.9, up to 19.
+    // The trip's 10.0 gal, the profile's 1.4 to start and taxi, and the 45
+    // minutes' reserve's 7.5, the most the rules ask: 18.9, up to 19.
     expect(fuel!.value).toBe("≈19");
+    // A profile with no start and taxi allowance: none assumed, 17.5 up to 18.
+    const bare = tripFigures({ ...est, estimate: { ...book, taxiFuelGal: null } }, true);
+    expect(bare[3]!.value).toBe("≈18");
   });
 
   it("writes an estimate's time as the nav log's own, its minutes rounded first", () => {

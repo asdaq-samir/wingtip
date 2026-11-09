@@ -43,7 +43,7 @@ def _scene():
     return lakes, towns, lines, (x0, y0, x1, y1)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _tile(x: int, y: int):
     """One tile of the chart drawn here; None for the odd tile no sheet
     covers, as along a coast."""

@@ -1,7 +1,7 @@
 [package]
 name = "wingtip-route"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 description = "The route and what flies it: the pilot's own points, holds and procedures picked, the ways to fly it (route options, fuel stops, ways round high ground and Class B), the things that move (traffic, the glide, the profile and its dry run, a flown track) and instrument approaches taught and debriefed"
 
@@ -23,3 +23,6 @@ wingtip-procedures = { path = "../procedures" }
 [features]
 default = ["options"]
 options = ["dep:wingtip-weather"]
+
+[lints]
+workspace = true

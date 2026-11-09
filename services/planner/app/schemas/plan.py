@@ -4,6 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .aircraft_figures import DemonstratedCrosswind, DistanceTable, ShortField  # noqa: F401  (re-exported)
 from .common import AltitudeChoice, FlightRules, Hazard, Loading, SpecialUse, Wind
 
 
@@ -666,35 +667,6 @@ class AltitudeFigure(BaseModel):
     fuel_gal: float | None
     tailwind_kt: float | None
     everywhere: bool
-
-
-class DistanceTable(BaseModel):
-    """One weight's distances, by pressure altitude (rows) and
-    temperature (columns)."""
-
-    ground_roll_ft: list[list[float]]
-    total_50ft_ft: list[list[float]]
-
-
-class ShortField(BaseModel):
-    """A POH's short-field takeoff or landing distances: a table per
-    weight, and how much a dry grass runway adds to the ground roll."""
-
-    source: str
-    pressure_altitudes_ft: list[float]
-    temperatures_c: list[float]
-    weights_lb: list[float]
-    tables: list[DistanceTable]
-    grass_ground_roll_pct: float
-
-
-class DemonstratedCrosswind(BaseModel):
-    """The strongest crosswind the POH says the aeroplane was shown to
-    take off and land in: not a limitation, but past it the pilot is
-    beyond what was tested."""
-
-    demonstrated_kt: float
-    source: str
 
 
 class AircraftProfile(BaseModel):

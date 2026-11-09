@@ -335,7 +335,7 @@ pub(crate) fn representative(polygons: &[Polygon]) -> Option<Pt> {
             }
         }
         xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        for pair in xs.chunks_exact(2) {
+        for pair in xs.as_chunks::<2>().0 {
             let width = pair[1] - pair[0];
             if best.is_none_or(|b| width > b.0) {
                 best = Some((width, ((pair[0] + pair[1]) / 2.0, y)));

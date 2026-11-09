@@ -129,7 +129,7 @@ pub fn closest_approach(own: &Fix, plane: &Plane) -> Option<(f64, f64, Option<f6
     let vx = kt * rad(track).sin() - speed * rad(heading).sin();
     let vy = kt * rad(track).cos() - speed * rad(heading).cos();
     let closing = vx * vx + vy * vy;
-    let hours = if closing > 0.0 { f64::min(CPA_MIN / 60.0, f64::max(0.0, -(rx * vx + ry * vy) / closing)) } else { 0.0 };
+    let hours = if closing > 0.0 { (-(rx * vx + ry * vy) / closing).clamp(0.0, CPA_MIN / 60.0) } else { 0.0 };
     let nm = (rx + vx * hours).hypot(ry + vy * hours);
     let above = match (plane.altitude_ft, own.altitude_ft) {
         (Some(ft), Some(own_ft)) => Some(ft + plane.vertical_fpm.unwrap_or(0.0) * hours * 60.0 - own_ft),

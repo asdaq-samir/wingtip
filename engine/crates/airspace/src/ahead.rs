@@ -112,6 +112,9 @@ struct Track {
 }
 
 impl Track {
+    // The airplane's state, one figure an argument as wt_ahead and the
+    // rule's JSON give them, and how far and how finely to look ahead.
+    #[allow(clippy::too_many_arguments)]
     fn new(lat: f64, lon: f64, track_deg: f64, gs_kt: f64, alt_ft: Option<f64>, vs_fpm: f64, seconds: f64, step: f64) -> Track {
         let n = (seconds / step).round() as usize + 1;
         let times: Vec<f64> = (0..n).map(|i| i as f64 * step).collect();
@@ -216,7 +219,7 @@ pub fn ground_ft(packs: &[Pack], lat: f64, lon: f64) -> Option<f64> {
         }
         let o = 32 + 2 * (r as usize * cols + c as usize);
         let v = i16::from_le_bytes(g.get(o..o + 2)?.try_into().unwrap());
-        return (v != GROUND_NONE).then(|| v as f64 + GROUND_MARGIN_FT);
+        return (v != GROUND_NONE).then_some(v as f64 + GROUND_MARGIN_FT);
     }
     None
 }

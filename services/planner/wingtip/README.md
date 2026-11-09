@@ -31,13 +31,13 @@ unchanged.
 
 ```bash
 # The test suite and the linter, exactly what CI runs
-docker run --rm -v "$PWD":/w -w /w/services/planner python:3.14-slim \
+docker run --rm -v "$PWD":/w -w /w/services/planner python:3.15-slim \
   sh -c "apt-get update -qq && apt-get install -y -qq libexpat1 && pip install -q -r requirements-dev-wingtip.txt && ruff check wingtip tests_wingtip && pytest tests_wingtip/ -q"
 ```
 
 The pipeline images deliberately carry no test tooling — they mirror what
 a SageMaker Processing or Training job needs and nothing more — so tests
-run in a plain `python:3.14-slim` against `requirements-dev-wingtip.txt`, plus
+run in a plain `python:3.15-slim` against `requirements-dev-wingtip.txt`, plus
 the one system library (`libexpat1`) rasterio's wheel expects and the
 slim image leaves out -- without it `services/planner/tests_wingtip/test_charts.py` fails to import.
 
@@ -138,7 +138,7 @@ Grouped by what they are for, not alphabetically.
 | `geo.py` | Great-circle distance, bearing, cross/along-track, nearest-neighbour and clustering -- PROJ (`pyproj`) under a thin scalar/array-dispatching layer, not hand-rolled trigonometry. Every function takes a bare float or a whole array the same way. |
 | `navlog.py` | Wind correction angle, heading, ground speed, ETE, fuel -- per leg, and the legs and totals of a whole route, for the planner. |
 | `magnetic.py` | Magnetic variation, for true → magnetic (the World Magnetic Model, evaluated locally). |
-| `aircraft.py` | Performance profiles (a C172, by default), cached by resolved path -- see services/planner/README.md's own note on why a cached profile is handed out as a fresh copy, never the cached object itself. |
+| `aircraft.py` | Performance profiles (none by default: a plan with no airplane picked has none), cached by resolved path -- see services/planner/README.md's own note on why a cached profile is handed out as a fresh copy, never the cached object itself. |
 
 **Reading the world** — each wraps one external source.
 

@@ -1,4 +1,4 @@
-import MapKit
+@preconcurrency import MapKit
 import SwiftUI
 
 /// The map: the FAA chart as its ground over Apple's map, own ship on it,
@@ -260,7 +260,7 @@ struct ChartMap: UIViewRepresentable {
 
     /// Whether two paths are the same points, to the metre: a procedure's
     /// line is left on the map while its path has not changed.
-    static func samePath(_ a: [CLLocationCoordinate2D], _ b: [CLLocationCoordinate2D]) -> Bool {
+    nonisolated static func samePath(_ a: [CLLocationCoordinate2D], _ b: [CLLocationCoordinate2D]) -> Bool {
         a.count == b.count && zip(a, b).allSatisfy { abs($0.latitude - $1.latitude) < 1e-5 && abs($0.longitude - $1.longitude) < 1e-5 }
     }
 

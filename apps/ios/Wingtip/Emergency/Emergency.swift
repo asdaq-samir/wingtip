@@ -18,7 +18,7 @@ final class Emergency {
 
     /// Where it was opened from.
     enum From: String, Identifiable, Sendable {
-        case flying, voice, checklist
+        case flying, voice, checklist, link
         var id: String { rawValue }
     }
 

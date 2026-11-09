@@ -36,6 +36,12 @@ areas:
       - design/**
       - scripts/build/design-tokens.sh
       - scripts/build/design_tokens.py
+      # The screens' links and every app's generated list, checked there.
+      - scripts/build/screens.sh
+      - scripts/build/screens.py
+      - docs/navigation.md
+      - apps/ios/Wingtip/Navigation/Generated/**
+      - apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/**
       - apps/ios/Wingtip/Design/Generated/**
       - apps/ios/Wingtip/Assets.xcassets/**
       # The icons and launch art, drawn from docs/brand by

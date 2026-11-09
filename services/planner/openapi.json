@@ -395,6 +395,16 @@
             "title": "Fuel Burn Gph",
             "type": "number"
           },
+          "glide": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GlideFigures"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -402,6 +412,17 @@
           "service_ceiling_ft": {
             "title": "Service Ceiling Ft",
             "type": "number"
+          },
+          "taxi_fuel_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxi Fuel Gal"
           },
           "type": {
             "title": "Type",
@@ -18200,6 +18221,18 @@
             "title": "Grass Ground Roll Pct",
             "type": "number"
           },
+          "headwind_kt_per_10pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Headwind Kt Per 10Pct"
+          },
           "pressure_altitudes_ft": {
             "items": {
               "type": "number"
@@ -18218,6 +18251,30 @@
             "title": "Tables",
             "type": "array"
           },
+          "tailwind_kt_per_10pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tailwind Kt Per 10Pct"
+          },
+          "tailwind_max_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tailwind Max Kt"
+          },
           "temperatures_c": {
             "items": {
               "type": "number"
@@ -18231,6 +18288,18 @@
             },
             "title": "Weights Lb",
             "type": "array"
+          },
+          "wind_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Wind Source"
           }
         },
         "required": [
@@ -21948,7 +22017,7 @@
     },
     "/api/alternate": {
       "get": {
-        "description": "The IFR alternate for a flight arriving at `dest` at `eta` (UTC when\nnaive): whether the destination needs one (14 CFR 91.169(b), the\n\"1-2-3\" rule, from its TAF an hour either side of the ETA), the\npilot's `alternate` checked against its minimums at the ETA there\n(91.169(c)), and the nearest fields with a TAF that will do, each\nreached at `tas_kt` from the destination (wingtip.alternates).",
+        "description": "The IFR alternate for a flight arriving at `dest` at `eta` (UTC when\nnaive): whether the destination needs one (14 CFR 91.169(b), the\n\"1-2-3\" rule, from its TAF an hour either side of the ETA), the\npilot's `alternate` checked against its minimums at the ETA there\n(91.169(c)), and the nearest fields with a TAF that will do, each\nreached at `tas_kt` from the destination (wingtip.alternates): the\npicked airplane's cruise, asked for, never a stock airplane's.",
         "operationId": "alternate_api_alternate_get",
         "parameters": [
           {
@@ -21973,9 +22042,10 @@
           {
             "in": "query",
             "name": "tas_kt",
-            "required": false,
+            "required": true,
             "schema": {
-              "default": 110.0,
+              "exclusiveMinimum": 0,
+              "maximum": 1000,
               "title": "Tas Kt",
               "type": "number"
             }
@@ -23296,7 +23366,7 @@
     },
     "/api/diversion": {
       "get": {
-        "description": "The diversion drill (apps/web/src/lib/diversion, ACS PA.VI.C): from a point\nto a field, in the planner's air on the way there at `altitude_ft` --\nthe winds and temperature aloft for the hour (wingtip.weather, the FD\nperiod for `depart`, now by default), the airplane's true airspeed and\nburn in that air (wingtip.performance) and the variation (wingtip.magnetic,\nthe WMM) -- the true course and distance, the wind triangle, the\nmagnetic heading, ground speed, time and fuel, each step in words;\nand the student's estimates (`mh`, `gs`, `ete`, `fuel`) checked\nagainst it, each within the drill's allowance or not.",
+        "description": "The diversion drill (apps/web/src/lib/diversion, ACS PA.VI.C): from a point\nto a field, in the planner's air on the way there at `altitude_ft` --\nthe winds and temperature aloft for the hour (wingtip.weather, the FD\nperiod for `depart`, now by default), the airplane's true airspeed and\nburn in that air (wingtip.performance) and the variation (wingtip.magnetic,\nthe WMM) -- the true course and distance, the wind triangle, the\nmagnetic heading, ground speed, time and fuel, each step in words;\nand the student's estimates (`mh`, `gs`, `ete`, `fuel`) checked\nagainst it, each within the drill's allowance or not. With no\n`aircraft` a 422: the heading, ground speed, time and fuel are all\nworked at an airplane's speed and burn, and no stock airplane's is\nassumed (the owner, 2026-11-09).",
         "operationId": "diversion_api_diversion_get",
         "parameters": [
           {
@@ -23348,9 +23418,15 @@
             "name": "aircraft",
             "required": false,
             "schema": {
-              "default": "c172",
-              "title": "Aircraft",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Aircraft"
             }
           },
           {

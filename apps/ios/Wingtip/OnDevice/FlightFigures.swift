@@ -31,7 +31,11 @@ enum FlightFigures {
         var out: [AskFigure] = []
         if let totals = facts.totals, let trip = totals.fuelGal {
             var said = "The plan burns \(Format.fuel(trip))"
-            if let required = totals.fuelRequiredGal { said += " and needs \(Format.fuel(required)) with taxi and reserve" }
+            if let required = totals.fuelRequiredGal {
+                // The start and taxi allowance is the profile's own; with
+                // none it is left out and said so, never a stock figure.
+                said += " and needs \(Format.fuel(required)) with " + (totals.taxiGal == nil ? "reserve (start and taxi not in this airplane's profile)" : "taxi and reserve")
+            }
             if let reserve = totals.reserveMin { said += " (a \(Format.duration(reserve)) reserve)" }
             if let margin = totals.fuelMarginGal { said += "; \(Format.fuel(margin)) to spare" }
             out.append(AskFigure(id: "fuel:plan", label: "Fuel, planned", said: said + ".",
@@ -54,17 +58,20 @@ enum FlightFigures {
     }
 
     /// How far the airplane glides in still air from its GPS altitude over
-    /// the ground under it (the engine's glide_range, 1.5 nm per 1,000 ft,
-    /// the Cessna 172S POH figure 3-1).
+    /// the ground under it (the engine's glide_range at the picked
+    /// airplane's own glide ratio, its POH's Section 3); none with no
+    /// airplane or no glide in its profile, never another airplane's.
     static func glide(facts: OnDeviceFacts) throws -> [AskFigure] {
+        guard facts.aircraft != nil else { throw AskRefused(why: "Pick an airplane: the glide is its own.") }
+        guard let ratio = facts.glideRatio else { throw AskRefused(why: MissingFigure.line("The glide") + ".") }
         guard let own = facts.own, let altitude = own.altitudeFt else { throw AskRefused(why: "This iPhone has no GPS altitude for the airplane.") }
-        guard let range = try Engine.glideRange(altitudeFt: altitude, speedKt: own.groundspeedKt, groundFt: own.groundFt) else {
+        guard let range = try Engine.glideRange(altitudeFt: altitude, speedKt: own.groundspeedKt, groundFt: own.groundFt, glideRatio: ratio) else {
             throw AskRefused(why: "The engine gives no glide on the ground or with no height over it.")
         }
         var said = "In still air the airplane glides about \(Format.distance(range)) from \(Format.altitude(altitude.rounded())) GPS"
         if let ground = own.groundFt { said += " over ground at \(Format.altitude(ground.rounded()))" }
         return [AskFigure(id: "glide", label: "Glide", said: said + ".",
-                          from: "the engine's glide_range (1.5 nm per 1,000 ft, the Cessna 172S POH figure 3-1) from own ship's GPS fix; the ground from the cycle pack")]
+                          from: "the engine's glide_range at the airplane's own glide ratio (its POH's Section 3) from own ship's GPS fix; the ground from the cycle pack")]
     }
 
     /// What finds the fields in a box: the cycle packs kept on the phone

@@ -367,10 +367,11 @@ fn path_of(d: &Drawing, frame: &Frame) -> Option<Path> {
             final_from = Some(ll.len().saturating_sub(1));
         }
         for &(lat, lon) in &line.points {
-            if let Some(&(a, b)) = ll.last() {
-                if (a - lat).abs() < 1e-5 && (b - lon).abs() < 1e-5 {
-                    continue;
-                }
+            if let Some(&(a, b)) = ll.last()
+                && (a - lat).abs() < 1e-5
+                && (b - lon).abs() < 1e-5
+            {
+                continue;
             }
             ll.push((lat, lon));
         }
@@ -484,7 +485,7 @@ fn against(path: &Path, p: Xy, va: usize, vb: usize) -> Against {
         let (bx, by) = (b.x - a.x, b.y - a.y);
         let len2 = bx * bx + by * by;
         let (px, py) = (p.x - a.x, p.y - a.y);
-        let t = if len2 > 0.0 { ((px * bx + py * by) / len2).max(0.0).min(1.0) } else { 0.0 };
+        let t = if len2 > 0.0 { ((px * bx + py * by) / len2).clamp(0.0, 1.0) } else { 0.0 };
         let right = if len2 > 0.0 { (by * px - bx * py) / len2.sqrt() } else { px.hypot(py) };
         let away = (px - t * bx).hypot(py - t * by);
         if away < best.away {
@@ -636,10 +637,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
     // is flown before it counts.
     let mut passes: Vec<Pass> = vec![Pass { fix: faf, i: faf_cross.i, u: faf_cross.u }];
     for k in (0..faf).rev() {
-        if let Some(last) = pass_of(&path, path.fixes[k].v, &xy, attempt.from, passes[0].i, false) {
-            if last.i <= passes[0].i {
-                passes.insert(0, Pass { fix: k, i: last.i, u: last.u });
-            }
+        if let Some(last) = pass_of(&path, path.fixes[k].v, &xy, attempt.from, passes[0].i, false)
+            && last.i <= passes[0].i
+        {
+            passes.insert(0, Pass { fix: k, i: last.i, u: last.u });
         }
     }
     // Fixes after the final approach fix (step-downs, the MAP), forward.
@@ -685,10 +686,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
     }
     let faf_alt = alt_at(points, faf_cross.i, faf_cross.u);
     let faf_limit = path.fixes[faf].min_ft.or(path.fixes[faf].max_ft);
-    if let (Some(alt), Some(limit)) = (faf_alt, faf_limit) {
-        if alt - limit > MATCH_FT {
-            return None;
-        }
+    if let (Some(alt), Some(limit)) = (faf_alt, faf_limit)
+        && alt - limit > MATCH_FT
+    {
+        return None;
     }
 
     let faf_along = path.cum[faf_v];
@@ -839,10 +840,11 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
             }
         }
         let floor_here = floor_at(pass.i);
-        if let (Some(a), Some(floor)) = (alt, floor_here) {
-            if floor - a > 0.0 && under.is_none_or(|u| floor - a > u) {
-                under = Some(floor - a);
-            }
+        if let (Some(a), Some(floor)) = (alt, floor_here)
+            && floor - a > 0.0
+            && under.is_none_or(|u| floor - a > u)
+        {
+            under = Some(floor - a);
         }
         crossings_out.push(FixCrossing {
             ident: fix.ident.clone(),
@@ -872,13 +874,13 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
         }
         // The final approach fix's "at" altitude is the glide slope's intercept
         // where there is a glidepath, crossed lower on it (ARINC 424-18 5.29 "I").
-        if let (Some(max), Some(a)) = (fix.max_ft, alt) {
-            if a - max > 0.0 && !is_map && !(pass.fix == faf && gp.is_some()) {
-                findings.push(finding(
-                    Tone::Stop,
-                    format!("At {}: {} ft above {}", fix.ident, grouped(js_round_f(a - max)), alt_ft(Some(max))),
-                ));
-            }
+        if let (Some(max), Some(a)) = (fix.max_ft, alt)
+            && a - max > 0.0
+            && !is_map
+            && !(pass.fix == faf && gp.is_some())
+        {
+            findings
+                .push(finding(Tone::Stop, format!("At {}: {} ft above {}", fix.ident, grouped(js_round_f(a - max)), alt_ft(Some(max)))));
         }
     }
 
@@ -934,10 +936,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
     let mut lowest_ft: Option<f64> = None;
     let mut i = faf_cross.i + 1;
     while i <= end_at && i < points.len() {
-        if let Some(a) = points[i].alt_ft {
-            if lowest_ft.is_none_or(|l| a < l) {
-                lowest_ft = Some(a);
-            }
+        if let Some(a) = points[i].alt_ft
+            && lowest_ft.is_none_or(|l| a < l)
+        {
+            lowest_ft = Some(a);
         }
         i += 1;
     }

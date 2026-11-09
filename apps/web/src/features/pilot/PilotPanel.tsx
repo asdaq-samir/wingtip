@@ -113,7 +113,7 @@ function Personal({
           signed out and show 401s with no word of why. "loading" is left
           out of the key, so the session check finishing does not throw
           away Minimums, which needs no sign-in, or an edit in it. */}
-      <ConsolePages key={pilot === null || pilot === "error" ? "out" : "in"} back="Account" pages={pages}>
+      <ConsolePages key={pilot === null || pilot === "error" ? "out" : "in"} back="Setup" pages={pages}>
         <div className={cn("flex flex-col", TAB_PAGE_GAP)}>
           {/* The Controls first, as Setup's half card is, at the owner's
               pick of the canvas (2026-10-27, T3): a drag up only adds what

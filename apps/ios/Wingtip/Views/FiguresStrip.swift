@@ -59,6 +59,12 @@ struct FiguresStrip: View {
         .padding(.horizontal)
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
+        // The figures open the nav log they add up, leg by leg (tap what
+        // you see, docs/navigation.md), as the web's distance does.
+        .contentShape(Rectangle())
+        .onTapGesture { if plan.routed { PendingCommand.shared.command = .open(.navlog) } }
+        .accessibilityAddTraits(plan.routed ? .isButton : [])
+        .accessibilityHint(plan.routed ? "Opens the nav log" : "")
     }
 }
 

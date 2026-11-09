@@ -469,7 +469,7 @@ test("a finger's swipe across the panel switches no tab, and on a Setup page to 
     .getByTestId("library-section")
     .getByRole("button", { name: /^Minimums/ })
     .click();
-  const back = panel.getByRole("button", { name: "Back to Account", exact: true });
+  const back = panel.getByRole("button", { name: "Back to Setup", exact: true });
   await expect(back).toBeVisible();
   await swipeAcross(page, 130);
   await expect(back).toHaveCount(0);

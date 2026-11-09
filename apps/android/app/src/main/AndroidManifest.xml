@@ -86,6 +86,15 @@
                 <data android:pathPrefix="/app/plan" />
                 <data android:pathPrefix="/api/auth/magic-link/verify" />
             </intent-filter>
+            <!-- The app's own scheme, wingtipmaps://plan?open=<screen>, for a
+                 shortcut or another app to open a screen (design/screens.json,
+                 Links); the site's address above opens the same screens. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="wingtipmaps" android:host="plan" />
+            </intent-filter>
         </activity>
 
         <!-- Google's Map Tiles key for this app (build.gradle.kts's

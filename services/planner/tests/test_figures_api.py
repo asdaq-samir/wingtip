@@ -136,7 +136,17 @@ def test_the_diversion_in_the_planners_air_with_the_estimates_checked(monkeypatc
     monkeypatch.setattr(figures, "navlog", SimpleNamespace(leg_from=leg))
     answer = client.get(
         "/api/diversion",
-        params={"lat": 43, "lon": -89, "to": "kmsn", "altitude_ft": 4500, "cruise_tas_kt": 110, "mh": 355, "gs": 95, "fuel": 1.4},
+        params={
+            "lat": 43,
+            "lon": -89,
+            "to": "kmsn",
+            "altitude_ft": 4500,
+            "aircraft": "c172",
+            "cruise_tas_kt": 110,
+            "mh": 355,
+            "gs": 95,
+            "fuel": 1.4,
+        },
     )
     assert answer.status_code == 200, answer.text
     d = answer.json()
@@ -170,10 +180,20 @@ def test_a_diversion_no_heading_holds_says_so(monkeypatch):
             }
         ),
     )
-    d = client.get("/api/diversion", params={"lat": 43, "lon": -89, "to": "KMSN", "altitude_ft": 4500}).json()
+    d = client.get("/api/diversion", params={"lat": 43, "lon": -89, "to": "KMSN", "altitude_ft": 4500, "aircraft": "c172"}).json()
     assert d["solved"] is None and d["steps"] == []
     assert d["problem"] == "The wind is too strong for a heading to KMSN to hold."
-    assert client.get("/api/diversion", params={"lat": 43, "lon": -89, "to": "ZZZZ", "altitude_ft": 4500}).status_code == 404
+    assert (
+        client.get("/api/diversion", params={"lat": 43, "lon": -89, "to": "ZZZZ", "altitude_ft": 4500, "aircraft": "c172"}).status_code
+        == 404
+    )
+
+
+def test_a_diversion_with_no_airplane_asks_for_one_rather_than_assume_a_172():
+    # The owner, 2026-11-09: no airplane picked, no stock airplane's speed.
+    resp = client.get("/api/diversion", params={"lat": 43, "lon": -89, "to": "KMSN", "altitude_ft": 4500})
+    assert resp.status_code == 422
+    assert "Pick an airplane" in resp.json()["detail"]
 
 
 def test_the_holding_entry_and_its_wind():

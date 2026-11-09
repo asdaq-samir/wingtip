@@ -97,10 +97,10 @@ pub fn segment_altitudes(
             ];
             let mut fly: Option<(f64, Because)> = None;
             for (ft, because) in candidates {
-                if let Some(ft) = ft {
-                    if fly.is_none_or(|(highest, _)| ft > highest) {
-                        fly = Some((ft, because));
-                    }
+                if let Some(ft) = ft
+                    && fly.is_none_or(|(highest, _)| ft > highest)
+                {
+                    fly = Some((ft, because));
                 }
             }
             Flown { name: name.clone(), fly }

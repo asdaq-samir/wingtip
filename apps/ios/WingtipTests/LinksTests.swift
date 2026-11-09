@@ -27,6 +27,25 @@ struct LinksTests {
         #expect(Links.command(for: URL(string: "https://wingtipmaps.app/app/plan?dep=C81")!) == nil)
     }
 
+    @Test func aScreenOpensByItsNameFromTheSiteOrTheAppsScheme() throws {
+        #expect(Links.command(for: URL(string: "https://wingtipmaps.app/app/plan?open=logbook")!) == .open(.logbook))
+        #expect(Links.command(for: URL(string: "wingtipmaps://plan?open=NAVLOG")!) == .open(.navlog))
+        #expect(Links.command(for: URL(string: "wingtipmaps://elsewhere?open=logbook")!) == nil)
+        #expect(Links.command(for: URL(string: "https://wingtipmaps.app/app/plan?open=nowhere")!) == nil)
+    }
+
+    @Test func aScreenBesideARouteOpensOnceTheRouteIsIn() throws {
+        let url = URL(string: "https://wingtipmaps.app/app/plan?dep=C81&dest=KDLH&open=brief")!
+        #expect(Links.command(for: url) == .planRoute(dep: "C81", stops: [], dest: "KDLH"))
+        #expect(Links.screen(for: url) == .brief)
+    }
+
+    @Test @MainActor func everyScreenTheStripHasIsOneOfItsWords() throws {
+        // The strip opens a screen by the word its field takes for it.
+        #expect(StripSheetView.field(for: .flights) == .saved)
+        #expect(!StripSheetView.opens(.fpl))
+    }
+
     @Test func aTrackFileIsFlownAndOtherFilesAreNot() throws {
         let gpx = URL(fileURLWithPath: "/tmp/flown.GPX")
         #expect(Links.command(for: gpx) == .track(gpx))

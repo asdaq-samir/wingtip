@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Iterator
+from collections.abc import Iterator
 
 import anthropic
 from fastapi import APIRouter, HTTPException

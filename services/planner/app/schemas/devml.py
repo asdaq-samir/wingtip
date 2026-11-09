@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from ..emergency.schemas import GlideFigures
+
 
 class AirportSuggestion(BaseModel):
     """An airport the search answers -- or, asked with `fixes`, a named
@@ -44,6 +46,13 @@ class AircraftProfileSummary(BaseModel):
     cruise_tas_kt: float
     fuel_burn_gph: float
     service_ceiling_ft: float
+    #: Its POH's best glide (Section 3), None where the profile has none:
+    #: the apps then draw no glide and judge no field within one, never
+    #: another airplane's (the owner, 2026-11-09).
+    glide: GlideFigures | None = None
+    #: Its POH's fuel for start, taxi and takeoff, gal; None where the
+    #: profile has none, and then none is assumed.
+    taxi_fuel_gal: float | None = None
 
 
 class AircraftProfiles(BaseModel):

@@ -96,7 +96,7 @@ struct StripSheetView: View {
             }
         }
         .onChange(of: focused) { _, now in if now, detent != .large { detent = .large } }
-        .onChange(of: BriefAsk.shared.wanted, initial: true) { _, now in if now, BriefAsk.shared.take() { open(.brief) } } // Siri's Brief
+        .takesAskedScreens { _ = open($0) } // Siri's Brief, and a screen asked for by name (StripSheetView+Screens)
         // The Go / No-Go for the head, asked as the Brief asks it.
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
         .onChange(of: plan.tail, initial: true) { _, tail in listener.tail = tail }

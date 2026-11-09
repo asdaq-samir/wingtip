@@ -5,6 +5,9 @@
 # list once it is within the budget. The counts raised on 2026-11-09, and
 # the files first listed then, are the formatters' growth (the whole-tree
 # reformat of scripts/dev/format.sh, a commit a language), not new code.
+# The six raised later that day are the warning fixes' (clippy's let
+# chains as rustfmt sets them, an allow's comment, a type named), not new
+# code either.
 
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 752
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 848
@@ -20,7 +23,7 @@ apps/ios/Wingtip/Views/InstructorView.swift 413
 apps/ios/Wingtip/Views/LogbookViews.swift 448
 apps/ios/Wingtip/Views/OwnAircraftViews.swift 578
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 650
-apps/ios/Wingtip/Views/RouteEditViews.swift 519
+apps/ios/Wingtip/Views/RouteEditViews.swift 456
 apps/web/e2e/dry-run.spec.ts 462
 apps/web/e2e/helpers.ts 841
 apps/web/e2e/ifr.spec.ts 442
@@ -77,7 +80,7 @@ apps/web/src/lib/map/gl/layers/RouteExtrasGl.tsx 495
 apps/web/src/lib/preferences.ts 629
 apps/web/src/lib/queryClient.ts 469
 apps/web/vite.config.ts 484
-engine/crates/airspace/src/ahead.rs 1070
+engine/crates/airspace/src/ahead.rs 1073
 engine/crates/airspace/src/rules.rs 558
 engine/crates/airspace/src/spoken.rs 560
 engine/crates/airspace/src/view.rs 830
@@ -89,13 +92,13 @@ engine/crates/core/src/json.rs 422
 engine/crates/pilot/src/pilot/currency.rs 444
 engine/crates/pilot/src/pilot/handbook.rs 430
 engine/crates/pilot/src/pilot/kinds.rs 416
-engine/crates/procedures/src/figures/debrief.rs 635
+engine/crates/procedures/src/figures/debrief.rs 637
 engine/crates/radio/src/atis.rs 723
-engine/crates/radio/src/clearance.rs 928
-engine/crates/route/src/approach/debrief.rs 1341
+engine/crates/radio/src/clearance.rs 930
+engine/crates/route/src/approach/debrief.rs 1343
 engine/crates/route/src/approach/lesson.rs 888
 engine/crates/route/src/motion/dry_run.rs 715
-engine/crates/route/src/motion/instruments.rs 518
+engine/crates/route/src/motion/instruments.rs 522
 engine/crates/route/src/navlog/plans.rs 496
 engine/crates/route/src/route/options.rs 742
 engine/crates/route/src/route/options/ask.rs 402
@@ -114,7 +117,7 @@ engine/facade/tests/gonogo.rs 1185
 engine/facade/tests/motion.rs 793
 engine/facade/tests/navlog.rs 698
 engine/facade/tests/runway.rs 598
-scripts/build/assistant_client.py 423
+scripts/build/assistant_client.py 426
 scripts/build/design_tokens.py 675
 services/assistant/app/toolbox.py 498
 services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 441

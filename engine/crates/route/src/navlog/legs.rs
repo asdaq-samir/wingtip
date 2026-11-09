@@ -7,11 +7,6 @@ use crate::geo::{bearing_deg, distance_nm, py_mod};
 use crate::json::Value;
 use wingtip_flight::flight;
 
-/// Fuel for engine start, taxi and takeoff where a profile has no figure
-/// of its own: the Cessna 172S POH's allowance, 1.4 gal (section 5, the
-/// fuel figures' note) -- wingtip_flight::flight::DEFAULT_TAXI_FUEL_GAL.
-pub use wingtip_flight::flight::DEFAULT_TAXI_FUEL_GAL;
-
 /// One nav-log leg between two (lat, lon) points at `altitude_ft`, in the
 /// air the planner looked up at its midpoint: the true course and distance
 /// (a great circle on wingtip.geo's sphere), the airplane's cruise in the
@@ -203,13 +198,17 @@ pub fn totals(legs: &[Obj]) -> R<Value> {
 /// time: the day's reserve, and said so. With no airplane (`profile`
 /// None) the reserve's minutes alone, which are the rules' (91.151,
 /// 91.167): its gallons, the taxi allowance, the fuel required and the
-/// margin are an airplane's, and null.
+/// margin are an airplane's, and null. The start, taxi and takeoff
+/// allowance is the profile's own (`taxi_fuel_gal`, its POH's); a profile
+/// without one has `taxi_gal` null and its fuel required leaves the
+/// allowance out, which the apps say beside it -- no stock airplane's
+/// figure fills the gap (the owner, 2026-11-09).
 pub fn fuel_plan(total_fuel_gal: Option<f64>, profile: Option<&Profile>, night: Option<bool>, rules: &str, alternate_gal: f64) -> Value {
     let reserve_min = flight::reserve_min(rules == "ifr", night.unwrap_or(false));
     let reserve_gal = profile.map(|p| py_round(reserve_min / 60.0 * p.airplane.fuel_burn_gph, 2));
-    let taxi_gal = profile.map(|p| p.taxi_fuel_gal.unwrap_or(DEFAULT_TAXI_FUEL_GAL));
-    let required = match (total_fuel_gal, taxi_gal, reserve_gal) {
-        (Some(t), Some(taxi), Some(reserve)) => Some(py_round(t + taxi + alternate_gal + reserve, 1)),
+    let taxi_gal = profile.and_then(|p| p.taxi_fuel_gal);
+    let required = match (total_fuel_gal, reserve_gal) {
+        (Some(t), Some(reserve)) => Some(py_round(t + taxi_gal.unwrap_or(0.0) + alternate_gal + reserve, 1)),
         _ => None,
     };
     let usable = profile.and_then(|p| p.usable_fuel_gal);

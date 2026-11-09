@@ -1,7 +1,7 @@
 [package]
 name = "wingtip-wasm"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 description = "The engine for the web app: one WebAssembly function, a rule by name with JSON in and out (apps/web/src/lib/engine)"
 
@@ -17,3 +17,6 @@ crate-type = ["cdylib"]
 # never asks them, and they were 153 KB of the module.
 [dependencies]
 wingtip-engine = { path = "../../facade", default-features = false }
+
+[lints]
+workspace = true

@@ -88,20 +88,20 @@ pub fn read(text: &str) -> Read {
     for (i, w) in words.iter().enumerate() {
         if *w == "RWY" {
             for end in words.get(i + 1).map(|n| n.split('/').collect::<Vec<_>>()).unwrap_or_default() {
-                if let Some(e) = runway_end(end) {
-                    if !r.runways.contains(&e) {
-                        r.runways.push(e);
-                    }
+                if let Some(e) = runway_end(end)
+                    && !r.runways.contains(&e)
+                {
+                    r.runways.push(e);
                 }
             }
         }
         let agl = words.get(i + 1).is_some_and(|n| n.starts_with("AGL") || n.starts_with("(AGL"));
-        if r.high_ft.is_none() && !agl {
-            if let Some((a, b)) = w.split_once('-') {
-                if let (Some(low), Some(high)) = (level(a), level(b)) {
-                    (r.low_ft, r.high_ft) = (Some(low), Some(high));
-                }
-            }
+        if r.high_ft.is_none()
+            && !agl
+            && let Some((a, b)) = w.split_once('-')
+            && let (Some(low), Some(high)) = (level(a), level(b))
+        {
+            (r.low_ft, r.high_ft) = (Some(low), Some(high));
         }
         // The ICAO Q) line: FIR/code/traffic/purpose/scope/lower/upper/...
         if *w == "Q)" {

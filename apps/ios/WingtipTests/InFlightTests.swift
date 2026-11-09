@@ -43,10 +43,32 @@ struct InFlightTests {
         let samples = (0...10).map { ["t_s": Double($0), "altitude_ft": 3000.0 + 5 * Double($0)] }
         let fpm: Double = try Engine.call("vertical_speed", json: ["samples": samples])
         #expect(abs(fpm - 300) < 0.001)
+        // The c172 profile's own 9 to 1 (its POH's figure 3-1): 4,000 ft
+        // over the ground, 9,000 ft a thousand, over 6,076 ft a mile.
         let ring: InFlight.Glide = try Engine.call("glide_ring", json: [
-            "lat": 42.5, "lon": -88.0, "altitude_ft": 4800.0, "speed_kt": 100.0, "terrain_ft": 800.0, "field_ft": 700.0,
+            "lat": 42.5, "lon": -88.0, "altitude_ft": 4800.0, "speed_kt": 100.0, "terrain_ft": 800.0, "field_ft": 700.0, "glide_ratio": 9.0,
         ])
-        #expect(ring.rangeNm == 6 && ring.groundFt == 800 && ring.coordinates.count == 73)
+        #expect(abs(ring.rangeNm - 4 * 9000 / (1852 / 0.3048)) < 1e-9 && ring.groundFt == 800 && ring.coordinates.count == 73)
+        // No glide ratio: no ring, never a stock airplane's.
+        let none: InFlight.Glide? = try Engine.call("glide_ring", json: [
+            "lat": 42.5, "lon": -88.0, "altitude_ft": 4800.0, "speed_kt": 100.0, "terrain_ft": 800.0,
+        ])
+        #expect(none == nil)
+    }
+
+    @Test @MainActor func theRingIsOffUntilAnEmergencyWithTheAirplanesOwnGlide() throws {
+        let defaults = try #require(UserDefaults(suiteName: "InFlightTests.ring"))
+        defaults.removePersistentDomain(forName: "InFlightTests.ring")
+        let plan = Plan()
+        plan.flyType("c172")
+        // Off by default (the owner, 2026-11-09), and no emergency open.
+        #expect(InFlight.ringRatio(plan: plan, defaults: defaults) == nil)
+        // Switched on, but no glide of the airplane's own is known yet.
+        defaults.set(true, forKey: InFlight.ringKey)
+        #expect(InFlight.ringRatio(plan: plan, defaults: defaults) == nil)
+        // No airplane: no ring whatever is switched.
+        plan.flyNoAirplane()
+        #expect(InFlight.ringRatio(plan: plan, defaults: defaults) == nil)
     }
 
     @Test func theBarWritesTheFigures() throws {

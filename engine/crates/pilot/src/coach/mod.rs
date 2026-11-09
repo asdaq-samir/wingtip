@@ -68,7 +68,7 @@ fn plan(name: &str, v: &Value) -> Result<String, String> {
         .map(|w| (*w, evidence.iter().filter(|e| e.weak == *w).collect::<Vec<_>>()))
         .filter(|(_, e)| !e.is_empty())
         .collect();
-    weak.sort_by(|a, b| b.1.len().cmp(&a.1.len()));
+    weak.sort_by_key(|w| std::cmp::Reverse(w.1.len()));
     let places = sessions::places(name, list(name, v, "places")?)?;
     let sessions = sessions::plan(&due, &weak, &currency, &places);
     Ok(write::plan(today_iso, &due, &evidence, &weak, &sessions))

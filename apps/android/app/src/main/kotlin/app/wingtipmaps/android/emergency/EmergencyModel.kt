@@ -38,6 +38,9 @@ class EmergencyModel(
         val loading: Boolean = false,
         val problem: String? = null,
         val airplaneName: String? = null,
+        /** No airplane picked: general guidance in place of its checklist
+         *  (`emergency_guidance`), and no glide or figure of any airplane's. */
+        val guidance: List<EngineContract.EmergencyGuidanceAnswerItemsItem> = emptyList(),
         val sections: List<ChecklistSection> = emptyList(),
         val section: Int? = null,
         val ticked: Set<String> = emptySet(),
@@ -63,7 +66,8 @@ class EmergencyModel(
         this.callsign = callsign
         val sections = rules.sections(checklist)
         val section = rules.checklistSection(sections.map { it.title }) ?: if (sections.isNotEmpty()) 0 else null
-        _state.update { it.copy(airplaneName = airplaneName, sections = sections, section = section, ticked = emptySet()) }
+        val guidance = if (this.aircraft == null) rules.guidance() else emptyList()
+        _state.update { it.copy(airplaneName = airplaneName, guidance = guidance, sections = sections, section = section, ticked = emptySet()) }
         refill()
     }
 

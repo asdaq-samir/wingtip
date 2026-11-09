@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * button of its own (decision 0010).
  */
 object EmergencyOpen {
-    enum class From { FLYING, VOICE, CHECKLIST }
+    enum class From { FLYING, VOICE, CHECKLIST, LINK }
 
     private val _from = MutableStateFlow<From?>(null)
     val from: StateFlow<From?> = _from.asStateFlow()

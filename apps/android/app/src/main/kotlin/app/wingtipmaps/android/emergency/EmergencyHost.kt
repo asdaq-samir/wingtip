@@ -10,6 +10,8 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.checklist.ChecklistKind
 import app.wingtipmaps.android.checklist.ChecklistStore
 import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.ui.AirplaneModel
+import app.wingtipmaps.android.ui.AirplanePicker
 import app.wingtipmaps.android.ui.OwnShipControl
 
 /**
@@ -19,7 +21,7 @@ import app.wingtipmaps.android.ui.OwnShipControl
  * position, which the fields are worked out from.
  */
 @Composable
-fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = viewModel()) {
+fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = viewModel(), airplanes: AirplaneModel = viewModel()) {
     val from by EmergencyOpen.from.collectAsStateWithLifecycle()
     if (from == null) return
     val context = LocalContext.current
@@ -35,5 +37,9 @@ fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = v
     }
     // The airplane's track magnetic, the engine's, where it flies a route.
     LaunchedEffect(fix, ownShip.on) { model.took(if (ownShip.on) fix else null, inFlight.progress?.trackMagDeg) }
-    EmergencySheet(state, model, onShowPosition = { if (!ownShip.on) ownShip.tap() }, onClose = EmergencyOpen::close)
+    EmergencySheet(state, model, onShowPosition = { if (!ownShip.on) ownShip.tap() }, onClose = EmergencyOpen::close) {
+        // The Airplane tab's own picker, here so the emergency stays open.
+        val types by airplanes.profiles.collectAsStateWithLifecycle()
+        AirplanePicker(types, selected = planned.aircraft, onPick = plan::setAircraft)
+    }
 }

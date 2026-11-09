@@ -15,7 +15,7 @@ use wingtip_engine::{ahead, airspace, pack, pack_query};
 /// Bytes, a bytearray, a memoryview or a mapped file, read in place. The
 /// object is held for the call, under the GIL, and the planner maps its
 /// files read-only, so the bytes do not change under the engine.
-fn bytes_of<'a>(buffer: &'a PyBuffer<u8>) -> PyResult<&'a [u8]> {
+fn bytes_of(buffer: &PyBuffer<u8>) -> PyResult<&[u8]> {
     if !buffer.is_c_contiguous() {
         return Err(PyValueError::new_err("bytes in one piece"));
     }

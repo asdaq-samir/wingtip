@@ -26,7 +26,11 @@ struct EmergencySheet: View {
         NavigationStack {
             List {
                 EmergencyFieldsSection(fix: fix, ownShipOff: ownShip.denied)
-                checklistSection
+                if plan.airplaneChosen {
+                    checklistSection
+                } else {
+                    guidanceSection
+                }
                 EmergencyRadioSections(mayday: mayday, phoneIdent: model.picked?.ident, phone: model.pickedPhone)
             }
             .navigationTitle("Emergency")
@@ -46,6 +50,19 @@ struct EmergencySheet: View {
     private var mayday: Result<Emergency.Mayday, any Error> {
         let nature = sectionIndex.map { sections[$0].title } ?? "Engine failure"
         return Result { try model.mayday(fix: fix, tail: plan.tail, nature: nature) }
+    }
+
+    /// With no airplane picked, general guidance only (the owner,
+    /// 2026-11-09): the engine's emergency_guidance, each item with its
+    /// source (AIM 6-1, 6-2, 6-3; FAA-H-8083-3C ch. 18), and the picker for
+    /// an airplane -- never an airplane's checklist or figure.
+    @ViewBuilder private var guidanceSection: some View {
+        Section(title: "What to Do") {
+            ForEach(Array(((try? Engine.emergencyGuidance().items) ?? []).enumerated()), id: \.offset) { _, item in
+                CardRow(title: item.title, detail: "\(item.detail) (\(item.source))")
+            }
+            PickAirplaneRow(detail: "Its own emergency checklist and glide")
+        }
     }
 
     /// The airplane's own emergency checklist (Section 3 of its handbook,

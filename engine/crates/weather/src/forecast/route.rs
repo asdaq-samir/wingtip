@@ -83,9 +83,7 @@ pub fn current_period(fcsts: &[Value], at: f64) -> Option<&Value> {
 /// change), never a TEMPO or PROB group (AC 00-45H). None where no period
 /// covers `at` at all.
 pub fn prevailing_at(fcsts: &[Value], at: f64) -> Option<&Value> {
-    if current_period(fcsts, at).is_none() {
-        return None;
-    }
+    current_period(fcsts, at)?;
     fcsts
         .iter()
         .filter(|p| {
@@ -180,7 +178,7 @@ fn feet(v: f64) -> String {
     let digits = n.unsigned_abs().to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i) % 3 == 0 {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
             out.push(',');
         }
         out.push(c);

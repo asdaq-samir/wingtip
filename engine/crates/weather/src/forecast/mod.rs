@@ -72,12 +72,12 @@ pub fn hour(prevailing: &Figures, becoming: bool, before: Option<&Figures>, supp
     let mut out = Hour::default();
     let mut category = prevailing.category.as_deref();
     let mut thunder = prevailing.thunder;
-    if let Some(was) = before.filter(|_| becoming) {
-        if rank(was.category.as_deref()) > rank(category) {
-            out.before_worse = true;
-            category = was.category.as_deref();
-            thunder = was.thunder;
-        }
+    if let Some(was) = before.filter(|_| becoming)
+        && rank(was.category.as_deref()) > rank(category)
+    {
+        out.before_worse = true;
+        category = was.category.as_deref();
+        thunder = was.thunder;
     }
     // The gust compared with is the prevailing group's own: a BECMG's wind
     // is the new one from the window's start.
@@ -92,10 +92,11 @@ pub fn hour(prevailing: &Figures, becoming: bool, before: Option<&Figures>, supp
             // only a chance of it.
             out.at_times_chance = false;
         }
-        if let Some(g) = group.figures.gust_kt {
-            if g > gust.unwrap_or(0.0) && g > out.at_times_gust_kt.unwrap_or(0.0) {
-                out.at_times_gust_kt = Some(g);
-            }
+        if let Some(g) = group.figures.gust_kt
+            && g > gust.unwrap_or(0.0)
+            && g > out.at_times_gust_kt.unwrap_or(0.0)
+        {
+            out.at_times_gust_kt = Some(g);
         }
         if group.figures.thunder && !thunder {
             out.at_times_thunder = true;

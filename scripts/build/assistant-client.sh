@@ -20,5 +20,5 @@ pin=$(grep -E '^datamodel-code-generator==' "$here/services/assistant/requiremen
 pydantic=$(grep -E '^pydantic==' "$here/services/assistant/requirements.txt")
 
 "$docker" run --rm -v "$here:/w" -w /w -e PIP_ROOT_USER_ACTION=ignore -e PIP_DISABLE_PIP_VERSION_CHECK=1 \
-  python:3.14-slim sh -ec 'pip install -q "$1" "$2" && python scripts/build/assistant_client.py ${3:-}' \
+  python:3.15-slim sh -ec 'pip install -q "$1" "$2" && python scripts/build/assistant_client.py ${3:-}' \
   sh "$pin" "$pydantic" "${1:-}"
