@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.security;
 
+import java.io.Serial;
 import java.util.List;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 
@@ -12,7 +13,10 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
  * the actual {@code Pilot} row the same way it resolves an OIDC
  * principal's {@code sub}/{@code email} claims.
  */
-public class MagicLinkAuthenticationToken extends AbstractAuthenticationToken {
+public final class MagicLinkAuthenticationToken extends AbstractAuthenticationToken {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final String email;
 

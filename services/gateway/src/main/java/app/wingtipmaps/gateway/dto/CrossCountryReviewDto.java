@@ -3,7 +3,7 @@ package app.wingtipmaps.gateway.dto;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A solo cross-country put to an instructor (14 CFR 61.93(c)(3), (d)):
  *  the flight as saved, the airplane and day, the student's note, the

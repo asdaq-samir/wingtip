@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An aeroplane as the API returns it. The cruise power, the climb's
  *  speed and burn, `usableFuelGal` and the flight plan's items are null

@@ -2,7 +2,7 @@ package app.wingtipmaps.gateway.dto;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** One of an instructor's students, or a student asking to be: their
  *  name, how far along 61.109's experience they are, the day their solo

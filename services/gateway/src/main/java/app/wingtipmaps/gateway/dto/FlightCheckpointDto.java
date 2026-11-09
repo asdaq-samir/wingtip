@@ -1,6 +1,6 @@
 package app.wingtipmaps.gateway.dto;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** One line of a filed nav log -- see {@link app.wingtipmaps.gateway.domain.FlightCheckpoint}
  *  for why the leg fields are nullable (the destination row has none,

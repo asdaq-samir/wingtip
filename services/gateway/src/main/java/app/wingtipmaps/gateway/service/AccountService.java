@@ -5,6 +5,7 @@ import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.tracing.TraceHeaders;
 import java.io.IOException;
+import java.io.Serial;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -137,6 +138,9 @@ public class AccountService {
     /** The account is untouched: the planner could not take the pilot's
      *  notes, and nothing is deleted until it can. */
     public static class AccountNotDeletedException extends RuntimeException {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         AccountNotDeletedException(String why) {
             super(why);
         }

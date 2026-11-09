@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Inbound request body for adding or editing one of a pilot's own
  *  aeroplanes -- POST/PUT /api/aircraft. The cruise power, the climb's

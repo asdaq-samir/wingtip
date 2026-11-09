@@ -13,8 +13,8 @@ import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
@@ -73,7 +73,7 @@ class PaidCallAllowanceTest {
         finish(post("/api/planner/briefing/narrative")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(huge))
-                .andExpect(status().isPayloadTooLarge())
+                .andExpect(status().isContentTooLarge())
                 .andExpect(jsonPath("$.detail").value("a request to /api/briefing/narrative is at most 256 KB"));
     }
 
@@ -85,7 +85,7 @@ class PaidCallAllowanceTest {
         finish(post("/api/planner/words/debrief")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(huge))
-                .andExpect(status().isPayloadTooLarge())
+                .andExpect(status().isContentTooLarge())
                 .andExpect(jsonPath("$.detail").value("a request to /api/words/debrief is at most 64 KB"));
     }
 
@@ -117,7 +117,7 @@ class PaidCallAllowanceTest {
         finish(post("/api/planner/go-no-go")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(huge))
-                .andExpect(status().isPayloadTooLarge())
+                .andExpect(status().isContentTooLarge())
                 .andExpect(jsonPath("$.detail").value("a request to the planner is at most 4 MB"));
     }
 

@@ -23,15 +23,6 @@ import app.wingtipmaps.gateway.planner.model.PlannerLogbookEntry;
 import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import app.wingtipmaps.gateway.tracing.TraceHeaders;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.util.RawValue;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -55,6 +46,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.util.RawValue;
 
 /**
  * The planner and the assistant, asked by this app on its own behalf
@@ -85,8 +84,9 @@ public class PlannerClient {
     /** Fields the planner adds later are ignored: its answers are
      *  generated from its OpenAPI document as this app was built, and a
      *  planner deployed after it may say more. */
-    static final ObjectMapper JSON =
-            new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    static final ObjectMapper JSON = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
 
     /** The same, reading and writing the planner's days ("2026-10-11") as
      *  LocalDate, for the planner's own asks and answers: types generated
@@ -94,25 +94,13 @@ public class PlannerClient {
      *  openapi-generator-maven-plugin, package planner.model), so a field
      *  the planner renames fails the build where it is used. */
     static final ObjectMapper DATES = JsonMapper.builder()
-            .addModule(new JavaTimeModule())
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
             .build();
 
     /** A rule from the logbook is the engine's work on a few hundred
      *  entries, milliseconds; a planner that takes longer is not well. */
     private static final Duration RULE_TIMEOUT = Duration.ofSeconds(20);
-
-    /** The planner did not answer, or not with what was asked for. */
-    public static class Unavailable extends RuntimeException {
-        public Unavailable(String why) {
-            super(why);
-        }
-
-        public Unavailable(String why, Throwable cause) {
-            super(why, cause);
-        }
-    }
 
     private final HttpClient http = newClient();
 
@@ -146,7 +134,7 @@ public class PlannerClient {
      * /api/briefing), for the departure time and the flight's own time
      * en route, so the forecast covers the flight.
      *
-     * @throws Unavailable when the planner cannot be reached or refuses
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public String briefing(String dep, String dest, List<String> stops, Instant depart, Double eteMin) {
         StringBuilder query =
@@ -177,7 +165,7 @@ public class PlannerClient {
      * openapi-generator-maven-plugin). Both briefings go as the JSON
      * they came as, never parsed here: what they say is the planner's.
      *
-     * @throws Unavailable when the assistant cannot be reached, refuses,
+     * @throws PlannerUnavailableException when the assistant cannot be reached, refuses,
      *     or answers something that is not its answer
      */
     public AssistantChangesWords changes(String dep, String dest, List<String> stops, String then, String now) {
@@ -199,8 +187,9 @@ public class PlannerClient {
         String answer = send(request, "the assistant", "the changes");
         try {
             return JSON.readValue(answer, AssistantChangesWords.class);
-        } catch (JsonProcessingException notItsAnswer) {
-            throw new Unavailable("the assistant's answer to the changes was not its answer", notItsAnswer);
+        } catch (JacksonException notItsAnswer) {
+            throw new PlannerUnavailableException(
+                    "the assistant's answer to the changes was not its answer", notItsAnswer);
         }
     }
 
@@ -210,7 +199,7 @@ public class PlannerClient {
      * worked out by the shared engine's pilot_currency, as this app's own
      * CurrencyDto.
      *
-     * @throws Unavailable when the planner cannot be reached or refuses
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public CurrencyDto currency(
             List<LogbookEntry> entries,
@@ -252,7 +241,7 @@ public class PlannerClient {
      * (POST /api/pilot/experience): 14 CFR 61.109(a), worked out by the
      * shared engine's pilot_experience.
      *
-     * @throws Unavailable when the planner cannot be reached or refuses
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public List<ExperienceItemDto> experience(List<LogbookEntry> entries, LocalDate today) {
         return answer(
@@ -306,7 +295,7 @@ public class PlannerClient {
      * out (14 CFR 61.87(n), (p)), and 61.93(d)'s checks for a solo
      * cross-country on {@code flightOn} where it is given ({@link #checkOf}).
      *
-     * @throws Unavailable when the planner cannot be reached or refuses
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public PlannerEndorsements endorsements(List<PlannerHeldEndorsement> held, LocalDate flightOn) {
         return answer(
@@ -328,7 +317,7 @@ public class PlannerClient {
      * the catalogue the Checkride page lists, a student records from paper
      * and an instructor signs from.
      *
-     * @throws Unavailable when the planner cannot be reached or refuses
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public List<EndorsementKindDto> endorsementKinds() {
         HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + "/api/pilot/endorsement-kinds"))
@@ -366,7 +355,7 @@ public class PlannerClient {
      * field it takes, tidied, "" where not given; the labels of the
      * required ones still empty; and the words as they are signed.
      *
-     * @throws Unavailable when the planner cannot be reached or refuses,
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses,
      *     a code it does not know among them
      */
     public PlannerEndorsementFilled fill(String code, String student, Map<String, String> fields) {
@@ -386,7 +375,7 @@ public class PlannerClient {
      * day (30 days on). The VOR check is sent only with its day, kind and
      * error all recorded.
      *
-     * @throws Unavailable when the planner cannot be reached or refuses
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public PlannerInspections inspections(
             LocalDate annualOn,
@@ -426,7 +415,7 @@ public class PlannerClient {
         String body;
         try {
             body = DATES.writeValueAsString(ask);
-        } catch (JsonProcessingException unwritable) {
+        } catch (JacksonException unwritable) {
             throw new IllegalStateException("the ask for " + what + " could not be written", unwritable);
         }
         return read(post(path, body, what), type, what, made);
@@ -457,7 +446,7 @@ public class PlannerClient {
         HttpRequest request = traceHeaders.traced(asked);
         try {
             return send(http, request, "the planner", what);
-        } catch (Unavailable unreached) {
+        } catch (PlannerUnavailableException unreached) {
             if (!(unreached.getCause() instanceof IOException)
                     || unreached.getCause() instanceof HttpTimeoutException) {
                 throw unreached;
@@ -474,8 +463,9 @@ public class PlannerClient {
     private static <A, T> T read(String answer, Class<A> type, String what, Function<A, T> made) {
         try {
             return made.apply(DATES.readValue(answer, type));
-        } catch (JsonProcessingException | NullPointerException notItsAnswer) {
-            throw new Unavailable("the planner's answer to " + what + " was not its answer", notItsAnswer);
+        } catch (JacksonException | NullPointerException notItsAnswer) {
+            throw new PlannerUnavailableException(
+                    "the planner's answer to " + what + " was not its answer", notItsAnswer);
         }
     }
 
@@ -488,14 +478,14 @@ public class PlannerClient {
             HttpResponse<String> response =
                     client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() != 200) {
-                throw new Unavailable(who + " answered " + response.statusCode() + " to " + what);
+                throw new PlannerUnavailableException(who + " answered " + response.statusCode() + " to " + what);
             }
             return response.body();
         } catch (IOException failed) {
-            throw new Unavailable(who + " could not be reached for " + what, failed);
+            throw new PlannerUnavailableException(who + " could not be reached for " + what, failed);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
-            throw new Unavailable("interrupted asking " + who + " for " + what, interrupted);
+            throw new PlannerUnavailableException("interrupted asking " + who + " for " + what, interrupted);
         }
     }
 

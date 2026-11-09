@@ -12,7 +12,7 @@ import java.time.LocalDate;
 public record InstructorRequest(
         @NotBlank(message = "fullName is required") @Size(max = 120, message = "fullName is at most 120 characters")
         String fullName,
-        /** As the FAA prints it with its ratings' letters, "987654321CFI". */
+        /* As the FAA prints it with its ratings' letters, "987654321CFI". */
         @NotBlank(message = "certificate is required")
         @Pattern(regexp = "[A-Za-z0-9]{4,20}", message = "certificate must be 4 to 20 letters and digits")
         String certificate,

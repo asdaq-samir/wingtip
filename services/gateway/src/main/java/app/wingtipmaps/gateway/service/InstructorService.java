@@ -114,16 +114,6 @@ public class InstructorService {
         this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
     }
 
-    /** A request refused, with the status and the words to answer it with. */
-    public static class Refused extends RuntimeException {
-        public final HttpStatus status;
-
-        public Refused(HttpStatus status, String why) {
-            super(why);
-            this.status = status;
-        }
-    }
-
     // ---- The student's side
 
     @Transactional
@@ -137,13 +127,14 @@ public class InstructorService {
     public void ask(Pilot student, String email, Instant now) {
         String address = email.strip();
         if (address.equalsIgnoreCase(student.getEmail())) {
-            throw new Refused(HttpStatus.BAD_REQUEST, "That is your own address: ask your instructor's.");
+            throw new InstructorRefusedException(
+                    HttpStatus.BAD_REQUEST, "That is your own address: ask your instructor's.");
         }
         if (links.existsByStudentIdAndEmailIgnoreCase(student.getId(), address)) {
-            throw new Refused(HttpStatus.CONFLICT, "You have already asked " + address + ".");
+            throw new InstructorRefusedException(HttpStatus.CONFLICT, "You have already asked " + address + ".");
         }
         if (links.countByStudentIdAndAskedAtAfter(student.getId(), now.minus(Duration.ofDays(1))) >= ASKS_A_DAY) {
-            throw new Refused(
+            throw new InstructorRefusedException(
                     HttpStatus.TOO_MANY_REQUESTS,
                     "You have asked " + ASKS_A_DAY + " instructors today: ask again tomorrow.");
         }
@@ -178,15 +169,16 @@ public class InstructorService {
     public void askReview(Pilot student, AskReviewRequest request, Instant now) {
         InstructorLink link = links.findById(request.instructorId())
                 .filter(l -> l.getStudent().getId().equals(student.getId()) && l.isAccepted())
-                .orElseThrow(() -> new Refused(HttpStatus.NOT_FOUND, "That instructor has not taken you on yet."));
+                .orElseThrow(() -> new InstructorRefusedException(
+                        HttpStatus.NOT_FOUND, "That instructor has not taken you on yet."));
         Flight flight = flights.findByIdAndPilotId(request.flightId(), student.getId())
-                .orElseThrow(() -> new Refused(HttpStatus.NOT_FOUND, "No such flight of yours."));
+                .orElseThrow(() -> new InstructorRefusedException(HttpStatus.NOT_FOUND, "No such flight of yours."));
         Pilot instructor = link.getInstructor();
         boolean waiting =
                 reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(student.getId(), instructor.getId()).stream()
                         .anyMatch(r -> !r.isAnswered() && r.getFlight().getId().equals(flight.getId()));
         if (waiting) {
-            throw new Refused(
+            throw new InstructorRefusedException(
                     HttpStatus.CONFLICT, "This flight is already with " + EndorsementRecords.nameOf(instructor) + ".");
         }
         String note = Typed.text(request.note());
@@ -286,33 +278,36 @@ public class InstructorService {
     @Transactional
     public SignedEndorsement sign(Pilot instructor, Pilot student, SignRequest request, Instant now) {
         if (!instructor.isInstructor() || instructor.getFullName() == null) {
-            throw new Refused(HttpStatus.CONFLICT, "Give your flight instructor certificate before signing.");
+            throw new InstructorRefusedException(
+                    HttpStatus.CONFLICT, "Give your flight instructor certificate before signing.");
         }
         LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
         // The instructor's own day, which west of Greenwich is a day behind
         // UTC's in the evening.
         if (request.signedOn().isBefore(today.minusDays(1))
                 || request.signedOn().isAfter(today.plusDays(1))) {
-            throw new Refused(HttpStatus.BAD_REQUEST, "An endorsement is signed with today's date.");
+            throw new InstructorRefusedException(HttpStatus.BAD_REQUEST, "An endorsement is signed with today's date.");
         }
         if (student.getFullName() == null || student.getFullName().isBlank()) {
-            throw new Refused(HttpStatus.CONFLICT, "The student has not given their name as on their certificate yet.");
+            throw new InstructorRefusedException(
+                    HttpStatus.CONFLICT, "The student has not given their name as on their certificate yet.");
         }
         // AC 61-65K's words and the fields they take are the engine's
         // (endorsement_kinds, endorsement_fill), asked through the planner.
         EndorsementKindDto kind = planner.endorsementKind(request.code())
-                .orElseThrow(() -> new Refused(HttpStatus.BAD_REQUEST, "No such endorsement: " + request.code() + "."));
+                .orElseThrow(() -> new InstructorRefusedException(
+                        HttpStatus.BAD_REQUEST, "No such endorsement: " + request.code() + "."));
         PlannerEndorsementFilled filled = planner.fill(kind.code(), student.getFullName(), request.fields());
         Map<String, String> fields = filled.getFields();
         List<String> missing = filled.getMissing();
         if (!missing.isEmpty()) {
-            throw new Refused(
+            throw new InstructorRefusedException(
                     HttpStatus.BAD_REQUEST,
                     "Fill in " + String.join(", ", missing).toLowerCase(Locale.ROOT) + ".");
         }
         String text = filled.getText();
         if (!text.equals(request.text().replaceAll("\\s+", " ").strip())) {
-            throw new Refused(
+            throw new InstructorRefusedException(
                     HttpStatus.CONFLICT, "The words have changed since you read them: read them again before signing.");
         }
         CrossCountryReview review = null;
@@ -320,9 +315,9 @@ public class InstructorService {
             review = reviews.findById(request.reviewId())
                     .filter(r -> r.getStudent().getId().equals(student.getId())
                             && r.getInstructor().getId().equals(instructor.getId()))
-                    .orElseThrow(() -> new Refused(HttpStatus.NOT_FOUND, "No such review."));
+                    .orElseThrow(() -> new InstructorRefusedException(HttpStatus.NOT_FOUND, "No such review."));
             if (review.isAnswered() || !SOLO_XC_FLIGHT.equals(kind.code())) {
-                throw new Refused(HttpStatus.CONFLICT, "That review has been answered.");
+                throw new InstructorRefusedException(HttpStatus.CONFLICT, "That review has been answered.");
             }
         }
         String signature = signatureLine(instructor, request.signedOn());

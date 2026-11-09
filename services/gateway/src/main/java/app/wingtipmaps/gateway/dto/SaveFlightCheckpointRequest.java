@@ -2,7 +2,7 @@ package app.wingtipmaps.gateway.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** One line of the nav log a POST /api/flights body files -- the leg
  *  fields are nullable for the same reasons the entity's are (see

@@ -19,6 +19,7 @@ import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.EndorsementDto;
 import app.wingtipmaps.gateway.dto.ExperienceItemDto;
 import app.wingtipmaps.gateway.dto.TrainingDto;
+import app.wingtipmaps.gateway.service.InstructorRefusedException;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.LogbookService;
 import app.wingtipmaps.gateway.service.PilotService;
@@ -28,7 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -159,7 +160,7 @@ class TrainingControllerTest {
     @Test
     void askInstructor_answersARefusalWithItsStatus_andAnAddressThatIsNotOneIs400() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
-        willThrow(new InstructorService.Refused(HttpStatus.TOO_MANY_REQUESTS, "You have asked 5 instructors today."))
+        willThrow(new InstructorRefusedException(HttpStatus.TOO_MANY_REQUESTS, "You have asked 5 instructors today."))
                 .given(instructors)
                 .ask(eq(PILOT), eq("cfi@example.com"), any());
         mockMvc.perform(post("/api/training/instructors")

@@ -23,6 +23,7 @@ import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
 import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.FlightService;
+import app.wingtipmaps.gateway.service.InstructorRefusedException;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.LessonService;
 import app.wingtipmaps.gateway.service.Mailer;
@@ -43,9 +44,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * An approach set as a lesson, against a real Postgres (V30): set by the
@@ -62,7 +63,7 @@ class LessonFlowTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:18");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18");
 
     @Autowired
     private PilotRepository pilots;
@@ -195,7 +196,7 @@ class LessonFlowTest {
         // The same approach again, its quiz not taken: once is enough.
         assertThatThrownBy(() -> lessons.assign(p[1], student, ils09(), NOW))
                 .isInstanceOfSatisfying(
-                        InstructorService.Refused.class,
+                        InstructorRefusedException.class,
                         r -> assertThat(r.status).isEqualTo(HttpStatus.CONFLICT));
         // Their instructor reads it among the student's record.
         assertThat(training.trainingFor(p[1], student, List.of(), TODAY).lessons())
@@ -245,7 +246,7 @@ class LessonFlowTest {
                         new LessonProgressRequest(
                                 false, false, new LessonProgressRequest.Quiz(List.of(right, wrong), 1)),
                         NOW))
-                .isInstanceOf(InstructorService.Refused.class);
+                .isInstanceOf(InstructorRefusedException.class);
     }
 
     @Test

@@ -556,9 +556,9 @@ services:
       ASSISTANT_SERVICE_URL: http://assistant:8000
       # Traces to Jaeger with TRACING=1, the planner's calls under the
       # gateway's (see the jaeger service); off otherwise.
-      MANAGEMENT_TRACING_ENABLED: ${TRACING:-false}
+      MANAGEMENT_TRACING_EXPORT_ENABLED: ${TRACING:-false}
       MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://jaeger:4318/v1/traces
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
       # Local start-up time, not a production setting. The class-data
       # archive (kept on the gateway-cds volume, see the Dockerfile) lets
       # a restart of the same jar skip the class loading and

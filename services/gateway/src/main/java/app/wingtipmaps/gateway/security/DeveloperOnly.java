@@ -2,6 +2,7 @@ package app.wingtipmaps.gateway.security;
 
 import app.wingtipmaps.gateway.service.PilotService;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
@@ -30,7 +31,8 @@ final class DeveloperOnly implements AuthorizationManager<RequestAuthorizationCo
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authentication, RequestAuthorizationContext context) {
+    public AuthorizationDecision authorize(
+            Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         // A session always has a pilot now: an OIDC sign-in that could not
         // be one is refused at sign-in (PilotOidcUserService).
         boolean developer = pilots.current(authentication.get())

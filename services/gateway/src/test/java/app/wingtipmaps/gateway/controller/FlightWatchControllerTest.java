@@ -17,13 +17,13 @@ import app.wingtipmaps.gateway.dto.BriefingSourceDto;
 import app.wingtipmaps.gateway.dto.FlightWatchDto;
 import app.wingtipmaps.gateway.service.FlightWatchService;
 import app.wingtipmaps.gateway.service.PilotService;
-import app.wingtipmaps.gateway.service.PlannerClient;
+import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -120,7 +120,7 @@ class FlightWatchControllerTest {
     void watch_returns502_whenThePlannerCannotBriefIt() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
         given(watches.watch(any(), eq(7L), any()))
-                .willThrow(new PlannerClient.Unavailable("the planner could not be reached for the briefing"));
+                .willThrow(new PlannerUnavailableException("the planner could not be reached for the briefing"));
 
         mockMvc.perform(post("/api/flights/7/watch")
                         .with(oidcLogin())

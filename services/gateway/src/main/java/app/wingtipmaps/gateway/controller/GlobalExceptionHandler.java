@@ -2,9 +2,9 @@ package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.dto.ErrorResponse;
 import app.wingtipmaps.gateway.flightservice.FlightServiceNotConnectedException;
-import app.wingtipmaps.gateway.service.InstructorService;
+import app.wingtipmaps.gateway.service.InstructorRefusedException;
 import app.wingtipmaps.gateway.service.NoSuchAircraftException;
-import app.wingtipmaps.gateway.service.PlannerClient;
+import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import app.wingtipmaps.gateway.service.SubscriptionService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -102,8 +102,8 @@ public class GlobalExceptionHandler {
 
     /** An instructor's or a student's request refused, with its own
      *  status and words (InstructorService). */
-    @ExceptionHandler(InstructorService.Refused.class)
-    public ResponseEntity<ErrorResponse> handleInstructorRefused(InstructorService.Refused ex) {
+    @ExceptionHandler(InstructorRefusedException.class)
+    public ResponseEntity<ErrorResponse> handleInstructorRefused(InstructorRefusedException ex) {
         return ResponseEntity.status(ex.status).body(new ErrorResponse(ex.getMessage()));
     }
 
@@ -143,8 +143,8 @@ public class GlobalExceptionHandler {
     /** The planner could not brief a flight the pilot asked to watch
      *  (PlannerClient): the same 502 the proxy answers for a planner that
      *  does not answer, so the page reports it the same way. */
-    @ExceptionHandler(PlannerClient.Unavailable.class)
-    public ResponseEntity<ErrorResponse> handlePlannerUnavailable(PlannerClient.Unavailable ex) {
+    @ExceptionHandler(PlannerUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handlePlannerUnavailable(PlannerUnavailableException ex) {
         log.warn("The planner could not be asked: {}", ex.toString());
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(new ErrorResponse(ex.getMessage()));
     }

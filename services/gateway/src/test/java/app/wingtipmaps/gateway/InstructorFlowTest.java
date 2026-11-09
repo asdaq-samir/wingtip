@@ -23,6 +23,7 @@ import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
 import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.FlightService;
+import app.wingtipmaps.gateway.service.InstructorRefusedException;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.Mailer;
 import app.wingtipmaps.gateway.service.PlannerClient;
@@ -43,9 +44,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * An instructor and a student against a real Postgres (V26): asked in by
@@ -62,7 +63,7 @@ class InstructorFlowTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:18");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18");
 
     @Autowired
     private PilotRepository pilots;
@@ -234,7 +235,7 @@ class InstructorFlowTest {
                 "solo-xc-flight", soloXc(p[0], null).fields(), "I certify something else.", TODAY, null);
         assertThatThrownBy(() -> instructors.sign(p[1], p[0], changed, NOW))
                 .isInstanceOfSatisfying(
-                        InstructorService.Refused.class,
+                        InstructorRefusedException.class,
                         r -> assertThat(r.status).isEqualTo(HttpStatus.CONFLICT));
     }
 
@@ -285,7 +286,7 @@ class InstructorFlowTest {
         instructors.askReview(p[0], new AskReviewRequest(flightId, link, "Cessna 172", flightOn, "Back by four"), NOW);
         assertThatThrownBy(() -> instructors.askReview(
                         p[0], new AskReviewRequest(flightId, link, "Cessna 172", flightOn, null), NOW))
-                .isInstanceOf(InstructorService.Refused.class);
+                .isInstanceOf(InstructorRefusedException.class);
 
         CrossCountryReviewDto waiting =
                 instructors.instructor(p[1], NOW).reviews().get(0);

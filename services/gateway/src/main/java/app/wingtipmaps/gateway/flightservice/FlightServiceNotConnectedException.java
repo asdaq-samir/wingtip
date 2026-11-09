@@ -1,7 +1,12 @@
 package app.wingtipmaps.gateway.flightservice;
 
+import java.io.Serial;
+
 /** Asked to file or brief with no Flight Service provider connected. */
 public class FlightServiceNotConnectedException extends RuntimeException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public FlightServiceNotConnectedException() {
         super("Filing and briefing through the app are not connected yet: file at 1800wxbrief.com, "

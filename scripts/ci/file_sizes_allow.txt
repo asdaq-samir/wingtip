@@ -118,8 +118,8 @@ scripts/build/assistant_client.py 423
 scripts/build/design_tokens.py 675
 services/assistant/app/toolbox.py 498
 services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 441
-services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 539
-services/gateway/src/main/java/app/wingtipmaps/gateway/service/PlannerClient.java 505
+services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 534
+services/gateway/src/main/java/app/wingtipmaps/gateway/service/PlannerClient.java 495
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/AircraftControllerTest.java 525
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 568
 services/ingest/ingest/swim.py 493

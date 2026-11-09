@@ -3,7 +3,7 @@ package app.wingtipmaps.gateway.dto;
 import app.wingtipmaps.gateway.domain.Flight;
 import java.time.Instant;
 import java.util.List;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** One row of a pilot's own flight list -- the totals, not the
  *  per-checkpoint detail ({@link FlightDto} carries that, for one
@@ -12,7 +12,7 @@ public record FlightSummaryDto(
         Long id,
         String departureIdent,
         String destinationIdent,
-        /** The airports it lands at on the way, in order. */
+        /* The airports it lands at on the way, in order. */
         List<String> stops,
         @Nullable String aircraftTailNumber,
         @Nullable Integer cruiseAltitudeFt,
@@ -21,12 +21,12 @@ public record FlightSummaryDto(
         @Nullable Double totalFuelGal,
         @Nullable Instant plannedFor,
         Instant createdAt,
-        /** The pilot's risk assessment, as saved with it; null without one. */
+        /* The pilot's risk assessment, as saved with it; null without one. */
         @Nullable RiskAssessmentDto risk,
-        /** The altitudes the pilot set at its points ("VPBNG:4500"); null
+        /* The altitudes the pilot set at its points ("VPBNG:4500"); null
          *  where the planner's own were flown. */
         @Nullable String altitudes,
-        /** The other picks it was planned with, as the planner's address
+        /* The other picks it was planned with, as the planner's address
          *  writes them; null for none. */
         @Nullable String picks) {
 

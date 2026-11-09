@@ -7,6 +7,7 @@ import app.wingtipmaps.gateway.dto.SubscriptionDto;
 import app.wingtipmaps.gateway.dto.SubscriptionDto.State;
 import app.wingtipmaps.gateway.repository.SubscriptionRepository;
 import app.wingtipmaps.gateway.security.SignInOptions;
+import java.io.Serial;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -72,6 +73,9 @@ public class SubscriptionService {
 
     /** The trial is already started, or was once: once an account. */
     public static class TrialUsedException extends RuntimeException {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         public TrialUsedException() {
             super("Your free month has already been used.");
         }

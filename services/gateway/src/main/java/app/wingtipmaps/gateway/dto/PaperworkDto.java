@@ -3,7 +3,7 @@ package app.wingtipmaps.gateway.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.util.List;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** What falls due for the pilot and their airplanes, soonest first, each
  *  with the rule that asks for it -- GET /api/paperwork. The days come

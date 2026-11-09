@@ -3,7 +3,7 @@ package app.wingtipmaps.gateway.dto;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.time.LocalDate;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An airplane's inspections and tests as its owner records them from its
  *  maintenance records, all at once -- PUT /api/aircraft/{id}/inspections.
