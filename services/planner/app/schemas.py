@@ -2901,6 +2901,46 @@ class Alternates(BaseModel):
     suggestions: list[AlternateCheck] = []
 
 
+class IcingLayer(BaseModel):
+    """The levels icing is forecast between over a leg, ft MSL."""
+
+    bottom_ft: float
+    top_ft: float
+
+
+class IcingForecastLeg(BaseModel):
+    """One leg's forecast icing (wingtip.icing_forecast): the worst
+    severity at the altitude flown, null where the AWC had no forecast for
+    it; the share of the leg in icing there; the layer icing is in over
+    the leg at any level; and the time it was read for, the leg's middle."""
+
+    index: int
+    altitude_ft: float
+    severity: Literal["none", "trace", "light", "moderate", "heavy"] | None
+    share: float | None
+    layer: IcingLayer | None
+    valid_s: float | None
+
+
+class IcingForecastWorst(BaseModel):
+    severity: Literal["trace", "light", "moderate", "heavy"]
+    altitudes_ft: list[float]
+    legs: list[int]
+
+
+class IcingForecast(BaseModel):
+    """GET /api/icing/route: the AWC's forecast icing (its GFA's, from CIP
+    and FIP; AIM 7-1-4) on each leg at the altitude flown, the worst of it
+    and the Go / No-Go's line (the engine's icing_forecast_route); the
+    legs it had no forecast for; the hour the forecast was issued."""
+
+    legs: list[IcingForecastLeg]
+    worst: IcingForecastWorst | None
+    unchecked: list[int]
+    line: str | None
+    issued: str
+
+
 class AircraftBases(BaseModel):
     """Where airplanes are based (wingtip.traffic.based): the field their last
     flights keep to, or None where none; those still being looked up are

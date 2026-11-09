@@ -14,6 +14,7 @@ import WeatherAlongRoute from "./WeatherAlongRoute";
 import FindingIcon from "../../../../components/FindingIcon";
 import { Flag, Pending } from "./BriefingBits";
 import { hazardAltitudeRange } from "./briefingWords";
+import ForecastIcingRows from "./ForecastIcingRows";
 
 interface Props {
   vm: FlightBriefing;
@@ -29,7 +30,7 @@ export default function EnroutePart({ vm, course, legs, depart }: Props) {
   const { briefing, briefingPendingMessage, unchecked, opened } = vm;
   return (
     <>
-      <AdverseConditions vm={vm} />
+      <AdverseConditions vm={vm} legs={legs} />
 
       {briefing && course ? (
         <WeatherAlongRoute briefing={briefing} course={course} legs={legs} departIso={depart || opened} unchecked={unchecked} phase="enroute" />
@@ -42,8 +43,10 @@ export default function EnroutePart({ vm, course, legs, depart }: Props) {
   );
 }
 
-function AdverseConditions({ vm }: { vm: FlightBriefing }) {
+function AdverseConditions({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
   const { vnrReasons, underMine, icing, hazardNames, briefing, briefingPendingMessage, unchecked } = vm;
+  // Under IFR, icing the AWC forecasts at an altitude flown (ForecastIcingRows).
+  const icingForecast = vm.ifr && !!vm.icingForecast.data?.worst;
   return (
     <AccordionSection
       title="Adverse Conditions"
@@ -51,7 +54,7 @@ function AdverseConditions({ vm }: { vm: FlightBriefing }) {
       // recommended, or short of that, under the pilot's own minimums.
       aside={vnrReasons.length > 0 ? <Flag finding="stop" testId="vnr-flag">VFR not recommended</Flag>
         : underMine.length > 0 ? <Flag finding="stop" testId="minimums-flag">Under your minimums</Flag>
-          : icing ? <Flag finding="caution" testId="icing-flag">Icing possible</Flag>
+          : icing || icingForecast ? <Flag finding="caution" testId="icing-flag">{icing ? "Icing possible" : "Icing forecast"}</Flag>
           : hazardNames.length > 0 ? <Flag finding="caution" testId="hazards-flag">{hazardNames.length === 1 ? "A hazard" : `${hazardNames.length} hazards`}</Flag> : undefined}
     >
       {/* Its own standard element (AIM 7-1-5(b)), stated first, the
@@ -141,6 +144,7 @@ function AdverseConditions({ vm }: { vm: FlightBriefing }) {
             ])}
           </ListGroup>
         )}
+      <ForecastIcingRows vm={vm} legs={legs} />
       {briefing && unchecked("hazards") !== unchecked("gairmets") && (
         <p className={cn("pt-2 text-caution-ink", TEXT.detail)}>
           {unchecked("hazards") ? "SIGMETs" : "G-AIRMETs"} could not be checked — verify separately before flight.

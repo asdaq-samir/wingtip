@@ -26,6 +26,7 @@ import { fieldCategory } from "../components/briefing/fieldWeather";
 import { flightPlanForms, type FiledProcedure } from "../../../lib/flightPlanForm";
 import { alternateFinding, useAlternate } from "./useAlternate";
 import { icingAtAltitude, icingLine } from "../../../lib/icing";
+import { useIcingForecast } from "./useIcingForecast";
 import { planFacts } from "../../../lib/oral";
 import { assess, riskLine, useRisk } from "../../../lib/frat";
 import type { BriefingPart } from "../components/briefing/sections";
@@ -184,6 +185,11 @@ export function useFlightBriefing({
   const leastMarginGal = margins.length ? Math.min(...margins) : null;
   // Under IFR, in cloud at or above the freezing level (lib/icing).
   const icing = ifr && nav && briefing ? icingAtAltitude(nav.altitude_selection, legs.map(l => l.altitude_ft), briefing.pireps) : null;
+  // Under IFR, the AWC's forecast icing (CIP and FIP) on each leg at the
+  // altitude flown (useIcingForecast): its line joins the one above in the
+  // Go / No-Go, and a forecast that could not be had is said unchecked.
+  const icingForecast = useIcingForecast({ ifr, briefing, legs, depart });
+  const icingLines = [icing && icingLine(icing), ifr ? icingForecast.data?.line : null].filter((l): l is string => !!l);
   const hazardNames = briefing ? [...briefing.hazards.map(h => sigmetHazard(h.hazard, h.type ?? "SIGMET")), ...briefing.gairmets.map(gairmetTitle)] : [];
   const assessment = briefing ? assess({
     vfrNotRecommended: vnrReasons.length > 0,
@@ -241,8 +247,11 @@ export function useFlightBriefing({
   const verdictFound: VerdictItem[] = verdictItems({
     weather: {
       pending: !briefing && !failed, failed,
-      vfrNotRecommended: vnrReasons, underMinimums: underMine, icing: icing && icingLine(icing), hazards: hazardNames,
-      unchecked: (briefing?.weather_unavailable ?? []).filter(w => w !== "tfrs").map(w => WEATHER_SOURCE_LABEL[w]),
+      vfrNotRecommended: vnrReasons, underMinimums: underMine, icing: icingLines.length ? icingLines.join("; ") : null, hazards: hazardNames,
+      unchecked: [
+        ...(briefing?.weather_unavailable ?? []).filter(w => w !== "tfrs").map(w => WEATHER_SOURCE_LABEL[w]),
+        ...(ifr && icingForecast.isError ? ["the forecast icing"] : []),
+      ],
       worst: briefing && (briefing.forecast.min_ceiling_ft != null || briefing.forecast.min_visibility_sm != null)
         ? ceilingAndVisibility(briefing.forecast.min_ceiling_ft, briefing.forecast.min_visibility_sm) : null,
     },
@@ -396,7 +405,7 @@ export function useFlightBriefing({
 
   return {
     briefing, ifr, vnrReasons, briefingPendingMessage, unchecked, underMine, opened, passAt, tfrInForce, tfrsCrossed,
-    specialUse, landings, stretches, ownCallSign, pilot, assessment, icing, hazardNames, planText, loaded, items,
+    specialUse, landings, stretches, ownCallSign, pilot, assessment, icing, icingForecast, hazardNames, planText, loaded, items,
     alternateWhere, printing, folds, setFolds, planForms,
   };
 }

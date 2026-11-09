@@ -205,6 +205,8 @@ public class PlannerProxyController {
             route("GET", "/api/tfrs"),
             route("GET", "/api/map/ages"),
             route("GET", "/api/alternate"),
+            // Under IFR, the forecast icing on each leg at the altitude flown (#216).
+            route("GET", "/api/icing/route"),
             route("GET", "/api/route-profile"),
             // FPL's Routes: the ways round storms, weather and high ground.
             route("GET", "/api/route-options"),

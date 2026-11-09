@@ -86,6 +86,9 @@ export type DataCycle = Schemas["DataCycle"];
  *  alternate (14 CFR 91.169(b)), the pilot's alternate checked against its
  *  minimums at its ETA (91.169(c)), and the nearest fields that will do. */
 export type Alternates = Schemas["Alternates"];
+/** Under IFR, the forecast icing on each leg at the altitude flown
+ *  (wingtip.icing_forecast). */
+export type IcingForecast = Schemas["IcingForecast"];
 export type AlternateCheck = Schemas["AlternateCheck"];
 
 export type ChartInfo = Schemas["ChartInfo"];
