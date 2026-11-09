@@ -242,6 +242,14 @@ jobs:
       - name: The design tokens are the committed ones
         working-directory: .
         run: scripts/build/design-tokens.sh --check
+      # The icons and launch art of every app (iOS, the watch, Android,
+      # the web, the site, the store), drawn from docs/brand's SVGs by
+      # scripts/build/app-icons.sh in its pinned image and committed:
+      # drawn again here, each must match the committed file pixel for
+      # pixel, or a source changed without its PNGs (or a PNG by hand).
+      - name: The app icons are the committed ones
+        working-directory: .
+        run: scripts/build/app-icons.sh --check
       - run: npx tsc --noEmit
       - run: npx eslint .
       # No unused file, export, type or dependency (knip, apps/web/knip.jsonc).
@@ -450,6 +458,7 @@ jobs:
       ios: ${{ steps.plan.outputs.ios }}
       api: ${{ steps.plan.outputs.api }}
       arch: ${{ steps.plan.outputs.arch }}
+      site: ${{ steps.plan.outputs.site }}
       docs-only: ${{ steps.docsonly.outputs.only }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
@@ -580,7 +589,17 @@ jobs:
                 - scripts/build/design-tokens.sh
                 - scripts/build/design_tokens.py
                 - apps/ios/Wingtip/Design/Generated/**
-                - apps/ios/Wingtip/Assets.xcassets/AccentColor.colorset/**
+                - apps/ios/Wingtip/Assets.xcassets/**
+                - docs/brand/**
+                - scripts/build/app-icons.sh
+                - scripts/build/app_icons.py
+                - scripts/build/brand-render.Dockerfile
+                - apps/ios/WingtipWatch/Assets.xcassets/**
+                - apps/android/app/src/main/res/mipmap-*/**
+                - apps/android/app/src/main/res/drawable-*/**
+                - apps/android/app/src/main/res/values*/brand_colors.xml
+                - apps/site/assets/**
+                - docs/store/*.png
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/**
                 - apps/ios/Wingtip/API/Generated/**
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
@@ -656,6 +675,12 @@ jobs:
                 - scripts/build/engine-contract-apps.*
                 - design/**
                 - .github/workflows/native-android-build.yml
+              site:
+                - apps/site/**
+                - design/tokens.json
+                - apps/web/public/privacy.html
+                - apps/web/public/terms.html
+                - apps/web/public/support.html
               arch:
                 - '**/*.ts'
                 - '**/*.tsx'
@@ -687,7 +712,7 @@ jobs:
           images = [{"service": s} for s in IMAGES if due(s)]
           outputs = {"images": json.dumps(images)}
           for name in ("test-root", "test-web", "test-gateway", "test-planner", "test-ingest", "test-assistant", "test-weather",
-                       "docs", "infra", "api", "arch"):
+                       "docs", "infra", "api", "arch", "site"):
               outputs[name] = "true" if due(name) else "false"
           # The phones' builds gate a merge: a pull request, or a run
           # started by hand on one's branch. Main's pushes and the nights
@@ -1762,6 +1787,20 @@ jobs:
       - name: No unused Python
         run: scripts/ci/dead_python.sh
 
+  # The website (apps/site, wingtipmaps.app's own pages): built from
+  # design/tokens.json and the web app's legal pages, then every page
+  # parsed, every link and file inside it found, and nothing loaded from
+  # another host. The standard library alone, in seconds.
+  site:
+    name: Website
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes]
+    if: needs.changes.outputs.site == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - run: python3 apps/site/build.py
+      - run: python3 apps/site/check.py
+
   # Every relative link and #anchor in the Markdown resolves: a doc moved
   # or a heading renamed breaks the links to it silently otherwise.
   # External links are not fetched (slow, and flaky for reasons no change
@@ -2185,7 +2224,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, architecture, links]
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, architecture, links, site]
     if: always()
     steps:
       - name: Every job passed or was not needed

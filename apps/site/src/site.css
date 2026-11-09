@@ -1,0 +1,72 @@
+/* wingtipmaps.app: phone width first. The colours are tokens.css's,
+   generated from design/tokens.json; the type is the system's own (SF
+   Pro on Apple's devices, Roboto on Android), as the phone apps set it,
+   so the site fetches no font. Links and buttons are the blue tint, as
+   everything tappable is in the apps. */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font: 17px/1.5 -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--tint); }
+img { max-width: 100%; height: auto; }
+main, .bar, .foot { max-width: 68rem; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+
+/* Hit areas of 44 points without growing the control (Apple's HIG): a
+   pseudo-element round it takes the taps. */
+.bar a, .foot a, .button { position: relative; }
+.bar a::after, .foot a::after, .button::after {
+  content: ""; position: absolute; inset: 50% -4px auto; height: 44px; transform: translateY(-50%);
+}
+
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 60px; }
+.brand { display: inline-flex; align-items: center; gap: 8px; color: var(--foreground); text-decoration: none; font-weight: 700; font-size: 17px; }
+.brand img { border-radius: 7px; }
+
+.button {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 16px;
+  border-radius: 999px; background: var(--primary); color: var(--primary-foreground);
+  font-weight: 600; font-size: 15px; text-decoration: none;
+}
+.button.secondary { background: var(--secondary); color: var(--tint); }
+
+h1, h2, h3 { line-height: 1.2; margin: 0; }
+h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 28px; font-weight: 700; margin-bottom: 16px; }
+h3 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+p { margin: 0; }
+
+.hero { display: grid; gap: 32px; padding: 24px 0 48px; }
+.hero-icon { width: 96px; height: 96px; border-radius: 22px; margin-bottom: 16px; }
+.lede { margin-top: 12px; font-size: 19px; color: var(--muted-foreground); }
+.cta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+.hero-shot { width: min(320px, 80vw); justify-self: center; }
+
+section { padding: 32px 0; }
+.cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.cards li { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+.cards p { color: var(--muted-foreground); font-size: 15px; }
+.aid p { max-width: 40rem; }
+
+.prose { max-width: 40rem; padding: 16px 0 32px; }
+.prose h1 { font-size: 28px; margin-bottom: 4px; }
+.prose h2 { font-size: 20px; margin: 32px 0 4px; }
+.prose p, .prose li { margin: 8px 0; }
+.prose .meta { color: var(--muted-foreground); font-size: 15px; }
+
+.foot { border-top: 1px solid var(--border); padding-top: 16px; padding-bottom: 48px; margin-top: 32px; }
+.foot nav { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 15px; }
+.foot p { margin-top: 16px; font-size: 13px; color: var(--muted-foreground); max-width: 40rem; }
+
+@media (min-width: 720px) {
+  .hero { grid-template-columns: 1.2fr 1fr; align-items: center; padding-top: 48px; }
+  h1 { font-size: 48px; }
+  .cards { grid-template-columns: repeat(2, 1fr); }
+  .cards.three { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1000px) {
+  .cards { grid-template-columns: repeat(3, 1fr); }
+}

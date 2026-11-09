@@ -103,6 +103,10 @@ def check(md: Path) -> list[str]:
             continue  # external: not fetched
         path_part, _, anchor = target.partition("#")
         path_part = unquote(path_part.split("?")[0])
+        # The legal pages are served by the app and the site, where a link
+        # like /privacy is a page there, not a file in the repository.
+        if rel.parts[:2] == ("docs", "legal") and path_part.startswith("/") and "." not in path_part:
+            continue
         if path_part:
             dest = (ROOT / path_part.lstrip("/")) if path_part.startswith("/") else (md.parent / path_part)
             dest = dest.resolve()

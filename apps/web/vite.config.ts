@@ -175,19 +175,19 @@ export default defineConfig({
         name: "Wingtip Maps", short_name: "Wingtip",
         description: "The map for flying: every airport and airspace on the chart, and the route, checkpoints and nav log when you go.",
         start_url: "/app/plan", scope: "/app/", display: "standalone",
+        // Android's launch ground for the installed app: color.brand.launch.
         background_color: "#ffffff", theme_color: "#ffffff",
         icons: [
-          // The app icon (docs/brand/appicon.svg) rendered to PNG: rounded
-          // for the installers that show it as it is (Android's 192 and
-          // 512), full bleed for the ones that mask it themselves (the
-          // maskable 512; iOS's 180, linked from index.html). Beside the
-          // manifest, under /app/ with the rest of the build: the page's
+          // docs/brand/appicon.svg drawn by scripts/build/app-icons.sh: rounded
+          // as shown (192, 512), full bleed where masked (maskable 192/512,
+          // iOS's 180 from index.html). Beside the manifest, under /app/: the page's
           // own links get the base put in front of them (index.html), the
           // manifest's do not, and "/icon-192.png" asked the server's root,
           // which answered 401 -- no icon to install with, and an error
           // in the console Lighthouse counts.
           { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
           { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "icon-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
           { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },

@@ -65,7 +65,15 @@ targets:
         CFBundleDisplayName: Wingtip Maps
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        UILaunchScreen: {}
+        # The launch screen: the mark on the app's own ground, light or
+        # dark with the phone, as Apple asks a launch screen to look like
+        # the first screen rather than a splash (HIG, Launching). Both are
+        # drawn by scripts/build/app-icons.sh from docs/brand/mark.svg and
+        # design/tokens.json's color.brand.launch and launch-night.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchMark
+          UIImageRespectsSafeAreaInsets: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
@@ -224,6 +232,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(WINGTIP_BUNDLE_ID).watchkitapp
         GENERATE_INFOPLIST_FILE: NO
+        # The small master on the chart's green (WingtipWatch/Assets.xcassets,
+        # scripts/build/app-icons.sh): the watch draws its icon small and
+        # round, where the full icon's lake and road are lost.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SKIP_INSTALL: YES
         TARGETED_DEVICE_FAMILY: "4"
   WingtipWatchTests:
