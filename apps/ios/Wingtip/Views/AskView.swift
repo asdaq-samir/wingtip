@@ -49,6 +49,7 @@ struct AskView: View {
             .navigationTitle("Ask")
             .navigationBarTitleDisplayMode(.inline)
             .closeButton { dismiss() }
+            .toolbar { ToolbarItem(placement: .topBarLeading) { AskWherePicker() } }
             .sheet(item: $source) { source in SourceSheet(source: source) }
             .onDisappear { client.cancel() }
         }
@@ -154,7 +155,7 @@ struct AskView: View {
         guard !words.isEmpty else { return }
         question = ""
         micProblem = nil
-        client.ask(words, context: context)
+        client.ask(words, context: context, facts: .make(plan: plan, ownShip: ownShip))
     }
 
     /// One question said: the route's idents are given the recognizer as
@@ -186,6 +187,10 @@ private struct TurnBubble: View {
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .accessibilityLabel("You asked: \(turn.content)")
             } else {
+                // Who wrote it: the planner, or this iPhone with no signal.
+                if let origin = turn.origin {
+                    Text(origin).font(.caption).foregroundStyle(.secondary)
+                }
                 if !turn.content.isEmpty {
                     Text(turn.content)
                         .textSelection(.enabled)
