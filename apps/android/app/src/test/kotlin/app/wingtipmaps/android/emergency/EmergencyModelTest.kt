@@ -50,6 +50,7 @@ class EmergencyModelTest {
             ChecklistSection("Engine failure in flight", listOf(EngineContract.ChecklistReadSectionsItemItemsItem("Airspeed", "68 KIAS"))),
         )
         override fun compassWord(bearingDeg: Double) = if (bearingDeg in 180.0..270.0) "SW" else "NE"
+        override fun guidance() = listOf(EngineContract.EmergencyGuidanceAnswerItemsItem(title = "Squawk 7700", detail = "Then talk to ATC", source = "AIM 6-2-2"))
     }
 
     private val fix = OwnShip.Fix(lat = 42.1, lon = -88.1, altitudeFt = 4520.0, trackDeg = 300.0, groundspeedKt = 100.0, accuracyM = 5.0, atMs = 0L)
@@ -94,6 +95,19 @@ class EmergencyModelTest {
         assertNull(askedAircraft)
         assertTrue(model.state.value.ranked!!.needsAirplane)
         assertNull(model.state.value.section)
+    }
+
+    @Test
+    fun withNoAirplaneTheGuidanceShowsInPlaceOfAChecklistAndWithOneItDoesNot() {
+        val none = EmergencyModel({ _, _, _, _, _ -> EmergencyFields(fields = listOf(field("C81", 3.4, 45.0))) }, Rules())
+        none.start(aircraft = "", airplaneName = null, callsign = null, checklist = "")
+        // The engine's general guidance, each item with its source; the
+        // sheet shows it (NoAirplaneGuidance) where a checklist would be.
+        assertEquals(listOf("Squawk 7700"), none.state.value.guidance.map { it.title })
+        assertEquals("AIM 6-2-2", none.state.value.guidance.single().source)
+        val picked = EmergencyModel({ _, _, _, _, _ -> EmergencyFields(fields = emptyList()) }, Rules())
+        picked.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "# x")
+        assertTrue(picked.state.value.guidance.isEmpty())
     }
 
     @Test
