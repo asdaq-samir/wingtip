@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { toast } from "../../../lib/toast";
+import { done } from "../../../lib/doneNote";
 import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, ListOrdered } from "lucide-react";
 import RoundButton from "../../../components/RoundButton";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../../components/ResponsivePopover";
@@ -89,7 +89,7 @@ export default function ShareMenu({
     const url = window.location.href;
     const title = routeName(planned.dep, planned.dest, planned.stops);
     try {
-      if (await shareOrCopy({ title, url }) === "copied") toast.success("Link Copied");
+      if (await shareOrCopy({ title, url }) === "copied") done("Link Copied");
     } catch (err) {
       if (!cancelled(err)) showError("Could not share the route", (err as Error).message);
     }
@@ -127,7 +127,7 @@ export default function ShareMenu({
     // The button's own link changes after the tap has followed it: changed
     // at once, the tap followed the new one, the route's.
     window.setTimeout(() => packChanged(n => n + 1), 0);
-    toast.success("Sent to ForeFlight", { description: "Then tap Open in ForeFlight again" });
+    done("Sent to ForeFlight", { detail: "Then tap Open in ForeFlight again" });
   };
 
   return (

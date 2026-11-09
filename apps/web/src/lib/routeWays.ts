@@ -1,5 +1,5 @@
 import type { RouteOption, RouteOptions } from "./api/types";
-import { duration } from "./clock";
+import { duration } from "./format";
 import { sameField } from "./procedures";
 
 /** How the planner's grid times the route itself against its nav log

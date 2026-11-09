@@ -1,4 +1,5 @@
 import { SETTLE_LEAST, SETTLE_MOST, SETTLE_POINTS, SHEET_MARGIN, SHEET_SECONDS, type MapInsets, type PanelState } from "../mapChrome";
+import { SIZE } from "../../lib/tokens";
 
 /**
  * The rules of the map's sheet, with no element in them (MapPanel moves
@@ -11,8 +12,10 @@ import { SETTLE_LEAST, SETTLE_MOST, SETTLE_POINTS, SHEET_MARGIN, SHEET_SECONDS, 
 /** The sheet's three heights, in px from the screen's edge. */
 export type Detents = Record<PanelState, number>;
 
-/** A card's width from `md` up: 24rem. */
-export const CARD = 384;
+/** The panel's width beside the map from `md` up (design/tokens.json
+ *  size.panel), and a desktop's side panel from 1024 wide (panel-wide). */
+export const CARD = SIZE.panel;
+export const CARD_WIDE = SIZE.panelWide;
 
 /** Over a wider screen the top sheet floats this far under the window's
  *  top, its four corners round, as Maps' card does on an iPad and a Mac;
@@ -32,9 +35,9 @@ export const FLOAT_PX = 16;
  * HIG's layout keeps content inside the safe area, where a fit put KOSH at
  * y = 38 under it (the FPL audit's A11). A sheet from the top covers it.
  */
-export function insetsOf(s: PanelState, d: Detents, onPhone: boolean, fromBottom: boolean, safeTop = 0): MapInsets {
+export function insetsOf(s: PanelState, d: Detents, onPhone: boolean, fromBottom: boolean, safeTop = 0, wide = false): MapInsets {
   const up = s === "full";
-  if (!onPhone && s !== "peek") return { top: safeTop, bottom: 0, left: 16 + CARD, out: true, up };
+  if (!onPhone && s !== "peek") return { top: safeTop, bottom: 0, left: 16 + (wide ? CARD_WIDE : CARD), out: true, up };
   const strip = onPhone ? (s === "peek" ? d.peek : d.half) : d.peek + SHEET_MARGIN + (fromBottom ? 0 : FLOAT_PX);
   return fromBottom ? { top: safeTop, bottom: strip, left: 0, out: s !== "peek", up } : { top: strip, bottom: 0, left: 0, out: s !== "peek", up };
 }

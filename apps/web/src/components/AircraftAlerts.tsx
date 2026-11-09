@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useQueries, type UseQueryResult } from "@tanstack/react-query";
-import { BellRing, X } from "lucide-react";
+import { BellRing } from "lucide-react";
 import { cn } from "cn";
 import { Alert } from "./ui/alert";
 import { Button } from "./ui/button";
-import IconButton from "./IconButton";
+import CloseButton from "./CloseButton";
 import { GLASS } from "./mapChrome";
 import { airborneNow, alertKey, dismissFired as dismiss, fired, useFiredAlerts, type Watched } from "../lib/aircraftAlerts";
 import type { FlightStatus } from "../lib/api/types";
@@ -90,9 +90,8 @@ export default function AircraftAlerts() {
         >
           Show
         </Button>
-        <IconButton label="Dismiss" className="shrink-0 rounded-full" onClick={() => dismiss(alert.id)} data-testid="aircraft-alert-dismiss">
-          <X />
-        </IconButton>
+        {/* The app's one close (CloseButton), as every card's and sheet's. */}
+        <CloseButton label="Dismiss" className="shrink-0" onClick={() => dismiss(alert.id)} data-testid="aircraft-alert-dismiss" />
       </Alert>
     </div>
   ));

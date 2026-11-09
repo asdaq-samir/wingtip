@@ -61,6 +61,14 @@ describe("describeError", () => {
     expect(describeError(new TypeError("x is not a function"))).toBe("x is not a function");
     expect(describeError("nope", "request failed")).toBe("request failed");
   });
+
+  test("an answer with only HTTP's reason phrase is said as what it means, never 'Not Found'", () => {
+    expect(describeError(new ApiError("Not Found", 404))).toBe("Not available yet");
+    expect(describeError(new ApiError("Bad Gateway", 502))).toBe("The planner is not answering; try again in a moment");
+    expect(describeError(new ApiError("Forbidden", 403), "sign in to see it")).toBe("sign in to see it");
+    // The planner's own words stay its own.
+    expect(describeError(new ApiError("No airport goes by 'KZZZ'.", 404))).toBe("No airport goes by 'KZZZ'.");
+  });
 });
 
 describe("me", () => {

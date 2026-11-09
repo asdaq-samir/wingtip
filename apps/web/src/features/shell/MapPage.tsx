@@ -15,6 +15,8 @@ import LinkSignIn from "../pilot/LinkSignIn";
 import TvLink from "../pilot/TvLink";
 import EmergencyHost from "../emergency/EmergencyHost";
 import PlanWorkspace from "../plan/PlanWorkspace";
+import { useIsDesktop } from "../../hooks/use-desktop";
+import { useShortcuts } from "../../hooks/use-shortcuts";
 import { BootMap } from "../plan/routeMapChunk";
 import type { WorkspacePieces } from "./workspace";
 
@@ -70,6 +72,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const { title, panel: panelLabel, console: consoleLabel, Workspace, route } = MODES[mode];
   const navBar = usePreferences(s => s.navBar);
   const edge = useNavEdge();
+  // A desktop's keys: / to the search, 1 to 4 for the tabs, Escape back.
+  useShortcuts(useIsDesktop());
   const [searchParams, setSearchParams] = useSearchParamsNow();
   // The route in the panel: the address's, unless the pilot has typed
   // over it -- and a draft belongs to the address it was typed over. The

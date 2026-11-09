@@ -36,7 +36,7 @@ test("the map's button turns the weather on and off, and an area's card says how
 
   // The areas, the PIREPs and the winds at 9,000 ft, from the map's button.
   await openMapSettings(page);
-  await expect(page.getByTestId("weather-areas-toggle")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("weather-areas-toggle")).toHaveAttribute("aria-checked", "false");
   await page.getByTestId("weather-areas-toggle").click();
   await page.getByTestId("weather-pireps-toggle").click();
   await page.getByTestId("weather-winds").click();

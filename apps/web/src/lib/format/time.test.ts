@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ago, duration, durationByHand, hm } from "./clock";
+import { ago, duration, durationByHand, hm } from "./time";
 
 describe("a time en route as a paper nav log writes it", () => {
   it("pads the minutes, rounded first", () => {

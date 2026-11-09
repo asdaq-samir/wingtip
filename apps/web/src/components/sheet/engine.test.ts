@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CARD, FLOAT_PX, clampHeight, follow, insetsOf, restingAt, settleSeconds, sheetTakes, speedAt, type Box, type Detents, type Track } from "./engine";
+import { CARD, CARD_WIDE, FLOAT_PX, clampHeight, follow, insetsOf, restingAt, settleSeconds, sheetTakes, speedAt, type Box, type Detents, type Track } from "./engine";
 
 const detents: Detents = { peek: 62, half: 376, full: 820 };
 
@@ -119,6 +119,8 @@ describe("insetsOf", () => {
 
   it("leaves a wider screen's map all but the card's column while it is out", () => {
     expect(insetsOf("half", detents, false, true)).toEqual({ top: 0, bottom: 0, left: 16 + CARD, out: true, up: false });
+    // A desktop's side panel is wider, and so is what it covers.
+    expect(insetsOf("half", detents, false, true, 0, true)).toEqual({ top: 0, bottom: 0, left: 16 + CARD_WIDE, out: true, up: false });
     // At rest in its corner, the pill and its margin; floating from the top, its gap too.
     expect(insetsOf("peek", detents, false, true)).toEqual({ top: 0, bottom: 62 + 8, left: 0, out: false, up: false });
     expect(insetsOf("peek", detents, false, false)).toEqual({ top: 62 + 8 + FLOAT_PX, bottom: 0, left: 0, out: false, up: false });

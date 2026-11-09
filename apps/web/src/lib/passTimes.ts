@@ -8,7 +8,7 @@
  * zones are the browser's, which the engine has no database of.
  */
 import type { Leg } from "./api/types";
-import { clockTime, utcFigures } from "./clock";
+import { clockTime, utcFigures } from "./format";
 import { callEngine, type EngineAnswer } from "./engine/engine";
 
 /** When the flight is `alongNm` along its route: the departure plus the

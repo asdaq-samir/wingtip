@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { declinationOf, fixRadialDistance, hoursOf, morseOf, radialOf, serviceVolume, threeFigures } from "./navaid";
+import { declinationOf, fixRadialDistance, hoursOf, morseOf, radialOf, serviceVolume } from "./navaid";
+import { threeFigures } from "./format";
 
 // Joliet's VOR/DME as NASR files it (NAV_BASE, 2026-10-29): 2° E.
 const JOT = { ident: "JOT", lat: 41.54641852, lon: -88.31841055, mag_var: 2 };

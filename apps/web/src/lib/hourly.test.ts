@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Metar } from "./api/types";
-import { zuluTime } from "./clock";
+import { zuluTime } from "./format";
 import { arrivalHour, hoursOf, sentenceOf } from "./hourly";
 
 // 18:20Z on the 29th: the TAFs below were issued at 17:20 for 18Z on.

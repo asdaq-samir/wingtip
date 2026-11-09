@@ -1,5 +1,5 @@
 import type { OnRoute } from "./api/types";
-import { clockTime } from "./clock";
+import { clockTime } from "./format";
 
 /**
  * Where and when the flight meets a hazard, in the Brief's words and as

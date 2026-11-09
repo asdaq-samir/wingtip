@@ -1,5 +1,6 @@
 import { cn } from "cn";
-import { ago, useMinuteClock, zuluTime } from "../lib/clock";
+import { ago, zuluTime } from "../lib/format";
+import { useMinuteClock } from "../lib/useMinuteClock";
 import { callEngine } from "../lib/engine/engine";
 
 /** When a report was observed and how long ago, amber once the next

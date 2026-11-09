@@ -64,8 +64,8 @@ test("an add still saving when Edit is clicked says added, and leaves the airpla
   await expect(page.getByLabel("Tail number")).toHaveValue("N2");
   hold.release();
 
-  await expect(page.locator("[data-sonner-toast]", { hasText: "Airplane Added" })).toBeVisible();
-  await expect(page.locator("[data-sonner-toast]", { hasText: "Airplane Saved" })).toHaveCount(0);
+  await expect(page.getByTestId("done-note").filter({ hasText: "Airplane Added" })).toBeVisible();
+  await expect(page.getByTestId("done-note").filter({ hasText: "Airplane Saved" })).toHaveCount(0);
   await expect(page.getByLabel("Tail number")).toHaveValue("N2");
 });
 
@@ -84,7 +84,7 @@ test.describe("the email sign-in link", () => {
     await console.getByRole("button", { name: "Sign in" }).click();
     const box = page.getByLabel("Email address");
     await box.fill("a@example.com");
-    await page.getByRole("button", { name: "Send sign-in link" }).click();
+    await page.getByRole("button", { name: "Send Link" }).click();
     await box.fill("b@example.com");
     hold.release();
 
@@ -108,7 +108,7 @@ test.describe("the email sign-in link", () => {
     // on its retry).
     await page.getByLabel("Email address").fill("a@example.com");
     await page.getByLabel("Email address").press("Enter");
-    await expect(page.getByRole("button", { name: "Send sign-in link" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Send Link" })).toBeDisabled();
     await page.keyboard.press("Escape");
     // Escape closes the sign-in dialog, the top layer, and leaves the
     // console under it open.
@@ -128,7 +128,7 @@ test.describe("the email sign-in link", () => {
     const console = await openPlannerConsole(page);
     await console.getByRole("button", { name: "Sign in" }).click();
     await page.getByLabel("Email address").fill("a@example.com");
-    await page.getByRole("button", { name: "Send sign-in link" }).click();
+    await page.getByRole("button", { name: "Send Link" }).click();
 
     // Under the field it is about, not over the map.
     await expect(page.getByTestId("sign-in-error")).toContainText("Too many sign-in links");
@@ -141,7 +141,7 @@ test.describe("the email sign-in link", () => {
     const console = await openPlannerConsole(page);
     await console.getByRole("button", { name: "Sign in" }).click();
     await page.getByLabel("Email address").fill("a@example.com");
-    await page.getByRole("button", { name: "Send sign-in link" }).click();
+    await page.getByRole("button", { name: "Send Link" }).click();
     await expect(page.getByTestId("sign-in-error")).toHaveText("Couldn't send that link. Reload the page and try again.");
   });
 });

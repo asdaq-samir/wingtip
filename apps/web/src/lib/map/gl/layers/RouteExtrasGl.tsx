@@ -9,7 +9,7 @@ import { useAirplaneChosen, usePreferences } from "../../../preferences";
 import { airportQuery, plateQuery } from "../../../queryClient";
 import { STOP_KINDS, type StopKind } from "../../../stopKinds";
 import type { TrafficPattern } from "../../../trafficPattern";
-import { altFt } from "../../../units";
+import { altFt } from "../../../format";
 import { COURSE_MAGENTA, MAP_BLUE } from "../../chartColors";
 import { colourOf } from "../../flightCategory";
 import { airportMarkIcon, fixMarkIcon, trafficIcon } from "../../icons";

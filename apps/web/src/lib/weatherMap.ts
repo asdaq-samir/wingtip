@@ -1,6 +1,7 @@
 import type { MapPirep, WeatherArea } from "./api/types";
 import { callEngine } from "./engine/engine";
 import { bearingDeg, destination, distanceNm, type LatLon } from "./geo";
+import { hundreds, mapLevel } from "./format";
 
 /** Each area's colour by what it warns of, as aviationweather.gov's own
  *  map tells them apart: convective red-orange, icing blue, turbulence
@@ -21,16 +22,6 @@ export function areaColour(area: Pick<WeatherArea, "kind" | "hazard">): string {
   return AREA_COLOURS[area.hazard ?? ""] ?? "#9333ea";
 }
 
-/** An altitude as the map's weather writes it, in hundreds of feet after
- *  "FL" (FL045 for 4,500 ft MSL), at the owner's pick (2026-10-20, "make
- *  the altitude to be FL"), kept on 2026-11-06 ("Keep Fl for now") when
- *  asked whether to match the rest of the app (lib/readback altitudeWords:
- *  feet below 18,000, a flight level from it). A flight level proper is a
- *  pressure altitude on 29.92, flown only from 18,000 ft (14 CFR 1.1,
- *  91.121(a)(2)), so below that the figure is still feet MSL. */
-export function altitudeWords(feet: number): string {
-  return `FL${String(Math.round(feet / 100)).padStart(3, "0")}`;
-}
 
 /** What an area is, in words: its title ("G-AIRMET · Icing", "Convective
  *  SIGMET") and its altitudes ("Freezing level to FL160"). */
@@ -40,8 +31,8 @@ export function areaWords(area: WeatherArea): { title: string; altitudes: string
   // sigmet_hazard), the briefing's own; a G-AIRMET's come in words already.
   const hazard = area.kind === "convective" ? null : area.hazard
     ? area.kind === "gairmet" ? area.hazard : callEngine("sigmet_hazard", { hazard: area.hazard, kind: null }) : null;
-  const low = area.from_freezing_level ? "Freezing level" : area.low_ft == null ? "Surface" : altitudeWords(area.low_ft);
-  const high = area.high_ft == null ? null : altitudeWords(area.high_ft);
+  const low = area.from_freezing_level ? "Freezing level" : area.low_ft == null ? "Surface" : mapLevel(area.low_ft);
+  const high = area.high_ft == null ? null : mapLevel(area.high_ft);
   return { title: hazard ? `${kind} · ${hazard}` : kind, altitudes: high ? `${low} to ${high}` : area.low_ft != null ? `${low} and up` : null };
 }
 
@@ -77,7 +68,7 @@ export function routeThrough(area: WeatherArea, line: [number, number][], altitu
  *  icing, else the sky -- and its altitude in hundreds of feet, as a
  *  PIREP writes it ("065"). */
 export function pirepMark(p: MapPirep): { glyph: string; colour: string; level: string } {
-  const level = p.altitude_ft == null ? "---" : String(Math.round(p.altitude_ft / 100)).padStart(3, "0");
+  const level = p.altitude_ft == null ? "---" : hundreds(p.altitude_ft);
   if (p.urgent) return { glyph: "!", colour: "#dc2626", level };
   if (p.turbulence && !/NEG|NONE/i.test(p.turbulence)) return { glyph: "⌁\uFE0E", colour: "#d97706", level };
   if (p.icing && !/NEG|NONE/i.test(p.icing)) return { glyph: "❄\uFE0E", colour: "#2563eb", level };

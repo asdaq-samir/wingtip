@@ -5,7 +5,7 @@
  * a line, an hour's verdict as the Brief's finding marks draw it, and its
  * time and fuel -- or, with no airplane picked, that they need one.
  */
-import { duration } from "../../lib/clock";
+import { duration } from "../../lib/format";
 import type { Finding } from "../../lib/findings";
 import type { DepartureWindowRun, WindowHour } from "../../lib/api/types";
 

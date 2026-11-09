@@ -1,6 +1,7 @@
 import type { MapPirep, StationWind, WeatherArea } from "../api/types";
 import { faaWords } from "../advisories";
-import { altitudeWords, areaWords, routeThrough } from "../weatherMap";
+import { areaWords, routeThrough } from "../weatherMap";
+import { bearing, knots, mapLevel } from "../format";
 import { WINDS_MODELLED } from "../windsAloft";
 import { MapCard } from "./MapCard";
 
@@ -27,7 +28,7 @@ export function AreaCard({ area, line, altitudeFt }: { area: WeatherArea; line: 
         {through && (
           <p className="font-semibold" data-testid="weather-area-route">
             Your route crosses it for {Math.round(through.nm)} nm
-            {through.relation && altitudeFt != null ? `, at ${altitudeWords(altitudeFt)}: ${through.relation === "in" ? "in it" : `${through.relation} it`}` : ""}.
+            {through.relation && altitudeFt != null ? `, at ${mapLevel(altitudeFt)}: ${through.relation === "in" ? "in it" : `${through.relation} it`}` : ""}.
           </p>
         )}
         {area.raw && <p className="text-muted-foreground">{area.kind === "gairmet" ? faaWords(area.raw) : area.raw}</p>}
@@ -41,7 +42,7 @@ export function PirepCard({ pirep }: { pirep: MapPirep }) {
   return (
     <MapCard title={pirep.urgent ? "Urgent PIREP" : "PIREP"} subtitle={[pirep.observed_at && `${pirep.observed_at.slice(11, 16)}Z`, pirep.aircraft].filter(Boolean).join(" · ")}>
       <div className="space-y-1 text-left" data-testid="pirep-card">
-        {pirep.altitude_ft != null && <p>At {altitudeWords(pirep.altitude_ft)}</p>}
+        {pirep.altitude_ft != null && <p>At {mapLevel(pirep.altitude_ft)}</p>}
         {pirep.turbulence && <p>Turbulence: {faaWords(pirep.turbulence)}</p>}
         {pirep.icing && <p>Icing: {faaWords(pirep.icing)}</p>}
         {/* The report as it was sent, as every raw report stays. */}
@@ -55,7 +56,7 @@ export function PirepCard({ pirep }: { pirep: MapPirep }) {
  *  altitude and whose winds they are, the GFS's (lib/windsAloft). */
 export function WindCard({ wind, altitudeFt }: { wind: StationWind; altitudeFt: number }) {
   return (
-    <MapCard title={`${String(Math.round(wind.dir_true_deg)).padStart(3, "0")}° true at ${Math.round(wind.speed_kt)} kt`} subtitle={`${wind.ident} · at ${altitudeWords(altitudeFt)} · ${WINDS_MODELLED}`}>
+    <MapCard title={`${bearing(wind.dir_true_deg)} true at ${knots(wind.speed_kt)}`} subtitle={`${wind.ident} · at ${mapLevel(altitudeFt)} · ${WINDS_MODELLED}`}>
       {wind.temp_c != null && <p className="text-left" data-testid="wind-card">{wind.temp_c > 0 ? "+" : ""}{wind.temp_c} °C</p>}
     </MapCard>
   );

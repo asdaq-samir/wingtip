@@ -34,7 +34,7 @@ fn near(a: f64, b: f64, within: f64) -> bool {
 
 #[test]
 fn a_cruising_altitude_is_written_fl_dash_as_the_owner_asked() {
-    // lib/units flightLevel, the owner's 2026-10-27 format; the Python wrote
+    // lib/format flightLevel, the owner's 2026-10-27 format; the Python wrote
     // FL045 and FL--- until the engine took the web's.
     assert_eq!(words::flight_level(Some(4500.0)), "FL-045");
     assert_eq!(words::flight_level(Some(12_500.0)), "FL-125");

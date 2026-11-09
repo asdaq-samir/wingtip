@@ -1,5 +1,5 @@
 import type { Where } from "./verdict";
-import { clockTime, duration, zuluTime } from "./clock";
+import { clockTime, duration, zuluTime } from "./format";
 import { placeOfPoint } from "./identSchema";
 import { callEngine } from "./engine/engine";
 

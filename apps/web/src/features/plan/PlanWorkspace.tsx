@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useDeferredValue, useMemo } from "react";
-import { AirplaneGlyph, AirportGlyph, RouteGlyph } from "../../components/tabGlyphs";
+import { TAB_ICON } from "../../lib/icons";
 import { TEXT } from "../../lib/text";
 import TabBar, { type BarTab } from "../../components/TabBar";
 import type { PanelTab } from "./hooks/useTabCards";
@@ -20,11 +20,11 @@ import RouteControls from "./components/workspace/RouteControls";
 import TabSearchField from "./components/workspace/SearchFields";
 
 const PLANNER_TABS: BarTab<PanelTab>[] = [
-  // FPL first and Aircraft third, swapped back at the owner's ask ("Swap
+  // FPL first and Airplane third, swapped back at the owner's ask ("Swap
   // fpl and aircraft tab positions").
-  { value: "fpl", label: "FPL", icon: RouteGlyph },
-  { value: "airport", label: "Airport", icon: AirportGlyph },
-  { value: "aircraft", label: "Aircraft", icon: AirplaneGlyph },
+  { value: "fpl", label: "FPL", icon: TAB_ICON.fpl },
+  { value: "airport", label: "Airport", icon: TAB_ICON.airport },
+  { value: "aircraft", label: "Airplane", icon: TAB_ICON.airplane },
   // Nearest is Airport's now, its strip under the Favorites and its list
   // in full from the strip's title, at the owner's pick of the redesign
   // ("make it 4 tabs, combining the nearest into airport").

@@ -1,7 +1,7 @@
 import type { Totals } from "../../lib/api/types";
 import type { Flown } from "./components/navlog/dryRun";
 import { decimalHours, etaAt, one } from "./format";
-import { duration } from "../../lib/clock";
+import { duration } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 
 /** One of the flight's figures: its name over it, its unit after it. */
@@ -127,7 +127,7 @@ export function shortFlights(totals: Totals | null): { name: string; shortGal: n
  *  the nav log's climb, wind or legs in it. */
 function guess({ distanceNm, cruiseTasKt, fuelBurnGph }: { distanceNm: number; cruiseTasKt: number | null; fuelBurnGph: number | null }) {
   const { minutes, required_gal: required } = callEngine("fuel_estimate", { distance_nm: distanceNm, cruise_tas_kt: cruiseTasKt, fuel_burn_gph: fuelBurnGph });
-  // Written as the nav log's own time is once it is in (lib/clock duration): this
+  // Written as the nav log's own time is once it is in (lib/format duration): this
   // one rounded its minutes on their own, and 119.6 read "1h 60m".
   return { minutes, distanceNm, required, time: minutes == null ? "—" : duration(minutes) };
 }

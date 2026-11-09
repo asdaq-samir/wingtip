@@ -10,10 +10,10 @@ import { Input } from "../../components/ui/input";
 import { useConfirm } from "../../components/useConfirm";
 import { api } from "../../lib/api/client";
 import type { Aircraft, DueItem, DueItemRequest } from "../../lib/api/types";
-import { localDay } from "../../lib/clock";
+import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
 import { daysBetween, dueTone, whenWords } from "../../lib/paperwork";
-import { toast } from "../../lib/toast";
+import { done } from "../../lib/doneNote";
 
 const KINDS: { value: DueItemRequest["kind"]; label: string }[] = [
   { value: "AD", label: "Airworthiness directive" },
@@ -56,7 +56,7 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
   const save = useMutation({
     mutationFn: ({ itemId, request }: { itemId: number | null; request: DueItemRequest }) =>
       itemId == null ? api.aircraft.addDueItem(aircraft.id, request) : api.aircraft.updateDueItem(aircraft.id, itemId, request),
-    onSuccess: () => { toast.success("Item Saved"); setOpen(null); refresh(); },
+    onSuccess: () => { done("Item Saved"); setOpen(null); refresh(); },
   });
   const remove = useMutation({
     mutationFn: (itemId: number) => api.aircraft.removeDueItem(aircraft.id, itemId),

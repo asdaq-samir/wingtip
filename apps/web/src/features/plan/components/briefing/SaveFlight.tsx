@@ -2,11 +2,11 @@ import { useMemo } from "react";
 import { useIsMutating, useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import { Check, GraduationCap, Save } from "lucide-react";
-import { toast } from "../../../../lib/toast";
+import { done } from "../../../../lib/doneNote";
 import { DropdownMenuItem } from "../../../../components/ui/dropdown-menu";
 import { ResponsivePopoverContent } from "../../../../components/ResponsivePopover";
 import { ReviewAskForm, type ReviewAsk } from "../../../pilot/ReviewAsk";
-import { localDay } from "../../../../lib/clock";
+import { localDay } from "../../../../lib/format";
 import { TEXT } from "../../../../lib/text";
 import { api } from "../../../../lib/api/client";
 import { pilotQuery, trainingQuery } from "../../../../lib/queryClient";
@@ -55,7 +55,7 @@ export function SaveFlightButton(flight: FlightToSave) {
     // note, the menu it was saved from having gone.
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["flights"] });
-      toast.success("Flight Saved");
+      done("Flight Saved");
     },
   });
   // "Saved" belongs to the plan that was saved: another route, time,
@@ -127,7 +127,7 @@ export function ReviewAskSheet({ flight, onDone }: { flight: FlightToSave; onDon
     onSuccess: next => {
       queryClient.setQueryData(["training"], next);
       void queryClient.invalidateQueries({ queryKey: ["flights"] });
-      toast.success("Sent to Your Instructor");
+      done("Sent to Your Instructor");
       onDone();
     },
   });

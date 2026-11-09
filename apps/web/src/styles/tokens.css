@@ -26,6 +26,10 @@
   --motion-fade: 0.2s;
   --motion-quick: 0.15s;
   --tap-target: 44px;
+  --size-chip: 32px;
+  --size-panel: 384px;
+  --size-panel-wide: 448px;
+  --size-desktop: 1024px;
   --airspace-blue-text: #2465b8;
   --airspace-magenta-text: #c0309f;
   --course: #e600e6;
@@ -51,7 +55,7 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.52 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -78,8 +82,8 @@
   --popover-foreground: #eef3f9;
   --primary: oklch(0.55 0.193 256.2);
   --primary-foreground: oklch(0.985 0 0);
-  --tint: oklch(0.72 0.15 252);
-  --tint-shade: oklch(0.76 0.14 252);
+  --tint: #57a8ff;
+  --tint-shade: #57a8ff;
   --sheet: var(--background);
   --airspace-blue-ink: #8cb8f2;
   --airspace-magenta-ink: #f0a0cf;
@@ -104,6 +108,11 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+}
+
+/* Wingtip, the default look: the theme's own blue, in the looks' typeface. */
+:root[data-brand="wingtip"] {
+  --brand-font: 'Barlow';
 }
 
 /* Glass Cockpit: what can be tapped, the typeface and the corners.
@@ -188,8 +197,8 @@
   --muted: #eeeeee;
   --muted-foreground: #333333;
   --border: #000000;
-  --primary: #0040c0;
+  --primary: #0047a0;
   --primary-foreground: #ffffff;
-  --tint: #0040c0;
-  --tint-shade: #0040c0;
+  --tint: #0047a0;
+  --tint-shade: #0047a0;
 }

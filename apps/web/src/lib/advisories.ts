@@ -1,6 +1,6 @@
 import type { Briefing } from "./api/types";
 import { callEngine } from "./engine/engine";
-import { altFt } from "./units";
+import { altFt } from "./format";
 
 type GAirmet = Briefing["gairmets"][number];
 type Pirep = Briefing["pireps"][number];

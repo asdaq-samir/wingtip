@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { categoryOf } from "./flightCategory";
+import { categoryOf, chipFillOf, colourOf } from "./flightCategory";
+import { inkOn } from "../scoreScale";
 
 // Each bound of AIM 7-1-7's categories, from either side: LIFR "ceiling
 // less than 500 feet and/or visibility less than 1 mile"; IFR "ceiling
@@ -31,5 +32,15 @@ describe("a forecast's flight category, as AIM 7-1-7 bounds it", () => {
     expect(categoryOf(400, null)).toBe("LIFR");
     expect(categoryOf(800, null)).toBeNull();
     expect(categoryOf(5000, undefined)).toBeNull();
+  });
+});
+
+describe("a category chip with its name on it", () => {
+  it("reads white words at 4.5:1 or more on every category, LIFR on its deeper fill", () => {
+    for (const c of ["VFR", "MVFR", "IFR", "LIFR"]) expect(inkOn(chipFillOf(c))).toBe("#ffffff");
+    expect(chipFillOf("LIFR")).toBe("#7e3fb8");
+    // The map keeps the lighter magenta for its pips, which carry no words.
+    expect(colourOf("LIFR")).toBe("#a371f7");
+    expect(chipFillOf(null)).toBe(colourOf(null));
   });
 });

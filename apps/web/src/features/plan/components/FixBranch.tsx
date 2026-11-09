@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
 import { altitudeLines, decorationOf, fixRoles, type BranchFix } from "../../../lib/procedures";
-import { altFt } from "../../../lib/units";
+import { altFt } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 import { PointFigures, PointMenu } from "./PointControls";
 

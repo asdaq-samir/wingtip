@@ -6,7 +6,7 @@ import { aircraftListQuery, currencyQuery, pilotQuery } from "../../../lib/query
 import type { Briefing, Course, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import type { BriefingState } from "./usePlan";
 import { ceilingAndVisibility, PLAN_NAME, reportedWind } from "../format";
-import { feetRange, flightLevel, grouped } from "../../../lib/units";
+import { feetRange, flightLevel, grouped, reportedDirection } from "../../../lib/format";
 import { isAirwayToken } from "../../../lib/identSchema";
 import { useLoad } from "./useLoad";
 import { armText } from "../../../lib/weightBalance";
@@ -366,7 +366,7 @@ export function useFlightBriefing({
       enroute: {
         ceilingFt: briefing?.forecast.min_ceiling_ft ?? null,
         visibilitySm: briefing?.forecast.min_visibility_sm ?? null,
-        wind: wind ? `${String(wind.dir).padStart(3, "0")}°/${wind.speed}` : null,
+        wind: wind ? `${reportedDirection(wind.dir)}°/${wind.speed}` : null,
         eteMin: totals?.ete_min ?? null,
         line: items.find(i => i.key === "weather")?.detail ?? null,
         finding: byKey(["weather", "altitude"]),

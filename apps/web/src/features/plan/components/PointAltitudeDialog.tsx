@@ -4,7 +4,7 @@ import { Button } from "../../../components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "../../../components/ui/input-group";
 import { callEngine } from "../../../lib/engine/engine";
 import { TEXT } from "../../../lib/text";
-import { altFt, flightLevel } from "../../../lib/units";
+import { altFt, flightLevel } from "../../../lib/format";
 
 /** The altitude at a point of the route: the pilot's own (`own`), else
  *  the plan's -- a waypoint's cruise there, an airport's pattern -- in

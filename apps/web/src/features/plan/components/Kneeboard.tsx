@@ -4,9 +4,9 @@ import type { Briefing, Candidate, Course, Leg, NavLogAltitude, Totals } from ".
 import { kneeboardRadio, mhzText } from "../../../lib/frequencies";
 import { pickedEnd, runwayFlown, runwayNumber } from "../../../lib/pattern";
 import { useRunwayPicks } from "../../../lib/useRunwayPicks";
-import { hm } from "../../../lib/clock";
+import { hm } from "../../../lib/format";
 import { routeName } from "../../../lib/identSchema";
-import { altFt, feetRange, gal, nm } from "../../../lib/units";
+import { altFt, feetRange, gal, nm } from "../../../lib/format";
 import { bearing, etaAt, one, plannedWords } from "../format";
 import { isLegPoint, legOf, navLogRows, rowPoint } from "./navlog/rows";
 

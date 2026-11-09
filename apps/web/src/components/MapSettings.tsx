@@ -1,10 +1,9 @@
-import { useId } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { editionOf } from "../lib/chartEdition";
 import { ListGroup, ListRow } from "./GroupedList";
 import PullDown from "./PullDown";
 import Segmented from "./Segmented";
-import { Switch } from "./ui/switch";
+import SwitchRow from "./SwitchRow";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { clearOwnTrail, useOwnTrail } from "../lib/map/ownTrail";
 import { BASE_CHARTS, usePreferences, type BaseChart, type ChartLight, type ChartNight, type MapOverlay, type OverlayStrength, type Terrain } from "../lib/preferences";
@@ -14,7 +13,8 @@ import { useGoogleSession } from "../lib/map/googleSession";
 import { OWN_SHIP_LOOKS, ownShipSvg, type OwnShipLook } from "../lib/map/ownShipLook";
 import { tileUrl } from "../lib/map/tiles";
 import { cn } from "cn";
-import { GROUP_HEADING, TEXT } from "../lib/text";
+import { TEXT } from "../lib/text";
+import SectionTitle from "./SectionTitle";
 import { chartQuery, googleMapsQuery } from "../lib/queryClient";
 import { useDataCycles, useLayerAges } from "../lib/map/layerAges";
 import { cycleWarning } from "../lib/dataCycles";
@@ -260,7 +260,7 @@ function PictureChoices({ title, value, onChange, options, testId }: {
 }) {
   return (
     <section className="flex flex-col">
-      <h3 className={cn("px-1 pb-1.5", GROUP_HEADING)}>{title}</h3>
+      <SectionTitle className="px-1 pb-1.5">{title}</SectionTitle>
       <ToggleGroup
         type="single" value={value} onValueChange={v => { if (v) onChange(v); }} aria-label={title} data-testid={testId}
         className="grid w-full grid-cols-3 gap-2"
@@ -299,20 +299,4 @@ function PictureChoices({ title, value, onChange, options, testId }: {
   );
 }
 
-/** An on-or-off row, as iOS's Settings has them: its name, and the stock
- *  switch at its end, the name its label so a tap on either works it. */
-function SwitchRow({ title, on, onChange, testId, disabled }: {
-  title: string;
-  on: boolean;
-  onChange: (on: boolean) => void;
-  testId: string;
-  disabled?: boolean;
-}) {
-  const id = useId();
-  return (
-    <ListRow id={id} title={title}>
-      <Switch id={id} checked={on} onCheckedChange={onChange} disabled={disabled} data-testid={testId} />
-    </ListRow>
-  );
-}
 

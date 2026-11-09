@@ -1,7 +1,7 @@
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import type { Totals } from "../../../lib/api/types";
 import { one } from "../format";
-import { gal } from "../../../lib/units";
+import { gal } from "../../../lib/format";
 
 /** The reserve's rule, as the planner chose it (wingtip.navlog.fuel_plan). */
 function reserveRule(totals: Totals): string {

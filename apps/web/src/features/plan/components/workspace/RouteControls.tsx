@@ -1,7 +1,8 @@
 import { Suspense, type ReactNode } from "react";
-import { ChartArea, Sparkles } from "lucide-react";
+import { ICON } from "../../../../lib/icons";
 import { cn } from "cn";
 import RoundButton from "../../../../components/RoundButton";
+import { TEXT } from "../../../../lib/text";
 import { LocalDuration } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import { LOCAL_MINUTES } from "../../hooks/usePlanWorkspace";
@@ -9,6 +10,15 @@ import { LOCAL_MINUTES } from "../../hooks/usePlanWorkspace";
 /** The route's chips: the airplane, the altitude and the time
  *  (`flightInputs`), a local flight's time aloft, and the route's buttons --
  *  the Profile, the AI brief and Share (`share`). */
+
+/** On a desktop's side panel the route box's small buttons carry their
+ *  word beside the glyph, where there is the room (docs/design/icons.md,
+ *  "Small buttons have words"; the UI audit, 2026-11-09); on a phone the
+ *  glyph alone, its word its name to VoiceOver, the row as decision 0029
+ *  keeps it. */
+const WORDED = "lg:pointer-fine:w-auto lg:pointer-fine:gap-1 lg:pointer-fine:px-2";
+const WORD = cn("hidden font-medium lg:pointer-fine:inline", TEXT.detail);
+
 export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWorkspaceModel; flightInputs: ReactNode; share: ReactNode }) {
   const {
     altitudeMark, briefMark, changeLocalMin, localMin, openBrief, openProfile, profileReady, routed, s,
@@ -69,10 +79,10 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
         {profileReady && (
           <RoundButton
             label={altitudeMark === "caution" ? "Profile, your altitude has a caution" : altitudeMark === "tight" ? "Profile, your altitude is tight" : "Profile"}
-            onClick={openProfile} className="size-[32px]" data-testid="route-profile"
+            onClick={openProfile} className={cn("size-[32px]", WORDED)} data-testid="route-profile"
           >
             <span className="relative">
-              <ChartArea className="size-[18px]" strokeWidth={2} />
+              <ICON.profile className="size-[18px]" strokeWidth={2} />
               {altitudeMark && (
                 <span
                   aria-hidden="true" data-testid={altitudeMark === "caution" ? "own-altitude-flag" : "tight-altitude-flag"}
@@ -80,6 +90,7 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
                 />
               )}
             </span>
+            <span className={WORD}>Profile</span>
           </RoundButton>
         )}
         {/* The AI's brief, a card over FPL (BriefCard) -- its verdict, its
@@ -90,11 +101,11 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             both the same thing", 2026-11-04). */}
         {routed && (
           <RoundButton
-            label={briefMark ? `AI brief, ${briefMark === "stop" ? "warning" : "caution"}` : "AI brief"} onClick={openBrief} className="size-[32px]"
+            label={briefMark ? `AI brief, ${briefMark === "stop" ? "warning" : "caution"}` : "AI brief"} onClick={openBrief} className={cn("size-[32px]", WORDED)}
             data-testid="route-brief" data-finding={briefMark ?? undefined} data-tip="brief"
           >
             <span className="relative">
-              <Sparkles className="size-[18px]" strokeWidth={2} />
+              <ICON.brief className="size-[18px]" strokeWidth={2} />
               {briefMark && (
                 <span
                   aria-hidden="true" data-testid="route-brief-mark"
@@ -102,6 +113,7 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
                 />
               )}
             </span>
+            <span className={WORD}>Brief</span>
           </RoundButton>
         )}
         {/* Not before there is a route, at the owner's ask ("the share

@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraduationCap, Mail, MailX, Plus, Users } from "lucide-react";
-import { toast } from "../../lib/toast";
+import { done } from "../../lib/doneNote";
 import FieldHit from "../../components/FieldHit";
 import { cn } from "cn";
 import { ConsolePages, PageRow } from "../../components/ConsolePages";
@@ -20,7 +20,7 @@ import QueryState from "../../components/QueryState";
 import InstructorPage from "./InstructorPage";
 import ComingUp from "./ComingUp";
 import LogbookFile from "./LogbookFile";
-import { localDay } from "../../lib/clock";
+import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
 import { currencyQuery, trainingQuery } from "../../lib/queryClient";
@@ -144,7 +144,7 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
   };
   const save = useMutation({
     mutationFn: ({ id, entry }: { id?: number; entry: LogbookEntryRequest }) => (id ? api.logbook.update(id, entry) : api.logbook.add(entry)),
-    onSuccess: () => { toast.success("Flight Logged"); setAdding(false); setChanging(null); refresh(); },
+    onSuccess: () => { done("Flight Logged"); setAdding(false); setChanging(null); refresh(); },
   });
   const remove = useMutation({ mutationFn: (id: number) => api.logbook.remove(id), onSuccess: () => { setToDelete(null); refresh(); } });
   const dates = useMutation({

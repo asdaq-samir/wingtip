@@ -64,7 +64,7 @@ const rideRule = () => {
  */
 export function useSheetMotion({
   size, setSize, sizeRef, moving, setMoving, movingRef,
-  detents, pageState, tellPage, tellInsets, onPhone, fromBottom, floating, footShown, safeTop, panel, panelRef, partsRef, pillHeight, atPill, landed,
+  detents, pageState, tellPage, tellInsets, onPhone, wide = false, fromBottom, floating, footShown, safeTop, panel, panelRef, partsRef, pillHeight, atPill, landed,
 }: {
   /** The size it shows, and as of now (set as a settle starts). */
   size: PanelState;
@@ -83,6 +83,8 @@ export function useSheetMotion({
   /** The room it leaves the map, told at rest. */
   tellInsets: (insets: MapInsets) => void;
   onPhone: boolean;
+  /** A desktop's wide side panel (useIsDesktop), which covers more of the map. */
+  wide?: boolean;
   fromBottom: boolean;
   /** A top sheet floating under the window's top (from `md` up). */
   floating: boolean;
@@ -107,7 +109,7 @@ export function useSheetMotion({
   const detentsRef = useRef(detents);
 
   // What it covers of the map where it comes to rest (insetsOf).
-  const insetsFor = useCallback((s: PanelState, d: Detents) => insetsOf(s, d, onPhone, fromBottom, safeTop), [onPhone, fromBottom, safeTop]);
+  const insetsFor = useCallback((s: PanelState, d: Detents) => insetsOf(s, d, onPhone, fromBottom, safeTop, wide), [onPhone, fromBottom, safeTop, wide]);
 
   // The parts held in sight, `off` px in from where the popup's free edge
   // is laid out (its full height less its height now): a bottom sheet's

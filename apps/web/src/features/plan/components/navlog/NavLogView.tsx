@@ -18,7 +18,7 @@ import {
   Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow,
 } from "../../../../components/ui/table";
 import type { Candidate, Leg, NavLogAltitude, Totals, TopOfClimb, TopOfDescent } from "../../../../lib/api/types";
-import { feet, magneticVariation, windCorrection } from "../../../../lib/units";
+import { feet, magneticVariation, windCorrection } from "../../../../lib/format";
 import { routeName } from "../../../../lib/identSchema";
 import { revealRow } from "../../../../lib/revealRow";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";

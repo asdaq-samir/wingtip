@@ -10,7 +10,7 @@ import type { EndorsementKind, Instructor, SignedEndorsement } from "../../lib/a
 import { renderEndorsement } from "../../lib/checkride";
 import { callEngine } from "../../lib/engine/engine";
 import { lapseWarning, said, signatureLine } from "../../lib/endorsements";
-import { localDay } from "../../lib/clock";
+import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 

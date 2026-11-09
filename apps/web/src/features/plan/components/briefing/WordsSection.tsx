@@ -7,14 +7,19 @@ import { TEXT } from "../../../../lib/text";
 import SourceChips from "../ask/SourceChips";
 import type { WordsState } from "./wordsState";
 
+/** Why there are no words, as a sentence under the section's title: it
+ *  was "Words unavailable: Not Found", a label and HTTP's raw reason
+ *  (the UI audit, 2026-11-09). */
+const sentence = (why: string) => `${why.charAt(0).toUpperCase()}${why.slice(1)}${/[.!?]$/.test(why) ? "" : "."}`;
+
 /**
  * One section of plain-language words with the reports they rest on:
  * the Brief's risk picture, its NOTAMs and its weather (BriefWords), and
  * the debrief's what to practise (DebriefWords). Its title is the way to
  * the list in full where there is one (`onMore`, the owner's rule for
  * every section's heading), three lines of skeleton while the words are
- * written, and where the model could not be reached, "Words unavailable"
- * with the reason in the note's size and nothing else -- never a toast
+ * written, and where the model could not be reached, why, as a sentence
+ * in the note's size and nothing else -- never a toast
  * (lib/problems). The figures the section is about stay in the Brief's
  * own cards either way.
  */
@@ -43,7 +48,7 @@ export default function WordsSection({ title, onMore, testId, state, credit, emp
           <Skeleton className="h-4 w-2/3" />
         </div>
       ) : unavailable ? (
-        <p className={cn("text-muted-foreground", TEXT.note)} data-testid={`${testId}-unavailable`}>Words unavailable: {unavailable}</p>
+        <p className={cn("text-muted-foreground", TEXT.note)} data-testid={`${testId}-unavailable`}>{sentence(unavailable)}</p>
       ) : answer && (
         <>
           {answer.sentences.length === 0 && empty ? (

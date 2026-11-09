@@ -1,7 +1,7 @@
 import type { AltitudeOption, Leg, Runway, Totals } from "../../lib/api/types";
 import { SCORE_STEPS } from "../../lib/scoreScale";
-import { altFt, bearing, flightLevel, one } from "../../lib/units";
-import { clockTime, duration, zuluTime } from "../../lib/clock";
+import { altFt, bearing, flightLevel, one } from "../../lib/format";
+import { clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { calmOnRunway, isCalm } from "../../lib/wind";
 import { modelledWinds } from "../../lib/windsAloft";
@@ -38,7 +38,7 @@ export function scoreColor(s: number): string {
 /** Total time in decimal hours, as a logbook keeps it: "19.9h", where
  *  the flight's line has no room for "19h 50m" (FlightLine). Up to the
  *  next tenth, so the time is never said short of what it is; whole
- *  minutes first, as lib/clock's duration's are. */
+ *  minutes first, as lib/format's duration's are. */
 export function decimalHours(minutes: number): string {
   return `${(Math.ceil(Math.round(minutes) / 6) / 10).toFixed(1)}h`;
 }
@@ -140,7 +140,7 @@ export function cruiseByAltitude(legs: Leg[], cruisePowerPct: number | null | un
 }
 
 /** A clock time, "09:05", 24-hour in the browser's own zone -- an ETA
- *  (lib/clock, where the app's times are written). */
+ *  (lib/format, where the app's times are written). */
 export { clockTime };
 
 /** When a leg ends: the departure instant plus the minutes flown to

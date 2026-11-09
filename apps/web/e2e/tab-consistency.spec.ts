@@ -60,7 +60,7 @@ test("every tab's page is laid out as one: its sections' sides, headings and the
   await page.goto("/app/plan");
   await settle(page);
   const pages: Record<string, Section[]> = {};
-  for (const [name, tab] of [["FPL", "tab-fpl"], ["Airport", "tab-airport"], ["Aircraft", "tab-aircraft"], ["Setup", "setup-button"]] as const) {
+  for (const [name, tab] of [["FPL", "tab-fpl"], ["Airport", "tab-airport"], ["Airplane", "tab-aircraft"], ["Setup", "setup-button"]] as const) {
     for (const size of ["half", "full"] as const) {
       // FPL with no route shows its Saved strip half way only.
       if (name === "FPL" && size === "full") continue;
@@ -91,6 +91,6 @@ test("every tab's page is laid out as one: its sections' sides, headings and the
   // Airport's and Aircraft's first section, under the same search bar,
   // as far under the tab bar.
   for (const size of ["half", "full"]) {
-    expect(Math.abs(pages[`Airport ${size}`]![0]!.top - pages[`Aircraft ${size}`]![0]!.top), size).toBeLessThan(1.5);
+    expect(Math.abs(pages[`Airport ${size}`]![0]!.top - pages[`Airplane ${size}`]![0]!.top), size).toBeLessThan(1.5);
   }
 });

@@ -4,7 +4,7 @@ import type { TrafficAircraft } from "../../../lib/api/types";
 import type { LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
 import { trafficLabel } from "../../../lib/map/traffic";
-import { altFt } from "../../../lib/units";
+import { altFt } from "../../../lib/format";
 
 /** One airplane in a list: its name, what it is and how it flies, and
  *  how far and which way it is from `from`. */

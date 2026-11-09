@@ -25,7 +25,7 @@ pub struct Missed {
 }
 
 /// A whole number with its thousands grouped ("4,000"), as the web's
-/// lib/units grouped writes one.
+/// lib/format grouped writes one.
 pub fn grouped(n: i64) -> String {
     let digits = n.abs().to_string();
     let mut out = String::new();

@@ -1,12 +1,12 @@
 """How a figure or the FAA's text is written in the Go / No-Go's words, as
-the web app writes them (lib/units, lib/advisories, features/plan/format):
+the web app writes them (lib/format, lib/advisories, features/plan/format):
 the verdict's lines are compared word for word with the web's."""
 from . import ask
 
 
 # How a figure is written is the engine's (figures::words, through
 # wingtip_native.call), JavaScript's rounding and number text as the web's
-# lib/units writes them, so a line here reads as the web's word for word.
+# lib/format writes them, so a line here reads as the web's word for word.
 
 
 def num(n) -> str:
@@ -28,19 +28,19 @@ def one(n: float) -> float:
 
 def grouped(n: float) -> str:
     """A whole number with a comma between each three figures, "12,500",
-    as the FAA writes altitudes and weights (lib/units grouped)."""
+    as the FAA writes altitudes and weights (lib/format grouped)."""
     return ask("words_grouped", n=n)
 
 
 def alt_ft(ft: float | None) -> str:
-    """"12,500"; an em dash for none (lib/units altFt)."""
+    """"12,500"; an em dash for none (lib/format altFt)."""
     return ask("words_alt_ft", ft=ft)
 
 
 def flight_level(ft: float | None) -> str:
     """A cruising altitude as the owner asked it written, hundreds of feet
     in three figures: "FL-045" for 4,500 ft, "FL-___" with none yet
-    (lib/units flightLevel)."""
+    (lib/format flightLevel)."""
     return ask("words_flight_level", ft=ft)
 
 
