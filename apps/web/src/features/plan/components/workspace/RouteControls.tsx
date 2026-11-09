@@ -56,7 +56,11 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
           17. Where the row wraps, the lines' gap keeps them apart (above).
           Back on this line at the owner's ask (2026-10-25), the sheet edge
           to edge for the room (MapPanel's HALF_INSET). */}
-      <div className="ml-auto flex shrink-0 items-center gap-3 pl-3.5" data-testid="route-actions">
+      {/* In points, not rem: iOS's bar buttons keep their size at any text
+          size, and at the owner's 19.65 px these grew to 39 with 15 between,
+          29 more than at 16, and wrapped onto a line of their own (the FPL
+          audit's A3). */}
+      <div className="ml-auto flex shrink-0 items-center gap-[12px] pl-[14px]" data-testid="route-actions">
         {/* The Profile -- the route from the side, its altitude's wheel and
             its dry run -- where the nav log's button was, the nav log in
             the route's ••• menu, at the owner's ask (2026-11-04: "Replace
@@ -65,10 +69,10 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
         {profileReady && (
           <RoundButton
             label={altitudeMark === "caution" ? "Profile, your altitude has a caution" : altitudeMark === "tight" ? "Profile, your altitude is tight" : "Profile"}
-            onClick={openProfile} className="size-8" data-testid="route-profile"
+            onClick={openProfile} className="size-[32px]" data-testid="route-profile"
           >
             <span className="relative">
-              <ChartArea className="size-[1.125rem]" strokeWidth={2} />
+              <ChartArea className="size-[18px]" strokeWidth={2} />
               {altitudeMark && (
                 <span
                   aria-hidden="true" data-testid={altitudeMark === "caution" ? "own-altitude-flag" : "tight-altitude-flag"}
@@ -86,11 +90,11 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             both the same thing", 2026-11-04). */}
         {routed && (
           <RoundButton
-            label={briefMark ? `AI brief, ${briefMark === "stop" ? "warning" : "caution"}` : "AI brief"} onClick={openBrief} className="size-8"
+            label={briefMark ? `AI brief, ${briefMark === "stop" ? "warning" : "caution"}` : "AI brief"} onClick={openBrief} className="size-[32px]"
             data-testid="route-brief" data-finding={briefMark ?? undefined} data-tip="brief"
           >
             <span className="relative">
-              <Sparkles className="size-[1.125rem]" strokeWidth={2} />
+              <Sparkles className="size-[18px]" strokeWidth={2} />
               {briefMark && (
                 <span
                   aria-hidden="true" data-testid="route-brief-mark"

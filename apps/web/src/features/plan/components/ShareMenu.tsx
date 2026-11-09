@@ -140,10 +140,10 @@ export default function ShareMenu({
             {/* The route box's a size down, as the box's other buttons are. */}
             <RoundButton
               label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
-              className={card === "route" ? "size-8" : undefined} data-testid={testId}
+              className={card === "route" ? "size-[32px]" : undefined} data-testid={testId}
             >
               <span className="relative">
-                {card === "route" ? <Ellipsis className="size-[1.125rem]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
+                {card === "route" ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
                 {!!planAgain?.stale.length && (
                   <span aria-hidden="true" data-testid="plan-again-mark" className="absolute -top-0.5 -right-1 size-2 rounded-full bg-caution" />
                 )}
