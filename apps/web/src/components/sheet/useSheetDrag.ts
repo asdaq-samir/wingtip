@@ -91,6 +91,7 @@ export function useSheetDrag(of: DragOf) {
           isBody: el === body,
           keeps: el.matches("textarea, input[type=range], [contenteditable=true]") || style.touchAction === "none",
           scrollFirst: el instanceof HTMLElement && el.dataset.scrollFirst !== undefined,
+          pulls: el instanceof HTMLElement && el.dataset.pullRefresh !== undefined,
           scroller: /auto|scroll/.test(style.overflowY),
           scrolls: scrolls(el),
           atStart: el.scrollTop <= 0,

@@ -117,7 +117,7 @@ fun FPLScreen(plan: Plan) {
  * 91.179 for IFR).
  */
 @Composable
-private fun FlightRulesRow(onChanged: () -> Unit) {
+internal fun FlightRulesRow(onChanged: () -> Unit) {
     val context = LocalContext.current
     val choices = remember(context) { FlightChoices.of(context) }
     val rules by choices.rules.collectAsStateWithLifecycle()

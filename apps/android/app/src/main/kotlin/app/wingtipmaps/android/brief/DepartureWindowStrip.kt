@@ -16,7 +16,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSize
@@ -64,7 +64,7 @@ fun DepartureWindowStrip(plan: Plan.State, signedIn: Boolean, model: DepartureWi
     when {
         !signedIn -> Text(stringResource(R.string.when_to_go_sign_in), color = muted)
         state.problem != null -> ProblemLine(state.problem)
-        state.pending -> LinearProgressIndicator(Modifier.fillMaxWidth())
+        state.pending -> Skeleton(rows = 1)
         answer == null -> {}
         answer.hours.isEmpty() -> Text(stringResource(R.string.when_to_go_none), color = muted)
         else -> {

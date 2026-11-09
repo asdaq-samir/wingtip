@@ -2,6 +2,8 @@
 
 package app.wingtipmaps.android.design.generated
 
+import android.os.Build
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Immutable
@@ -53,6 +55,27 @@ object WingtipColors {
         /** The dark tab an airspace's altitudes sit in, at 90%. */
         val AirspaceTab = Color(0xFF1C2330)
         const val AIRSPACE_TAB_HEX = "#1c2330"
+        /** FIS-B NEXRAD's levels (DO-358B; 0 is none) drawn from light green through yellow and red to magenta, as radar pictures run from the faintest returns to the strongest. Level 1, the faintest. */
+        val Nexrad1 = Color(0xFF9BE59B)
+        const val NEXRAD_1_HEX = "#9be59b"
+        /** NEXRAD level 2. */
+        val Nexrad2 = Color(0xFF34C759)
+        const val NEXRAD_2_HEX = "#34c759"
+        /** NEXRAD level 3. */
+        val Nexrad3 = Color(0xFFFFD60A)
+        const val NEXRAD_3_HEX = "#ffd60a"
+        /** NEXRAD level 4. */
+        val Nexrad4 = Color(0xFFFF9F0A)
+        const val NEXRAD_4_HEX = "#ff9f0a"
+        /** NEXRAD level 5. */
+        val Nexrad5 = Color(0xFFFF3B30)
+        const val NEXRAD_5_HEX = "#ff3b30"
+        /** NEXRAD level 6. */
+        val Nexrad6 = Color(0xFFB0001E)
+        const val NEXRAD_6_HEX = "#b0001e"
+        /** NEXRAD level 7, the strongest. */
+        val Nexrad7 = Color(0xFFD62AD8)
+        const val NEXRAD_7_HEX = "#d62ad8"
         /** Prohibited, restricted, warning and alert areas (special-use airspace, FAA Order JO 7400.10): the orange-brown hatch. */
         val SpecialUse = Color(0xFFE0662A)
         const val SPECIAL_USE_HEX = "#e0662a"
@@ -550,6 +573,21 @@ object WingtipMotion {
     val SheetBackEase = CubicBezierEasing(0.2f, 0.9f, 0.3f, 1f)
     const val FADE_MS = 200
     const val QUICK_MS = 150
+    const val PAGE_MS = 250
+    const val SKELETON_PULSE_MS = 1500
+}
+
+/** The taps felt on a key action, as View.performHapticFeedback's constants; one
+ *  from API 30 has its fallback below that. */
+object WingtipHaptic {
+    /** An altitude set: a wheel's detent, as a picker ticks. */
+    const val ALTITUDE = HapticFeedbackConstants.CLOCK_TICK
+    /** Direct To or Fly Here taken: the route has changed under the pilot. */
+    val DIRECT_TO: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+    /** An alert or a copilot warning shown: felt as well as seen, in a busy cockpit. */
+    val WARNING: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
+    /** The sheet settling at a detent (pill, half, full). */
+    const val DETENT = HapticFeedbackConstants.CONTEXT_CLICK
 }
 
 object WingtipSize {
@@ -559,4 +597,5 @@ object WingtipSize {
     val Panel = 384.dp
     val PanelWide = 448.dp
     val Desktop = 1024.dp
+    val RefreshPull = 64.dp
 }

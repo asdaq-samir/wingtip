@@ -1,11 +1,9 @@
 package app.wingtipmaps.android.logbook
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
@@ -33,7 +32,7 @@ fun LogbookScreen(model: LogbookModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg)) {
         item {
-            if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+            if (state.loading) Skeleton(rows = 4)
             ProblemLine(state.problem)
             if (state.currency.isNotEmpty()) SectionTitle(stringResource(R.string.currency))
         }

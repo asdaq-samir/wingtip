@@ -3,6 +3,7 @@ import { cn } from "cn";
 import { RouteMap } from "../../routeMapChunk";
 import TipHost from "../../../../components/TipHost";
 import FirstFlight from "../FirstFlight";
+import Welcome from "../welcome/Welcome";
 import FixCard from "../FixCard";
 import RouteLegCard from "../RouteLegCard";
 import { FlyingHead } from "../../routePanelParts";
@@ -69,6 +70,8 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
       )}
       {/* What to look for, a tip at a time, the first times (lib/firstRunTips). */}
       <TipHost />
+      {/* The welcome first, once (useWelcome); then the first flight's card. */}
+      <Welcome routed={routed} onPlan={setRoute} onOpened={openNavLogCard} />
       <FirstFlight routed={routed} onPlan={setRoute} onPlanned={openNavLogCard} />
     </div>
   );

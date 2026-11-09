@@ -3,6 +3,7 @@ import type { SetURLSearchParams } from "react-router-dom";
 import type { AltitudeChoice } from "../../../lib/api/types";
 import { altitudesParam, groundOf, positionIdent, stopsOf } from "../../../lib/identSchema";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
+import { feel } from "../../../lib/haptics";
 import { sameField } from "../../../lib/procedures";
 import { holdsOf, holdsParam, type Hold } from "../lib/routeHolds";
 import { patched } from "../../../lib/useSearchParamsNow";
@@ -44,6 +45,7 @@ export function usePlanSetters(setSearchParams: SetURLSearchParams) {
   const directToPoint = useCallback((ident: string | null) => {
     const ship = useOwnShip.getState();
     const fix = ship.enabled ? ship.fix : null;
+    if (ident) feel("directTo");
     setSearchParams(prev => directToPatch(prev, ident, fix), { replace: true });
   }, [setSearchParams]);
   // A hold set at a point, changed, or (null) taken off: one a point.
@@ -62,6 +64,7 @@ export function usePlanSetters(setSearchParams: SetURLSearchParams) {
     const ship = useOwnShip.getState();
     const fix = ship.enabled ? ship.fix : null;
     if (!fix) return;
+    feel("directTo");
     setSearchParams(prev => {
       const was = prev.get("was") ?? routeWas(prev);
       const stops = stopsOf(prev.get("stops")).filter(stop => !sameField(stop, to.ident));
@@ -80,6 +83,7 @@ export function usePlanSetters(setSearchParams: SetURLSearchParams) {
   // the log flies the plan and nothing else, and the Custom box (whose
   // draft belonged to the old address) empties with it.
   const changeAltitudeChoice = useCallback((choice: AltitudeChoice) => {
+    feel("altitude");
     setSearchParams(prev => {
       return patched(prev, { altitude_ft: null, altitude_nearest: null, altitude_choice: choice === "fastest" ? null : choice });
     }, { replace: true });

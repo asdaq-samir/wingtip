@@ -245,7 +245,7 @@ struct StopServicesSections: View {
                     Button("Try Again") { Task { await load() } }
                 }
             } else {
-                Section(title: "Services") { ProgressView("Fetching the services…") }
+                Section(title: "Services") { Skeleton(rows: 2, label: "Fetching the services") }
             }
         }
         .task(id: ident) { await load() }

@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../compo
 import { GLASS } from "../../lib/mapChrome";
 import { LATEST_KEPT_MS, useLatestAtcCall } from "../../lib/atc/latestCall";
 import { TEXT } from "../../lib/text";
+import { useFeelOnNew } from "../../lib/haptics";
 import { useCopilot } from "./useCopilot";
 
 /** A warning's red, a caution's amber, as the alerts banner's are; an
@@ -51,6 +52,8 @@ function AtcLine() {
  */
 export default function CopilotBanner() {
   const { message, dismiss } = useCopilot();
+  // A new warning or caution felt as it comes up (lib/haptics); an advisory only shown.
+  useFeelOnNew(message && message.level !== "advisory" && !message.elsewhere ? `${message.kind}:${message.title}` : null, "warning");
   const [open, setOpen] = useState(false);
   if (!message || message.elsewhere) return <AtcLine />;
   const Icon = ICON[message.level];

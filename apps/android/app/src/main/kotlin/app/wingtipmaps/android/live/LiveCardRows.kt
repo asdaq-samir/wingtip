@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -12,13 +11,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.SectionTitle
@@ -36,7 +34,7 @@ fun SpecialUseRows(lat: Double, lon: Double, model: SpecialUseModel = viewModel(
     LaunchedEffect(lat, lon) { model.at(lat, lon) }
     SectionTitle(stringResource(R.string.special_use))
     when {
-        state.loading -> LinearProgressIndicator(Modifier.fillMaxWidth())
+        state.loading -> Skeleton(rows = 2)
         state.unavailable -> Text(stringResource(R.string.special_use_unavailable), color = LocalInk.current.cautionInk)
         state.areas.isNullOrEmpty() -> Text(stringResource(R.string.special_use_none), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }

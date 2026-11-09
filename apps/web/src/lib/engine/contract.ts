@@ -668,6 +668,7 @@ export type ReadTrackAnswer =
   | {
       error: string;
     };
+export type ReceiverTrafficAnswer = HeardPlane[];
 export type RegionOfAnswer = string;
 export type RegisteredProfileAnswer = string | null;
 export type ReserveMinAnswer = number;
@@ -2224,6 +2225,13 @@ export interface EngineContract {
     answer: NotamsFnsAnswer;
   };
   /**
+   * A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.
+   */
+  notams_ranked: {
+    input: NotamsRankedInput;
+    answer: NotamsRankedAnswer;
+  };
+  /**
    * Whether a transmission is said to the airplane `tail` (AIM 4-2-4).
    */
   our_call: {
@@ -2502,6 +2510,34 @@ export interface EngineContract {
   readback_check: {
     input: ReadbackCheckInput;
     answer: ReadbackCheckAnswer;
+  };
+  /**
+   * FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.
+   */
+  receiver_nexrad: {
+    input: ReceiverNexradInput;
+    answer: ReceiverNexradAnswer;
+  };
+  /**
+   * A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).
+   */
+  receiver_read: {
+    input: ReceiverReadInput;
+    answer: ReceiverPicture;
+  };
+  /**
+   * A field's latest METAR (or SPECI) and TAF sent over FIS-B (AIM 4-5-9), as sent, with when; the K of a contiguous-states ICAO identifier matched either way (ORD, KORD).
+   */
+  receiver_reports: {
+    input: ReceiverReportsInput;
+    answer: ReceiverReportsAnswer;
+  };
+  /**
+   * The traffic to draw: the receiver's own targets, their pressure altitudes put on own ship's scale by own ship's height less its pressure altitude, then the internet's airplanes the receiver does not hear (by ICAO address), never own ship.
+   */
+  receiver_traffic: {
+    input: ReceiverTrafficInput;
+    answer: ReceiverTrafficAnswer;
   };
   /**
    * The phone pack's region holding a point, "n40w088": a square of 4 degrees named by its south-west corner.
@@ -7233,6 +7269,97 @@ export interface NoAltitudeAnswer {
 export interface NotamsFnsInput {
   text: string;
 }
+export interface NotamsRankedInput {
+  notams: {
+    id: string;
+    /**
+     * The place the NOTAM is issued for, as the feed names it (OSH, KOSH).
+     */
+    location?: string | null;
+    /**
+     * ISO 8601 UTC; null for in force now.
+     */
+    starts?: string | null;
+    /**
+     * ISO 8601 UTC; null for until further notice.
+     */
+    ends?: string | null;
+    schedule?: string | null;
+    /**
+     * The NOTAM's text as sent.
+     */
+    text: string;
+    /**
+     * A TFR's floor, ft MSL, where the planner read it.
+     */
+    floor_ft?: number | null;
+    /**
+     * A TFR's ceiling, ft MSL.
+     */
+    ceiling_ft?: number | null;
+    /**
+     * The route goes through it (a TFR the planner placed on the route).
+     */
+    crosses?: boolean | null;
+  }[];
+  fields?: {
+    ident: string;
+    role: "dep" | "stop" | "dest";
+    /**
+     * When the flight's time at the field starts, ISO 8601 UTC.
+     */
+    from?: string | null;
+    until?: string | null;
+    /**
+     * The runway ends in use there ("18", "09L"); empty where none is known.
+     */
+    runways?: string[];
+  }[];
+  /**
+   * The flight's window, ISO 8601 UTC: for a NOTAM at no field of the route.
+   */
+  from?: string | null;
+  until?: string | null;
+  /**
+   * The cruise altitude, ft MSL.
+   */
+  cruise_ft?: number | null;
+  /**
+   * The airspaces the route passes, by name (CHICAGO CLASS B).
+   */
+  airspaces?: string[];
+}
+export interface NotamsRankedAnswer {
+  ranked: {
+    id: string;
+    rank: number;
+    score: number;
+    /**
+     * One of the first three said with a line each; the rest are folded.
+     */
+    top: boolean;
+    /**
+     * Another NOTAM has the same score: the words may put a tie in another order.
+     */
+    tied: boolean;
+    field: string | null;
+    role: string | null;
+    /**
+     * Its JO 7930.2 keyword (RWY, AD, NAV, AIRSPACE...).
+     */
+    keyword: string | null;
+    runways: string[];
+    closed: boolean;
+    low_ft: number | null;
+    high_ft: number | null;
+    in_force: boolean | null;
+    reasons: {
+      key: "time" | "schedule" | "field" | "runway" | "closed" | "altitude" | "airspace" | "kind";
+      words: string;
+    }[];
+  }[];
+  top: number;
+}
 export interface OurCallInput {
   text: string;
   tail: string;
@@ -7814,6 +7941,339 @@ export interface ReadbackCheckAnswer {
     required: boolean;
   }[];
   words: string;
+}
+export interface ReceiverNexradInput {
+  /**
+   * The last answer, or null at first.
+   */
+  picture?: ReceiverPicture | null;
+}
+/**
+ * What a receiver has said so far: hand it back with the next bytes.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReceiverPicture".
+ */
+export interface ReceiverPicture {
+  receiver: ReceiverState;
+  ownship: ReceiverOwnship | null;
+  targets: ReceiverTarget[];
+  texts: ReceiverText[];
+  nexrad: ReceiverBlock[];
+}
+export interface ReceiverState {
+  /**
+   * The name its ID message gives (Stratux, Sentry, SkyEcho).
+   */
+  name: string | null;
+  long_name: string | null;
+  stratux: boolean;
+  heartbeat_at: number | null;
+  /**
+   * A Heartbeat came in the last 5 s (one a second, GDL 90 3.1).
+   */
+  live: boolean;
+  /**
+   * One line for the receiver's chip: "Stratux · 12 targets · GPS".
+   */
+  summary: string;
+  gps: boolean;
+  utc_ok: boolean;
+  battery_low: boolean;
+  maintenance: boolean;
+  /**
+   * Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid.
+   */
+  msl: boolean;
+  frames: number;
+  /**
+   * Frames whose CRC did not match, dropped.
+   */
+  bad_frames: number;
+  station_lat: number | null;
+  station_lon: number | null;
+  station_at: number | null;
+}
+/**
+ * Own ship as the receiver's GPS gives it.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReceiverOwnship".
+ */
+export interface ReceiverOwnship {
+  /**
+   * The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address.
+   */
+  hex: string;
+  /**
+   * The 24-bit participant address (GDL 90 3.5.1.3).
+   */
+  address: number;
+  /**
+   * 0 ADS-B with an ICAO address, 1 ADS-B self-assigned, 2 TIS-B ICAO, 3 TIS-B track file, 4 surface vehicle, 5 ground station beacon (GDL 90 3.5.1.2).
+   */
+  address_type: number;
+  source: "ADS-B" | "TIS-B" | "vehicle" | "beacon";
+  callsign: string | null;
+  lat: number;
+  lon: number;
+  /**
+   * Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+   */
+  pressure_ft: number | null;
+  airborne: boolean;
+  extrapolated: boolean;
+  track_deg: number | null;
+  /**
+   * True track, true heading or magnetic heading (GDL 90 3.5.1.5).
+   */
+  track_kind: "track" | "heading" | "magnetic";
+  speed_kt: number | null;
+  vertical_fpm: number | null;
+  /**
+   * GDL 90's emitter category code (3.5.1.10).
+   */
+  emitter: number;
+  /**
+   * DO-260B's emitter category, A1 light to C5 line obstacle.
+   */
+  category: string | null;
+  /**
+   * 0 none, 1 general, 2 medical, 3 minimum fuel, 4 no communication, 5 unlawful interference, 6 downed aircraft (GDL 90 3.5.1.12).
+   */
+  emergency: number;
+  /**
+   * Navigation Integrity Category.
+   */
+  nic: number;
+  /**
+   * Navigation Accuracy Category for Position.
+   */
+  nacp: number;
+  alert: boolean;
+  /**
+   * When it was last heard, Unix s.
+   */
+  at: number;
+  /**
+   * The GPS height (GDL 90 ID 11), ft: above MSL where the receiver says so (receiver.msl), else above the WGS-84 ellipsoid.
+   */
+  geometric_ft: number | null;
+  /**
+   * Its Vertical Figure of Merit, m.
+   */
+  vfom_m: number | null;
+}
+/**
+ * An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReceiverTarget".
+ */
+export interface ReceiverTarget {
+  /**
+   * The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address.
+   */
+  hex: string;
+  /**
+   * The 24-bit participant address (GDL 90 3.5.1.3).
+   */
+  address: number;
+  /**
+   * 0 ADS-B with an ICAO address, 1 ADS-B self-assigned, 2 TIS-B ICAO, 3 TIS-B track file, 4 surface vehicle, 5 ground station beacon (GDL 90 3.5.1.2).
+   */
+  address_type: number;
+  source: "ADS-B" | "TIS-B" | "vehicle" | "beacon";
+  callsign: string | null;
+  lat: number;
+  lon: number;
+  /**
+   * Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+   */
+  pressure_ft: number | null;
+  airborne: boolean;
+  extrapolated: boolean;
+  track_deg: number | null;
+  /**
+   * True track, true heading or magnetic heading (GDL 90 3.5.1.5).
+   */
+  track_kind: "track" | "heading" | "magnetic";
+  speed_kt: number | null;
+  vertical_fpm: number | null;
+  /**
+   * GDL 90's emitter category code (3.5.1.10).
+   */
+  emitter: number;
+  /**
+   * DO-260B's emitter category, A1 light to C5 line obstacle.
+   */
+  category: string | null;
+  /**
+   * 0 none, 1 general, 2 medical, 3 minimum fuel, 4 no communication, 5 unlawful interference, 6 downed aircraft (GDL 90 3.5.1.12).
+   */
+  emergency: number;
+  /**
+   * Navigation Integrity Category.
+   */
+  nic: number;
+  /**
+   * Navigation Accuracy Category for Position.
+   */
+  nacp: number;
+  alert: boolean;
+  /**
+   * When it was last heard, Unix s.
+   */
+  at: number;
+}
+/**
+ * A FIS-B text product as sent (AIM 4-5-9): a METAR, TAF, winds aloft or PIREP (product 413), or a NOTAM, TFR, AIRMET, SIGMET, SUA status, G-AIRMET or CWA text record.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReceiverText".
+ */
+export interface ReceiverText {
+  /**
+   * The FIS-B product ID (DO-358B).
+   */
+  product: number;
+  /**
+   * METAR, SPECI, TAF, WINDS, PIREP ... or NOTAM, AIRMET, SIGMET, SUA, G-AIRMET, CWA, NOTAM-TRA, NOTAM-TMOA.
+   */
+  kind: string;
+  /**
+   * The station or office.
+   */
+  location: string | null;
+  /**
+   * A text record's report number.
+   */
+  number: number | null;
+  /**
+   * The words as sent; a METAR or TAF without its kind, as the METAR and TAF readers take it.
+   */
+  text: string;
+  /**
+   * The product's time, HHMMZ.
+   */
+  time: string;
+  /**
+   * When it was last sent, Unix s.
+   */
+  at: number;
+}
+/**
+ * A FIS-B NEXRAD block (products 63 regional and 64 CONUS): 32 bins across and 4 down, north row first, each a level 0 to 7.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReceiverBlock".
+ */
+export interface ReceiverBlock {
+  id: number;
+  regional: boolean;
+  north: number;
+  west: number;
+  south: number;
+  east: number;
+  /**
+   * 128 digits 0 to 7, row by row from the north-west.
+   */
+  bins: string;
+  time: string;
+  at: number;
+}
+export interface ReceiverNexradAnswer {
+  levels: ReceiverNexradLevel[];
+  time: string | null;
+  at: number | null;
+}
+/**
+ * One NEXRAD level's rectangles, [south, west, north, east] degrees each.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReceiverNexradLevel".
+ */
+export interface ReceiverNexradLevel {
+  /**
+   * 1 to 7, DO-358B's levels (0 is none).
+   */
+  level: number;
+  rects: [number, number, number, number][];
+}
+export interface ReceiverReadInput {
+  /**
+   * The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+   */
+  data?: string | null;
+  /**
+   * Now, Unix s: when the bytes came.
+   */
+  at: number;
+  /**
+   * The last answer, or null at first.
+   */
+  picture?: ReceiverPicture | null;
+}
+export interface ReceiverReportsInput {
+  /**
+   * The last answer, or null at first.
+   */
+  picture?: ReceiverPicture | null;
+  ident: string;
+}
+export interface ReceiverReportsAnswer {
+  metar: ReceiverReport | null;
+  taf: ReceiverReport | null;
+}
+/**
+ * A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReceiverReport".
+ */
+export interface ReceiverReport {
+  kind: string;
+  text: string;
+  time: string;
+  at: number;
+}
+export interface ReceiverTrafficInput {
+  /**
+   * The last answer, or null at first.
+   */
+  picture?: ReceiverPicture | null;
+  internet?: HeardPlane[];
+  /**
+   * Own ship's height MSL from the phone's GPS, ft, where known.
+   */
+  own_ft?: number | null;
+  /**
+   * Now, Unix s.
+   */
+  at: number;
+}
+/**
+ * An airplane as the map's traffic draws it, the planner's TrafficAircraft (wingtip.traffic): who, where, how high, its track, speed and climb, how old.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "HeardPlane".
+ */
+export interface HeardPlane {
+  hex: string;
+  callsign?: string | null;
+  registration?: string | null;
+  type?: string | null;
+  category?: string | null;
+  lat: number;
+  lon: number;
+  altitude_ft?: number | null;
+  pressure_altitude?: boolean | null;
+  track_deg?: number | null;
+  speed_kt?: number | null;
+  vertical_fpm?: number | null;
+  squawk?: string | null;
+  emergency?: string | null;
+  seen_s?: number | null;
 }
 export interface RegionOfInput {
   lat: number;

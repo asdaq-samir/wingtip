@@ -21,6 +21,19 @@ export interface TipSpec {
  *  route or been closed: the tips store's key for it. */
 export const FIRST_FLIGHT = "first-flight";
 
+/** The welcome (features/plan/components/welcome), seen once it has been
+ *  finished or skipped: before the first flight's card, and brought back
+ *  with the tips by the Guide's Show Welcome and Tips Again. */
+export const WELCOME = "welcome";
+
+/** Whether the welcome is still to be shown on this device: what holds
+ *  the page's own asks back (locateOnOpen's location, the tips) until it
+ *  has said why. */
+export const welcomeDue = () => unseen(useTips.getState().seen, WELCOME);
+
+/** Whether the welcome is on the screen now: no tip is offered over it. */
+export const useWelcomeOpen = create<{ open: boolean }>(() => ({ open: false }));
+
 /** In the order they are offered, each when its control is in sight. */
 export const TIPS: TipSpec[] = [
   {

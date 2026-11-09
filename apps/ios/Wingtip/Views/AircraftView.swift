@@ -81,7 +81,7 @@ struct AircraftView: View {
                 }
                 Section(title: "Types the Planner Has Figures for") {
                     if profiles.isEmpty {
-                        if let problem { ProblemLine(problem) } else { ProgressView() }
+                        if let problem { ProblemLine(problem) } else { Skeleton(label: "Fetching the types") }
                     }
                     ForEach(profiles, id: \.name) { profile in
                         HStack {

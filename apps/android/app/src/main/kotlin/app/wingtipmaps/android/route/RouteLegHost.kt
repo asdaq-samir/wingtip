@@ -8,6 +8,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.design.generated.WingtipHaptic
+import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
 
@@ -29,6 +31,7 @@ fun RouteLegHost(plan: Plan, ownShipOn: Boolean, model: RouteLegModel = viewMode
     // The point flying mode flies to: the engine's next waypoint on the route.
     val flyingTo = inFlight.progress?.takeIf { ownShipOn && it.onRoute }?.next?.name
     val leg = RouteLegModel.view(index, state, flyingTo)
+    val haptics = rememberHaptics()
     if (leg == null) {
         // The route was planned again without this leg: the sheet goes.
         LaunchedEffect(index) { model.close() }
@@ -37,7 +40,12 @@ fun RouteLegHost(plan: Plan, ownShipOn: Boolean, model: RouteLegModel = viewMode
     RouteLegSheet(
         leg = leg,
         onDirect = {
-            if (leg.directOn) plan.cancelDirect() else plan.directToStop(leg.to, if (ownShipOn) fix else null)
+            if (leg.directOn) {
+                plan.cancelDirect()
+            } else {
+                plan.directToStop(leg.to, if (ownShipOn) fix else null)
+                haptics.tap(WingtipHaptic.DIRECT_TO)
+            }
             model.close()
         },
         onRemove = {

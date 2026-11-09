@@ -34,11 +34,29 @@ struct AtcCardRows: View {
 }
 
 /// Setup's Alerts: the ATC copilot off, or listening while flying.
+/// Turned on with the microphone not yet asked for, why is said first and
+/// the system's question comes on Allow (PermissionAsk); Not Now leaves it off.
 struct AtcModePicker: View {
+    @State private var askingMicrophone = false
+
     var body: some View {
-        Picker("ATC", selection: Binding(get: { AtcCopilot.shared.mode }, set: { AtcCopilot.shared.mode = $0 })) {
+        Picker("ATC", selection: Binding(get: { AtcCopilot.shared.mode }, set: { pick($0) })) {
             ForEach(AtcCopilot.Mode.allCases) { Text($0.label).tag($0) }
         }
         .pickerStyle(.segmented)
+        .sheet(isPresented: $askingMicrophone) {
+            PermissionAsk(permission: .microphone, allow: {
+                askingMicrophone = false
+                Task { if await ClearanceListener.allowed() { AtcCopilot.shared.mode = .flying } }
+            }, notNow: { askingMicrophone = false })
+            .presentationDetents([.medium])
+        }
+    }
+
+    private func pick(_ mode: AtcCopilot.Mode) {
+        guard mode == .flying else { AtcCopilot.shared.mode = mode; return }
+        Task {
+            if await Permission.undecided(.microphone) { askingMicrophone = true } else { AtcCopilot.shared.mode = mode }
+        }
     }
 }

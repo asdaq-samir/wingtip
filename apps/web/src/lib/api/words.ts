@@ -66,7 +66,7 @@ interface RiskWordsRequest {
 /** A POST to the planner through the gateway, its JSON back; the
  *  gateway's prefix written in as GatewayRequest writes it. A plain
  *  fetch, as ./assistant's: the schema has no such path yet. */
-async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
+export async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(path, {
     method: "POST", signal, body: JSON.stringify(body),
     headers: { "Content-Type": "application/json", ...csrfHeaders("POST"), ...requestIdHeaders() },

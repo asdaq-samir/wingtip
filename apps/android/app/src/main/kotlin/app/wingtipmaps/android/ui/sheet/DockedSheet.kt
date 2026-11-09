@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -44,10 +45,13 @@ import androidx.compose.ui.unit.Dp
 import app.wingtipmaps.android.R
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipMotion
+import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import androidx.compose.material3.ExperimentalMaterial3Api
 
@@ -147,6 +151,11 @@ fun DockedSheet(
         }
         LaunchedEffect(anchors) { state.drag.updateAnchors(anchors, state.drag.targetValue) }
         val scroll = remember(state) { SheetScroll(state) }
+        // The sheet felt as it settles at a stop it was not at before.
+        val haptics = rememberHaptics()
+        LaunchedEffect(state) {
+            snapshotFlow { state.drag.settledValue }.drop(1).collect { haptics.tap(WingtipHaptic.DETENT) }
+        }
 
         body(peek)
 

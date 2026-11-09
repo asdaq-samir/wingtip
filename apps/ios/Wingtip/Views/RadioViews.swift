@@ -110,6 +110,7 @@ struct RadioCallBanner: View {
                         Button("Fly \(Altitudes.said(Double(ft)))") {
                             plan.ownAltitudeFt = Double(ft)
                             plan.ownAltitudeLegal = false
+                            Feel.tap(.altitude)
                             plan.plan()
                             listener.seen = call.id
                         }

@@ -33,9 +33,12 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.AirportSuggestion
+import app.wingtipmaps.android.design.RefreshBox
+import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.live.LiveAirportRows
+import app.wingtipmaps.android.receiver.ReceiverReports
 
 /**
  * The Airport tab: a field found by ident or name, and its card -- the
@@ -62,30 +65,35 @@ fun AirportScreen(ident: String, plan: Plan, onDone: () -> Unit = {}, model: Air
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Search),
         )
         ProblemLine(state.problem)
-        LazyColumn(Modifier.weight(1f)) {
-            items(state.suggestions) { found ->
-                SuggestionRow(found) { model.open(found.ident) }
-                HorizontalDivider()
-            }
-            state.place?.let { place ->
-                item {
-                    CardActionRow(
-                        CardKind.AIRPORT,
-                        can = { actions.canAirport(it, place) },
-                        onAction = { action ->
-                            actions.airport(action, place)
-                            if (action == CardAction.FLY_HERE || action == CardAction.ADD_STOP) onDone()
-                        },
-                    )
-                    PlaceCard(place)
+        // A pull on the open card fetches it again: the weather is live.
+        RefreshBox(refreshing = state.loading && state.place != null, onRefresh = model::refresh, enabled = state.place != null, modifier = Modifier.weight(1f)) {
+            LazyColumn(Modifier.fillMaxSize()) {
+                if (state.loading && state.suggestions.isEmpty() && state.place == null) item(key = "loading") { Skeleton(Modifier.padding(vertical = WingtipSpace.Md)) }
+                items(state.suggestions) { found ->
+                    SuggestionRow(found) { model.open(found.ident) }
+                    HorizontalDivider()
+                }
+                state.place?.let { place ->
+                    item {
+                        CardActionRow(
+                            CardKind.AIRPORT,
+                            can = { actions.canAirport(it, place) },
+                            onAction = { action ->
+                                actions.airport(action, place)
+                                if (action == CardAction.FLY_HERE || action == CardAction.ADD_STOP) onDone()
+                            },
+                        )
+                        PlaceCard(place)
+                    }
                 }
             }
         }
     }
 }
 
+/** A field the search found: its ident and name, where it is under them. */
 @Composable
-private fun SuggestionRow(found: AirportSuggestion, onOpen: () -> Unit) {
+internal fun SuggestionRow(found: AirportSuggestion, onOpen: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = stringResource(R.string.said_open), onClick = onOpen).padding(vertical = WingtipSpace.Md)) {
         Text("${found.ident}  ${found.name}", style = MaterialTheme.typography.bodyLarge)
         val where = listOfNotNull(found.municipality, found.region).joinToString(", ")
@@ -120,7 +128,11 @@ fun PlaceCard(place: AirportPlace) {
             }
             Text(metar.raw, style = MaterialTheme.typography.bodyMedium)
         } else {
-            Text(stringResource(R.string.no_weather_report), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // With no report from the weather service (no signal, or none
+            // at the field), what the cockpit receiver heard over FIS-B.
+            ReceiverReports(place.ident) {
+                Text(stringResource(R.string.no_weather_report), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         // What SWIM says now: the D-ATIS, the RVR, a ground stop or delay.
         LiveAirportRows(place.ident)

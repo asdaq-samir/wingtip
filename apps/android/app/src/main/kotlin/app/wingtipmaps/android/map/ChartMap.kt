@@ -124,7 +124,7 @@ fun ChartMap(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val holder = remember { MapHolder(MapView(context), context.resources.displayMetrics.density) }
+    val holder = remember { MapHolder(MapView(context).also(NexradLayer::follow), context.resources.displayMetrics.density) }
     holder.onDragged = onDragged
     holder.onRevealed = onRevealed
     holder.onPick = onPick
@@ -150,7 +150,7 @@ fun ChartMap(
         }
     }
 
-    LaunchedEffect(holder, template, minZoom, maxZoom, overlays) { holder.style(template, minZoom, maxZoom, overlays, line) }
+    LaunchedEffect(holder, template, minZoom, maxZoom, overlays, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context)) { holder.style(template, minZoom, maxZoom, overlays, line) }
     LaunchedEffect(holder, night) { holder.paint(night) }
     LaunchedEffect(holder, bottomInset) { holder.inset(bottomInset) }
     LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints) }
@@ -255,7 +255,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             if (template == null) return@getMapAsync
             chartMaxZoom = MapStyle.maxZoom(maxZoom)
             map.setMaxZoomPreference(if (lastClose != null) maxOf(chartMaxZoom, MapStyle.CLOSE_MAX_ZOOM) else chartMaxZoom)
-            val json = MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather)
+            val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather), lastLayers.tac)
             val builder = Style.Builder().fromJson(json)
             OverlayPictures.addTo(builder, density)
             // At the latest this long after the style is set the map is

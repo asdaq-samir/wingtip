@@ -50,9 +50,14 @@ struct SetupView: View {
                 Section {
                     NavigationLink("Personal Minimums") { MinimumsView().closesBack() }
                     NavigationLink("Guide") { PilotGuideView().closesBack() }
+                    // The first launch's welcome, shown again from here alone.
+                    Button("Show Welcome Again") { WelcomeModel.shared.again() }
                 }
                 Section(title: "Map") {
                     Toggle("Traffic", isOn: Binding(get: { traffic.on }, set: { traffic.on = $0 }))
+                    // A Stratux, Sentry or the like on the cockpit's Wi-Fi:
+                    // its traffic and FIS-B weather with no internet.
+                    ReceiverModePicker()
                     SpokenAlertsToggle()
                     ForgetNotesButton()
                     Toggle("VFR Waypoints", isOn: $waypointsOn)
@@ -104,6 +109,8 @@ struct SetupView: View {
                     } else {
                         LabeledContent("Edition", value: "Fetching…")
                     }
+                    // Regions' charts kept for flying with no signal.
+                    NavigationLink("Downloads") { DownloadsView().closesBack() }
                     ProblemLine(charts.problem)
                 }
                 Section {
