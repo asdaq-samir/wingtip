@@ -33,4 +33,14 @@ object GlideRing {
 
     /** Whether the ring shows: the pilot's setting or the emergency open. */
     fun shown(kept: Boolean, emergencyOpen: Boolean): Boolean = kept || emergencyOpen
+
+    /** Why the switch can draw no ring: no airplane, or one without its
+     *  own glide ratio (no other airplane's is taken); null where it can. */
+    enum class Unavailable { NO_AIRPLANE, NO_GLIDE }
+
+    fun unavailable(airplane: Boolean, glideRatio: Double?): Unavailable? = when {
+        !airplane -> Unavailable.NO_AIRPLANE
+        glideRatio == null -> Unavailable.NO_GLIDE
+        else -> null
+    }
 }

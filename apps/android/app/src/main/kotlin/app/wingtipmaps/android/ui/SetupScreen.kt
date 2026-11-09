@@ -46,6 +46,7 @@ import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.about.AboutScreen
 import app.wingtipmaps.android.account.DeleteAccountButton
 import app.wingtipmaps.android.account.ExportRow
+import app.wingtipmaps.android.airplane.GlideRingRow
 import app.wingtipmaps.android.atc.AtcSettingRow
 import app.wingtipmaps.android.atc.RadioListener
 import app.wingtipmaps.android.briefing.PassengerScreen
@@ -153,6 +154,8 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         val traffic = remember(context) { Traffic.of(context) }
         val trafficOn by traffic.on.collectAsStateWithLifecycle()
         SwitchRow(stringResource(R.string.traffic), trafficOn) { traffic.setOn(it) }
+        // Off unless kept on; on by itself in an emergency (GlideRing).
+        GlideRingRow(plan)
         // A Stratux, Sentry or the like on the cockpit's Wi-Fi: its traffic
         // and FIS-B weather with no internet.
         ReceiverSettingRows()

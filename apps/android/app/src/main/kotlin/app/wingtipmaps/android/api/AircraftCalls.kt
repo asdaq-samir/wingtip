@@ -4,6 +4,7 @@ import app.wingtipmaps.android.api.generated.gateway.AircraftDto
 import app.wingtipmaps.android.api.generated.gateway.AircraftRequest
 import app.wingtipmaps.android.api.generated.gateway.HandbookFigures
 import app.wingtipmaps.android.api.generated.gateway.HandbookRequest
+import app.wingtipmaps.android.api.generated.gateway.OwnFigures
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 
@@ -26,3 +27,8 @@ suspend fun Gateway.updateAircraft(id: Long, request: AircraftRequest): Aircraft
  *  (PUT /api/aircraft/{id}/handbook); null takes them away. */
 suspend fun Gateway.saveHandbook(id: Long, figures: HandbookFigures?): AircraftDto =
     json.decodeFromString(send("PUT", "/api/aircraft/$id/handbook", json = json.encodeToString(HandbookRequest(figures))))
+
+/** The pilot's own handbook figures added to the record, only those given
+ *  (PUT /api/aircraft/{id}/figures): the inline ask's one figure. */
+suspend fun Gateway.saveFigures(id: Long, figures: OwnFigures): AircraftDto =
+    json.decodeFromString(send("PUT", "/api/aircraft/$id/figures", json = json.encodeToString(figures)))

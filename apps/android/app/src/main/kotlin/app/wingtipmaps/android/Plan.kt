@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.airplane.AirplaneNow
+import app.wingtipmaps.android.airplane.OwnAirplanes
+import app.wingtipmaps.android.airplane.OwnRecord
 import app.wingtipmaps.android.api.Course
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Leg
@@ -24,6 +27,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -66,11 +72,15 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val was: RouteEdits.Route? = null,
         /** The flight rules it was planned under (FlightChoices), "vfr" or "ifr". */
         val rules: String = "vfr",
+        /** The pilot's own record of the airplane (its N-number's, else
+         *  the type's: OwnAirplanes.applicable), its figures over the
+         *  type's book, or the whole of an airplane of no stock type. */
+        val own: OwnRecord? = null,
     ) {
         val routed: Boolean get() = dep.isNotEmpty() && dest.isNotEmpty()
 
         /** An airplane is chosen: time, fuel and groundspeed can be had. */
-        val airplane: Boolean get() = aircraft.isNotEmpty()
+        val airplane: Boolean get() = AirplaneNow.plannerName(aircraft, own) != null
     }
 
     private val prefs = app.getSharedPreferences("plan", Context.MODE_PRIVATE)
@@ -83,6 +93,19 @@ class Plan(app: Application) : AndroidViewModel(app) {
 
     init {
         restore()
+        // The pilot's own figures for the airplane flown: planned again on
+        // them whenever they change (an ask answered, a profile edited).
+        val records = OwnAirplanes.of(app).records
+        val tail = FlightChoices.of(app).tail
+        viewModelScope.launch {
+            combine(records, tail, _state.map { it.aircraft }.distinctUntilChanged()) { r, t, a -> OwnAirplanes.applicable(r, t, a) }
+                .distinctUntilChanged()
+                .collect { own ->
+                    if (own == _state.value.own) return@collect
+                    _state.update { it.copy(own = own) }
+                    if (_state.value.routed) plan()
+                }
+        }
     }
 
     /** The route as typed, planned: idents upper-cased as the planner
@@ -148,7 +171,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, asked.aircraft, asked.holds, asked.rules).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
                         is NavLogMessage.Altitude -> {}

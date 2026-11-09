@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.coach.CoachScreen
 import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -70,8 +71,10 @@ fun LogbookScreen(model: LogbookModel = viewModel()) {
             ListItem(
                 overlineContent = { Text(e.flownOn) },
                 headlineContent = { Text(LogbookModel.line(e)) },
-                supportingContent = e.aircraft?.let { { Text(it) } },
+                // The airplane's N-number, a tap to its profile.
+                supportingContent = e.aircraft?.let { { Text(it, color = MaterialTheme.colorScheme.primary) } },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = e.aircraft?.let { tail -> Modifier.clickable(role = Role.Button) { ProfileOpen.open(tail) } } ?: Modifier,
             )
         }
     }

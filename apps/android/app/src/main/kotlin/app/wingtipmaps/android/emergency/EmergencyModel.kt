@@ -56,13 +56,18 @@ class EmergencyModel(
     private var asking: Job? = null
     private var pickedIdent: String? = null
     private var aircraft: String? = null
+    private var glideRatio: Double? = null
     private var callsign: String? = null
     private var trackMagDeg: Double? = null
 
-    /** Opened for an airplane (none: no glide is guessed), with its own
-     *  emergency checklist's text as the pilot kept it. */
-    fun start(aircraft: String?, airplaneName: String?, callsign: String?, checklist: String) {
+    /** Opened for an airplane (none: no glide is guessed) as the planner
+     *  is asked it (a stock type, or "own"), with the pilot's own glide
+     *  ratio where they gave one, and its own emergency checklist's text as
+     *  the pilot kept it. */
+    fun start(aircraft: String?, airplaneName: String?, callsign: String?, checklist: String, glideRatio: Double? = null) {
+        if (aircraft?.ifEmpty { null } != this.aircraft || glideRatio != this.glideRatio) asked = null
         this.aircraft = aircraft?.ifEmpty { null }
+        this.glideRatio = glideRatio
         this.callsign = callsign
         val sections = rules.sections(checklist)
         val section = rules.checklistSection(sections.map { it.title }) ?: if (sections.isNotEmpty()) 0 else null
@@ -84,7 +89,7 @@ class EmergencyModel(
             _state.update { it.copy(loading = data == null) }
             asking = viewModelScope.launch {
                 try {
-                    data = source.fields(at.first, at.second, at.third, aircraft)
+                    data = source.fields(at.first, at.second, at.third, aircraft, glideRatio)
                     _state.update { it.copy(loading = false, problem = null) }
                 } catch (e: CancellationException) {
                     throw e

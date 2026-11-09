@@ -87,12 +87,6 @@ object Planner {
     fun route(dep: String, dest: String, stops: List<String>): Map<String, String?> =
         mapOf("dep" to dep, "dest" to dest, "stops" to stops.joinToString(",").ifEmpty { null })
 
-    /** The airplane as the planner is asked it: the profile's name, null
-     *  with none chosen (an empty name), which it plans with no airplane --
-     *  distances and courses, no times or fuel (decision 0011; the owner,
-     *  2026-11-09: "don't assume"). */
-    fun aircraft(name: String): String? = name.ifEmpty { null }
-
     /** Which chart the map draws and where its tiles are (/api/chart). */
     suspend fun chart(): ChartInfo = Gateway.json.decodeFromString(fetch("/api/chart"))
 
@@ -124,11 +118,13 @@ object Planner {
 
     /** The nav log for a route, line by line as the planner sends them
      *  (/api/navlog), under the flight rules picked (the planner's
-     *  altitudes by 14 CFR 91.159 or 91.179); a line of a kind the app has no use for is left out. */
-    fun navlog(dep: String, dest: String, stops: List<String>, aircraft: String, holds: List<String> = emptyList(), rules: String = "vfr"): Flow<NavLogMessage> =
+     *  altitudes by 14 CFR 91.159 or 91.179), for the airplane as
+     *  AirplaneNow.plannerQuery asks it (its name and the pilot's own
+     *  figures); a line of a kind the app has no use for is left out. */
+    fun navlog(dep: String, dest: String, stops: List<String>, airplane: Map<String, String?>, holds: List<String> = emptyList(), rules: String = "vfr"): Flow<NavLogMessage> =
         lines(
             "/api/navlog",
-            route(dep, dest, stops) + ("aircraft" to aircraft(aircraft)) + ("holds" to holds.joinToString(",").ifEmpty { null }) + ("rules" to rules),
+            route(dep, dest, stops) + airplane + ("holds" to holds.joinToString(",").ifEmpty { null }) + ("rules" to rules),
         )
             .mapNotNull { NavLog.decode(it) }
 

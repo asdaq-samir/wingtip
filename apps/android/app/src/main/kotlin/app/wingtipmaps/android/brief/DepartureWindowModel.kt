@@ -3,6 +3,8 @@ package app.wingtipmaps.android.brief
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.airplane.AirplaneNow
+import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.departureWindow
 import app.wingtipmaps.android.api.generated.DepartureWindow
@@ -49,7 +51,8 @@ class DepartureWindowModel(
             _state.value = State()
             return
         }
-        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft).joinToString("|")
+        val g = AirplaneNow.given(plan.own)
+        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, g).joinToString("|")
         val s = _state.value
         if (route == s.route && (s.pending || now() - askedAtMs < KEPT_MS)) return
         asking?.cancel()
@@ -58,7 +61,11 @@ class DepartureWindowModel(
         asking = viewModelScope.launch {
             val question = DepartureWindowAsk(
                 dep = plan.dep, dest = plan.dest, stops = plan.stops.joinToString(",").ifEmpty { null },
-                aircraft = Planner.aircraft(plan.aircraft), airplane = plan.airplane,
+                aircraft = AirplaneNow.plannerName(plan.aircraft, plan.own), airplane = plan.airplane,
+                cruiseTasKt = g[FigureKey.CRUISE.key], fuelBurnGph = g[FigureKey.BURN.key], cruisePowerPct = g[FigureKey.POWER.key],
+                usableFuelGal = g[FigureKey.USABLE.key], climbTasKt = g[FigureKey.CLIMB_TAS.key], climbFuelBurnGph = g[FigureKey.CLIMB_BURN.key],
+                climbRateFpm = g[FigureKey.CLIMB_RATE.key], serviceCeilingFt = g[FigureKey.CEILING.key], taxiFuelGal = g[FigureKey.TAXI.key],
+                glideRatio = g[FigureKey.GLIDE.key],
                 hours = HOURS, day = LocalDate.now().toString(),
             )
             try {

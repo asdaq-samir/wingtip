@@ -3,16 +3,19 @@ package app.wingtipmaps.android.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +41,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.airplane.AirplaneFigureStrip
+import app.wingtipmaps.android.airplane.ProfileOpen
+import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AircraftProfileSummary
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.checklist.ChecklistKind
@@ -45,7 +51,6 @@ import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.documents.AddFromPhotoRow
 import app.wingtipmaps.android.documents.HandbookPhotoSheet
-import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import kotlinx.coroutines.CancellationException
@@ -82,7 +87,7 @@ class AirplaneModel : ViewModel() {
  * the planner's airplane types picked from a menu (a discrete setting is
  * a menu, not a slider), the handbook figures the planner flies it on,
  * and its checklists. The airplane by N-number, with the pilot's own
- * figures, is a later phase.
+ * figures over the book's, is its profile (airplane/), a tap away.
  */
 @Composable
 fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
@@ -91,12 +96,12 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     val state by plan.state.collectAsStateWithLifecycle()
     var checklist by remember { mutableStateOf<ChecklistKind?>(null) }
     var photo by remember { mutableStateOf(false) }
-    val picked = profiles.firstOrNull { it.name == state.aircraft }
+    val airplane = rememberAirplaneNow(plan)
 
     Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         AirplanePicker(profiles, selected = state.aircraft, onPick = plan::setAircraft)
         ProblemLine(problem)
-        picked?.let { ProfileFigures(it) }
+        if (airplane.profile != null) AirplaneFigureStrip(airplane)
         RegistrationField()
         PassengersRow()
         AddFromPhotoRow(stringResource(R.string.photo_line_airplane)) { photo = true }
@@ -121,9 +126,11 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     }
     if (photo) HandbookPhotoSheet(type = state.aircraft, onClose = { photo = false })
     checklist?.let { kind ->
-        val title = stringResource(R.string.checklists_of, state.aircraft.uppercase())
+        // An own airplane of no stock type keeps its checklists by its N-number.
+        val key = state.aircraft.ifEmpty { airplane.base().key }
+        val title = stringResource(R.string.checklists_of, key.uppercase())
         WingtipSheet(title = title, onClose = { checklist = null }, full = true) {
-            ChecklistScreen(airplane = state.aircraft, kind = kind)
+            ChecklistScreen(airplane = key, kind = kind)
         }
     }
 }
@@ -184,6 +191,12 @@ private fun RegistrationField() {
         },
         label = { Text(stringResource(R.string.registration)) },
         placeholder = { Text(stringResource(R.string.registration_hint)) },
+        // The N-number's profile, every figure of it the pilot's to set.
+        trailingIcon = {
+            if (typed.isNotBlank()) {
+                IconButton(onClick = { ProfileOpen.open(typed) }) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.profile_open)) }
+            }
+        },
         singleLine = true,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
         modifier = Modifier.fillMaxWidth(),
@@ -209,13 +222,3 @@ private fun PassengersRow() {
 /** "Cessna 172 · C172": the type's name and the planner's key for it. */
 private fun label(profile: AircraftProfileSummary): String =
     profile.type?.let { "$it · ${profile.name.uppercase()}" } ?: profile.name.uppercase()
-
-/** The handbook figures the planner flies the type on, its own. */
-@Composable
-private fun ProfileFigures(profile: AircraftProfileSummary) {
-    Row(Modifier.fillMaxWidth()) {
-        Figure(stringResource(R.string.figure_cruise), Format.speed(profile.cruiseTasKt))
-        Figure(stringResource(R.string.figure_burn), Format.burn(profile.fuelBurnGph))
-        Figure(stringResource(R.string.figure_ceiling), Format.altitude(profile.serviceCeilingFt))
-    }
-}
