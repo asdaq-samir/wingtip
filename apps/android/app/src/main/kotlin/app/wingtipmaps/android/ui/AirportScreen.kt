@@ -3,6 +3,7 @@ package app.wingtipmaps.android.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,98 +21,42 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.AirportSuggestion
-import app.wingtipmaps.android.api.Planner
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-
-/** A field looked for and the one opened: the search's words, what the
- *  planner found for them, and the card of the one picked. */
-class AirportModel : ViewModel() {
-    data class State(
-        val query: String = "",
-        val suggestions: List<AirportSuggestion> = emptyList(),
-        val place: AirportPlace? = null,
-        val problem: String? = null,
-    )
-
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
-
-    private var searching: Job? = null
-
-    /** Fields by ident or name as they are typed, asked a moment after
-     *  the typing pauses, so a word is one ask rather than one per letter. */
-    fun search(text: String) {
-        _state.update { it.copy(query = text) }
-        searching?.cancel()
-        val q = text.trim()
-        if (q.length < 2) {
-            _state.update { it.copy(suggestions = emptyList()) }
-            return
-        }
-        searching = viewModelScope.launch {
-            delay(250)
-            try {
-                val found = Planner.search(q)
-                _state.update { it.copy(suggestions = found, problem = null) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.update { it.copy(problem = e.message) }
-            }
-        }
-    }
-
-    /** A field's card opened, by its ident. */
-    fun open(ident: String) {
-        searching?.cancel()
-        viewModelScope.launch {
-            try {
-                val place = Planner.place(ident.trim().uppercase())
-                _state.update { it.copy(place = place, suggestions = emptyList(), query = place.ident, problem = null) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.update { it.copy(problem = e.message) }
-            }
-        }
-    }
-}
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.format.Format
 
 /**
  * The Airport tab: a field found by ident or name, and its card -- the
- * name, where it is, its elevation and its METAR as sent. The planner's
- * words throughout; the raw report stays as the station sent it.
+ * airport card's actions first (Fly Here, Add Stop, Call, Address, the
+ * web's set), then its name, where it is, its elevation and its METAR
+ * as sent with its flight category. The planner's words throughout; the
+ * raw report stays as the station sent it.
  *
- * @param ident a field to open as the tab is shown (a link's `place`), or
- *   empty.
+ * @param ident a field to open as the tab is shown (a link's `place`, a
+ *   tap on the map), or empty.
+ * @param onDone after an action that changes the route, so a sheet over
+ *   the strip can close and show it.
  */
 @Composable
-fun AirportScreen(ident: String) {
-    val model: AirportModel = viewModel()
+fun AirportScreen(ident: String, plan: Plan, onDone: () -> Unit = {}, model: AirportModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
+    val actions = rememberRouteActions(plan)
     LaunchedEffect(ident) { if (ident.isNotEmpty()) model.open(ident) }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         OutlinedTextField(
             value = state.query, onValueChange = model::search, modifier = Modifier.fillMaxWidth(),
-            label = { Text("Airport") }, singleLine = true,
+            label = { Text(stringResource(R.string.tab_airport)) }, singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Search),
         )
         ProblemLine(state.problem)
@@ -120,14 +65,26 @@ fun AirportScreen(ident: String) {
                 SuggestionRow(found) { model.open(found.ident) }
                 HorizontalDivider()
             }
-            state.place?.let { place -> item { PlaceCard(place) } }
+            state.place?.let { place ->
+                item {
+                    CardActionRow(
+                        CardKind.AIRPORT,
+                        can = { actions.canAirport(it, place) },
+                        onAction = { action ->
+                            actions.airport(action, place)
+                            if (action == CardAction.FLY_HERE || action == CardAction.ADD_STOP) onDone()
+                        },
+                    )
+                    PlaceCard(place)
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun SuggestionRow(found: AirportSuggestion, onOpen: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = 10.dp)) {
+    Column(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = WingtipSpace.Md)) {
         Text("${found.ident}  ${found.name}", style = MaterialTheme.typography.bodyLarge)
         val where = listOfNotNull(found.municipality, found.region).joinToString(", ")
         if (where.isNotEmpty()) {
@@ -136,30 +93,32 @@ private fun SuggestionRow(found: AirportSuggestion, onOpen: () -> Unit) {
     }
 }
 
-/** The field's card, the part of it phase 0 shows. */
+/** The field's card: its name, where it is, its elevation, its diagram
+ *  with the airplane on it, and its METAR as sent under its flight
+ *  category's chip. */
 @Composable
 fun PlaceCard(place: AirportPlace) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(place.name, style = MaterialTheme.typography.titleLarge)
+    Column(Modifier.fillMaxWidth().padding(vertical = WingtipSpace.Md), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        Text(place.name, style = MaterialTheme.typography.headlineSmall)
         val where = listOfNotNull(place.ident, place.municipality, place.region).joinToString(" · ")
         Text(where, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        place.elevationFt?.let { Text("Elevation ${ft(it)}", style = MaterialTheme.typography.bodyMedium) }
+        place.elevationFt?.let { Text(stringResource(R.string.elevation_is, Format.altitude(it)), style = MaterialTheme.typography.bodyMedium) }
         // The FAA's diagram with the airplane on it, by the diagram's own
         // latitude and longitude marks (#218).
         place.airportDiagramUrl?.let { url ->
             var open by remember { mutableStateOf(false) }
-            OutlinedButton(onClick = { open = true }) { Text("Diagram with Your Position") }
+            OutlinedButton(onClick = { open = true }) { Text(stringResource(R.string.diagram_with_position)) }
             if (open) DiagramOwnShipDialog(place.ident, url) { open = false }
         }
         val metar = place.metar
         if (metar?.raw != null) {
-            Text(
-                metar.flightCategory?.let { "METAR · $it" } ?: "METAR",
-                style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp),
-            )
+            Row(Modifier.padding(top = WingtipSpace.Sm), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+                SectionTitle(stringResource(R.string.metar), Modifier.padding(bottom = WingtipSpace.Md))
+                metar.flightCategory?.let { CategoryChip(it) }
+            }
             Text(metar.raw, style = MaterialTheme.typography.bodyMedium)
         } else {
-            Text("No weather report at this field.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.no_weather_report), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

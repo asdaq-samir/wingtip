@@ -6,12 +6,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -20,72 +17,95 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.name
-import app.wingtipmaps.android.engine.MapRules
-import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.design.generated.WingtipSize
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.flight.Tracking
+import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
-import java.util.Locale
-import kotlin.math.abs
-import kotlin.math.roundToInt
+import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import androidx.core.graphics.toColorInt
 
 /**
  * The card of what was tapped on the map, as the web's map opens one in
  * its sheet (MapCard: AirspaceCardBody, VorCard, FixCard, WaypointCard,
- * the field's card, a traffic airplane's): what it is, the figures a
- * pilot reads off it, each from the tapped feature's own fields or the
- * engine (MapRules), and a field's from the planner as it opens. Shown
- * in a modal sheet over the map, as Ask is.
+ * the field's card, a traffic airplane's), in the one sheet with its
+ * title and its close: what it is, the figures a pilot reads off it, each
+ * from the tapped feature's own fields or the engine (MapRules), and the
+ * card kind's actions (CardActionRow), the same set as the web's.
  */
 @Composable
-fun MapCard(pick: MapPick) {
-    Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        when (pick) {
-            is MapPick.Airport -> AirportCard(pick.ident)
-            is MapPick.Airspace -> AirspaceCard(pick)
-            is MapPick.Vor -> VorCard(pick)
-            is MapPick.Point -> PointCard(pick)
-            is MapPick.Plane -> PlaneCard(pick.hex)
+fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
+    val title = when (pick) {
+        is MapPick.Airport -> pick.ident
+        is MapPick.Airspace -> stringResource(R.string.airspace_class, pick.airspaceClass)
+        is MapPick.Vor -> pick.ident
+        is MapPick.Point -> pick.ident
+        is MapPick.Plane -> pick.hex.uppercase()
+    }
+    val actions = rememberRouteActions(plan)
+    // An action that changes the route closes the card, so the route is
+    // seen being planned; Call, Address and Copy leave it open.
+    val act: (CardAction, () -> Unit) -> Unit = { action, run ->
+        run()
+        if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) onClose()
+    }
+    WingtipSheet(title = title, onClose = onClose) {
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Lg),
+            verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+        ) {
+            when (pick) {
+                is MapPick.Airport -> AirportCard(pick.ident, actions, act)
+                is MapPick.Airspace -> {
+                    AirspaceCard(pick)
+                    PointActions(CardKind.POINT, pick, actions, act)
+                }
+                is MapPick.Vor -> {
+                    VorCard(pick)
+                    PointActions(CardKind.NAVAID, pick, actions, act)
+                }
+                is MapPick.Point -> {
+                    PointCard(pick)
+                    PointActions(CardKind.NAVAID, pick, actions, act)
+                }
+                is MapPick.Plane -> PlaneCard(pick.hex)
+            }
         }
-        Box(Modifier.height(16.dp))
     }
 }
 
-/** The card's head: its mark's colour, its name and what it is, and a
- *  line under them. */
 @Composable
-private fun Head(colour: Color, title: String, kind: String, subtitle: String?) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Box(Modifier.size(width = 6.dp, height = 36.dp).background(colour, RoundedCornerShape(3.dp)))
+private fun PointActions(kind: CardKind, pick: MapPick, actions: RouteActions, act: (CardAction, () -> Unit) -> Unit) {
+    val point = RouteActions.pointOf(pick) ?: return
+    val copy = RouteActions.copyOf(pick)
+    CardActionRow(kind, can = { actions.canPoint(it, copy != null) }, onAction = { a -> act(a) { actions.point(a, point, copy) } })
+}
+
+/** The card's head under its title: its mark's colour, what it is, and a
+ *  line under that. */
+@Composable
+internal fun Head(colour: Color, kind: String, subtitle: String?) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
+        Box(Modifier.size(width = WingtipSpace.Sm, height = WingtipSize.Chip).background(colour, MaterialTheme.shapes.extraSmall))
         Column {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                Text(kind, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            Text(kind, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (!subtitle.isNullOrEmpty()) {
                 Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -95,7 +115,7 @@ private fun Head(colour: Color, title: String, kind: String, subtitle: String?) 
 
 /** A row of a card: a name and its value, Material's list item. */
 @Composable
-private fun Fact(name: String, value: String, description: Boolean = false) {
+internal fun Fact(name: String, value: String, description: Boolean = false) {
     ListItem(
         headlineContent = { Text(name) },
         supportingContent = if (description) ({ Text(value) }) else null,
@@ -104,202 +124,26 @@ private fun Fact(name: String, value: String, description: Boolean = false) {
     )
 }
 
-@Composable
-private fun Section(title: String) {
-    Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-}
-
-private fun ink(hex: String) = Color(android.graphics.Color.parseColor(hex))
-
-/** Feet in the sectional's figures, "10,000". */
-private fun feet(x: Double) = String.format(Locale.US, "%,d", x.roundToInt())
-
-/** Degrees as a radial or a course is said: three figures, 360 for north
- *  ("the 360 radial"), never 000 (the web's threeFigures). */
-fun threeFigures(deg: Double): String {
-    val whole = ((deg.roundToInt() % 360) + 360) % 360
-    return String.format(Locale.US, "%03d", if (whole == 0) 360 else whole)
-}
-
-/** A declination as a chart writes it: "2° E". */
-fun declinationOf(east: Double): String {
-    val n = abs(east)
-    val figure = if (n == n.roundToInt().toDouble()) n.roundToInt().toString() else n.toString()
-    return "$figure° ${if (east < 0) "W" else "E"}"
-}
-
-/** A place in degrees and minutes, "41°52.3′ N 87°37.8′ W". */
-fun degreesMinutes(lat: Double, lon: Double): String {
-    fun part(v: Double, pos: String, neg: String): String {
-        val a = abs(v)
-        val d = a.toInt()
-        return String.format(Locale.US, "%d°%04.1f′ %s", d, (a - d) * 60, if (v < 0) neg else pos)
-    }
-    return "${part(lat, "N", "S")} ${part(lon, "E", "W")}"
-}
-
-// ---- The airspace ---------------------------------------------------------
-
-/** The sectional's ink of each class (MapStyle.AIRSPACE_INK). */
-private fun classInk(cls: String) = ink(MapStyle.AIRSPACE_INK[cls]?.colour ?: MapStyle.MAGENTA)
-
-/** When a volume is in effect, in words (the web's airspaceHours), or
- *  none where the file says nothing: NASR's WKHR_CODE "H24" continuous,
- *  "NOTAM" part-time at the times a NOTAM sets (FAA JO 7400.11), with
- *  its remark where it says more than that. */
-fun airspaceHours(code: String?, remark: String?): String? {
-    val said = remark?.trim()?.takeIf { it.isNotEmpty() && !NOTAM_ONLY.matches(it) }?.let(MapRules::faaWords)
-    return when (code) {
-        "H24" -> "Continuous"
-        "NOTAM" -> if (said != null) "By NOTAM. $said" else "By NOTAM"
-        else -> said
-    }
-}
-
-private val NOTAM_ONLY = Regex("^legal description references notam\\.?$", RegexOption.IGNORE_CASE)
-
-/** A volume's card (the web's AirspaceCardBody): its floor and ceiling in
- *  feet MSL, "up to but not including" where the file says TNI (the
- *  sectional's minus), its hours; whom to call before entering, from the
- *  primary airport's frequencies (NASR FRQ); and what it takes to go in,
- *  each rule with its section. */
-@Composable
-private fun AirspaceCard(volume: MapPick.Airspace) {
-    val name = remember(volume.name) { if (volume.name.isEmpty()) "" else MapRules.placeName(volume.name) }
-    Head(classInk(volume.airspaceClass), "Class ${volume.airspaceClass}", "Airspace", name)
-    Fact("Floor", if (volume.floorSfc) "SFC" else "${feet(volume.floorFt)} ft MSL")
-    Fact(
-        "Ceiling",
-        volume.ceilingFt?.let { "${if (volume.ceilingExcluded) "Up to but not including " else ""}${feet(it)} ft MSL" } ?: "—",
-    )
-    airspaceHours(volume.hoursCode, volume.hoursRemark)?.let { Fact("Hours", it) }
-    val asked = remember(volume.airspaceClass) { MapRules.entryRules(volume.airspaceClass) }
-    val rules = asked.getOrNull()
-    val types = rules?.call.orEmpty()
-    val field by produceState<AirportPlace?>(null, volume.ident) {
-        value = volume.ident?.let { runCatching { Planner.place(it) }.getOrNull() }
-    }
-    val calls = field?.frequencies.orEmpty().filter { it.frequencyMhz != null && it.type?.uppercase() in types }
-    val first = types.firstOrNull { type -> calls.any { it.type?.uppercase() == type } }
-    if (first != null) {
-        Section(if (first == "APP") "Call approach" else "Call the tower")
-        for (f in calls.filter { it.type?.uppercase() == first }.take(3)) {
-            Fact(f.description ?: f.type ?: "", String.format(Locale.US, "%.3f", f.frequencyMhz!!).trimEnd('0').let { if (it.endsWith('.')) "${it}0" else it })
-        }
-    }
-    asked.exceptionOrNull()?.let { ProblemLine("The entry rules failed: ${it.message}") }
-    if (!rules?.rules.isNullOrEmpty()) {
-        Section("To enter")
-        for (r in rules!!.rules) {
-            ListItem(
-                headlineContent = { Text(r.rule, style = MaterialTheme.typography.bodyMedium) },
-                supportingContent = { Text(r.cite) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            )
-        }
-    }
-}
-
-// ---- A VOR, a fix, a waypoint ----------------------------------------------
-
-private fun MapPick.Vor.station() = app.wingtipmaps.android.engine.Station(ident, lat, lon, magVar)
-
-/** A VOR's card (the web's VorCard): the radial the airplane is on and the
- *  course to fly to it, to the station's own declination, where own ship
- *  is on; its identifier as it sends it (the only sure way to know the
- *  station tuned is the one meant, AIM 1-1-3); its DME channel, service
- *  volume, elevation, declination and hours; and its remarks, as the
- *  Chart Supplement lists them, under Restrictions where it is in service
- *  with them. */
-@Composable
-private fun VorCard(vor: MapPick.Vor) {
-    Head(ink(MapStyle.BLUE), vor.ident, vor.kind, listOfNotNull(vor.name?.let(MapRules::placeName), vor.freq).joinToString(" · "))
-    val context = LocalContext.current
-    val fix by OwnShip.of(context).fix.collectAsStateWithLifecycle()
-    val radial = fix?.let { MapRules.radialOf(vor.station(), it.lat, it.lon) }
-    radial?.exceptionOrNull()?.let { ProblemLine("The radial failed: ${it.message}") }
-    val on = radial?.getOrNull()
-    if (on != null) {
-        Text(
-            "On the ${threeFigures(on.radial)} radial · ${nm(on.nm)}",
-            style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold,
-        )
-        Text("${threeFigures(on.toCourse)}° to fly to it", color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-    val morseAsked = remember(vor.ident) { MapRules.morse(vor.ident) }
-    morseAsked.exceptionOrNull()?.let { ProblemLine("The identifier's Morse failed: ${it.message}") }
-    val morse = morseAsked.getOrNull()
-    if (morse != null) {
-        ListItem(
-            headlineContent = { Text("Identifier") },
-            trailingContent = {
-                Text(morse, fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { contentDescription = vor.ident.toList().joinToString(" ") })
-            },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        )
-    }
-    vor.channel?.let { Fact("DME channel", it) }
-    remember(vor.serviceVolume) { MapRules.serviceVolume(vor.serviceVolume) }.fold(
-        { it?.let { Fact("Service volume", it, description = true) } },
-        { ProblemLine("The service volume failed: ${it.message}") },
-    )
-    vor.elevationFt?.let { Fact("Elevation", ft(it)) }
-    vor.magVar?.let { Fact("Declination", declinationOf(it)) }
-    remember(vor.hours) { MapRules.navaidHours(vor.hours) }.fold(
-        { it?.let { Fact("Hours", it) } },
-        { ProblemLine("The hours failed: ${it.message}") },
-    )
-    if (vor.remarks.isNotEmpty()) {
-        var open by rememberSaveable(vor.ident) { mutableStateOf(false) }
-        TextButton(onClick = { open = !open }) {
-            Text(
-                if (vor.restricted) "Restrictions" else "Remarks",
-                color = if (vor.restricted) LocalWingtipPalette.current.caution else MaterialTheme.colorScheme.primary,
-            )
-        }
-        if (open) {
-            for (remark in vor.remarks) {
-                Text(remark, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-    Fact("Position", degreesMinutes(vor.lat, vor.lon))
-}
-
-/** A fix's or a VFR waypoint's card (the web's FixCard, WaypointCard):
- *  where it is off the nearest VOR on the map, as a controller and a
- *  flight plan give it (its fix/radial/distance, AIM 5-1-6), and its
- *  place. */
-@Composable
-private fun PointCard(point: MapPick.Point) {
-    val frdAsked = remember(point) { MapRules.fixRadialDistance(point.lat, point.lon, point.vors.map { it.station() }) }
-    val frd = frdAsked.getOrNull()
-    Head(
-        ink(if (point.vfr) MapStyle.VFR_GREEN else MapStyle.FIX_INK),
-        point.ident,
-        if (point.vfr) "VFR waypoint" else "Fix",
-        frd,
-    )
-    frdAsked.exceptionOrNull()?.let { ProblemLine("The fix, radial and distance failed: ${it.message}") }
-    Fact("Position", degreesMinutes(point.lat, point.lon))
-}
-
-// ---- A field ----------------------------------------------------------------
+internal fun ink(hex: String) = Color(hex.toColorInt())
 
 /** A field's card, asked of the planner as it opens (the web's airport
- *  card), where the strip has no Airport tab to open it in. */
+ *  card), with the airport card's actions. */
 @Composable
-private fun AirportCard(ident: String) {
+private fun AirportCard(ident: String, actions: RouteActions, act: (CardAction, () -> Unit) -> Unit) {
     val place by produceState<Result<AirportPlace>?>(null, ident) {
         value = runCatching { Planner.place(ident) }
     }
     when (val got = place) {
-        null -> CircularProgressIndicator(Modifier.size(24.dp))
-        else -> got.fold({ PlaceCard(it) }, { ProblemLine(it.message) })
+        null -> CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
+        else -> got.fold(
+            { field ->
+                CardActionRow(CardKind.AIRPORT, can = { actions.canAirport(it, field) }, onAction = { a -> act(a) { actions.airport(a, field) } })
+                PlaceCard(field)
+            },
+            { ProblemLine(it.message) },
+        )
     }
 }
-
-// ---- An airplane of the traffic ---------------------------------------------
 
 /** An airplane heard (the web's traffic card): what it is, its height
  *  against own ship's as TCAS writes it (the engine's `traffic_marks`),
@@ -318,26 +162,25 @@ private fun PlaneCard(hex: String) {
     val i = planes.indexOfFirst { it.hex.equals(hex, ignoreCase = true) }
     val plane = planes.getOrNull(i)
     if (plane == null) {
-        Head(ink(MapStyle.TRAFFIC_FAR), hex.uppercase(), "Traffic", "No longer heard.")
+        Head(ink(MapStyle.TRAFFIC_FAR), stringResource(R.string.traffic), stringResource(R.string.traffic_gone))
         return
     }
     val mark = marks.getOrNull(i)
     Head(
         ink(if (mark?.near == true) MapStyle.TRAFFIC_NEAR else MapStyle.TRAFFIC_FAR),
-        plane.name,
-        plane.type ?: "Traffic",
+        listOfNotNull(plane.name, plane.type).joinToString(" · "),
         plane.registration?.takeIf { it != plane.name },
     )
     ProblemLine(trafficProblem)
     ProblemLine(watchProblem)
-    mark?.label?.takeIf { it.isNotEmpty() }?.let { Fact("Height", it) }
-    plane.altitudeFt?.let { Fact("Altitude", ft(it)) }
-    plane.speedKt?.let { Fact("Ground speed", kt(it)) }
-    plane.trackDeg?.let { Fact("Track", "${threeFigures(it)}° true") }
+    mark?.label?.takeIf { it.isNotEmpty() }?.let { Fact(stringResource(R.string.fact_height), it) }
+    plane.altitudeFt?.let { Fact(stringResource(R.string.fact_altitude), Format.altitude(it)) }
+    plane.speedKt?.let { Fact(stringResource(R.string.fact_ground_speed), Format.speed(it)) }
+    plane.trackDeg?.let { Fact(stringResource(R.string.fact_track), "${Format.heading(it)} true") }
     HorizontalDivider()
     val isTracked = tracked == hex.lowercase()
     OutlinedButton(onClick = { tracking.track(if (isTracked) null else hex, plane) }, modifier = Modifier.fillMaxWidth()) {
-        Text(if (isTracked) "Stop Tracking" else "Track")
+        Text(stringResource(if (isTracked) R.string.stop_tracking else R.string.track))
     }
     val source by traffic.source.collectAsStateWithLifecycle()
     Text(Traffic.credit(source), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

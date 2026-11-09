@@ -38,7 +38,8 @@ sealed interface MapPick {
 
     /** A Class B, C or D volume (NASR's Class Airspace shapefile as the
      *  tiles carry it: CLASS, NAME, IDENT, the floor and ceiling, TNI,
-     *  WKHR_CODE and WKHR_RMK). */
+     *  WKHR_CODE and WKHR_RMK), and where it was tapped, the point its
+     *  card's actions send the route to. */
     data class Airspace(
         val id: String,
         val name: String,
@@ -49,6 +50,8 @@ sealed interface MapPick {
         val ceilingExcluded: Boolean,
         val hoursCode: String?,
         val hoursRemark: String?,
+        val lat: Double = 0.0,
+        val lon: Double = 0.0,
     ) : MapPick {
         /** The surface where the floor is 0 ft, as the planner's floor_sfc. */
         val floorSfc: Boolean get() = floorFt == 0.0
@@ -67,7 +70,7 @@ sealed interface MapPick {
         private fun flag(v: Any?): Boolean = v == true || v == "true"
 
         /** A tapped ring of the tiles' `airspace` layer (the web's volumeOfTile). */
-        fun airspace(p: Map<String, Any?>): Airspace {
+        fun airspace(p: Map<String, Any?>, lat: Double = 0.0, lon: Double = 0.0): Airspace {
             val floor = number(p["floor_ft"]) ?: 0.0
             val cls = p["class"].toString()
             return Airspace(
@@ -80,6 +83,8 @@ sealed interface MapPick {
                 ceilingExcluded = flag(p["ceiling_excluded"]),
                 hoursCode = text(p["hours_code"]),
                 hoursRemark = text(p["hours_remark"]),
+                lat = lat,
+                lon = lon,
             )
         }
 

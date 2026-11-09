@@ -24,6 +24,10 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import app.wingtipmaps.android.flight.Geo
+import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
 
 /**
  * The route being planned and what the planner has said of it so far: the
@@ -41,6 +45,9 @@ class Plan(app: Application) : AndroidViewModel(app) {
         /** The planner's aircraft profile; the airplane by N-number is a
          *  later phase. */
         val aircraft: String = "c172",
+        /** The holds the pilot put on the route, as the planner reads them
+         *  (the engine's hold_write: "VPBNG/090/30:270:R:1M:2T"). */
+        val holds: List<String> = emptyList(),
         val course: Course? = null,
         val legs: List<Leg> = emptyList(),
         val totals: NavLogTotals? = null,
@@ -97,7 +104,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, asked.aircraft).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, asked.aircraft, asked.holds).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
                         is NavLogMessage.Altitude -> {}
@@ -111,6 +118,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                             _state.update { it.copy(legs = fresh.toList(), totals = message.totals, stage = null) }
                             keep()
                             keepForTheAir()
+                            holdWhenPlanned()
                         }
                         is NavLogMessage.Problem -> _state.update { it.copy(problem = message.error.detail, stage = null) }
                     }
@@ -127,6 +135,58 @@ class Plan(app: Application) : AndroidViewModel(app) {
             }
             _state.update { it.copy(planning = false) }
         }
+    }
+
+    /** A point of the chart a card sends the route to: a field, a VOR, a
+     *  fix, or a place by its position ("@41.8800,-87.6300"). */
+    data class ChartPoint(val ident: String, val lat: Double, val lon: Double)
+
+    /** Fly Here: a new route from `from` (the airplane's position, else the
+     *  route's departure) to the field. */
+    fun flyHere(dest: String, from: String) = plan(from, dest, emptyList())
+
+    /** Direct To: from where the airplane is to the point, then on along
+     *  the route, the point taken out of the stops after it. */
+    fun directTo(point: ChartPoint, at: OwnShip.Fix) {
+        val s = _state.value
+        val stops = listOf(point.ident) + s.stops.filterNot { it.equals(point.ident, ignoreCase = true) }
+        plan(positionIdent(at), s.dest.ifEmpty { point.ident }, if (s.dest.isEmpty()) emptyList() else stops)
+    }
+
+    /** Add Stop and Add to Route: the point among the stops where it
+     *  bends the route least (Geo.bestStopIndex), the route planned again. */
+    fun addToRoute(point: ChartPoint) {
+        val s = _state.value
+        val course = s.course ?: return
+        val points = (listOf(course.departure) + course.stops.orEmpty() + course.destination).map { it.lat to it.lon }
+        val at = Geo.bestStopIndex(points, point.lat, point.lon).coerceAtMost(s.stops.size)
+        plan(s.dep, s.dest, s.stops.toMutableList().apply { add(at, point.ident) })
+    }
+
+    private var holdAt: String? = null
+
+    /** Hold Here: a hold at the point, put on the route first where it is
+     *  not on it, then set on the course flown into it once the log says
+     *  what that is. The standard pattern: right turns and one-minute legs
+     *  at or below 14,000 ft MSL (AIM 5-3-8 j.2 and j.5(a)), one turn,
+     *  which the pilot changes on the web's hold sheet. */
+    fun holdHere(point: ChartPoint) {
+        holdAt = point.ident
+        if (_state.value.legs.any { it.to.equals(point.ident, ignoreCase = true) }) holdWhenPlanned() else addToRoute(point)
+    }
+
+    private fun holdWhenPlanned() {
+        val fix = holdAt ?: return
+        val leg = _state.value.legs.firstOrNull { it.to.equals(fix, ignoreCase = true) } ?: return
+        holdAt = null
+        val hold = EngineContract.RouteHoldIn(fix = fix, inbound = leg.magneticCourseDeg, right = true, legMin = 1.0, turns = 1.0)
+        Engine.rule<EngineContract.HoldWriteInput, String>("hold_write", EngineContract.HoldWriteInput(hold)).fold(
+            { text ->
+                _state.update { s -> s.copy(holds = s.holds.filterNot { it.startsWith("$fix/", ignoreCase = true) } + text) }
+                plan()
+            },
+            { why -> _state.update { it.copy(problem = "The hold at $fix could not be written: ${why.message}") } },
+        )
     }
 
     /** What is on the page, kept for the next launch. */
@@ -185,7 +245,16 @@ class Plan(app: Application) : AndroidViewModel(app) {
         prefs.edit().remove(KEY).apply()
     }
 
-    private companion object {
-        const val KEY = "kept"
+    companion object {
+        private const val KEY = "kept"
+
+        /** The airplane's position as the planner reads a place for a
+         *  route's end ("@41.8800,-87.6300,4500"), its altitude to the
+         *  hundred feet where it has one (the web's positionIdent). */
+        fun positionIdent(fix: OwnShip.Fix): String {
+            val at = String.format(java.util.Locale.US, "@%.4f,%.4f", fix.lat, fix.lon)
+            val ft = fix.altitudeFt
+            return if (ft == null || ft < 0) at else "$at,${Math.round(ft / 100) * 100}"
+        }
     }
 }
