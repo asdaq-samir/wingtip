@@ -43,6 +43,16 @@ class FormatTest {
         "weight" to { e -> Format.weight(num(e)!!) },
         "windCorrection" to { e -> Format.windCorrection(num(e)!!) },
         "variation" to { e -> Format.variation(num(e)!!) },
+        // The spoken forms: what TalkBack says for each figure (Spoken).
+        "spokenAltitude" to { e -> Spoken.altitude(num(e)) },
+        "spokenHeading" to { e -> Spoken.heading(num(e)!!) },
+        "spokenHeadingMagnetic" to { e -> Spoken.headingMagnetic(num(e)!!) },
+        "spokenHeadingTrue" to { e -> Spoken.headingTrue(num(e)!!) },
+        "spokenDistance" to { e -> Spoken.distance(num(e)) },
+        "spokenSpeed" to { e -> Spoken.speed(num(e)) },
+        "spokenFuel" to { e -> Spoken.fuel(num(e)) },
+        "spokenDuration" to { e -> Spoken.duration(num(e)) },
+        "spokenZulu" to { e -> Spoken.zulu(e.jsonPrimitive.content) },
     )
 
     @Test
@@ -72,6 +82,18 @@ class FormatTest {
         assertEquals("122.0", Format.frequency(122.0))
         assertEquals("118.3", Format.frequency(118.3))
         assertEquals("121.75", Format.frequency(121.75))
+    }
+
+    /** The words under the spoken forms: hyphened tens, no "and". */
+    @Test
+    fun numbersInWords() {
+        assertEquals("zero", Spoken.number(0))
+        assertEquals("nineteen", Spoken.number(19))
+        assertEquals("forty", Spoken.number(40))
+        assertEquals("one hundred two", Spoken.number(102))
+        assertEquals("two thousand one", Spoken.number(2001))
+        assertEquals("minus thirty-five", Spoken.number(-35))
+        assertEquals("one nine", Spoken.digits("19"))
     }
 
     /** The live reports' figures (D-ATIS, the emergency checklist), as the

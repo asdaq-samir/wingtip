@@ -26,7 +26,13 @@ import app.wingtipmaps.android.brief.DepartureWindowStrip
 import app.wingtipmaps.android.brief.IcingRows
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import app.wingtipmaps.android.strip.FindingIcon
+import app.wingtipmaps.android.strip.findingSaid
 import app.wingtipmaps.android.strip.words
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
@@ -48,7 +54,11 @@ fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: 
             if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
             ProblemLine(state.problem)
             state.verdict?.let { verdict ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
+                // Said as it comes in, once the planner answers.
+                Row(
+                    Modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
+                ) {
                     FindingIcon(verdict.finding, Modifier.size(WingtipSize.Chip))
                     Text(
                         verdict.words, style = MaterialTheme.typography.headlineSmall,
@@ -61,11 +71,14 @@ fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: 
             state.risk?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             if (state.items.isNotEmpty()) SectionTitle(stringResource(R.string.brief_findings))
             state.items.forEach { item ->
+                // The finding said first, as its glyph shows it.
+                val said = "${findingSaid(BriefModel.finding(item.finding))}: ${item.label}. ${item.detail}"
                 ListItem(
                     headlineContent = { Text(item.label) },
                     supportingContent = { Text(item.detail) },
                     leadingContent = { FindingIcon(BriefModel.finding(item.finding)) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clearAndSetSemantics { contentDescription = said },
                 )
             }
             // In the weather's adverse conditions: the forecast icing a leg.

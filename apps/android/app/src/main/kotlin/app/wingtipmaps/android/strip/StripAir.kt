@@ -11,13 +11,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.format.Spoken
+import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.ui.FiguresStrip
+import app.wingtipmaps.android.ui.largeType
 
 /**
  * The strip in the air, the sheet's first rows at every size: the ribbon
@@ -43,11 +46,16 @@ fun StripAir(state: Plan.State, rows: List<StripRow>, position: Position?, modif
                 is StripRow.Destination -> next.ident to next.leg
                 is StripRow.Departure -> next.ident to null
             }
-            Column(Modifier.semantics { contentDescription = "Next: $name" }) {
+            // Read as one, its figures in words (Spoken), not "Next:" and
+            // then the written figures again one by one.
+            val said = listOfNotNull(
+                "Next: $name", leg?.let(LegWords::bearing), leg?.let { Spoken.distance(it.distanceNm) }, leg?.eteMin?.let(Spoken::duration),
+            ).joinToString(", ")
+            Column(Modifier.clearAndSetSemantics { contentDescription = said }) {
                 Text("NEXT", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    maxLines = if (largeType()) 2 else 1, overflow = TextOverflow.Ellipsis,
                 )
                 if (leg != null) {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {

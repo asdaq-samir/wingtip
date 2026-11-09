@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.AnnounceOnce
 import app.wingtipmaps.android.ui.LocalInk
 
 /**
@@ -40,6 +41,10 @@ import app.wingtipmaps.android.ui.LocalInk
  */
 @Composable
 fun AtcCardView(card: AtcCard, kept: AtcCopilotModel.Kept, problem: String?, words: (AtcItem) -> String, onAct: (Int) -> Unit, onReadBack: () -> Unit, onClose: () -> Unit) {
+    // A new call to us said once as it comes in: the live region below
+    // says what changes on a card already shown (the readback's result).
+    val heard = card.items.map(words).ifEmpty { listOf(card.text) }.joinToString(", ")
+    AnnounceOnce(card.id, stringResource(R.string.said_atc_heard, heard))
     Surface(shape = MaterialTheme.shapes.large, tonalElevation = 3.dp, shadowElevation = 2.dp) {
         Column(
             Modifier.fillMaxWidth().padding(start = WingtipSpace.Md, end = WingtipSpace.Xs, top = WingtipSpace.Xs, bottom = WingtipSpace.Sm)

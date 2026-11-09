@@ -35,7 +35,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.collapse
+import androidx.compose.ui.semantics.expand
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
+import app.wingtipmaps.android.R
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.design.generated.WingtipMotion
@@ -54,6 +60,13 @@ fun SheetStop.lower(): SheetStop? = when (this) {
     SheetStop.FULL -> SheetStop.HALF
     SheetStop.HALF -> SheetStop.PILL
     SheetStop.PILL -> null
+}
+
+/** The one stop above, or none from the whole screen. */
+fun SheetStop.higher(): SheetStop? = when (this) {
+    SheetStop.PILL -> SheetStop.HALF
+    SheetStop.HALF -> SheetStop.FULL
+    SheetStop.FULL -> null
 }
 
 /** Every move of the sheet: ease-out over 300 ms, no spring (decision
@@ -175,7 +188,22 @@ fun DockedSheet(
             tonalElevation = BottomSheetDefaults.Elevation,
         ) {
             Column(Modifier.fillMaxWidth()) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { BottomSheetDefaults.DragHandle() }
+                // A drag is no way to move the sheet with TalkBack: the
+                // handle says where the sheet rests and offers a stop up and
+                // a stop down as actions, as Material's own sheets do.
+                val stopWord = stringResource(
+                    when (state.stop) { SheetStop.PILL -> R.string.said_sheet_pill; SheetStop.HALF -> R.string.said_sheet_half; SheetStop.FULL -> R.string.said_sheet_full },
+                )
+                val up = stringResource(R.string.said_sheet_up)
+                val down = stringResource(R.string.said_sheet_down)
+                Box(
+                    Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
+                        stateDescription = stopWord
+                        state.stop.higher()?.let { to -> expand(up) { scope.launch { state.moveTo(to) }; true } }
+                        state.stop.lower()?.let { to -> collapse(down) { scope.launch { state.moveTo(to) }; true } }
+                    },
+                    contentAlignment = Alignment.Center,
+                ) { BottomSheetDefaults.DragHandle() }
                 sheet()
             }
         }

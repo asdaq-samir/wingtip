@@ -14,8 +14,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.api.AirportPin
+import app.wingtipmaps.android.map.MapMarks
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
@@ -93,7 +105,16 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         if (trafficOn) traffic.start()
         onDispose { traffic.stop() }
     }
+    // The fields in view as actions on the map, with a screen reader on
+    // (MapMarks): the chart's symbols are pictures TalkBack cannot read.
+    var fieldsInView by remember { mutableStateOf<List<AirportPin>>(emptyList()) }
+    val scope = rememberCoroutineScope()
+    var marksJob by remember { mutableStateOf<Job?>(null) }
     val onView = { view: MapRest ->
+        if (A11y.screenReader(context)) {
+            marksJob?.cancel()
+            marksJob = scope.launch { fieldsInView = MapMarks.fieldsInView(context, view) }
+        }
         mapWeather.view(view)
         traffic.mapCentre = (view.south + view.north) / 2 to (view.west + view.east) / 2
         traffic.mapRadiusNm = Geo.nm((view.south + view.north) / 2, (view.west + view.east) / 2, view.north, view.east)
@@ -124,6 +145,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
     val emergency by viewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
 
+    val mapSaid = if (fieldsInView.isEmpty()) stringResource(R.string.said_map) else pluralStringResource(R.plurals.said_map_fields, fieldsInView.size, fieldsInView.size)
+    val fieldActions = fieldsInView.map { pin ->
+        CustomAccessibilityAction(stringResource(R.string.said_open_field, MapMarks.label(pin))) { onPick(MapPick.Airport(pin.ident)); true }
+    }
     Box(Modifier.fillMaxSize()) {
         ChartMap(
             // The first style waits for the overlays' name (at most
@@ -132,7 +157,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             minZoom = base?.minZoom ?: 5,
             maxZoom = base?.maxZoom ?: 12,
             line = state.course?.courseLine.orEmpty(),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().semantics {
+                contentDescription = mapSaid
+                customActions = fieldActions
+            },
             routePoints = routePoints,
             selectedLeg = selectedLeg,
             overlays = overlays,

@@ -153,4 +153,11 @@ dependencies {
 
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
+    // The screens' accessibility, checked by Google's framework on an
+    // emulator (AccessibilityChecksTest); the manifest's empty activity
+    // hosts each composition.
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4.accessibility)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

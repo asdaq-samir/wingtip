@@ -26,12 +26,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.api.Leg
+import app.wingtipmaps.android.route.LegWords
+import app.wingtipmaps.android.ui.largeType
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.InkColors
 
@@ -82,7 +85,7 @@ private fun FieldCardRow(
                         if (name.isNotEmpty()) {
                             Text(
                                 name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
@@ -115,20 +118,25 @@ private fun FieldCardRow(
 }
 
 /** A checkpoint's row: its number and name, "MH 318 · 24 NM" under them,
- *  the leg's minutes at the right. */
+ *  the leg's minutes at the right. TalkBack reads the row as one sentence
+ *  in words (LegWords), the written figures under it cleared. */
 @Composable
 private fun CheckpointRow(number: Int, name: String, leg: Leg, onOpen: () -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).height(IntrinsicSize.Min).padding(end = 16.dp)) {
         Box(Modifier.width(24.dp).fillMaxHeight()) { Timeline(field = false, first = false, last = false, dotAt = 24.dp) }
-        TextButton(onClick = onOpen, modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
-            Column(Modifier.weight(1f)) {
+        TextButton(
+            onClick = onOpen,
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = LegWords.checkpoint(number, name, leg) },
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            Column(Modifier.weight(1f).clearAndSetSemantics {}) {
                 Text(
                     "$number. $name", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis,
                 )
                 Text(StripData.legFigures(leg), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            leg.eteMin?.let { Text(Format.duration(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            leg.eteMin?.let { Text(Format.duration(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.clearAndSetSemantics {}) }
         }
     }
 }

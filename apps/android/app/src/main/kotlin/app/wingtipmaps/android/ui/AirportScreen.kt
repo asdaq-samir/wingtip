@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,7 +86,7 @@ fun AirportScreen(ident: String, plan: Plan, onDone: () -> Unit = {}, model: Air
 
 @Composable
 private fun SuggestionRow(found: AirportSuggestion, onOpen: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = WingtipSpace.Md)) {
+    Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = stringResource(R.string.said_open), onClick = onOpen).padding(vertical = WingtipSpace.Md)) {
         Text("${found.ident}  ${found.name}", style = MaterialTheme.typography.bodyLarge)
         val where = listOfNotNull(found.municipality, found.region).joinToString(", ")
         if (where.isNotEmpty()) {

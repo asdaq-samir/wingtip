@@ -23,12 +23,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.ui.largeType
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
@@ -53,7 +57,7 @@ fun RouteLegSheet(leg: RouteLegModel.View, onDirect: () -> Unit, onRemove: () ->
                     Icon(WingtipIcons.directTo, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                     Text(
                         if (leg.directOn) stringResource(R.string.route_leg_cancel_direct) else stringResource(R.string.route_leg_direct, leg.to),
-                        modifier = Modifier.padding(start = ButtonDefaults.IconSpacing), maxLines = 1,
+                        modifier = Modifier.padding(start = ButtonDefaults.IconSpacing), maxLines = if (largeType()) 2 else 1,
                     )
                 }
                 if (leg.removable) {
@@ -62,21 +66,26 @@ fun RouteLegSheet(leg: RouteLegModel.View, onDirect: () -> Unit, onRemove: () ->
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                     ) {
                         Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-                        Text(stringResource(R.string.route_leg_remove, leg.to), modifier = Modifier.padding(start = ButtonDefaults.IconSpacing), maxLines = 1)
+                        Text(stringResource(R.string.route_leg_remove, leg.to), modifier = Modifier.padding(start = ButtonDefaults.IconSpacing), maxLines = if (largeType()) 2 else 1)
                     }
                 }
             }
-            Fact(stringResource(R.string.route_leg_distance), leg.distanceNm?.let(Format::distance) ?: Format.NONE)
-            Fact(stringResource(R.string.route_leg_course), leg.courseMagDeg?.let { Format.heading(it) + "M" } ?: Format.NONE)
+            Fact(stringResource(R.string.route_leg_distance), leg.distanceNm?.let(Format::distance) ?: Format.NONE, Spoken.distance(leg.distanceNm))
+            Fact(
+                stringResource(R.string.route_leg_course), leg.courseMagDeg?.let { Format.heading(it) + "M" } ?: Format.NONE,
+                leg.courseMagDeg?.let(Spoken::headingMagnetic) ?: Spoken.NOT_KNOWN,
+            )
         }
     }
 }
 
+/** A figure's row, read as one: its name and the figure in words. */
 @Composable
-private fun Fact(name: String, value: String) {
+private fun Fact(name: String, value: String, said: String) {
     ListItem(
         headlineContent = { Text(name) },
         trailingContent = { Text(value, style = MaterialTheme.typography.bodyLarge) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = Modifier.clearAndSetSemantics { contentDescription = "$name, $said" },
     )
 }

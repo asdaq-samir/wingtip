@@ -424,7 +424,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         bottomInset = px
         if (destroyed || !opened) return
         view.getMapAsync { map ->
-            map.easeCamera(CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()), INSET_MS)
+            CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()).let { if (app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)) map.moveCamera(it) else map.easeCamera(it, INSET_MS) }
             credits(map, px)
         }
     }
@@ -623,7 +623,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             val at = LatLng(fix.lat, fix.lon)
             val update = if (map.cameraPosition.zoom < FOLLOW_ZOOM) CameraUpdateFactory.newLatLngZoom(at, FOLLOW_ZOOM)
             else CameraUpdateFactory.newLatLng(at)
-            map.animateCamera(update, FOLLOW_MS)
+            if (app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)) map.moveCamera(update) else map.animateCamera(update, FOLLOW_MS)
         }
     }
 

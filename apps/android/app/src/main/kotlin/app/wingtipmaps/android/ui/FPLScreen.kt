@@ -29,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,7 +40,9 @@ import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.plan.FlightRules
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -134,11 +138,15 @@ private fun FlightRulesRow(onChanged: () -> Unit) {
 }
 
 /** One leg's row: to where at what cruise altitude, how far, the
- *  magnetic heading, the time; a tap opens the leg. */
+ *  magnetic heading, the time; a tap opens the leg. TalkBack reads the
+ *  row as one sentence in words (LegWords), so a swipe is a leg. */
 @Composable
 private fun LegRow(leg: Leg, onOpen: () -> Unit) {
+    val openLeg = stringResource(R.string.said_open_leg)
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen).padding(vertical = WingtipSpace.Sm),
+        Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = openLeg, onClick = onOpen)
+            .clearAndSetSemantics { contentDescription = LegWords.row(leg) }
+            .padding(vertical = WingtipSpace.Sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1.4f)) {
@@ -160,12 +168,12 @@ private fun LegRow(leg: Leg, onOpen: () -> Unit) {
 private fun TotalsRows(totals: NavLogTotals) {
     val warn = (totals.fuelMarginGal ?: 0.0) < 0
     Row(Modifier.fillMaxWidth()) {
-        Figure(stringResource(R.string.figure_dist), Format.distance(totals.distanceNm))
+        Figure(stringResource(R.string.figure_dist), Format.distance(totals.distanceNm), said = stringResource(R.string.leg_distance) + ", " + Spoken.distance(totals.distanceNm))
         // Time and fuel only with an airplane: the planner sends none
         // without one, and none is guessed (decision 0011).
-        totals.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.duration(it)) }
-        totals.fuelGal?.let { Figure(stringResource(R.string.figure_fuel), Format.fuel(it), warn = warn) }
-        totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn) }
+        totals.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.duration(it), said = stringResource(R.string.leg_time) + ", " + Spoken.duration(it)) }
+        totals.fuelGal?.let { Figure(stringResource(R.string.figure_fuel), Format.fuel(it), warn = warn, said = stringResource(R.string.leg_fuel) + ", " + Spoken.fuel(it)) }
+        totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn, said = stringResource(R.string.said_fuel_required) + ", " + Spoken.fuel(it)) }
     }
     if (warn) ProblemLine(stringResource(R.string.under_reserve), Modifier.padding(top = WingtipSpace.Xs))
 }

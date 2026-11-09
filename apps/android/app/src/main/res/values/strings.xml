@@ -36,6 +36,32 @@
     <string name="figure_burn">BURN</string>
     <string name="figure_ceiling">CEILING</string>
 
+    <!-- What TalkBack says for a figure's name and for a control's state,
+         where the written word is an abbreviation or nothing at all. -->
+    <string name="said_to">To</string>
+    <string name="said_fuel_required">Fuel required</string>
+    <string name="said_expanded">Expanded</string>
+    <string name="said_collapsed">Collapsed</string>
+    <string name="said_show_why">Show why</string>
+    <string name="said_warning">Warning</string>
+    <string name="said_caution">Caution</string>
+    <string name="said_note">Note</string>
+    <string name="said_open">Open</string>
+    <string name="said_open_leg">Open the leg</string>
+    <string name="said_map">Chart</string>
+    <plurals name="said_map_fields">
+        <item quantity="one">Chart, %1$d field in view. An action opens it.</item>
+        <item quantity="other">Chart, %1$d fields in view. Actions open each one.</item>
+    </plurals>
+    <string name="said_open_field">Open %1$s</string>
+    <string name="said_best_field">Best field %1$s, %2$s</string>
+    <string name="said_atc_heard">Call for you: %1$s</string>
+    <string name="said_sheet_pill">Panel lowered</string>
+    <string name="said_sheet_half">Panel at half</string>
+    <string name="said_sheet_full">Panel full screen</string>
+    <string name="said_sheet_up">Raise the panel</string>
+    <string name="said_sheet_down">Lower the panel</string>
+
     <!-- The map's buttons (the UI audit's #12: the state said, not only drawn). -->
     <string name="own_ship_button">My Position</string>
     <string name="own_ship_off">Off</string>

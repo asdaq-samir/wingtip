@@ -28,8 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -78,9 +80,18 @@ fun CopilotBanner(plan: Plan.State, flying: Boolean, fix: OwnShip.Fix?, ahead: L
         ) {
             Icon(
                 when (shown.level) { "warning" -> Icons.Filled.Warning; "caution" -> Icons.Filled.Error; else -> Icons.Filled.Info },
-                contentDescription = null, tint = ink, modifier = if (open) Modifier.padding(top = WingtipSpace.Md) else Modifier,
+                // The level said, not only drawn in its colour.
+                contentDescription = stringResource(when (shown.level) { "warning" -> R.string.said_warning; "caution" -> R.string.said_caution; else -> R.string.said_note }),
+                tint = ink, modifier = if (open) Modifier.padding(top = WingtipSpace.Md) else Modifier,
             )
-            Column(Modifier.weight(1f).clickable { open = !open }.padding(vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
+            // The line opens to its why: a button that says so, and whether
+            // it is open, to TalkBack.
+            val state = stringResource(if (open) R.string.said_expanded else R.string.said_collapsed)
+            Column(
+                Modifier.weight(1f).clickable(role = Role.Button, onClickLabel = stringResource(R.string.said_show_why)) { open = !open }
+                    .semantics { stateDescription = state }.padding(vertical = WingtipSpace.Sm),
+                verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
+            ) {
                 Text(shown.title, color = ink, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium, maxLines = if (open) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis)
                 if (open) {
                     shown.detail.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
