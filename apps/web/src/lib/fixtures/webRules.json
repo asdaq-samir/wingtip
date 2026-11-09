@@ -359,5 +359,17 @@
     "around_nm": 10,
     "relation_nm": 40
   },
-  "lostCommsAltitude": "On each segment, the highest of the altitude assigned in the last clearance, the minimum altitude for IFR operations, and the altitude ATC said to expect in a further clearance."
+  "lostCommsAltitude": "On each segment, the highest of the altitude assigned in the last clearance, the minimum altitude for IFR operations, and the altitude ATC said to expect in a further clearance.",
+  "terrainViewBands": [
+    {
+      "altitude_ft": 5500,
+      "caution_from_ft": 4500,
+      "warning_from_ft": 5500
+    },
+    {
+      "altitude_ft": 800,
+      "caution_from_ft": -200,
+      "warning_from_ft": 800
+    }
+  ]
 }

@@ -22,7 +22,9 @@ import type { StopPin } from "../../../lib/map/stopPins";
 import { inkOn } from "../../../lib/scoreScale";
 import { feet } from "../../../lib/units";
 import { scoreColor } from "../format";
-import type { RouteLeg } from "./navlog/rows";
+import type { NavLogRow, RouteLeg } from "./navlog/rows";
+import { useTerrainView } from "../../../lib/map/gl/terrain/useTerrainView";
+import { useRouteAloft } from "../hooks/useRouteAloft";
 
 const NO_PATTERNS: TrafficPattern[] = [];
 const NO_POINTS: { lat: number; lon: number }[] = [];
@@ -104,6 +106,9 @@ interface Props {
   onSelectLeg?: (key: string) => void;
   /** The leg whose Route Leg sheet is open (the only one cased in green). */
   selectedLeg?: string | null;
+  /** The nav log's rows, for the route drawn at its altitudes in 3D
+   *  (useRouteAloft). */
+  routeRows?: NavLogRow[];
 }
 
 
@@ -256,7 +261,7 @@ export default memo(function RouteMap({
   course, candidates, selected, focus, onSelectCandidate, onSelectPoint,
   airportWeather, place, start = null, onSelectPlace, legs, heldPoint, onHoldPoint, nearest = null, patterns = NO_PATTERNS, patternFocus = null,
   procedures = NO_PROCEDURES, procedureFocus = null, procedureCover, crossings = NO_CROSSINGS, directs = "", onProcedureFix, fuelStops = NO_POINTS_AT,
-  stopFields = NO_STOP_FIELDS, onPickStopField, ways, wayShown = null, onPickWay, routeLegs = NO_LEGS, onSelectLeg, selectedLeg,
+  stopFields = NO_STOP_FIELDS, onPickStopField, ways, wayShown = null, onPickWay, routeLegs = NO_LEGS, onSelectLeg, selectedLeg, routeRows,
 }: Props) {
   const focusZoom = course?.max_zoom ?? 12;
   // The pattern just picked, its corners and its entry, to bring in.
@@ -300,6 +305,8 @@ export default memo(function RouteMap({
   // The course and the plan's first cruise, for a weather area's card.
   const courseLine = (course?.course_line as [number, number][] | undefined) ?? null;
   const cruiseFt = legs[0]?.altitude_ft ?? null;
+  // The route at its altitudes, in 3D only.
+  const aloft = useRouteAloft(useTerrainView().mode, routeRows, courseLine);
 
   // The chosen checkpoints and the candidates they were chosen from, at
   // every zoom, or neither: the settings' VFR Checkpoints. Their dots in
@@ -345,6 +352,7 @@ export default memo(function RouteMap({
       crossings={crossings} directs={directs} onProcedureFix={onProcedureFix}
       fuelStops={fuelStops} stopFields={stopFields} onPickStopField={onPickStopField}
       ways={ways} wayShown={wayShown} onPickWay={onPickWay} routeLegs={glLegs} onSelectLeg={onSelectLeg} selectedLeg={selectedLeg}
+      aloft={aloft}
     />
   );
 });

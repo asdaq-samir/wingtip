@@ -39,14 +39,28 @@ class UpstreamRoutesTest {
             "GET /api/cycle-pack/{cycle}/{file}", "the planner answers /api/cycle-pack/{cycle}/{region}.pack alone",
             "POST /api/words/{kind}", "the assistant answers notams, weather, risk, debrief and changes alone");
 
+    /**
+     * Routes added since the hand list was replaced, each with its rules:
+     * no old entry to hold it to, so held to what its decorator says.
+     */
+    static final Map<String, String> ADDED = Map.of(
+            "POST /api/departure-window", "planner signed-in csrf");
+
     @Test
     void everyRouteTheDocumentsMarkIsOneTheHandListForwardedWithTheSameRules() {
-        assertThat(routes).hasSize(89);
+        assertThat(routes).hasSize(89 + ADDED.size());
         List<String> differences = new ArrayList<>();
         for (Route route : routes) {
             String sample = RoutesBefore.sample(route.pattern().getPatternString());
             RoutesBefore old = before.stream().filter(b -> b.matches(route.method(), sample)).findFirst().orElse(null);
             String name = route.method() + " " + route.pattern().getPatternString();
+            if (ADDED.containsKey(name)) {
+                String rules = route.upstream().name().toLowerCase(Locale.ROOT) + " "
+                        + route.access().name().toLowerCase(Locale.ROOT).replace('_', '-') + " "
+                        + (route.csrf() ? "csrf" : "no-csrf");
+                compare(differences, name, "rules", ADDED.get(name), rules);
+                continue;
+            }
             if (old == null) {
                 differences.add(name + ": not forwarded before");
                 continue;

@@ -31,6 +31,10 @@ insert_final_newline = unset
 [{Caddyfile,Caddyfile.*,V8__spring_session.sql}]
 indent_style = tab
 
+# make's recipes must start with a tab.
+[Makefile]
+indent_style = tab
+
 # Windows' Gradle wrapper, and data as its source writes it.
 [*.bat]
 end_of_line = crlf

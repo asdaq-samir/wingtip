@@ -5731,208 +5731,7 @@
       "type": "object",
       "properties": {
         "input": {
-          "title": "GonogoRiskInput",
-          "type": "object",
-          "properties": {
-            "vfr_not_recommended": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
-            },
-            "under_minimums": {
-              "type": [
-                "array",
-                "null"
-              ],
-              "items": {
-                "type": "string"
-              }
-            },
-            "tfr_on_route": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
-            },
-            "hazards": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "description": "The number of SIGMETs and G-AIRMETs on the route."
-            },
-            "night": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
-            },
-            "night_passengers": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it."
-            },
-            "fuel_margin_gal": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "ifr": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
-            },
-            "vor_check": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "good_through": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "within_limit": {
-                      "type": [
-                        "boolean",
-                        "null"
-                      ],
-                      "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
-                    }
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "The VOR check (14 CFR 91.171): left out for a stock profile, null for none recorded."
-            },
-            "inspections": {
-              "$ref": "#/definitions/GonogoInspections"
-            },
-            "squawks": {
-              "type": [
-                "array",
-                "null"
-              ],
-              "items": {
-                "type": "object",
-                "properties": {
-                  "text": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "inoperative": {
-                    "type": [
-                      "boolean",
-                      "null"
-                    ],
-                    "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
-                  },
-                  "deferred_for": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                }
-              }
-            },
-            "currency": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "flights": {
-                      "type": [
-                        "number",
-                        "null"
-                      ]
-                    },
-                    "total_hours": {
-                      "type": [
-                        "number",
-                        "null"
-                      ]
-                    },
-                    "day_passengers_until": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "night_passengers_until": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "instrument_current_until": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "instrument_current_from": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "description": "pilot_currency's instrumentCurrentFrom: before this day the pilot is not instrument current yet."
-                    },
-                    "ipc_needed_after": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "flight_review_until": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "medical_expires_on": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    }
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "day": {
-              "type": "string",
-              "description": "The day flown, yyyy-mm-dd."
-            },
-            "ticked": {
-              "type": [
-                "object",
-                "null"
-              ],
-              "additionalProperties": {},
-              "description": "The self checks ticked, by key, true where ticked."
-            }
-          },
-          "required": [
-            "day"
-          ]
+          "$ref": "#/definitions/GonogoRiskInput"
         },
         "answer": {
           "title": "GonogoRiskAnswer",
@@ -13090,6 +12889,48 @@
         "answer": {
           "title": "DiagramFixUsableAnswer",
           "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "terrain_view_bands": {
+      "description": "The pilot's-eye view's colours for the ground under an airplane at `altitude_ft` MSL: amber from `caution_from_ft` (1,000 ft below it), red from `warning_from_ft` (its own altitude), feet MSL; the owner's bands, no regulation's. A picture of the plan, not terrain clearance (no TAWS, TSO-C151; nothing of 14 CFR 91.119 or 91.177).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TerrainViewBandsInput",
+          "type": "object",
+          "properties": {
+            "altitude_ft": {
+              "type": "number",
+              "description": "The airplane's altitude, ft MSL."
+            }
+          },
+          "required": [
+            "altitude_ft"
+          ],
+          "additionalProperties": false
+        },
+        "answer": {
+          "title": "TerrainViewBandsAnswer",
+          "type": "object",
+          "properties": {
+            "caution_from_ft": {
+              "type": "number"
+            },
+            "warning_from_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "caution_from_ft",
+            "warning_from_ft"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -20960,6 +20801,273 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "departure_window": {
+      "description": "\"When should I go?\": the Go / No-Go for each departure hour the forecasts reach (the Brief's findings, the IFR alternate's say and the risk assessment with the hour's night, 14 CFR 1.1 and 61.57(b)), each go, caution, no-go or unknown with the one or two findings that decide it, and the runs of go hours ranked best first: the most margin over the minimums, then the shortest ETE.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DepartureWindowInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "The departure, [lat, lon]: the night is judged along the straight line to `end`."
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "The destination, [lat, lon]."
+            },
+            "airplane": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "An airplane is picked: without one the fuel, the runways and the weight and balance are left out, ETE and fuel are null, and the night is judged at the departure alone."
+            },
+            "minimums": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "ceiling_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "visibility_sm": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "description": "The pilot's own ceiling and visibility minimums, which the margin is counted against; 14 CFR 91.155(c), (d)'s 1,000 ft and 3 sm where one is not set."
+            },
+            "risk": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/GonogoRiskInput"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The risk assessment's input as the Go / No-Go sends it; its briefing and nav log members (vfr_not_recommended, under_minimums, tfr_on_route, hazards, night, night_passengers, fuel_margin_gal) are each hour's own. Null: no assessment, as with no briefing."
+            },
+            "hours": {
+              "type": "array",
+              "items": {
+                "title": "DepartureWindowHourIn",
+                "type": "object",
+                "properties": {
+                  "depart_s": {
+                    "type": "number",
+                    "description": "The departure, UNIX seconds."
+                  },
+                  "reaches": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ],
+                    "description": "The forecasts reach the whole flight; false, the hour is unknown."
+                  },
+                  "ete_min": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "fuel_gal": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "ground_min": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Minutes on the ground at the stops, counted in the night's span."
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The forecast's lowest ceiling along the route for this flight; null, none."
+                  },
+                  "visibility_sm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "verdict": {
+                    "$ref": "#/definitions/VerdictInput"
+                  },
+                  "alternate": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/definitions/GonogoAlternateData"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "depart_s",
+                  "verdict"
+                ]
+              }
+            }
+          },
+          "required": [
+            "start",
+            "end",
+            "hours"
+          ]
+        },
+        "answer": {
+          "title": "DepartureWindowAnswer",
+          "type": "object",
+          "properties": {
+            "hours": {
+              "type": "array",
+              "items": {
+                "title": "DepartureWindowHour",
+                "type": "object",
+                "properties": {
+                  "depart_s": {
+                    "type": "number"
+                  },
+                  "verdict": {
+                    "type": "string",
+                    "enum": [
+                      "go",
+                      "caution",
+                      "no-go",
+                      "unknown"
+                    ]
+                  },
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/GonogoItem"
+                    },
+                    "description": "The one or two findings that decide it; for a go, the weather's."
+                  },
+                  "ete_min": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "fuel_gal": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "night": {
+                    "type": "boolean",
+                    "description": "Any of the flight at night (14 CFR 1.1)."
+                  },
+                  "night_passengers": {
+                    "type": "boolean",
+                    "description": "Any of it in 14 CFR 61.57(b)'s night-passenger period."
+                  },
+                  "margin": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The forecast's worst along the route over the minimums, the lesser ratio of ceiling and visibility, at most 3."
+                  }
+                },
+                "required": [
+                  "depart_s",
+                  "verdict",
+                  "reasons",
+                  "ete_min",
+                  "fuel_gal",
+                  "night",
+                  "night_passengers",
+                  "margin"
+                ]
+              }
+            },
+            "windows": {
+              "type": "array",
+              "description": "The runs of go hours, best first.",
+              "items": {
+                "title": "DepartureWindowRun",
+                "type": "object",
+                "properties": {
+                  "from_s": {
+                    "type": "number"
+                  },
+                  "last_s": {
+                    "type": "number",
+                    "description": "Its last departure hour."
+                  },
+                  "hours": {
+                    "type": "number"
+                  },
+                  "margin": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "ete_min": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "quickest_s": {
+                    "type": "number",
+                    "description": "The departure hour in it with the shortest ETE."
+                  }
+                },
+                "required": [
+                  "from_s",
+                  "last_s",
+                  "hours",
+                  "margin",
+                  "ete_min",
+                  "quickest_s"
+                ]
+              }
+            }
+          },
+          "required": [
+            "hours",
+            "windows"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -21177,6 +21285,7 @@
     "diagram_graticule",
     "diagram_point",
     "diagram_fix_usable",
+    "terrain_view_bands",
     "strip_fuel",
     "fuel_in_tanks",
     "fuel_estimate",
@@ -21290,7 +21399,8 @@
     "passenger_night",
     "passenger_night_on_the_way",
     "checkpoints_select",
-    "below_vfr_minimums"
+    "below_vfr_minimums",
+    "departure_window"
   ],
   "additionalProperties": false,
   "definitions": {
@@ -26459,6 +26569,210 @@
           }
         }
       }
+    },
+    "GonogoRiskInput": {
+      "title": "GonogoRiskInput",
+      "type": "object",
+      "properties": {
+        "vfr_not_recommended": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "under_minimums": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "tfr_on_route": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "hazards": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The number of SIGMETs and G-AIRMETs on the route."
+        },
+        "night": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "night_passengers": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it."
+        },
+        "fuel_margin_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ifr": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "vor_check": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "good_through": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "within_limit": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ],
+                  "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The VOR check (14 CFR 91.171): left out for a stock profile, null for none recorded."
+        },
+        "inspections": {
+          "$ref": "#/definitions/GonogoInspections"
+        },
+        "squawks": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "inoperative": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+              },
+              "deferred_for": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "flights": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "total_hours": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "day_passengers_until": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "night_passengers_until": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "instrument_current_until": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "instrument_current_from": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "pilot_currency's instrumentCurrentFrom: before this day the pilot is not instrument current yet."
+                },
+                "ipc_needed_after": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "flight_review_until": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "medical_expires_on": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "day": {
+          "type": "string",
+          "description": "The day flown, yyyy-mm-dd."
+        },
+        "ticked": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {},
+          "description": "The self checks ticked, by key, true where ticked."
+        }
+      },
+      "required": [
+        "day"
+      ]
     }
   }
 }

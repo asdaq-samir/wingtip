@@ -18,7 +18,10 @@
 //!   lib/takeoffLanding, lib/pattern's runwayFlown);
 //! - `weight_balance`: the weight and balance (lib/weightBalance);
 //! - `pass_times`: when the flight passes a point, and a TFR's or a
-//!   special-use area's times then (lib/passTimes).
+//!   special-use area's times then (lib/passTimes);
+//! - `window`: "When should I go?" -- the findings for each departure hour
+//!   the forecasts reach, and the runs of go hours, the best first
+//!   (`window_calls` reads and writes it by name).
 //!
 //! Each takes plain data and gives plain values, with a `*_json` writer
 //! for the planner's answer; the airports, runways, weather and plan they
@@ -33,6 +36,8 @@ pub mod pass_times;
 pub mod runways;
 pub mod verdict;
 pub mod weight_balance;
+pub mod window;
+pub mod window_calls;
 
 /// A list of strings as JSON.
 pub(crate) fn strings(out: &mut String, items: &[String]) {

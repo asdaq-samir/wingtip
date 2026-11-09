@@ -13,7 +13,7 @@ import MapBanners from "../../../components/MapBanners";
 import MapLoading from "../../../components/MapLoading";
 import { MapInsetsContext, SHEET_SECONDS, type MapInsets } from "../../../components/mapChrome";
 import { SheetCard } from "../../../components/SheetCard";
-import type { SheetTurn } from "../../../components/MapPanel";
+import type { SheetTurn } from "../../../components/sheet/useSheetMotion";
 import type { Course, OverlayTiles } from "../../api/types";
 import { engineLoaded } from "../../engine/engine";
 import { usePreferences } from "../../preferences";

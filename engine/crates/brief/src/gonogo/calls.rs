@@ -123,6 +123,7 @@ pub fn call(name: &str, v: &Value) -> Option<R<String>> {
     let i = In { name };
     Some(match name {
         "gonogo_verdict_items" => verdict_input(i, v).map(|input| verdict::items_json(&verdict::verdict_items(&input))),
+        "departure_window" => super::window_calls::read(i, v).map(|input| super::window_calls::answer_json(&super::window::departure_window(&input))),
         "gonogo_verdict_line" => items(i, v, "items").map(|items| {
             let (finding, words) = verdict::verdict_line(&items);
             line_json(finding, &words)
@@ -254,7 +255,7 @@ fn line_json(finding: &str, words: &str) -> String {
     out
 }
 
-fn verdict_input(i: In, v: &Value) -> R<verdict::Input> {
+pub(crate) fn verdict_input(i: In, v: &Value) -> R<verdict::Input> {
     let part = |key: &str| -> R<&Value> { i.obj(v, key)?.map_or_else(|| i.err(key, "is missing"), Ok) };
     let (w, a, t, f, r, b) = (part("weather")?, part("airspace")?, part("altitude")?, part("fuel")?, part("runways")?, part("balance")?);
     let special_use = i
@@ -340,7 +341,7 @@ fn items(i: In, v: &Value, key: &str) -> R<Vec<Item>> {
 
 /// The planner's /api/alternate answer, as much as the finding reads:
 /// None where there is none (`!data`).
-fn alternates(i: In, data: Option<&Value>) -> R<Option<Alternates>> {
+pub(crate) fn alternates(i: In, data: Option<&Value>) -> R<Option<Alternates>> {
     let Some(data) = data.filter(|d| !matches!(d, Value::Null)) else { return Ok(None) };
     let required = data.get("destination").is_some_and(|d| truth(d, "required"));
     let alternate = match data.get("alternate") {
@@ -536,7 +537,7 @@ fn squawks(i: In, v: &Value, key: &str) -> R<Vec<Squawk>> {
         .collect()
 }
 
-fn frat_input(i: In, v: &Value) -> R<frat::Input> {
+pub(crate) fn frat_input(i: In, v: &Value) -> R<frat::Input> {
     let vor_check = match v.get("vor_check") {
         None => VorCheck::Absent,
         Some(Value::Null) => VorCheck::None,

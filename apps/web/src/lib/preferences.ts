@@ -53,6 +53,10 @@ export type ChartNight = "normal" | "dimmed";
  *  Auto turns it on from the phone's light sensor where the browser has
  *  one; On and Off are the pilot's own. */
 export type ChartLight = "auto" | "on" | "off";
+/** The ground under the chart (lib/map/gl/layers/TerrainGl): the chart as
+ *  printed, its relief shaded over it, or the relief stood up in 3D, the
+ *  map tilted with two fingers. */
+export type Terrain = "flat" | "shaded" | "3d";
 /** The app's look (lib/brand): Glass Cockpit or Chart ink, the two the
  *  owner kept (2026-11-04: "Only keep the glass cockpit and chart ink");
  *  Sectional, Windsock and Clear Sky are gone. */
@@ -193,6 +197,8 @@ interface Preferences {
   chartNight: ChartNight;
   /** The chart in sunlight (lib/sunlight): from the light sensor, on, or off. */
   chartLight: ChartLight;
+  /** The ground under the chart: flat, shaded or 3D (TerrainGl). */
+  terrain: Terrain;
   /** The app's look: its tint, its typeface and its corners (lib/brand). */
   brand: Brand;
   /** How own ship is drawn on the chart (lib/map/ownShipLook). */
@@ -277,6 +283,7 @@ interface Preferences {
   setNavBar: (navBar: NavEdge) => void;
   setChartNight: (chartNight: ChartNight) => void;
   setChartLight: (chartLight: ChartLight) => void;
+  setTerrain: (terrain: Terrain) => void;
   setBrand: (brand: Brand) => void;
   setOwnShipLook: (ownShipLook: OwnShipLook) => void;
   setFlightRules: (flightRules: FlightRules) => void;
@@ -342,6 +349,8 @@ export const usePreferences = create<Preferences>()(
       navBar: null,
       chartNight: "dimmed",
       chartLight: "auto",
+      // Flat, as the chart is printed, until the pilot asks for relief.
+      terrain: "flat",
       brand: "cockpit",
       // A plane, at the owner's ask, where it was the arrow.
       ownShipLook: "single",
@@ -415,6 +424,7 @@ export const usePreferences = create<Preferences>()(
       setNavBar: navBar => set({ navBar }),
       setChartNight: chartNight => set({ chartNight }),
       setChartLight: chartLight => set({ chartLight }),
+      setTerrain: terrain => set({ terrain }),
       setBrand: brand => set({ brand }),
       setOwnShipLook: ownShipLook => set({ ownShipLook }),
       setFlightRules: flightRules => set({ flightRules }),
@@ -469,7 +479,7 @@ export const usePreferences = create<Preferences>()(
       }) as Preferences,
       // The functions are not state; only the values are written.
       partialize: s => ({
-        base: s.base, tac: s.tac, waypoints: s.waypoints, classB: s.classB, airspace: s.airspace, navaids: s.navaids, tfrs: s.tfrs, alerts: s.alerts, speakAlerts: s.speakAlerts, plates: s.plates, traffic: s.traffic, military: s.military, privateFields: s.privateFields, minimums: s.minimums, routeWeather: s.routeWeather, stopsRadiusNm: s.stopsRadiusNm, stopKind: s.stopKind, loads: s.loads, keepOffline: s.keepOffline, aircraft: s.aircraft, tailFigures: s.tailFigures, filters: s.filters, navBar: s.navBar, chartNight: s.chartNight, chartLight: s.chartLight, brand: s.brand, ownShipLook: s.ownShipLook,
+        base: s.base, tac: s.tac, waypoints: s.waypoints, classB: s.classB, airspace: s.airspace, navaids: s.navaids, tfrs: s.tfrs, alerts: s.alerts, speakAlerts: s.speakAlerts, plates: s.plates, traffic: s.traffic, military: s.military, privateFields: s.privateFields, minimums: s.minimums, routeWeather: s.routeWeather, stopsRadiusNm: s.stopsRadiusNm, stopKind: s.stopKind, loads: s.loads, keepOffline: s.keepOffline, aircraft: s.aircraft, tailFigures: s.tailFigures, filters: s.filters, navBar: s.navBar, chartNight: s.chartNight, chartLight: s.chartLight, terrain: s.terrain, brand: s.brand, ownShipLook: s.ownShipLook,
         flightRules: s.flightRules, routeEdit: s.routeEdit, listenInput: s.listenInput,
         recentAirports: s.recentAirports, homeAirport: s.homeAirport, favoriteAirports: s.favoriteAirports,
         recentAircraft: s.recentAircraft, favoriteAircraft: s.favoriteAircraft, myAircraft: s.myAircraft,

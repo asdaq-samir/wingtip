@@ -1,6 +1,8 @@
-import { Suspense, lazy, memo, useMemo, useRef, type ComponentProps, type KeyboardEvent, type PointerEvent } from "react";
+import { Suspense, lazy, memo, useEffect, useMemo, useRef, type ComponentProps, type KeyboardEvent, type PointerEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Pause, Play } from "lucide-react";
+import { Mountain, Pause, Play } from "lucide-react";
+import { callEngine } from "../../../lib/engine/engine";
+import { setPilotView, usePilotView } from "../../../lib/map/gl/terrain/pilotView";
 import { cn } from "cn";
 import CloseButton from "../../../components/CloseButton";
 import RoundButton from "../../../components/RoundButton";
@@ -56,6 +58,11 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
   // The speeds in turn, a tap each: one small button on the chart, where
   // a segmented control took a row of its own.
   const nextSpeed = REPLAY_SPEEDS[(REPLAY_SPEEDS.indexOf(speed as (typeof REPLAY_SPEEDS)[number]) + 1) % REPLAY_SPEEDS.length]!;
+  // The run seen from the pilot's seat over the 3D ground, or the chart
+  // from above (lib/map/gl/terrain's PilotCamera): a toggle among the
+  // run's own controls, put back to the chart as the run is put away.
+  const pilotView = usePilotView(s => s.on);
+  useEffect(() => () => setPilotView(false), []);
   // The chart dragged along, at the owner's ask ("can the trace be
   // drag-able in the dry run?"): a finger or a pointer on it puts the
   // airplane where it points along the course, the run held while it does
@@ -110,6 +117,12 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
             Go missed
           </RoundButton>
         )}
+        <RoundButton
+          label={pilotView ? "Chart view" : "Pilot's view"} aria-pressed={pilotView} onClick={() => setPilotView(!pilotView)}
+          className={cn(pilotView && "bg-tint text-white hover:bg-tint/90")} data-testid="dry-run-pilot-view"
+        >
+          <Mountain className="size-5" />
+        </RoundButton>
         <RoundButton label={playing ? "Pause" : "Play"} onClick={playing ? pausePastFlight : playPastFlight} data-testid="dry-run-play">
           {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
         </RoundButton>
@@ -121,6 +134,20 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
         </RoundButton>
         <CloseButton onClick={onClose} data-testid="dry-run-close" />
       </div>
+      {/* In the pilot's view, its key at the chart's other corner: what the
+          ground's amber and red are, and that they are a picture of the
+          plan, not terrain clearance (no TAWS; nothing of 14 CFR 91.119 or
+          91.177, which the plan's altitudes answer). */}
+      {pilotView && (
+        <div
+          className={cn("pointer-events-none absolute top-1.5 left-2 z-10 flex flex-col gap-0.5 text-foreground", TEXT.caption)}
+          data-testid="dry-run-pilot-key"
+        >
+          <span className="flex items-center gap-1"><span aria-hidden="true" className="size-2.5 rounded-sm bg-[rgb(255,176,0)]" />Ground within {amberBandFt(pilotView).toLocaleString("en-US")} ft</span>
+          <span className="flex items-center gap-1"><span aria-hidden="true" className="size-2.5 rounded-sm bg-[rgb(215,0,21)]" />Ground above you</span>
+          <span className="text-muted-foreground">A view, not terrain clearance</span>
+        </div>
+      )}
       {/* The height and speed are said on the traces themselves (the
           chart's NowMarks), where a line of words over the chart took a
           row of its own: the controls over the chart's corner as the side
@@ -164,6 +191,14 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
       </div>
     </div>
   );
+}
+
+/** How deep under the airplane the pilot's view draws the ground amber,
+ *  ft: the engine's band (`terrain_view_bands`), read where its key says it. */
+function amberBandFt(shown: boolean): number {
+  if (!shown) return 0;
+  const bands = callEngine("terrain_view_bands", { altitude_ft: 0 });
+  return bands.warning_from_ft - bands.caution_from_ft;
 }
 
 /** To the tenth of a mile, the scrubber's step. */

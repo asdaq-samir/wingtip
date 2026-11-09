@@ -1678,6 +1678,18 @@ jobs:
       - name: No aviation rule outside the engine
         run: python3 scripts/ci/rules_boundary.py
 
+  # Every relative link and #anchor in the Markdown resolves: a doc moved
+  # or a heading renamed breaks the links to it silently otherwise.
+  # External links are not fetched (slow, and flaky for reasons no change
+  # here causes). Seconds, the standard library only.
+  links:
+    name: Doc links
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - name: Relative links and anchors in *.md
+        run: python3 scripts/ci/check_links.py
+
   docs:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -2077,7 +2089,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary]
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, links]
     if: always()
     steps:
       - name: Every job passed or was not needed

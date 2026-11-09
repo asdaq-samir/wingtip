@@ -76,6 +76,11 @@ fn the_lists_and_figures_the_apps_kept() {
         let got = ask("diagram_fix_usable", json!({ "age_s": case["age_s"], "accuracy_m": case["accuracy_m"] }));
         assert_eq!(got, case["usable"], "{case}");
     }
+    for case in f["terrainViewBands"].as_array().unwrap() {
+        let got = ask("terrain_view_bands", json!({ "altitude_ft": case["altitude_ft"] }));
+        assert_eq!(got["caution_from_ft"].as_f64(), case["caution_from_ft"].as_f64(), "{case}");
+        assert_eq!(got["warning_from_ft"].as_f64(), case["warning_from_ft"].as_f64(), "{case}");
+    }
     let reach = ask("traffic_reach", json!({}));
     assert_eq!(reach["around_nm"].as_f64(), f["trafficReach"]["around_nm"].as_f64());
     assert_eq!(reach["relation_nm"].as_f64(), f["trafficReach"]["relation_nm"].as_f64());

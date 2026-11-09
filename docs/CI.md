@@ -109,6 +109,54 @@ On the Mac, a run like that goes through `scripts/dev/one-at-a-time.sh
 24 GB Mac, 2026-11-08) and waits while macOS says memory is short; the
 quick checks before a push are `scripts/dev/check.sh <area>`.
 
+## The jobs
+
+`.github/workflows/ci.yml`, on a pull request, a push to main, every
+night and by hand (Run workflow). `changes` decides which of the rest a
+change needs; a job it skips counts as passing.
+
+| Job | What it runs |
+|---|---|
+| `changes` | The path filter: which suites, images and phone builds a change touches, and whether it is docs only |
+| `test` | The engine's `cargo test`, that the committed WebAssembly matches the engine; ruff and pytest over `services/planner/wingtip` and the charts job; wingtip's pdoc |
+| `test-web` | `npm run types`, `tsc`, ESLint and Vitest over `apps/web`, and that the phones' API models are the committed ones |
+| `test-gateway` | `mvn test`: the gateway's JUnit suite, with a real Postgres in Testcontainers |
+| `test-planner`, `test-ingest`, `test-assistant`, `test-weather` | ruff and pytest over each service's own suite |
+| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` set on a pull request, everything at night |
+| `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build |
+| `android`, `ios` | The phone builds, when a pull request touches them (above) |
+| `rules-boundary` | No aviation rule outside the engine (below) |
+| `links` | Every relative link and `#anchor` in the Markdown resolves (`scripts/ci/check_links.py`) |
+| `api-compat` | No breaking change to an OpenAPI document (below) |
+| `infra` | cfn-lint, shellcheck, `docker compose config` and `caddy validate` over the production files |
+| `dependency-review` | New dependencies' advisories, on a public repository's pull requests |
+| `docs` | The gateway's Javadoc, at night |
+| `standards` | Lighthouse and the speed lab against their thresholds, at night |
+| `flake-hunt-python`, `flake-hunt-web`, `flake-report` | The nightly flake hunt (below) |
+| `passed` | "CI passed", the one check a merge waits on |
+
+Images go to GHCR from main; `promote.yml` copies the ones that passed to
+ECR and deploys them ([README-AWS.md](README-AWS.md#deploys)).
+
+### The test suites
+
+| Suite | Proves |
+|---|---|
+| `engine/` (`cargo test`) | Every engine rule against the shared fixtures in `apps/web/src/lib/fixtures`, and the contract |
+| `services/planner/tests_wingtip/` | wingtip's data work: geo, features, the model registry, the remote-URI guards, parsing with the network mocked |
+| `services/planner/tests/` | The planner's HTTP contract: status codes and shapes, a failing source reaching the caller as a clean 502, the committed `openapi.json` matching the app, the chart model's scores and reload |
+| `services/{ingest,assistant,weather}/tests/` | Each service's readers and stores; the assistant with the model and the planner stood in |
+| `services/gateway/src/test/` | The HTTP contract (`@WebMvcTest`: 400, 405, 409), the pilot-scoping guards, the committed `openapi.json`, and Flyway's migrations against a real Postgres with `ddl-auto: validate` |
+| `apps/web` (Vitest) | The pages' decisions as pure functions: filters, ordering, the nav log's rows |
+| `apps/web/e2e` (Playwright) | Pages in a real browser at phone and desktop sizes, against the whole stack |
+
+Left to the developer by design: what needs the live network or a trained
+model (`collect`, a retrain); mocking those would test the mock, not the
+upstream data that actually breaks.
+
+On the Mac, `scripts/dev/check.sh <area>` runs the quick ones for a part
+of the repository in Docker ([LOCAL-DEV.md](LOCAL-DEV.md#the-developer-scripts)).
+
 ## Rules boundary
 
 Every aviation rule or figure is the engine's (CLAUDE.md, issue #482).
@@ -197,7 +245,9 @@ mini for free:
 
 Unset the variables to go back to GitHub's runners. Only once the
 repository is private: on a public one any fork's pull request could run
-its code on the Mac.
+its code on the Mac. Since 2026-11-07 the repository is public again, the
+variables are unset and every job runs on GitHub's runners; the VM is
+kept for when it goes private.
 
 ## Flaky tests
 

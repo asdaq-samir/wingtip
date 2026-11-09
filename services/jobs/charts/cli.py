@@ -8,6 +8,13 @@ entry point):
 - `overlays`: the overlay tiles alone (overlays.ensure), a minute or two
   of tippecanoe once the planner has written a new cycle pack; a no-op
   otherwise. The production server runs it from cron.
+- `next`: the FAA's next chart cycle staged ahead of its date
+  (charts.next_cycle, by wingtip.chart_next's dates): from CHARTS_CYCLE_LEAD_DAYS before it, its sheets
+  fetched, its pyramid rendered and packed into its own folder, which the
+  map takes at 0901Z on its date; once it is in force and complete, the
+  cycles before it deleted. It takes a turn among the machine's heavy
+  work first (charts.turn). The planner starts it (app.chart_refresh,
+  CHARTS_CYCLE_AUTO) through the dev-services sidecar.
 - `refresh`: the chart cycle alone (wingtip.charts.refresh), published to
   CHART_TILES_BUCKET where one is set: the AWS scheduled task.
 - `pack`: every finished kind's loose tiles into its archives
@@ -32,10 +39,10 @@ import os
 import sys
 from pathlib import Path
 
-from wingtip import altitude, charts
-from wingtip.config import CHART_TILES_BUCKET
+from wingtip import altitude, chart_next, charts
+from wingtip.config import CHART_TILES_BUCKET, get_settings
 
-from . import overlays
+from . import next_cycle, overlays, turn
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +52,7 @@ log = logging.getLogger(__name__)
 #: come first. Raising one's own niceness needs no privilege.
 NICE = 10
 #: The commands that render, and so step back.
-RENDERS = ("run", "pyramid", "refresh", "unmask")
+RENDERS = ("run", "pyramid", "refresh", "unmask", "next")
 
 
 def entry() -> int:
@@ -69,7 +76,7 @@ def main(argv: list | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m charts",
                                      description="FAA charts: fetch every sheet, render every tile, build the overlays.")
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("run", "overlays", "prepare", "pyramid", "refresh", "check", "publish", "unmask", "pack"):
+    for name in ("run", "overlays", "prepare", "pyramid", "refresh", "check", "publish", "unmask", "pack", "next"):
         p = sub.add_parser(name)
         if name in ("prepare", "pyramid"):
             p.add_argument("--kind", nargs="+", choices=list(charts.KINDS), default=list(charts.KINDS))
@@ -80,6 +87,11 @@ def main(argv: list | None = None) -> int:
             # (wingtip.charts.pyramid_workers): a fixed 4 was killed for
             # memory at @2x.
             p.add_argument("--workers", type=int, default=None if name == "pyramid" else 2)
+        if name == "next":
+            # From the memory there is, as a pyramid's (pyramid_workers).
+            p.add_argument("--workers", type=int, default=None)
+            p.add_argument("--lead-days", type=int, default=get_settings().charts_cycle_lead_days,
+                           help="how many days before its date the next cycle is staged (CHARTS_CYCLE_LEAD_DAYS)")
         if name == "unmask":
             p.add_argument("--cycle", help="the cycle whose sheets and tiles to clean; the served one by default")
             p.add_argument("--again", action="store_true",
@@ -125,13 +137,13 @@ def _locked(args, parser) -> int:
     an unmask waits, then renders its tiles again on what that run left; a
     publish waits rather than write back a ledger an unmask has struck
     tiles off."""
-    if args.command in ("refresh", "pyramid", "unmask", "publish", "pack"):
+    if args.command in ("refresh", "pyramid", "unmask", "publish", "pack", "next"):
         wait = args.command in ("unmask", "publish", "pack")
         with charts.refresh_lock(wait=wait) as got:
             if not got:
                 log.info("a refresh, pyramid or unmask is already running on %s; leaving it to that",
                          charts.CHART_TILE_CACHE_DIR)
-                return 0 if args.command == "refresh" else 1
+                return 0 if args.command in ("refresh", "next") else 1
             return _run(args, parser)
     return _run(args, parser)
 
@@ -145,6 +157,11 @@ def _run(args, parser) -> int:
         changed = charts.unmask_prepared(args.cycle, workers=args.workers, again=args.again)
         log.info("masked lines removed: %s", {k: len(v) for k, v in changed.items()} or "none left to remove")
         return 0
+    if args.command == "next":
+        label = "charts job: the next chart cycle"
+        state = next_cycle.run(workers=args.workers, lead_days=args.lead_days, turn=lambda: turn.turn(label))
+        log.info("next cycle: %s", state)
+        return 1 if state == chart_next.FAILED else 0
     if args.command == "refresh":
         cycle = charts.refresh(workers=args.workers, publish_bucket=args.bucket)
         log.info("cycle %s complete; serving %s", cycle, charts.serving_cycle())

@@ -1243,6 +1243,21 @@ def _cycles_on_disk(root: Path) -> list[str]:
     return [name for _, name in sorted(found, reverse=True)]
 
 
+def in_force(cycle: str, now: datetime | None = None) -> bool:
+    """Whether a cycle on disk may be drawn yet: its effective date has
+    come, at 0901Z (wingtip.data_cycles.in_force_day; 14 CFR 91.103 wants
+    the current edition, and an edition is current from its date, not
+    before). The next cycle is drawn ahead into its own folder beside the
+    one serving (wingtip.chart_next), complete days early; this is what
+    keeps the map on the old one until the FAA's changeover, and so what
+    swaps them -- the next look after 0901Z on the date, a minute at most
+    with the serving cache. A folder whose name is no date is in force."""
+    from .data_cycles import chart_effective, in_force_day
+
+    effective = chart_effective(cycle)
+    return effective is None or effective <= in_force_day(now)
+
+
 _serving_cache: dict = {"value": None, "at": 0.0, "pointer": None}
 _SERVING_TTL_S = 60
 
@@ -1260,7 +1275,8 @@ def serving_cycle() -> str:
         return _serving_cache["value"]
     pointer = _published_pointer() if CHART_TILES_URL else None
     value = pointer and pointer["cycle"]
-    value = value or next((c for c in _cycles_on_disk(CHART_TILE_CACHE_DIR) if pyramid_complete(c, ("sec",))), None)
+    value = value or next((c for c in _cycles_on_disk(CHART_TILE_CACHE_DIR)
+                           if in_force(c) and pyramid_complete(c, ("sec",))), None)
     value = value or current_cycle()
     _serving_cache.update(value=value, at=time.time(), pointer=pointer)
     return value
@@ -1285,7 +1301,8 @@ def serving_cycle_of(kind: str) -> str:
     held = _kind_serving.get(kind)
     if held and time.time() - held[1] < _SERVING_TTL_S:
         return held[0]
-    value = next((c for c in _cycles_on_disk(CHART_TILE_CACHE_DIR) if pyramid_complete(c, (kind,))), None) or serving_cycle()
+    value = next((c for c in _cycles_on_disk(CHART_TILE_CACHE_DIR) if in_force(c) and pyramid_complete(c, (kind,))),
+                 None) or serving_cycle()
     _kind_serving[kind] = (value, time.time())
     return value
 
@@ -2039,6 +2056,24 @@ def refresh(kinds: tuple = tuple(KINDS), workers: int = 2, prune: bool = True,
     if publish_bucket and _bucket_cycle(publish_bucket, client=client) == cycle:
         log.info("cycle %s is already published to %s", cycle, publish_bucket)
         return cycle
+    build_cycle(cycle, kinds, workers)
+    if publish_bucket and pyramid_complete(cycle, kinds):
+        publish(cycle, publish_bucket, client=client)
+    # Never before the cycle is in force: the FAA's page names a cycle
+    # from 0000Z on its date, and the one it replaces is the map's until
+    # 0901Z (in_force).
+    if prune and pyramid_complete(cycle, kinds) and in_force(cycle):
+        prune_cycles(keep=cycle)
+    return cycle
+
+
+def build_cycle(cycle: str, kinds: tuple = tuple(KINDS), workers: int | None = 2, step=None) -> bool:
+    """A cycle's sheets fetched and prepared, its pyramid rendered and
+    each finished kind packed into its archives: what `refresh` does for
+    the cycle in force and wingtip.chart_next for the next one, ahead of
+    its date. `step(text)` hears each stage as it starts, for a status
+    file. Whether every kind is complete at the end."""
+    say = step or (lambda _text: None)
     # Only the kinds due: a finished kind is not rendered again unless
     # the renderer has changed since, and one with a sheet missing is
     # tried again every run -- it used to read complete, and nothing
@@ -2046,17 +2081,16 @@ def refresh(kinds: tuple = tuple(KINDS), workers: int = 2, prune: bool = True,
     todo = pyramid_due(cycle, kinds)
     if todo:
         log.info("cycle %s: preparing sheets", cycle)
+        say(f"fetching and preparing sheets ({', '.join(todo)})")
         prepare_all(todo, cycle)
         for key in todo:
             log.info("cycle %s: rendering the %s pyramid", cycle, key)
+            say(f"rendering the {key} pyramid")
             render_pyramid(KINDS[key], workers=workers, cycle=cycle)
     # Each finished kind's loose tiles into its archives.
+    say("packing")
     pack_complete(cycle, kinds)
-    if publish_bucket and pyramid_complete(cycle, kinds):
-        publish(cycle, publish_bucket, client=client)
-    if prune and pyramid_complete(cycle, kinds):
-        prune_cycles(keep=cycle)
-    return cycle
+    return pyramid_complete(cycle, kinds)
 
 
 # ---------------------------------------------------------------------------

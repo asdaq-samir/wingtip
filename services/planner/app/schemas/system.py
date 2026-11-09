@@ -177,6 +177,9 @@ class ChartsStatus(BaseModel):
     # on its clock, blank for any time) and with how many processes.
     refresh_window: str = ""
     refresh_workers: int = 1
+    # The next cycle, drawn before its date (app.chart_cycle); None where
+    # it could not be worked out.
+    next: "NextCycle | None" = None
 
 
 class ChartRefreshStarted(BaseModel):
@@ -209,6 +212,9 @@ class Status(BaseModel):
     # Each FAA data set's edition and whether it is in its cycle; the ones
     # out of date are logged too (wingtip.data_cycles).
     data_cycles: list[DataCycle] = []
+    # The live feeds (app.feeds): SWIM's through ingest's beats, the
+    # weather's through the weather service.
+    feeds: "FeedHealth | None" = None
 
 
 class RetrainStarted(BaseModel):
@@ -217,3 +223,12 @@ class RetrainStarted(BaseModel):
 
     started: bool
     state: str | None
+
+
+# Kept in their own modules and named here only where a model above holds
+# them: imported last, as each imports what it needs from this one.
+from ..chart_cycle.schemas import NextCycle  # noqa: E402
+from ..feeds.schemas import FeedHealth  # noqa: E402
+
+ChartsStatus.model_rebuild()
+Status.model_rebuild()

@@ -16,6 +16,8 @@ from wingtip import chartlabels, charts, checkpoint_notes, data_cycles, model_re
 from wingtip.terrain import DEFAULT_FAA_CACHE_DIR
 
 from .. import chart_model, chart_refresh, errors
+from ..chart_cycle import check as chart_cycle_check
+from ..feeds import watch as feeds_watch
 from ..router_basics import PROCESSED_DIR, paths
 from ..settings import CHARTS_REFRESH_WINDOW, CHARTS_REFRESH_WORKERS, get_settings
 from ..schemas.system import (
@@ -233,13 +235,15 @@ def status() -> Status:
             },
             faa_files=_faa_files(),
             weather=_weather_datasets(),
-            charts={**charts.status(), "refresh_window": CHARTS_REFRESH_WINDOW, "refresh_workers": CHARTS_REFRESH_WORKERS},
+            charts={**charts.status(), "refresh_window": CHARTS_REFRESH_WINDOW, "refresh_workers": CHARTS_REFRESH_WORKERS,
+                    "next": chart_cycle_check.status()},
             model={"current": _current_model(), "versions": _versions(),
                    "chart": _chart_model()},
             pipeline=pipeline.result().model_copy(update={"training": _training()}),
             corridors=_corridors(),
             recent_errors=errors.recent(),
             data_cycles=cycles,
+            feeds=feeds_watch.snapshot_or_none(),
         )
 
 
