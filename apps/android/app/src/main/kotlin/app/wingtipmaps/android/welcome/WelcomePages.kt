@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.AirplaneModel
 import app.wingtipmaps.android.ui.AirplanePicker
@@ -83,6 +84,7 @@ private fun HomeSearch(home: String?, onPick: (String) -> Unit) {
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Search),
     )
     ProblemLine(found.problem)
+    if (found.loading && found.suggestions.isEmpty()) Skeleton(rows = 2)
     if (found.query.isNotBlank()) {
         found.suggestions.take(SHOWN).forEach { field ->
             SuggestionRow(field) {

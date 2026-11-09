@@ -316,5 +316,6 @@
     <string name="welcome_own">Plan My Own</string>
     <string name="welcome_again">Show Welcome Again</string>
     <string name="microphone">Microphone</string>
+    <string name="loading">Loading</string>
     <string name="microphone_line">Wingtip listens to the radio to write down your clearance; nothing leaves the phone unless you ask.</string>
 </resources>

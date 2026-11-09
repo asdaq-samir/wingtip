@@ -122,6 +122,9 @@ class Traffic private constructor(private val context: Context, private val tick
         every = null
     }
 
+    /** One answer now, out of the clock's turn: a pull on a traffic card. */
+    suspend fun refresh() = ask(OwnShip.of(context).fix.value)
+
     /** One answer about a point, where traffic is on and there is one. */
     private suspend fun ask(fix: OwnShip.Fix?) {
         if (!on.value) return

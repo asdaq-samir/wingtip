@@ -1,8 +1,6 @@
 package app.wingtipmaps.android.brief
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -11,12 +9,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.route.RoutePoints
@@ -42,7 +40,7 @@ fun IcingRows(plan: Plan.State, model: IcingModel = viewModel()) {
         state.unchecked -> Text(stringResource(R.string.icing_unchecked), color = LocalInk.current.cautionInk, style = MaterialTheme.typography.bodyMedium)
         state.loading -> {
             SectionTitle(stringResource(R.string.icing_forecast))
-            LinearProgressIndicator(Modifier.fillMaxWidth())
+            Skeleton(rows = 2)
         }
         state.rows.isNotEmpty() -> {
             SectionTitle(stringResource(R.string.icing_forecast))

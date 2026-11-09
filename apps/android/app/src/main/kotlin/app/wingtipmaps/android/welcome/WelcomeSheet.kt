@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.SharedAxisContent
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.notify.Notifications
@@ -89,7 +90,9 @@ fun WelcomeHost(plan: Plan, onOpen: (sample: Boolean) -> Unit) {
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg),
         ) {
-            WelcomePage(state.step, state, plan, model)
+            // A page gives way to the next along X (Material's shared axis;
+            // a cross-fade under Reduce Motion).
+            SharedAxisContent(state.index) { i -> WelcomePage(state.steps[i], state, plan, model) }
             WelcomeButtons(
                 step = state.step,
                 onSkip = { end(model.skip()) },

@@ -8,6 +8,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.AirportPlace
+import app.wingtipmaps.android.design.Haptics
+import app.wingtipmaps.android.design.generated.WingtipHaptic
+import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.map.MapPick
 
@@ -16,9 +19,16 @@ import app.wingtipmaps.android.map.MapPick
  * phone, and which of them each card can do now: Direct To wants the
  * airplane's position, Add to Route and Hold Here a route, Call a
  * telephone. Every card -- an airport's, a VOR's, a fix's, the
- * airspace's -- goes through here, so an action is one thing everywhere.
+ * airspace's -- goes through here, so an action is one thing everywhere;
+ * Direct To and Fly Here are felt as well (WingtipHaptic.DIRECT_TO).
  */
-class RouteActions(private val plan: Plan, private val fix: OwnShip.Fix?, private val routed: Boolean, private val context: Context) {
+class RouteActions(
+    private val plan: Plan,
+    private val fix: OwnShip.Fix?,
+    private val routed: Boolean,
+    private val context: Context,
+    private val haptics: Haptics? = null,
+) {
     /** Where Fly Here starts: the airplane, else the route's departure. */
     private val from: String? get() = fix?.let(Plan::positionIdent) ?: plan.state.value.dep.ifEmpty { null }
 
@@ -32,7 +42,10 @@ class RouteActions(private val plan: Plan, private val fix: OwnShip.Fix?, privat
 
     fun airport(action: CardAction, place: AirportPlace) {
         when (action) {
-            CardAction.FLY_HERE -> from?.let { plan.flyHere(place.ident, it) }
+            CardAction.FLY_HERE -> from?.let {
+                plan.flyHere(place.ident, it)
+                haptics?.tap(WingtipHaptic.DIRECT_TO)
+            }
             CardAction.ADD_STOP -> plan.addToRoute(Plan.ChartPoint(place.ident, place.lat, place.lon))
             CardAction.CALL -> place.phone?.let { CardIntents.call(context, it) }
             CardAction.ADDRESS -> CardIntents.address(context, place.lat, place.lon, place.address ?: place.name)
@@ -51,7 +64,10 @@ class RouteActions(private val plan: Plan, private val fix: OwnShip.Fix?, privat
      *  VOR's frequency, a fix's name). */
     fun point(action: CardAction, point: Plan.ChartPoint, copy: Pair<String, String>?) {
         when (action) {
-            CardAction.DIRECT_TO -> fix?.let { plan.directTo(point, it) }
+            CardAction.DIRECT_TO -> fix?.let {
+                plan.directTo(point, it)
+                haptics?.tap(WingtipHaptic.DIRECT_TO)
+            }
             CardAction.ADD_TO_ROUTE -> plan.addToRoute(point)
             CardAction.HOLD_HERE -> plan.holdHere(point)
             CardAction.COPY -> copy?.let { (label, text) -> CardIntents.copy(context, label, text) }
@@ -84,5 +100,6 @@ fun rememberRouteActions(plan: Plan): RouteActions {
     val context = LocalContext.current
     val fix by remember { OwnShip.of(context) }.fix.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
-    return remember(plan, fix, state.routed, state.course) { RouteActions(plan, fix, state.routed && state.course != null, context) }
+    val haptics = rememberHaptics()
+    return remember(plan, fix, state.routed, state.course) { RouteActions(plan, fix, state.routed && state.course != null, context, haptics) }
 }

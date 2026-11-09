@@ -38,7 +38,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AheadAlert
+import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.pilot.MinimumsStore
 import app.wingtipmaps.android.plan.FlightChoices
@@ -64,6 +66,9 @@ fun CopilotBanner(plan: Plan.State, flying: Boolean, fix: OwnShip.Fix?, ahead: L
     val message by model.message.collectAsStateWithLifecycle()
     val shown = message?.takeIf { !it.elsewhere && mode != CopilotMode.OFF && flying } ?: return
     var open by rememberSaveable(shown.id) { mutableStateOf(false) }
+    // A warning or a caution is felt as it appears, in a busy cockpit.
+    val haptics = rememberHaptics()
+    LaunchedEffect(shown.id) { if (shown.level == "warning" || shown.level == "caution") haptics.tap(WingtipHaptic.WARNING) }
     val ink = when (shown.level) {
         "warning" -> MaterialTheme.colorScheme.error
         "caution" -> LocalInk.current.cautionInk

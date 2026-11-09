@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
@@ -30,6 +31,7 @@ import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.design.SharedAxisContent
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.InFlight
@@ -148,12 +150,16 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                     Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(t.title)) })
                 }
             }
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                when (Tabs.entries[tab]) {
-                    Tabs.FPL -> FPLScreen(plan)
-                    Tabs.AIRPORT -> AirportScreen(airport, plan = plan, model = airports)
-                    Tabs.AIRPLANE -> AirplaneScreen(plan)
-                    Tabs.SETUP -> SetupScreen(session)
+            // A tab gives way to the next along the row's axis (Material's
+            // shared axis; a cross-fade under Reduce Motion).
+            SharedAxisContent(tab, Modifier.weight(1f).fillMaxWidth()) { shown ->
+                Box(Modifier.fillMaxSize()) {
+                    when (Tabs.entries[shown]) {
+                        Tabs.FPL -> FPLScreen(plan)
+                        Tabs.AIRPORT -> AirportScreen(airport, plan = plan, model = airports)
+                        Tabs.AIRPLANE -> AirplaneScreen(plan)
+                        Tabs.SETUP -> SetupScreen(session)
+                    }
                 }
             }
             Spacer(Modifier.height(navigationBar))
