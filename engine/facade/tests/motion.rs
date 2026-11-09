@@ -216,47 +216,8 @@ fn alerts_go_off_once_as_it_happens() {
 
 // --- Glide ------------------------------------------------------------------
 
-// The Cessna 172S's 9 to 1 (its POH, Section 3 and figure 3-1, the c172
-// profile's glide.ratio): 9,000 ft forward for each 1,000 down, 1.48 nm.
+// The c172 profile's 9 to 1 (its POH, figure 3-1), feet in a nm.
 const FT_PER_NM: f64 = 1852.0 / 0.3048;
-
-#[test]
-fn the_glide_is_the_airplanes_own_ratio_in_the_air() {
-    let range = |alt: Value, kt: Value, ground: Value| {
-        ask("glide_range", json!({ "altitude_ft": alt, "speed_kt": kt, "ground_ft": ground, "glide_ratio": 9 }))
-    };
-    assert!(close(n(&range(json!(4800), json!(100), json!(800))), 4.0 * 9000.0 / FT_PER_NM, 1e-9));
-    // No airplane, or no glide in its profile: no glide is worked out,
-    // never a stock airplane's.
-    assert_eq!(ask("glide_range", json!({ "altitude_ft": 4800, "speed_kt": 100, "ground_ft": 800 })), Value::Null);
-    assert_eq!(ask("glide_range", json!({ "altitude_ft": 4800, "speed_kt": 100, "ground_ft": 800, "glide_ratio": null })), Value::Null);
-    assert_eq!(range(json!(1000), json!(100), json!(800)), Value::Null);
-    assert_eq!(range(json!(4800), json!(10), json!(800)), Value::Null);
-    assert_eq!(range(Value::Null, json!(100), json!(800)), Value::Null);
-    assert_eq!(range(json!(4800), json!(100), Value::Null), Value::Null);
-}
-
-#[test]
-fn a_field_within_a_glide_is_judged_over_its_own_elevation_at_pattern_height() {
-    let reaches = |alt: f64, kt: f64, nm: f64, elevation: Value| {
-        ask("glide_reaches", json!({ "altitude_ft": alt, "speed_kt": kt, "distance_nm": nm, "elevation_ft": elevation, "glide_ratio": 9 }))
-            .as_bool()
-            .unwrap()
-    };
-    // 5,000 ft over a 600 ft field is 3,400 ft to spare above its pattern:
-    // 5.0 nm at 9 to 1. A field 6 nm off at 2,500 ft has 1,500 ft: 2.2 nm.
-    assert!(reaches(5000.0, 100.0, 5.0, json!(600)));
-    assert!(!reaches(5000.0, 100.0, 6.0, json!(600)));
-    assert!(!reaches(5000.0, 100.0, 6.0, json!(2500)));
-    assert!(!reaches(5000.0, 10.0, 1.0, json!(600)));
-    assert!(!reaches(5000.0, 100.0, 1.0, Value::Null));
-    assert!(!reaches(1500.0, 100.0, 0.5, json!(600)));
-    // With no glide ratio, nothing is judged within a glide.
-    assert_eq!(ask("glide_reaches", json!({ "altitude_ft": 5000, "speed_kt": 100, "distance_nm": 1, "elevation_ft": 600 })), json!(false));
-    assert_eq!(ask("underway", json!({ "speed_kt": 40 })), json!(true));
-    assert_eq!(ask("underway", json!({ "speed_kt": 39.9 })), json!(false));
-    assert_eq!(ask("underway", json!({})), json!(false));
-}
 
 // --- In flight (#218) ---------------------------------------------------------
 

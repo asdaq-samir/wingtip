@@ -277,12 +277,9 @@ pub fn vertical_speed(samples: &[(f64, f64)]) -> Option<f64> {
     (sxx > 0.0).then(|| sxy / sxx * 60.0)
 }
 
-/// The glide ring: its radius (motion::glide's still-air range at the
-/// picked airplane's own glide ratio) over the higher of the ground under
-/// the airplane (the pack's terrain grid) and the nearest field's
-/// elevation, and its outline on the sphere for a map that draws polygons.
-/// None on the ground, slower than flying speed, with no height to go by
-/// or with no glide ratio (no airplane, or none in its profile).
+/// The glide ring: its radius (motion::glide's still-air range at the picked airplane's own glide ratio) over the higher of
+/// the ground under the airplane (the pack's terrain grid) and the nearest field's elevation, and its outline on the sphere
+/// for a map that draws polygons. None on the ground, under flying speed, with no height or no glide ratio.
 pub fn glide_ring(
     lat: f64, lon: f64, altitude_ft: Option<f64>, speed_kt: Option<f64>, terrain_ft: Option<f64>, field_ft: Option<f64>,
     glide_ratio: Option<f64>,
@@ -417,9 +414,8 @@ pub(super) fn vertical_speed_rule(v: &Value) -> Result<String, String> {
     Ok(out)
 }
 
-/// `glide_ring`: `{"range_nm", "ground_ft", "ring": [[lat, lon]]}` or null,
-/// from `{"lat", "lon", "altitude_ft"?, "speed_kt"?, "terrain_ft"?,
-/// "field_ft"?, "glide_ratio"?}`.
+/// `glide_ring`: `{"range_nm", "ground_ft", "ring": [[lat, lon]]}` or null, from `{"lat", "lon", "altitude_ft"?,
+/// "speed_kt"?, "terrain_ft"?, "field_ft"?, "glide_ratio"?}`.
 pub(super) fn glide_ring_rule(v: &Value) -> Result<String, String> {
     let n = "glide_ring";
     let Some((range, ground, ring)) = glide_ring(
@@ -510,16 +506,13 @@ mod tests {
 
     #[test]
     fn the_ring_is_over_the_higher_ground() {
-        // The 172S's 9 to 1 (its POH, figure 3-1): 9,000 ft forward for
-        // each 1,000 down, 1.48 nm.
         let (range, ground, ring) = glide_ring(45.0, -93.0, Some(5000.0), Some(100.0), Some(1200.0), Some(900.0), Some(9.0)).unwrap();
         assert_eq!(ground, 1200.0);
-        assert!((range - 3.8 * 9000.0 / glide::FT_PER_NM).abs() < 1e-9);
+        assert!((range - 3.8 * 9000.0 / glide::FT_PER_NM).abs() < 1e-9, "the 172S's 9 to 1, its POH figure 3-1");
         assert_eq!(ring.len(), RING_POINTS + 1);
         assert_eq!(ring[0], ring[RING_POINTS]);
         assert!((distance_nm(45.0, -93.0, ring[10].0, ring[10].1) - range).abs() < 1e-6);
         assert!(glide_ring(45.0, -93.0, Some(5000.0), Some(10.0), Some(1200.0), None, Some(9.0)).is_none());
-        // No glide ratio in the airplane's profile, or no airplane: no ring.
-        assert!(glide_ring(45.0, -93.0, Some(5000.0), Some(100.0), Some(1200.0), Some(900.0), None).is_none());
+        assert!(glide_ring(45.0, -93.0, Some(5000.0), Some(100.0), Some(1200.0), Some(900.0), None).is_none(), "no ratio, no ring");
     }
 }
