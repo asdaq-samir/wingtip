@@ -90,7 +90,16 @@ reclaim() {
   [ -d "$dir" ] || return 0
   holder=$(cat "$dir/owner" 2>/dev/null || true)
   pid=${holder%% *}
-  if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then
+  if [ "$pid" = container ]; then
+    # A turn a container holds (the charts job's next chart cycle,
+    # services/jobs/charts/turn.py, through this lock mounted from /tmp)
+    # names no pid the Mac can see: it touches its owner file each minute,
+    # and one untouched for five has gone.
+    if [ -n "$(find "$dir/owner" -mmin +5 2>/dev/null)" ]; then
+      echo "one-at-a-time: taking back the turn of ${holder#* }, untouched for five minutes" >&2
+      rm -rf "$dir"
+    fi
+  elif [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then
     echo "one-at-a-time: taking back the turn of ${holder#* }, which has gone" >&2
     rm -rf "$dir"
   elif [ -z "$holder" ] && [ -n "$(find "$dir" -maxdepth 0 -mmin +1 2>/dev/null)" ]; then

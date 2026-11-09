@@ -21,8 +21,8 @@
 #   docker build -f services/Dockerfile.base --target native -o out .
 
 # Every image here and its sources pinned by digest, the tag kept beside
-# it for a reader and for Dependabot (.github/dependabot.yml, docker),
-# which moves both together: a tag alone is whatever was pushed under it
+# it for a reader and for the end pass's update, which moves both
+# together: a tag alone is whatever was pushed under it
 # last, so the same commit could build on a different Python or Rust from
 # one day to the next, and the cache keyed on it would miss.
 #

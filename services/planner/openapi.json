@@ -3454,6 +3454,16 @@
             "title": "Cycle",
             "type": "string"
           },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NextCycle"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "prepared": {
             "additionalProperties": {
               "type": "integer"
@@ -6177,6 +6187,123 @@
           "met"
         ],
         "title": "ExperienceItem",
+        "type": "object"
+      },
+      "FeedHealth": {
+        "description": "Every live feed as last checked (each minute), and after how many\nminutes stale a feed is an alert; `webhook` whether alerts are POSTed\nanywhere (FEED_ALERT_WEBHOOK).",
+        "properties": {
+          "alert_after_min": {
+            "title": "Alert After Min",
+            "type": "integer"
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          },
+          "feeds": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FeedState"
+            },
+            "title": "Feeds",
+            "type": "array"
+          },
+          "webhook": {
+            "default": false,
+            "title": "Webhook",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "checked_at",
+          "alert_after_min"
+        ],
+        "title": "FeedHealth",
+        "type": "object"
+      },
+      "FeedState": {
+        "description": "One live feed (wingtip.feed_health): a SWIM feed ingest reads\n(\"swim\") or a weather product (\"weather\"); its state -- \"ok\", \"stale\"\nor \"off\" (not set up) -- and why, its last message or fetch, since when\nit has been stale, and whether that is long enough to be an alert.",
+        "properties": {
+          "alerting": {
+            "default": false,
+            "title": "Alerting",
+            "type": "boolean"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "last_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last At"
+          },
+          "messages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "stale_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Since"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "what": {
+            "title": "What",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "what",
+          "state"
+        ],
+        "title": "FeedState",
         "type": "object"
       },
       "FieldBelowVfr": {
@@ -10805,6 +10932,75 @@
         "title": "NearestAirports",
         "type": "object"
       },
+      "NextCycle": {
+        "description": "The FAA's next chart cycle, staged ahead of its date by the charts\njob's `next` run (wingtip.chart_next): its folder name and effective\ndate, the day staging may start (`lead_days` before), whether the\nplanner starts it (CHARTS_CYCLE_AUTO), and what the job last said --\n`state` one of waiting, not_published, no_turn, staging, staged,\nfailed, swapped -- with when, and how far its pyramid has got.",
+        "properties": {
+          "auto": {
+            "title": "Auto",
+            "type": "boolean"
+          },
+          "cycle": {
+            "title": "Cycle",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "effective": {
+            "title": "Effective",
+            "type": "string"
+          },
+          "lead_days": {
+            "title": "Lead Days",
+            "type": "integer"
+          },
+          "progress": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PyramidProgress"
+            },
+            "default": {},
+            "title": "Progress",
+            "type": "object"
+          },
+          "stage_from": {
+            "title": "Stage From",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "cycle",
+          "effective",
+          "stage_from",
+          "lead_days",
+          "auto",
+          "state"
+        ],
+        "title": "NextCycle",
+        "type": "object"
+      },
       "NoteSeeded": {
         "description": "A generated note offered as the shared one: kept (`written`), or\nthe shared one saved meanwhile, which stays (`description` is it).",
         "properties": {
@@ -15332,6 +15528,16 @@
             },
             "title": "Faa Files",
             "type": "array"
+          },
+          "feeds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeedHealth"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "model": {
             "$ref": "#/components/schemas/ModelRegistry"
@@ -22633,6 +22839,25 @@
         }
       }
     },
+    "/api/status/feeds": {
+      "get": {
+        "description": "SWIM's STDDS, FNS, TFMS, ITWS and SFDPS from ingest's beats, each\nweather product from the weather service, and which have been stale\nfor FEED_ALERT_AFTER_MIN, as checked each minute. On its own for\nanything that polls on the stack's network (the gateway's mail, one\nday), and in /api/status for the console.",
+        "operationId": "feeds_api_status_feeds_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedHealth"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Feeds"
+      }
+    },
     "/api/stops/along": {
       "get": {
         "description": "The public fields along a route with fuel, food, repair or a flight\nschool, in route order, for the map's Stops while a course is drawn:\nthose no more than STOP_OFF_COURSE_NM off each flight's line, each\nwith its miles from its flight's departure, those it adds and how far\noff the course it is; what they have as round the pilot.",
@@ -22765,7 +22990,7 @@
     },
     "/api/terrain-tile/{z}/{x}/{y}.png": {
       "get": {
-        "description": "The ground's heights for one {z}/{x}/{y} tile as a terrarium PNG\n(wingtip.elevation.terrain_tile_png): the AWS Terrain Tiles (USGS 3DEP,\nSRTM and, offshore, ETOPO1) the planner reads its terrain floors from,\ntheir voids filled and the sea floor the sea's surface, so the map's\nrelief and 3D ground are the same ground the altitudes were planned\nover. Zooms 0 to 12.",
+        "description": "The ground's heights for one {z}/{x}/{y} tile as a terrarium PNG:\nthe AWS Terrain Tiles (USGS 3DEP, SRTM and, offshore, ETOPO1) the\nplanner reads its terrain floors from, their voids filled and the sea\nfloor the sea's surface, so the map's relief and 3D ground are the\nground the altitudes were planned over. Zooms 0 to 12.",
         "operationId": "terrain_tile_api_terrain_tile__z___x___y__png_get",
         "parameters": [
           {
@@ -22829,7 +23054,7 @@
     },
     "/api/terrain/obstacles": {
       "get": {
-        "description": "The FAA's Digital Obstacle File's obstacles in a box at least\n`min_agl_ft` tall (200 ft by default, 14 CFR 77.9(a)'s height for\nnotice to the FAA of construction, the file's own \"significant\"\nthreshold as wingtip.faa_data reads it), tallest first, for the map to\nstand them up over its 3D ground. A box over two degrees either way is\na 422: the map asks for its view close in.",
+        "description": "The FAA's Digital Obstacle File's obstacles in a box at least\n`min_agl_ft` tall (200 ft by default, 14 CFR 77.9(a)'s), tallest\nfirst, for the map to stand them up over its 3D ground. A box over two\ndegrees either way is a 422: the map asks for its view close in.",
         "operationId": "obstacles_api_terrain_obstacles_get",
         "parameters": [
           {

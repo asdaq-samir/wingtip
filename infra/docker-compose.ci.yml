@@ -79,6 +79,8 @@ services:
       # planner prepares at startup, are all the suite needs. The daily
       # refresh is the local stack's and AWS's job, not a test run's.
       CHARTS_AUTO_REFRESH: "0"
+      # Nor the next cycle's, ahead of its date (CHARTS_CYCLE_AUTO).
+      CHARTS_CYCLE_AUTO: "0"
       # Nor a new edition of the FAA's NASR and obstacle files: the suite
       # reads the edition the image's cache holds.
       FAA_DATA_AUTO_REFRESH: "0"

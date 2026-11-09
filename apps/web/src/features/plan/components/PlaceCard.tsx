@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { Cloud, CloudSun, Eye, Gauge, Lightbulb, MapPin, MapPinPlus, Phone, PlaneLanding, PlaneTakeoff, Radio, Repeat, Route, Star, Thermometer, Wind } from "lucide-react";
+import { MapPin, MapPinPlus, Phone, Star } from "lucide-react";
 import DirectToIcon from "../../../components/DirectToIcon";
 import { FAVORITE_STAR_ON } from "../../../components/mapChrome";
 import { cn } from "cn";
@@ -11,15 +11,12 @@ import { CardHead, PanelCard } from "../../../components/PanelCard";
 import { PhotoHead, type HeadSlide } from "../../../components/PhotoHead";
 import RoundButton from "../../../components/RoundButton";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
-import { PillSection } from "../../../components/Favorites";
-import { FirstFew } from "../../../components/FirstFew";
 import { CardTabBar, CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../../../lib/cardTab";
 import { CardAction as Action } from "../../../components/CardAction";
 import { ApiError } from "../../../lib/api/client";
-import type { AirportPin, AirportPlace, ClassBAirport, TerminalChart } from "../../../lib/api/types";
+import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
 import { distanceNm, type LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
@@ -27,27 +24,22 @@ import { chipColourOf } from "../../../lib/map/flightCategory";
 import { inkOn } from "../../../lib/scoreScale";
 import { feet, miles } from "../../../lib/units";
 import { reportedWind, windLine } from "../format";
-import { ChartBadge, RowBadge } from "../../../components/RowBadge";
-import { BADGE } from "../../../lib/rowBadges";
-import { FrequencyRow } from "./FrequencyRow";
-import { RunwayRow } from "./RunwayRow";
-import { PublicationRows } from "./PublicationRows";
-import { ChartRow, FaaChart } from "./AirportDiagram";
+import { FaaChart } from "./AirportDiagram";
 import { RunwaySketch } from "./RunwaySketch";
 import { runwaysLeftOut, stripsOf } from "../../../lib/runwaySketch";
 import { TEXT } from "../../../lib/text";
 import { diagramRunwaysPicture } from "../../../lib/diagram";
-import { ago, useMinuteClock, zuluTime } from "../../../lib/clock";
+import { ago, useMinuteClock } from "../../../lib/clock";
 import { arrivalHour, hoursOf, sentenceOf } from "../../../lib/hourly";
-import { HourlyForecast } from "./HourlyForecast";
 import { sameField } from "../../../lib/procedures";
-import { ctafOf, frequencyOf, mhzText } from "../../../lib/frequencies";
-import { fuelNames } from "../../../lib/stopServices";
 import { airportQuery, photosQuery, servicesQuery } from "../../../lib/queryClient";
-import { StopServices, StopStrip, type SuggestedStop } from "./StopServices";
-import { AtisRows } from "./AtisRows";
-import { DigitalAtisRows, RvrRows } from "./LiveAirportRows";
+import { StopStrip, type SuggestedStop } from "./StopServices";
 import { PhotoSlide } from "../../../components/PictureSlides";
+import { mapsLink } from "./place/mapsLink";
+import { PlaceChartsTab } from "./place/PlaceChartsTab";
+import { PlaceInfoTab } from "./place/PlaceInfoTab";
+import { PlaceRunwaysTab } from "./place/PlaceRunwaysTab";
+import { PlaceWeatherTab } from "./place/PlaceWeatherTab";
 
 const SketchViewer = lazy(() => import("./SketchViewer"));
 // The pictures behind the diagram, full screen to pinch in on, as a chart is.
@@ -80,19 +72,6 @@ function subtitleOf(place: AirportPlace, from: { point: LatLon; name: string | n
  *  (SETTLE_MOST is 0.35 s). */
 const RISEN_MS = 520;
 
-/** A time as reports give it: "1255Z". */
-function zuluOf(at: string): string {
-  const when = new Date(at);
-  return Number.isNaN(when.getTime()) ? "" : zuluTime(when);
-}
-
-/** When the report was made: "1255Z · 14m ago". */
-function observedLine(at: string): string {
-  const when = new Date(at);
-  if (Number.isNaN(when.getTime())) return "";
-  return `${zuluOf(at)} · ${ago(Date.now() - when.getTime())}`;
-}
-
 /** How old a report is, "14m ago", for the weather's line. */
 function ageOf(at: string | null | undefined): string | null {
   const when = at ? new Date(at) : null;
@@ -124,75 +103,6 @@ const CARD_TABS: { value: CardTab; label: string }[] = [
   { value: "runways", label: "Runways" },
   { value: "diagrams", label: "Charts" },
 ];
-
-/** The field's charts in the d-TPP under the Charts tab, by what they are for:
- *  the FAA's chart codes (wingtip.publications). The airport's own -- its hot
- *  spots, land and hold short -- go with its diagram. */
-const CHART_GROUPS: { title: string; kinds: string[] }[] = [
-  { title: "Approaches", kinds: ["IAP"] },
-  { title: "Departures", kinds: ["DP", "ODP"] },
-  { title: "Arrivals", kinds: ["STR"] },
-  { title: "Minimums", kinds: ["MIN"] },
-];
-const AIRPORT_CHARTS = ["HOT", "LAH"];
-const GROUPED = new Set(["APD", ...AIRPORT_CHARTS, ...CHART_GROUPS.flatMap(g => g.kinds)]);
-
-/** A chart's row: its title as the FAA prints it -- "LEGOZ FOUR (RNAV)",
- *  "ILS OR LOC RWY 24" -- not in sentence case as the FAA's other words
- *  are here (lib/advisories faaWords): a procedure is named by its fixes
- *  and its navaids, as a code is, and pilots know it by the title on the
- *  plate. Shown in the app, full screen (ChartRow), not on the FAA's site. */
-function TerminalChartRow({ chart, airport }: { chart: TerminalChart; airport: string }) {
-  // A procedure's badge says which kind it is, as its group's title does:
-  // an approach's a landing airplane, a departure's one taking off, an
-  // arrival's a route; the rest a chart's.
-  const badge = chart.kind === "IAP" ? <RowBadge colour={BADGE.approach}><PlaneLanding /></RowBadge>
-    : chart.kind === "DP" || chart.kind === "ODP" ? <RowBadge colour={BADGE.approach}><PlaneTakeoff /></RowBadge>
-      : chart.kind === "STR" ? <RowBadge colour={BADGE.approach}><Route /></RowBadge>
-        : <ChartBadge />;
-  return <ChartRow media={badge} title={chart.name} url={chart.url} airport={airport} testId="terminal-chart" />;
-}
-
-/** The field in Maps -- Apple's, which a phone opens in its Maps app --
- *  by its street address where the FAA lists one, so Maps names the
- *  road a driver is taken to, and by where it is otherwise; its name the
- *  pin's either way. */
-function mapsLink(place: AirportPlace): string {
-  const where = place.address
-    ? `address=${encodeURIComponent(place.address)}`
-    : `ll=${place.lat.toFixed(5)},${place.lon.toFixed(5)}`;
-  return `https://maps.apple.com/?q=${encodeURIComponent(place.name)}&${where}`;
-}
-
-/** The radio a pilot calls the field on, beside its airspace: the tower's
- *  where it has one, else the CTAF -- a UNICOM that is also the CTAF, or
- *  MULTICOM's 122.9 where none is listed (AC 90-66C 9.6, ctafOf). */
-function radioOf(place: AirportPlace): string {
-  // Every tower frequency the FAA lists, where a field splits its runways
-  // between two (KPHX: 118.7 for 08/26, 120.9 for 07L/25R and 07R/25L):
-  // the first alone read as the field's one tower, against the other in
-  // Frequencies just above it (the owner's screenshot, 2026-10-29).
-  const towers = place.towered
-    ? [...new Set(place.frequencies.filter(f => f.type === "TWR" && f.frequency_mhz != null).map(f => mhzText(f.frequency_mhz!)))]
-    : [];
-  if (towers.length) return `Tower ${towers.join(", ")}`;
-  const tower = place.towered ? frequencyOf(place.frequencies, "TWR") : null;
-  if (tower?.frequency_mhz != null) return `Tower ${mhzText(tower.frequency_mhz)}`;
-  const ctaf = ctafOf(place.frequencies);
-  return `${ctaf.type === "MULTICOM" ? "MULTICOM" : "CTAF"} ${mhzText(ctaf.frequency_mhz!)}`;
-}
-
-/** A section of the Info tab, which has several: its title over its rows
- *  (PillSection), the title the way to its list in full where it has more. */
-function CardSection({ title, onMore, right, children, testId }: {
-  title: string; onMore?: () => void; right?: ReactNode; children: ReactNode; testId?: string;
-}) {
-  return (
-    <div className="pt-5 first:pt-0">
-      <PillSection title={title} onMore={onMore} right={right} testId={testId}>{children}</PillSection>
-    </div>
-  );
-}
 
 /**
  * An airport's card in the panel, as a place's is in Maps, laid out at
@@ -331,9 +241,6 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
   const line = place ? subtitleOf(place, measured)
     : error ? (error instanceof ApiError && error.status === 404 ? "Not found" : "Could not be looked up")
       : "…";
-  // None from a planner older than the list (a card kept by the worker,
-  // a deploy under way), not a page that fails.
-  const procedures = place?.procedures ?? [];
   const metar = place?.metar ?? null;
   const weather = place
     ? { status: place.weather_unavailable ? "unavailable" : metar ? "reported" : "no-report", category: metar?.flight_category ?? null }
@@ -400,8 +307,6 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
   // The hour the planned flight lands in, where this is its destination.
   const landsAt = arrival ? (arrival.depart ? Date.parse(arrival.depart) : now) + arrival.minutes * 60_000 : null;
   const landsIn = landsAt != null && !Number.isNaN(landsAt) ? arrivalHour(hourly.hours, landsAt) : null;
-  // The longest runway open, for the details: what a pilot sizes a field by.
-  const longest = place?.runways.filter(r => !r.closed && r.length_ft != null).sort((a, b) => b.length_ft! - a.length_ft!)[0] ?? null;
   const ident4 = place?.ident ?? ident;
   // The pictures, a swipe across (PictureSlides): the field from the air
   // first, then its runways, then the field from the ground, at the
@@ -584,281 +489,22 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
             raise={{ onExpand: raise, onLower }} barRef={tabsRef} className="mt-3 scroll-mt-16"
           />
           <CardTabPanel value="radio" className="space-y-0">
-            {place && (
-              <>
-                {/* Before the Details, at the owner's ask (2026-10-29: "move
-                    details after frequencies"). The first few, the title the
-                    way to every one, as every
-                    section's title is the way to its list in full (PillSection);
-                    how many of how many at its right. */}
-                <div className="pt-5 first:pt-0">
-                  <FirstFew
-                    key={place.ident} title="Frequencies" testId="place-frequencies"
-                    rows={place.frequencies.length ? place.frequencies.map((f, i) => (
-                      <FrequencyRow key={`${f.type}-${f.frequency_mhz}-${i}`} type={f.type} description={f.description} mhz={f.frequency_mhz} testId="place-frequency" />
-                    )) : [<ListRow key="none" title="None listed" />]}
-                    // What some fields read out on so many clicks of the mic on
-                    // the CTAF: the weather, a radio check (wingtip.remarks).
-                    after={place.radio_notes.map(note => (
-                      <ListRow key={note} media={<RowBadge colour={BADGE.traffic}><Radio /></RowBadge>} title={note} />
-                    ))}
-                  />
-                </div>
-
-                <CardSection title="Details" testId="place-details">
-                  <ListGroup>
-                    <ListRow
-                      title="Elevation" data-testid="place-elevation"
-                      value={<span className="font-semibold text-foreground">{feet(place.elevation_ft)}</span>}
-                    />
-                    {/* The class of the airspace it sits in (its airspace_class,
-                        from the FAA's NASR) and the radio a pilot calls it on. */}
-                    <ListRow
-                      title="Airspace" data-testid="place-airspace"
-                      value={<span className="font-semibold text-foreground">{[place.airspace_class && `Class ${place.airspace_class}`, radioOf(place)].filter(Boolean).join(" · ")}</span>}
-                    />
-                    {longest && (
-                      <ListRow
-                        title="Longest runway" data-testid="place-longest-runway"
-                        value={<span className="font-semibold text-foreground">{`${longest.ends ?? "—"} · ${feet(longest.length_ft)}`}</span>}
-                      />
-                    )}
-                    {/* Its fuel from its Chart Supplement entry, and the remarks
-                        in plain English as the planner gives them, a row each
-                        (wingtip.remarks.service_notes): self-serve, its hours, the FBO's. */}
-                    <ListRow
-                      title="Fuel" data-testid="services-fuel"
-                      value={<span className="font-semibold text-foreground">{services ? (services.fuel_types.length ? fuelNames(services.fuel_types) : "None listed") : "…"}</span>}
-                    />
-                    {/* Its remarks folded under their own row, so a field's
-                        paragraph of them (Duluth's) does not stand between the
-                        fuel and the address in A2's Details. shadcn's Collapsible. */}
-                    {!!services?.fuel_notes.length && (
-                      <Collapsible>
-                        <CollapsibleTrigger asChild>
-                          <ListRow title="Fuel remarks" chevron data-testid="services-fuel-remarks" />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          {services.fuel_notes.map(note => <ListRow key={note} title={<span className={cn("text-muted-foreground", TEXT.detail)}>{note}</span>} />)}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    )}
-                    {/* Where it is on the ground, in Maps: an action of the
-                        card's until the star took its place (A2). */}
-                    {/* The address written out, the way to it in Maps, at the
-                        owner's ask (2026-10-29: "write the address in
-                        details"); the town where the FAA lists none. */}
-                    <ListRow title="Address" description={place.address ?? where ?? undefined} href={mapsLink(place)} data-testid="place-address" />
-                  </ListGroup>
-                </CardSection>
-                {place.lighting.length > 0 && (
-                  // The field's lights, from its Chart Supplement remarks: the
-                  // ones a pilot turns on from the cockpit by keying the mic, and
-                  // with no count of clicks of their own, the standard one --
-                  // after the radio, as it is the mic that turns them on.
-                  <div className="pt-5">
-                    <FirstFew
-                      key={place.ident} title="Lights"
-                      rows={place.lighting.map(note => (
-                        <ListRow key={note} media={<RowBadge colour={BADGE.lights}><Lightbulb /></RowBadge>} title={note} data-testid="place-lighting" />
-                      ))}
-                      after={place.standard_keying && (
-                        // The standard keying (AIM 2-1-9): the mic keyed 7 times
-                        // within 5 seconds for high intensity, 5 for medium, 3 for
-                        // low -- a row, where it was a footnote.
-                        <ListRow title="Keying" value={<span className="text-foreground">7 high · 5 medium · 3 low</span>} data-testid="place-keying" />
-                      )}
-                    />
-                  </div>
-                )}
-                {/* What the field offers on the ground (StopServices), after
-                    the radio and the lights, at the owner's ask for food, fuel
-                    and rest stops: its fuel is the details'. */}
-                <StopServices ident={place.ident} withoutFuel />
-              </>
-            )}
+            {place && <PlaceInfoTab place={place} where={where} services={services} />}
           </CardTabPanel>
 
           <CardTabPanel value="weather" className="space-y-0">
-            {/* The weather's card at the top of its tab, as Apple's Weather
-                has its hourly one: its category in the FAA's colour, the
-                forecast in a sentence and the report's age over a hairline,
-                the hours under it; the reports as sent right under it, so
-                the sentence is not a button. With no report or forecast of
-                its own, what there is said in the sentence's place: the
-                model's, the nearest station's. */}
-            {(place || known) && (
-              <ListGroup>
-                <ListRow
-                  media={chip || undefined}
-                  title={<span className={TEXT.prose} data-testid="place-forecast-sentence">{place ? hourly.sentence ?? weatherLine : "…"}</span>}
-                  value={weatherAge ?? undefined} data-testid="place-weather-summary"
-                />
-                {place && hourly.hours.length > 0 && (
-                  <div className="min-w-0">
-                    <HourlyForecast
-                      hours={hourly.hours}
-                      arrival={landsIn != null && landsAt != null ? { index: landsIn, at: landsAt } : null}
-                    />
-                  </div>
-                )}
-              </ListGroup>
-            )}
-            {place && (
-              <div className="pt-5" data-testid="place-weather">
-                <ListGroup>
-                  {metar ? (
-                    <>
-                      {/* When it was observed, first: a report's age is what a
-                          pilot weighs it by (and where it came from, where it is
-                          own ship's receiver). Its wind is true, as reported. */}
-                      {metar.observed_at && (
-                        <ListRow
-                          title="Observed" data-testid="place-observed"
-                          value={<span className="text-foreground">{observedLine(metar.observed_at)}</span>}
-                        />
-                      )}
-                      {/* Each figure with its glyph, its value at the right in
-                          the text's own colour; the report as it was sent
-                          under them. */}
-                      {metar.wind_speed_kt != null && (
-                        <ListRow
-                          media={<RowBadge colour={BADGE.weather}><Wind /></RowBadge>} title="Wind"
-                          value={<span className="font-semibold text-foreground">{windLine(metar)}</span>} data-testid="place-wind"
-                        />
-                      )}
-                      <ListRow
-                        media={<RowBadge colour={BADGE.weather}><Eye /></RowBadge>} title="Visibility"
-                        value={<span className="font-semibold text-foreground">{miles(metar.visibility_sm)}</span>}
-                      />
-                      <ListRow
-                        media={<RowBadge colour={BADGE.weather}><Cloud /></RowBadge>} title="Ceiling"
-                        value={<span className="font-semibold text-foreground">{metar.ceiling_ft == null ? "None" : feet(metar.ceiling_ft)}</span>}
-                      />
-                      {metar.temp_c != null && (
-                        <ListRow
-                          media={<RowBadge colour={BADGE.weather}><Thermometer /></RowBadge>} title="Temperature"
-                          description={metar.dewpoint_c != null ? `Dew point ${Math.round(metar.dewpoint_c)} °C` : undefined}
-                          value={<span className="font-semibold text-foreground">{Math.round(metar.temp_c)} °C</span>}
-                        />
-                      )}
-                      {metar.altimeter_in_hg != null && (
-                        <ListRow
-                          media={<RowBadge colour={BADGE.weather}><Gauge /></RowBadge>} title="Altimeter"
-                          value={<span className="font-semibold text-foreground">{metar.altimeter_in_hg.toFixed(2)} inHg</span>}
-                        />
-                      )}
-                      <ListRow title={<span className="font-mono break-words">{metar.raw}</span>} />
-                    </>
-                  ) : (
-                    <ListRow title={place.weather_unavailable ? "The weather service could not be reached" : "No weather station reports from this field"} />
-                  )}
-                </ListGroup>
-                {/* For one with no report of its own, the weather modelled at
-                    it for the hour (wingtip.glmp): its category -- the card's "≈"
-                    badge -- ceiling and visibility, and that it is a model's. */}
-                {modelled && (
-                  <div className="pt-5" data-testid="place-modelled-weather">
-                    {/* The National Weather Service's Gridded LAMP: planning
-                        guidance from a model, not an observation. */}
-                    <ListGroup title={`Modelled for ${zuluOf(modelled.valid_at)}`}>
-                      <ListRow
-                        media={<RowBadge colour={BADGE.weather}><CloudSun /></RowBadge>} title="Flight category"
-                        value={<span className="font-semibold text-foreground">{modelled.flight_category}</span>}
-                      />
-                      <ListRow
-                        media={<RowBadge colour={BADGE.weather}><Eye /></RowBadge>} title="Visibility"
-                        // GLMP's most is 10 sm, as a METAR's "10SM" is.
-                        value={<span className="font-semibold text-foreground">{modelled.visibility_sm >= 10 ? "10+ sm" : miles(modelled.visibility_sm)}</span>}
-                      />
-                      <ListRow
-                        media={<RowBadge colour={BADGE.weather}><Cloud /></RowBadge>} title="Ceiling"
-                        value={<span className="font-semibold text-foreground">{modelled.ceiling_ft == null ? "None" : feet(modelled.ceiling_ft)}</span>}
-                      />
-                    </ListGroup>
-                  </div>
-                )}
-                {/* Its nearest station's, for one with none of its own: where
-                    it is from it, its category and the report as sent -- the
-                    card's "≈" badge where nothing is modelled. */}
-                {nearby && (
-                  <div className="pt-5" data-testid="place-nearby-metar">
-                    <ListGroup title={`Nearest report, ${nearby.distance_nm} nm ${compassPoint(nearby.bearing_deg)}`}>
-                      <ListRow
-                        title={<span className="font-semibold">{nearby.ident}</span>}
-                        description={nearby.metar.observed_at ? observedLine(nearby.metar.observed_at) : undefined}
-                        value={nearbyCategory ? <span className="font-semibold text-foreground">{nearbyCategory}</span> : undefined}
-                      />
-                      {nearby.metar.raw && <ListRow title={<span className="font-mono break-words">{nearby.metar.raw}</span>} />}
-                    </ListGroup>
-                  </div>
-                )}
-              </div>
-            )}
-            {/* Listen to ATIS: one broadcast heard and read by the engine,
-                the runway in use and the altimeter in one line (AtisRows). */}
-            {place && <AtisRows key={ident} />}
-            {/* The tower's D-ATIS, where it sends one on SWIM. */}
-            {place && <DigitalAtisRows ident={place.ident} />}
+            <PlaceWeatherTab
+              ident={ident} place={place} known={known} chip={chip} hourly={hourly} weatherLine={weatherLine} weatherAge={weatherAge}
+              arrival={landsIn != null && landsAt != null ? { index: landsIn, at: landsAt } : null}
+            />
           </CardTabPanel>
 
           <CardTabPanel value="runways" className="space-y-0">
-            {place && (
-              <div data-testid="place-runways">
-                <ListGroup>
-                  {place.pattern?.altitude_ft != null && (
-                    <ListRow
-                      media={<RowBadge colour={BADGE.runway}><Repeat /></RowBadge>}
-                      title="Pattern altitude"
-                      // 1,000 ft above the field where none is published (AIM 4-3-3).
-                      description={place.pattern.published ? "As the FAA publishes it" : "1,000 ft above the field: none published"}
-                      value={<span className="font-semibold text-foreground">{feet(place.pattern.altitude_ft)}</span>} data-testid="place-pattern"
-                    />
-                  )}
-                  {place.runways.length ? place.runways.map((r, i) => <RunwayRow key={`${r.ends}-${i}`} runway={r} />) : <ListRow title="None listed" />}
-                </ListGroup>
-                {/* Each runway's RVR now, where the field reports it. */}
-                <RvrRows ident={place.ident} />
-              </div>
-            )}
+            {place && <PlaceRunwaysTab place={place} />}
           </CardTabPanel>
 
           <CardTabPanel value="diagrams" className="space-y-0">
-            {place && (
-              <div data-testid="place-charts">
-                <PillSection title="Airport">
-                  <ListGroup>
-                    {!place.airport_diagram_url && !place.airport_diagram_cycle && !sketched && (
-                      // Drawn by the FAA for the fields with a tower or a busy
-                      // ramp; most small fields have none, and are sketched.
-                      <ListRow muted title="The FAA publishes no airport diagram for this field" />
-                    )}
-                    <PublicationRows
-                      ident={place.ident} diagram={place.airport_diagram_url} diagramCycle={place.airport_diagram_cycle}
-                      supplement={place.chart_supplement_url}
-                      sketch={sketched ? { runways: place.runways, lat: place.lat, lon: place.lon } : null}
-                    />
-                    {procedures.filter(c => AIRPORT_CHARTS.includes(c.kind)).map(c => <TerminalChartRow key={c.url} chart={c} airport={place.ident} />)}
-                  </ListGroup>
-                </PillSection>
-                {/* The approaches, departures, arrivals and minimums in this
-                    cycle's d-TPP, at the pilot's ask, as the FAA's PDFs. */}
-                {[...CHART_GROUPS, { title: "Other", kinds: procedures.map(c => c.kind).filter(k => !GROUPED.has(k)) }].map(g => {
-                  const charts = procedures.filter(c => g.kinds.includes(c.kind));
-                  return charts.length > 0 && (
-                    <div key={`${place.ident}-${g.title}`} data-chart-group={g.title} className="scroll-mt-16 pt-5">
-                      {/* The first three, the title the rest (FirstFew); all
-                          the approaches where the route's Approaches opened
-                          the card on them. */}
-                      <FirstFew
-                        title={g.title} open={startOn === "approaches" && g.title === "Approaches"}
-                        rows={charts.map(c => <TerminalChartRow key={c.url} chart={c} airport={place.ident} />)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {place && <PlaceChartsTab place={place} sketched={sketched} startOn={startOn} />}
           </CardTabPanel>
         </Tabs>
       )}
