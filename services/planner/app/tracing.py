@@ -1,35 +1,41 @@
-"""Traces, when there is somewhere to send them: with
-OTEL_EXPORTER_OTLP_ENDPOINT set (docker-compose's tracing profile sets
-it to Jaeger's), every request the planner answers is a span, and every
-call it makes with requests one under it -- aviationweather.gov, the
-FAA, the USGS -- the gateway's span above it all, so a slow
-plan is one trace from the page's call down. Without it, nothing is
-loaded and nothing is sent."""
-import logging
+"""Traces of the planner, when there is somewhere to send them: with
+OTEL_EXPORTER_OTLP_ENDPOINT set (docker-compose sets it to Jaeger's with
+TRACING=1), every request the planner answers is a span, under the
+gateway's or the assistant's where they sent a traceparent, and under it
+each source asked with requests, each rule asked of the engine and each
+weather product read (wingtip.tracing), so a slow plan is one trace from
+the page's call down. The page's request id (X-Request-Id, which the
+gateway passes on) is the span's wingtip.request_id. Without the
+endpoint nothing is loaded and nothing is sent."""
+from wingtip import tracing
 
-from .settings import get_settings
+#: The page's id for the request, as the gateway sends it on.
+REQUEST_ID_HEADER = b"x-request-id"
 
-log = logging.getLogger(__name__)
+#: The container's health check (GET /, every few seconds), left out: a
+#: trace each buried the pilots' requests in Jaeger. A regular expression
+#: searched in the request's whole URL, as the instrumentation reads it.
+HEALTH_CHECK = r"^https?://[^/]+/$"
+
+
+def _tag_request_id(span, scope: dict) -> None:
+    """FastAPIInstrumentor's server_request_hook: the request id on the
+    request's span, where the gateway sent one."""
+    if span is None or not span.is_recording():
+        return
+    for name, value in scope.get("headers") or ():
+        if name == REQUEST_ID_HEADER:
+            span.set_attribute("wingtip.request_id", value.decode("latin-1")[:64])
+            return
 
 
 def instrument(app) -> bool:
-    """Instruments `app` and `requests` when an OTLP endpoint is set;
-    False, and nothing done, when it is not."""
-    settings = get_settings()
-    if not settings.otel_exporter_otlp_endpoint:
+    """Instruments `app` (and through wingtip.tracing, requests, threads,
+    the engine and the logs) when an OTLP endpoint is set; False, and
+    nothing done, when it is not."""
+    if not tracing.start():
         return False
-    from opentelemetry import trace
-    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-    from opentelemetry.instrumentation.requests import RequestsInstrumentor
-    from opentelemetry.sdk.resources import Resource
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-    provider = TracerProvider(resource=Resource.create({"service.name": settings.otel_service_name}))
-    provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
-    trace.set_tracer_provider(provider)
-    FastAPIInstrumentor.instrument_app(app)
-    RequestsInstrumentor().instrument()
-    log.info("tracing to %s", settings.otel_exporter_otlp_endpoint)
+    FastAPIInstrumentor.instrument_app(app, server_request_hook=_tag_request_id, excluded_urls=HEALTH_CHECK)
     return True

@@ -57,7 +57,7 @@ On request only, behind a compose profile:
 | `charts`, `charts-overlays`, `charts-next` | `jobs` | The chart cycle: the FAA's sheets rendered into one PMTiles archive per kind; the map's overlay vector tiles; the next cycle staged before its date and swapped in at 0901Z on it. [services/jobs/README.md](../services/jobs/README.md) |
 | `ml` | `notebooks` | Jupyter on 8888 (token `wingtip`) |
 | `web-build` | `web-dev` | `vite build --watch` into `apps/web/dist`, which the gateway serves in place of its own bundle |
-| `jaeger` | `tracing` | Traces of a request, gateway to planner to each source, on 16686 |
+| `jaeger` | `tracing` | Traces of a request, gateway to planner to each engine rule and source, and the assistant's Claude calls, on 16686 ([LOCAL-DEV.md](LOCAL-DEV.md#tracing)) |
 | `base` | (never runs) | Builds `services/Dockerfile.base`, the Python base with wingtip and the engine that every Python image starts from |
 
 ### A request, end to end
@@ -74,6 +74,18 @@ The browser never reaches the planner directly: the gateway checks the
 session, the subscription and the day's allowance, then forwards. Which
 planner and assistant routes a browser may reach, and what each needs,
 the gateway learns from the two services' own OpenAPI documents.
+
+A request can be followed through all of this as one trace
+(OpenTelemetry, to Jaeger, off unless `TRACING=1`;
+[LOCAL-DEV.md](LOCAL-DEV.md#tracing)). The page sends an `X-Request-Id`; the
+gateway puts it on its span and passes the W3C `traceparent` and the id to
+the planner and the assistant, which take it up; the planner's spans go
+down to each engine rule by its name and each weather product read, the
+assistant's to each Claude call with its model and tokens. Each service
+sets this up in one small module of its own (the gateway's `tracing`
+package, the planner's `app/tracing.py` over `wingtip/tracing.py`, which the
+weather service and ingest start too, and the assistant's `app/tracing.py`),
+and none of it is loaded where tracing is off.
 
 ## The shared stores
 

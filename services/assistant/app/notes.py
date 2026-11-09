@@ -13,6 +13,7 @@ from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from . import tracing
 from .generated import planner_client as planner
 from .generated.planner_models import NoteToWrite
 from .gateway import gateway
@@ -88,12 +89,14 @@ def _describe_checkpoint(
         "Reply with that one sentence and nothing else: no preamble, and no "
         "remark about what you do or don't know."
     )
-    resp = anthropic.Anthropic().messages.create(
-        model=CHECKPOINT_NOTE_MODEL,
-        max_tokens=CHECKPOINT_NOTE_MAX_TOKENS,
-        output_config={"effort": CHECKPOINT_NOTE_EFFORT},
-        messages=[{"role": "user", "content": prompt}],
-    )
+    with tracing.claude_call("checkpoint_notes", CHECKPOINT_NOTE_MODEL) as used:
+        resp = anthropic.Anthropic().messages.create(
+            model=CHECKPOINT_NOTE_MODEL,
+            max_tokens=CHECKPOINT_NOTE_MAX_TOKENS,
+            output_config={"effort": CHECKPOINT_NOTE_EFFORT},
+            messages=[{"role": "user", "content": prompt}],
+        )
+        used.add(resp)
     # The answer is the text block: a thinking block can come first. A
     # reply cut off at the cap (the thinking shares it) is refused like an
     # empty one, since the note is saved as the one every pilot then sees.

@@ -36,7 +36,7 @@ from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Callable
 
-from wingtip import weather_store
+from wingtip import tracing, weather_store
 
 from . import aviationweather, fetch, gfs, glmp, radar, tfr
 from .settings import get_settings
@@ -109,7 +109,10 @@ class Schedule:
             self.tried[product.name] = time.time()
         started = time.time()
         try:
-            product.run()
+            # A trace of its own where tracing is on (wingtip.tracing): the
+            # fetch, each source asked under it, each engine rule it reads with.
+            with tracing.span(f"fetch {product.name}", root=True, **{"wingtip.weather.product": product.name}):
+                product.run()
             weather_store.write_attempt(product.name, started, None)
             log.info("%s fetched in %.1f s", product.name, time.time() - started)
         except FAILURES as err:
@@ -179,6 +182,8 @@ def main() -> None:
     from wingtip.config import get_settings as wingtip_settings
 
     logging.basicConfig(level=wingtip_settings().log_level, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+    # Traces with TRACING=1 (docs/LOCAL-DEV.md, "Tracing"); nothing otherwise.
+    tracing.start("weather")
     settings = get_settings()
     weather_store.store_dir().mkdir(parents=True, exist_ok=True)
     stop = threading.Event()
