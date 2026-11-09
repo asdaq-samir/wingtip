@@ -62,7 +62,7 @@ class BriefModel : ViewModel() {
                 val answer = Planner.goNoGo(
                     GoNoGoAsk(
                         dep = plan.dep, dest = plan.dest, stops = plan.stops.joinToString(",").ifEmpty { null },
-                        aircraft = plan.aircraft, holds = plan.holds.joinToString(",").ifEmpty { null },
+                        aircraft = plan.aircraft.ifEmpty { Planner.NO_AIRPLANE }, holds = plan.holds.joinToString(",").ifEmpty { null },
                     ),
                 )
                 _state.update { it.copy(loading = false) + answer }

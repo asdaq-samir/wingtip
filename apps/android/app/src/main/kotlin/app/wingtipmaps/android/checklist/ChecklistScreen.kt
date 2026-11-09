@@ -35,6 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.ui.ProblemLine
+import app.wingtipmaps.android.emergency.EmergencyOpen
+import app.wingtipmaps.android.R
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.design.generated.WingtipSpace
 
 /**
@@ -63,6 +67,17 @@ fun ChecklistScreen(airplane: String, kind: ChecklistKind, modifier: Modifier = 
             }
         }
         ProblemLine(state.problem)
+        // The emergency assistant from the emergency checklists: the best
+        // fields within a glide, this list opened at the emergency, the
+        // MAYDAY (decision 0010: its way in, with no map button).
+        if (state.kind == ChecklistKind.EMERGENCY) {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.emergency_assistant), color = MaterialTheme.colorScheme.primary) },
+                supportingContent = { Text(stringResource(R.string.emergency_assistant_line)) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { EmergencyOpen.open(EmergencyOpen.From.CHECKLIST) },
+            )
+        }
         when (state.mode) {
             ChecklistModel.Mode.RUN -> RunView(state, model, Modifier.weight(1f))
             ChecklistModel.Mode.EDIT -> EditView(state, model, Modifier.weight(1f))

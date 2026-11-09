@@ -54,6 +54,12 @@ fun FiguresStrip(state: Plan.State) {
     val fuel = stripFuel(state.totals, burntGal = progress?.burntGal)
     Row(Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs)) {
         Figure(stringResource(R.string.figure_to), if (state.routed) state.dest else Format.NONE)
+        // With no airplane, To and Dist alone: no time or fuel is guessed
+        // (decision 0011).
+        if (!state.airplane) {
+            Figure(stringResource(R.string.figure_dist), Format.distance(progress?.let { it.destination?.distanceNm ?: it.leftNm } ?: state.totals?.distanceNm ?: state.course?.distanceNm))
+            return@Row
+        }
         if (progress != null) {
             Figure(stringResource(R.string.figure_dist), Format.distance(progress.destination?.distanceNm ?: progress.leftNm))
             Figure(stringResource(R.string.figure_ete), progress.destination?.eteMin?.let(Format::duration) ?: Format.NONE)
