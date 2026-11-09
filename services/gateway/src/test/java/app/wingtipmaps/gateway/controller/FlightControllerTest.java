@@ -5,6 +5,7 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -325,5 +326,66 @@ class FlightControllerTest {
                         .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"checkpoints\":[]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.destinationIdent").value("KDLH"));
+    }
+
+    @Test
+    void update_returns401_whenSignedOut() throws Exception {
+        given(pilotService.current(any())).willReturn(Optional.empty());
+
+        mockMvc.perform(patch("/api/flights/7")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Lunch at Duluth\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void update_returns404_forAnotherPilotsFlight() throws Exception {
+        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
+        given(flightService.update(any(), any(), any())).willReturn(Optional.empty());
+
+        mockMvc.perform(patch("/api/flights/7")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Lunch at Duluth\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void update_returns400_whenTheNameIsTooLong() throws Exception {
+        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
+
+        mockMvc.perform(patch("/api/flights/7")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"" + "x".repeat(81) + "\"}"))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verify(flightService, org.mockito.Mockito.never()).update(any(), any(), any());
+    }
+
+    @Test
+    void update_returnsTheFlightWithItsNewNameAndNotes() throws Exception {
+        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
+        given(flightService.update(any(), org.mockito.ArgumentMatchers.eq(7L), any()))
+                .willReturn(Optional.of(sampleFlight().edited("Lunch at Duluth", "Fuel at KDLH")));
+
+        mockMvc.perform(patch("/api/flights/7")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Lunch at Duluth\",\"notes\":\"Fuel at KDLH\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Lunch at Duluth"))
+                .andExpect(jsonPath("$.notes").value("Fuel at KDLH"));
+    }
+
+    @Test
+    void edited_keepsWhatIsLeftOut_andClearsWhatIsBlank() {
+        Flight flight = sampleFlight().edited("Lunch", "Notes");
+        flight.edited(null, " ");
+        org.junit.jupiter.api.Assertions.assertEquals("Lunch", flight.getName());
+        org.junit.jupiter.api.Assertions.assertNull(flight.getNotes());
     }
 }

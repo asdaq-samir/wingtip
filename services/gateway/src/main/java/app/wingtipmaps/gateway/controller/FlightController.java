@@ -9,6 +9,7 @@ import app.wingtipmaps.gateway.dto.FlightSummaryDto;
 import app.wingtipmaps.gateway.dto.RiskAssessmentDto;
 import app.wingtipmaps.gateway.dto.SaveFlightRequest;
 import app.wingtipmaps.gateway.dto.TrackDto;
+import app.wingtipmaps.gateway.dto.UpdateFlightRequest;
 import app.wingtipmaps.gateway.service.FlightService;
 import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.SubscriptionService;
@@ -18,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -26,7 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** A pilot's own filed flights -- list, save a new one (answered with
- *  its nav log), delete. Pilot-scoped the same way {@link AircraftController}
+ *  its nav log), rename or note it, delete. Pilot-scoped the same way {@link AircraftController}
  *  is, for the same reason. */
 @RestController
 @RequestMapping("/api/flights")
@@ -65,6 +67,17 @@ public class FlightController {
     public ResponseEntity<FlightDto> get(Authentication authentication, @PathVariable Long id) {
         return PilotResponses.found(
                 pilots, authentication, pilot -> flightService.get(pilot, id).map(FlightController::toDto));
+    }
+
+    /** Renames one of the pilot's flights or changes its notes, as edited
+     *  in place on the saved-flights list; 404 where it is not theirs. */
+    @PatchMapping("/{id}")
+    public ResponseEntity<FlightSummaryDto> update(
+            Authentication authentication, @PathVariable Long id, @Valid @RequestBody UpdateFlightRequest request) {
+        return PilotResponses.found(
+                pilots,
+                authentication,
+                pilot -> flightService.update(pilot, id, request).map(FlightSummaryDto::of));
     }
 
     /** The flight's track, where the pilot saved one to their account. */
@@ -122,7 +135,9 @@ public class FlightController {
                 riskOf(f),
                 checkpoints,
                 f.getOwnAltitudes(),
-                f.getPicks());
+                f.getPicks(),
+                f.getName(),
+                f.getNotes());
     }
 
     private static FlightCheckpointDto toCheckpointDto(FlightCheckpoint c) {

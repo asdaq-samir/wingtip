@@ -246,7 +246,7 @@ struct GWFlightDto: Codable, Equatable, Sendable {
     var cruiseAltitudeFt: Int?
     var departureIdent, destinationIdent: String
     var id: Int
-    var picks, plannedFor: String?
+    var name, notes, picks, plannedFor: String?
     var risk: GWRiskAssessmentDto?
     var stops: [String]
     var totalDistanceNm, totalEteMin, totalFuelGal: Double?
@@ -369,7 +369,7 @@ struct GWFlightSummaryDto: Codable, Equatable, Sendable {
     var cruiseAltitudeFt: Int?
     var departureIdent, destinationIdent: String
     var id: Int
-    var picks, plannedFor: String?
+    var name, notes, picks, plannedFor: String?
     var risk: GWRiskAssessmentDto?
     var stops: [String]
     var totalDistanceNm, totalEteMin, totalFuelGal: Double?
@@ -868,6 +868,12 @@ struct GWFeatureUse: Codable, Equatable, Sendable {
 // MARK: - GWTokenRequest
 struct GWTokenRequest: Codable, Equatable, Sendable {
     var deviceCode: String
+}
+
+// MARK: - GWUpdateFlightRequest
+struct GWUpdateFlightRequest: Codable, Equatable, Sendable {
+    var name: String?
+    var notes: String?
 }
 
 // MARK: - GWVorCheckRequest

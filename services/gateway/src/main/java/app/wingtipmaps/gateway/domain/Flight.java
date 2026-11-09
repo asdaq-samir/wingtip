@@ -72,6 +72,15 @@ public class Flight {
     @Column(length = 1000)
     private String picks;
 
+    /** The pilot's own name for it ("Lunch at Duluth"); null where it is
+     *  shown by its route. */
+    @Column(length = 80)
+    private String name;
+
+    /** The pilot's notes on it; null for none. */
+    @Column(length = 2000)
+    private String notes;
+
     private Integer cruiseAltitudeFt;
     private Double totalDistanceNm;
     private Double totalEteMin;
@@ -184,5 +193,17 @@ public class Flight {
 
     public List<String> getStops() {
         return stopIdents == null || stopIdents.isBlank() ? List.of() : List.of(stopIdents.split(","));
+    }
+
+    /** Renames it and changes its notes, as edited in place: null keeps
+     *  what was there, blank clears it. */
+    public Flight edited(String newName, String newNotes) {
+        if (newName != null) {
+            this.name = newName.isBlank() ? null : newName.strip();
+        }
+        if (newNotes != null) {
+            this.notes = newNotes.isBlank() ? null : newNotes.strip();
+        }
+        return this;
     }
 }

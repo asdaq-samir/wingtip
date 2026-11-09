@@ -400,6 +400,8 @@ data class FlightDto (
     val departureIdent: String,
     val destinationIdent: String,
     val id: Long,
+    val name: String? = null,
+    val notes: String? = null,
     val picks: String? = null,
     val plannedFor: String? = null,
     val risk: RiskAssessmentDto? = null,
@@ -540,6 +542,8 @@ data class FlightSummaryDto (
     val departureIdent: String,
     val destinationIdent: String,
     val id: Long,
+    val name: String? = null,
+    val notes: String? = null,
     val picks: String? = null,
     val plannedFor: String? = null,
     val risk: RiskAssessmentDto? = null,
@@ -1165,6 +1169,12 @@ data class FeatureUse (
 @Serializable
 data class TokenRequest (
     val deviceCode: String
+)
+
+@Serializable
+data class UpdateFlightRequest (
+    val name: String? = null,
+    val notes: String? = null
 )
 
 @Serializable
