@@ -53,19 +53,19 @@ struct RouteLegSheet: View {
     @ViewBuilder
     private func actions(_ sheet: RouteLegs.Sheet) -> some View {
         if sheet.direct != nil || sheet.remove != nil {
-            HStack(spacing: WingtipSpace.sm) {
+            GlassRow {
                 if let direct = sheet.direct {
                     Button { model.direct(sheet, plan: plan, from: dryRun.fix ?? ownShip.fix) } label: {
                         Label(direct.on ? "Cancel Direct" : "Direct \(direct.ident)", systemImage: WingtipIcon.directTo)
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .glassProminentButton()
                 }
                 if let stop = sheet.remove {
                     Button(role: .destructive) { model.remove(sheet, plan: plan) } label: {
                         Label("Remove \(stop)", systemImage: "trash").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .glassButton()
                 }
             }
             .listRowBackground(Color.clear)

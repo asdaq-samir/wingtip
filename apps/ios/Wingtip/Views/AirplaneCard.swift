@@ -130,7 +130,7 @@ struct AirplaneCard: View {
                         ShareLink(item: link, subject: Text(name)) { Label("Share", systemImage: "square.and.arrow.up") }
                     }
                     .labelStyle(.iconOnly)
-                    .buttonStyle(.bordered)
+                    .glassButton()
                     .font(.body)
                 }
                 if let plane {

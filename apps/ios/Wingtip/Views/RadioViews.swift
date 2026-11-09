@@ -120,7 +120,7 @@ struct RadioCallBanner: View {
                     }
                     if let squawk = clearance.squawk { Text("Squawk \(squawk)").font(.subheadline.weight(.semibold)) }
                 }
-                .buttonStyle(.bordered)
+                .glassButton()
                 .buttonBorderShape(.capsule)
             }
             if let problem { ProblemLine(problem) }

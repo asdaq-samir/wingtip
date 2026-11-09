@@ -39,18 +39,18 @@ struct AirspaceCard: View {
                 // its course.
                 if let named = here?.point {
                     let at = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-                    HStack(spacing: WingtipSpace.sm) {
+                    GlassRow {
                         Button { plan.drop(named.ident, at: at, then: .direct, from: dryRun.fix ?? ownShip.fix) } label: {
                             CardActionLabel(.directTo)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .glassProminentButton()
                         .disabled(plan.course == nil)
                         Button {
                             if plan.course != nil { plan.drop(named.ident, at: at, then: .add, from: nil) } else { plan.stops.append(named.ident); plan.plan() }
                         } label: {
                             CardActionLabel(.addToRoute)
                         }
-                        .buttonStyle(.bordered)
+                        .glassButton()
                         .disabled(!plan.routed)
                         Button {
                             plan.drop(named.ident, at: at, then: .hold, from: nil)
@@ -58,7 +58,7 @@ struct AirspaceCard: View {
                         } label: {
                             CardActionLabel(.holdHere)
                         }
-                        .buttonStyle(.bordered)
+                        .glassButton()
                         .disabled(plan.course == nil)
                     }
                     .listRowBackground(Color.clear)

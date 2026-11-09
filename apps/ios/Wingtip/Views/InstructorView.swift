@@ -39,7 +39,7 @@ struct InstructorView: View {
                             LabeledContent {
                                 HStack {
                                     Button("Decline") { Task { await act { try await Gateway.leaveStudent(s.linkId) } } }.buttonStyle(.borderless)
-                                    Button("Accept") { Task { await act { try await Gateway.acceptStudent(s.linkId) } } }.buttonStyle(.borderedProminent)
+                                    Button("Accept") { Task { await act { try await Gateway.acceptStudent(s.linkId) } } }.glassProminentButton()
                                 }
                             } label: {
                                 Text(s.name)

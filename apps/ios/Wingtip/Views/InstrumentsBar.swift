@@ -86,13 +86,8 @@ struct InstrumentsBar: View {
             .accessibilityIdentifier("instruments-bar")
             .sheet(isPresented: $nearest) {
                 NavigationStack {
-                    DiversionView()
-                        .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button { nearest = false } label: { Image(systemName: "xmark") }
-                                    .accessibilityLabel("Close")
-                            }
-                        }
+                    // The system's own close, in the glass toolbar (CloseButton).
+                    DiversionView().closeButton { nearest = false }
                 }
                 .presentationDetents([.medium, .large])
             }

@@ -343,10 +343,10 @@ private enum PreviewData {
 
 #Preview("CardActionLabel") {
     HStack(spacing: WingtipSpace.sm) {
-        Button {} label: { CardActionLabel(.flyHere) }.buttonStyle(.borderedProminent)
-        Button {} label: { CardActionLabel(.addStop) }.buttonStyle(.bordered)
-        Button {} label: { CardActionLabel(.call) }.buttonStyle(.bordered)
-        Button {} label: { CardActionLabel(.address) }.buttonStyle(.bordered)
+        Button {} label: { CardActionLabel(.flyHere) }.glassProminentButton()
+        Button {} label: { CardActionLabel(.addStop) }.glassButton()
+        Button {} label: { CardActionLabel(.call) }.glassButton()
+        Button {} label: { CardActionLabel(.address) }.glassButton()
     }
     .padding()
 }

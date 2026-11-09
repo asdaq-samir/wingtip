@@ -231,7 +231,7 @@ private struct TurnBubble: View {
                         HStack(spacing: WingtipSpace.sm) {
                             ForEach(turn.sources) { source in
                                 Button(source.label) { onSource(source) }
-                                    .buttonStyle(.bordered)
+                                    .glassButton()
                                     .controlSize(.small)
                                     .contentShape(Rectangle().inset(by: -8))
                                     .accessibilityLabel("Source: \(source.label)")

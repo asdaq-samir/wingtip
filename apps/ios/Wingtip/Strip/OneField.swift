@@ -75,6 +75,9 @@ struct StripFieldRow: View {
             .overlay(Capsule().strokeBorder(ink.ink.opacity(0.08), lineWidth: 1))
             StripProfileMenu()
         }
+        // The field and the avatar one piece of glass, as Maps' search
+        // field and its avatar are.
+        .glassGroup(spacing: WingtipSpace.md)
         .accessibilityIdentifier("strip-field")
     }
 }
@@ -88,8 +91,6 @@ struct StripProfileMenu: View {
     @Environment(Session.self) private var session
     @Environment(\.openStripScreen) private var open
     @Environment(\.chartInk) private var ink
-    /// Reduce Transparency: the avatar solid, as every glass is (Glass.swift).
-    @Environment(\.accessibilityReduceTransparency) private var solid
 
     private var initials: String {
         StripData.initials(name: session.pilot?.displayName ?? session.pilot?.fullName, email: session.pilot?.email)
@@ -114,7 +115,6 @@ struct StripProfileMenu: View {
             }
         } label: {
             ZStack {
-                Circle().fill(solid ? AnyShapeStyle(WingtipInk.sheet) : AnyShapeStyle(.ultraThinMaterial))
                 Circle().strokeBorder(ink.ink.opacity(0.08), lineWidth: 1)
                 if initials.isEmpty {
                     Image(systemName: "person.fill").font(.body.weight(.medium)).foregroundStyle(ink.tint)
@@ -123,6 +123,9 @@ struct StripProfileMenu: View {
                 }
             }
             .frame(width: 44, height: 44)
+            // Liquid Glass on iOS 26, answering the touch; solid with
+            // Reduce Transparency on, as every glass is (Glass.swift).
+            .floatingGlass(in: Circle(), material: .ultraThinMaterial, interactive: true)
         }
         .menuOrder(.fixed)
         .accessibilityLabel(session.pilot.map { "\($0.displayName): the pilot's menu" } ?? "The pilot's menu")

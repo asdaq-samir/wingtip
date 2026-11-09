@@ -42,6 +42,8 @@ struct MapButtons: View {
                 .foregroundStyle(Color.accentColor)
             }
         }
+        // The two round buttons one piece of glass, as Maps' are.
+        .glassGroup(spacing: WingtipSpace.md)
         .padding(.trailing, WingtipSpace.md)
         .padding(.top, WingtipSpace.md)
     }
