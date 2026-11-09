@@ -1,7 +1,159 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The app's name as the launcher shows it. The screens' own words are
-     in the Kotlin beside the screens for now; they move here when a
-     second language is a column rather than a rewrite. -->
+<!-- The app's words, one place for them so a second language is a column
+     rather than a rewrite. Labels are Title Case (decision 0021), the
+     pilot's own airplane is "Airplane" (decision 0020), and the FAA's own
+     text and the planner's words stay as they come. Figures are never
+     written here: Format writes them (format/Format.kt). -->
 <resources>
     <string name="app_name">Wingtip Maps</string>
+    <string name="app_short_name">Wingtip</string>
+
+    <!-- The tabs (decision 0013). -->
+    <string name="tab_fpl">FPL</string>
+    <string name="tab_airport">Airport</string>
+    <string name="tab_airplane">Airplane</string>
+    <string name="tab_setup">Setup</string>
+
+    <!-- Sheets and their controls (decision 0015). -->
+    <string name="close">Close</string>
+    <string name="share">Share</string>
+    <string name="send">Send</string>
+    <string name="stop">Stop</string>
+    <string name="failed">Failed</string>
+    <string name="not_now">Not Now</string>
+    <string name="allow">Allow</string>
+    <string name="allow_precise">Allow Precise</string>
+
+    <!-- The figures' names, as the strip writes them. -->
+    <string name="figure_to">TO</string>
+    <string name="figure_dist">DIST</string>
+    <string name="figure_ete">ETE</string>
+    <string name="figure_fuel">FUEL</string>
+    <string name="figure_mh">MH</string>
+    <string name="figure_required">REQUIRED</string>
+    <string name="figure_cruise">CRUISE</string>
+    <string name="figure_burn">BURN</string>
+    <string name="figure_ceiling">CEILING</string>
+
+    <!-- The map's buttons (the UI audit's #12: the state said, not only drawn). -->
+    <string name="own_ship_button">My Position</string>
+    <string name="own_ship_off">Off</string>
+    <string name="own_ship_shown">Shown</string>
+    <string name="own_ship_following">Following</string>
+    <string name="own_ship_approximate">Your airplane is not shown: location is allowed only approximately, which can be off by a mile or more. Allow precise location here or in Settings.</string>
+    <string name="own_ship_denied">Your airplane is not shown: location is off for Wingtip Maps. Allow it here or in Settings.</string>
+    <string name="ask">Ask</string>
+    <string name="ask_about_flight">Ask About the Flight</string>
+    <string name="ask_help">The figures are the planner\'s; the assistant puts them in words and shows what it read.</string>
+
+    <!-- The flight plan. -->
+    <string name="departure">Departure</string>
+    <string name="destination">Destination</string>
+    <string name="stops">Stops</string>
+    <string name="stops_help">Idents, separated by commas</string>
+    <string name="plan">Plan</string>
+    <string name="under_reserve">Under the reserve the planner holds the flight to. Fly it with a fuel stop.</string>
+
+    <!-- A leg (LegSheet). -->
+    <string name="leg_from">From</string>
+    <string name="leg_altitude">Cruise Altitude</string>
+    <string name="leg_true_course">True Course</string>
+    <string name="leg_magnetic_course">Magnetic Course</string>
+    <string name="leg_magnetic_heading">Magnetic Heading</string>
+    <string name="leg_variation">Variation</string>
+    <string name="leg_distance">Distance</string>
+    <string name="leg_time">Time En Route</string>
+    <string name="leg_groundspeed">Groundspeed</string>
+    <string name="leg_airspeed">True Airspeed</string>
+    <string name="leg_fuel">Fuel</string>
+
+    <!-- The Brief (decision 0012). -->
+    <string name="brief">Brief</string>
+    <string name="brief_findings">Findings</string>
+    <string name="reading_brief">Reading the brief…</string>
+    <string name="verdict_go">Go</string>
+    <string name="verdict_caution">Caution</string>
+    <string name="verdict_no_go">No-Go</string>
+    <string name="where_to_or_ask">Where to, or ask</string>
+
+    <!-- Card actions (lib/cardActions.ts ACTION, docs/design/icons.md). -->
+    <string name="action_fly_here">Fly Here</string>
+    <string name="action_direct_to">Direct To</string>
+    <string name="action_add_stop">Add Stop</string>
+    <string name="action_add_to_route">Add to Route</string>
+    <string name="action_hold_here">Hold Here</string>
+    <string name="action_call">Call</string>
+    <string name="action_address">Address</string>
+    <string name="action_copy">Copy</string>
+
+    <!-- The map's cards. -->
+    <string name="airspace">Airspace</string>
+    <string name="airspace_class">Class %1$s</string>
+    <string name="fix">Fix</string>
+    <string name="vfr_waypoint">VFR Waypoint</string>
+    <string name="traffic">Traffic</string>
+    <string name="traffic_gone">No longer heard.</string>
+    <string name="track">Track</string>
+    <string name="stop_tracking">Stop Tracking</string>
+    <string name="fact_floor">Floor</string>
+    <string name="fact_ceiling">Ceiling</string>
+    <string name="fact_hours">Hours</string>
+    <string name="fact_identifier">Identifier</string>
+    <string name="fact_dme_channel">DME Channel</string>
+    <string name="fact_service_volume">Service Volume</string>
+    <string name="fact_elevation">Elevation</string>
+    <string name="fact_declination">Declination</string>
+    <string name="fact_position">Position</string>
+    <string name="fact_height">Height</string>
+    <string name="fact_altitude">Altitude</string>
+    <string name="fact_ground_speed">Ground Speed</string>
+    <string name="fact_track">Track</string>
+    <string name="call_approach">Call Approach</string>
+    <string name="call_tower">Call the Tower</string>
+    <string name="to_enter">To Enter</string>
+    <string name="remarks">Remarks</string>
+    <string name="restrictions">Restrictions</string>
+
+    <!-- The Airport tab. -->
+    <string name="elevation_is">Elevation %1$s</string>
+    <string name="diagram_with_position">Diagram with Your Position</string>
+    <string name="metar">METAR</string>
+    <string name="no_weather_report">No weather report at this field.</string>
+    <string name="nearest">Nearest</string>
+
+    <!-- The Airplane tab. -->
+    <string name="checklists">Checklists</string>
+    <string name="checklists_of">Checklists · %1$s</string>
+    <string name="checklist_normal">Checklist</string>
+    <string name="checklist_emergency">Emergency</string>
+    <string name="checklist_normal_line">This airplane\'s normal procedures</string>
+    <string name="checklist_emergency_line">This airplane\'s emergency procedures</string>
+
+    <!-- Setup (decision 0014). -->
+    <string name="layout">Layout</string>
+    <string name="layout_tabs">Tabs</string>
+    <string name="layout_strip">Strip</string>
+    <string name="theme">Theme</string>
+    <string name="account">Account</string>
+    <string name="signed_in">Signed In</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="email">Email</string>
+    <string name="email_sign_in_link">Email Me a Sign-In Link</string>
+    <string name="check_email">Check your email: the link opens the app and signs you in.</string>
+    <string name="coming_up">Coming Up</string>
+    <string name="map">Map</string>
+    <string name="layer_airspace">Airspace</string>
+    <string name="layer_navaids">VORs and Fixes</string>
+    <string name="layer_tac">Terminal Area Charts</string>
+    <string name="layer_private">Private Fields</string>
+    <string name="layer_military">Military Fields</string>
+    <string name="speak_alerts">Speak Alerts Ahead</string>
+    <string name="flight">Flight</string>
+    <string name="passenger_briefing">Passenger Briefing</string>
+    <string name="passenger_briefing_line">Brief them, then send them the flight</string>
+    <string name="passengers_briefed">Briefed: %1$d of %2$d</string>
+    <string name="the_flight">The Flight</string>
+    <string name="server">Server</string>
+    <string name="pilot_menu">The pilot\'s menu</string>
 </resources>

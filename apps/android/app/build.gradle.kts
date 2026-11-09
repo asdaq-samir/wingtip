@@ -91,6 +91,11 @@ android {
         getByName("androidTest") {
             assets.srcDirs("../../web/src/lib/fixtures")
         }
+        // The shared fixtures on the JVM tests' classpath too: the
+        // formatter is held to formats.json there (FormatTest).
+        getByName("test") {
+            resources.srcDirs("../../web/src/lib/fixtures")
+        }
     }
 }
 

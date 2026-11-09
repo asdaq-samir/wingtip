@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,16 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.clickable
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.lifecycle.viewmodel.compose.viewModel
-import app.wingtipmaps.android.Plan
-import app.wingtipmaps.android.briefing.PassengerScreen
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ListItem
@@ -39,26 +33,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.briefing.PassengerScreen
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.MapLayersStore
+import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
- * The Setup tab, phase 0's part of it: the account. Signed in, the
- * pilot's address and Sign Out; signed out, an address and the emailed
- * link, which opens the app and signs it in (Session.open). The server
- * the build talks to is shown, as the iOS app shows it, for a tester
- * with more than one. The Map section holds what is drawn on the map,
- * as the iOS app's Setup has it: Traffic, for now.
+ * The Setup tab: how the app looks (the screen's layout, the theme), the
+ * account -- signed in, the pilot's address and Sign Out; signed out, an
+ * address and the emailed link, which opens the app and signs it in
+ * (Session.open) -- what falls due, what the map draws, and the flight's
+ * passenger briefing. The server the build talks to is shown, for a
+ * tester with more than one. Each section under one SectionTitle.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetupScreen(session: Session) {
     // The plan the root holds (the activity's one Plan), for the
@@ -70,76 +69,90 @@ fun SetupScreen(session: Session) {
     val problem by session.problem.collectAsStateWithLifecycle()
     val linkSent by session.linkSent.collectAsStateWithLifecycle()
     var email by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
+        verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
     ) {
-        // The tabs, or the strip (StripLayout), as the web app's Screen row
-        // has it: a setting of two is a segmented control.
-        val context = LocalContext.current
+        // The tabs, or the strip (StripLayout), as the web app's Layout
+        // tile has it, and the look, as its Theme tile: a setting of a few
+        // is a segmented control (decision 0017).
+        SectionTitle(stringResource(R.string.layout))
         val layout by rememberLayout()
-        Text("Screen", style = MaterialTheme.typography.titleLarge)
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            val choices = listOf(LayoutPreference.TABS to "Tabs", LayoutPreference.STRIP to "Strip")
-            choices.forEachIndexed { i, (value, label) ->
-                SegmentedButton(
-                    selected = layout == value,
-                    onClick = { LayoutPreference.set(context, value) },
-                    shape = SegmentedButtonDefaults.itemShape(index = i, count = choices.size),
-                ) { Text(label) }
-            }
-        }
-        Text("Account", style = MaterialTheme.typography.titleLarge)
+        Segmented(
+            listOf(LayoutPreference.TABS to stringResource(R.string.layout_tabs), LayoutPreference.STRIP to stringResource(R.string.layout_strip)),
+            selected = layout,
+        ) { LayoutPreference.set(context, it) }
+        SectionTitle(stringResource(R.string.theme))
+        val look by rememberLook()
+        Segmented(Look.entries.map { it to it.label }, selected = look ?: Look.WINGTIP) { LookPreference.set(context, it) }
+
+        SectionTitle(stringResource(R.string.account))
         val signedIn = pilot
         when {
-            !loaded -> CircularProgressIndicator(Modifier.size(24.dp))
+            !loaded -> CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
             signedIn != null -> {
-                Text(signedIn.email ?: signedIn.displayName ?: "Signed in", style = MaterialTheme.typography.bodyLarge)
-                OutlinedButton(onClick = { session.signOut(context) }) { Text("Sign Out") }
+                Text(signedIn.email ?: signedIn.displayName ?: stringResource(R.string.signed_in), style = MaterialTheme.typography.bodyLarge)
+                OutlinedButton(onClick = { session.signOut(context) }) { Text(stringResource(R.string.sign_out)) }
             }
             else -> {
                 OutlinedTextField(
                     value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Email") }, singleLine = true,
+                    label = { Text(stringResource(R.string.email)) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
                 )
                 Button(onClick = { session.requestMagicLink(email) }, enabled = email.contains('@')) {
-                    Text("Email Me a Sign-In Link")
+                    Text(stringResource(R.string.email_sign_in_link))
                 }
-                if (linkSent) {
-                    Text("Check your email: the link opens the app and signs you in.", style = MaterialTheme.typography.bodyMedium)
-                }
+                if (linkSent) Text(stringResource(R.string.check_email), style = MaterialTheme.typography.bodyMedium)
             }
         }
         ProblemLine(problem)
         // What falls due, the pilot's and their airplanes': under the
         // account it belongs to.
         signedIn?.let { ComingUpSection(signedInAs = it.email ?: it.displayName ?: "") }
-        Text("Map", style = MaterialTheme.typography.titleLarge)
+
+        SectionTitle(stringResource(R.string.map))
         MapLayerRows()
-        TrafficRow()
-        SpokenAlertsRow()
+        val traffic = remember(context) { Traffic.of(context) }
+        val trafficOn by traffic.on.collectAsStateWithLifecycle()
+        SwitchRow(stringResource(R.string.traffic), trafficOn) { traffic.setOn(it) }
+        val spoken = remember(context) { SpokenAlerts.of(context) }
+        val spokenOn by spoken.on.collectAsStateWithLifecycle()
+        SwitchRow(stringResource(R.string.speak_alerts), spokenOn, spoken::setOn)
+
         // The passenger briefing for the planned flight (#223), where the
         // field's "passenger briefing" opens Setup.
-        Text("Flight", style = MaterialTheme.typography.titleLarge)
+        SectionTitle(stringResource(R.string.flight))
         ListItem(
-            headlineContent = { Text("Passenger briefing") },
-            supportingContent = { Text("Brief them, then send them the flight", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            headlineContent = { Text(stringResource(R.string.passenger_briefing)) },
+            supportingContent = { Text(stringResource(R.string.passenger_briefing_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { briefing = true },
         )
-        Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Server", style = MaterialTheme.typography.bodyMedium)
+        Row(Modifier.fillMaxWidth().padding(top = WingtipSpace.Lg), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(stringResource(R.string.server), style = MaterialTheme.typography.bodyMedium)
             Text(Config.host, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
     if (briefing) {
-        ModalBottomSheet(
-            onDismissRequest = { briefing = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        ) {
+        WingtipSheet(title = stringResource(R.string.passenger_briefing), onClose = { briefing = false }, full = true) {
             PassengerScreen(plan)
+        }
+    }
+}
+
+/** A setting of a few choices: Material's segmented buttons. */
+@Composable
+private fun <T> Segmented(choices: List<Pair<T, String>>, selected: T?, onPick: (T) -> Unit) {
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        choices.forEachIndexed { i, (value, label) ->
+            SegmentedButton(
+                selected = selected == value,
+                onClick = { onPick(value) },
+                shape = SegmentedButtonDefaults.itemShape(index = i, count = choices.size),
+            ) { Text(label, maxLines = 1) }
         }
     }
 }
@@ -148,31 +161,18 @@ fun SetupScreen(session: Session) {
  * What the map draws over the chart (MapLayersStore, kept across
  * launches), the web's map settings' "On the Map" rows in its words and
  * order: Airspace, VORs and Fixes, Terminal Area Charts, Private Fields,
- * Military Fields. The terminal area chart's row only where the chart has
- * one over its base.
+ * Military Fields.
  */
 @Composable
 private fun MapLayerRows() {
     val context = LocalContext.current
     val store = remember(context) { MapLayersStore.of(context) }
     val layers by store.layers.collectAsStateWithLifecycle()
-    SwitchRow("Airspace", layers.airspace) { store.set(MapLayersStore.Switch.AIRSPACE, it) }
-    SwitchRow("VORs and Fixes", layers.navaids) { store.set(MapLayersStore.Switch.NAVAIDS, it) }
-    SwitchRow("Terminal Area Charts", layers.tac) { store.set(MapLayersStore.Switch.TAC, it) }
-    SwitchRow("Private Fields", layers.privateFields) { store.set(MapLayersStore.Switch.PRIVATE_FIELDS, it) }
-    SwitchRow("Military Fields", layers.military) { store.set(MapLayersStore.Switch.MILITARY, it) }
-}
-
-/**
- * The traffic layer on or off (Traffic.setOn, kept across launches), as
- * the iOS app's Setup and the web app's map settings have it.
- */
-@Composable
-private fun TrafficRow() {
-    val context = LocalContext.current
-    val traffic = remember(context) { Traffic.of(context) }
-    val on by traffic.on.collectAsStateWithLifecycle()
-    SwitchRow("Traffic", on) { traffic.setOn(it) }
+    SwitchRow(stringResource(R.string.layer_airspace), layers.airspace) { store.set(MapLayersStore.Switch.AIRSPACE, it) }
+    SwitchRow(stringResource(R.string.layer_navaids), layers.navaids) { store.set(MapLayersStore.Switch.NAVAIDS, it) }
+    SwitchRow(stringResource(R.string.layer_tac), layers.tac) { store.set(MapLayersStore.Switch.TAC, it) }
+    SwitchRow(stringResource(R.string.layer_private), layers.privateFields) { store.set(MapLayersStore.Switch.PRIVATE_FIELDS, it) }
+    SwitchRow(stringResource(R.string.layer_military), layers.military) { store.set(MapLayersStore.Switch.MILITARY, it) }
 }
 
 /**
@@ -187,22 +187,5 @@ private fun SwitchRow(title: String, on: Boolean, onChange: (Boolean) -> Unit) {
         trailingContent = { Switch(checked = on, onCheckedChange = null) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Switch, onValueChange = onChange),
-    )
-}
-
-/**
- * The alerts ahead said aloud (SpokenAlerts), as the iOS app's Setup has
- * it: off until the pilot turns it on, the row the toggle as Traffic's.
- */
-@Composable
-private fun SpokenAlertsRow() {
-    val context = LocalContext.current
-    val spoken = remember(context) { SpokenAlerts.of(context) }
-    val on by spoken.on.collectAsStateWithLifecycle()
-    ListItem(
-        headlineContent = { Text("Speak Alerts Ahead") },
-        trailingContent = { Switch(checked = on, onCheckedChange = null) },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Switch, onValueChange = spoken::setOn),
     )
 }

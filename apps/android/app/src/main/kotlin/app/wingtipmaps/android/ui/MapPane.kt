@@ -1,0 +1,153 @@
+package app.wingtipmaps.android.ui
+
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.Charts
+import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.flight.Geo
+import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.flight.OwnTrail
+import app.wingtipmaps.android.flight.SpokenAlerts
+import app.wingtipmaps.android.flight.Tracking
+import app.wingtipmaps.android.flight.Traffic
+import app.wingtipmaps.android.map.ChartMap
+import app.wingtipmaps.android.map.MapLayersStore
+import app.wingtipmaps.android.map.MapLoading
+import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.map.MapRest
+import app.wingtipmaps.android.map.MapStyle
+import app.wingtipmaps.android.map.MapWeather
+import app.wingtipmaps.android.map.TrafficDrawing
+
+/**
+ * The map and what is over it, the same under either layout: the chart
+ * with its overlays, the fields' weather, the traffic and own ship
+ * (ChartMap), the loading mark until it is drawn (MapLoading), the
+ * buttons at the top right, and in the air the instruments at the top
+ * left (InFlightTop), or why the airplane is not shown (OwnShipNote).
+ *
+ * @param covered what the sheet covers at its pill, where the map opens
+ *   and the loading mark turns in the middle of what is left; a sheet
+ *   pulled up over the map moves neither.
+ * @param onAsk the sparkle's Ask, or none (the strip's field is the way).
+ */
+@Composable
+fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) -> Unit, onAsk: (() -> Unit)?, onNearest: () -> Unit) {
+    val charts: Charts = viewModel()
+    val info by charts.info.collectAsStateWithLifecycle()
+    val overlays by charts.overlays.collectAsStateWithLifecycle()
+    val overlaysSettled by charts.overlaysSettled.collectAsStateWithLifecycle()
+    val chartProblem by charts.problem.collectAsStateWithLifecycle()
+    val closeTiles by charts.closeTiles.collectAsStateWithLifecycle()
+    val state by plan.state.collectAsStateWithLifecycle()
+    val density = LocalDensity.current
+    val template = remember(info, density.density) { Charts.template(info, density.density) }
+    val base = remember(info) { Charts.base(info) }
+    val terminal = remember(info, density.density) { Charts.terminal(info, density.density) }
+    // The map shown as one thing (the web's #541, #542): the loading mark
+    // over it until the chart and the overlays are drawn, then faded once.
+    var revealed by remember { mutableStateOf(false) }
+    val night = isSystemInDarkTheme()
+    val context = LocalContext.current
+    val layers by remember { MapLayersStore.of(context) }.layers.collectAsStateWithLifecycle()
+    val mapWeather: MapWeather = viewModel()
+    val weather by mapWeather.colours.collectAsStateWithLifecycle()
+    val traffic = remember { Traffic.of(context) }
+    val trafficOn by traffic.on.collectAsStateWithLifecycle()
+    val planes by traffic.planes.collectAsStateWithLifecycle()
+    val marks by traffic.marks.collectAsStateWithLifecycle()
+    val heardAtMs by traffic.heardAtMs.collectAsStateWithLifecycle()
+    val tracked by remember { Tracking.of(context) }.hex.collectAsStateWithLifecycle()
+    val targets = remember(planes, marks, heardAtMs) {
+        val heard = heardAtMs ?: System.currentTimeMillis()
+        planes.mapIndexed { i, p -> TrafficDrawing.Target(p, marks.getOrNull(i), heard - ((p.seenS ?: 0.0) * 1000).toLong()) }
+    }
+    // Asked every five seconds while the map is shown and traffic is on.
+    DisposableEffect(trafficOn) {
+        if (trafficOn) traffic.start()
+        onDispose { traffic.stop() }
+    }
+    val onView = { view: MapRest ->
+        mapWeather.view(view)
+        traffic.mapCentre = (view.south + view.north) / 2 to (view.west + view.east) / 2
+        traffic.mapRadiusNm = Geo.nm((view.south + view.north) / 2, (view.west + view.east) / 2, view.north, view.east)
+        // The street map's session asked for only once the map is near
+        // where it comes in, as the web asks it (BaseGl CloseBase).
+        if (view.zoom >= MapStyle.CLOSE_FROM - 1) charts.wantClose()
+    }
+
+    val ship = ownShip.ownShip
+    val opensAt = remember { ship.lastPosition }
+    val trail = remember { OwnTrail.of(context) }
+    val fix by ship.fix.collectAsStateWithLifecycle()
+    val approximate by ship.approximate.collectAsStateWithLifecycle()
+    val denied by ship.denied.collectAsStateWithLifecycle()
+    val flown by trail.points.collectAsStateWithLifecycle()
+    // In the air (#218): each fix asked of the engine once for the
+    // instruments, the strip's figures and the glide ring (InFlight), again
+    // when the route changes under it; what is ahead said aloud where the
+    // pilot asked (SpokenAlerts).
+    val ahead by ship.ahead.collectAsStateWithLifecycle()
+    val groundFt by ship.groundFt.collectAsStateWithLifecycle()
+    val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
+    LaunchedEffect(groundFt) { InFlight.shared.terrainFt = groundFt }
+    LaunchedEffect(fix, ownShip.on, state.course, state.legs) { InFlight.shared.took(if (ownShip.on) fix else null, state) }
+    LaunchedEffect(ahead) { SpokenAlerts.of(context).hear(ahead) }
+
+    Box(Modifier.fillMaxSize()) {
+        ChartMap(
+            // The first style waits for the overlays' name (at most
+            // Charts.FIRST_STYLE_WAIT_MS), so they are in it with the chart.
+            template = if (overlaysSettled) template else null,
+            minZoom = base?.minZoom ?: 5,
+            maxZoom = base?.maxZoom ?: 12,
+            line = state.course?.courseLine.orEmpty(),
+            modifier = Modifier.fillMaxSize(),
+            overlays = overlays,
+            layers = layers,
+            terminal = terminal,
+            weather = weather,
+            closeTiles = closeTiles,
+            traffic = if (trafficOn) targets else emptyList(),
+            tracked = tracked,
+            night = night,
+            bottomInset = with(density) { covered.roundToPx() },
+            opensAt = opensAt,
+            ownShip = if (ownShip.on) fix else null,
+            trail = flown,
+            glide = if (ownShip.on) inFlight.glide?.ring.orEmpty() else emptyList(),
+            follow = ownShip.following,
+            onDragged = { ownShip.following = false },
+            onRevealed = { revealed = true },
+            onPick = onPick,
+            onView = onView,
+        )
+        MapLoading(shown = !revealed, bottomInset = covered, problem = if (info == null) chartProblem else null, modifier = Modifier.fillMaxSize())
+        MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
+        if (ownShip.on && !approximate && !denied) {
+            // What is ahead and the flight's instruments, at the top left of
+            // the buttons where nothing else was (#218).
+            InFlightTop(state = inFlight, ahead = ahead, onNearest = onNearest, modifier = Modifier.align(Alignment.TopStart))
+        }
+        if (ownShip.on && (approximate || denied)) {
+            // Why the airplane is not on the map, where the pilot looks
+            // for it: beside the button that showed it.
+            OwnShipNote(approximate = approximate, onAskAgain = ownShip::askAgain, onClose = ownShip::stop, modifier = Modifier.align(Alignment.TopStart))
+        }
+    }
+}

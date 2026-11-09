@@ -6,20 +6,17 @@ import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.routePosition
-import java.time.Instant
+import app.wingtipmaps.android.format.Format
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlin.math.roundToInt
 
 /**
  * The strip's figures and words apart from its screens: the flight as
  * rows in time from the plan the planner streamed (Plan.State), the
  * ribbon's points, where the airplane is along them, the pilot's
- * initials, and the formats the web app's strip writes (stripData.ts,
- * lib/format, lib/format, identSchema's routeName). Every figure here is the
+ * initials and the route's name (stripData.ts, identSchema's routeName);
+ * every figure is written by Format. Every figure here is the
  * planner's; this file only orders them and writes them out. Pure, so it
  * is held on the JVM (StripDataTest).
  */
@@ -142,33 +139,10 @@ object StripData {
         return if (address.isNullOrEmpty()) "" else address[0].uppercase()
     }
 
-    /** A duration as the web app writes every one, "1h 5m", "45m", "3h",
-     *  "0m" (lib/format duration, the narrow style). */
-    fun duration(minutes: Double): String {
-        val whole = minutes.roundToInt()
-        val h = whole / 60
-        val m = whole % 60
-        return when {
-            h > 0 && m > 0 -> "${h}h ${m}m"
-            h > 0 -> "${h}h"
-            else -> "${m}m"
-        }
-    }
-
-    /** The clock at an instant, "14:10", in the phone's zone. */
-    fun clockTime(epochMs: Long, zone: ZoneId = ZoneId.systemDefault()): String =
-        DateTimeFormatter.ofPattern("HH:mm", Locale.US).format(Instant.ofEpochMilli(epochMs).atZone(zone))
-
     /** The clock some minutes after leaving, or null for a leg that
      *  cannot be flown. */
     fun timeAt(leaveMs: Long, minutes: Double?, zone: ZoneId = ZoneId.systemDefault()): String? =
-        minutes?.let { clockTime(leaveMs + (it * 60_000).toLong(), zone) }
-
-    /** The altitude as the app writes it everywhere, "FL-045", and "FL-___"
-     *  with none yet, three blanks to fill (lib/format
-     *  flightLevel; the owner's pick, knowingly beside the FAA's usage). */
-    fun flightLevel(ft: Double?): String =
-        if (ft == null) "FL-___" else "FL-" + String.format(Locale.US, "%03d", (ft / 100).roundToInt())
+        minutes?.let { Format.clock(leaveMs + (it * 60_000).toLong(), zone) }
 
     /** The route by its points, "C81 → KJVL → KDLH"; one airport to itself
      *  "KDLH local" (identSchema's routeName). */
@@ -183,28 +157,22 @@ object StripData {
         return listOfNotNull(
             routeName(state.dep, state.dest, state.stops),
             state.aircraft.uppercase(),
-            state.legs.firstOrNull()?.altitudeFt?.let(::flightLevel),
+            state.legs.firstOrNull()?.altitudeFt?.let(Format::cruiseAltitude),
             "leaving now",
         ).joinToString(" · ")
     }
 
-    /** A frequency's megahertz as the cards write them, "118.3", "121.75"
-     *  (lib/frequencies mhzText). */
-    fun mhzText(value: Double): String = String.format(Locale.US, "%.3f", value).replace(Regex("""0{1,2}$"""), "")
-
     /** The ribbon's figures at the right: the time aloft and the fuel. */
     fun ribbonFigures(state: Plan.State): String = listOfNotNull(
-        state.totals?.eteMin?.let(::duration),
-        state.totals?.fuelGal?.let { String.format(Locale.US, "%.1f gal", it) },
+        state.totals?.eteMin?.let(Format::duration),
+        state.totals?.fuelGal?.let(Format::fuel),
     ).joinToString(" · ")
 
-    /** The checkpoint row's figures, "MH 318 · 24 NM". The heading needs
+    /** The checkpoint row's figures, "MH 318 · 24.0 nm". The heading needs
      *  the airplane's airspeed against the wind: with no airplane chosen the
-     *  planner sends none, and the row writes a dash, "MH — · 24 NM". */
-    fun legFigures(leg: Leg): String {
-        val heading = leg.magneticHeadingDeg?.let { String.format(Locale.US, "%03d", ((it.roundToInt() % 360) + 360) % 360) } ?: "—"
-        return String.format(Locale.US, "MH %s · %.0f NM", heading, leg.distanceNm)
-    }
+     *  planner sends none, and the row writes a dash, "MH — · 24.0 nm". */
+    fun legFigures(leg: Leg): String =
+        "MH ${leg.magneticHeadingDeg?.let(Format::headingFigures) ?: Format.NONE} · ${Format.distance(leg.distanceNm)}"
 
     /** The screens the field's chips offer, each handled as typed: how a
      *  pilot finds the rest without tabs (the web's stripSuggestions). */
@@ -212,6 +180,6 @@ object StripData {
         listOf("Brief me", "Weather at ${state.dest}", "Nav log", "Routes", "Altitude", "Procedures", "Stops", "Nearest fuel",
             "File flight plan", "Dry run", "Clearance", "My airplane", "Saved flights")
     } else {
-        listOf("Nearest fuel", "Nearest airports", "Saved flights", "Favorites", "Recents", "My airplane", "Logbook", "Settings")
+        listOf("Nearest fuel", "Nearest airports", "Saved flights", "Favorites", "Recents", "My airplane", "Logbook", "Setup")
     }
 }

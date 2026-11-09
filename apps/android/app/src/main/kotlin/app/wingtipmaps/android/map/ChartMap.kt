@@ -49,6 +49,8 @@ import org.maplibre.android.style.sources.TileSet
 import org.maplibre.android.style.sources.VectorSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.Point
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.generated.WingtipSize
 
 /** The map's view where it came to rest: its box and its zoom, MapLibre's. */
 data class MapRest(val south: Double, val west: Double, val north: Double, val east: Double, val zoom: Double)
@@ -411,7 +413,20 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (px == bottomInset) return
         bottomInset = px
         if (destroyed || !opened) return
-        view.getMapAsync { map -> map.easeCamera(CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()), INSET_MS) }
+        view.getMapAsync { map ->
+            map.easeCamera(CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()), INSET_MS)
+            credits(map, px)
+        }
+    }
+
+    /** MapLibre's logo and its attribution button above the sheet, where
+     *  they can be read and tapped, rather than at the screen's foot under
+     *  it (the UI audit, 2026-11-09). */
+    private fun credits(map: MapLibreMap, sheetPx: Int) {
+        val gap = (WingtipSpace.Sm.value * density).toInt()
+        val logoWidth = (WingtipSize.TapTarget.value * 2 * density).toInt()
+        map.uiSettings.setLogoMargins(gap, 0, 0, sheetPx + gap)
+        map.uiSettings.setAttributionMargins(gap + logoWidth, 0, 0, sheetPx + gap)
     }
 
     /** The map shown as one thing: the first time it is at rest with its
@@ -487,6 +502,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         map.setMinZoomPreference(MapStyle.glZoom(LEAFLET_MIN_ZOOM))
         map.uiSettings.isRotateGesturesEnabled = false
         map.uiSettings.isTiltGesturesEnabled = false
+        credits(map, bottomInset)
         map.cameraPosition = CameraPosition.Builder()
             .target(if (at != null) LatLng(at.first, at.second) else COUNTRY)
             .zoom(MapStyle.glZoom(if (at != null) LEAFLET_OPEN_ZOOM else LEAFLET_COUNTRY_ZOOM))
@@ -531,7 +547,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             val (lat, lon) = pointOf(f) ?: return@let null
             MapPick.Point(f.getStringProperty("ident") ?: return@let null, f.getBooleanProperty("vfr") == true, lat, lon, tileVors(style))
         } ?: near(TAP_LINE, *MapStyle.AIRSPACE_LINES.toTypedArray())?.let { f ->
-            MapPick.airspace(properties(f))
+            MapPick.airspace(properties(f), at.latitude, at.longitude)
         }
         if (picked != null) onPick(picked)
         return picked != null
@@ -551,8 +567,11 @@ private class MapHolder(val view: MapView, private val density: Float) {
         return seen.values.toList()
     }
 
-    /** The airplane as the blue dot of a map app (the web app's own-ship
-     *  mark), white-edged so it reads on the chart's every colour; the
+    /** The airplane as an airplane, turned to its track, in the brand's
+     *  tint with a white casing so it reads on the chart's every colour
+     *  (OverlayPictures.ownShip); the tint's dot where the phone gives no
+     *  track, a shape of its own rather than a colour (the UI audit's
+     *  #12). The
      *  map brought to it while following, at the sectional's scale the
      *  first time and then only moved, so a pinch the pilot made is kept. */
     private fun ownShip(map: MapLibreMap, style: Style, fix: OwnShip.Fix?, follow: Boolean) {
@@ -562,11 +581,14 @@ private class MapHolder(val view: MapView, private val density: Float) {
             source.setGeoJson(geoJson)
         } else {
             style.addSource(GeoJsonSource(OWN_SHIP, geoJson))
-            val layer = CircleLayer(OWN_SHIP, OWN_SHIP).withProperties(
-                PropertyFactory.circleRadius(7f),
-                PropertyFactory.circleColor(Color.rgb(0, 122, 255)),
-                PropertyFactory.circleStrokeColor(Color.WHITE),
-                PropertyFactory.circleStrokeWidth(2.5f),
+            val layer = org.maplibre.android.style.layers.SymbolLayer(OWN_SHIP, OWN_SHIP).withProperties(
+                PropertyFactory.iconImage(
+                    Expression.switchCase(Expression.has("track"), Expression.literal(MapStyle.OWN_SHIP_ICON), Expression.literal(MapStyle.OWN_SHIP_DOT)),
+                ),
+                PropertyFactory.iconRotate(Expression.coalesce(Expression.get("track"), Expression.literal(0))),
+                PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
+                PropertyFactory.iconAllowOverlap(true),
+                PropertyFactory.iconIgnorePlacement(true),
             )
             // Under the traffic, which is drawn over everything.
             below(style, layer, MapStyle.TRAFFIC_TREND)
@@ -729,7 +751,10 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 if (fix != null) {
                     addJsonObject {
                         put("type", "Feature")
-                        putJsonObject("properties") {}
+                        putJsonObject("properties") {
+                            // The track turns the airplane; with none it is the dot.
+                            fix.trackDeg?.let { put("track", it) }
+                        }
                         putJsonObject("geometry") {
                             put("type", "Point")
                             putJsonArray("coordinates") {

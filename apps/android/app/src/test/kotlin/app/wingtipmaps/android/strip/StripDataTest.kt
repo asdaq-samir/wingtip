@@ -56,24 +56,15 @@ class StripDataTest {
     }
 
     @Test
-    fun theWordsAreTheWebAppsFormats() {
-        assertEquals("1h 5m", StripData.duration(65.0))
-        assertEquals("45m", StripData.duration(45.0))
-        assertEquals("3h", StripData.duration(180.0))
-        assertEquals("0m", StripData.duration(0.2))
-        assertEquals("FL-045", StripData.flightLevel(4500.0))
-        assertEquals("FL-___", StripData.flightLevel(null))
+    fun theRoutesWordsAndFiguresAreTheFormattersOnes() {
         assertEquals("C81 → KJVL → KDLH", StripData.routeName("C81", "KDLH", listOf("KJVL")))
         assertEquals("KDLH local", StripData.routeName("KDLH", "KDLH", emptyList()))
         assertEquals("C81 → KJVL → KDLH · C172 · FL-045 · leaving now", StripData.headLine(state))
         assertNull(StripData.headLine(Plan.State()))
-        assertEquals("118.3", StripData.mhzText(118.3))
-        assertEquals("121.75", StripData.mhzText(121.75))
-        assertEquals("MH 318 · 24 NM", StripData.legFigures(state.legs[0]))
-        assertEquals("MH 000 · 24 NM", StripData.legFigures(state.legs[0].copy(magneticHeadingDeg = 359.6)))
-        assertEquals("MH — · 24 NM", StripData.legFigures(state.legs[0].copy(magneticHeadingDeg = null)))
+        assertEquals("MH 318 · 24.0 nm", StripData.legFigures(state.legs[0]))
+        assertEquals("MH 360 · 24.0 nm", StripData.legFigures(state.legs[0].copy(magneticHeadingDeg = 359.6)))
+        assertEquals("MH — · 24.0 nm", StripData.legFigures(state.legs[0].copy(magneticHeadingDeg = null)))
         val utc = ZoneId.of("UTC")
-        assertEquals("14:10", StripData.clockTime(1_762_265_400_000L, utc))
         assertEquals("15:15", StripData.timeAt(1_762_265_400_000L, 65.0, utc))
         assertNull(StripData.timeAt(0L, null, utc))
     }

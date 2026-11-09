@@ -43,10 +43,25 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     JSON: the chart and the overlay tiles' layers, the web's
     `glStyle.ts` and `glOverlays.ts`), `OverlayPictures` (the symbols'
     pictures, drawn with Canvas) and `MapLoading` (the turning mark);
-  - `ui/`: Material 3 screens. `RootScreen` (the map under a bottom
-    sheet with the four tabs: FPL, Airport, Aircraft, Setup, and the
-    figures' strip at the sheet's foot), one file per tab, `Theme` and
-    `Figures` (the strip, the problem line, the figures' formatting).
+  - `ui/`: Material 3 screens, one composable and one ViewModel per
+    screen. `RootScreen` (the map, `MapPane`, under the docked sheet with
+    the four tabs: FPL, Airport, Airplane, Setup, and the figures' strip
+    at the sheet's foot), one file per tab, `Theme` (the one Wingtip
+    theme: the look picked in Setup, Wingtip by default, from the
+    tokens), `Figures` (the strip and `ProblemLine`, the one error
+    style), `SectionTitle`, `WingtipIcons` (the concept table of
+    docs/design/icons.md), `CardActions` (each card kind's actions, the
+    web's lib/cardActions.ts);
+  - `ui/sheet/`: `DockedSheet` (the panel at pill, half and full, a
+    300 ms ease-out with no spring and one stop a throw, decision 0018;
+    predictive back lowers it a stop, then a card closes, then the app
+    goes) and `WingtipSheet` (every sheet over the map: Material's modal
+    sheet with a start-aligned title and a Close at the end, decision
+    0015);
+  - `format/Format.kt`: every figure written one way, tested against the
+    shared `apps/web/src/lib/fixtures/formats.json` (FormatTest), which
+    design/tokens.json generates: FL-045 on the cruise controls
+    (decision 0009), 4,500 ft, 1h 5m, 0:18, 1432Z, 045° with north 360.
 - `app/src/test`: JUnit, on the JVM. `app/src/androidTest`: on an
   emulator, with the web's shared fixtures as the test APK's assets.
 
@@ -84,7 +99,11 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
   rules. Material's own components over hand-rolled ones -- the bottom
   sheet, the tab row, the exposed dropdown -- so touch targets, type and
   motion are the platform's. A discrete setting is a menu, not a slider.
-  The phone's own colours on Android 12 and later (Material You).
+  Wingtip's own colours, not the wallpaper's: Material You stays off,
+  the brand's blue is the tint (design/tokens.json, the owner's
+  2026-11-09 decision), and the type roles are Material 3's sizes
+  (the tokens' `android` slots: 16 sp rows, 14 sp prose). User-visible
+  words are string resources (res/values/strings.xml).
 - The app's words are the web app's words ("airplane", the FAA's
   sentence-cased text with its codes kept); a problem is said where it
   happened, in the call's own words, not in a toast.

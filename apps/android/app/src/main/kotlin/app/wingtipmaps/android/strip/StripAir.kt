@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.strip
 
+import app.wingtipmaps.android.format.Format
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,7 +52,7 @@ fun StripAir(state: Plan.State, rows: List<StripRow>, position: Position?, modif
                 if (leg != null) {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
                         Text(StripData.legFigures(leg), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        leg.eteMin?.let { Text(StripData.duration(it), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        leg.eteMin?.let { Text(Format.duration(it), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                 }
             }

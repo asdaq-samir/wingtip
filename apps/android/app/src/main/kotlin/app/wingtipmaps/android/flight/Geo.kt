@@ -9,6 +9,7 @@ import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
+import app.wingtipmaps.android.format.Format
 
 /**
  * The two figures of the sphere the flight pieces need between fixes,
@@ -21,6 +22,25 @@ object Geo {
     private const val RAD = Math.PI / 180
     /** The Earth's radius in nm (the FAA's 6,371 km, 3,440.065 nm). */
     private const val EARTH_NM = 3440.065
+
+    /** Where a point goes into a route so it bends it least: the index of
+     *  the leg (between points i and i + 1) whose detour through it is the
+     *  shortest, which is the point's place among the stops (the web's
+     *  lib/geo bestStopIndex). Geometry, not a rule. */
+    fun bestStopIndex(points: List<Pair<Double, Double>>, lat: Double, lon: Double): Int {
+        var best = 0
+        var least = Double.POSITIVE_INFINITY
+        for (i in 0 until points.size - 1) {
+            val (aLat, aLon) = points[i]
+            val (bLat, bLon) = points[i + 1]
+            val added = nm(aLat, aLon, lat, lon) + nm(lat, lon, bLat, bLon) - nm(aLat, aLon, bLat, bLon)
+            if (added < least) {
+                best = i
+                least = added
+            }
+        }
+        return best
+    }
 
     /** The great-circle distance between two points, nm. */
     fun nm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
@@ -67,6 +87,6 @@ object Geo {
         // Wording only: where the engine fails (Engine.rule logs it) the
         // bearing itself is said, "045°", which is still right.
         return Engine.compassWord(bearingDeg).map { SHORT[it] ?: it }
-            .getOrElse { String.format(java.util.Locale.US, "%03.0f°", ((bearingDeg % 360) + 360) % 360) }
+            .getOrElse { Format.heading(bearingDeg) }
     }
 }

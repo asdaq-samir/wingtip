@@ -19,7 +19,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,6 +53,11 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
+import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.R
+import androidx.compose.ui.res.stringResource
+import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import app.wingtipmaps.android.design.generated.WingtipSpace
 
 /**
  * The top of the map in the air (#218), under the status bar and left of
@@ -93,7 +97,7 @@ fun AlertsBanner(alerts: List<AheadAlert>) {
             Column(Modifier.weight(1f)) {
                 Text(first.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    "${first.need} · ${InstrumentsWords.minutes(first.seconds / 60)}, ${nm(first.distanceNm)}",
+                    "${first.need} · ${InstrumentsWords.minutes(first.seconds / 60)}, ${Format.distance(first.distanceNm)}",
                     style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -118,7 +122,7 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
     Surface(shape = MaterialTheme.shapes.large, tonalElevation = 3.dp, shadowElevation = 2.dp) {
         Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row {
-                Cell("GS", fix.groundspeedKt?.let { "${it.roundToInt()} kt" } ?: "—", "Groundspeed")
+                Cell("GS", Format.speed(fix.groundspeedKt), "Groundspeed")
                 Cell("TRK", InstrumentsWords.track(fix.trackDeg, progress?.trackMagDeg), "Track")
                 Cell("ALT", fix.altitudeFt?.let { String.format(Locale.US, "%,d", it.roundToInt()) } ?: "—", "GPS altitude in feet")
                 Cell("VS", InstrumentsWords.verticalSpeed(state.verticalFpm), "Vertical speed in feet a minute")
@@ -133,7 +137,7 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
                     }
                     Cell("DIS", String.format(Locale.US, if (next.distanceNm < 10) "%.1f" else "%.0f", next.distanceNm), "Distance in nautical miles")
                     Cell("ETE", next.eteMin?.let(InstrumentsWords::minutesSeconds) ?: "—", "Time to go")
-                    Cell("DTK", degrees(progress.desiredTrackMagDeg ?: progress.desiredTrackDeg), "Desired track")
+                    Cell("DTK", Format.heading(progress.desiredTrackMagDeg ?: progress.desiredTrackDeg), "Desired track")
                 }
                 InstrumentsWords.offCourse(progress)?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -146,7 +150,7 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Material's tonal button: 40 dp drawn, its 48-dp touch
                 // target its own, nothing grown.
-                FilledTonalButton(onClick = onNearest) { Text("Nearest") }
+                FilledTonalButton(onClick = onNearest) { Text(stringResource(R.string.nearest)) }
                 Text(
                     "Planning aid · not for navigation",
                     style = MaterialTheme.typography.labelSmall,
@@ -175,8 +179,8 @@ object InstrumentsWords {
     /** The track magnetic where the engine knows the variation (a route
      *  flown), else true and marked T. */
     fun track(trueDeg: Double?, magnetic: Double?): String = when {
-        magnetic != null -> degrees(magnetic)
-        trueDeg != null -> "${degrees(trueDeg)}T"
+        magnetic != null -> Format.heading(magnetic)
+        trueDeg != null -> "${Format.heading(trueDeg)}T"
         else -> "—"
     }
 
@@ -189,7 +193,7 @@ object InstrumentsWords {
 
     /** Minutes as a clock counts them down, "7:05"; past an hour "1h 12m". */
     fun minutesSeconds(minutes: Double): String {
-        if (minutes >= 60) return hoursMinutes(minutes)
+        if (minutes >= 60) return Format.duration(minutes)
         val s = (minutes * 60).roundToInt()
         return String.format(Locale.US, "%d:%02d", s / 60, s % 60)
     }
@@ -198,20 +202,19 @@ object InstrumentsWords {
     fun minutes(minutes: Double): String = "${minutes.roundToInt()} min"
 
     /** The UTC clock time a flight plan and ATC use, "1432Z". */
-    fun zulu(unixS: Double): String =
-        DateTimeFormatter.ofPattern("HHmm'Z'", Locale.US).withZone(ZoneOffset.UTC).format(Instant.ofEpochMilli((unixS * 1000).toLong()))
+    fun zulu(unixS: Double): String = Format.zulu(Instant.ofEpochMilli((unixS * 1000).toLong()))
 
     /** How far off the course line and which side; null within a tenth. */
     fun offCourse(p: EngineContract.InFlightAnswer): String? {
         val side = p.offSide ?: return null
         if (p.offNm < 0.1) return null
-        return "${nm(p.offNm)} $side of course"
+        return "${Format.distance(p.offNm)} $side of course"
     }
 
     /** The destination's arrival and the fuel the plan leaves there. */
     fun arrival(dest: EngineContract.InFlightAnswerDestination, etaS: Double): String {
         val line = "${dest.name} at ${zulu(etaS)}, ${dest.distanceNm.roundToInt()} nm"
-        return dest.fuelLeftGal?.let { "$line, about ${gal(maxOf(0.0, it))} left by the plan" } ?: line
+        return dest.fuelLeftGal?.let { "$line, about ${Format.fuel(maxOf(0.0, it))} left by the plan" } ?: line
     }
 }
 
@@ -221,7 +224,6 @@ object InstrumentsWords {
  * at pattern height (the engine's glide_reaches, AC 90-66C's 1,000 ft
  * over the field). A tap opens the field's card.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Unit) {
     var fields by remember { mutableStateOf<List<NearestAirport>?>(null) }
@@ -237,9 +239,8 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
             problem = "The nearest fields could not be found. ${e.message ?: ""}".trim()
         }
     }
-    ModalBottomSheet(onDismissRequest = onClose) {
-        Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Nearest", style = MaterialTheme.typography.titleLarge)
+    WingtipSheet(title = stringResource(R.string.nearest), onClose = onClose) {
+        Column(Modifier.padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             when {
                 fix == null -> Text("Finding your position…", style = MaterialTheme.typography.bodyMedium)
                 problem != null -> ProblemLine(problem)
@@ -252,8 +253,8 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
                     Column(Modifier.fillMaxWidth().clickable { onOpen(field.ident) }.padding(vertical = 10.dp)) {
                         Text("${field.ident}  ${field.name}", style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         val parts = listOfNotNull(
-                            "${nm(field.distanceNm)} ${degrees(field.bearingDeg)}T",
-                            field.longestRunwayFt?.let { String.format(Locale.US, "%,d ft runway", it) },
+                            "${Format.distance(field.distanceNm)} ${Format.heading(field.bearingDeg)}T",
+                            field.longestRunwayFt?.let { "${Format.altitude(it.toDouble())} runway" },
                             reach?.fold({ if (it) "within a glide" else null }, { "glide not worked out" }),
                         )
                         Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

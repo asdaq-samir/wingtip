@@ -577,12 +577,15 @@ def gen_kotlin(tree, sch):
     L.append(" *  phone's font size. */")
     slots = {}
     for k, r in tokens(tree["type"]).items():
-        slot = r.get("$extensions", {}).get(EXT, {}).get("android")
-        if slot:
-            slots[slot] = r
+        # A slot's name alone takes the role's own size; an object names
+        # the slot and Material 3's size for it, which wins.
+        android = r.get("$extensions", {}).get(EXT, {}).get("android")
+        if isinstance(android, dict):
+            slots[android["slot"]] = {**r["$value"], **{k: v for k, v in android.items() if k != "slot"}}
+        elif android:
+            slots[android] = r["$value"]
     L.append("val WingtipTypography = Typography(")
-    for slot, r in slots.items():
-        v = r["$value"]
+    for slot, v in slots.items():
         args = [
             "fontFamily = FontFamily.SansSerif",
             "fontWeight = %s" % ANDROID_WEIGHT[v.get("fontWeight", 400)],

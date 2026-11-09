@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.strip
 
+import app.wingtipmaps.android.format.Format
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.api.Leg
+import app.wingtipmaps.android.ui.LocalInk
+import app.wingtipmaps.android.ui.InkColors
 
 /** More checkpoints than this fold in the middle, the first and the last
  *  kept (the canvas's "N more checkpoints"). */
@@ -125,7 +128,7 @@ private fun CheckpointRow(number: Int, name: String, leg: Leg, onOpen: () -> Uni
                 )
                 Text(StripData.legFigures(leg), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            leg.eteMin?.let { Text(StripData.duration(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            leg.eteMin?.let { Text(Format.duration(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }
@@ -180,7 +183,7 @@ fun LazyListScope.stripList(
             is StripRow.Stop -> item(key = row.key) {
                 FieldCardRow(
                     ident = row.ident, card = cards[row.ident], at = StripData.timeAt(leaveMs, row.minutesFlown), atLabel = "ETA",
-                    detail = listOf(row.groundMin?.takeIf { it > 0 }?.let { "${StripData.duration(it)} on the ground" }),
+                    detail = listOf(row.groundMin?.takeIf { it > 0 }?.let { "${Format.duration(it)} on the ground" }),
                     first = false, last = false, onOpen = { onField(row.ident) },
                 )
             }

@@ -17,6 +17,8 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipPalettes
+import androidx.compose.ui.graphics.toArgb
 
 /**
  * The map's style as the web's MapLibre GL map has it
@@ -712,7 +714,18 @@ object MapStyle {
     const val TRAFFIC_NEAR = WingtipColors.Chart.TRAFFIC_NEAR_HEX
     const val TRAFFIC_FAR = WingtipColors.Chart.TRAFFIC_FAR_HEX
     const val TRAFFIC_NEAR_TEXT = WingtipColors.Chart.TRAFFIC_NEAR_TEXT_HEX
-    const val TINT = WingtipColors.Chart.MAP_BLUE_HEX
+    /** The tracked airplane's ring and own ship: the brand's tint, the
+     *  app's tappable blue, not iOS's systemBlue. */
+    val TINT = hex(WingtipPalettes.Light.tint)
+
+    /** Own ship's pictures (OverlayPictures.ownShip): the airplane, and
+     *  the dot with no track. */
+    const val OWN_SHIP_ICON = "own-ship"
+    const val OWN_SHIP_DOT = "own-ship|dot"
+
+    /** A colour as the "#rrggbb" a style takes. */
+    fun hex(colour: androidx.compose.ui.graphics.Color): String =
+        String.format(java.util.Locale.US, "#%06x", colour.toArgb() and 0xFFFFFF)
 
     /** An airplane's picture: a chevron turned to its track, or a dot
      *  where it sends none, amber or cyan. */

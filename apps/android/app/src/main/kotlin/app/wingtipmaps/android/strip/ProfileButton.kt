@@ -7,9 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -29,11 +27,15 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.api.Pilot
+import androidx.compose.ui.res.stringResource
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.design.generated.WingtipSpace
 
 /**
  * The round profile button beside the field (the strip layout has no
  * tabs): the pilot's initials in a circle, or a person's glyph signed
- * out, and Material's own menu -- My airplane, Settings, Sign in or Sign
+ * out, and Material's own menu -- Airplane, Setup, Sign In or Sign
  * out -- each opening the existing screen over the strip. The logbook
  * and the instructor are the web's and the iOS app's; on this phone the
  * menu offers what is here. An IconButton is Material's 48-dp control,
@@ -43,11 +45,12 @@ import app.wingtipmaps.android.api.Pilot
 fun ProfileButton(pilot: Pilot?, onOpen: (StripModel.Over) -> Unit, onSignOut: () -> Unit, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
     val initials = StripData.initialsOf(pilot)
+    val menu = stringResource(R.string.pilot_menu)
     Box(modifier) {
         IconButton(
             onClick = { open = true },
             modifier = Modifier.semantics {
-                contentDescription = pilot?.displayName?.let { "$it: the pilot's menu" } ?: "The pilot's menu"
+                contentDescription = pilot?.displayName?.let { "$it: $menu" } ?: menu
             },
         ) {
             Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.size(36.dp)) {
@@ -64,33 +67,33 @@ fun ProfileButton(pilot: Pilot?, onOpen: (StripModel.Over) -> Unit, onSignOut: (
             pilot?.displayName?.let { name ->
                 Text(
                     name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm),
                 )
                 HorizontalDivider()
             }
             DropdownMenuItem(
-                text = { Text("My airplane") },
-                leadingIcon = { Icon(Icons.Filled.Flight, contentDescription = null) },
+                text = { Text(stringResource(R.string.tab_airplane)) },
+                leadingIcon = { Icon(WingtipIcons.airplane, contentDescription = null) },
                 onClick = { open = false; onOpen(StripModel.Over.Airplane) },
             )
             DropdownMenuItem(
-                text = { Text("Settings") },
-                leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                onClick = { open = false; onOpen(StripModel.Over.Settings) },
+                text = { Text(stringResource(R.string.tab_setup)) },
+                leadingIcon = { Icon(WingtipIcons.setup, contentDescription = null) },
+                onClick = { open = false; onOpen(StripModel.Over.Setup) },
             )
             HorizontalDivider()
             if (pilot != null) {
                 DropdownMenuItem(
-                    text = { Text("Sign out") },
+                    text = { Text(stringResource(R.string.sign_out)) },
                     leadingIcon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
                     onClick = { open = false; onSignOut() },
                 )
             } else {
                 // The sign-in is Setup's own (the emailed link).
                 DropdownMenuItem(
-                    text = { Text("Sign in") },
+                    text = { Text(stringResource(R.string.sign_in)) },
                     leadingIcon = { Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null) },
-                    onClick = { open = false; onOpen(StripModel.Over.Settings) },
+                    onClick = { open = false; onOpen(StripModel.Over.Setup) },
                 )
             }
         }

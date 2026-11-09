@@ -31,6 +31,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.ui.ProblemLine
+import app.wingtipmaps.android.ui.LocalInk
+import app.wingtipmaps.android.ui.InkColors
 
 /** A finding's glyph, as the web's FindingIcon draws it. */
 @Composable
@@ -43,6 +48,14 @@ fun FindingIcon(finding: Finding, modifier: Modifier = Modifier) {
         Finding.UNKNOWN, Finding.PENDING -> Icons.AutoMirrored.Filled.HelpOutline to MaterialTheme.colorScheme.onSurfaceVariant
     }
     Icon(icon, contentDescription = null, tint = tint, modifier = modifier)
+}
+
+/** A finding's colour as words, 4.5:1 and more on a card. */
+fun InkColors.words(finding: Finding, muted: Color): Color = when (finding) {
+    Finding.OK -> goInk
+    Finding.CAUTION -> cautionInk
+    Finding.STOP -> stopInk
+    Finding.UNKNOWN, Finding.PENDING -> muted
 }
 
 /** A card of the strip: 18-point corners, white on the paper, a hair of
@@ -64,8 +77,9 @@ fun StripCard(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, cont
  * capitals ("C81 → KJVL → KDLH · C172 · FL-045 · leaving now"), the
  * route's other ways as chips where there are any, and at most three
  * one-line actions from the glance, each a row into the Brief. Until the
- * brief is on this phone the verdict reads "Reading the brief…", as the
- * web's does before its briefing answers.
+ * planner's Go / No-Go answers (BriefModel) the verdict reads "Reading
+ * the brief…", as the web's does before its briefing answers; where it
+ * could not, why, in the error style.
  */
 @Composable
 fun StripHead(
@@ -78,10 +92,12 @@ fun StripHead(
     onAction: (GlanceAction) -> Unit,
     onBrief: () -> Unit,
     modifier: Modifier = Modifier,
+    problem: String? = null,
 ) {
     val ink = LocalInk.current
+    val briefWord = stringResource(R.string.brief)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        StripCard(onClick = onBrief, modifier = Modifier.fillMaxWidth().semantics { contentDescription = "The flight" }) {
+        StripCard(onClick = onBrief, modifier = Modifier.fillMaxWidth().semantics { contentDescription = briefWord }) {
             Column(Modifier.padding(16.dp).heightIn(min = 80.dp), verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.Bottom)) {
                 if (verdict != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -91,8 +107,10 @@ fun StripHead(
                             color = ink.words(verdict.finding, MaterialTheme.colorScheme.onSurfaceVariant),
                         )
                     }
+                } else if (problem != null) {
+                    ProblemLine(problem)
                 } else {
-                    Text("Reading the brief…", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.reading_brief), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (line != null) {
                     Text(
