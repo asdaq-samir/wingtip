@@ -1,7 +1,7 @@
 [package]
 name = "wingtip-contract-gen"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 description = "Writes engine/contract/engine.schema.json from each rule's own contract file, beside its code"
 

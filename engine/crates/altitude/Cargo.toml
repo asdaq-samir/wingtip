@@ -1,7 +1,7 @@
 [package]
 name = "wingtip-altitude"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 description = "Altitude selection: the terrain and obstacle floor (14 CFR 91.119), the IFR floor (91.177, Part 95's mountainous areas), the band under airspace, clouds (91.155) and the service ceiling, the cruising altitudes by course (91.159, 91.179) and the words where none fits"
 

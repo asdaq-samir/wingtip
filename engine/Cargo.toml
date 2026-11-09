@@ -26,7 +26,7 @@ members = [
     "bindings/wasm",
     "contract/gen",
 ]
-resolver = "2"
+resolver = "3"
 
 [profile.release]
 lto = true

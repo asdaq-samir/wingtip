@@ -43,7 +43,7 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 
-RUST_IMAGE=rust:1.89-slim-bookworm
+RUST_IMAGE=rust:1.99-slim-bookworm
 # CI's (ci.yml's test job).
 CARGO_MACHETE=0.9.1
 
@@ -232,7 +232,7 @@ run_area() {
       key=$(worktree_key)
       # The target is a volume of this worktree's own, labelled with its path
       # so tidy-local.sh can remove it when the worktree is gone.
-      local tvol=wingtip-cargo-target-tests-1.89-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
+      local tvol=wingtip-cargo-target-tests-1.99-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
       docker volume inspect "$tvol" >/dev/null 2>&1 || docker volume create --label "wingtip.worktree=$here" "$tvol" >/dev/null
       docker run --rm -v "$here:/w/$key" \
         -v wingtip-cargo-registry:/usr/local/cargo/registry -v wingtip-cargo-git:/usr/local/cargo/git \
