@@ -8,10 +8,14 @@
 //!   figure with its reason (14 CFR 1.1, 61.1(b), 61.51, 61.57);
 //! - aircraft: the traffic list's filters (an airplane's kind, height,
 //!   operator, emergency, how it stands to a field) and an airplane by its
-//!   N-number, on its type's stock profile.
+//!   N-number, on its type's stock profile;
+//! - coach: a pilot's proficiency plan -- what is due and when (61.56,
+//!   61.57), the weak areas their own debriefs show, and the sessions
+//!   that answer them.
 
 pub mod aircraft;
 pub mod autolog;
+pub mod coach;
 pub mod pilot;
 
 // The modules below this crate by the names they had when the engine was

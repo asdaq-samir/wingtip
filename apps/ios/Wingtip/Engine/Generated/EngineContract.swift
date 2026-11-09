@@ -1669,6 +1669,79 @@ enum EngineContract {
         }
     }
 
+    /// One of the pilot's own debriefed flights, trimmed to what proficiency_plan reads.
+    struct CoachDebrief: Codable, Equatable, Sendable {
+        /// An approach debriefed (route's approach_debrief) or a flight against its plan (debrief).
+        var kind: String
+        /// YYYY-MM-DD, the pilot's own calendar.
+        var flownOn: String
+        /// Where: the approach's field, or the flight's route ("KMSN-KJVL").
+        var place: String?
+        /// The field's elevation, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4); without it the gate is not checked.
+        var elevationFt: Double?
+        /// An approach's profile.track as its debrief gives it.
+        var profile: [EngineContract.CoachDebriefProfileItem]?
+        /// An approach debrief's findings, as worded.
+        var findings: [EngineContract.ApproachFinding]?
+        /// A flight debrief's legs.
+        var legs: [EngineContract.CoachDebriefLegsItem]?
+        /// A flight debrief's pattern entries.
+        var patterns: [EngineContract.CoachDebriefPatternsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case kind
+            case flownOn = "flown_on"
+            case place
+            case elevationFt = "elevation_ft"
+            case profile
+            case findings
+            case legs
+            case patterns
+        }
+    }
+
+    struct CoachDebriefLegsItem: Codable, Equatable, Sendable {
+        var from: String
+        var to: String
+        var altitudeWithin: Double?
+        var courseWithin: Double?
+        var ok: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case from
+            case to
+            case altitudeWithin = "altitude_within"
+            case courseWithin = "course_within"
+            case ok
+        }
+    }
+
+    struct CoachDebriefPatternsItem: Codable, Equatable, Sendable {
+        var ident: String
+        /// Its altitude less pattern altitude, ft (+ high).
+        var offFt: Double
+        var ok: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case offFt = "off_ft"
+            case ok
+        }
+    }
+
+    struct CoachDebriefProfileItem: Codable, Equatable, Sendable {
+        var toGoNm: Double?
+        var altFt: Double
+        /// Past full scale, or under a minimum, there.
+        var off: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case toGoNm = "to_go_nm"
+            case altFt = "alt_ft"
+            case off
+        }
+    }
+
     struct CompassWordInput: Codable, Equatable, Sendable {
         var bearingDeg: Double
 
@@ -6522,6 +6595,34 @@ enum EngineContract {
         var text: String
     }
 
+    /// A field near the pilot's home, as the host found it in its data.
+    struct PracticePlace: Codable, Equatable, Sendable {
+        var ident: String
+        var name: String?
+        /// From the pilot's home field.
+        var distanceNm: Double
+        /// A lighted runway (NASR), for night landings.
+        var lighted: Bool?
+        var towered: Bool?
+        /// Its instrument approaches (the FAA's CIFP).
+        var approaches: [EngineContract.PracticePlaceApproachesItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case name
+            case distanceNm = "distance_nm"
+            case lighted
+            case towered
+            case approaches
+        }
+    }
+
+    struct PracticePlaceApproachesItem: Codable, Equatable, Sendable {
+        var name: String
+        /// Has an electronic glidepath by its name: an ILS or a GLS.
+        var precision: Bool
+    }
+
     struct PressureAltitudeFtInput: Codable, Equatable, Sendable {
         var elevationFt: Double
         var altimeterInhg: Double
@@ -6686,6 +6787,178 @@ enum EngineContract {
             case inboundDeg = "inbound_deg"
             case ptCourseDeg = "pt_course_deg"
         }
+    }
+
+    struct ProficiencyDue: Codable, Equatable, Sendable {
+        var key: String
+        /// "due:<key>", what a plan's words cite.
+        var id: String
+        var label: String
+        /// The 14 CFR section.
+        var rule: String
+        /// The last day it is good, YYYY-MM-DD; null with nothing on record.
+        var until: String?
+        /// A currency not begun yet: its first day (61.57(c)(1)'s month after).
+        var from: String?
+        /// Days from today to until; negative where lapsed.
+        var daysLeft: Int?
+        var status: String
+        /// What it takes, in a sentence, with its rule.
+        var detail: String
+
+        enum CodingKeys: String, CodingKey {
+            case key
+            case id
+            case label
+            case rule
+            case until
+            case from
+            case daysLeft = "days_left"
+            case status
+            case detail
+        }
+    }
+
+    struct ProficiencyPlanAnswer: Codable, Equatable, Sendable {
+        var today: String
+        var due: [EngineContract.ProficiencyDue]
+        /// The currencies lapsing within remind_days, in a sentence each.
+        var reminders: [EngineContract.ProficiencyPlanAnswerRemindersItem]
+        /// The lines from the pilot's debriefs of the last half year.
+        var evidence: [EngineContract.ProficiencyPlanAnswerEvidenceItem]
+        /// The most evidence first.
+        var weakAreas: [EngineContract.ProficiencyPlanAnswerWeakAreasItem]
+        var sessions: [EngineContract.ProficiencySession]
+
+        enum CodingKeys: String, CodingKey {
+            case today
+            case due
+            case reminders
+            case evidence
+            case weakAreas = "weak_areas"
+            case sessions
+        }
+    }
+
+    struct ProficiencyPlanAnswerEvidenceItem: Codable, Equatable, Sendable {
+        /// "ev:1"..., newest first.
+        var id: String
+        var flownOn: String
+        var place: String
+        /// The weak area's key.
+        var area: String
+        var text: String
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case flownOn = "flown_on"
+            case place
+            case area
+            case text
+        }
+    }
+
+    struct ProficiencyPlanAnswerRemindersItem: Codable, Equatable, Sendable {
+        var key: String
+        var text: String
+        var until: String?
+        var daysLeft: Int
+
+        enum CodingKeys: String, CodingKey {
+            case key
+            case text
+            case until
+            case daysLeft = "days_left"
+        }
+    }
+
+    struct ProficiencyPlanAnswerWeakAreasItem: Codable, Equatable, Sendable {
+        var key: String
+        var label: String
+        var acs: [String]
+        var evidence: [String]
+    }
+
+    struct ProficiencyPlanInput: Codable, Equatable, Sendable {
+        /// YYYY-MM-DD.
+        var today: String
+        var entries: [EngineContract.LogbookEntry]
+        /// The last flight review, YYYY-MM-DD.
+        var flightReviewOn: String?
+        /// YYYY-MM-DD, as the pilot gives it.
+        var medicalExpiresOn: String?
+        /// The last instrument proficiency check, YYYY-MM-DD.
+        var ipcOn: String?
+        /// "student" holds the pilot to the solo endorsement instead of the flight review (61.56(g)); "instrument" adds instrument currency.
+        var ratings: [String]?
+        /// A student's endorsements.
+        var held: [EngineContract.ProficiencyPlanInputHeldItem]?
+        var debriefs: [EngineContract.CoachDebrief]?
+        var places: [EngineContract.PracticePlace]?
+        /// How many days before a currency lapses its reminder shows; 30 where null.
+        var remindDays: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case today
+            case entries
+            case flightReviewOn = "flight_review_on"
+            case medicalExpiresOn = "medical_expires_on"
+            case ipcOn = "ipc_on"
+            case ratings
+            case held
+            case debriefs
+            case places
+            case remindDays = "remind_days"
+        }
+    }
+
+    struct ProficiencyPlanInputHeldItem: Codable, Equatable, Sendable {
+        /// AC 61-65K's, as endorsement_kinds names it.
+        var code: String
+        /// YYYY-MM-DD.
+        var on: String
+    }
+
+    struct ProficiencySession: Codable, Equatable, Sendable {
+        /// "session:1"...
+        var id: String
+        /// The currency ("night_passengers", "ipc") or weak area ("unstable_approach") it answers.
+        var key: String
+        /// What to practise, with its source.
+        var practise: String
+        /// The ids it answers: "due:<key>" and evidence ids.
+        var why: [String]
+        /// The nearest field suited to it; null where any will do or none was given.
+        var place: EngineContract.ProficiencySessionPlace?
+        /// The plan's suggestion of its length, not a rule.
+        var minutes: Int
+        /// Flown with an instructor.
+        var instructor: Bool
+        /// Where it may count toward a WINGS flight activity; never a claim that it does.
+        var wings: EngineContract.ProficiencySessionWings?
+    }
+
+    struct ProficiencySessionPlace: Codable, Equatable, Sendable {
+        var ident: String
+        var name: String
+        var distanceNm: Double
+        /// The approach to fly there.
+        var approach: String?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case name
+            case distanceNm = "distance_nm"
+            case approach
+        }
+    }
+
+    struct ProficiencySessionWings: Codable, Equatable, Sendable {
+        /// The accident causal factor's area (AC 61-91K 6).
+        var area: String
+        /// The ACS task flown to.
+        var acs: String
+        var note: String
     }
 
     struct ProhibitedCautionInput: Codable, Equatable, Sendable {

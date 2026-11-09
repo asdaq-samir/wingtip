@@ -1154,6 +1154,11 @@ extension Engine {
         try rule("procedures_write", EngineContract.ProceduresWriteInput(picks: picks))
     }
 
+    /// A pilot's proficiency plan: what is due and when (the flight review, 14 CFR 61.56(c); passengers by day and at night, 61.57(a), (b); instrument currency, 61.57(c), (d); a student's solo endorsement, 61.87(n), (p); the medical as given), the reminders for those lapsing within remind_days, the weak areas the pilot's own debriefs show (an approach off course or glidepath under the 500 ft gate, AC 61-98D 2.1.4; an approach past full scale or under a minimum; a downwind off pattern altitude, ACS PA.III.B; a leg not held, PA.VI.A), each with its evidence, and up to four sessions: what to practise, why, the nearest suited field of `places`, how long, and whether it may count toward a WINGS flight activity (AC 61-91K 7.3). Every decision is the engine's; a model only words it, citing the ids.
+    static func proficiencyPlan(today: String, entries: [EngineContract.LogbookEntry], flightReviewOn: String? = nil, medicalExpiresOn: String? = nil, ipcOn: String? = nil, ratings: [String]? = nil, held: [EngineContract.ProficiencyPlanInputHeldItem]? = nil, debriefs: [EngineContract.CoachDebrief]? = nil, places: [EngineContract.PracticePlace]? = nil, remindDays: Int? = nil) throws -> EngineContract.ProficiencyPlanAnswer {
+        try rule("proficiency_plan", EngineContract.ProficiencyPlanInput(today: today, entries: entries, flightReviewOn: flightReviewOn, medicalExpiresOn: medicalExpiresOn, ipcOn: ipcOn, ratings: ratings, held: held, debriefs: debriefs, places: places, remindDays: remindDays))
+    }
+
     /// Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
     static func prohibitedCaution(selection: [String: JSONValue]) throws -> [String] {
         try rule("prohibited_caution", EngineContract.ProhibitedCautionInput(selection: selection))

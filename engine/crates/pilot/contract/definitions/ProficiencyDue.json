@@ -1,0 +1,73 @@
+{
+  "title": "ProficiencyDue",
+  "type": "object",
+  "properties": {
+    "key": {
+      "enum": [
+        "flight_review",
+        "solo",
+        "day_passengers",
+        "night_passengers",
+        "instrument",
+        "medical"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "description": "\"due:<key>\", what a plan's words cite."
+    },
+    "label": {
+      "type": "string"
+    },
+    "rule": {
+      "type": "string",
+      "description": "The 14 CFR section."
+    },
+    "until": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The last day it is good, YYYY-MM-DD; null with nothing on record."
+    },
+    "from": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "A currency not begun yet: its first day (61.57(c)(1)'s month after)."
+    },
+    "days_left": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Days from today to until; negative where lapsed."
+    },
+    "status": {
+      "enum": [
+        "current",
+        "due_soon",
+        "lapsed",
+        "pending",
+        "unknown"
+      ]
+    },
+    "detail": {
+      "type": "string",
+      "description": "What it takes, in a sentence, with its rule."
+    }
+  },
+  "required": [
+    "key",
+    "id",
+    "label",
+    "rule",
+    "until",
+    "from",
+    "days_left",
+    "status",
+    "detail"
+  ],
+  "additionalProperties": false
+}

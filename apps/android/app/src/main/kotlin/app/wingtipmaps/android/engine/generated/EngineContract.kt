@@ -1557,6 +1557,81 @@ object EngineContract {
         val altitudeFt: Double,
     )
 
+    /**
+     * One of the pilot's own debriefed flights, trimmed to what proficiency_plan reads.
+     */
+    @Serializable
+    data class CoachDebrief(
+        /**
+         * An approach debriefed (route's approach_debrief) or a flight against its plan (debrief).
+         */
+        val kind: String,
+        /**
+         * YYYY-MM-DD, the pilot's own calendar.
+         */
+        @SerialName("flown_on")
+        val flownOn: String,
+        /**
+         * Where: the approach's field, or the flight's route ("KMSN-KJVL").
+         */
+        val place: String? = null,
+        /**
+         * The field's elevation, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4); without it the gate is not checked.
+         */
+        @SerialName("elevation_ft")
+        val elevationFt: Double? = null,
+        /**
+         * An approach's profile.track as its debrief gives it.
+         */
+        val profile: List<EngineContract.CoachDebriefProfileItem>? = null,
+        /**
+         * An approach debrief's findings, as worded.
+         */
+        val findings: List<EngineContract.ApproachFinding>? = null,
+        /**
+         * A flight debrief's legs.
+         */
+        val legs: List<EngineContract.CoachDebriefLegsItem>? = null,
+        /**
+         * A flight debrief's pattern entries.
+         */
+        val patterns: List<EngineContract.CoachDebriefPatternsItem>? = null,
+    )
+
+    @Serializable
+    data class CoachDebriefLegsItem(
+        val from: String,
+        val to: String,
+        @SerialName("altitude_within")
+        val altitudeWithin: Double? = null,
+        @SerialName("course_within")
+        val courseWithin: Double? = null,
+        val ok: Boolean,
+    )
+
+    @Serializable
+    data class CoachDebriefPatternsItem(
+        val ident: String,
+        /**
+         * Its altitude less pattern altitude, ft (+ high).
+         */
+        @SerialName("off_ft")
+        val offFt: Double,
+        val ok: Boolean,
+    )
+
+    @Serializable
+    data class CoachDebriefProfileItem(
+        @SerialName("to_go_nm")
+        val toGoNm: Double? = null,
+        @SerialName("alt_ft")
+        val altFt: Double,
+        /**
+         * Past full scale, or under a minimum, there.
+         */
+        val off: Boolean,
+    )
+
     @Serializable
     data class CompassWordInput(
         @SerialName("bearing_deg")
@@ -6282,6 +6357,38 @@ object EngineContract {
         val text: String,
     )
 
+    /**
+     * A field near the pilot's home, as the host found it in its data.
+     */
+    @Serializable
+    data class PracticePlace(
+        val ident: String,
+        val name: String? = null,
+        /**
+         * From the pilot's home field.
+         */
+        @SerialName("distance_nm")
+        val distanceNm: Double,
+        /**
+         * A lighted runway (NASR), for night landings.
+         */
+        val lighted: Boolean? = null,
+        val towered: Boolean? = null,
+        /**
+         * Its instrument approaches (the FAA's CIFP).
+         */
+        val approaches: List<EngineContract.PracticePlaceApproachesItem>? = null,
+    )
+
+    @Serializable
+    data class PracticePlaceApproachesItem(
+        val name: String,
+        /**
+         * Has an electronic glidepath by its name: an ILS or a GLS.
+         */
+        val precision: Boolean,
+    )
+
     @Serializable
     data class PressureAltitudeFtInput(
         @SerialName("elevation_ft")
@@ -6446,6 +6553,203 @@ object EngineContract {
         val inboundDeg: Double,
         @SerialName("pt_course_deg")
         val ptCourseDeg: Double,
+    )
+
+    @Serializable
+    data class ProficiencyDue(
+        val key: String,
+        /**
+         * "due:<key>", what a plan's words cite.
+         */
+        val id: String,
+        val label: String,
+        /**
+         * The 14 CFR section.
+         */
+        val rule: String,
+        /**
+         * The last day it is good, YYYY-MM-DD; null with nothing on record.
+         */
+        val until: String? = null,
+        /**
+         * A currency not begun yet: its first day (61.57(c)(1)'s month after).
+         */
+        val from: String? = null,
+        /**
+         * Days from today to until; negative where lapsed.
+         */
+        @SerialName("days_left")
+        val daysLeft: Int? = null,
+        val status: String,
+        /**
+         * What it takes, in a sentence, with its rule.
+         */
+        val detail: String,
+    )
+
+    @Serializable
+    data class ProficiencyPlanAnswer(
+        val today: String,
+        val due: List<EngineContract.ProficiencyDue>,
+        /**
+         * The currencies lapsing within remind_days, in a sentence each.
+         */
+        val reminders: List<EngineContract.ProficiencyPlanAnswerRemindersItem>,
+        /**
+         * The lines from the pilot's debriefs of the last half year.
+         */
+        val evidence: List<EngineContract.ProficiencyPlanAnswerEvidenceItem>,
+        /**
+         * The most evidence first.
+         */
+        @SerialName("weak_areas")
+        val weakAreas: List<EngineContract.ProficiencyPlanAnswerWeakAreasItem>,
+        val sessions: List<EngineContract.ProficiencySession>,
+    )
+
+    @Serializable
+    data class ProficiencyPlanAnswerEvidenceItem(
+        /**
+         * "ev:1"..., newest first.
+         */
+        val id: String,
+        @SerialName("flown_on")
+        val flownOn: String,
+        val place: String,
+        /**
+         * The weak area's key.
+         */
+        val area: String,
+        val text: String,
+    )
+
+    @Serializable
+    data class ProficiencyPlanAnswerRemindersItem(
+        val key: String,
+        val text: String,
+        val until: String? = null,
+        @SerialName("days_left")
+        val daysLeft: Int,
+    )
+
+    @Serializable
+    data class ProficiencyPlanAnswerWeakAreasItem(
+        val key: String,
+        val label: String,
+        val acs: List<String>,
+        val evidence: List<String>,
+    )
+
+    @Serializable
+    data class ProficiencyPlanInput(
+        /**
+         * YYYY-MM-DD.
+         */
+        val today: String,
+        val entries: List<EngineContract.LogbookEntry>,
+        /**
+         * The last flight review, YYYY-MM-DD.
+         */
+        @SerialName("flight_review_on")
+        val flightReviewOn: String? = null,
+        /**
+         * YYYY-MM-DD, as the pilot gives it.
+         */
+        @SerialName("medical_expires_on")
+        val medicalExpiresOn: String? = null,
+        /**
+         * The last instrument proficiency check, YYYY-MM-DD.
+         */
+        @SerialName("ipc_on")
+        val ipcOn: String? = null,
+        /**
+         * "student" holds the pilot to the solo endorsement instead of the flight review (61.56(g)); "instrument" adds instrument currency.
+         */
+        val ratings: List<String>? = null,
+        /**
+         * A student's endorsements.
+         */
+        val held: List<EngineContract.ProficiencyPlanInputHeldItem>? = null,
+        val debriefs: List<EngineContract.CoachDebrief>? = null,
+        val places: List<EngineContract.PracticePlace>? = null,
+        /**
+         * How many days before a currency lapses its reminder shows; 30 where null.
+         */
+        @SerialName("remind_days")
+        val remindDays: Int? = null,
+    )
+
+    @Serializable
+    data class ProficiencyPlanInputHeldItem(
+        /**
+         * AC 61-65K's, as endorsement_kinds names it.
+         */
+        val code: String,
+        /**
+         * YYYY-MM-DD.
+         */
+        val on: String,
+    )
+
+    @Serializable
+    data class ProficiencySession(
+        /**
+         * "session:1"...
+         */
+        val id: String,
+        /**
+         * The currency ("night_passengers", "ipc") or weak area ("unstable_approach") it answers.
+         */
+        val key: String,
+        /**
+         * What to practise, with its source.
+         */
+        val practise: String,
+        /**
+         * The ids it answers: "due:<key>" and evidence ids.
+         */
+        val why: List<String>,
+        /**
+         * The nearest field suited to it; null where any will do or none was given.
+         */
+        val place: EngineContract.ProficiencySessionPlace? = null,
+        /**
+         * The plan's suggestion of its length, not a rule.
+         */
+        val minutes: Int,
+        /**
+         * Flown with an instructor.
+         */
+        val instructor: Boolean,
+        /**
+         * Where it may count toward a WINGS flight activity; never a claim that it does.
+         */
+        val wings: EngineContract.ProficiencySessionWings? = null,
+    )
+
+    @Serializable
+    data class ProficiencySessionPlace(
+        val ident: String,
+        val name: String,
+        @SerialName("distance_nm")
+        val distanceNm: Double,
+        /**
+         * The approach to fly there.
+         */
+        val approach: String? = null,
+    )
+
+    @Serializable
+    data class ProficiencySessionWings(
+        /**
+         * The accident causal factor's area (AC 61-91K 6).
+         */
+        val area: String,
+        /**
+         * The ACS task flown to.
+         */
+        val acs: String,
+        val note: String,
     )
 
     @Serializable
