@@ -2,7 +2,7 @@ import { cn } from "cn";
 import { GLASS } from "../../../components/mapChrome";
 import { Button } from "../../../components/ui/button";
 import { openEmergency } from "../../emergency/emergencyStore";
-import { clockTime, duration } from "../../../lib/clock";
+import { clockTime, duration } from "../../../lib/format";
 import { distanceNm } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/ownShip";
 import { DRY_RUN, usePastFlight } from "../../../lib/map/pastFlight";

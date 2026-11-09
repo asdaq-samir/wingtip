@@ -7,8 +7,8 @@
  */
 import type { AcsTable } from "./checkride";
 import { lookUp } from "./checkride";
-import { duration } from "./clock";
-import { feet } from "./units";
+import { duration } from "./format";
+import { feet } from "./format";
 
 export interface PlanFacts {
   route: { ident: string; name?: string | null; airspaceClass?: string | null; patternFt?: number | null; runway?: string | null }[];

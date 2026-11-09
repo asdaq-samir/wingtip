@@ -10,7 +10,7 @@ import { Slider } from "../../../components/ui/slider";
 import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight } from "../../../lib/map/pastFlight";
 import { routeProfileQuery } from "../../../lib/queryClient";
 import { TEXT } from "../../../lib/text";
-import { altFt } from "../../../lib/units";
+import { altFt, feet } from "../../../lib/format";
 import FlightLine from "./FlightLine";
 import { dryRunFlown, runNmAt, type DryRun, type Flown } from "./navlog/dryRun";
 import type { RouteEnds } from "./navlog/rows";
@@ -143,7 +143,7 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
           className={cn("pointer-events-none absolute top-1.5 left-2 z-10 flex flex-col gap-0.5 text-foreground", TEXT.caption)}
           data-testid="dry-run-pilot-key"
         >
-          <span className="flex items-center gap-1"><span aria-hidden="true" className="size-2.5 rounded-sm bg-[rgb(255,176,0)]" />Ground within {amberBandFt(pilotView).toLocaleString("en-US")} ft</span>
+          <span className="flex items-center gap-1"><span aria-hidden="true" className="size-2.5 rounded-sm bg-[rgb(255,176,0)]" />Ground within {feet(amberBandFt(pilotView))}</span>
           <span className="flex items-center gap-1"><span aria-hidden="true" className="size-2.5 rounded-sm bg-[rgb(215,0,21)]" />Ground above you</span>
           <span className="text-muted-foreground">A view, not terrain clearance</span>
         </div>

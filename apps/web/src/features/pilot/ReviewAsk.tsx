@@ -5,7 +5,7 @@ import { Input } from "../../components/ui/input";
 import PullDown from "../../components/PullDown";
 import { Textarea } from "../../components/ui/textarea";
 import type { InstructorLink } from "../../lib/api/types";
-import { localDay } from "../../lib/clock";
+import { localDay } from "../../lib/format";
 
 /** What a solo cross-country's review is asked with. */
 export interface ReviewAsk {

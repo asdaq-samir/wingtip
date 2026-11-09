@@ -1,7 +1,7 @@
 import type { FlightPlanFilingRequest, Leg, Totals } from "./api/types";
-import { utcFigures } from "./clock";
+import { utcFigures } from "./format";
 import { callEngine } from "./engine/engine";
-import { feet } from "./units";
+import { feet } from "./format";
 
 /**
  * The FAA's flight plan form filled in from a plan: FAA Form 7233-4, the

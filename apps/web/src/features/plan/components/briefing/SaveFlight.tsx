@@ -6,7 +6,7 @@ import { toast } from "../../../../lib/toast";
 import { DropdownMenuItem } from "../../../../components/ui/dropdown-menu";
 import { ResponsivePopoverContent } from "../../../../components/ResponsivePopover";
 import { ReviewAskForm, type ReviewAsk } from "../../../pilot/ReviewAsk";
-import { localDay } from "../../../../lib/clock";
+import { localDay } from "../../../../lib/format";
 import { TEXT } from "../../../../lib/text";
 import { api } from "../../../../lib/api/client";
 import { pilotQuery, trainingQuery } from "../../../../lib/queryClient";

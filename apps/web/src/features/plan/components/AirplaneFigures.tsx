@@ -1,3 +1,4 @@
+import { grouped } from "../../../lib/format";
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
@@ -119,7 +120,7 @@ export function AirplaneFigures({ tail }: { tail: string }) {
             </span>
           ) : (
             <span className={cn("tabular-nums", own(f.key) ? "font-semibold text-foreground" : "text-muted-foreground")}>
-              {shown[f.key] != null ? `${shown[f.key]!.toLocaleString()} ${f.unit}` : "Its type's"}
+              {shown[f.key] != null ? `${grouped(shown[f.key]!)} ${f.unit}` : "Its type's"}
             </span>
           )}
         />

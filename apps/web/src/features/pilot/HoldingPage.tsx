@@ -6,7 +6,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import Segmented from "../../components/Segmented";
 import { Input } from "../../components/ui/input";
 import { approachRelative, entrySteps, holdingEntry, holdingWind, type Entry, type Turns } from "../../lib/holdEntry";
-import { bearing } from "../../lib/units";
+import { bearing } from "../../lib/format";
 import { TEXT } from "../../lib/text";
 
 const ENTRY_NAME: Record<Entry, string> = { direct: "Direct", teardrop: "Teardrop", parallel: "Parallel" };

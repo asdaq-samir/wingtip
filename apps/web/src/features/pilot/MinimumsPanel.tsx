@@ -2,7 +2,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import PullDown from "../../components/PullDown";
 import { MINIMUM_CHOICES, type Minimums } from "../../lib/minimums";
 import { usePreferences, type RouteWeather } from "../../lib/preferences";
-import { feet, miles } from "../../lib/units";
+import { feet, miles } from "../../lib/format";
 
 /** How each minimum reads in its menu. */
 const MINIMUM_ROWS: { key: keyof Minimums; title: string; unit: (n: number) => string }[] = [

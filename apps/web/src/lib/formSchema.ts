@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { localDay } from "./clock";
+import { localDay } from "./format";
 
 // Zod checks once whether it may compile its parsers with Function(),
 // which the page's Content-Security-Policy (script-src 'self', no eval)

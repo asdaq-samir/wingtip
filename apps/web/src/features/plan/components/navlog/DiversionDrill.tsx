@@ -13,7 +13,7 @@ import type { Leg } from "../../../../lib/api/types";
 import { ALLOWANCES, divert, reasonable, stopwatch, type Diversion, type EstimateKey } from "../../../../lib/diversion";
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
-import { bearing, grouped, windCorrection } from "../../../../lib/units";
+import { bearing, grouped, windCorrection } from "../../../../lib/format";
 import { FINDING_TONE } from "../../../../lib/findings";
 import { typedNumber, written } from "../../../../lib/workings";
 import { nearestQuery } from "../../../../lib/queryClient";

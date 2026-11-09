@@ -11,7 +11,7 @@ import { distanceNm } from "../../../../lib/geo";
 import { runwayNumber, type WindPick } from "../../../../lib/pattern";
 import { transitionWords, type PickedProcedure } from "../../../../lib/procedures";
 import { TEXT } from "../../../../lib/text";
-import { altFt } from "../../../../lib/units";
+import { altFt } from "../../../../lib/format";
 import { PROCEDURE_STALE_MS, type ProcedureKind } from "../../hooks/useProceduresRoute";
 import { Chips, NONE } from "./PatternChips";
 import { CHIP } from "../routeListStyle";

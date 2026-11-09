@@ -20,7 +20,7 @@ import type { PickedProcedure } from "../../../lib/procedures";
 import { airportQuery, procedureQuery } from "../../../lib/queryClient";
 import { FINDING_TONE } from "../../../lib/findings";
 import { GROUP_HEADING, TEXT, TEXT_POINTS } from "../../../lib/text";
-import { altFt } from "../../../lib/units";
+import { altFt } from "../../../lib/format";
 
 /** The lesson's one safety line, its subtitle: the plate, not this, is
  *  what is flown (CLAUDE.md's safety principle, kept off the pilot's

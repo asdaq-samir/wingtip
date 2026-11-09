@@ -1,6 +1,6 @@
 import type { ProcedureFix, ProcedureList } from "./api/types";
 import { callEngine } from "./engine/engine";
-import { altFt } from "./units";
+import { altFt } from "./format";
 
 /** An instrument procedure picked at a field of the route (the route's
  *  Procedures): the field, the procedure's coded identifier ("I08-Y"),

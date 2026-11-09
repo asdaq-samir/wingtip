@@ -8,7 +8,7 @@
  */
 import type { Leg } from "./api/types";
 import { callEngine } from "./engine/engine";
-import { bearing, grouped, magneticVariation, windCorrection } from "./units";
+import { bearing, grouped, magneticVariation, windCorrection } from "./format";
 
 /** What the student works out; how far off an E6B allows is the
  *  engine's (`workings_right`). */

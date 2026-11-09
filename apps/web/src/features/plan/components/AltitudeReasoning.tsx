@@ -5,7 +5,7 @@ import { usePrinting } from "../../../lib/usePrinting";
 import type { AltitudeSegment, Leg, NavLogAltitude } from "../../../lib/api/types";
 import { cruiseReferenceFt } from "../../../lib/performance";
 import { TEXT } from "../../../lib/text";
-import { flightLevel } from "../../../lib/units";
+import { flightLevel } from "../../../lib/format";
 import { WINDS_MODELLED } from "../../../lib/windsAloft";
 import { capitalised, faaWords, suaAltitudes } from "../../../lib/advisories";
 import { altFt, bearing, cruiseByAltitude, describeFuel, describeSteps, describeTime, feetBelowClouds, PLAN_NAME } from "../format";
@@ -54,7 +54,7 @@ const WESTBOUND = "westbound (180° through 359°)";
 /** A course as the rule sorts it: cut to the whole degree, not rounded,
  *  as the planner sorts the exact course (the engine's is_eastbound) --
  *  a course of 179.6° rounded read "180° is eastbound" -- north as 360,
- *  as every bearing is written (lib/units' bearing). */
+ *  as every bearing is written (lib/format's bearing). */
 const ruleCourse = (course: number) => bearing(Math.floor(course));
 
 /** "a, b and c" -- the ceiling is the lowest of up to three things. */

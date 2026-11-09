@@ -14,7 +14,7 @@ import { RowBadge } from "../../components/RowBadge";
 import { SETTING_BADGE } from "../../lib/rowBadges";
 import type { Pilot } from "../../lib/api/types";
 import { api } from "../../lib/api/client";
-import { feet } from "../../lib/units";
+import { feet } from "../../lib/format";
 import { flightsQuery, pilotQuery } from "../../lib/queryClient";
 import { shortName } from "../../lib/aircraftChoice";
 import { usePreferences } from "../../lib/preferences";

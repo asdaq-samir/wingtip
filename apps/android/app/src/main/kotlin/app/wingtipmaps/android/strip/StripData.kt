@@ -17,7 +17,7 @@ import kotlin.math.roundToInt
  * rows in time from the plan the planner streamed (Plan.State), the
  * ribbon's points, where the airplane is along them, the pilot's
  * initials, and the formats the web app's strip writes (stripData.ts,
- * lib/clock, lib/units, identSchema's routeName). Every figure here is the
+ * lib/format, lib/format, identSchema's routeName). Every figure here is the
  * planner's; this file only orders them and writes them out. Pure, so it
  * is held on the JVM (StripDataTest).
  */
@@ -162,7 +162,7 @@ object StripData {
     }
 
     /** A duration as the web app writes every one, "1h 5m", "45m", "3h",
-     *  "0m" (lib/clock duration, the narrow style). */
+     *  "0m" (lib/format duration, the narrow style). */
     fun duration(minutes: Double): String {
         val whole = minutes.roundToInt()
         val h = whole / 60
@@ -184,7 +184,7 @@ object StripData {
         minutes?.let { clockTime(leaveMs + (it * 60_000).toLong(), zone) }
 
     /** The altitude as the app writes it everywhere, "FL-045", and "FL-___"
-     *  with none yet, three blanks to fill (lib/units
+     *  with none yet, three blanks to fill (lib/format
      *  flightLevel; the owner's pick, knowingly beside the FAA's usage). */
     fun flightLevel(ft: Double?): String =
         if (ft == null) "FL-___" else "FL-" + String.format(Locale.US, "%03d", (ft / 100).roundToInt())

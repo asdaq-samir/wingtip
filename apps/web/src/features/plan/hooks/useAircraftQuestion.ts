@@ -7,7 +7,7 @@ import { distanceNm, type LatLon } from "../../../lib/geo";
 import { squawkMeaning } from "../../../lib/squawks";
 import { nmAway } from "../../../lib/useAway";
 import { usePreferences } from "../../../lib/preferences";
-import { grouped } from "../../../lib/units";
+import { grouped } from "../../../lib/format";
 import { airportQuery } from "../../../lib/queryClient";
 import { callEngine } from "../../../lib/engine/engine";
 

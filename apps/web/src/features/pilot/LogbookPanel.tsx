@@ -20,7 +20,7 @@ import QueryState from "../../components/QueryState";
 import InstructorPage from "./InstructorPage";
 import ComingUp from "./ComingUp";
 import LogbookFile from "./LogbookFile";
-import { localDay } from "../../lib/clock";
+import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
 import { currencyQuery, trainingQuery } from "../../lib/queryClient";

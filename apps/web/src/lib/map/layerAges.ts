@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { DataCycle, Traffic } from "../api/types";
-import { ago, useMinuteClock } from "../clock";
+import { ago } from "../format";
+import { useMinuteClock } from "../useMinuteClock";
 
 /** How long ago `at` (ms) was, in a few words: "just now" under a
- *  minute, "4m ago", "2h 5m ago" (lib/clock ago); null for no time. */
+ *  minute, "4m ago", "2h 5m ago" (lib/format ago); null for no time. */
 export function ageWords(at: number | null, now: number): string | null {
   return at == null || Number.isNaN(at) ? null : ago(now - at);
 }

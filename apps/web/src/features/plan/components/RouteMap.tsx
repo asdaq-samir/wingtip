@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { hm } from "../../../lib/clock";
-import { threeFigures } from "../../../lib/navaid";
+import { hm } from "../../../lib/format";
+import { threeFigures } from "../../../lib/format";
 import { Badge } from "../../../components/ui/badge";
 import { chartQuery, classBQuery } from "../../../lib/queryClient";
 import { pointName } from "../../../lib/identSchema";
@@ -20,7 +20,7 @@ import { usePreferences } from "../../../lib/preferences";
 import type { StopKind } from "../../../lib/stopKinds";
 import type { StopPin } from "../../../lib/map/stopPins";
 import { inkOn } from "../../../lib/scoreScale";
-import { feet } from "../../../lib/units";
+import { feet } from "../../../lib/format";
 import { scoreColor } from "../format";
 import type { NavLogRow, RouteLeg } from "./navlog/rows";
 import { useTerrainView } from "../../../lib/map/gl/terrain/useTerrainView";

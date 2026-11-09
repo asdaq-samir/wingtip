@@ -126,7 +126,7 @@ enum StripData {
     }
 
     /// A duration as the web app writes every one, "1h 5m", "45m", "3h",
-    /// and "0m" for none (lib/clock duration, Intl's narrow style): the
+    /// and "0m" for none (lib/format duration, Intl's narrow style): the
     /// minutes rounded first, so 119.6 is "2h", not "1h 60m".
     static func duration(_ minutes: Double) -> String {
         let whole = Int(minutes.rounded())

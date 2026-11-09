@@ -1,8 +1,8 @@
 import { Cloud, CloudLightning, CloudRain, CloudSnow, CloudSun, Sun } from "lucide-react";
 import { cn } from "cn";
 import { colourOf } from "../../../lib/map/flightCategory";
-import { clockTime } from "../../../lib/clock";
-import { altFt } from "../../../lib/units";
+import { clockTime } from "../../../lib/format";
+import { altFt } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 import type { Hour } from "../../../lib/hourly";
 import { reportedWind } from "../format";

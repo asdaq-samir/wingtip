@@ -19,7 +19,7 @@ import { nearestQuery } from "../../../lib/queryClient";
 import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
 import { useTabSearch } from "../../../lib/tabSearch";
-import { altFt } from "../../../lib/units";
+import { altFt } from "../../../lib/format";
 import { FINDING_TONE } from "../../../lib/findings";
 
 export interface NearFrom {

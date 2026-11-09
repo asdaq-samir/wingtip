@@ -12,10 +12,10 @@ import type { AltitudeChoice, Detour, Leg, NavLogAltitude } from "../../../../li
 import { useAirplaneChosen, type FlightRules } from "../../../../lib/preferences";
 import { routeProfileQuery } from "../../../../lib/queryClient";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
-import { altFt, flightLevel, one } from "../../../../lib/units";
+import { altFt, flightLevel, one } from "../../../../lib/format";
 import { PLAN_NAME } from "../../format";
 import { callEngine } from "../../../../lib/engine/engine";
-import { duration } from "../../../../lib/clock";
+import { duration } from "../../../../lib/format";
 import AltitudeReasoning from "../AltitudeReasoning";
 import type { RouteEnds } from "./rows";
 

@@ -10,7 +10,7 @@ import { Input } from "../../components/ui/input";
 import { useConfirm } from "../../components/useConfirm";
 import { api } from "../../lib/api/client";
 import type { Aircraft, DueItem, DueItemRequest } from "../../lib/api/types";
-import { localDay } from "../../lib/clock";
+import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
 import { daysBetween, dueTone, whenWords } from "../../lib/paperwork";
 import { toast } from "../../lib/toast";

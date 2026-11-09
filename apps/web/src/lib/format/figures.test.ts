@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { altFt, feet, gal, grouped, magneticVariation, nm, windCorrection } from "./units";
+import { altFt, feet, gal, grouped, magneticVariation, nm, windCorrection } from "./figures";
 
 describe("figures written as the FAA writes them", () => {
   it("puts a comma between each three figures, rounded to a whole number", () => {

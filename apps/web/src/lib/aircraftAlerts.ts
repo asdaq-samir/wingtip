@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import type { FlightStatus } from "./api/types";
-import { clockTime } from "./clock";
+import { clockTime } from "./format";
 import { compassPoint, saidPoint } from "./compass";
 import { callEngine } from "./engine/engine";
-import { altFt } from "./units";
+import { altFt } from "./format";
 
 /**
  * What a pilot can ask to be told of an airplane, from its card's Alert,

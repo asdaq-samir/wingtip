@@ -8,7 +8,7 @@ import { Input } from "../../components/ui/input";
 import { api } from "../../lib/api/client";
 import type { ApproachLesson, FlightSummary, Training } from "../../lib/api/types";
 import { dueWords, lessonPicked, lessonStatus, notableFixes, notesToSend } from "../../lib/assignedLessons";
-import { localDay } from "../../lib/clock";
+import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { procedureQuery } from "../../lib/queryClient";
 import { FINDING_TONE } from "../../lib/findings";

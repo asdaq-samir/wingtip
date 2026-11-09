@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { pastFlightQuery } from "../../../../features/plan/components/pastFlightsQuery";
 import type { Course } from "../../../api/types";
 import { flightQuery } from "../../../queryClient";
-import { altFt } from "../../../units";
+import { altFt } from "../../../format";
 import { useFlownTrack } from "../../flownTrack";
 import { TRAFFIC_COLOURS, trafficIcon } from "../../icons";
 import { useLegHighlight } from "../../legHighlight";

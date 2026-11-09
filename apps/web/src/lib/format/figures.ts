@@ -1,8 +1,11 @@
-import { normalizeDeg } from "./geo";
-/** How an altitude, a ceiling or a visibility is written everywhere on
- *  the page: one formatter each, so a nav log, a briefing and a map card
- *  never write the same figure two ways. A missing figure is an em dash
- *  -- nothing reported, which is not the same as zero. */
+import { normalizeDeg } from "../geo";
+/** How an altitude, a distance, a speed or a direction is written
+ *  everywhere in the app: one formatter each, so a nav log, a briefing
+ *  and a map card never write the same figure two ways, each held to the
+ *  shared example table the phones test against too
+ *  (lib/fixtures/formats.json, from design/tokens.json's `format`). A
+ *  missing figure is an em dash -- nothing reported, which is not the
+ *  same as zero. */
 
 /**
  * A whole number with a comma between each three figures, "12,500", as
@@ -35,7 +38,7 @@ export function feet(ft: number | null | undefined): string {
  *  in the format FL-***"), and "FL-___" with none yet, a blank for each figure (the owner,
  *  2026-11-04: "FL should have three underscores"). */
 export function flightLevel(ft: number | null | undefined): string {
-  return ft === null || ft === undefined ? "FL-___" : `FL-${String(Math.round(ft / 100)).padStart(3, "0")}`;
+  return ft === null || ft === undefined ? "FL-___" : `FL-${hundreds(ft)}`;
 }
 
 /**
@@ -106,6 +109,41 @@ export function miles(sm: number | null | undefined): string {
  * the nav log wrote 000 and its own workings 360.
  */
 export function bearing(deg: number): string {
+  return `${threeFigures(deg)}°`;
+}
+
+/** The same three figures with no degree sign, as a VOR's radial, a
+ *  clearance's heading or an FRD point says them: "the 045 radial",
+ *  "heading 360", never 000. */
+export function threeFigures(deg: number): string {
   const whole = normalizeDeg(Math.round(deg));
-  return `${String(whole === 0 ? 360 : whole).padStart(3, "0")}°`;
+  return String(whole === 0 ? 360 : whole).padStart(3, "0");
+}
+
+/** A wind's direction as a report sends it, three figures and not
+ *  turned: a METAR or an ATIS codes a calm wind 000 and a north one 360
+ *  (FAA Order JO 7900.5, METAR wind group), so a reported figure is
+ *  written as it came. */
+export function reportedDirection(deg: number): string {
+  return String(Math.round(deg)).padStart(3, "0");
+}
+
+/** An altitude on the map's weather -- an AIRMET's, a SIGMET's -- as
+ *  "FL" and three figures of hundreds of feet, FL045 for 4,500 ft MSL:
+ *  the owner's pick (2026-10-20, kept 2026-11-06; docs/decisions/0009),
+ *  against the FAA, whose flight levels start at 18,000 ft (14 CFR 1.1,
+ *  91.121(a)(2)). The cruise controls write FL-045 (flightLevel). */
+export function mapLevel(ft: number): string {
+  return `FL${hundreds(ft)}`;
+}
+
+/** Hundreds of feet in three figures, as a PIREP writes its level: "065". */
+export function hundreds(ft: number): string {
+  return String(Math.round(ft / 100)).padStart(3, "0");
+}
+
+/** A speed in whole knots: "110 kt", an airspeed, a ground speed or a
+ *  wind's. */
+export function knots(kt: number | null | undefined): string {
+  return kt === null || kt === undefined ? "—" : `${Math.round(kt)} kt`;
 }

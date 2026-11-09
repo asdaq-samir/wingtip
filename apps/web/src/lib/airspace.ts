@@ -2,7 +2,7 @@
 import type { VfrMinimums } from "./api/types";
 import { callEngine } from "./engine/engine";
 import type { LatLon } from "./geo";
-import { altFt } from "./units";
+import { altFt } from "./format";
 
 export { degreesMinutes } from "./coords";
 

@@ -8,7 +8,7 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { altitudeLines, fixRoles, type BranchFix } from "../../../lib/procedures";
 import { TEXT } from "../../../lib/text";
-import { altFt } from "../../../lib/units";
+import { altFt } from "../../../lib/format";
 import { callEngine } from "../../../lib/engine/engine";
 import { capitalised } from "../../../lib/advisories";
 

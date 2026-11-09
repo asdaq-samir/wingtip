@@ -1312,21 +1312,21 @@ export interface EngineContract {
     answer: WordsToFixedAnswer;
   };
   /**
-   * A whole number with a comma between each three figures, "12,500" (lib/units grouped).
+   * A whole number with a comma between each three figures, "12,500" (lib/format grouped).
    */
   words_grouped: {
     input: WordsGroupedInput;
     answer: WordsGroupedAnswer;
   };
   /**
-   * An altitude grouped, "12,500"; an em dash for none (lib/units altFt).
+   * An altitude grouped, "12,500"; an em dash for none (lib/format altFt).
    */
   words_alt_ft: {
     input: WordsAltFtInput;
     answer: WordsAltFtAnswer;
   };
   /**
-   * A cruising altitude in hundreds of feet, "FL-045"; "FL-___" for none (lib/units flightLevel).
+   * A cruising altitude in hundreds of feet, "FL-045"; "FL-___" for none (lib/format flightLevel).
    */
   words_flight_level: {
     input: WordsFlightLevelInput;

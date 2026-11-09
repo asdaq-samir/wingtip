@@ -8,7 +8,7 @@ import { api } from "../../../lib/api/client";
 import type { AirspaceBand } from "../../../lib/api/types";
 import { degreesMinutes, minimumsLine, shortAirspaceName } from "../../../lib/airspace";
 import type { LatLon } from "../../../lib/geo";
-import { altFt } from "../../../lib/units";
+import { altFt } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 import { CardHead, PanelCard } from "../../../components/PanelCard";
 import { CardAction } from "../../../components/CardAction";

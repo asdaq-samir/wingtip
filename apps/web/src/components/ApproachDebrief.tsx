@@ -9,13 +9,13 @@ import type { ProcedureDrawing, ProcedureList } from "../lib/api/types";
 import {
   findApproaches, withMinimums, withTransition, type ApproachDebrief as Debriefed, type Tone,
 } from "../lib/approachDebrief";
-import { clockTime } from "../lib/clock";
+import { clockTime } from "../lib/format";
 import { rad } from "../lib/geo";
 import { sameField, transitionWords, type PickedProcedure } from "../lib/procedures";
 import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
 import type { TrackPoint } from "../lib/track";
-import { feet } from "../lib/units";
+import { feet } from "../lib/format";
 
 /** A cycle's procedures hold for its 28 days: as the route's own queries
  *  of them keep them (ProceduresRoute), and under the same keys, so a

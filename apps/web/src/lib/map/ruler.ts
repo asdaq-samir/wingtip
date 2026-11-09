@@ -6,10 +6,10 @@
  * then drag it to see the distance etc"). What it says and when it comes
  * are worked out here; MapRuler follows the fingers and draws it.
  */
-import { hoursMinutes, duration } from "../clock";
+import { hoursMinutes, duration } from "../format";
 import { bearingDeg, destination, distanceNm, type LatLon } from "../geo";
 import { magneticOf, type Declination } from "../magnetic";
-import { bearing, nm as miles, one } from "../units";
+import { bearing, nm as miles, one } from "../format";
 
 /** How long two fingers are held before the ruler comes: ForeFlight's is
  *  about this, and a pinch to zoom has moved well before it. */

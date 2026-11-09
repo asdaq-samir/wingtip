@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OnRoute } from "./api/types";
-import { clockTime } from "./clock";
+import { clockTime } from "./format";
 import { legLines, legWords, onRouteLine } from "./onRoute";
 
 const on = (over: Partial<OnRoute>): OnRoute => ({

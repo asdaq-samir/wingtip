@@ -5,7 +5,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import PullDown from "../../components/PullDown";
 import { api, describeError } from "../../lib/api/client";
 import type { LogbookEntry } from "../../lib/api/types";
-import { localDay } from "../../lib/clock";
+import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { shareFile } from "../../lib/flightPlanFiles";
 import { COLUMN_TARGETS, csvRows, guessColumns, headerRowOf, missingColumns, remapped, type Columns } from "../../lib/logbookColumns";

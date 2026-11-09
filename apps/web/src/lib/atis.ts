@@ -11,7 +11,7 @@ import { heardThrough, useAtcRadio } from "./atcRadio";
 import { holdForListening } from "./audioInput";
 import { callEngine, type EngineAnswer } from "./engine/engine";
 import { listen } from "./listen";
-import { altFt } from "./units";
+import { altFt, reportedDirection } from "./format";
 
 /** A broadcast's figures as the engine reads them (read_atis): a figure
  *  not heard is null. The shapes are the engine's contract's. */
@@ -36,7 +36,7 @@ export function windWords(w: AtisWind): string {
   if (callEngine("wind_calm", { speed_kt: w.kt })) return "Calm";
   const speed = w.kt != null ? `${w.kt} kt` : null;
   const gusts = w.gust_kt != null ? `gusts ${w.gust_kt}` : null;
-  const head = w.from_deg != null ? `${String(w.from_deg).padStart(3, "0")}°${w.variable ? " variable" : ""}` : w.variable ? (speed ? "Variable" : "Light and variable") : null;
+  const head = w.from_deg != null ? `${reportedDirection(w.from_deg)}°${w.variable ? " variable" : ""}` : w.variable ? (speed ? "Variable" : "Light and variable") : null;
   return [head && speed ? `${head} at ${speed}` : head ?? speed, gusts].filter(Boolean).join(", ");
 }
 
