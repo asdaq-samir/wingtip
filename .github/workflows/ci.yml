@@ -138,6 +138,8 @@ jobs:
       - if: steps.machete.outputs.cache-hit != 'true'
         run: cargo install --locked cargo-machete@0.9.1
       - run: cargo machete engine
+      # The Rust as rustfmt writes it (engine/rustfmt.toml).
+      - run: rustup component add rustfmt && scripts/dev/format.sh --check rust
       - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot -p wingtip-altitude -p wingtip-contract-gen
       # The web app's copy of the engine (apps/web/src/lib/engine), committed
       # because the web build has no Rust: built again in the script's
@@ -252,6 +254,9 @@ jobs:
         run: scripts/build/app-icons.sh --check
       - run: npx tsc --noEmit
       - run: npx eslint .
+      # The TypeScript, CSS, JSON and Markdown, and the build scripts'
+      # JavaScript, as Prettier writes them (.prettierrc.yaml).
+      - run: npm run format:check
       # No unused file, export, type or dependency (knip, apps/web/knip.jsonc).
       - run: npx knip --no-progress
       - run: npx vitest run
@@ -286,6 +291,10 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
+      # The Java as palantir-java-format writes it (Spotless, in the pom).
+      - name: The Java's layout
+        working-directory: services/gateway
+        run: mvn -B -q spotless:check
       - name: mvn test (gateway)
         working-directory: services/gateway
         run: mvn -B test
@@ -519,6 +528,7 @@ jobs:
                 - services/planner/pytest_guards.py
                 - scripts/areas.yml
                 - scripts/areas.py
+                - scripts/dev/format.sh
               api:
                 - services/planner/openapi.json
                 - services/assistant/openapi.json
@@ -579,6 +589,7 @@ jobs:
                 - engine/contract/**
               test-web:
                 - apps/web/**
+                - .prettierrc.yaml
                 - services/planner/openapi.json
                 - services/assistant/openapi.json
                 - services/gateway/openapi.json
@@ -669,6 +680,7 @@ jobs:
                 - .github/workflows/native-ios-test.yml
               android:
                 - apps/android/**
+                - .editorconfig
                 - engine/**
                 - apps/web/src/lib/fixtures/**
                 - scripts/build/api-models-apps.*
@@ -1786,6 +1798,10 @@ jobs:
           python3 scripts/ci/file_sizes.py --base FETCH_HEAD
       - name: No unused Python
         run: scripts/ci/dead_python.sh
+      # Every Python file as ruff format writes it (.ruff.toml's [format],
+      # the version scripts/dev/format.sh pins, through pipx), seconds.
+      - name: The Python's layout
+        run: scripts/dev/format.sh --check python
 
   # The website (apps/site, wingtipmaps.app's own pages): built from
   # design/tokens.json and the web app's legal pages, then every page

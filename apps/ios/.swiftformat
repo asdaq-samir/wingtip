@@ -1,0 +1,19 @@
+# SwiftFormat's settings for the iPhone, iPad, Watch and widget apps
+# (scripts/dev/format.sh swift, the version it pins). Layout only: the
+# rules below space, indent and order the code and change nothing it
+# does, so none rewrites a statement (no throws or arguments dropped, no
+# `try` or `let` moved, no if/else bodies or properties unfolded). Matched
+# to how the files were written before the formatter came in (2026-11-09),
+# so it reflowed as little as it could: four spaces, no line width (the
+# code is wrapped by hand, as Xcode leaves it), ranges written 0...n, the
+# body of an #if indented as it was, and a trailing comma in a
+# multi-line collection but not in a call.
+--swift-version 6.2
+--language-mode 5
+--exclude **/Generated
+--rules blankLinesAtEndOfScope,blankLinesAtStartOfScope,braces,consecutiveBlankLines,consecutiveSpaces,duplicateImports,elseOnSameLine,indent,leadingDelimiters,linebreakAtEndOfFile,linebreaks,modifierOrder,redundantParens,semicolons,sortImports,spaceAroundBraces,spaceAroundBrackets,spaceAroundComments,spaceAroundGenerics,spaceAroundOperators,spaceAroundParens,spaceInsideBraces,spaceInsideBrackets,spaceInsideComments,spaceInsideGenerics,spaceInsideParens,trailingCommas,trailingSpace,wrapArguments
+--indent 4
+--ranges no-space
+--ifdef preserve
+--trailing-commas collections-only
+--closing-paren same-line

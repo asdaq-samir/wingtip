@@ -30,6 +30,10 @@ jobs:
       # has them already; the Mac mini's runner keeps them in ~/.cargo/bin,
       # which its service PATH did not carry (rustup: command not found,
       # 2026-11-07).
+      # The Swift as SwiftFormat writes it (apps/ios/.swiftformat), at the
+      # version scripts/dev/format.sh pins and fetches, seconds.
+      - name: The Swift's layout
+        run: scripts/dev/format.sh --check swift
       - name: rustup on the PATH
         run: '[ -d "$HOME/.cargo/bin" ] && echo "$HOME/.cargo/bin" >> "$GITHUB_PATH" || true'
       # The engine's framework as the last run that built this engine left

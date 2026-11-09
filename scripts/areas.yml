@@ -23,6 +23,8 @@ areas:
     check: npm run types && npx tsc --noEmit && npx eslint . && npx knip && npx vitest run
     paths:
       - apps/web/**
+      # Prettier's settings (npm run format:check)
+      - .prettierrc.yaml
       - services/planner/openapi.json
       - services/assistant/openapi.json
       - services/gateway/openapi.json
@@ -166,6 +168,8 @@ areas:
     check: ./gradlew testDebugUnitTest lintDebug assembleDebug (apps/android)
     paths:
       - apps/android/**
+      # ktlint's settings (scripts/dev/format.sh kotlin)
+      - .editorconfig
       - engine/**
       - apps/web/src/lib/fixtures/**
       - scripts/build/api-models-apps.*
@@ -211,6 +215,8 @@ ci_only:
     - services/planner/pytest_guards.py
     - scripts/areas.yml
     - scripts/areas.py
+    # Every language's formatter, its version and how each is run.
+    - scripts/dev/format.sh
   # The APIs the phones call, for api-compat.
   api:
     - services/planner/openapi.json

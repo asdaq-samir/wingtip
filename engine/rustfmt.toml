@@ -1,0 +1,12 @@
+# rustfmt's settings for the engine (`cargo fmt --all` in engine/, or
+# scripts/dev/format.sh rust). Matched to how the crates were written before
+# the formatter came in (2026-11-09), so it reflowed as little as it could:
+# 140 columns, ruff's width for the Python (.ruff.toml); the small
+# heuristics at their widest, so a call, a struct literal or a chain that
+# fits the width stays on its line; a function's parameters packed onto as
+# few lines as fit rather than one a line; and an array of short items
+# (the readers' word lists) packed too.
+max_width = 140
+use_small_heuristics = "Max"
+fn_params_layout = "Compressed"
+short_array_element_width_threshold = 80

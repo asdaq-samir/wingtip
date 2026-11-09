@@ -1,0 +1,11 @@
+# Prettier's settings for the web app's TypeScript, JavaScript, CSS, JSON
+# and Markdown, and the build scripts' JavaScript (`npm run format` in
+# apps/web, or scripts/dev/format.sh web). Hidden at the root, as
+# .ruff.toml is, so Prettier finds it from any of those files. Matched to
+# how the files were written before the formatter came in (2026-11-09),
+# so it reflowed as little as it could: double quotes, semicolons and
+# two-space indents (.editorconfig) are Prettier's own defaults already;
+# 140 columns, ruff's width for the Python; and an object literal that
+# fits on one line is kept on it, wherever its first key sits.
+printWidth: 140
+objectWrap: collapse
