@@ -8,15 +8,19 @@ import FixCard from "../FixCard";
 import RouteLegCard from "../RouteLegCard";
 import { FlyingHead } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
+import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 
 /** An approach the pilot's instructor set them, opened from their
  *  Checkride page (`?lesson=12`): its own chunk, as the lesson's is. */
+import { ReadyToFlyPrompt } from "../../../readyToFly";
+
 const AssignedLesson = lazy(() => import("../AssignedLesson"));
 
 /** The map beside the briefing (PlanWorkspace's `map`), with what floats
  *  over it: the next checkpoint in flight, a fix's card, an assigned
  *  approach, the tips and the first flight's. */
 export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
+  const dryPlaying = usePastFlight((p) => p.hex === DRY_RUN && p.playing);
   const {
     closeLeg,
     closeLesson,
@@ -69,6 +73,9 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
       {/* Its own boundary: the map's chunk (routeMapChunk) comes after the
           panel's first script, and without one the page's (MapPage)
           held the panel back, blank, until it had. */}
+      {/* Ready to fly, once, as a dry run or own ship starts with something
+          to fix (features/readyToFly): a dialog over the map, nothing moved. */}
+      <ReadyToFlyPrompt dryPlaying={dryPlaying} />
       <Suspense fallback={null}>
         <RouteMap
           course={course}
