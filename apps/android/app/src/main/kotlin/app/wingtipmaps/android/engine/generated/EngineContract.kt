@@ -4925,6 +4925,247 @@ object EngineContract {
     )
 
     @Serializable
+    data class LogbookFromTrackAnswer(
+        val entry: EngineContract.LogbookFromTrackAnswerEntry,
+        /**
+         * 61.57(c)(1)'s items the track shows, to add to the entry where flown by instruments.
+         */
+        val instrument: EngineContract.LogbookFromTrackAnswerInstrument,
+        val takeoffs: List<EngineContract.LogbookTakeoff>,
+        val landings: List<EngineContract.LogbookLanding>,
+        val approaches: List<EngineContract.LogbookFromTrackAnswerApproachesItem>,
+        val holds: List<EngineContract.LogbookFromTrackAnswerHoldsItem>,
+        val block: EngineContract.LogbookFromTrackAnswerBlock,
+        @SerialName("cross_country")
+        val crossCountry: EngineContract.LogbookFromTrackAnswerCrossCountry,
+        @SerialName("ends_airborne")
+        val endsAirborne: Boolean,
+        val reasons: List<EngineContract.LogbookFromTrackAnswerReasonsItem>,
+    )
+
+    @Serializable
+    data class LogbookFromTrackAnswerApproachesItem(
+        val airport: String,
+        val id: String,
+        val name: String,
+        /**
+         * When it crossed the final approach fix inbound, ms.
+         */
+        @SerialName("faf_at")
+        val fafAt: Double,
+        val outcome: String,
+        @SerialName("also_fits")
+        val alsoFits: List<String>,
+    )
+
+    @Serializable
+    data class LogbookFromTrackAnswerBlock(
+        val from: Double? = null,
+        val to: Double? = null,
+    )
+
+    @Serializable
+    data class LogbookFromTrackAnswerCrossCountry(
+        @SerialName("landed_elsewhere")
+        val landedElsewhere: Boolean,
+        @SerialName("over_50_nm")
+        val over50Nm: Boolean,
+        @SerialName("farthest_nm")
+        val farthestNm: Double,
+    )
+
+    @Serializable
+    data class LogbookFromTrackAnswerEntry(
+        /**
+         * YYYY-MM-DD on the pilot's clock (61.51(b)(1)(i)).
+         */
+        val flownOn: String,
+        val aircraft: String? = null,
+        val aircraftType: String? = null,
+        val route: String,
+        /**
+         * 1.1's flight time, to the tenth.
+         */
+        val totalHours: Double,
+        /**
+         * Takeoff roll to landing roll, to the tenth.
+         */
+        val airHours: Double,
+        /**
+         * Of the flight time, in 1.1's night.
+         */
+        val nightHours: Double,
+        /**
+         * The flight time where a landing was more than 50 nm from the departure (61.1(b)(ii)), else 0.
+         */
+        val crossCountryHours: Double,
+        /**
+         * Every landing not counted at night: 61.57(a).
+         */
+        val dayLandings: Double,
+        /**
+         * To a full stop in 61.57(b)'s period.
+         */
+        val nightLandings: Double,
+        /**
+         * Of the day landings, the touch-and-goes (61.57(a) counts them, (b) does not).
+         */
+        val touchAndGoes: Double,
+        val toweredLandings: Double,
+        val distanceNm: Double,
+        val longestLegNm: Double,
+        /**
+         * 0: added from `instrument` where flown by instruments.
+         */
+        val approaches: Double,
+        val holding: Boolean,
+        val tracking: Boolean,
+        val remarks: String,
+    )
+
+    @Serializable
+    data class LogbookFromTrackAnswerHoldsItem(
+        val from: Double,
+        val to: Double,
+        val racetracks: Double,
+        val lat: Double,
+        val lon: Double,
+        val fix: String? = null,
+    )
+
+    /**
+     * 61.57(c)(1)'s items the track shows, to add to the entry where flown by instruments.
+     */
+    @Serializable
+    data class LogbookFromTrackAnswerInstrument(
+        val approaches: Double,
+        val holding: Boolean,
+        val tracking: Boolean,
+    )
+
+    @Serializable
+    data class LogbookFromTrackAnswerReasonsItem(
+        val item: String,
+        val says: String,
+        val source: String,
+    )
+
+    @Serializable
+    data class LogbookFromTrackInput(
+        /**
+         * The track, in any order; put in time order first.
+         */
+        val points: List<EngineContract.TrackPoint>,
+        /**
+         * The fields near the places logbook_track_places named.
+         */
+        val fields: List<EngineContract.LogbookTrackField>? = null,
+        /**
+         * Those fields' approaches, as /api/procedure draws them.
+         */
+        val drawings: List<EngineContract.ProcedureDrawing>? = null,
+        /**
+         * The approach picked for the flight, by its CIFP id.
+         */
+        val picked: String? = null,
+        val aircraft: String? = null,
+        @SerialName("aircraft_type")
+        val aircraftType: String? = null,
+        /**
+         * The pilot's clock against UTC, minutes; 0 where left out.
+         */
+        @SerialName("utc_offset_min")
+        val utcOffsetMin: Double? = null,
+    )
+
+    @Serializable
+    data class LogbookLanding(
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        val field: String? = null,
+        val towered: Boolean,
+        /**
+         * 14 CFR 1.1's night there and then.
+         */
+        val night: Boolean,
+        /**
+         * 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise.
+         */
+        @SerialName("passenger_night")
+        val passengerNight: Boolean,
+        val kind: String,
+        /**
+         * To a full stop in 61.57(b)'s period.
+         */
+        @SerialName("counts_night")
+        val countsNight: Boolean,
+    )
+
+    @Serializable
+    data class LogbookTakeoff(
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        val field: String? = null,
+        val towered: Boolean,
+        /**
+         * 14 CFR 1.1's night there and then.
+         */
+        val night: Boolean,
+        /**
+         * 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise.
+         */
+        @SerialName("passenger_night")
+        val passengerNight: Boolean,
+    )
+
+    @Serializable
+    data class LogbookTrackField(
+        val ident: String,
+        val lat: Double,
+        val lon: Double,
+        /**
+         * NASR's elevation, ft MSL.
+         */
+        @SerialName("elevation_ft")
+        val elevationFt: Double? = null,
+        /**
+         * A control tower (NASR APT_BASE TWR_TYPE_CODE).
+         */
+        val towered: Boolean? = null,
+    )
+
+    @Serializable
+    data class LogbookTrackPlacesAnswer(
+        val places: List<EngineContract.LogbookTrackPlacesAnswerPlacesItem>,
+        /**
+         * How far round each place a field is looked for.
+         */
+        @SerialName("within_nm")
+        val withinNm: Double,
+    )
+
+    @Serializable
+    data class LogbookTrackPlacesAnswerPlacesItem(
+        /**
+         * ms since 1970.
+         */
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        val kind: String,
+    )
+
+    @Serializable
+    data class LogbookTrackPlacesInput(
+        /**
+         * The track, in any order; put in time order first.
+         */
+        val points: List<EngineContract.TrackPoint>,
+    )
+
+    @Serializable
     data class LostCommsAnswer(
         val vfr: String,
         val routes: List<EngineContract.LostCommsAnswerRoutesItem>,

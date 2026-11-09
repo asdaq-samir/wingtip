@@ -464,18 +464,20 @@ struct GWQuizAnswerDto: Codable, Equatable, Sendable {
 // MARK: - GWLogbookEntryDto
 struct GWLogbookEntryDto: Codable, Equatable, Sendable {
     var aircraft, aircraftType: String?
+    var airHours: Double
     var approaches: Int
     var crossCountryHours: Double
     var dayLandings: Int
     var distanceNm, dualHours: Double
+    var flightId: Int?
     var flownOn: String
-    var holding: Bool
+    var fromTrack, holding: Bool
     var id: Int
     var instrumentHours, longestLegNm, nightHours: Double
     var nightLandings: Int
     var remarks, route: String?
     var soloHours, totalHours: Double
-    var toweredLandings: Int
+    var touchAndGoes, toweredLandings: Int
     var tracking: Bool
 }
 
@@ -487,19 +489,21 @@ struct GWLogbookImportRequest: Codable, Equatable, Sendable {
 // MARK: - GWLogbookEntryRequest
 struct GWLogbookEntryRequest: Codable, Equatable, Sendable {
     var aircraft, aircraftType: String?
+    var airHours: Double
     var approaches: Int
     var crossCountryHours: Double
     var dayLandings: Int
     var distanceNm, dualHours: Double
+    var flightId: Int?
     var flownOn: String
-    var holding: Bool
+    var fromTrack, holding: Bool
     var instrumentHours, longestLegNm, nightHours: Double
     var nightLandings: Int
     var remarks: String?
     var route: String?
     var soloHours: Double
     var totalHours: Double
-    var toweredLandings: Int
+    var touchAndGoes, toweredLandings: Int
     var tracking: Bool
 }
 

@@ -5057,6 +5057,237 @@ enum EngineContract {
         var tracking: Bool?
     }
 
+    struct LogbookFromTrackAnswer: Codable, Equatable, Sendable {
+        var entry: EngineContract.LogbookFromTrackAnswerEntry
+        /// 61.57(c)(1)'s items the track shows, to add to the entry where flown by instruments.
+        var instrument: EngineContract.LogbookFromTrackAnswerInstrument
+        var takeoffs: [EngineContract.LogbookTakeoff]
+        var landings: [EngineContract.LogbookLanding]
+        var approaches: [EngineContract.LogbookFromTrackAnswerApproachesItem]
+        var holds: [EngineContract.LogbookFromTrackAnswerHoldsItem]
+        var block: EngineContract.LogbookFromTrackAnswerBlock
+        var crossCountry: EngineContract.LogbookFromTrackAnswerCrossCountry
+        var endsAirborne: Bool
+        var reasons: [EngineContract.LogbookFromTrackAnswerReasonsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case entry
+            case instrument
+            case takeoffs
+            case landings
+            case approaches
+            case holds
+            case block
+            case crossCountry = "cross_country"
+            case endsAirborne = "ends_airborne"
+            case reasons
+        }
+    }
+
+    struct LogbookFromTrackAnswerApproachesItem: Codable, Equatable, Sendable {
+        var airport: String
+        var id: String
+        var name: String
+        /// When it crossed the final approach fix inbound, ms.
+        var fafAt: Double
+        var outcome: String
+        var alsoFits: [String]
+
+        enum CodingKeys: String, CodingKey {
+            case airport
+            case id
+            case name
+            case fafAt = "faf_at"
+            case outcome
+            case alsoFits = "also_fits"
+        }
+    }
+
+    struct LogbookFromTrackAnswerBlock: Codable, Equatable, Sendable {
+        var from: Double?
+        var to: Double?
+    }
+
+    struct LogbookFromTrackAnswerCrossCountry: Codable, Equatable, Sendable {
+        var landedElsewhere: Bool
+        var over50Nm: Bool
+        var farthestNm: Double
+
+        enum CodingKeys: String, CodingKey {
+            case landedElsewhere = "landed_elsewhere"
+            case over50Nm = "over_50_nm"
+            case farthestNm = "farthest_nm"
+        }
+    }
+
+    struct LogbookFromTrackAnswerEntry: Codable, Equatable, Sendable {
+        /// YYYY-MM-DD on the pilot's clock (61.51(b)(1)(i)).
+        var flownOn: String
+        var aircraft: String?
+        var aircraftType: String?
+        var route: String
+        /// 1.1's flight time, to the tenth.
+        var totalHours: Double
+        /// Takeoff roll to landing roll, to the tenth.
+        var airHours: Double
+        /// Of the flight time, in 1.1's night.
+        var nightHours: Double
+        /// The flight time where a landing was more than 50 nm from the departure (61.1(b)(ii)), else 0.
+        var crossCountryHours: Double
+        /// Every landing not counted at night: 61.57(a).
+        var dayLandings: Double
+        /// To a full stop in 61.57(b)'s period.
+        var nightLandings: Double
+        /// Of the day landings, the touch-and-goes (61.57(a) counts them, (b) does not).
+        var touchAndGoes: Double
+        var toweredLandings: Double
+        var distanceNm: Double
+        var longestLegNm: Double
+        /// 0: added from `instrument` where flown by instruments.
+        var approaches: Double
+        var holding: Bool
+        var tracking: Bool
+        var remarks: String
+    }
+
+    struct LogbookFromTrackAnswerHoldsItem: Codable, Equatable, Sendable {
+        var from: Double
+        var to: Double
+        var racetracks: Double
+        var lat: Double
+        var lon: Double
+        var fix: String?
+    }
+
+    /// 61.57(c)(1)'s items the track shows, to add to the entry where flown by instruments.
+    struct LogbookFromTrackAnswerInstrument: Codable, Equatable, Sendable {
+        var approaches: Double
+        var holding: Bool
+        var tracking: Bool
+    }
+
+    struct LogbookFromTrackAnswerReasonsItem: Codable, Equatable, Sendable {
+        var item: String
+        var says: String
+        var source: String
+    }
+
+    struct LogbookFromTrackInput: Codable, Equatable, Sendable {
+        /// The track, in any order; put in time order first.
+        var points: [EngineContract.TrackPoint]
+        /// The fields near the places logbook_track_places named.
+        var fields: [EngineContract.LogbookTrackField]?
+        /// Those fields' approaches, as /api/procedure draws them.
+        var drawings: [EngineContract.ProcedureDrawing]?
+        /// The approach picked for the flight, by its CIFP id.
+        var picked: String?
+        var aircraft: String?
+        var aircraftType: String?
+        /// The pilot's clock against UTC, minutes; 0 where left out.
+        var utcOffsetMin: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case points
+            case fields
+            case drawings
+            case picked
+            case aircraft
+            case aircraftType = "aircraft_type"
+            case utcOffsetMin = "utc_offset_min"
+        }
+    }
+
+    struct LogbookLanding: Codable, Equatable, Sendable {
+        var t: Double
+        var lat: Double
+        var lon: Double
+        var field: String?
+        var towered: Bool
+        /// 14 CFR 1.1's night there and then.
+        var night: Bool
+        /// 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise.
+        var passengerNight: Bool
+        var kind: String
+        /// To a full stop in 61.57(b)'s period.
+        var countsNight: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case t
+            case lat
+            case lon
+            case field
+            case towered
+            case night
+            case passengerNight = "passenger_night"
+            case kind
+            case countsNight = "counts_night"
+        }
+    }
+
+    struct LogbookTakeoff: Codable, Equatable, Sendable {
+        var t: Double
+        var lat: Double
+        var lon: Double
+        var field: String?
+        var towered: Bool
+        /// 14 CFR 1.1's night there and then.
+        var night: Bool
+        /// 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise.
+        var passengerNight: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case t
+            case lat
+            case lon
+            case field
+            case towered
+            case night
+            case passengerNight = "passenger_night"
+        }
+    }
+
+    struct LogbookTrackField: Codable, Equatable, Sendable {
+        var ident: String
+        var lat: Double
+        var lon: Double
+        /// NASR's elevation, ft MSL.
+        var elevationFt: Double?
+        /// A control tower (NASR APT_BASE TWR_TYPE_CODE).
+        var towered: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case lat
+            case lon
+            case elevationFt = "elevation_ft"
+            case towered
+        }
+    }
+
+    struct LogbookTrackPlacesAnswer: Codable, Equatable, Sendable {
+        var places: [EngineContract.LogbookTrackPlacesAnswerPlacesItem]
+        /// How far round each place a field is looked for.
+        var withinNm: Double
+
+        enum CodingKeys: String, CodingKey {
+            case places
+            case withinNm = "within_nm"
+        }
+    }
+
+    struct LogbookTrackPlacesAnswerPlacesItem: Codable, Equatable, Sendable {
+        /// ms since 1970.
+        var t: Double
+        var lat: Double
+        var lon: Double
+        var kind: String
+    }
+
+    struct LogbookTrackPlacesInput: Codable, Equatable, Sendable {
+        /// The track, in any order; put in time order first.
+        var points: [EngineContract.TrackPoint]
+    }
+
     struct LostCommsAnswer: Codable, Equatable, Sendable {
         var vfr: String
         var routes: [EngineContract.LostCommsAnswerRoutesItem]

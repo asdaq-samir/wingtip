@@ -617,12 +617,15 @@ data class QuizAnswerDto (
 data class LogbookEntryDto (
     val aircraft: String? = null,
     val aircraftType: String? = null,
+    val airHours: Double,
     val approaches: Int,
     val crossCountryHours: Double,
     val dayLandings: Int,
     val distanceNm: Double,
     val dualHours: Double,
+    val flightId: Long? = null,
     val flownOn: String,
+    val fromTrack: Boolean,
     val holding: Boolean,
     val id: Long,
     val instrumentHours: Double,
@@ -633,6 +636,7 @@ data class LogbookEntryDto (
     val route: String? = null,
     val soloHours: Double,
     val totalHours: Double,
+    val touchAndGoes: Int,
     val toweredLandings: Int,
     val tracking: Boolean
 )
@@ -646,12 +650,15 @@ data class LogbookImportRequest (
 data class LogbookEntryRequest (
     val aircraft: String? = null,
     val aircraftType: String? = null,
+    val airHours: Double,
     val approaches: Int,
     val crossCountryHours: Double,
     val dayLandings: Int,
     val distanceNm: Double,
     val dualHours: Double,
+    val flightId: Long? = null,
     val flownOn: String,
+    val fromTrack: Boolean,
     val holding: Boolean,
     val instrumentHours: Double,
     val longestLegNm: Double,
@@ -661,6 +668,7 @@ data class LogbookEntryRequest (
     val route: String? = null,
     val soloHours: Double,
     val totalHours: Double,
+    val touchAndGoes: Int,
     val toweredLandings: Int,
     val tracking: Boolean
 )

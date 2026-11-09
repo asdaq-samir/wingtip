@@ -2288,6 +2288,144 @@ struct APIItwsAlert: Codable, Equatable, Sendable {
     var words: String
 }
 
+/// The draft: the entry, 61.57(c)'s items apart, what the track
+/// showed, and a reason for each figure.
+// MARK: - APILogbookDraft
+struct APILogbookDraft: Codable, Equatable, Sendable {
+    var approaches: [APIDraftApproach]
+    var block: APIDraftBlock
+    var crossCountry: APIDraftCrossCountry
+    var endsAirborne: Bool
+    var entry: APIDraftEntry
+    var holds: [APIDraftHold]
+    var instrument: APIDraftInstrument
+    var landings: [APIDraftLanding]
+    var reasons: [APIDraftReason]
+    var takeoffs: [APIDraftTakeoff]
+}
+
+// MARK: - APIDraftApproach
+struct APIDraftApproach: Codable, Equatable, Sendable {
+    var airport: String
+    var alsoFits: [String]
+    /// When it crossed the final approach fix inbound, ms.
+    var fafAt: Double
+    var id, name, outcome: String
+}
+
+// MARK: - APIDraftBlock
+struct APIDraftBlock: Codable, Equatable, Sendable {
+    var from, to: Double?
+}
+
+// MARK: - APIDraftCrossCountry
+struct APIDraftCrossCountry: Codable, Equatable, Sendable {
+    var farthestNm: Double
+    /// A landing elsewhere: 61.1(b)(i).
+    var landedElsewhere: Bool
+}
+
+/// The entry as the gateway's form takes it (LogbookEntryRequest).
+// MARK: - APIDraftEntry
+struct APIDraftEntry: Codable, Equatable, Sendable {
+    var aircraft, aircraftType: String?
+    /// Takeoff roll to landing roll.
+    var airHours: Double
+    var approaches: Int
+    /// Where a landing was more than 50 nm from the departure (61.1(b)(ii)).
+    var crossCountryHours: Double
+    /// Every landing not counted at night (61.57(a)).
+    var dayLandings: Int
+    var distanceNm: Double
+    var flownOn: String
+    var holding: Bool
+    var longestLegNm: Double
+    /// Of the flight time, in 1.1's night.
+    var nightHours: Double
+    /// To a full stop in 61.57(b)'s period.
+    var nightLandings: Int
+    var remarks, route: String
+    /// 14 CFR 1.1's flight time, to the tenth.
+    var totalHours: Double
+    /// Of the day landings, the touch-and-goes.
+    var touchAndGoes: Int
+    var toweredLandings: Int
+    var tracking: Bool
+}
+
+// MARK: - APIDraftHold
+struct APIDraftHold: Codable, Equatable, Sendable {
+    var fix: String?
+    var from, lat, lon: Double
+    var racetracks: Int
+    var to: Double
+}
+
+/// 61.57(c)(1)'s items the track shows, added to the entry only where
+/// the pilot says it was flown by instruments (61.51(g)(1)).
+// MARK: - APIDraftInstrument
+struct APIDraftInstrument: Codable, Equatable, Sendable {
+    var approaches: Int
+    var holding, tracking: Bool
+}
+
+// MARK: - APIDraftLanding
+struct APIDraftLanding: Codable, Equatable, Sendable {
+    /// To a full stop in 61.57(b)'s period.
+    var countsNight: Bool
+    var field: String?
+    var kind: String
+    var lat, lon: Double
+    /// 1.1's night there and then.
+    var night: Bool
+    /// 61.57(b)'s period: from 1 hour after sunset to 1 hour before sunrise.
+    var passengerNight: Bool
+    var t: Double
+    var towered: Bool
+}
+
+// MARK: - APIDraftReason
+struct APIDraftReason: Codable, Equatable, Sendable {
+    var item, says, source: String
+}
+
+// MARK: - APIDraftTakeoff
+struct APIDraftTakeoff: Codable, Equatable, Sendable {
+    var field: String?
+    var lat, lon: Double
+    /// 1.1's night there and then.
+    var night: Bool
+    /// 61.57(b)'s period: from 1 hour after sunset to 1 hour before sunrise.
+    var passengerNight: Bool
+    var t: Double
+    var towered: Bool
+}
+
+/// The track (as many points as the gateway keeps of one, thinned by
+/// the app) and what the app knows besides: the airplane, the pilot's
+/// clock and the approach picked for the flight.
+// MARK: - APILogbookDraftAsk
+struct APILogbookDraftAsk: Codable, Equatable, Sendable {
+    /// The airplane's N-number.
+    var aircraft: String?
+    var aircraftType: String?
+    /// The approach picked for the flight, its CIFP id.
+    var picked: String?
+    var points: [APIDraftTrackPoint]
+    /// The pilot's clock against UTC, minutes.
+    var utcOffsetMin: Double?
+}
+
+/// A point of the app's recorded track: when, ms since 1970; GPS
+/// altitude, ft MSL, where the phone gave one.
+// MARK: - APIDraftTrackPoint
+struct APIDraftTrackPoint: Codable, Equatable, Sendable {
+    var altFt: Double?
+    var lat: Double
+    var lon: Double
+    var t: Double
+}
+
 /// 91.185: VFR's words, the routes in the rule's order, each segment's
 /// altitude and why, and when to leave the clearance limit.
 // MARK: - APILostComms

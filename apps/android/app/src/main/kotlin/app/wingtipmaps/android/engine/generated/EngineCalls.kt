@@ -217,6 +217,18 @@ fun Engine.pilotExperience(entries: List<EngineContract.LogbookEntry>, today: St
     rule("pilot_experience", EngineContract.PilotExperienceInput(entries = entries, today = today))
 
 /**
+ * Where a flown track took off, landed or came down low, for the host to find the fields within `within_nm` of each (the logbook entry drawn from the track, pilot's autolog).
+ */
+fun Engine.logbookTrackPlaces(points: List<EngineContract.TrackPoint>): Result<EngineContract.LogbookTrackPlacesAnswer> =
+    rule("logbook_track_places", EngineContract.LogbookTrackPlacesInput(points = points))
+
+/**
+ * A logbook entry drawn from the app's own flown track, a draft for the pilot to change and confirm: 14 CFR 1.1's flight time and night, 61.57's landings (full stop or touch-and-go, 61.57(b)'s period), the approaches matched to the CIFP procedures given and the holds (61.57(c), offered apart in `instrument`: they count only when flown by instruments, 61.51(g)(1)), cross-country by 61.1(b), and a reason for each figure.
+ */
+fun Engine.logbookFromTrack(points: List<EngineContract.TrackPoint>, fields: List<EngineContract.LogbookTrackField>? = null, drawings: List<EngineContract.ProcedureDrawing>? = null, picked: String? = null, aircraft: String? = null, aircraftType: String? = null, utcOffsetMin: Double? = null): Result<EngineContract.LogbookFromTrackAnswer> =
+    rule("logbook_from_track", EngineContract.LogbookFromTrackInput(points = points, fields = fields, drawings = drawings, picked = picked, aircraft = aircraft, aircraftType = aircraftType, utcOffsetMin = utcOffsetMin))
+
+/**
  * An ATC clearance heard, read into its items as the web's lib/clearance read it (AIM 4-4-3), camelCase.
  */
 fun Engine.readClearance(text: String): Result<EngineContract.Clearance> =

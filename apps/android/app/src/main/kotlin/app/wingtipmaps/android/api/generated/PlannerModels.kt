@@ -3716,6 +3716,246 @@ data class ItwsAlert (
 )
 
 /**
+ * The draft: the entry, 61.57(c)'s items apart, what the track
+ * showed, and a reason for each figure.
+ */
+@Serializable
+data class LogbookDraft (
+    val approaches: List<DraftApproach>,
+    val block: DraftBlock,
+
+    @SerialName("cross_country")
+    val crossCountry: DraftCrossCountry,
+
+    @SerialName("ends_airborne")
+    val endsAirborne: Boolean,
+
+    val entry: DraftEntry,
+    val holds: List<DraftHold>,
+    val instrument: DraftInstrument,
+    val landings: List<DraftLanding>,
+    val reasons: List<DraftReason>,
+    val takeoffs: List<DraftTakeoff>
+)
+
+@Serializable
+data class DraftApproach (
+    val airport: String,
+
+    @SerialName("also_fits")
+    val alsoFits: List<String>,
+
+    /**
+     * When it crossed the final approach fix inbound, ms.
+     */
+    @SerialName("faf_at")
+    val fafAt: Double,
+
+    val id: String,
+    val name: String,
+    val outcome: String
+)
+
+@Serializable
+data class DraftBlock (
+    val from: Double? = null,
+    val to: Double? = null
+)
+
+@Serializable
+data class DraftCrossCountry (
+    @SerialName("farthest_nm")
+    val farthestNm: Double,
+
+    /**
+     * A landing elsewhere: 61.1(b)(i).
+     */
+    @SerialName("landed_elsewhere")
+    val landedElsewhere: Boolean,
+
+    /**
+     * A landing more than 50 nm from the departure: 61.1(b)(ii).
+     */
+    @SerialName("over_50_nm")
+    val over50_Nm: Boolean
+)
+
+/**
+ * The entry as the gateway's form takes it (LogbookEntryRequest).
+ */
+@Serializable
+data class DraftEntry (
+    val aircraft: String? = null,
+    val aircraftType: String? = null,
+
+    /**
+     * Takeoff roll to landing roll.
+     */
+    val airHours: Double,
+
+    val approaches: Int,
+
+    /**
+     * Where a landing was more than 50 nm from the departure (61.1(b)(ii)).
+     */
+    val crossCountryHours: Double,
+
+    /**
+     * Every landing not counted at night (61.57(a)).
+     */
+    val dayLandings: Int,
+
+    val distanceNm: Double,
+    val flownOn: String,
+    val holding: Boolean,
+    val longestLegNm: Double,
+
+    /**
+     * Of the flight time, in 1.1's night.
+     */
+    val nightHours: Double,
+
+    /**
+     * To a full stop in 61.57(b)'s period.
+     */
+    val nightLandings: Int,
+
+    val remarks: String,
+    val route: String,
+
+    /**
+     * 14 CFR 1.1's flight time, to the tenth.
+     */
+    val totalHours: Double,
+
+    /**
+     * Of the day landings, the touch-and-goes.
+     */
+    val touchAndGoes: Int,
+
+    val toweredLandings: Int,
+    val tracking: Boolean
+)
+
+@Serializable
+data class DraftHold (
+    val fix: String? = null,
+    val from: Double,
+    val lat: Double,
+    val lon: Double,
+    val racetracks: Int,
+    val to: Double
+)
+
+/**
+ * 61.57(c)(1)'s items the track shows, added to the entry only where
+ * the pilot says it was flown by instruments (61.51(g)(1)).
+ */
+@Serializable
+data class DraftInstrument (
+    val approaches: Int,
+    val holding: Boolean,
+    val tracking: Boolean
+)
+
+@Serializable
+data class DraftLanding (
+    /**
+     * To a full stop in 61.57(b)'s period.
+     */
+    @SerialName("counts_night")
+    val countsNight: Boolean,
+
+    val field: String? = null,
+    val kind: String,
+    val lat: Double,
+    val lon: Double,
+
+    /**
+     * 1.1's night there and then.
+     */
+    val night: Boolean,
+
+    /**
+     * 61.57(b)'s period: from 1 hour after sunset to 1 hour before sunrise.
+     */
+    @SerialName("passenger_night")
+    val passengerNight: Boolean,
+
+    val t: Double,
+    val towered: Boolean
+)
+
+@Serializable
+data class DraftReason (
+    val item: String,
+    val says: String,
+    val source: String
+)
+
+@Serializable
+data class DraftTakeoff (
+    val field: String? = null,
+    val lat: Double,
+    val lon: Double,
+
+    /**
+     * 1.1's night there and then.
+     */
+    val night: Boolean,
+
+    /**
+     * 61.57(b)'s period: from 1 hour after sunset to 1 hour before sunrise.
+     */
+    @SerialName("passenger_night")
+    val passengerNight: Boolean,
+
+    val t: Double,
+    val towered: Boolean
+)
+
+/**
+ * The track (as many points as the gateway keeps of one, thinned by
+ * the app) and what the app knows besides: the airplane, the pilot's
+ * clock and the approach picked for the flight.
+ */
+@Serializable
+data class LogbookDraftAsk (
+    /**
+     * The airplane's N-number.
+     */
+    val aircraft: String? = null,
+
+    val aircraftType: String? = null,
+
+    /**
+     * The approach picked for the flight, its CIFP id.
+     */
+    val picked: String? = null,
+
+    val points: List<DraftTrackPoint>,
+
+    /**
+     * The pilot's clock against UTC, minutes.
+     */
+    val utcOffsetMin: Double? = null
+)
+
+/**
+ * A point of the app's recorded track: when, ms since 1970; GPS
+ * altitude, ft MSL, where the phone gave one.
+ */
+@Serializable
+data class DraftTrackPoint (
+    @SerialName("alt_ft")
+    val altFt: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val t: Double
+)
+
+/**
  * 91.185: VFR's words, the routes in the rule's order, each segment's
  * altitude and why, and when to leave the clearance limit.
  */
