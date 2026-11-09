@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import type { WordsAnswer } from "../../../../lib/api/words";
+import { notamCredit, notamNone } from "./briefingWords";
 import WordsSection from "./WordsSection";
 import { wordsState } from "./wordsState";
 
@@ -45,5 +46,30 @@ describe("a section of words", () => {
     expect(chips[0]!.textContent).toBe("METAR KDLH 1753Z");
     fireEvent.click(chips[0]!);
     expect(screen.getByTestId("source-text").textContent).toBe(ANSWER.sources[0]!.text);
+  });
+});
+
+describe("the NOTAMs' coverage", () => {
+  test("the credit names the feed and the day it was first heard, in the app's date format", () => {
+    expect(notamCredit("2026-10-19")).toBe("FAA NOTAM feed since 19 Oct 2026");
+    expect(notamCredit(null)).toBe("FAA NOTAM feed");
+  });
+
+  test("an empty list reads none heard since the day, never no NOTAMs", () => {
+    expect(notamNone("2026-10-19")).toBe("None heard since 19 Oct");
+    expect(notamNone(undefined)).toBe("None heard");
+    const answer: WordsAnswer = { sentences: [], sources: [], model: "m", unavailable: null, coverage_since: "2026-10-19" };
+    render(<WordsSection title="NOTAMs that matter" testId="w" state={wordsState({ data: answer, error: null })}
+      credit={notamCredit(answer.coverage_since)} empty={notamNone(answer.coverage_since)} />);
+    expect(screen.getByTestId("w-empty").textContent).toBe("None heard since 19 Oct");
+    expect(screen.getByTestId("w-credit").textContent).toBe("FAA NOTAM feed since 19 Oct 2026");
+    expect(document.body.textContent).not.toMatch(/no notams/i);
+    expect(screen.queryByTestId("w-words")).toBeNull();
+  });
+
+  test("with words, the credit still follows the chips", () => {
+    render(<WordsSection title="NOTAMs that matter" testId="w" state={wordsState({ data: ANSWER, error: null })} credit={notamCredit("2026-10-19")} empty={notamNone("2026-10-19")} />);
+    expect(screen.getByTestId("w-words")).toBeTruthy();
+    expect(screen.getByTestId("w-credit").textContent).toBe("FAA NOTAM feed since 19 Oct 2026");
   });
 });

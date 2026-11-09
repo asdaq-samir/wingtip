@@ -454,6 +454,14 @@ def briefing_changes(then: Briefing, now: Briefing) -> list[Source]:
 # --- The endpoints ------------------------------------------------------
 
 
+def _coverage_since() -> str | None:
+    """The day the store first heard the NOTAM feed, ISO date (UTC): NOTAMs
+    issued before it and never changed are not held, so every NOTAM answer
+    says from when it can speak."""
+    t = notams.since()
+    return None if t is None else datetime.fromtimestamp(t, timezone.utc).date().isoformat()
+
+
 @router.post("/api/words/notams/sources")
 def notam_sources(ask: RouteAsk) -> WordsSources:
     """The NOTAMs and TFRs of a flight as sources, with the flight itself
@@ -463,7 +471,7 @@ def notam_sources(ask: RouteAsk) -> WordsSources:
     (wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of
     flight and an hour past, the route's own time not being known here).
     None at all where there is no NOTAM and no TFR: nothing to say.
-    `since`, when the NOTAM feed was first heard; `unchecked`, "tfrs"
+    `coverage_since`, the day the NOTAM feed was first heard (UTC); `unchecked`, "tfrs"
     where tfr.faa.gov did not answer."""
     r = load_route(ask.dep, ask.dest, ask.stops)
     fields = list(dict.fromkeys(i for i, a in zip(r.idents, r.airports) if not a.get("fix")))
@@ -478,7 +486,7 @@ def notam_sources(ask: RouteAsk) -> WordsSources:
         tfrs, unchecked = [], ["tfrs"]
     items = [*map(_notam_source, found), *map(_tfr_source, tfrs)]
     sources = [_flight_source(r.idents[0], r.idents[-1], ask.stops, start), *items] if items else []
-    return WordsSources(sources=sources, since=exposure.iso(notams.since()), unchecked=unchecked)
+    return WordsSources(sources=sources, coverage_since=_coverage_since(), unchecked=unchecked)
 
 
 @router.post("/api/words/weather/sources")

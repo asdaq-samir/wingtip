@@ -1920,11 +1920,15 @@ class WordsSource(BaseModel):
 
 class WordsSources(BaseModel):
     """A reading's sources, in the order they bear on the flight; for the
-    NOTAMs, since when the NOTAM feed has been heard and what could not be
-    checked ("tfrs")."""
+    NOTAMs, the day the NOTAM feed was first heard (`coverage_since`, ISO
+    date) and what could not be checked ("tfrs"). The feed (SWIM's FNS)
+    sends what is issued or changed once it is heard, so NOTAMs issued
+    before that day and never changed are not in the store: the list is
+    what was heard since, not every NOTAM in force (the owner, 2026-11-09,
+    chose the feed alone over the FAA NOTAM API's full load)."""
 
     sources: list[WordsSource]
-    since: str | None = None
+    coverage_since: str | None = None
     unchecked: list[str] = []
 
 

@@ -25,6 +25,10 @@ export interface WordsAnswer {
   /** Why there are no words -- the model could not be reached -- said in
    *  the section's own small text, never a toast; null where there are. */
   unavailable: string | null;
+  /** The NOTAMs' only: the day (ISO date) the planner first heard the FAA's
+   *  NOTAM feed. Earlier NOTAMs never changed since are not held, so the
+   *  words are of what was heard since, never of every NOTAM in force. */
+  coverage_since?: string | null;
 }
 
 export interface DebriefWordsAnswer extends WordsAnswer {

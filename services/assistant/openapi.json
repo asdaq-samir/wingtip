@@ -554,8 +554,19 @@
         "type": "object"
       },
       "NotamWords": {
-        "description": "The NOTAM words, with since when the planner has heard the NOTAM\nfeed (ISO 8601 UTC; None where it has not yet): until the feed's\nfirst load of what was already in force, the list is not the whole\nlist for a field. `unchecked` names \"tfrs\" where tfr.faa.gov did not\nanswer, so an empty list does not read as no TFRs.",
+        "description": "The NOTAM words, with the day the planner first heard the NOTAM\nfeed (`coverage_since`, ISO date; None where it has not yet): the feed\nsends what is issued or changed, so the list is what was heard since,\nnot the whole list for a field (the owner, 2026-11-09). `unchecked` names \"tfrs\" where tfr.faa.gov did not\nanswer, so an empty list does not read as no TFRs.",
         "properties": {
+          "coverage_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Since"
+          },
           "model": {
             "title": "Model",
             "type": "string"
@@ -566,17 +577,6 @@
             },
             "title": "Sentences",
             "type": "array"
-          },
-          "since": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Since"
           },
           "sources": {
             "items": {

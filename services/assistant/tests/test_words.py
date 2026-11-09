@@ -102,11 +102,22 @@ def test_each_reading_passes_its_ask_to_the_planners_sources_and_says_them(monke
 
 
 def test_the_notam_words_carry_the_feeds_since_and_what_was_unchecked(monkeypatch, fake_planner):
-    fake_planner.answer("/api/words/notams/sources", {"sources": [], "since": "2025-10-09T08:53:20Z", "unchecked": ["tfrs"]})
+    fake_planner.answer("/api/words/notams/sources", {"sources": [], "coverage_since": "2025-10-09", "unchecked": ["tfrs"]})
     body = client.post("/api/words/notams", json={"dep": "C81", "dest": "KDLH"}).json()
     # No NOTAM and no TFR: nothing to say, and no call.
     assert body["sentences"] == [] and body["unavailable"] is None
-    assert body["since"] == "2025-10-09T08:53:20Z" and body["unchecked"] == ["tfrs"]
+    assert body["coverage_since"] == "2025-10-09" and body["unchecked"] == ["tfrs"]
+
+
+def test_the_notam_prompt_carries_the_coverage_day_and_never_claims_completeness(monkeypatch, fake_planner):
+    calls = canned(monkeypatch, {"sentences": [{"text": "Runway 09/27 is closed.", "sources": ["notam:DLH 10/012"]}]})
+    fake_planner.answer("/api/words/notams/sources", {
+        "sources": [{"id": "notam:DLH 10/012", "label": "NOTAM DLH 10/012", "text": "RWY 09/27 CLSD"}],
+        "coverage_since": "2026-10-19", "unchecked": []})
+    body = client.post("/api/words/notams", json={"dep": "C81", "dest": "KDLH"}).json()
+    assert "<coverage>NOTAMs heard from the FAA feed since 2026-10-19.</coverage>" in calls[0]
+    assert "Never say there are no NOTAMs" in words.SYSTEM and "none heard since" in words.SYSTEM
+    assert body["coverage_since"] == "2026-10-19"
 
 
 def test_the_changes_make_no_call_when_nothing_changed(monkeypatch, fake_planner):

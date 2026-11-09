@@ -18,11 +18,17 @@ import type { WordsState } from "./wordsState";
  * (lib/problems). The figures the section is about stay in the Brief's
  * own cards either way.
  */
-export default function WordsSection({ title, onMore, testId, state, children }: {
+export default function WordsSection({ title, onMore, testId, state, credit, empty, children }: {
   title: string;
   onMore?: () => void;
   testId: string;
   state: WordsState;
+  /** The credit line under the chips (the NOTAMs': the feed and since
+   *  when), in the note's size: a source line, not a footnote. */
+  credit?: string;
+  /** What no sentence and no failure reads, where there is something to
+   *  say about it (the NOTAMs': none heard since a day). */
+  empty?: string;
   /** Under the words: the debrief's note for the instructor. */
   children?: ReactNode;
 }) {
@@ -40,14 +46,19 @@ export default function WordsSection({ title, onMore, testId, state, children }:
         <p className={cn("text-muted-foreground", TEXT.note)} data-testid={`${testId}-unavailable`}>Words unavailable: {unavailable}</p>
       ) : answer && (
         <>
-          <p className={cn("tabular-nums", TEXT.prose)} data-testid={`${testId}-words`}>
-            {answer.sentences.map((s, i) => <span key={i} data-sources={s.sources.join(" ")}>{i > 0 ? " " : ""}{s.text}</span>)}
-          </p>
+          {answer.sentences.length === 0 && empty ? (
+            <p className={cn("text-muted-foreground", TEXT.prose)} data-testid={`${testId}-empty`}>{empty}</p>
+          ) : (
+            <p className={cn("tabular-nums", TEXT.prose)} data-testid={`${testId}-words`}>
+              {answer.sentences.map((s, i) => <span key={i} data-sources={s.sources.join(" ")}>{i > 0 ? " " : ""}{s.text}</span>)}
+            </p>
+          )}
           {/* Eight under the chips: the next section's title reaches 8 up
               for its 44 points (PillSection), and a chip's 6 down, where
               the NOTAMs' chip lost its area's foot to the weather's title
               on CI's iPad (the iOS audit's P1, 2026-11-05). */}
           <div className="pb-2"><SourceChips sources={answer.sources} testId={`${testId}-source`} /></div>
+          {credit && <p className={cn("text-muted-foreground", TEXT.note)} data-testid={`${testId}-credit`}>{credit}</p>}
           {children}
         </>
       )}

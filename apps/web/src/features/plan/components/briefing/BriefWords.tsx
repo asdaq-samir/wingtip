@@ -5,6 +5,7 @@ import { useVerdict, verdictLine } from "../../../../lib/verdict";
 import { contextNow } from "../ask/useAsk";
 import type { PanelTab } from "../navlog/panelTab";
 import WordsSection from "./WordsSection";
+import { notamCredit, notamNone } from "./briefingWords";
 import { wordsState } from "./wordsState";
 
 /** The words are asked once for a route and its time, and kept: not on
@@ -53,7 +54,8 @@ export function NotamWords({ open }: { open: OpenSection }) {
   if (!plan.routed) return null;
   // The Brief lists no NOTAMs in full but the TFRs, which are NOTAMs: the
   // title opens those.
-  return <WordsSection title="NOTAMs that matter" testId="brief-notam-words" onMore={() => open("preflight", "TFRs & Special Use")} state={wordsState(query)} />;
+  return <WordsSection title="NOTAMs that matter" testId="brief-notam-words" onMore={() => open("preflight", "TFRs & Special Use")} state={wordsState(query)}
+    credit={notamCredit(query.data?.coverage_since)} empty={notamNone(query.data?.coverage_since)} />;
 }
 
 export function WeatherWords({ open }: { open: OpenSection }) {

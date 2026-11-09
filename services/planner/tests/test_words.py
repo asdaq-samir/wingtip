@@ -111,11 +111,20 @@ def test_the_notam_sources_come_from_the_feeds_notams_at_the_fields_landed_at(mo
     assert list(found) == ["flight:route", "notam:DLH 10/012"]
     assert found["notam:DLH 10/012"]["text"] == (
         "!DLH 10/012 DLH RWY 09/27 CLSD 2610011200-PERM\nFrom 2026-10-01T12:00:00Z, until further notice.")
-    assert resp.json()["since"] == "2025-10-09T08:53:20Z" and resp.json()["unchecked"] == []
+    assert resp.json()["coverage_since"] == "2025-10-09" and resp.json()["unchecked"] == []
 
     # No NOTAM and no TFR: nothing at all, not even the flight.
     monkeypatch.setattr(notams, "at_fields", lambda fields, now=None: [])
     assert client.post("/api/words/notams/sources", json={"dep": "C81", "dest": "KDLH"}).json()["sources"] == []
+
+
+def test_the_notam_sources_say_no_day_before_the_feed_has_been_heard(monkeypatch):
+    from wingtip import notams, tfr
+
+    monkeypatch.setattr(notams, "at_fields", lambda fields, now=None: [])
+    monkeypatch.setattr(notams, "since", lambda: None)
+    monkeypatch.setattr(tfr, "along_route", lambda path, start, end: [])
+    assert client.post("/api/words/notams/sources", json={"dep": "C81", "dest": "KDLH"}).json()["coverage_since"] is None
 
 
 def test_the_risk_sources_are_the_findings_the_factors_and_the_pilots_record():

@@ -16417,9 +16417,9 @@
         "type": "object"
       },
       "WordsSources": {
-        "description": "A reading's sources, in the order they bear on the flight; for the\nNOTAMs, since when the NOTAM feed has been heard and what could not be\nchecked (\"tfrs\").",
+        "description": "A reading's sources, in the order they bear on the flight; for the\nNOTAMs, the day the NOTAM feed was first heard (`coverage_since`, ISO\ndate) and what could not be checked (\"tfrs\"). The feed (SWIM's FNS)\nsends what is issued or changed once it is heard, so NOTAMs issued\nbefore that day and never changed are not in the store: the list is\nwhat was heard since, not every NOTAM in force (the owner, 2026-11-09,\nchose the feed alone over the FAA NOTAM API's full load).",
         "properties": {
-          "since": {
+          "coverage_since": {
             "anyOf": [
               {
                 "type": "string"
@@ -16428,7 +16428,7 @@
                 "type": "null"
               }
             ],
-            "title": "Since"
+            "title": "Coverage Since"
           },
           "sources": {
             "items": {
@@ -22142,7 +22142,7 @@
     },
     "/api/words/notams/sources": {
       "post": {
-        "description": "The NOTAMs and TFRs of a flight as sources, with the flight itself\nfirst: the NOTAMs in force or to come at every field the route lands\nat, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's FNS),\nand the TFRs near the route over the briefing's hours\n(wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of\nflight and an hour past, the route's own time not being known here).\nNone at all where there is no NOTAM and no TFR: nothing to say.\n`since`, when the NOTAM feed was first heard; `unchecked`, \"tfrs\"\nwhere tfr.faa.gov did not answer.",
+        "description": "The NOTAMs and TFRs of a flight as sources, with the flight itself\nfirst: the NOTAMs in force or to come at every field the route lands\nat, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's FNS),\nand the TFRs near the route over the briefing's hours\n(wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of\nflight and an hour past, the route's own time not being known here).\nNone at all where there is no NOTAM and no TFR: nothing to say.\n`coverage_since`, the day the NOTAM feed was first heard (UTC); `unchecked`, \"tfrs\"\nwhere tfr.faa.gov did not answer.",
         "operationId": "notam_sources_api_words_notams_sources_post",
         "requestBody": {
           "content": {
