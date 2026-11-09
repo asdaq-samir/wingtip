@@ -1,0 +1,65 @@
+{
+  "_note": "Forecast icing on an IFR route (#216), the engine's icing_forecast_route (engine/crates/brief/src/icing_forecast.rs): each leg's AWC icing cross-section, values level-fastest (values[level + column * data_levels]), 0 none, 1 trace, 2 light, 3 moderate, 4 heavy, negative none forecast; sfc_hgt the ground in metres. The answers are worked by hand from the rule: the levels either side of the altitude flown, the worse of them; a level under the ground is not read; any icing at the altitude, trace or worse, is the Go / No-Go's line (AIM 7-1-19). engine/facade/tests/icing_forecast.rs asks the engine each case; the planner asks the same name.",
+  "levels_ft": [3000, 4000, 5000, 6000],
+  "routes": [
+    {
+      "about": "Light icing on a third of leg 1 at 4,000 ft; moderate at 4,500 ft on leg 2, between two levels, read from the worse; leg 3 not had; leg 4's icing is under the ground",
+      "legs": [
+        {"altitude_ft": 4000, "valid_s": 1794200400,
+         "section": {"width": 3, "data_levels": 4, "values": [0, 0, 0, 0, 0, 2, 1, 0, 0, 0, 0, 0], "sfc_hgt": [200, 200, 200]}},
+        {"altitude_ft": 4500, "valid_s": 1794204000,
+         "section": {"width": 2, "data_levels": 4, "values": [0, 0, 3, 0, 0, 0, 0, 0], "sfc_hgt": [200, 200]}},
+        {"altitude_ft": 5000, "section": null},
+        {"altitude_ft": 6000,
+         "section": {"width": 1, "data_levels": 4, "values": [2, 0, 0, 0], "sfc_hgt": [1000]}}
+      ],
+      "answer": {
+        "legs": [
+          {"index": 0, "altitude_ft": 4000, "severity": "light", "share": 0.33, "layer": {"bottom_ft": 4000, "top_ft": 5000}, "valid_s": 1794200400},
+          {"index": 1, "altitude_ft": 4500, "severity": "moderate", "share": 0.5, "layer": {"bottom_ft": 5000, "top_ft": 5000}, "valid_s": 1794204000},
+          {"index": 2, "altitude_ft": 5000, "severity": null, "share": null, "layer": null, "valid_s": null},
+          {"index": 3, "altitude_ft": 6000, "severity": "none", "share": 0, "layer": null, "valid_s": null}
+        ],
+        "worst": {"severity": "moderate", "altitudes_ft": [4500], "legs": [1]},
+        "unchecked": [2],
+        "line": "Forecast icing, moderate, at 4,500 ft on leg 2"
+      }
+    },
+    {
+      "about": "Trace on two legs at two altitudes: still the line's, by AIM 7-1-19",
+      "legs": [
+        {"altitude_ft": 4000, "section": {"width": 1, "data_levels": 4, "values": [0, 1, 0, 0]}},
+        {"altitude_ft": 6000, "section": {"width": 1, "data_levels": 4, "values": [0, 0, 0, 1]}}
+      ],
+      "answer": {
+        "legs": [
+          {"index": 0, "altitude_ft": 4000, "severity": "trace", "share": 1, "layer": {"bottom_ft": 4000, "top_ft": 4000}, "valid_s": null},
+          {"index": 1, "altitude_ft": 6000, "severity": "trace", "share": 1, "layer": {"bottom_ft": 6000, "top_ft": 6000}, "valid_s": null}
+        ],
+        "worst": {"severity": "trace", "altitudes_ft": [4000, 6000], "legs": [0, 1]},
+        "unchecked": [],
+        "line": "Forecast icing, trace, at 4,000 and 6,000 ft on legs 1 and 2"
+      }
+    },
+    {
+      "about": "Icing over the leg, none at the altitude flown; and a leg with no forecast at its altitude is unchecked",
+      "legs": [
+        {"altitude_ft": 3000, "section": {"width": 2, "data_levels": 4, "values": [0, 0, 4, 4, 0, 0, 0, 0]}},
+        {"altitude_ft": 4000, "section": {"width": 1, "data_levels": 4, "values": [-1, -1, -1, -1]}}
+      ],
+      "answer": {
+        "legs": [
+          {"index": 0, "altitude_ft": 3000, "severity": "none", "share": 0, "layer": {"bottom_ft": 5000, "top_ft": 6000}, "valid_s": null},
+          {"index": 1, "altitude_ft": 4000, "severity": null, "share": null, "layer": null, "valid_s": null}
+        ],
+        "worst": null,
+        "unchecked": [1],
+        "line": null
+      }
+    }
+  ],
+  "refused": [
+    {"about": "values that do not fill the section", "legs": [{"altitude_ft": 4000, "section": {"width": 2, "data_levels": 4, "values": [0, 0, 0]}}]},
+    {"about": "a section with other levels than levels_ft", "legs": [{"altitude_ft": 4000, "section": {"width": 1, "data_levels": 3, "values": [0, 0, 0]}}]}
+  ]
+}

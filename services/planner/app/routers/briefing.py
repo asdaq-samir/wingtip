@@ -20,10 +20,11 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
 from wingtip import airports, airspace, alternates, altitude, data_cycles, geo, pattern, publications, runway_wind, tfr, weather
+from wingtip import icing_forecast
 
 from .. import exposure
 from ..router_basics import load_route
-from ..schemas import Alternates, Briefing, MapLayerAges, Tfrs
+from ..schemas import Alternates, Briefing, IcingForecast, MapLayerAges, Tfrs
 
 #: How long past the arrival the forecast is read over, and the flight
 #: assumed when the caller does not say how long it is.
@@ -327,3 +328,25 @@ def alternate(dest: str, eta: datetime, tas_kt: float = 110.0, alternate: str = 
         )
     except weather.WeatherServiceError as err:
         raise HTTPException(502, "aviationweather.gov did not answer, so the alternate could not be checked.") from err
+
+
+@router.get("/api/icing/route")
+def icing_on_the_route(fixes: str, alt_ft: str, leg_min: str, ground_min: str = "",
+                       depart: datetime | None = None) -> IcingForecast:
+    """Under IFR, the AWC's forecast icing on each leg at the altitude it
+    is flown (wingtip.icing_forecast; AIM 7-1-4, 7-1-19): the nav log's
+    `fixes` ("lat,lon;lat,lon", one more than its legs), each leg's
+    altitude `alt_ft` and ETE `leg_min`, and its minutes on the ground
+    after it `ground_min`, the flight leaving at `depart` (now when not
+    given; UTC when naive). Each leg is read for the hour of its middle."""
+    path = _fixes(fixes)
+    altitudes, minutes = _numbers(alt_ft, "alt_ft"), _numbers(leg_min, "leg_min")
+    if not path or not altitudes or not minutes:
+        raise HTTPException(422, "fixes, alt_ft and leg_min are needed, one more fix than legs.")
+    start = time.time() if depart is None else (depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)).timestamp()
+    try:
+        return icing_forecast.along(path, altitudes, minutes, _numbers(ground_min, "ground_min"), start)
+    except ValueError as err:
+        raise HTTPException(422, str(err)) from err
+    except icing_forecast.IcingForecastUnavailable as err:
+        raise HTTPException(502, "aviationweather.gov did not answer, so the forecast icing could not be checked.") from err
