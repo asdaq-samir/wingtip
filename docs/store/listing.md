@@ -16,7 +16,7 @@ quote marks and with each bullet on one line.
 
 The stores' text says what the app itself says, in its words: the web's
 `apps/web/src/components/planningAid.ts` and the terms
-(`apps/web/public/terms.html#planning-aid`), and the native kneeboards'
+(`apps/web/public/terms.html#a-planning-aid-not-for-navigation`), and the native kneeboards'
 footer (`apps/ios/Wingtip/Views/Kneeboard.swift`: "a planning aid: check
 the charts, NOTAMs and an official briefing before flight"). The
 description's last paragraph is that sentence, word for word:

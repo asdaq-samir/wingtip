@@ -11,8 +11,10 @@ NextCycle
 # pytest fixtures a test asks for by parameter for what they set up (a
 # store written, a module patched), not for a value it reads.
 a_vfr_waypoint
+east_of_madison
 flat_world
 remarks_csv
+round_oshkosh
 the_rockford_dme
 two_abs
 two_tfrs
