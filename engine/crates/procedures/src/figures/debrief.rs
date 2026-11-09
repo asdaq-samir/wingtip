@@ -132,7 +132,8 @@ fn place(c: &Checkpoint) -> (f64, f64) {
 
 /// Ground speed at each point, knots: over at least ten seconds round it,
 /// which a one-second GPS's jitter would otherwise make a mess of.
-fn ground_speeds(points: &[Point]) -> Vec<f64> {
+/// The logbook drawn from a track (pilot::autolog) reads them too.
+pub fn ground_speeds(points: &[Point]) -> Vec<f64> {
     let last = points.len().saturating_sub(1);
     (0..points.len())
         .map(|i| {

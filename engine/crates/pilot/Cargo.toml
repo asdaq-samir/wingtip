@@ -3,7 +3,7 @@ name = "wingtip-pilot"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "The pilot's records and the airplanes: a checklist, the logbook's CSV file, a handbook page, endorsements and ACS codes, the traffic list's filters and an airplane by its N-number"
+description = "The pilot's records and the airplanes: a checklist, the logbook's CSV file, a handbook page, endorsements and ACS codes, a logbook entry drawn from a flown track, the traffic list's filters and an airplane by its N-number"
 
 [lib]
 name = "wingtip_pilot"
@@ -13,3 +13,8 @@ name = "wingtip_pilot"
 [dependencies]
 wingtip-core = { path = "../core" }
 wingtip-flight = { path = "../flight" }
+# The logbook entry drawn from a flown track (autolog): the track's
+# flights and ground speeds (procedures' debrief) and the approaches it
+# flew, matched to the CIFP's (route's approach), without route options.
+wingtip-procedures = { path = "../procedures" }
+wingtip-route = { path = "../route", default-features = false }

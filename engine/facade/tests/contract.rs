@@ -89,6 +89,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/radio/src/mayday.rs"),
         include_str!("../../crates/brief/src/icing_forecast.rs"),
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
+        include_str!("../../crates/pilot/src/autolog/mod.rs"),
         include_str!("../../crates/route/src/approach/calls.rs"),
         include_str!("../../crates/route/src/route/answers.rs"),
         include_str!("../../crates/route/src/navlog/calls.rs"),
@@ -212,6 +213,11 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in currency["experience"].as_array().unwrap() {
         c.ask("pilot_experience", json!({ "entries": case["entries"], "today": case["today"] }));
     }
+    let track = fixture("logbookTrack.json");
+    c.ask("logbook_track_places", json!({ "points": track["points"] }));
+    c.ask("logbook_from_track", json!({ "points": track["points"], "fields": track["fields"], "drawings": track["drawings"],
+        "picked": track["picked"], "aircraft": track["aircraft"], "aircraft_type": track["aircraft_type"],
+        "utc_offset_min": track["utc_offset_min"] }));
 
     c.ask("drill_decks", json!({}));
     let altitudes = fixture("altitudes.json");
