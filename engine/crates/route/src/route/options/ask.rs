@@ -9,9 +9,7 @@ use super::grid::Area;
 use crate::json::Value;
 use wingtip_core::grid::Point;
 
-/// The still-air speed the ways are costed at with no airplane: it orders
-/// them by distance and times the weather window, and no figure the pilot
-/// sees is worked from it.
+/// The still-air speed the ways are costed at with no airplane (Profile).
 pub const REFERENCE_TAS_KT: f64 = 100.0;
 
 pub struct End {
@@ -20,11 +18,10 @@ pub struct End {
 }
 
 /// The airplane, or none picked (`airplane` false): the ways are then the
-/// route's own -- costed in still air at REFERENCE_TAS_KT, which only
-/// orders them and times the weather window -- with no minutes, fuel or
-/// fuel stops, which need an airplane (the owner, 2026-11-09: "If no
-/// airplane is entered, only show the distance and the things you can
-/// without airplane profile, don't assume").
+/// route's own, costed in still air at REFERENCE_TAS_KT (which only orders
+/// them and times the weather window), with no minutes, fuel or fuel
+/// stops (the owner, 2026-11-09: "If no airplane is entered, only show
+/// the distance and the things you can without airplane profile").
 pub struct Profile {
     pub airplane: bool,
     pub tas_kt: f64,
