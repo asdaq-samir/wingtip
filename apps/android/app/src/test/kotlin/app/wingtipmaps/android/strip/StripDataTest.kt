@@ -71,6 +71,7 @@ class StripDataTest {
         assertEquals("121.75", StripData.mhzText(121.75))
         assertEquals("MH 318 · 24 NM", StripData.legFigures(state.legs[0]))
         assertEquals("MH 000 · 24 NM", StripData.legFigures(state.legs[0].copy(magneticHeadingDeg = 359.6)))
+        assertEquals("MH — · 24 NM", StripData.legFigures(state.legs[0].copy(magneticHeadingDeg = null)))
         val utc = ZoneId.of("UTC")
         assertEquals("14:10", StripData.clockTime(1_762_265_400_000L, utc))
         assertEquals("15:15", StripData.timeAt(1_762_265_400_000L, 65.0, utc))

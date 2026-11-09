@@ -198,9 +198,13 @@ object StripData {
         state.totals?.fuelGal?.let { String.format(Locale.US, "%.1f gal", it) },
     ).joinToString(" · ")
 
-    /** The checkpoint row's figures, "MH 318 · 24 NM". */
-    fun legFigures(leg: Leg): String =
-        String.format(Locale.US, "MH %03d · %.0f NM", ((leg.magneticHeadingDeg.roundToInt() % 360) + 360) % 360, leg.distanceNm)
+    /** The checkpoint row's figures, "MH 318 · 24 NM". The heading needs
+     *  the airplane's airspeed against the wind: with no airplane chosen the
+     *  planner sends none, and the row writes a dash, "MH — · 24 NM". */
+    fun legFigures(leg: Leg): String {
+        val heading = leg.magneticHeadingDeg?.let { String.format(Locale.US, "%03d", ((it.roundToInt() % 360) + 360) % 360) } ?: "—"
+        return String.format(Locale.US, "MH %s · %.0f NM", heading, leg.distanceNm)
+    }
 
     /** The screens the field's chips offer, each handled as typed: how a
      *  pilot finds the rest without tabs (the web's stripSuggestions). */

@@ -252,11 +252,11 @@ struct FlightServiceView: View {
     /// endurance typed (the pilot's fuel aboard).
     /// Thrown where the engine cannot write an item, which the form says.
     private func request() throws -> FlightPlanFilingRequest? {
-        guard plan.routed, let first = plan.legs.first, let ete = plan.totals?.eteMin, !aircraftId.isEmpty, !aircraftType.isEmpty else { return nil }
+        guard plan.routed, let first = plan.legs.first, let tas = first.tasKt, let ete = plan.totals?.eteMin, !aircraftId.isEmpty, !aircraftType.isEmpty else { return nil }
         let digits = endurance.filter(\.isNumber)
         guard digits.count == 4, let hours = Int(digits.prefix(2)), let minutes = Int(digits.suffix(2)), minutes < 60 else { return nil }
         let pob = Int(persons.filter(\.isNumber)).flatMap { (1...999).contains($0) ? $0 : nil }
-        return FlightPlanFilingRequest(aircraftId: aircraftId.uppercased(), aircraftType: aircraftType.uppercased(), cruisingLevel: try FilingForm.cruisingLevel(first.altitudeFt), cruisingSpeed: try FilingForm.cruisingSpeed(first.tasKt), departure: plan.dep, departureTime: ISO8601DateFormatter().string(from: departs), destination: plan.dest, eetMinutes: Int(ete.rounded(.up)), enduranceMinutes: hours * 60 + minutes, personsOnBoard: pob, route: try FilingForm.route(plan.stops), rules: "VFR")
+        return FlightPlanFilingRequest(aircraftId: aircraftId.uppercased(), aircraftType: aircraftType.uppercased(), cruisingLevel: try FilingForm.cruisingLevel(first.altitudeFt), cruisingSpeed: try FilingForm.cruisingSpeed(tas), departure: plan.dep, departureTime: ISO8601DateFormatter().string(from: departs), destination: plan.dest, eetMinutes: Int(ete.rounded(.up)), enduranceMinutes: hours * 60 + minutes, personsOnBoard: pob, route: try FilingForm.route(plan.stops), rules: "VFR")
     }
 
     private func file() async {
@@ -480,7 +480,9 @@ enum RouteShare {
                           totals.fuelGal.map(AirportWords.gal)].compactMap { $0 }.joined(separator: " · "))
         }
         for leg in plan.legs {
-            lines.append(String(format: "%@ → %@  %05.0f ft  MH %03.0f°  %.1f nm  %@  %@", leg.from, leg.to, leg.altitudeFt, leg.magneticHeadingDeg, leg.distanceNm,
+            // No heading without an airplane: the planner sends none.
+            let heading = leg.magneticHeadingDeg.map { String(format: "MH %03.0f°", $0) } ?? ""
+            lines.append(String(format: "%@ → %@  %05.0f ft  %@  %.1f nm  %@  %@", leg.from, leg.to, leg.altitudeFt, heading, leg.distanceNm,
                                 leg.groundspeedKt.map { String(format: "GS %.0f kt", $0) } ?? "", leg.eteMin.map(hoursMinutes) ?? ""))
         }
         return lines.joined(separator: "\n")
@@ -560,10 +562,7 @@ struct Kneeboard: View {
                 Text("Date ________").font(.system(size: 9))
             }
             Rectangle().frame(height: 1.5)
-            Text([aircraft, totals.map { AirportWords.nm($0.distanceNm) }, totals?.eteMin.map(hoursMinutes),
-                  totals?.fuelGal.map(AirportWords.gal),
-                  totals?.fuelRequiredGal.map { "(\(Formats.number($0, decimals: 1)) with reserve)" }].compactMap { $0 }.joined(separator: " · "))
-                .font(.system(size: 9))
+            Text(summary).font(.system(size: 9))
             Grid(alignment: .leading, horizontalSpacing: 6, verticalSpacing: 3) {
                 GridRow {
                     ForEach(["Checkpoint", "Alt", "MH", "Dist", "GS", "ETE", "ETA", "ATA", "Fuel", "Rem"], id: \.self) { Text($0).bold() }
@@ -573,7 +572,7 @@ struct Kneeboard: View {
                     GridRow {
                         Text(leg.to).lineLimit(1)
                         Text(Int(leg.altitudeFt).formatted())
-                        Text(Formats.number(leg.magneticHeadingDeg, decimals: 0).leftPadded(to: 3))
+                        Text(leg.magneticHeadingDeg.map { Formats.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
                         Text(Formats.number(leg.distanceNm, decimals: 1))
                         Text(leg.groundspeedKt.map { Formats.number($0, decimals: 0) } ?? "")
                         Text(leg.eteMin.map { Formats.number($0, decimals: 1) } ?? "")
@@ -595,6 +594,19 @@ struct Kneeboard: View {
         .foregroundStyle(.black)
         .background(.white)
         .environment(\.colorScheme, .light)
+    }
+
+    /// The airplane and the totals it has: with no airplane chosen the
+    /// planner sends the miles alone, and the line leaves the rest out.
+    private var summary: String {
+        let parts: [String?] = [
+            aircraft,
+            totals.map { AirportWords.nm($0.distanceNm) },
+            totals?.eteMin.map(hoursMinutes),
+            totals?.fuelGal.map(AirportWords.gal),
+            totals?.fuelRequiredGal.map { "(\(Formats.number($0, decimals: 1)) with reserve)" },
+        ]
+        return parts.compactMap { $0 }.joined(separator: " · ")
     }
 
     /// The page as a PDF in the temporary folder, for the share sheet.

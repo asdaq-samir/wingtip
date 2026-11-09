@@ -28,13 +28,16 @@ struct StripAir: View {
                             .lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    if let leg = next.leg {
+                    // The heading needs the airplane's airspeed against the
+                    // wind; with no airplane chosen the planner sends none,
+                    // and the strip shows no heading rather than a guess.
+                    if let heading = next.leg?.magneticHeadingDeg {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("MH").condensedCaps(.caption).foregroundStyle(ink.muted)
-                            Text(String(format: "%03d", Int(leg.magneticHeadingDeg.rounded()))).font(ChartInk.figure(28))
+                            Text(String(format: "%03d", Int(heading.rounded()))).font(ChartInk.figure(28))
                         }
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Magnetic heading \(SpokenFigures.degrees(leg.magneticHeadingDeg))")
+                        .accessibilityLabel("Magnetic heading \(SpokenFigures.degrees(heading))")
                     }
                     if let fix, let at = next.coordinate {
                         let nm = Flight.nm(from: fix.coordinate, to: at)

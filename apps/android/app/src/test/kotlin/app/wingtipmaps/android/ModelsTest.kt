@@ -24,7 +24,7 @@ class ModelsTest {
         assertEquals("KENW", leg.to)
         assertEquals(12.3, leg.distanceNm, 1e-9)
         assertEquals(3500.0, leg.altitudeFt, 1e-9)
-        assertEquals(350.0, leg.magneticHeadingDeg, 1e-9)
+        assertEquals(350.0, leg.magneticHeadingDeg!!, 1e-9)
         assertEquals(7.0, leg.eteMin!!, 1e-9)
         assertEquals(270.0, leg.wind?.windDirTrueDeg!!, 1e-9)
         assertNull(leg.climbMin)

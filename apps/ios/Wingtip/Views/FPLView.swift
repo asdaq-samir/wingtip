@@ -237,7 +237,9 @@ struct LegRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(leg.to).font(.headline)
                 HStack(spacing: 10) {
-                    Text(AirportWords.degrees(leg.magneticHeadingDeg))
+                    // No heading without an airplane: the planner sends
+                    // none, and the row shows the figures it has.
+                    if let heading = leg.magneticHeadingDeg { Text(AirportWords.degrees(heading)) }
                     if let gs = leg.groundspeedKt { Text(AirportWords.kt(gs)) }
                     if let wind = leg.wind {
                         let (dir, kt) = (wind.windDirTrueDeg, wind.windSpeedKt)
@@ -266,7 +268,8 @@ struct LegRow: View {
     /// nine zero, ninety-eight knots, wind two seven zero at twelve, twenty
     /// nautical miles, twelve minutes, one point four gallons".
     private var spoken: String {
-        var parts = ["To \(leg.to)", "heading \(SpokenFigures.degrees(leg.magneticHeadingDeg))"]
+        var parts = ["To \(leg.to)"]
+        if let heading = leg.magneticHeadingDeg { parts.append("heading \(SpokenFigures.degrees(heading))") }
         if let gs = leg.groundspeedKt { parts.append(SpokenFigures.knots(gs)) }
         if let wind = leg.wind {
             let (dir, kt) = (wind.windDirTrueDeg, wind.windSpeedKt)
