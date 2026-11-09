@@ -5020,6 +5020,14 @@ enum EngineContract {
         var approaches: Double
         var holding: Bool
         var tracking: Bool
+        /// Takeoff roll to landing roll, to the tenth, at most the flight time; 0 where the file gives none.
+        var airHours: Double
+        /// Of the day landings, those not to a full stop (61.57(a) counts them, (b) does not).
+        var touchAndGoes: Double
+        /// Always false: read from a file.
+        var fromTrack: Bool
+        /// Always null: a file opens no saved flight.
+        var flightId: Int?
     }
 
     struct LogbookCsvReadAnswerSkippedItem: Codable, Equatable, Sendable {

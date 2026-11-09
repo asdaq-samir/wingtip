@@ -24,4 +24,5 @@ pub mod handbook;
 pub mod js;
 pub mod kinds;
 pub mod logbook;
+pub mod logbook_derived;
 pub mod records;

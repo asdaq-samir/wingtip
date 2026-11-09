@@ -939,7 +939,7 @@ extension Engine {
         try rule("legal_cruising_altitudes", EngineContract.LegalCruisingAltitudesInput(floorFt: floorFt, ceilingFt: ceilingFt, magneticCourseDeg: magneticCourseDeg, ruleFromFt: ruleFromFt, rules: rules))
     }
 
-    /// A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them.
+    /// A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.
     static func logbookCsvRead(text: String) throws -> EngineContract.LogbookCsvReadAnswer {
         try rule("logbook_csv_read", EngineContract.LogbookCsvReadInput(text: text))
     }

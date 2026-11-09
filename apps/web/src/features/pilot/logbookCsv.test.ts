@@ -42,6 +42,9 @@ describe("the logbook as CSV", () => {
       totalHours: 3.6, nightHours: 1.2, crossCountryHours: 3.6, distanceNm: 135,
       // Four landings, one a full stop at night: three by day for 61.57(a).
       dayLandings: 3, nightLandings: 1,
+      // Wheels off and on are not given: no air time known. Of the four,
+      // one is a touch-and-go (two full stops by day, one at night).
+      airHours: 0, touchAndGoes: 1, fromTrack: false, flightId: null,
       instrumentHours: 1.3, approaches: 3, holding: true, tracking: false,
       remarks: 'Night XC, "hood" back',
     });
@@ -57,10 +60,11 @@ describe("the logbook as CSV", () => {
       id: 1, flownOn: "2026-10-01", aircraft: "N12345", aircraftType: "C172", route: "C81 KDLH", totalHours: 3.4, nightHours: 0.5,
       crossCountryHours: 3.4, dayLandings: 2, nightLandings: 1, remarks: "Smooth, then \"bumpy\"", dualHours: 0, soloHours: 3.4,
       instrumentHours: 0.3, toweredLandings: 1, distanceNm: 230, longestLegNm: 230, approaches: 2, holding: true, tracking: true,
+      airHours: 3.1, touchAndGoes: 1, fromTrack: false, flightId: null,
       createdAt: "2026-10-01T20:00:00Z", ...over,
     } as LogbookEntry);
     const written = logbookCsv([entry({}), entry({ id: 2, flownOn: "2026-09-01", route: null, remarks: null, holding: false, tracking: false })]);
-    expect(written.split("\r\n")[0]).toBe("Date,AircraftID,TypeCode,Route,TotalTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments");
+    expect(written.split("\r\n")[0]).toBe("Date,AircraftID,TypeCode,Route,TotalTime,AirTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,TouchAndGoes,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments");
     const { entries, skipped } = importLogbook(written);
     expect(skipped).toEqual([]);
     expect(entries.map(e => e.flownOn)).toEqual(["2026-09-01", "2026-10-01"]);

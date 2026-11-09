@@ -32,11 +32,13 @@ struct PilotRecordsTests {
     }
 
     @Test func aLogbookEntryAndCurrencyWithEveryColumn() throws {
-        let entry = #"{"id":4,"flownOn":"2026-10-12","aircraft":"N3429J","aircraftType":"P28A","route":"KDLH KHIB","remarks":"","totalHours":1.4,"nightHours":0,"crossCountryHours":1.4,"dualHours":1.4,"soloHours":0,"instrumentHours":0.3,"dayLandings":2,"nightLandings":0,"toweredLandings":1,"distanceNm":62,"longestLegNm":62,"approaches":1,"holding":true,"tracking":false}"#
+        let entry = #"{"id":4,"flownOn":"2026-10-12","aircraft":"N3429J","aircraftType":"P28A","route":"KDLH KHIB","remarks":"","totalHours":1.4,"nightHours":0,"crossCountryHours":1.4,"dualHours":1.4,"soloHours":0,"instrumentHours":0.3,"dayLandings":2,"nightLandings":0,"toweredLandings":1,"distanceNm":62,"longestLegNm":62,"approaches":1,"holding":true,"tracking":false,"airHours":1.3,"touchAndGoes":1,"fromTrack":true,"flightId":40}"#
         let e = try JSONDecoder().decode(LogbookEntry.self, from: Data(entry.utf8))
         #expect(e.dualHours == 1.4 && e.toweredLandings == 1 && e.holding == true)
         let request = LogbookEntryRequest(e)
         #expect(request.longestLegNm == 62 && request.approaches == 1)
+        // An entry drawn from the track keeps its air time and its flight.
+        #expect(request.airHours == 1.3 && request.touchAndGoes == 1 && request.fromTrack && request.flightId == 40)
         // Blank words go as nothing, not as "".
         let sent = try JSONSerialization.jsonObject(with: JSONEncoder().encode(request.trimmed)) as? [String: Any]
         #expect(sent?["remarks"] == nil && sent?["route"] as? String == "KDLH KHIB")
@@ -116,6 +118,9 @@ struct PilotWordsTests {
         let e = read.entries[0]
         #expect(e.flownOn == "2026-10-12" && e.aircraftType == "P28A" && e.route == "KDLH KHIB")
         #expect(e.dayLandings == 2 && e.nightLandings == 1 && e.approaches == 3 && e.instrumentHours == 0.5 && e.holding && e.remarks == "Wind, gusty")
+        // No wheels off and on in the file: no air time known, not the
+        // flight time; a file's entry is never one from a track.
+        #expect(e.airHours == 0 && e.touchAndGoes == 0 && !e.fromTrack && e.flightId == nil)
         #expect(read.skipped.map(\.line) == [10, 11])
         #expect(read.skipped[0].reason.contains("more than a day"))
         // A spreadsheet's date read as ForeFlight writes it, one cut short
@@ -126,7 +131,7 @@ struct PilotWordsTests {
     }
 
     @Test func theLogbooksOwnFileReadsBackTheSame() throws {
-        let json = #"[{"id":1,"flownOn":"2026-10-12","aircraft":"N3429J","aircraftType":"P28A","route":"KDLH KHIB","remarks":"Say \"again\", please","totalHours":1.4,"nightHours":0.5,"crossCountryHours":1.4,"dualHours":1.0,"soloHours":0.4,"instrumentHours":0.3,"dayLandings":2,"nightLandings":1,"toweredLandings":1,"distanceNm":62,"longestLegNm":62,"approaches":2,"holding":true,"tracking":true}]"#
+        let json = #"[{"id":1,"flownOn":"2026-10-12","aircraft":"N3429J","aircraftType":"P28A","route":"KDLH KHIB","remarks":"Say \"again\", please","totalHours":1.4,"nightHours":0.5,"crossCountryHours":1.4,"dualHours":1.0,"soloHours":0.4,"instrumentHours":0.3,"dayLandings":2,"nightLandings":1,"toweredLandings":1,"distanceNm":62,"longestLegNm":62,"approaches":2,"holding":true,"tracking":true,"airHours":1.2,"touchAndGoes":1,"fromTrack":false,"flightId":null}]"#
         let entries = try JSONDecoder().decode([LogbookEntry].self, from: Data(json.utf8))
         let back = try LogbookCSV.read(try LogbookCSV.csv(entries))
         #expect(back.skipped.isEmpty)

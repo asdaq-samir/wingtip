@@ -13,21 +13,32 @@
 //! landings as day landings (all of them, which 14 CFR 61.57(a) counts by
 //! day or night) beside the night full-stop ones (61.57(b)).
 //!
+//! Of the columns an entry drawn from the app's track adds (V34), the air
+//! time and the touch-and-goes are written under names of this logbook's
+//! own (ForeFlight has neither) and read back from them, else from
+//! ForeFlight's wheels off and on and its landings (logbook_derived); an
+//! entry read from a file was not drawn from a track and opens no saved
+//! flight, wherever it was first logged.
+//!
 //! The web app's lib/logbookCsv, moved here whole; the entries are the
 //! gateway's LogbookEntryRequest, camelCase, as the apps send them.
 
 use super::csv;
 use super::js;
+use super::logbook_derived;
 use crate::json::{self, Value};
 
 /// The columns written, ForeFlight's names where it has the field, each
 /// with the entry's member it is written from.
-const OUT: [(&str, &str); 19] = [
+const OUT: [(&str, &str); 21] = [
     ("Date", "flownOn"),
     ("AircraftID", "aircraft"),
     ("TypeCode", "aircraftType"),
     ("Route", "route"),
     ("TotalTime", "totalHours"),
+    // Takeoff roll to landing roll; ForeFlight keeps it as TimeOff and
+    // TimeOn instead.
+    ("AirTime", "airHours"),
     ("Night", "nightHours"),
     ("CrossCountry", "crossCountryHours"),
     ("Solo", "soloHours"),
@@ -36,6 +47,8 @@ const OUT: [(&str, &str); 19] = [
     // Every landing, by day and at night: dayLandings + nightLandings.
     ("AllLandings", ""),
     ("NightLandingsFullStop", "nightLandings"),
+    // Among AllLandings: those not to a full stop.
+    ("TouchAndGoes", "touchAndGoes"),
     ("ToweredLandings", "toweredLandings"),
     ("Distance", "distanceNm"),
     ("LongestLeg", "longestLegNm"),
@@ -292,7 +305,24 @@ pub fn read(text_in: &str) -> (Vec<String>, Vec<Skipped>) {
         num(&mut e, "longestLegNm", hours(at("longestleg")));
         num(&mut e, "approaches", approaches);
         e.push_str(&format!(",\"holding\":{}", count(at("holds")) > 0.0));
-        e.push_str(&format!(",\"tracking\":{}}}", yes(at("tracking"))));
+        e.push_str(&format!(",\"tracking\":{}", yes(at("tracking"))));
+        // This logbook's own AirTime, else ForeFlight's wheels off to on,
+        // else none known (logbook_derived says why not the flight time).
+        let air = if has("airtime") {
+            hours(at("airtime")).min(total)
+        } else {
+            logbook_derived::air_hours(at("timeoff"), at("timeon"), total).unwrap_or(0.0)
+        };
+        num(&mut e, "airHours", air);
+        let given = |n: &str| at(n).filter(|s| !js::trim(s).is_empty()).map(|s| count(Some(s)));
+        let touch_and_goes = if has("touchandgoes") {
+            count(at("touchandgoes"))
+        } else {
+            logbook_derived::touch_and_goes(given("alllandings"), given("daylandingsfullstop"), night)
+        };
+        // Never more than the day landings that hold them.
+        num(&mut e, "touchAndGoes", touch_and_goes.min((all - night).max(0.0)));
+        e.push_str(",\"fromTrack\":false,\"flightId\":null}");
         entries.push(e);
     }
     (entries, skipped)

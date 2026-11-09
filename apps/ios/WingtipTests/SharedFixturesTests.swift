@@ -214,6 +214,7 @@ struct SharedFixturesTests {
                 a.dayLandings == b.dayLandings, a.nightLandings == b.nightLandings, a.toweredLandings == b.toweredLandings,
                 roughly(a.distanceNm, b.distanceNm), roughly(a.longestLegNm, b.longestLegNm), a.approaches == b.approaches,
                 a.holding == b.holding, a.tracking == b.tracking,
+                roughly(a.airHours, b.airHours), a.touchAndGoes == b.touchAndGoes, a.fromTrack == b.fromTrack, a.flightId == b.flightId,
             ]
             return !fields.contains(false)
         }

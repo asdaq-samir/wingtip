@@ -147,6 +147,7 @@ fn writes_its_own_oldest_first_and_reads_it_back_as_it_was() {
             "id": 1, "flownOn": "2026-10-01", "aircraft": "N12345", "aircraftType": "C172", "route": "C81 KDLH", "totalHours": 3.4, "nightHours": 0.5,
             "crossCountryHours": 3.4, "dayLandings": 2, "nightLandings": 1, "remarks": "Smooth, then \"bumpy\"", "dualHours": 0, "soloHours": 3.4,
             "instrumentHours": 0.3, "toweredLandings": 1, "distanceNm": 230, "longestLegNm": 230, "approaches": 2, "holding": true, "tracking": true,
+            "airHours": 3.1, "touchAndGoes": 1, "fromTrack": false, "flightId": null,
             "createdAt": "2026-10-01T20:00:00Z",
         });
         for (k, v) in over.as_object().unwrap() {
@@ -161,7 +162,7 @@ fn writes_its_own_oldest_first_and_reads_it_back_as_it_was() {
     let written = written.as_str().unwrap();
     assert_eq!(
         written.split("\r\n").next().unwrap(),
-        "Date,AircraftID,TypeCode,Route,TotalTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments"
+        "Date,AircraftID,TypeCode,Route,TotalTime,AirTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,TouchAndGoes,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments"
     );
     let read = ask("logbook_csv_read", json!({ "text": written }));
     assert_eq!(read["skipped"], json!([]));

@@ -4875,6 +4875,22 @@ object EngineContract {
         val approaches: Double,
         val holding: Boolean,
         val tracking: Boolean,
+        /**
+         * Takeoff roll to landing roll, to the tenth, at most the flight time; 0 where the file gives none.
+         */
+        val airHours: Double,
+        /**
+         * Of the day landings, those not to a full stop (61.57(a) counts them, (b) does not).
+         */
+        val touchAndGoes: Double,
+        /**
+         * Always false: read from a file.
+         */
+        val fromTrack: Boolean,
+        /**
+         * Always null: a file opens no saved flight.
+         */
+        val flightId: Int? = null,
     )
 
     @Serializable
