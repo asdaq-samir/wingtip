@@ -381,6 +381,23 @@ test("an airport's card keeps its field in sight: the next position the GPS give
   await fieldClearOfCard(page, "KDLH");
 });
 
+test("a route fitted at the pill and untouched is fitted again above the half sheet as it settles there", async ({ page }) => {
+  // The FPL audit's A13 (2026-11-08): KUGN to KOSH fitted at the pill,
+  // the sheet up to half slid the map half the sheet's move, and KOSH
+  // ended 94 points off the top. The owner's rule: the route in sight at
+  // its fitted size is fitted again to what the sheet leaves.
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  await page.goto("/app/plan?dep=KUGN&dest=KOSH");
+  await settle(page);
+  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  await fittedClearOf(page, sideDrawer(page));
+  await grabberTo(page, "half");
+  await settled(sideDrawer(page));
+  await mapStill(page);
+  await fittedClearOf(page, sideDrawer(page));
+  await fieldClearOfCard(page, "KOSH");
+});
+
 test("from half way to all the way up and back, the map stays exactly where it is", async ({ page }) => {
   // The owner's ask: "when going from half card to full card, map should
   // not move or zoom" -- only the pill to half and back moves it.
