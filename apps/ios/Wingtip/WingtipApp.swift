@@ -13,6 +13,8 @@ struct WingtipApp: App {
     @State private var dryRun = DryRun()
     @State private var traffic = Traffic()
     @State private var verdict = Verdict()
+    /// iOS's hand-over of the chart downloads finished in the background.
+    @UIApplicationDelegateAdaptor(OfflineAppDelegate.self) private var offlineDelegate
 
     init() {
         // Apple's own measurements of this app on this phone -- launch,
@@ -35,6 +37,7 @@ struct WingtipApp: App {
                 .task { ownShip.start() }
                 .task { await session.refresh() }
                 .task { await charts.load() }
+                .task { OfflineDownloads.shared.start() }
                 .task { plan.restore() }
                 // The flight in progress on the Lock Screen and in the
                 // Dynamic Island (FlightActivity, a Live Activity: the

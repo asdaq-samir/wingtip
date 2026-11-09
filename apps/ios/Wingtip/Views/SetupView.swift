@@ -104,6 +104,8 @@ struct SetupView: View {
                     } else {
                         LabeledContent("Edition", value: "Fetching…")
                     }
+                    // Regions' charts kept for flying with no signal.
+                    NavigationLink("Downloads") { DownloadsView().closesBack() }
                     ProblemLine(charts.problem)
                 }
                 Section {

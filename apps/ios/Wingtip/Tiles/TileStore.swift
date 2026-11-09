@@ -24,8 +24,11 @@ final class TileStore: Sendable {
         root.appending(path: "\(cycle)/\(kind)/\(z)/\(x)/\(y)\(scale == 1 ? "" : "@\(scale)x").png")
     }
 
+    /// A region downloaded for the air first (Setup → Downloads,
+    /// OfflineStore), then a tile fetched as the map went.
     func read(cycle: String, kind: String, z: Int, x: Int, y: Int, scale: Int = 1) -> Data? {
-        try? Data(contentsOf: path(cycle: cycle, kind: kind, z: z, x: x, y: y, scale: scale))
+        OfflineStore.shared.tile(cycle: cycle, kind: kind, z: z, x: x, y: y, scale: scale)
+            ?? (try? Data(contentsOf: path(cycle: cycle, kind: kind, z: z, x: x, y: y, scale: scale)))
     }
 
     func write(_ data: Data, cycle: String, kind: String, z: Int, x: Int, y: Int, scale: Int = 1) {
