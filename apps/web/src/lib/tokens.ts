@@ -59,6 +59,9 @@ export const BRAND = {
   markRingNight: "#e37bb5",
   markPlane: "#14284b",
   taxiwayYellow: "#f2b600",
+  launch: "#ffffff",
+  launchNight: "#0b1422",
+  chartLand: "#d7e8c6",
 };
 
 /** Chart ink's own inks by day (index.css's --ink-*), for where the stylesheet is not loaded. */

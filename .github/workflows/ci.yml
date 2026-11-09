@@ -242,6 +242,14 @@ jobs:
       - name: The design tokens are the committed ones
         working-directory: .
         run: scripts/build/design-tokens.sh --check
+      # The icons and launch art of every app (iOS, the watch, Android,
+      # the web, the site, the store), drawn from docs/brand's SVGs by
+      # scripts/build/app-icons.sh in its pinned image and committed:
+      # drawn again here, each must match the committed file pixel for
+      # pixel, or a source changed without its PNGs (or a PNG by hand).
+      - name: The app icons are the committed ones
+        working-directory: .
+        run: scripts/build/app-icons.sh --check
       - run: npx tsc --noEmit
       - run: npx eslint .
       # No unused file, export, type or dependency (knip, apps/web/knip.jsonc).
@@ -581,7 +589,17 @@ jobs:
                 - scripts/build/design-tokens.sh
                 - scripts/build/design_tokens.py
                 - apps/ios/Wingtip/Design/Generated/**
-                - apps/ios/Wingtip/Assets.xcassets/AccentColor.colorset/**
+                - apps/ios/Wingtip/Assets.xcassets/**
+                - docs/brand/**
+                - scripts/build/app-icons.sh
+                - scripts/build/app_icons.py
+                - scripts/build/brand-render.Dockerfile
+                - apps/ios/WingtipWatch/Assets.xcassets/**
+                - apps/android/app/src/main/res/mipmap-*/**
+                - apps/android/app/src/main/res/drawable-*/**
+                - apps/android/app/src/main/res/values*/brand_colors.xml
+                - apps/site/assets/**
+                - docs/store/*.png
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/**
                 - apps/ios/Wingtip/API/Generated/**
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**

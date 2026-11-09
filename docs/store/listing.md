@@ -290,6 +290,8 @@ only one, and the site may show it as the web's.
   Play Console app (`app.wingtipmaps.android`, $25 developer account),
   then paste this page's fields.
 - A support address on that domain for both stores' contact fields.
-- Upload the screenshots (`docs/store/screenshots/`) and the 1024 and
-  512 icons (`docs/brand/app-store-1024.png`, the Play icon beside the
-  screenshots).
+- Upload the screenshots (`docs/store/screenshots/`), the 1024 and
+  512 icons (`docs/brand/app-store-1024.png`, `docs/store/play-icon-512.png`)
+  and Play's feature graphic (`docs/store/play-feature-graphic.png`), all
+  drawn by `scripts/build/app-icons.sh` from `docs/brand`. The App Store
+  takes its icon from the build; the 1024 is for anything else that asks.

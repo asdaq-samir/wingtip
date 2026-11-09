@@ -35,7 +35,19 @@ areas:
       - scripts/build/design-tokens.sh
       - scripts/build/design_tokens.py
       - apps/ios/Wingtip/Design/Generated/**
-      - apps/ios/Wingtip/Assets.xcassets/AccentColor.colorset/**
+      - apps/ios/Wingtip/Assets.xcassets/**
+      # The icons and launch art, drawn from docs/brand by
+      # scripts/build/app-icons.sh and checked there (--check).
+      - docs/brand/**
+      - scripts/build/app-icons.sh
+      - scripts/build/app_icons.py
+      - scripts/build/brand-render.Dockerfile
+      - apps/ios/WingtipWatch/Assets.xcassets/**
+      - apps/android/app/src/main/res/mipmap-*/**
+      - apps/android/app/src/main/res/drawable-*/**
+      - apps/android/app/src/main/res/values*/brand_colors.xml
+      - apps/site/assets/**
+      - docs/store/*.png
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/**
       - apps/ios/Wingtip/API/Generated/**
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
