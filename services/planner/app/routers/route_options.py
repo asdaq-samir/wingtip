@@ -51,7 +51,8 @@ def _chips(found: dict, typed: list[str]) -> list[dict]:
     stops drawn on the map and put in the route's box as it is picked.
     One chip a set of stops; none at all where only the route itself is
     left."""
-    chips = [{"key": "none", "label": "None", "stops": typed, "fuel": [],
+    # "As typed", the owner's word for what was "None" (2026-11-08).
+    chips = [{"key": "none", "label": "As typed", "stops": typed, "fuel": [],
               "crosses": found.get("current", []) if typed else found.get("direct", [])}]
     seen = [[_same(t) for t in typed]]
 

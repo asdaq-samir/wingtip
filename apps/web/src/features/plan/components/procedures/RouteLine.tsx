@@ -8,8 +8,9 @@ import { useRouteLineOpen } from "../../../../lib/routeLine";
 /** FPL's route line's choices (PlanWorkspace's routeLine): each chip's
  *  key and words, and what its way meets, in amber; the one picked. */
 export interface RouteLineChoices {
-  /** Each way: its key, name, what it meets and its whole time ("2h 59m"). */
-  chips: { key: string; label: string; warning: string | null; time: string | null }[];
+  /** Each way: its key, name, what it meets, its whole time ("2h 59m"),
+   *  and its miles and fuel. */
+  chips: { key: string; label: string; warning: string | null; time: string | null; nm: number | null; gal: number | null }[];
   picked: string;
   onPick: (key: string) => void;
 }
@@ -19,7 +20,8 @@ export interface RouteLineChoices {
  * canvas's K1 (2026-10-29): folded, one row -- the route's glyph, the way
  * flown and its time, how many more there are; open, its heading and the
  * planner's ways as cards, each its time over its name, a tap on one the
- * route at once ("None" is the route as typed). It was a tray under the
+ * route at once ("As typed" is the route as typed, the owner's word for
+ * what was "None", 2026-11-08), its miles and fuel under its name. It was a tray under the
  * departure's row, folded to the way picked, as a runway line is. Open
  * until its row folds it (the owner, 2026-10-28: "Keep the routes and
  * runway opened until folded"). A way that meets something says so in
@@ -28,11 +30,15 @@ export interface RouteLineChoices {
 /** The Routes row. `grouped`: inside Route Cards' head box (PlanWorkspace),
  *  under the airplane and the altitude, the box's fill and corners its
  *  own; else a rounded row of its own over the list. */
+/** A card's miles and fuel, "105 nm · 10.3 gal", as far as they are known. */
+const figures = (c: RouteLineChoices["chips"][number]) =>
+  [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? `${c.gal.toFixed(1)} gal` : null].filter(Boolean).join(" · ");
+
 export function RouteLine({ line, grouped = false }: { line: RouteLineChoices; grouped?: boolean }) {
   const open = useRouteLineOpen(s => s.open);
   const picked = line.chips.find(c => c.key === line.picked) ?? line.chips[0]!;
   const words = (c: RouteLineChoices["chips"][number]) =>
-    `${c.key === "none" ? "None, the route as typed" : c.label}${c.time ? `, ${c.time}` : ""}${c.warning ? `, ${c.warning.toLowerCase()}` : ""}`;
+    `${c.key === "none" ? "As typed, the route as typed" : c.label}${c.time ? `, ${c.time}` : ""}${figures(c) ? `, ${figures(c)}` : ""}${c.warning ? `, ${c.warning.toLowerCase()}` : ""}`;
   const others = line.chips.length - 1;
   return (
     <Collapsible open={open} onOpenChange={next => useRouteLineOpen.setState({ open: next })} className={grouped ? undefined : "mt-2 mb-1 rounded-xl bg-card"} data-testid="route-line">
@@ -69,6 +75,7 @@ export function RouteLine({ line, grouped = false }: { line: RouteLineChoices; g
             >
               <span className={cn("font-semibold", TEXT.row, c.key === line.picked && "text-tint")}>{c.time ?? "—"}</span>
               <span className={cn("whitespace-normal", TEXT.note, c.warning ? "text-amber-700 dark:text-amber-400" : "text-foreground")}>{c.label}</span>
+              {figures(c) && <span className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="route-line-figures">{figures(c)}</span>}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
