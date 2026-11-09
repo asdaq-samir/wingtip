@@ -186,6 +186,12 @@ Then the callers switch to the name and the old copy is deleted.
 
 ## The engine's rules
 
+- A portable ADS-B receiver's GDL 90 (`crates/receiver`): the phones hand
+  over the bytes heard on UDP port 4000 with the last picture once a
+  second (`receiver_read`), and draw its views -- the traffic merged with
+  the internet's (`receiver_traffic`), a field's FIS-B METAR and TAF
+  (`receiver_reports`), the NEXRAD as rectangles (`receiver_nexrad`).
+  The web has the rules but no listener: a browser opens no UDP socket.
 - The engine also reads an ATC clearance heard into its items and a call
   to us by its call sign (`crates/radio`, the web's lib/clearance and
   lib/heardCall, held to their fixtures in `apps/web/src/lib/fixtures`), and

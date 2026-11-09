@@ -124,7 +124,7 @@ fun ChartMap(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val holder = remember { MapHolder(MapView(context), context.resources.displayMetrics.density) }
+    val holder = remember { MapHolder(MapView(context).also(NexradLayer::follow), context.resources.displayMetrics.density) }
     holder.onDragged = onDragged
     holder.onRevealed = onRevealed
     holder.onPick = onPick

@@ -53,6 +53,7 @@ import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.pilot.MinimumsRows
+import app.wingtipmaps.android.receiver.ReceiverSettingRows
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
@@ -137,6 +138,9 @@ fun SetupScreen(session: Session) {
         val traffic = remember(context) { Traffic.of(context) }
         val trafficOn by traffic.on.collectAsStateWithLifecycle()
         SwitchRow(stringResource(R.string.traffic), trafficOn) { traffic.setOn(it) }
+        // A Stratux, Sentry or the like on the cockpit's Wi-Fi: its traffic
+        // and FIS-B weather with no internet.
+        ReceiverSettingRows()
         val spoken = remember(context) { SpokenAlerts.of(context) }
         val spokenOn by spoken.on.collectAsStateWithLifecycle()
         SwitchRow(stringResource(R.string.speak_alerts), spokenOn, spoken::setOn)
