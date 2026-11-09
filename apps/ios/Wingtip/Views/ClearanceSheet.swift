@@ -173,7 +173,7 @@ struct ClearanceSheet: View {
                         heardField
                     }
                     if let problem = listener.problem ?? lookupProblem ?? engineProblem {
-                        Text(problem).font(.footnote).foregroundStyle(.red)
+                        ProblemLine(problem)
                     }
                 } header: {
                     // The flight the clearance is for, as the canvas heads it.

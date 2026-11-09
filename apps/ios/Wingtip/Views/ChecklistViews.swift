@@ -14,7 +14,7 @@ struct ChecklistView: View {
     var body: some View {
         List {
             if let problem = model.problem {
-                Text(problem).foregroundStyle(.orange)
+                ProblemLine(problem)
             }
             if let writing = model.writing {
                 Section {

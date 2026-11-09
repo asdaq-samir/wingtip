@@ -48,7 +48,7 @@ struct SignInView: View {
                     }
                 }
                 if let problem = session.problem {
-                    Section { Text(problem).foregroundStyle(.red).font(.footnote) }
+                    Section { ProblemLine(problem) }
                 }
             }
             .navigationTitle("Sign In")

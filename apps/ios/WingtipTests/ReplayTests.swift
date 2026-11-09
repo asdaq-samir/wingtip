@@ -132,7 +132,7 @@ struct RootLayoutTests {
     }
 
     @Test func theSidebarsBarIsTitledForItsTab() throws {
-        #expect(SplitLayout<EmptyView>.title(.fpl) == "Flight plan")
+        #expect(SplitLayout<EmptyView>.title(.fpl) == "Flight Plan")
         #expect(SplitLayout<EmptyView>.title(.airport) == "Airport")
         #expect(RootView.Tabs(rawValue: "airport") == .airport)
     }

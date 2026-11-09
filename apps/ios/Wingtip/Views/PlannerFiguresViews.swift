@@ -53,7 +53,7 @@ struct DebriefSections: View {
             } else if loaded, answer != nil {
                 Text("No flight in this track: it never went faster than taxiing.").foregroundStyle(.secondary)
             } else if let problem {
-                Text(problem).font(.footnote).foregroundStyle(.red)
+                ProblemLine(problem)
             } else {
                 ProgressView("Reading the track…")
             }

@@ -30,7 +30,7 @@ struct RadioOverlay: View {
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             if let problem = listener.problem {
-                                Text(problem).foregroundStyle(.orange)
+                                ProblemLine(problem)
                             } else if listener.heard.isEmpty {
                                 Text("Listening to the radio…").foregroundStyle(.secondary)
                             }
@@ -117,7 +117,7 @@ struct RadioCallBanner: View {
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.capsule)
             }
-            if let problem { Text(problem).font(.footnote).foregroundStyle(.red) }
+            if let problem { ProblemLine(problem) }
         }
         .padding(12)
         .floatingGlass(in: floatingCard)

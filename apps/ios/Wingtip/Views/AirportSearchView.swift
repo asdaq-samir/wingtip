@@ -281,7 +281,7 @@ struct NearFromView: View {
                     ForEach(fields) { field in NavigationLink(value: field.ident) { NearestRow(field: field) } }
                 }
             } else if let problem {
-                Text(problem).foregroundStyle(.red)
+                ProblemLine(problem)
             } else {
                 ProgressView("Fetching the nearest fields…")
             }

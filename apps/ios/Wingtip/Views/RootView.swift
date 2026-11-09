@@ -166,7 +166,9 @@ struct RootView: View {
                 // A finger held on the chart: the airspace there, half way
                 // up, as a field's card opens.
                 onHold: { at in open(AirportRoute.airspace(lat: at.latitude, lon: at.longitude).text) },
-                onWaypointStop: plan.routed ? { (ident: String) in plan.stops.append(ident); plan.plan() } : nil
+                onWaypoint: plan.course != nil ? { (ident: String, at: CLLocationCoordinate2D, action: CardAction) in
+                    plan.drop(ident, at: at, then: action == .directTo ? .direct : .add, from: action == .directTo ? dryRun.fix ?? ownShip.fix : nil)
+                } : nil
             ),
             hazardLegs: plan.hazardLegs,
             bottomInset: mapInset,

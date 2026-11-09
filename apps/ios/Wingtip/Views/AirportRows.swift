@@ -189,15 +189,17 @@ struct RunwaySketch: View {
 /// One of the card's actions, as Maps' place card has them: a glyph over
 /// its name on a rounded pane, the first in the tint.
 struct CardActionLabel: View {
-    let title: String
-    let systemImage: String
+    /// The action, whose one name and glyph every card uses (CardAction).
+    let action: CardAction
+
+    init(_ action: CardAction) { self.action = action }
 
     var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: systemImage).font(.title3)
-            Text(title).font(.caption.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
+        VStack(spacing: WingtipSpace.xs) {
+            Image(systemName: action.systemImage).font(WingtipType.heading)
+            Text(action.title).font(WingtipType.tabBar.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity, minHeight: 44)
+        .frame(maxWidth: .infinity, minHeight: WingtipSize.tapTarget)
     }
 }
 
@@ -341,10 +343,10 @@ private enum PreviewData {
 
 #Preview("CardActionLabel") {
     HStack(spacing: 8) {
-        Button {} label: { CardActionLabel(title: "Fly Here", systemImage: "location.north.line") }.buttonStyle(.borderedProminent)
-        Button {} label: { CardActionLabel(title: "Add Stop", systemImage: "mappin.and.ellipse") }.buttonStyle(.bordered)
-        Button {} label: { CardActionLabel(title: "Call", systemImage: "phone") }.buttonStyle(.bordered)
-        Button {} label: { CardActionLabel(title: "Address", systemImage: "map") }.buttonStyle(.bordered)
+        Button {} label: { CardActionLabel(.flyHere) }.buttonStyle(.borderedProminent)
+        Button {} label: { CardActionLabel(.addStop) }.buttonStyle(.bordered)
+        Button {} label: { CardActionLabel(.call) }.buttonStyle(.bordered)
+        Button {} label: { CardActionLabel(.address) }.buttonStyle(.bordered)
     }
     .padding()
 }

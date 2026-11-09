@@ -170,7 +170,7 @@ struct StripSheetView: View {
                 .padding(.top, 6)
                 .padding(.bottom, 8)
             if let problem {
-                Text(problem).font(ChartInk.note).foregroundStyle(.red)
+                ProblemLine(problem)
                     .padding(.horizontal, 20).padding(.bottom, 6)
                     .accessibilityAddTraits(.isStaticText)
             }
@@ -208,7 +208,7 @@ struct StripSheetView: View {
         }
         if listener.listening || listener.problem != nil {
             VStack(alignment: .leading, spacing: 2) {
-                if let problem = listener.problem { Text(problem).foregroundStyle(.orange) }
+                if let problem = listener.problem { ProblemLine(problem) }
                 ForEach(listener.heard.suffix(2)) { t in
                     Text(t.text).lineLimit(2).foregroundStyle(t.forUs ? Color.accentColor : Color.primary)
                 }

@@ -111,8 +111,8 @@ final class PlateRenderer: MKOverlayRenderer {
 }
 
 /// What the root view hands the map for these: the pin, the switches
-/// from Setup, the approaches picked, and what a hold or a waypoint's +
-/// does.
+/// from Setup, the approaches picked, and what a hold or a waypoint's
+/// actions do.
 struct MapExtrasInput {
     var held: CLLocationCoordinate2D?
     var waypoints = false
@@ -120,7 +120,9 @@ struct MapExtrasInput {
     var plates = true
     var approaches: [ProcedurePick] = []
     var onHold: ((CLLocationCoordinate2D) -> Void)?
-    var onWaypointStop: ((String) -> Void)?
+    /// A waypoint's card's action (CardKind.navaid): Direct To, Add to
+    /// Route, Copy.
+    var onWaypoint: ((String, CLLocationCoordinate2D, CardAction) -> Void)?
 
     /// Setup's switches, kept on the device (the web app's preferences:
     /// waypoints and Class B off until a pilot turns them on, plates on).
@@ -143,7 +145,7 @@ struct MapExtrasInput {
 @MainActor
 final class MapExtrasState: NSObject {
     var onHold: ((CLLocationCoordinate2D) -> Void)?
-    var onWaypointStop: ((String) -> Void)?
+    var onWaypoint: ((String, CLLocationCoordinate2D, CardAction) -> Void)?
     private var held: HeldAnnotation?
     private var showWaypoints = false
     private var showClassB = false
@@ -174,7 +176,7 @@ final class MapExtrasState: NSObject {
 
     func update(_ map: MKMapView, _ input: MapExtrasInput, tiles: (any MKOverlay)?) {
         onHold = input.onHold
-        onWaypointStop = input.onWaypointStop
+        onWaypoint = input.onWaypoint
         if let point = input.held {
             if let pin = held {
                 if pin.coordinate.latitude != point.latitude || pin.coordinate.longitude != point.longitude { pin.coordinate = point }
@@ -212,13 +214,9 @@ final class MapExtrasState: NSObject {
     func view(for annotation: any MKAnnotation, on map: MKMapView) -> MKAnnotationView? {
         if let mark = annotation as? WaypointAnnotation {
             let view = map.dequeueReusableAnnotationView(withIdentifier: WaypointMarkView.reuse, for: mark)
-            if onWaypointStop != nil {
-                let add = UIButton(type: .contactAdd)
-                add.accessibilityLabel = "Add as a Stop"
-                view.rightCalloutAccessoryView = add
-            } else {
-                view.rightCalloutAccessoryView = nil
-            }
+            // A waypoint's card is its callout, with the navaid card's
+            // actions under its name, as the web's (CardKind.navaid).
+            view.detailCalloutAccessoryView = actions(for: mark)
             return view
         }
         if annotation is HeldAnnotation {
@@ -231,10 +229,31 @@ final class MapExtrasState: NSObject {
         return nil
     }
 
-    func calloutTapped(_ view: MKAnnotationView) {
-        guard let mark = view.annotation as? WaypointAnnotation else { return }
-        view.setSelected(false, animated: MapMotion.animated)
-        onWaypointStop?(mark.waypoint.ident)
+    /// The navaid card's actions in a row, the first filled: Direct To and
+    /// Add to Route once there is a route, Copy always.
+    private func actions(for mark: WaypointAnnotation) -> UIView {
+        let row = UIStackView()
+        row.axis = .horizontal
+        row.spacing = WingtipSpace.sm
+        for (i, action) in CardKind.navaid.actions.enumerated() {
+            var look: UIButton.Configuration = i == 0 ? .borderedProminent() : .bordered()
+            look.title = action.title
+            look.image = UIImage(systemName: action.systemImage)
+            look.imagePlacement = .top
+            look.imagePadding = WingtipSpace.xs
+            look.buttonSize = .small
+            let button = UIButton(configuration: look, primaryAction: UIAction { [weak self, weak mark] _ in
+                guard let self, let mark else { return }
+                if action == .copy {
+                    UIPasteboard.general.string = mark.waypoint.ident
+                } else {
+                    self.onWaypoint?(mark.waypoint.ident, mark.coordinate, action)
+                }
+            })
+            button.isEnabled = action == .copy || onWaypoint != nil
+            row.addArrangedSubview(button)
+        }
+        return row
     }
 
     private func refreshWaypoints(_ map: MKMapView, after ms: Int) {

@@ -110,22 +110,22 @@ struct AirportCard: View {
     /// next stop; Call and Address from the FAA's airport file, greyed
     /// where it lists none.
     private func actions(_ place: AirportPlace) -> some View {
-        HStack(spacing: 8) {
-            Button { plan.dest = place.ident; plan.plan() } label: { CardActionLabel(title: "Fly Here", systemImage: "location.north.line") }
+        HStack(spacing: WingtipSpace.sm) {
+            Button { plan.dest = place.ident; plan.plan() } label: { CardActionLabel(.flyHere) }
                 .buttonStyle(.borderedProminent)
-            Button { plan.stops.append(place.ident); plan.plan() } label: { CardActionLabel(title: "Add Stop", systemImage: "mappin.and.ellipse") }
+            Button { plan.stops.append(place.ident); plan.plan() } label: { CardActionLabel(.addStop) }
                 .buttonStyle(.bordered)
                 .disabled(!plan.routed || plan.idents.contains(place.ident))
             if let phone = place.phone, let call = URL(string: "tel:" + phone.filter { !$0.isWhitespace }) {
-                Link(destination: call) { CardActionLabel(title: "Call", systemImage: "phone") }
+                Link(destination: call) { CardActionLabel(.call) }
                     .buttonStyle(.bordered)
                     .accessibilityLabel("Call \(phone)")
             } else {
-                Button {} label: { CardActionLabel(title: "Call", systemImage: "phone") }
+                Button {} label: { CardActionLabel(.call) }
                     .buttonStyle(.bordered).disabled(true)
                     .accessibilityLabel("Call: no phone listed")
             }
-            Link(destination: Self.mapsLink(place)) { CardActionLabel(title: "Address", systemImage: "map") }
+            Link(destination: Self.mapsLink(place)) { CardActionLabel(.address) }
                 .buttonStyle(.bordered)
                 .accessibilityLabel(place.address.map { "\($0), in Maps" } ?? "Where it is, in Maps")
         }

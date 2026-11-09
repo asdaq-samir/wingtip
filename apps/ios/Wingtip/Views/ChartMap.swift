@@ -369,10 +369,6 @@ struct ChartMap: UIViewRepresentable {
         /// and the thin edge round it.
         static let courseWidth: CGFloat = 4.5, edgeWidth: CGFloat = 6.5
 
-        func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-            MainActor.assumeIsolated { extras.calloutTapped(view) }
-        }
-
         func mapView(_ mapView: MKMapView, rendererFor overlay: any MKOverlay) -> MKOverlayRenderer {
             if let renderer = flight?.renderer(for: overlay) { return renderer }
             if let renderer = MainActor.assumeIsolated({ overlays.renderer(for: overlay) }) { return renderer }

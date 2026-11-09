@@ -56,7 +56,7 @@ struct AirplaneFiguresView: View {
                         ForEach(words, id: \.self) { Text($0) }
                     }
                 }
-                if let problem { Text(problem).foregroundStyle(.red) }
+                if let problem { ProblemLine(problem) }
             }
             Section {
                 PhotosPicker(selection: $picked, matching: .images) {
