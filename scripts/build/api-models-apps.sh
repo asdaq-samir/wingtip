@@ -2,7 +2,9 @@
 # The phones' models of the servers' answers, generated from the same
 # OpenAPI documents the web's API client is (`npm run types`:
 # services/planner/openapi.json for the planner, services/gateway/openapi.json
-# for the gateway), so a field renamed on a server fails the phones' build
+# for the gateway, services/assistant/openapi.json for the assistant the
+# gateway forwards /api/assistant, /api/words/* and the checkpoint notes
+# to), so a field renamed on a server fails the phones' build
 # and CI, not a pilot's screen at runtime. quicktype writes models only --
 # plain Codable structs and @Serializable data classes, no runtime library --
 # and each app keeps its own thin client (apps/ios/Wingtip/API/Planner.swift,
@@ -12,6 +14,8 @@
 #   apps/ios/Wingtip/API/Generated/GatewayModels.swift      types prefixed GW
 #   apps/android/.../api/generated/PlannerModels.kt         package ...api.generated
 #   apps/android/.../api/generated/GatewayModels.kt         package ...api.generated.gateway
+#   apps/ios/Wingtip/API/Generated/AssistantModels.swift    types prefixed AS
+#   apps/android/.../api/generated/AssistantModels.kt       package ...api.generated.assistant
 #
 # all committed with a "generated, do not edit" header (neither app's build
 # has Node); CI runs this and fails when the committed files differ.
@@ -47,7 +51,7 @@ docker=${DOCKER:-docker}
   swift_dir=apps/ios/Wingtip/API/Generated
   kotlin_dir=apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated
   mkdir -p "$swift_dir" "$kotlin_dir" /tmp/api
-  for doc in planner gateway; do
+  for doc in planner gateway assistant; do
     node scripts/build/api-models-apps.mjs prep "services/$doc/openapi.json" "/tmp/api/$doc.kotlin.json"
     node scripts/build/api-models-apps.mjs prep "services/$doc/openapi.json" "/tmp/api/$doc.swift.json" swift
   done
@@ -76,5 +80,9 @@ docker=${DOCKER:-docker}
   node scripts/build/api-models-apps.mjs kotlin "$kotlin_dir/PlannerModels.kt" services/planner/openapi.json
   gen kotlin gateway app.wingtipmaps.android.api.generated.gateway "$kotlin_dir/GatewayModels.kt"
   node scripts/build/api-models-apps.mjs kotlin "$kotlin_dir/GatewayModels.kt" services/gateway/openapi.json
+  gen swift assistant AS "$swift_dir/AssistantModels.swift"
+  node scripts/build/api-models-apps.mjs swift "$swift_dir/AssistantModels.swift" snake
+  gen kotlin assistant app.wingtipmaps.android.api.generated.assistant "$kotlin_dir/AssistantModels.kt"
+  node scripts/build/api-models-apps.mjs kotlin "$kotlin_dir/AssistantModels.kt" services/assistant/openapi.json
 '
-echo "generated every schema of services/planner/openapi.json and services/gateway/openapi.json"
+echo "generated every schema of services/planner, services/gateway and services/assistant openapi.json"

@@ -84,7 +84,10 @@ function swift(file, keys) {
   // every type.
   text = text.replace(/^\/\/ This file was generated[\s\S]*?\n\n/, "");
   text = text.replace(/^\/\/\n\/\/ Hashable or Equatable:\n(\/\/ .*\n){3}\n?/gm, "");
-  for (const [key, to] of Object.entries(RENAMES)) {
+  // Swift alone: "operator", a keyword Swift takes as a name in backticks,
+  // and "required" and "right", which it takes as they are; quicktype
+  // prefixes each with the type's name instead ("flightDetailOperator").
+  for (const [key, to] of Object.entries({ ...RENAMES, operator: "`operator`", required: "required", right: "right" })) {
     for (const [, from] of [...text.matchAll(new RegExp(`case (\\w+) = "${key}"$`, "gm"))]) {
       text = text.replace(new RegExp(`\\b${from}\\b`, "g"), to);
     }
