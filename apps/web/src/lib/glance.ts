@@ -136,6 +136,13 @@ const ACTION: Record<VerdictItem["key"], { stop: string; caution: string }> = {
 
 /** A line's lead and its action in one sentence of at most LINE_MAX
  *  characters, the lead cut short with an ellipsis where it must be. */
+/** A section's name inside a sentence, in lower case but for a code's
+ *  words -- "TFRs & special use", where it read "tfrs" (the FPL audit's
+ *  A10; the FAA's codes are kept, CLAUDE.md "Writing"). */
+function inSentence(label: string): string {
+  return label.split(" ").map(word => (/^[A-Z]{2,}/.test(word) ? word : word.toLowerCase())).join(" ");
+}
+
 function sentence(lead: string, action: string): string {
   const head = lead.replace(/[.;:,\s]+$/, "");
   const room = LINE_MAX - action.length - 2;
@@ -197,9 +204,9 @@ export function glanceLines(items: VerdictItem[], glance: BriefGlance | null): G
   const more = rest.filter(i => i.finding !== "ok");
   const pending = rest.filter(i => i.finding === "pending");
   const line = !rest.length ? ""
-    : pending.length ? `Still checking ${pending.map(i => i.label.toLowerCase()).join(", ")}`
+    : pending.length ? `Still checking ${pending.map(i => inSentence(i.label)).join(", ")}`
     : more.length ? `${more.length} more to look at`
-    : sentence(`${rest.map(i => i.label.toLowerCase()).join(", ")}`.replace(/^./, c => c.toUpperCase()), "nothing to fix");
+    : sentence(`${rest.map(i => inSentence(i.label)).join(", ")}`.replace(/^./, c => c.toUpperCase()), "nothing to fix");
   const finding: Finding = pending.length ? "pending" : more.some(i => i.finding === "stop" || i.finding === "caution") ? "caution" : more.length ? "unknown" : "ok";
   return { act, rest: { line, finding, items: rest } };
 }

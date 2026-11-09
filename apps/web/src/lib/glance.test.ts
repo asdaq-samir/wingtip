@@ -32,7 +32,7 @@ describe("the Brief's lines at a glance", () => {
     const { act, rest } = glanceLines(quiet, glance);
     expect(act).toEqual([]);
     expect(rest.finding).toBe("ok");
-    expect(rest.line).toBe("Weather, tfrs & special use, altitude, fuel, runways, weight & balance, risk: nothing to fix");
+    expect(rest.line).toBe("Weather, TFRs & special use, altitude, fuel, runways, weight & balance, risk: nothing to fix");
     expect(rest.items).toHaveLength(7);
   });
 
@@ -42,7 +42,7 @@ describe("the Brief's lines at a glance", () => {
     expect(act[0]!.line).toBe("Runway 27 at C81 has 18 kt across, past the POH's demonstrated: ask for another runway, or wait for the wind");
     expect(act[0]!.cite).toBe("14 CFR 91.103(b); the POH");
     expect(act[0]!.raw).toEqual(["METAR C81 ..."]);
-    expect(rest.line).toBe("Weather, tfrs & special use, altitude, fuel, weight & balance, risk: nothing to fix");
+    expect(rest.line).toBe("Weather, TFRs & special use, altitude, fuel, weight & balance, risk: nothing to fix");
   });
 
   it("puts the stops before the cautions, at most three lines, the rest counted", () => {
