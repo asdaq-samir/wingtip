@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { experimental_streamedQuery as streamedQuery, keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ApiError, api, describeError } from "../../../lib/api/client";
+import { ApiError, api, describeError, isUnknownPlace, unknownPlaceOf } from "../../../lib/api/client";
 import { checkpointsQuery, courseQuery } from "../../../lib/queryClient";
 import { identOf, routeOf } from "../../../lib/identSchema";
 import { ended, inBatches } from "../../../lib/api/streams";
@@ -176,7 +176,8 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
     staleTime: Infinity,
     // No legal altitude is the page's to say, with what can be done about
     // it (PlanWorkspace): not the query client's plain toast.
-    meta: { silent: (error: unknown) => error instanceof ApiError && error.advice !== null },
+    // Nor a point the planner does not know, the route box's (courseQuery).
+    meta: { silent: (error: unknown) => (error instanceof ApiError && error.advice !== null) || isUnknownPlace(error) },
   };
 }
 
@@ -361,7 +362,19 @@ export function usePlan(
     // old route's hazards and TFRs showed for a moment (the audit's finding).
     placeholderData: (previous, previousQuery) =>
       previousQuery && sameRoute(previousQuery.queryKey, [dep, dest, via]) ? previous : undefined,
+    // A point not known, the route box's to say (courseQuery); the Brief
+    // says its own failure in place.
+    meta: { silent: isUnknownPlace },
   });
+
+  // A point of the route the planner does not know (a typo, KZZZ): which
+  // one, for its pill in the route box, and only for this route -- not a
+  // query's left from one before it.
+  const unknownError = course.error ?? checkpoints.error ?? navlog.error;
+  const unknownPlace = useMemo(() => {
+    if (!briefable || !isUnknownPlace(unknownError)) return null;
+    return { ident: unknownPlaceOf(unknownError) };
+  }, [briefable, unknownError]);
 
   // The same object while the briefing is: a new one at every render drew
   // every tab of the panel again with it.
@@ -392,7 +405,7 @@ export function usePlan(
     // The nav log's own rows' checkpoints: none while it is the route as
     // entered, whose legs run point to point.
     logSelected: withCheckpoints && !pointToPoint ? checkpoints.data?.selected ?? NONE : NONE,
-    legs, nav, navStage, stage, unflyable,
+    legs, nav, navStage, stage, unflyable, unknownPlace,
     // The log on screen is the one before the altitude asked for, whose
     // own is still coming.
     replanning: holding,

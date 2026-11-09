@@ -237,6 +237,19 @@ export function describeError(err: unknown, fallback = "request failed"): string
   return firstLine || fallback;
 }
 
+/** Whether the planner could not find a point of the route: its 404,
+ *  which names the ident in quotes ("No airport goes by 'KZZZ'."). The
+ *  route box says it on that point's pill, not the map's problem line
+ *  (the FPL audit's A2): the pilot typed it, the system is not down. */
+export function isUnknownPlace(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 404;
+}
+
+/** The ident an unknown place's 404 names, if it names one. */
+export function unknownPlaceOf(err: unknown): string | null {
+  return isUnknownPlace(err) ? /'([^']+)'/.exec((err as ApiError).message)?.[1]?.toUpperCase() ?? null : null;
+}
+
 /** `describeError` for a query's `error` field, which is null while
  *  nothing has failed -- and so is this. */
 export const errorMessage = (err: unknown, fallback: string) => (err ? describeError(err, fallback) : null);

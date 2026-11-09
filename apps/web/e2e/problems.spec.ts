@@ -106,18 +106,30 @@ test("two different failures are two problems, counted on the line and listed on
 
 test("a problem goes with the route it was about", async ({ page }) => {
   // With no close of its own, a problem left behind by a route since
-  // closed stayed on the map.
+  // closed stayed on the map. A failure of the planner's own, not a
+  // place it does not know (a 404, the route box's: below).
   await page.route("**/api/planner/course**", (route: Route) =>
-    route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ detail: "unknown airport KZZZ" }) }));
-  await page.goto("/app/plan?dep=C81&dest=KZZZ");
-  // Among what is said: the nav log and the checkpoints fail on the same
-  // field in words of their own, a moment after or with it, as the page's
-  // parts come in.
-  await expect.poll(async () => (await problemTitles(page)).some(t => t.includes("unknown airport KZZZ")), { timeout: 20000 }).toBe(true);
+    route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "the course store is offline" }) }));
+  await page.goto(PLAN);
+  await expect.poll(async () => (await problemTitles(page)).some(t => t.includes("course store is offline")), { timeout: 20000 }).toBe(true);
 
   // The route cleared from the panel, its Share menu's Clear the route.
   await clearTheRoute(page);
   await expect(banner(page)).toHaveCount(0);
+});
+
+test("an ident the planner does not know is said on its pill, not the map's line", async ({ page }) => {
+  // The FPL audit's A2 (2026-11-08): KZZZ read as any other pill, and the
+  // only word was the map's line, cut off, naming the data set. The pilot
+  // typed it; it is said where they typed it, with Remove.
+  await page.goto("/app/plan?dep=KUGN&dest=KZZZ");
+  const said = page.getByTestId("route-unknown");
+  await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
+  await expect(page.getByTestId("route-dest").locator("[aria-invalid=true]")).toHaveCount(1);
+  await expect(banner(page)).toHaveCount(0);
+  await said.getByTestId("route-unknown-remove").click();
+  await expect(page).not.toHaveURL(/KZZZ/);
+  await expect(said).toHaveCount(0);
 });
 
 test("the line sits beside the map's buttons, level with them, one line tall, and the location arrow takes its tap", async ({ page }) => {
