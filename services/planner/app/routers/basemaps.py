@@ -5,11 +5,12 @@ from fastapi import APIRouter, HTTPException
 
 from ..schemas.basemaps import GoogleMaps
 from ..settings import get_settings
+from ..gateway import PUBLIC
 
 router = APIRouter()
 
 
-@router.get("/api/map/google", response_model=GoogleMaps)
+@router.get("/api/map/google", response_model=GoogleMaps, openapi_extra=PUBLIC)
 def google_maps() -> GoogleMaps:
     """The deployment's Google Maps Platform key for the Map Tiles API,
     for the browser's own session and tile requests (a browser key,

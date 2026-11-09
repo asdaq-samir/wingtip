@@ -25,6 +25,7 @@ from wingtip import retry
 
 from ..schemas.devservices import DevService, DevServices, DevServiceStarted
 from ..settings import get_settings
+from ..gateway import DEVELOPER
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ def service_state(name: str) -> str | None:
     return {s["name"]: s["state"] for s in response.json()}.get(name, "absent")
 
 
-@router.get("/api/dev/services", response_model=DevServices)
+@router.get("/api/dev/services", response_model=DevServices, openapi_extra=DEVELOPER)
 def dev_services() -> DevServices:
     """Which of the services the console links to are running.
 
@@ -101,7 +102,7 @@ def dev_services() -> DevServices:
     )
 
 
-@router.post("/api/dev/services/{service}/start", response_model=DevServiceStarted)
+@router.post("/api/dev/services/{service}/start", response_model=DevServiceStarted, openapi_extra=DEVELOPER)
 def start_dev_service(service: str) -> DevServiceStarted:
     """Start one of them, if it is not already up.
 

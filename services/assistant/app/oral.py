@@ -28,6 +28,7 @@ import anthropic
 from fastapi import APIRouter, HTTPException
 
 from . import references
+from .gateway import gateway
 from .schemas import OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest
 from .settings import get_settings
 
@@ -225,11 +226,15 @@ def editions() -> dict:
 router = APIRouter()
 
 
+#: The developer's until a CFI has reviewed what the examiner says.
+ORAL = gateway("developer", paid="ORAL")
+
+
 def _unavailable(err: Exception) -> HTTPException:
     return HTTPException(502, f"The mock oral could not reach its examiner: {err}")
 
 
-@router.post("/api/oral/question", response_model=OralQuestion)
+@router.post("/api/oral/question", response_model=OralQuestion, openapi_extra=ORAL)
 def oral_question(request: OralQuestionRequest) -> OralQuestion:
     """One question on one of the `focus` ACS elements, set in the flight
     `plan` describes, not one of those already `asked`; its answer from
@@ -246,7 +251,7 @@ def oral_question(request: OralQuestionRequest) -> OralQuestion:
     return OralQuestion(**asked, editions=edition)
 
 
-@router.post("/api/oral/grade", response_model=OralGrade)
+@router.post("/api/oral/grade", response_model=OralGrade, openapi_extra=ORAL)
 def oral_grade(request: OralGradeRequest) -> OralGrade:
     """The student's answer graded against the question's answer and the
     sources it was asked from (`source_ids`, as the question gave them)."""

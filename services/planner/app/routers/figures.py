@@ -18,6 +18,7 @@ from wingtip.engine import ask as engine
 from ..router_basics import DEFAULT_AIRCRAFT
 from ..figures.schemas import DebriefAnswer, DebriefAsk, Diversion, Holding, LostComms, LostCommsAsk
 from wingtip.planning import aircraft_profile, forecast_hour_for
+from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 from .plan import CruisePower, CruiseTas
 
 router = APIRouter()
@@ -47,7 +48,7 @@ def _pattern_altitudes(idents: list[str]) -> dict[str, float]:
     return out
 
 
-@router.post("/api/debrief")
+@router.post("/api/debrief", openapi_extra=PUBLIC_READ_BY_POST)
 def debrief(ask: DebriefAsk) -> DebriefAnswer:
     """A saved flight debriefed against its flown track (apps/web/src/lib/debrief,
     ACS PA.VI.A): leg by leg the altitude and the course held, each
@@ -63,7 +64,7 @@ def debrief(ask: DebriefAsk) -> DebriefAnswer:
     return DebriefAnswer.model_validate(engine("debrief", checkpoints=checkpoints, points=points, patterns=patterns))
 
 
-@router.get("/api/diversion")
+@router.get("/api/diversion", openapi_extra=PUBLIC)
 def diversion(
     lat: Annotated[float, Query(ge=-90, le=90)],
     lon: Annotated[float, Query(ge=-180, le=180)],
@@ -109,7 +110,7 @@ def diversion(
     )
 
 
-@router.get("/api/holding")
+@router.get("/api/holding", openapi_extra=PUBLIC)
 def holding(
     inbound: Annotated[float, Query(ge=0, le=360)],
     heading: Annotated[float, Query(ge=0, le=360)],
@@ -131,7 +132,7 @@ def holding(
                                          wind_from=wind_from, wind_kt=wind_kt, altitude_ft=altitude_ft))
 
 
-@router.post("/api/lost-comms")
+@router.post("/api/lost-comms", openapi_extra=PUBLIC_READ_BY_POST)
 def lost_comms(ask: LostCommsAsk) -> LostComms:
     """Two-way radio failure under IFR (apps/web/src/lib/lostComms, 14 CFR
     91.185): the routes in the rule's order, the altitude on each segment

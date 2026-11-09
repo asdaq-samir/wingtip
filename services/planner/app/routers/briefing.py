@@ -26,6 +26,7 @@ from .. import exposure
 from ..router_basics import load_route
 from ..schemas.common import Briefing
 from ..schemas.briefing import Alternates, IcingForecast, MapLayerAges, Tfrs
+from ..gateway import PUBLIC
 
 #: How long past the arrival the forecast is read over, and the flight
 #: assumed when the caller does not say how long it is.
@@ -123,7 +124,7 @@ def _fixes(text: str) -> list[tuple[float, float]] | None:
     return points if len(points) >= 2 else None
 
 
-@router.get("/api/map/ages")
+@router.get("/api/map/ages", openapi_extra=PUBLIC)
 def map_layer_ages() -> MapLayerAges:
     """When the planner fetched what the map's weather layers are drawn
     from, for the map's settings to say how old each is: the METARs
@@ -146,7 +147,7 @@ def map_layer_ages() -> MapLayerAges:
     }
 
 
-@router.get("/api/tfrs")
+@router.get("/api/tfrs", openapi_extra=PUBLIC)
 def tfrs() -> Tfrs:
     """Every temporary flight restriction in force or to come, for the
     map: each NOTAM's areas, when, how high and why (wingtip.tfr). A 502 when
@@ -158,7 +159,7 @@ def tfrs() -> Tfrs:
         raise HTTPException(502, "tfr.faa.gov did not answer, so the map has no TFRs on it.") from err
 
 
-@router.get("/api/briefing")
+@router.get("/api/briefing", openapi_extra=PUBLIC)
 def briefing(dep: str, dest: str, stops: str = "", depart: datetime | None = None, ete_min: float | None = None,
              fixes: str = "", leg_min: str = "", ground_min: str = "") -> Briefing:
     """Everything the nav log's own leg math doesn't cover: adverse
@@ -291,7 +292,7 @@ def briefing(dep: str, dest: str, stops: str = "", depart: datetime | None = Non
     }
 
 
-@router.get("/api/alternate")
+@router.get("/api/alternate", openapi_extra=PUBLIC)
 def alternate(dest: str, eta: datetime, tas_kt: float = 110.0, alternate: str = "") -> Alternates:
     """The IFR alternate for a flight arriving at `dest` at `eta` (UTC when
     naive): whether the destination needs one (14 CFR 91.169(b), the
@@ -331,7 +332,7 @@ def alternate(dest: str, eta: datetime, tas_kt: float = 110.0, alternate: str = 
         raise HTTPException(502, "aviationweather.gov did not answer, so the alternate could not be checked.") from err
 
 
-@router.get("/api/icing/route")
+@router.get("/api/icing/route", openapi_extra=PUBLIC)
 def icing_on_the_route(fixes: str, alt_ft: str, leg_min: str, ground_min: str = "",
                        depart: datetime | None = None) -> IcingForecast:
     """Under IFR, the AWC's forecast icing on each leg at the altitude it

@@ -28,6 +28,7 @@ from ..gonogo.words import (
 from . import briefing as briefing_router
 from wingtip import flight_plan as fp
 from .plan import PlanQuery, named_checkpoints
+from ..gateway import PUBLIC_READ_BY_POST
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -116,7 +117,7 @@ def _flown_words(nav: dict) -> str:
     return f"{_altitude_range(nav)}{plan}"
 
 
-@router.post("/api/go-no-go")
+@router.post("/api/go-no-go", openapi_extra=PUBLIC_READ_BY_POST)
 def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
     """The Go / No-Go for a route: each finding -- the weather, the TFRs and
     special-use airspace, the altitude, the fuel, the runways, the weight

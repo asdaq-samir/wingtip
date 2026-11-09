@@ -44,6 +44,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import planner
+from .gateway import gateway
 from .planner import PlannerError
 from .settings import get_settings
 
@@ -681,7 +682,8 @@ def answer(ask: AssistantAsk, runner=None, box: Toolbox | None = None) -> Iterat
 router = APIRouter()
 
 
-@router.post("/api/assistant", responses={200: {"content": {"application/x-ndjson": {}}}})
+@router.post("/api/assistant", responses={200: {"content": {"application/x-ndjson": {}}}},
+             openapi_extra=gateway("signed-in", paid="ASSISTANT"))
 def ask_assistant(ask: AssistantAsk) -> StreamingResponse:
     """The answer as events, one JSON object a line: `tool` (name, label)
     as each is asked, `text` (a piece of the answer) as it comes, `action`

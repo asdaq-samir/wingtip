@@ -22,14 +22,15 @@ from ..schemas.chart import (
     PickDeleted,
     PickSaved,
 )
+from ..gateway import DEVELOPER, SHARED
 
 router = APIRouter()
 
 # Half a chart cycle, in seconds -- how long a browser (or a CDN in
 # front of this app) may keep a tile before asking again, so a new
 # edition reaches a returning pilot within a month of its date.
-# PlannerProxyController forwards Cache-Control for the tile path alone;
-# see its own comment.
+# The gateway forwards Cache-Control only for routes marked SHARED
+# (app.gateway), as the tiles' are.
 _CHART_TILE_MAX_AGE_S = 28 * 24 * 3600
 
 
@@ -54,7 +55,7 @@ def _chart_tile(kind: charts.ChartKind, z: int, x: int, y: int, scale: int = 1) 
 # Before the plain tile's route, which would take "93@2x" for its y and
 # turn it away as no number.
 @router.get("/api/chart-tile/{kind}/{z}/{x}/{y}@2x.png",
-            responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}})
+            responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}}, openapi_extra=SHARED)
 def chart_tile_2x(kind: str, z: int, x: int, y: int) -> Response:
     """The same tile at twice the pixels, 512 on a side, for a 2x or 3x
     screen: drawn from the FAA's sheet at that size, where the browser
@@ -66,7 +67,7 @@ def chart_tile_2x(kind: str, z: int, x: int, y: int) -> Response:
 
 
 @router.get("/api/chart-tile/{kind}/{z}/{x}/{y}.png",
-            responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}})
+            responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}}, openapi_extra=SHARED)
 def chart_tile(kind: str, z: int, x: int, y: int) -> Response:
     """Any kind of chart by its key (`chart_layers` on the course lists
     them): `sec`, `tac`, `ifr_low`, `ifr_high`, `ifr_area`. What the
@@ -85,7 +86,7 @@ def chart_tile(kind: str, z: int, x: int, y: int) -> Response:
     return _chart_tile(charts.KINDS[kind], z, x, y)
 
 
-@router.get("/api/classify")
+@router.get("/api/classify", openapi_extra=DEVELOPER)
 def classify(
     lat: Annotated[float, Query(ge=-90, le=90)], lon: Annotated[float, Query(ge=-180, le=180)]
 ) -> Classification:
@@ -108,7 +109,7 @@ class PickRequest(BaseModel):
     note: str | None = None
 
 
-@router.post("/api/picks")
+@router.post("/api/picks", openapi_extra=DEVELOPER)
 def add_pick(pick: PickRequest) -> PickSaved:
     r = load_route(pick.departure_ident, pick.destination_ident)
 
@@ -141,7 +142,7 @@ def add_pick(pick: PickRequest) -> PickSaved:
     return PickSaved(ok=True, pick=saved, displaced=saved["displaced"], summary=chartlabels.summarise(route))
 
 
-@router.delete("/api/picks")
+@router.delete("/api/picks", openapi_extra=DEVELOPER)
 def remove_pick(dep: str, dest: str, lat: float, lon: float) -> PickDeleted:
     route = chartlabels.route_key(*route_key(dep, dest))
     removed = chartlabels.delete_pick(route, lat, lon)
@@ -156,7 +157,7 @@ def remove_pick(dep: str, dest: str, lat: float, lon: float) -> PickDeleted:
 MAX_HALF_WIDTH_NM = 10.0
 
 
-@router.get("/api/detect/stream")
+@router.get("/api/detect/stream", openapi_extra=DEVELOPER)
 def detect_stream(
     dep: str,
     dest: str,

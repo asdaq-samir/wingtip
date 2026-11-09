@@ -76,7 +76,7 @@ areas_for() {
       engine/*|apps/web/src/lib/fixtures/*|services/planner/tests_wingtip/fixtures/native/*) found+="engine " ;;
     esac
     case "$path" in
-      services/gateway/*) found+="java " ;;
+      services/gateway/*|services/planner/openapi.json|services/assistant/openapi.json) found+="java " ;;
     esac
     case "$path" in
       apps/ios/*|apps/web/src/lib/fixtures/*|apps/web/src/lib/acs.json|engine/facade/*|engine/crates/*|engine/bindings/ffi/*|engine/Cargo.*|services/planner/tests_wingtip/fixtures/native/*)

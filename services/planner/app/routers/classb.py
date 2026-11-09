@@ -19,13 +19,14 @@ from fastapi import APIRouter
 from wingtip import airspace, altitude, classb, weather
 
 from ..schemas.classb import ClassBAirport, ClassBResponse
+from ..gateway import PUBLIC
 
 log = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.get("/api/class-b", response_model=ClassBResponse)
+@router.get("/api/class-b", response_model=ClassBResponse, openapi_extra=PUBLIC)
 def class_b_airports() -> ClassBResponse:
     """Every Class B airport: where it is, and what the weather is doing
     there now and what it is forecast to do.

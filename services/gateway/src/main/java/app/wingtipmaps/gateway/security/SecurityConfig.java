@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.security;
 
+import app.wingtipmaps.gateway.controller.UpstreamRoutes;
 import app.wingtipmaps.gateway.service.PilotService;
 import jakarta.servlet.Filter;
 import java.net.URI;
@@ -142,58 +143,42 @@ public class SecurityConfig {
                             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                             // The front end itself.
                             .requestMatchers("/app", "/app/**").permitAll();
-                    // The developer's work, matched before the public GET
-                    // rule below so the stack's status and its services
-                    // are not read by anyone who asks. Picks are the
-                    // model's training labels, so writing one is training
-                    // the next model. The role where a session can hold
-                    // one; nobody where none can and nothing opened them.
+                    // The developer's work: the role where a session can
+                    // hold one; nobody where none can and nothing opened them.
                     AuthorizationManager<RequestAuthorizationContext> developer = switch (signIn.access()) {
                         case SIGN_IN -> new DeveloperOnly(pilots);
                         case OPEN -> (authentication, context) -> new AuthorizationDecision(true);
                         case CLOSED -> (authentication, context) -> new AuthorizationDecision(false);
                     };
+                    // Which of the planner's and the assistant's routes are
+                    // whose, as the two services mark each in its OpenAPI
+                    // document (UpstreamRoutes, x-gateway's access): the
+                    // developer's first, so the stack's status and its
+                    // services are not read by anyone who asks. Picks are
+                    // the model's training labels, so writing one is
+                    // training the next model; the mock oral is a billed
+                    // Claude call, the developer's until a CFI has reviewed
+                    // what it says; the training page's chart reads are
+                    // chart-vision jobs the planner runs and keeps.
+                    UpstreamRoutes upstream = UpstreamRoutes.shipped();
                     auth
-                            .requestMatchers(HttpMethod.POST, "/api/planner/retrain", "/api/planner/charts/refresh")
-                            .access(developer)
-                            .requestMatchers(HttpMethod.POST, "/api/planner/picks").access(developer)
-                            .requestMatchers(HttpMethod.DELETE, "/api/planner/picks").access(developer)
-                            // The mock oral: a billed Claude call a
-                            // question and an answer, and the developer's
-                            // until a CFI has reviewed what it says.
-                            .requestMatchers(HttpMethod.POST, "/api/planner/oral/**").access(developer)
-                            .requestMatchers("/api/planner/status", "/api/planner/dev/**").access(developer)
-                            // The training page's chart reads: each corridor
-                            // read is a chart-vision job on a thread of the
-                            // planner's, kept on disk, and the classifier
-                            // reads tiles; neither is for planning a route.
-                            .requestMatchers(HttpMethod.GET, "/api/planner/detect/stream", "/api/planner/classify",
-                                    "/api/planner/model-comparison")
-                            .access(developer)
+                            .requestMatchers(upstream.matcher(UpstreamRoutes.Access.DEVELOPER)).access(developer)
                             // The web app's speed over time (SpeedController).
                             .requestMatchers(HttpMethod.GET, "/api/speed").access(developer);
                     // Reading from the planner: planning a route needs no
-                    // account.
-                    auth.requestMatchers(HttpMethod.GET, "/api/planner/**").permitAll();
-                    // The Go / No-Go is a read too, though a POST: the
-                    // pilot's minimums, loading and logbook ride in its body,
-                    // and it changes nothing on the planner.
-                    auth.requestMatchers(HttpMethod.POST, "/api/planner/go-no-go").permitAll();
-                    // So are the native app's debrief and lost comms: the
-                    // track and the segments ride in the body, and nothing
-                    // on the planner changes (app.figures).
-                    auth.requestMatchers(HttpMethod.POST, "/api/planner/debrief", "/api/planner/lost-comms").permitAll();
-                    // And a clearance heard: its words in the body, its
-                    // places found, nothing kept (app.routers.clearance).
-                    auth.requestMatchers(HttpMethod.POST, "/api/planner/clearance/places").permitAll();
+                    // account. The Go / No-Go, the debrief, lost comms and a
+                    // clearance's places are reads too, though POSTs: the
+                    // pilot's own inputs ride in the body, and nothing on
+                    // the planner changes.
+                    auth.requestMatchers(upstream.matcher(UpstreamRoutes.Access.PUBLIC)).permitAll();
                     // A download manager asks for a file's size first:
                     // ForeFlight's, for the checkpoints' pack.
                     auth.requestMatchers(HttpMethod.HEAD, "/api/planner/foreflight-pack/**").permitAll();
-                    // Writing through the planner -- a checkpoint note, a
-                    // corridor build (minutes of Overpass and FAA I/O per
-                    // call), the Brief's narrative (a real billed Claude
-                    // call every time) -- need a session as soon as this deployment
-                    // offers any way to get one.
+                    // Writing through the planner -- a checkpoint note, the
+                    // Brief's narrative, the assistant, the words (a real
+                    // billed Claude call every time) -- and any address no
+                    // document marks (a 404 from the proxy) need a session
+                    // as soon as this deployment offers any way to get one.
                     //
                     // Where nothing does, they are open only when the
                     // deployment says so (app.open-writes): a machine of
@@ -268,11 +253,11 @@ public class SecurityConfig {
                         // session to forge, only its token (SpeedController).
                         // The Go / No-Go changes nothing, so a forged one
                         // gains nothing; the native app holds no cookie to
-                        // echo (PlannerProxyController's go-no-go). The
-                        // debrief, lost comms and a clearance's places
-                        // change nothing either.
-                        .ignoringRequestMatchers("/api/client-errors", "/api/speed/field", "/api/speed/lab", "/api/planner/go-no-go",
-                                "/api/planner/debrief", "/api/planner/lost-comms", "/api/planner/clearance/places"))
+                        // echo. The debrief, lost comms and a clearance's
+                        // places change nothing either: each route the
+                        // planner marks so (x-gateway's csrf: false).
+                        .ignoringRequestMatchers("/api/client-errors", "/api/speed/field", "/api/speed/lab")
+                        .ignoringRequestMatchers(UpstreamRoutes.shipped().csrfExempt()))
                 // The handler above resolves the token lazily and nothing
                 // server-rendered ever forces it, so without this filter
                 // the XSRF-TOKEN cookie is never written and every POST

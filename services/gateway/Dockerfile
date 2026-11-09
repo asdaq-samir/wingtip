@@ -53,6 +53,10 @@ RUN --mount=type=cache,target=/root/.m2/repository \
 # openapi-generator-maven-plugin): at ../assistant from the pom, where it
 # is in the repository too.
 COPY services/assistant/openapi.json /assistant/openapi.json
+# And the planner's: with the assistant's, the routes the proxy forwards
+# and who may call each, from their x-gateway marks (UpstreamRoutes),
+# copied into the jar by pom.xml.
+COPY services/planner/openapi.json /planner/openapi.json
 # src/main alone: the tests are neither run here (-DskipTests) nor
 # wanted in the layer, where an edited test rebuilt the jar.
 COPY services/gateway/src/main ./src/main

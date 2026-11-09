@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from . import planner
+from .gateway import gateway
 from .schemas import NoteCheckpoint, NoteDone, NoteError, NoteStart
 from .settings import get_settings
 
@@ -109,7 +110,8 @@ def _name(cp: dict | None) -> str | None:
     return (cp.get("name") or cp["category"]) if cp else None
 
 
-@router.post("/api/checkpoint-notes/generate", responses={200: {"content": {"application/x-ndjson": {}}}})
+@router.post("/api/checkpoint-notes/generate", responses={200: {"content": {"application/x-ndjson": {}}}},
+             openapi_extra=gateway("signed-in", paid="CHECKPOINT_NOTES", pilot=True))
 def describe_checkpoints(
     request: GenerateNotesRequest,
     x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER),

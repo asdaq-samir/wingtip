@@ -31,6 +31,7 @@ from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel, Field
 
 from . import planner
+from .gateway import gateway
 from .settings import get_settings
 
 #: Haiku, as the checkpoint notes' CHECKPOINT_NOTE_MODEL: the job is short
@@ -279,10 +280,15 @@ def _sources(found: dict) -> list[Source]:
 
 #: The body each reading takes, as the planner's own sources endpoint
 #: reads it (its routers/words.py has the shapes); passed on whole.
+#: What the gateway forwards: a briefing, a Go / No-Go or a debrief's
+#: figures, none over a few tens of KB. Each source becomes prompt text a
+#: billed call reads, so a 4 MB body would be about 190k tokens a call.
+WORDS = gateway("signed-in", paid="WORDS", body_limit=64 * 1024)
+
 ASK = Body(..., description="The reading's ask, as the planner's POST /api/words/{kind}/sources takes it.")
 
 
-@router.post("/api/words/notams")
+@router.post("/api/words/notams", openapi_extra=WORDS)
 def notam_words(ask: dict = ASK) -> NotamWords:
     """The NOTAMs that matter for a flight ({dep, dest, stops, depart}), in
     a few sentences: the NOTAMs in force or to come at every field the
@@ -294,7 +300,7 @@ def notam_words(ask: dict = ASK) -> NotamWords:
     return NotamWords(**words.model_dump(), coverage_since=coverage, unchecked=found.get("unchecked") or [])
 
 
-@router.post("/api/words/weather")
+@router.post("/api/words/weather", openapi_extra=WORDS)
 def weather_words(ask: dict = ASK) -> WordsAnswer:
     """The weather for a flight as a briefer would say it ({dep, dest,
     stops, depart, ete_min, fixes, leg_min}, as GET /api/briefing is
@@ -302,7 +308,7 @@ def weather_words(ask: dict = ASK) -> WordsAnswer:
     return say(WEATHER_ASK, _sources(sources_for("weather", ask)), most=MOST_SENTENCES)
 
 
-@router.post("/api/words/risk")
+@router.post("/api/words/risk", openapi_extra=WORDS)
 def risk_words(ask: dict = ASK) -> WordsAnswer:
     """Where the risk in a flight is ({verdict, pilot}: the Go / No-Go as
     the app has it and the pilot's record). Never "safe": the decision is
@@ -310,7 +316,7 @@ def risk_words(ask: dict = ASK) -> WordsAnswer:
     return say(RISK_ASK, _sources(sources_for("risk", ask)), most=MOST_SENTENCES)
 
 
-@router.post("/api/words/debrief")
+@router.post("/api/words/debrief", openapi_extra=WORDS)
 def debrief_words(ask: dict = ASK) -> DebriefWordsAnswer:
     """A flown flight's debrief ({debrief}) in a few sentences, and a
     paragraph for the pilot's instructor written from them. A 422 from
@@ -319,7 +325,7 @@ def debrief_words(ask: dict = ASK) -> DebriefWordsAnswer:
                output=DebriefWords, answer=DebriefWordsAnswer)
 
 
-@router.post("/api/words/changes")
+@router.post("/api/words/changes", openapi_extra=WORDS)
 def changes_words(ask: dict = ASK) -> ChangesWords:
     """What changed in a flight's briefing since the last look ({dep,
     dest, stops, then, now}), for a watch that reads the briefing again

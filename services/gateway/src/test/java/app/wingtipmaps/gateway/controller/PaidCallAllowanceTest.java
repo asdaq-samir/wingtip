@@ -68,24 +68,24 @@ class PaidCallAllowanceTest {
      *  or the planner is asked. */
     @Test
     void aNavLogPastTheLimitIsA413() throws Exception {
-        String huge = "{\"legs\":\"" + "x".repeat(PlannerProxyController.NARRATIVE_BODY_LIMIT) + "\"}";
+        String huge = "{\"legs\":\"" + "x".repeat(256 * 1024) + "\"}";
         finish(post("/api/planner/briefing/narrative")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(huge))
                 .andExpect(status().isPayloadTooLarge())
-                .andExpect(jsonPath("$.detail").value("a nav log is at most 256 KB"));
+                .andExpect(jsonPath("$.detail").value("a request to /api/briefing/narrative is at most 256 KB"));
     }
 
     /** A reading put in words is a few tens of KB: past 64 KB it is
      *  refused before the allowance or the assistant is asked. */
     @Test
     void aReadingPastTheWordsLimitIsA413() throws Exception {
-        String huge = "{\"debrief\":\"" + "x".repeat(PlannerProxyController.WORDS_BODY_LIMIT) + "\"}";
+        String huge = "{\"debrief\":\"" + "x".repeat(64 * 1024) + "\"}";
         finish(post("/api/planner/words/debrief")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(huge))
                 .andExpect(status().isPayloadTooLarge())
-                .andExpect(jsonPath("$.detail").value("a reading to put in words is at most 64 KB"));
+                .andExpect(jsonPath("$.detail").value("a request to /api/words/debrief is at most 64 KB"));
     }
 
     @Test
