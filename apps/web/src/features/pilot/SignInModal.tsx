@@ -29,10 +29,13 @@ import { Separator } from "../../components/ui/separator";
  * one that was not opened a blank 401 -- on the local stack, which
  * registers neither, both did.
  */
-export default function SignInModal({ plain = false }: {
+export default function SignInModal({ plain = false, inline = false }: {
   /** A tinted word, as a row's action (Setup's Account group), not a
    *  bordered button. */
   plain?: boolean;
+  /** A tinted link inside a sentence ("Sign in to keep the flights you
+   *  plan", FPL's Saved), its 44-point area round it. */
+  inline?: boolean;
 } = {}) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -75,7 +78,14 @@ export default function SignInModal({ plain = false }: {
         }
       }}
       title="Sign in to Wingtip Maps" description="Save your airplanes and filed flights to your own account."
-      trigger={plain ? (
+      trigger={inline ? (
+        <button
+          type="button" data-testid="sign-in-inline"
+          className="relative font-semibold text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Sign in
+        </button>
+      ) : plain ? (
         <Button
           variant="ghost" size="sm" data-testid="sign-in"
           className={cn("relative -mr-2 px-2 font-normal text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}

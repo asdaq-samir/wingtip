@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Route } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +9,9 @@ import { flightsQuery, pilotQuery } from "../../../lib/queryClient";
 import QueryState from "../../../components/QueryState";
 import { useStripShows } from "../hooks/useStripShows";
 import { RecentRouteTiles } from "./RecentRoutes";
+
+// The sign-in sheet's code with its first tap, not FPL's first load.
+const SignInModal = lazy(() => import("../../pilot/SignInModal"));
 
 /** The most the strip shows, newest first; Saved's title opens them all. */
 const STRIP_MOST = 10;
@@ -51,7 +55,9 @@ function SavedTiles({ signedIn }: { signedIn: boolean }) {
   const flightsAsked = useQuery({ ...flightsQuery, enabled: signedIn });
   const flights = flightsAsked.data;
   const shown = [...(flights ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, STRIP_MOST);
-  if (!signedIn) return <StripNote>Sign in to keep the flights you plan.</StripNote>;
+  // "Sign in" the way there, a tinted link, where the note was a dead end
+  // (the FPL audit's A21).
+  if (!signedIn) return <StripNote><Suspense fallback="Sign in"><SignInModal inline /></Suspense> to keep the flights you plan.</StripNote>;
   // Could not be fetched: said here, with Try again, as every list says it
   // (QueryState), where the strip was left blank.
   if (flightsAsked.isError) return <QueryState query={flightsAsked} fetching="Fetching your flights…" failed="Your flights could not be fetched." />;
