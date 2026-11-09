@@ -209,7 +209,7 @@ private struct TurnBubble: View {
             if turn.role == .user {
                 Text(turn.content)
                     .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .accessibilityLabel("You asked: \(turn.content)")
@@ -222,7 +222,7 @@ private struct TurnBubble: View {
                     Text(turn.content)
                         .textSelection(.enabled)
                         .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
-                        .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("The assistant: \(turn.content)")
                 }

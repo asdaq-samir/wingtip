@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.offline.KeptForAir
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -25,6 +26,9 @@ class AirportModel : ViewModel() {
         val problem: String? = null,
         /** A search or a field's card being fetched: its skeleton shows. */
         val loading: Boolean = false,
+        /** When the card shown was fetched, where it is the one kept for
+         *  the air; null when it is the network's own. */
+        val keptAtMs: Long? = null,
     )
 
     private val _state = MutableStateFlow(State())
@@ -62,8 +66,13 @@ class AirportModel : ViewModel() {
         _state.update { it.copy(loading = true) }
         viewModelScope.launch {
             try {
-                val place = Planner.place(ident.trim().uppercase())
-                _state.update { it.copy(place = place, suggestions = emptyList(), query = place.ident, problem = null, loading = false) }
+                // Kept as it comes, and the kept card given back with its time
+                // where the network fails (KeptForAir).
+                val had = KeptForAir.had(KeptForAir.AIRPORTS, ident.trim().uppercase(), AirportPlace.serializer()) { Planner.place(ident.trim().uppercase()) }
+                val place = had.value
+                _state.update {
+                    it.copy(place = place, keptAtMs = had.fetchedAtMs.takeIf { had.kept }, suggestions = emptyList(), query = place.ident, problem = null, loading = false)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

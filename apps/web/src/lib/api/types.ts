@@ -361,6 +361,9 @@ export type SpeedFieldReport = Gateway["FieldReport"];
  *  filed nav log, fetched one flight at a time. */
 export type FlightSummary = Gateway["FlightSummaryDto"];
 export type Flight = Gateway["FlightDto"];
+/** A saved flight's share, and a flight shared with whoever has its link (FlightShareController). */
+export type FlightShare = Gateway["FlightShareDto"];
+export type SharedFlight = Gateway["SharedFlightDto"];
 /** A flight's flown track as saved to the account (lib/track). */
 export type SavedTrack = Gateway["TrackDto"];
 /** POST /api/flights body -- files (replacing any previous one) a nav

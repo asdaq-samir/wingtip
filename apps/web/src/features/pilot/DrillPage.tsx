@@ -5,8 +5,9 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
 import { answered, deckOf, dueCards, keepProgress, keptProgress, nextDue, type Card, type DeckKey, type Light } from "./drills";
 import { TEXT } from "../../lib/text";
+import { SIGNAL } from "../../lib/tokens";
 
-const LIGHT: Record<Light, string> = { green: "#16a34a", red: "#dc2626", white: "#f8fafc" };
+const LIGHT: Record<Light, string> = SIGNAL;
 
 /** The tower's light as the card shows it: a lamp, flashing or
  *  alternating as the signal does, and said in words beside it. */

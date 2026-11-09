@@ -100,8 +100,8 @@ def test_sources_status_names_each_source_and_says_which_is_served_on():
     _store("metars", {}, fetched_at=150.0)
     weather_store.write_attempt("metars", 150.0, None)
     by_name = {s["name"]: s for s in weather.sources_status()}
-    assert by_name["TAFs"] == {"name": "TAFs", "fetched_at": 100.0, "kept_until": 900.0, "failing": True}
-    assert by_name["METARs"] == {"name": "METARs", "fetched_at": 150.0, "kept_until": None, "failing": False}
+    assert by_name["TAFs"] == {"name": "TAFs", "key": "tafs", "fetched_at": 100.0, "kept_until": 900.0, "failing": True}
+    assert by_name["METARs"] == {"name": "METARs", "key": "metars", "fetched_at": 150.0, "kept_until": None, "failing": False}
     # The winds aloft, modelled, each period to the end of its own window.
     winds = by_name["Winds aloft, modelled (GFS), 6-hour"]
     assert winds["fetched_at"] is None and not winds["failing"]

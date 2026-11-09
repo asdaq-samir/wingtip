@@ -27,6 +27,7 @@ import { LinkSignIn, TvLink } from "../pilot";
 import { EmergencyHost } from "../emergency";
 import { AirplaneProfileHost } from "../airplane";
 import { AutoLogbookHost } from "../logbook-auto";
+import { SharedFlightHost } from "../shared-flight";
 import { BootMap, PlanWorkspace } from "../plan";
 import { loadTrainWorkspace } from "../chart-labels";
 import { useIsDesktop } from "../../hooks/use-desktop";
@@ -41,14 +42,10 @@ import type { WorkspacePieces } from "./workspace";
  *  an empty pill for a moment, at the owner's notice ("why is setup tab
  *  slow to load"). */
 
-/**
- * The training workspace on its own chunk. It carries the developer's
- * console -- charts, tables, the model registry -- and a pilot loading
- * the planner has no use for any of it; eagerly imported here it was
- * about half of the page's JavaScript, parsed on every visit.
- * React's own `lazy`, resolved while the `Suspense` below shows the
- * empty shell.
- */
+/** The training workspace on its own chunk. It carries the developer's console -- charts, tables, the model
+ *  registry -- and a pilot loading the planner has no use for any of it; eagerly imported here it was about half
+ *  of the page's JavaScript, parsed on every visit. React's own `lazy`, resolved while the `Suspense` below shows
+ *  the empty shell. */
 const TrainWorkspace = lazy(loadTrainWorkspace);
 
 type Mode = "pilot" | "dev";
@@ -317,6 +314,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 <AirplaneProfileHost />
                 {/* A flight ended on own ship's GPS, offered for the logbook (features/logbook-auto); the ⌘K palette. */}
                 <AutoLogbookHost />
+                {/* A flight another pilot sent, previewed before it is used (features/shared-flight). */}
+                <SharedFlightHost />
                 <PaletteHost />
                 {/* Dev mode's refusal: someone it is not for, on the dev page, is taken to the map. */}
                 <DevGuard />

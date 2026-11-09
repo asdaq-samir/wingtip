@@ -39,6 +39,7 @@ struct FlightsView: View {
                     // a swipe away, Edit and Flown Track to the right.
                     .contextMenu {
                         editButton(flight)
+                        shareButtons(flight)
                         flownTrack(flight)
                         Button("Delete", systemImage: "trash", role: .destructive) { model.delete(flight) }
                     }
@@ -67,12 +68,29 @@ struct FlightsView: View {
             }
         }
         .task(id: session.signedIn) { await model.load() }
+        .sheet(item: $model.sendingLink) { ActivityView(items: [$0.url]).presentationDetents([.medium, .large]) }
         // Left with an Undo still up: the delete kept.
         .onDisappear { if let removed = model.removed { Task { await model.keep(removed.flight) } } }
     }
 
     private func editButton(_ flight: SavedFlight) -> some View {
         Button("Edit", systemImage: "pencil") { model.edit(flight) }
+    }
+
+    /// Share… by link, the N-number with it only where the pilot picks so;
+    /// Stop Sharing once shared, which ends the link for everyone.
+    @ViewBuilder private func shareButtons(_ flight: SavedFlight) -> some View {
+        if let tail = flight.aircraftTailNumber {
+            Menu {
+                Button("Share Link") { Task { await model.share(flight, includeTail: false) } }
+                Button("Share Link with \(tail)") { Task { await model.share(flight, includeTail: true) } }
+            } label: { Label("Share…", systemImage: "square.and.arrow.up") }
+        } else {
+            Button("Share…", systemImage: "square.and.arrow.up") { Task { await model.share(flight, includeTail: false) } }
+        }
+        if flight.share != nil {
+            Button("Stop Sharing", systemImage: "xmark.circle") { Task { await model.stopSharing(flight) } }
+        }
     }
 
     private func flownTrack(_ flight: SavedFlight) -> some View {
@@ -90,7 +108,7 @@ struct SavedFlightRow: View {
     var body: some View {
         let route = SavedFlightsModel.route(flight)
         let title = SavedFlightsModel.title(flight)
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             Text(title).font(title == route ? .headline.monospaced() : .headline)
             if title != route { Text(route).font(.subheadline.monospaced()).foregroundStyle(.secondary) }
             HStack(spacing: WingtipSpace.md) {

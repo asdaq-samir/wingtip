@@ -100,7 +100,7 @@ private struct StripFigure: View {
     @Environment(\.dynamicTypeSize) private var size
 
     var body: some View {
-        let layout = size.isAccessibilitySize ? AnyLayout(HStackLayout(spacing: WingtipSpace.sm)) : AnyLayout(VStackLayout(spacing: 2))
+        let layout = size.isAccessibilitySize ? AnyLayout(HStackLayout(spacing: WingtipSpace.sm)) : AnyLayout(VStackLayout(spacing: WingtipSpace.xxs))
         layout {
             Text(name).font(.caption2).foregroundStyle(.secondary)
             if size.isAccessibilitySize { Spacer(minLength: 0) }

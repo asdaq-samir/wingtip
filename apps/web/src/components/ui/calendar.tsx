@@ -54,7 +54,7 @@ function Calendar({
         ),
         month_caption: cn("flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)", defaultClassNames.month_caption),
         dropdowns: cn(
-          "flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-medium pointer-coarse:text-[1.0625rem] pointer-coarse:font-semibold",
+          "flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-medium pointer-coarse:text-(length:--type-row) pointer-coarse:font-semibold",
           defaultClassNames.dropdowns,
         ),
         dropdown_root: cn(
@@ -67,8 +67,8 @@ function Calendar({
         caption_label: cn(
           "font-medium select-none",
           captionLayout === "label"
-            ? "text-sm pointer-coarse:text-[1.0625rem]"
-            : "flex items-center gap-1 rounded-(--cell-radius) text-sm pointer-coarse:text-[1.0625rem] [&>svg]:size-3.5 [&>svg]:text-muted-foreground",
+            ? "text-sm pointer-coarse:text-(length:--type-row)"
+            : "flex items-center gap-1 rounded-(--cell-radius) text-sm pointer-coarse:text-(length:--type-row) [&>svg]:size-3.5 [&>svg]:text-muted-foreground",
           defaultClassNames.caption_label,
         ),
         month_grid: cn("w-full border-collapse", defaultClassNames.month_grid),
@@ -76,7 +76,7 @@ function Calendar({
         weekday: cn(
           // A note's size and its iOS leading (TEXT.note, 13 on 18 to a
           // finger), where the stock 0.8rem stood on the browser's 1.5.
-          "flex-1 rounded-(--cell-radius) text-xs pointer-coarse:text-[0.8125rem] pointer-coarse:leading-[1.125rem] font-normal text-muted-foreground select-none",
+          "flex-1 rounded-(--cell-radius) text-xs pointer-coarse:text-(length:--type-note) pointer-coarse:leading-[1.125rem] font-normal text-muted-foreground select-none",
           defaultClassNames.weekday,
         ),
         week: cn("mt-2 flex w-full", defaultClassNames.week),

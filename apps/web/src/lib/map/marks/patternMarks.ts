@@ -1,4 +1,5 @@
 import { divIcon } from "./icons";
+import { CHART } from "../../tokens";
 
 /**
  * The traffic patterns the pilot picked (the route's Procedures), on the
@@ -10,11 +11,11 @@ import { divIcon } from "./icons";
  * out of the pattern dashed from its end (departurePattern). Not
  * tappable: a picture of the pattern, the chart under it.
  */
-export const TEAL = "#0e8f8a";
+export const TEAL = CHART.pattern;
 /** A name's ground, darker: white words on the line's teal were 3.95:1,
  *  under the 4.5:1 small words need (WCAG 1.4.3; the iOS audit). This is
  *  5.2:1. */
-const LABEL_TEAL = "#0b7a75";
+const LABEL_TEAL = CHART.patternLabel;
 
 /** From this zoom in, the legs' arrows and names: further out the pattern
  *  is a few pixels round its field, and its words would cover the field's
@@ -29,7 +30,7 @@ export function arrowIcon(bearing: number) {
     iconAnchor: [8, 8],
     html:
       `<svg viewBox="-8 -8 16 16" width="16" height="16" style="transform:rotate(${Math.round(bearing)}deg)" aria-hidden="true">` +
-      `<path d="M0 -6 L5 4 L0 1.5 L-5 4 Z" fill="${TEAL}" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
+      `<path d="M0 -6 L5 4 L0 1.5 L-5 4 Z" fill="${TEAL}" stroke="${CHART.casing}" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
   });
 }
 
@@ -43,6 +44,6 @@ export function labelIcon(words: string) {
     className: "",
     iconSize: [width, 18],
     iconAnchor: [width / 2, 9],
-    html: `<span class="absolute inset-0 grid place-items-center whitespace-nowrap rounded-md text-[11px] leading-none font-bold text-white shadow-sm" style="background:${LABEL_TEAL}">${words.replace(/[<>&]/g, "")}</span>`,
+    html: `<span class="absolute inset-0 grid place-items-center whitespace-nowrap rounded-md text-(length:--type-caption) leading-none font-bold text-white shadow-sm" style="background:${LABEL_TEAL}">${words.replace(/[<>&]/g, "")}</span>`,
   });
 }

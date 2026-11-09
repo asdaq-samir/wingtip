@@ -31,6 +31,7 @@ struct AirportCard: View {
                 Section {
                     // The UI tests' sign the card is up (WingtipUITests/FlowTests).
                     AirportHead(place: place).accessibilityIdentifier("airport-card-head")
+                    KeptAgeLine(kind: .airports, key: ident)
                     AirportPictures(place: place, photos: photos, shown: $shown)
                         .listRowInsets(EdgeInsets())
                     actions(place)
@@ -94,16 +95,15 @@ struct AirportCard: View {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(300))
                 guard !Task.isCancelled else { break }
-                if let fresh = try? await Planner.place(ident) { place = fresh }
+                if let fresh = try? await KeptForAir.answer(.airports, key: ident, fetch: { try await Planner.place(ident) }) { place = fresh.value }
             }
         }
     }
 
     private func load() async {
         do {
-            let fresh = try await Planner.place(ident)
-            place = fresh
-            problem = nil
+            let fresh = try await KeptForAir.answer(.airports, key: ident) { try await Planner.place(ident) }.value
+            place = fresh; problem = nil
             shelf.opened(KeptAirport(fresh))
         } catch let failure as Planner.Failure where failure.status == 404 {
             notFound = true
@@ -253,7 +253,7 @@ struct AirportPictures: View {
                             .overlay(alignment: .bottomLeading) {
                                 // Its photographer and licence, as Commons' licences ask.
                                 Text(credit).font(.caption2).lineLimit(1)
-                                    .padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
+                                    .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xxs)
                                     .floatingGlass(in: Capsule(), material: .thinMaterial).padding(WingtipSpace.sm)
                             }
                     }

@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.LoopFrame
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -42,6 +43,9 @@ data class LoopState(
     val ready: Boolean = false,
     val failed: Boolean = false,
     val oldAfterS: Double = 900.0,
+    /** When the frames' list shown was fetched, where it is the one kept
+     *  for the air; null when it is the network's own. */
+    val keptAtMs: Long? = null,
 ) {
     val shown: Int get() = if (frames.isEmpty()) -1 else minOf(index ?: frames.lastIndex, frames.lastIndex)
     val frame: LoopFrame? get() = frames.getOrNull(shown)
@@ -95,10 +99,16 @@ class WeatherLoop private constructor(private val context: Context, private val 
     private suspend fun fetchForever(kind: LoopKind) {
         while (true) {
             try {
-                val answer = Gateway.json.decodeFromString<LoopAnswer>(Planner.fetch("/api/weather/loop", mapOf("kind" to kind.kind)))
+                // Kept as it comes, and the kept list where the network fails
+                // (KeptForAir): its frames' tiles the map's cache may hold.
+                val had = KeptForAir.had(KeptForAir.WEATHER_LOOP, kind.kind, LoopAnswer.serializer()) { fetch(kind) }
+                val answer = had.value
                 _state.update {
                     val same = it.frames.map(LoopFrame::valid) == answer.frames.map(LoopFrame::valid)
-                    it.copy(frames = answer.frames, oldAfterS = answer.oldAfterS, failed = false, ready = it.ready && same)
+                    it.copy(
+                        frames = answer.frames, oldAfterS = answer.oldAfterS, failed = false, ready = it.ready && same,
+                        keptAtMs = had.fetchedAtMs.takeIf { had.kept },
+                    )
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -170,6 +180,11 @@ class WeatherLoop private constructor(private val context: Context, private val 
         Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 
     companion object {
+        /** The planner's frame list for a pick (/api/weather/loop): the
+         *  loop's own ask, and Keep for the Air's. */
+        suspend fun fetch(kind: LoopKind): LoopAnswer =
+            Gateway.json.decodeFromString<LoopAnswer>(Planner.fetch("/api/weather/loop", mapOf("kind" to kind.kind)))
+
         private val KIND = stringPreferencesKey("weather_loop")
         private val SPEED = stringPreferencesKey("weather_loop_speed")
         /** Half the radar's five minutes. */

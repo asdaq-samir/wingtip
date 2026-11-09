@@ -277,7 +277,7 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
    glass -- every sheet, button and figure strip solid white with black figures and a deep blue tint,
    AA-large on white. */
 html[data-chart-light="bright"] .liquid-glass {
-  background-color: #ffffff !important;
+  background-color: var(--card) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
@@ -285,11 +285,11 @@ html[data-chart-light="bright"] .liquid-glass {
    them, where a shadow alone is lost in the sun. */
 html[data-chart-light="bright"] [data-slot="map-panel"],
 html[data-chart-light="bright"] [data-map-controls] button {
-  box-shadow: inset 0 0 0 2px #000;
+  box-shadow: inset 0 0 0 2px var(--border);
 }
 html[data-chart-light="bright"] [data-slot="section-summary"] {
-  background-color: #ffffff;
-  color: #000000;
+  background-color: var(--card);
+  color: var(--foreground);
 }
 
 /* The Chart ink look on its cards, after the sun's rules, yielding to
@@ -299,7 +299,7 @@ html[data-chart-light="bright"] [data-slot="section-summary"] {
 html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], [data-slot="item-group"][role="group"]) {
   border-color: transparent;
   border-radius: var(--radius-card);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.08);
+  box-shadow: var(--depth-card);
 }
 
 @layer base {
@@ -766,7 +766,7 @@ html[data-vt="tab"] [data-slot="map-panel"] [data-panel-body] {
     backdrop-filter: none !important;
     box-shadow:
       0 0 0 1px var(--border),
-      0 2px 12px rgb(0 0 0 / 0.12);
+      var(--depth-float);
     &:is(.dark *) {
       background-color: var(--popover) !important;
     }

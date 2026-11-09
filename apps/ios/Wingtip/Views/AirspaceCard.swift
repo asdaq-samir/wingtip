@@ -172,7 +172,7 @@ struct BandRow: View {
     /// Solid blue for B, magenta for C, dashed blue for D, dashed
     /// magenta for E, as the sectional draws them.
     static func ink(_ cls: String) -> (colour: Color, solid: Bool, dashed: Bool) {
-        let blue = Badge.hex(0x1f5fa8), magenta = Badge.hex(0xa1316f)
+        let blue = Color(uiColor: WingtipColor.Chart.towered), magenta = Color(uiColor: WingtipColor.Chart.untowered)
         switch cls {
         case "B": return (blue, true, false)
         case "C": return (magenta, true, false)
@@ -204,8 +204,8 @@ struct BandRow: View {
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(ink.solid ? Color.white : ink.colour)
                 .frame(width: side, height: side)
-                .background(ink.solid ? ink.colour : Color.clear, in: RoundedRectangle(cornerRadius: 6))
-                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(ink.colour, style: StrokeStyle(lineWidth: 2, dash: ink.dashed ? [3, 2] : [])))
+                .background(ink.solid ? ink.colour : Color.clear, in: RoundedRectangle(cornerRadius: WingtipRadius.badge))
+                .overlay(RoundedRectangle(cornerRadius: WingtipRadius.badge).strokeBorder(ink.colour, style: StrokeStyle(lineWidth: 2, dash: ink.dashed ? [3, 2] : [])))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 Text("Class \(band.airspaceClass)").fontWeight(.semibold)

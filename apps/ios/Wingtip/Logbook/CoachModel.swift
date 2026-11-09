@@ -162,6 +162,13 @@ final class CoachModel {
         }
     }
 
+    /// One line of evidence: "2 Nov 2026 at KMSN, ILS Y RWY 08: …", the
+    /// approach's procedure beside its field where the line is one's.
+    static func evidenceLine(_ e: APICoachEvidence) -> String {
+        let place = e.procedure.map { "\(e.place), \($0)" } ?? e.place
+        return "\(Day.said(e.flownOn)) at \(place): \(e.text)"
+    }
+
     /// Where, how long and with whom a session is flown, as one line.
     static func sessionDetail(_ s: CoachSession) -> String {
         var parts: [String] = []

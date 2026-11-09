@@ -34,13 +34,13 @@ export default function SunlightBanner() {
         TEXT.detail,
       )}
     >
-      <Sun className="size-5 shrink-0 text-[#ffd60a]" strokeWidth={2.5} aria-hidden />
+      <Sun className="size-5 shrink-0 text-(color:--brand-taxiway-yellow)" strokeWidth={2.5} aria-hidden />
       <span className="min-w-0 flex-1">Bright light: high-contrast chart on.</span>
       <Button
         type="button"
         size="sm"
         variant="ghost"
-        className="shrink-0 rounded-full font-semibold text-[#ffd60a] hover:bg-white/10 hover:text-[#ffd60a]"
+        className="shrink-0 rounded-full font-semibold text-(color:--brand-taxiway-yellow) hover:bg-white/10 hover:text-(color:--brand-taxiway-yellow)"
         onClick={() => {
           setChartLight("off");
           see(SEEN);

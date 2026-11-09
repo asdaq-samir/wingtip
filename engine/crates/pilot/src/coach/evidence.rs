@@ -76,13 +76,15 @@ impl Weak {
     }
 }
 
-/// One line of evidence: its id ("ev:3"), the day flown, where, what it
-/// shows and the line itself.
+/// One line of evidence: its id ("ev:3"), the day flown, where, the
+/// approach procedure where it was one ("ILS Y RWY 08"), what it shows and
+/// the line itself.
 pub struct Evidence {
     pub id: String,
     pub flown_on: String,
     pub day: i64,
     pub place: String,
+    pub procedure: Option<String>,
     pub weak: Weak,
     pub text: String,
 }
@@ -167,7 +169,7 @@ fn flight(d: &Value, mut add: impl FnMut(Weak, String)) {
 /// The evidence in the debriefs flown within RECENT_DAYS of `today`, the
 /// newest first, each with its id.
 pub fn evidence(name: &str, debriefs: &[Value], today: i64) -> Result<Vec<Evidence>, String> {
-    let mut found: Vec<(i64, String, String, Weak, String)> = Vec::new();
+    let mut found: Vec<Evidence> = Vec::new();
     for d in debriefs {
         let flown_on = d.get("flown_on").and_then(Value::as_str).ok_or_else(|| format!("{name}: a debrief has no \"flown_on\""))?;
         let (y, m, dd) = day(name, flown_on)?;
@@ -176,7 +178,20 @@ pub fn evidence(name: &str, debriefs: &[Value], today: i64) -> Result<Vec<Eviden
             continue;
         }
         let place = d.get("place").and_then(Value::as_str).unwrap_or("").to_owned();
-        let mut add = |weak, text| found.push((on, flown_on.to_owned(), place.clone(), weak, text));
+        // The procedure's name as the chart gives it, so a pilot who flew
+        // two approaches into one field knows which the line is about.
+        let procedure = d.get("procedure").and_then(Value::as_str).map(str::trim).filter(|p| !p.is_empty()).map(str::to_owned);
+        let mut add = |weak, text| {
+            found.push(Evidence {
+                id: String::new(),
+                flown_on: flown_on.to_owned(),
+                day: on,
+                place: place.clone(),
+                procedure: procedure.clone(),
+                weak,
+                text,
+            })
+        };
         match d.get("kind").and_then(Value::as_str) {
             Some("approach") => approach(d, &mut add),
             Some("flight") => flight(d, &mut add),
@@ -184,12 +199,11 @@ pub fn evidence(name: &str, debriefs: &[Value], today: i64) -> Result<Vec<Eviden
         }
     }
     // Newest first, the order found kept within a day.
-    found.sort_by_key(|f| std::cmp::Reverse(f.0));
-    Ok(found
-        .into_iter()
-        .enumerate()
-        .map(|(i, (day, flown_on, place, weak, text))| Evidence { id: format!("ev:{}", i + 1), flown_on, day, place, weak, text })
-        .collect())
+    found.sort_by_key(|f| std::cmp::Reverse(f.day));
+    for (i, e) in found.iter_mut().enumerate() {
+        e.id = format!("ev:{}", i + 1);
+    }
+    Ok(found)
 }
 
 #[cfg(test)]
@@ -210,6 +224,18 @@ mod tests {
         assert_eq!(e[0].weak, Weak::Unstable);
         // 1,300 - 887 = 413 ft above the field; 1,500 is 613, over the gate.
         assert!(e[0].text.contains("413 ft above the field"), "{}", e[0].text);
+        assert_eq!(e[0].procedure, None);
+    }
+
+    #[test]
+    fn an_approachs_evidence_names_its_procedure() {
+        let d = parse(
+            r#"[{"kind":"approach","flown_on":"2026-10-01","place":"KMSN","procedure":"ILS Y RWY 08","elevation_ft":887,
+                "profile":[{"to_go_nm":1,"alt_ft":1300,"off":true}],"findings":[]}]"#,
+        )
+        .unwrap();
+        let e = evidence("t", d.as_array().unwrap(), days_from_civil(2026, 11, 1)).unwrap();
+        assert_eq!((e[0].place.as_str(), e[0].procedure.as_deref()), ("KMSN", Some("ILS Y RWY 08")));
     }
 
     #[test]

@@ -20,15 +20,16 @@ final class CheckpointAnnotation: NSObject, MKAnnotation {
 
     var title: String? { name }
 
-    /// The rating scale's steps (lib/scoreScale SCORE_STEPS, format.ts
+    /// The rating scale's steps (design/tokens.json color.score; the web's lib/scoreScale,
     /// scoreColor): the deeper the brown, the better the checkpoint.
     static func colour(for score: Double) -> UIColor {
-        UIColor(hex: score >= 4.5 ? 0x4E3406 : score >= 4.0 ? 0x724D09 : score >= 3.5 ? 0x96660E : score >= 3.0 ? 0xB98014 : 0xD99A1E)
+        score >= 4.5 ? WingtipColor.Score.step5 : score >= 4.0 ? WingtipColor.Score.step4 : score >= 3.5 ? WingtipColor.Score.step3
+            : score >= 3.0 ? WingtipColor.Score.step2 : WingtipColor.Score.step1
     }
 
     /// White on the three deeper steps, ink on the two palest, as the web
     /// app's inkOn picks it.
-    static func ink(for score: Double) -> UIColor { score >= 3.5 ? .white : UIColor(white: 0.1, alpha: 1) }
+    static func ink(for score: Double) -> UIColor { score >= 3.5 ? WingtipColor.Chart.casing : WingtipColor.Chart.fixInk }
 
     /// The names from this zoom in (Leaflet's levels, MapExtras.zoom): out
     /// further, the numbered dots alone, as the web map's checkpoint labels
@@ -67,7 +68,7 @@ final class CheckpointMarkView: MKAnnotationView {
         let ring = UIView(frame: dot.frame)
         ring.layer.cornerRadius = 12
         ring.layer.borderWidth = 1
-        ring.layer.borderColor = UIColor(red: 10 / 255, green: 20 / 255, blue: 28 / 255, alpha: 0.55).cgColor
+        ring.layer.borderColor = WingtipColor.Chart.shade.withAlphaComponent(0.55).cgColor
         ring.layer.shadowColor = UIColor.black.cgColor
         ring.layer.shadowOpacity = 0.45
         ring.layer.shadowRadius = 2
@@ -79,7 +80,7 @@ final class CheckpointMarkView: MKAnnotationView {
         // sectional prints its labels, not black capitals.
         name.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
         name.textColor = WingtipColor.Chart.fixInk
-        name.backgroundColor = UIColor(white: 1, alpha: 0.85)
+        name.backgroundColor = WingtipColor.Chart.casing.withAlphaComponent(0.85)
         name.layer.cornerRadius = WingtipSpace.xs
         name.layer.masksToBounds = true
         addSubview(name)

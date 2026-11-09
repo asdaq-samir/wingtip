@@ -1,3 +1,5 @@
+import { CHART, SCORE } from "./tokens";
+
 /**
  * How good a checkpoint is, as a colour: one ochre hue, pale to dark,
  * more ink for a better landmark. The planner's scores and the training
@@ -13,7 +15,7 @@
  * against the markers' white casing) and are at least 13.8 OKLab units
  * from every flight-category colour.
  */
-export const SCORE_STEPS = ["#d99a1e", "#b98014", "#96660e", "#724d09", "#4e3406"] as const;
+export const SCORE_STEPS = [SCORE.step1, SCORE.step2, SCORE.step3, SCORE.step4, SCORE.step5] as const;
 
 /** Score bands, on the rating scale's own steps (above) so a
  *  colour means one thing across both views. */
@@ -34,5 +36,5 @@ export function inkOn(fill: string): string {
   };
   const luminance = 0.2126 * linear(1) + 0.7152 * linear(3) + 0.0722 * linear(5);
   // Contrast against white is (1.05) / (L + 0.05); below 4.5:1, ink.
-  return 1.05 / (luminance + 0.05) >= 4.5 ? "#ffffff" : "#1c1a17";
+  return 1.05 / (luminance + 0.05) >= 4.5 ? CHART.casing : CHART.fixInk;
 }

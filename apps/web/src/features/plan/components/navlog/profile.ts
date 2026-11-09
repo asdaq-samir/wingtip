@@ -1,5 +1,6 @@
 import { callEngine, type EngineAnswer } from "../../../../lib/engine/engine";
 import type { NavLogRow } from "./rows";
+import { CHART } from "../../../../lib/tokens";
 
 type PlanProfile = EngineAnswer<"plan_profile">;
 
@@ -25,9 +26,9 @@ export function ceilings(airspace: { class: string; ceiling_ft?: number | null }
  *  blue dashed (FAA Aeronautical Chart User's Guide, Airspace); each name
  *  in its colour as text, lightened on a dark card (index.css). */
 export const AIRSPACE: Record<string, { stroke: string; text: string; dashed?: boolean }> = {
-  B: { stroke: "#2465b8", text: "var(--airspace-blue-text)" },
-  C: { stroke: "#c0309f", text: "var(--airspace-magenta-text)" },
-  D: { stroke: "#2465b8", text: "var(--airspace-blue-text)", dashed: true },
+  B: { stroke: CHART.towered, text: "var(--airspace-blue-text)" },
+  C: { stroke: CHART.untowered, text: "var(--airspace-magenta-text)" },
+  D: { stroke: CHART.towered, text: "var(--airspace-blue-text)", dashed: true },
 };
 
 /** Each Class B, C and D's widest piece along the route, by the name it

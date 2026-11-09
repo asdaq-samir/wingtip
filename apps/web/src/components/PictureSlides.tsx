@@ -77,10 +77,7 @@ export function PictureSlides({
           data-testid={testId && `${testId}-dots`}
         >
           {shown.map((_, i) => (
-            <span
-              key={i}
-              className={cn("size-1.5 rounded-full shadow-[0_0_2px_rgba(0,0,0,.6)]", i === page ? "bg-white" : "bg-white/45")}
-            />
+            <span key={i} className={cn("size-1.5 rounded-full shadow-xs shadow-black/60", i === page ? "bg-white" : "bg-white/45")} />
           ))}
         </div>
       )}

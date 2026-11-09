@@ -62,7 +62,7 @@ export function CardTabBar<T extends string>({
         <TabsTrigger
           key={t.value}
           value={t.value}
-          className="pointer-coarse:text-[0.9375rem]"
+          className="pointer-coarse:text-(length:--type-detail)"
           disabled={disabled}
           data-testid={`${testIdPrefix}-${t.value}`}
           onPointerDown={() => {

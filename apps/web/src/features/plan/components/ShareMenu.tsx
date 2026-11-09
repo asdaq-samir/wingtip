@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../../lib/doneNote";
 import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, ListOrdered } from "lucide-react";
 import RoundButton from "../../../components/RoundButton";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../../components/ResponsivePopover";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -14,10 +15,8 @@ import type { Candidate, Course } from "../../../lib/api/types";
 import type { RouteCard } from "../../../lib/openCards";
 import { foreflightRoute, type PlanPoint } from "../../../lib/flightPlanFiles";
 import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "../lib/foreflightPack";
-import { routeName } from "../../../lib/identSchema";
-import { showError } from "../../../lib/problems";
-import { cancelled, shareOrCopy } from "../../../lib/share";
 import { navLogRows } from "./navlog/rows";
+import { useShareLink } from "../hooks/useShareLink";
 
 const SHARE_LABEL: Record<"route" | RouteCard, string> = {
   // The route box's is More, a "…", at the owner's ask ("Don't call it
@@ -106,18 +105,10 @@ export default function ShareMenu({
 }) {
   const [askingReview, setAskingReview] = useState(false);
 
-  // The plan's own address, to another device or person: the share
-  // sheet where the browser has one (Safari on an iPhone), otherwise
-  // copied.
-  const share = useCallback(async () => {
-    const url = window.location.href;
-    const title = routeName(planned.dep, planned.dest, planned.stops);
-    try {
-      if ((await shareOrCopy({ title, url })) === "copied") done("Link Copied");
-    } catch (err) {
-      if (!cancelled(err)) showError("Could not share the route", (err as Error).message);
-    }
-  }, [planned.dep, planned.dest, planned.stops]);
+  // The plan, to another pilot or an instructor, as a link that opens as
+  // a preview (useShareLink): the share sheet where the browser has one
+  // (Safari on an iPhone), otherwise copied.
+  const { share, tail, includeTail, setIncludeTail } = useShareLink(planned, altitudeFt);
 
   // The route as the files and ForeFlight's link take it: the departure,
   // each checkpoint, stop and the destination, as the nav log lists them
@@ -215,6 +206,18 @@ export default function ShareMenu({
               <Fuel />
               Show Fuel Stops
             </DropdownMenuItem>
+          )}
+          {routed && tail && (
+            // The N-number is the pilot's: sent only when ticked, the menu
+            // kept open for the Share under it.
+            <DropdownMenuCheckboxItem
+              checked={includeTail}
+              onCheckedChange={(on) => setIncludeTail(on === true)}
+              onSelect={(e) => e.preventDefault()}
+              data-testid="share-include-tail"
+            >
+              Include {tail}
+            </DropdownMenuCheckboxItem>
           )}
           {routed && (
             <DropdownMenuItem onSelect={() => void share()} data-testid="share-link">

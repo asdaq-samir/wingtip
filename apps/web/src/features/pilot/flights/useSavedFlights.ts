@@ -1,11 +1,14 @@
 import { startTransition, useActionState, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, describeError } from "../../../lib/api/client";
+import { flightShares } from "../../../lib/api/sharedFlights";
+import { cancelled, shareOrCopy } from "../../../lib/share";
+import { showError } from "../../../lib/problems";
 import type { FlightSummary } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
 import { useOptimisticList } from "../../../lib/optimisticList";
 import { flightsQuery } from "../../../lib/queryClient";
-import { flightEdit, flightEditProblem, type FlightEditRequest } from "./flightEdit";
+import { flightEdit, flightEditProblem, flightTitle, type FlightEditRequest } from "./flightEdit";
 
 /** What the row's save asks: a change to send, a problem found before
  *  sending, or the last problem put away (the row opened afresh or let go). */
@@ -120,9 +123,34 @@ export function useSavedFlights() {
     });
   };
 
+  /** Share: the flight shared by link (its N-number only where asked),
+   *  read-only until Stop Sharing, and the link sent on from the share
+   *  sheet, or copied. The list keeps the share, for its Stop Sharing. */
+  const shareFlight = async (flight: FlightSummary, includeTail: boolean) => {
+    try {
+      const share = await flightShares.share(flight.id, includeTail);
+      keep({ ...flight, share });
+      if ((await shareOrCopy({ title: flightTitle(flight), url: share.url })) === "copied") done("Link Copied");
+    } catch (err) {
+      if (!cancelled(err)) showError("Not shared", describeError(err));
+    }
+  };
+  /** Stop Sharing: the link answers no more, for anyone it was sent to. */
+  const stopSharing = async (flight: FlightSummary) => {
+    try {
+      await flightShares.stop(flight.id);
+      keep({ ...flight, share: null });
+      done("Sharing Stopped");
+    } catch (err) {
+      showError("Still shared", describeError(err));
+    }
+  };
+
   return {
     asked,
     list,
+    shareFlight,
+    stopSharing,
     editing,
     toggleEditing: () => setEditing((e) => !e),
     flightToDelete,

@@ -54,6 +54,7 @@ import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.predictiveBack
 import app.wingtipmaps.android.design.rememberPredictiveBack
 import app.wingtipmaps.android.engine.Engine
@@ -64,6 +65,7 @@ import app.wingtipmaps.android.engine.generated.diagramLabels
 import app.wingtipmaps.android.engine.generated.diagramPoint
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.offline.KeptForAir
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -128,7 +130,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
         val back = rememberPredictiveBack(enabled = true, onBack = onClose)
         Surface(Modifier.fillMaxSize().predictiveBack(back)) {
             Column(Modifier.fillMaxSize()) {
-                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg, end = WingtipSpace.Xs), verticalAlignment = Alignment.CenterVertically) {
                     Text("$ident airport diagram", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                     IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = "Close") }
                 }
@@ -145,7 +147,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
                         DiagramPage.note(it, fixAsked),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(12.dp),
+                        modifier = Modifier.padding(WingtipSpace.Md),
                     )
                 }
             }
@@ -254,13 +256,10 @@ class DiagramPage(
          *  their words by the engine, where each is drawn by Android's
          *  PDF text, the fit by the engine. */
         fun read(url: String, cache: File): DiagramPage? {
-            val file = File(cache, "diagram-${url.hashCode()}.pdf")
-            if (!file.exists()) {
-                http.newCall(Request.Builder().url(url).build()).execute().use { response ->
-                    if (!response.isSuccessful) throw IllegalStateException("The FAA answered ${response.code}.")
-                    file.writeBytes(response.body.bytes())
-                }
-            }
+            // The one Keep for the Air kept (KeptForAir) first, so it opens
+            // with no signal; else the cache's, fetched where it is not.
+            val file = KeptForAir.current?.pdf(KeptForAir.AIRPORTS, url)?.takeIf { it.isFile } ?: File(cache, "diagram-${url.hashCode()}.pdf")
+            if (!file.exists()) download(url, file)
             ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
                 PdfRenderer(fd).use { renderer ->
                     if (renderer.pageCount < 1) return null
@@ -273,6 +272,17 @@ class DiagramPage(
                         return DiagramPage(bitmap, w, h, graticule.getOrNull(), graticule.exceptionOrNull()?.message)
                     }
                 }
+            }
+        }
+
+        /** The diagram's PDF from the FAA into `file`, whole or not at all. */
+        fun download(url: String, file: File) {
+            http.newCall(Request.Builder().url(url).build()).execute().use { response ->
+                if (!response.isSuccessful) throw IllegalStateException("The FAA answered ${response.code}.")
+                file.parentFile?.mkdirs()
+                val part = File(file.path + ".part")
+                part.writeBytes(response.body.bytes())
+                if (!part.renameTo(file)) part.delete()
             }
         }
 

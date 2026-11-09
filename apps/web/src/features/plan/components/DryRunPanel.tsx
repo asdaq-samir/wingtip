@@ -164,11 +164,11 @@ export function DryRunControls({
           data-testid="dry-run-pilot-key"
         >
           <span className="flex items-center gap-1">
-            <span aria-hidden="true" className="size-2.5 rounded-sm bg-[rgb(255,176,0)]" />
+            <span aria-hidden="true" className="size-2.5 rounded-sm bg-(--chart-caution)" />
             Ground within {feet(amberBandFt(pilotView))}
           </span>
           <span className="flex items-center gap-1">
-            <span aria-hidden="true" className="size-2.5 rounded-sm bg-[rgb(215,0,21)]" />
+            <span aria-hidden="true" className="size-2.5 rounded-sm bg-(--chart-warning)" />
             Ground above you
           </span>
           <span className="text-muted-foreground">A view, not terrain clearance</span>

@@ -254,7 +254,7 @@ const assistant = createClient<AssistantPaths>({ baseUrl: "", Request: GatewayRe
 assistant.use(csrfAndFailures);
 
 /** The Spring Boot endpoints, on this same origin. */
-const gateway = createClient<GatewayPaths>({ baseUrl: "" });
+export const gateway = createClient<GatewayPaths>({ baseUrl: "" });
 gateway.use(csrfAndFailures);
 
 /** A schema's shape as openapi-fetch hands it back: every fixed-length

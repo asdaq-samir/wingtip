@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.InkColors
 import app.wingtipmaps.android.ui.LocalInk
 
@@ -111,8 +112,8 @@ fun StripRibbon(
 ) {
     val ink = LocalInk.current
     val figures = StripData.ribbonFigures(state)
-    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             val tag = verdict?.let { tagWords(it.finding) }?.let { stringResource(it) }
             if (verdict != null && tag != null) {
                 val wash = when (verdict.finding) {
@@ -123,7 +124,7 @@ fun StripRibbon(
                 Text(
                     tag.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
                     color = ink.words(verdict.finding, MaterialTheme.colorScheme.onSurfaceVariant),
-                    modifier = Modifier.background(wash, CircleShape).padding(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.background(wash, CircleShape).padding(horizontal = WingtipSpace.Sm, vertical = WingtipSpace.Xxs),
                 )
             }
             Text(

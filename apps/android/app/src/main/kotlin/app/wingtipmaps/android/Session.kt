@@ -1,5 +1,6 @@
 package app.wingtipmaps.android
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -8,6 +9,7 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.deleteAccount
 import app.wingtipmaps.android.checklist.ChecklistStore
+import app.wingtipmaps.android.plan.KeptPlan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -92,13 +94,18 @@ class Session : ViewModel() {
     }
 
     /** Signing out ends the session on the gateway and forgets what the
-     *  phone kept of the pilot's, their airplanes' checklists (the owner's
-     *  pick: sign-out clears, as the web app's useLogout does). */
+     *  phone kept of the pilot's, their airplanes' checklists and their
+     *  plan kept for the next launch (the owner's pick: sign-out clears, as
+     *  the web app's useLogout does). The public aviation data kept for the
+     *  air -- the fields' cards, the NOTAMs, the weather (KeptForAir) -- is
+     *  not the pilot's, and stays. */
     fun signOut(context: Context) {
         val checklists = ChecklistStore.of(context.applicationContext)
+        val plan = KeptPlan(context.applicationContext as Application)
         viewModelScope.launch {
             runCatching { Gateway.signOut() }
             forget(checklists)
+            plan.clear()
         }
     }
 
@@ -112,12 +119,14 @@ class Session : ViewModel() {
      *  its words are the problem shown under the account. */
     fun deleteAccount(context: Context) {
         val checklists = ChecklistStore.of(context.applicationContext)
+        val plan = KeptPlan(context.applicationContext as Application)
         viewModelScope.launch {
             _deleting.value = true
             try {
                 Gateway.deleteAccount()
                 _problem.value = null
                 forget(checklists)
+                plan.clear()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

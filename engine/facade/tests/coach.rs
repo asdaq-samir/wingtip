@@ -72,6 +72,20 @@ fn an_unstable_approach_is_one_off_under_500_ft_above_the_field() {
 }
 
 #[test]
+fn an_approachs_evidence_names_the_procedure_flown_and_a_flights_none() {
+    // Two approaches into one field read alike by the field alone; the
+    // chart's name for each ("ILS Y RWY 08") says which.
+    let got = plan(&json!({ "today": "2026-11-09", "entries": [], "debriefs": [
+        { "kind": "approach", "flown_on": "2026-11-01", "place": "KMSN", "procedure": "ILS Y RWY 08",
+          "elevation_ft": 887, "profile": [{ "to_go_nm": 1.0, "alt_ft": 1200.0, "off": true }] },
+        { "kind": "flight", "flown_on": "2026-10-20", "place": "KMSN-KJVL",
+          "patterns": [{ "ident": "KJVL", "off_ft": -300.0, "ok": false }] }] }));
+    let evidence = got["evidence"].as_array().unwrap();
+    assert_eq!((&evidence[0]["place"], &evidence[0]["procedure"]), (&json!("KMSN"), &json!("ILS Y RWY 08")));
+    assert_eq!((&evidence[1]["place"], &evidence[1]["procedure"]), (&json!("KMSN-KJVL"), &Value::Null));
+}
+
+#[test]
 fn a_session_says_wings_may_count_and_never_that_it_does() {
     let avery = &fixture("coach.json")["pilots"][0]["ask"];
     let got = plan(avery);

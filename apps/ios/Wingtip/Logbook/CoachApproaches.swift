@@ -12,14 +12,15 @@ enum CoachApproaches {
     /// A field's approaches drawn at most: the CIFP lists a dozen at a big one.
     static let mostApproaches = 6
 
-    /// An approach debriefed, trimmed: its profile and findings (the
+    /// An approach debriefed, trimmed: its procedure as the chart names it
+    /// ("ILS Y RWY 08"), its profile and findings (the
     /// result among them, in the engine's words), and the field's
     /// elevation for the 500 ft gate (AC 61-98D 2.1.4); nil elevation
     /// leaves the gate unchecked, never assumed.
     static func trimmed(_ a: EngineContract.ApproachDebrief, elevationFt: Double?, flownOn: String) -> CoachDebrief {
         CoachDebrief(
             elevationFt: elevationFt, findings: a.findings.map { APICoachFinding(text: $0.text, tone: $0.tone) },
-            flownOn: flownOn, kind: "approach", legs: [], patterns: [], place: a.airport,
+            flownOn: flownOn, kind: "approach", legs: [], patterns: [], place: a.airport, procedure: a.name,
             profile: a.profile.track.map { APICoachProfilePoint(altFt: $0.altFt, off: $0.off, toGoNm: $0.toGoNm) })
     }
 

@@ -86,6 +86,21 @@ enum ReadyFacts {
         return kept.dep == dep && kept.dest == dest && kept.stops == stops && kept.totals != nil
     }
 
+    /// What Keep for the Air holds for the route (KeptForAir, Kept): each
+    /// kind on the phone or not, and the size its last keep came to. The
+    /// briefing's and the NOTAMs' ages are their own items; this is only
+    /// whether they are on board.
+    static func kept(manifest: KeptForAir.Manifest?, saved: Bool, briefed: Bool, notams: Bool, goNoGo: Bool) -> EngineContract.ReadyToFlyInputKept {
+        var on = Set(manifest?.kinds ?? [])
+        if saved { on.insert(KeptForAir.Kind.plan.rawValue) }
+        if saved, briefed { on.formUnion([KeptForAir.Kind.briefing.rawValue, KeptForAir.Kind.weather.rawValue]) }
+        if notams { on.insert(KeptForAir.Kind.notams.rawValue) }
+        if goNoGo { on.insert(KeptForAir.Kind.goNoGo.rawValue) }
+        let all = KeptForAir.Kind.allCases.map(\.rawValue)
+        return EngineContract.ReadyToFlyInputKept(onBoard: all.filter(on.contains), missing: all.filter { !on.contains($0) },
+                                                  sizeMb: manifest.map { Double($0.bytes) / 1_000_000 })
+    }
+
     /// The receiver, only for a pilot who flies with one (one has been
     /// heard on this phone and listening is on); nil leaves it out.
     static func receiver(used: Bool, listening: Bool, live: Bool) -> EngineContract.ReadyToFlyInputReceiver? {
@@ -113,7 +128,7 @@ struct ReadyStore: Equatable, Sendable {
     var chartEdition: String?
     var packEdition: String?
 
-    /// The tiles Plan.keepForTheAir keeps for the route, and the packs of
+    /// The tiles KeepForAir keeps for the route, and the packs of
     /// the regions it crosses, looked for on disk.
     static func look(tiles: Set<KeepRoute.Tile>, template: TileTemplate?, regions: Set<String>) async -> ReadyStore {
         await Task.detached(priority: .utility) {

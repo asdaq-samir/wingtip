@@ -10,6 +10,7 @@ import { altFt, flightLevel } from "../../../../lib/format";
 import { one } from "../../format";
 import { planProfile } from "./profile";
 import { navLogRows, type RouteEnds } from "./rows";
+import { CHART } from "../../../../lib/tokens";
 const W = 340,
   H = 64;
 const miles = (nm: number) => `${Math.round(nm)}`;
@@ -153,10 +154,10 @@ export default memo(function MiniProfile({
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block h-full w-full" aria-hidden="true">
           <defs>
             <linearGradient id={tintId} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={H}>
-              <stop offset={tintAt ? tintOffset(tintAt) : 0} stopColor="#d92d20" data-tint="red" />
-              <stop offset={tintAt ? tintOffset(tintAt) : 0} stopColor="#e0a100" data-tint="red-end" />
-              <stop offset={tintAt ? tintOffset(tintAt - 500) : 0} stopColor="#e0a100" data-tint="amber" />
-              <stop offset={tintAt ? tintOffset(tintAt - 500) : 0} stopColor="#8b6f47" data-tint="amber-end" />
+              <stop offset={tintAt ? tintOffset(tintAt) : 0} stopColor={CHART.warning} data-tint="red" />
+              <stop offset={tintAt ? tintOffset(tintAt) : 0} stopColor={CHART.caution} data-tint="red-end" />
+              <stop offset={tintAt ? tintOffset(tintAt - 500) : 0} stopColor={CHART.caution} data-tint="amber" />
+              <stop offset={tintAt ? tintOffset(tintAt - 500) : 0} stopColor={CHART.terrain} data-tint="amber-end" />
             </linearGradient>
           </defs>
           <g

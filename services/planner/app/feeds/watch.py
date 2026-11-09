@@ -2,13 +2,13 @@
 in a thread of their own, a feed stale for FEED_ALERT_AFTER_MIN turned
 into an alert, and the alert said -- the log (a warning, and an info line
 when it ends), FEED_ALERT_WEBHOOK where one is set (a JSON POST), and any
-hook in HOOKS, which is where the gateway's mail is to be attached.
+hook in HOOKS.
 
-The gateway's scheduled mail is not touched here: it is the gateway's to
-send (Spring holds the accounts and the mail), and the planner has no
-mail of its own. Until it does, the developer console shows each feed's
-line and its alert, and GET /api/status/feeds answers them for anything
-that polls.
+The mail is the gateway's (Spring holds the accounts and the mail, and
+the planner has none): its UptimeWatch reads GET /api/status/feeds each
+minute and mails an alert as a feed's `alerting` begins and ends. The
+developer console shows each feed's line too, and the pilot's Status page
+the ones a pilot reads by (app.feeds.status_rows, through /api/map/ages).
 """
 
 from __future__ import annotations
@@ -35,8 +35,8 @@ WEATHER_URL = get_settings().weather_url
 
 #: Called with {"event": "stale" | "back", "feed", "kind", "detail",
 #: "stale_since", "at"} as an alert begins and ends: the hook point for
-#: anything that tells a person (the gateway's mail, once it has a job for
-#: it). A hook that raises is logged and the others still run.
+#: anything else in this process that tells a person. A hook that raises
+#: is logged and the others still run.
 HOOKS: list[Callable[[dict], None]] = []
 
 _watch = feed_health.Watch(after_s=AFTER_MIN * 60)
@@ -110,6 +110,14 @@ def snapshot() -> dict:
         "webhook": bool(WEBHOOK),
         "feeds": [{**line, "last_at": _iso(line.get("last_at")), "stale_since": _iso(line.get("stale_since"))} for line in lines],
     }
+
+
+def last_lines() -> list[dict]:
+    """The last check's lines as they are, UNIX times and all, with no
+    check made now: for a pilot's request, which must not wait on the
+    weather service's answer. None checked yet is none."""
+    with _lock:
+        return list(_last["lines"] or [])
 
 
 def snapshot_or_none() -> dict | None:

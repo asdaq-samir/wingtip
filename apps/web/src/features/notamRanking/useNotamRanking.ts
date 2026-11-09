@@ -9,11 +9,26 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { postJson } from "../../lib/api/words";
+import { keptStore } from "../../lib/storage";
 import type { RankedNotam, RankedNotams } from "../../lib/api/types";
 import { routeKeyOf, useBriefPlan } from "../../lib/briefPlan";
 import { patternsOf } from "../../lib/trafficPattern";
 
 const KEPT_MS = 10 * 60_000;
+
+/** The last ranking the planner gave, for its route, kept on this device:
+ *  the ranking is a POST, which the service worker cannot keep as it keeps
+ *  the planner's other answers, and a pilot in the air with no signal still
+ *  has the NOTAMs that matter, with their age (lib/kept). One route's, the
+ *  one flown; public FAA data, so signing out leaves it. */
+type KeptRanking = { route: string; at: number; answer: RankedNotams };
+const keptRanking = () => keptStore<KeptRanking | null>("wingtip.kept.notams", null);
+
+/** The ranking kept for `route`, if that is the route it was kept for. */
+function keptNotams(route: string): KeptRanking | undefined {
+  const kept = keptRanking().getState().value;
+  return kept?.route === route ? kept : undefined;
+}
 
 /** The runway ends the pilot's plan picked, by field ({"KOSH": "36"}):
  *  the takeoff's and the pattern's from the address's picks
@@ -35,10 +50,11 @@ export function splitRanking(answer: RankedNotams | undefined): { top: RankedNot
  *  fetched and asks it again as its fix. */
 export function notamRankingQuery(plan: ReturnType<typeof useBriefPlan.getState>) {
   const runways = runwaysOfPicks(plan.flight?.picks);
+  const route = routeKeyOf(plan);
   return {
-    queryKey: ["notams", "ranked", routeKeyOf(plan), plan.eteMin, plan.altitudeFt, runways],
-    queryFn: ({ signal }: { signal: AbortSignal }) =>
-      postJson<RankedNotams>(
+    queryKey: ["notams", "ranked", route, plan.eteMin, plan.altitudeFt, runways],
+    queryFn: async ({ signal }: { signal: AbortSignal }) => {
+      const answer = await postJson<RankedNotams>(
         "/api/planner/words/notams/ranked",
         {
           dep: plan.dep,
@@ -50,7 +66,14 @@ export function notamRankingQuery(plan: ReturnType<typeof useBriefPlan.getState>
           runways,
         },
         signal,
-      ),
+      );
+      keptRanking().setState({ value: { route, at: Date.now(), answer } });
+      return answer;
+    },
+    // The kept ranking first, with when it came, so the section draws it at
+    // once and with no signal; asked again behind it once it is stale.
+    initialData: () => keptNotams(route)?.answer,
+    initialDataUpdatedAt: () => keptNotams(route)?.at,
     enabled: plan.routed && !!plan.dep && !!plan.dest,
     staleTime: KEPT_MS,
     meta: { silent: true },
@@ -60,5 +83,15 @@ export function notamRankingQuery(plan: ReturnType<typeof useBriefPlan.getState>
 export function useNotamRanking() {
   const plan = useBriefPlan();
   const query = useQuery(notamRankingQuery(plan));
-  return { shown: plan.routed, ...splitRanking(query.data), answer: query.data, error: query.error, pending: !query.data && !query.error };
+  return {
+    shown: plan.routed,
+    ...splitRanking(query.data),
+    answer: query.data,
+    error: query.error,
+    pending: !query.data && !query.error,
+    /** When the ranking shown came, and whether asking again failed:
+     *  for its age where it is a kept one (KeptAge). */
+    fetchedAt: query.dataUpdatedAt || null,
+    failed: query.isError,
+  };
 }

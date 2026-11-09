@@ -114,7 +114,7 @@ export default function BriefChecks({
           );
           const look = cn(
             "relative block h-full min-h-[4.75rem] w-full rounded-2xl bg-card px-3 pt-2.5 pb-3 text-left outline-none",
-            "shadow-[0_0_0_0.5px_rgb(0_0_0/0.06)] focus-visible:ring-2 focus-visible:ring-ring active:bg-foreground/8 pointer-coarse:active:opacity-70",
+            "shadow-float focus-visible:ring-2 focus-visible:ring-ring active:bg-foreground/8 pointer-coarse:active:opacity-70",
             looked[tile.key] && "bg-card/70",
           );
           return (

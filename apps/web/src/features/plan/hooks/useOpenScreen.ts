@@ -117,6 +117,11 @@ export function useOpenScreen({
       case "guide":
       case "about":
         return;
+      // A shared flight's preview is opened by its link alone, taken off
+      // the address as the page loads (features/shared-flight), with the
+      // plan it needs; asked for by name, there is none to show.
+      case "shared":
+        return;
       default:
         screen satisfies never;
     }

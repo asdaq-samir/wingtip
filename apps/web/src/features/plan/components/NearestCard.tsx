@@ -178,7 +178,7 @@ function NearestRow({
         <>
           {category && (
             <span
-              className={cn("mr-1.5 inline-block rounded-[5px] px-1.5 align-[0.05em] font-bold tracking-wide", TEXT.note)}
+              className={cn("mr-1.5 inline-block rounded-sm px-1.5 align-[0.05em] font-bold tracking-wide", TEXT.note)}
               style={{ backgroundColor: chipFillOf(category), color: inkOn(chipFillOf(category)) }}
             >
               {category}

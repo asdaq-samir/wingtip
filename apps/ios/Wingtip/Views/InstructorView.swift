@@ -54,7 +54,7 @@ struct InstructorView: View {
                         NavigationLink {
                             StudentView(row: s, instructor: instructor) { await act { try await Gateway.instructor() } }.closesBack()
                         } label: {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(s.name)
                                 Text(Self.studentLine(s)).font(.footnote).foregroundStyle(.secondary)
                             }
@@ -188,7 +188,7 @@ struct StudentView: View {
                     let codes = training.knowledgeTestCodes
                     if codes.isEmpty { Text("No codes yet").foregroundStyle(.secondary) }
                     ForEach(codes, id: \.self) { code in
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(code).font(.body.monospaced())
                             if let words = AcsTable.bundled?.words(code) { Text(words).font(.footnote).foregroundStyle(.secondary) }
                         }
@@ -225,7 +225,7 @@ struct StudentView: View {
                         }
                         .closesBack()
                     } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(kind.label)
                             Text(kind.rule + (paper[kind.code].map { " · on paper \(Day.said($0.endorsedOn))" } ?? "")).font(.footnote).foregroundStyle(.secondary)
                             if let until = paper[kind.code]?.until { GoodToText(until: until).font(.footnote) }

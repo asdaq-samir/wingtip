@@ -138,7 +138,7 @@ function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"spa
   return (
     <span
       data-slot="dropdown-menu-shortcut"
-      className={cn("ml-auto text-xs pointer-coarse:text-[0.8125rem] tracking-widest text-muted-foreground", className)}
+      className={cn("ml-auto text-xs pointer-coarse:text-(length:--type-note) tracking-widest text-muted-foreground", className)}
       {...props}
     />
   );

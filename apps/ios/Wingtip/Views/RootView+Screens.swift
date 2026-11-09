@@ -36,6 +36,9 @@ extension RootView {
         case .emergency: Emergency.shared.open = .link
         case .airplanes: show(.airplane, asking: screen)
         case .logbook, .coach, .minimums, .guide, .downloads, .about: show(.setup, asking: screen)
+        // A shared flight's preview opens from its link's keys
+        // (PendingCommand.sharedFlight); the name alone names no flight.
+        case .shared: break
         }
     }
 

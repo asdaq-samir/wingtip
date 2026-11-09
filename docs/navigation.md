@@ -80,6 +80,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `guide` | Guide | yes | yes | -- | How the app works, and the practice drills. |
 | `downloads` | Downloads | -- | yes | yes | Charts kept for flying with no signal. |
 | `passengers` | Passenger Briefing | -- | yes | yes | The passenger briefing. |
+| `shared` | Shared Flight | yes | yes | yes | A flight another pilot sent: its plan shown first, with Use This Plan and Not Now, the receiver's own plan kept until they choose. Its keys are the plan's (dep, dest, stops, altitude_ft, depart, type, rules, tail) or a saved flight's share. |
 | `about` | About | yes | yes | yes | The build, the data's cycles, the credits and the legal pages. |
 
 The plan's own keys go beside it, and alone they open what they name:
@@ -89,6 +90,12 @@ The plan's own keys go beside it, and alone they open what they name:
 - `stops`: The points between, idents comma-separated.
 - `place`: A field's card, by its ident.
 - `flight`: An airplane tracked, by its ICAO address (six hex digits).
+- `altitude_ft`: A shared plan's cruise altitude, feet MSL.
+- `depart`: A shared plan's departure time, an ISO 8601 instant in UTC; none for about now.
+- `type`: A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own.
+- `rules`: A shared plan's flight rules, vfr or ifr.
+- `tail`: A shared plan's N-number, only where its pilot chose to send it.
+- `share`: A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it.
 
 <!-- END generated -->
 
@@ -97,6 +104,42 @@ the route, then opens the screen: the web waits up to 30 s for the route
 (`lib/navigation/wanted`), the phones open it after the route command
 (`PendingCommand.then`, `Links.Route.then`). The word `open` is taken off
 the web's address once used, so a reload or Back does not open it again.
+
+## Sharing a flight
+
+A pilot sends a plan to another pilot or an instructor as a link that opens
+as a preview, the `shared` screen above, on the web, the iPhone and Android
+alike (the owner, 2026-11-09). Two kinds, one address:
+
+- **Plain:** `/app/plan?open=shared&dep=KMSN&dest=KOSH&stops=KJVL&altitude_ft=3500&depart=2026-11-10T15:00:00Z&type=C172&rules=vfr`,
+  the plan in the link itself, which stores nothing on a server and opens
+  signed out. `tail=` only where the pilot ticks Include N-number. Sent from
+  the route's Share (the web's route menu and its cards' Share in the bar,
+  iOS's Share menu, Android's FPL Share) through the platform's own share
+  sheet: the Web Share API, or the link copied; `ShareLink`; the Android
+  sharesheet.
+- **Saved:** `/app/plan?open=shared&share=<token>`, a saved flight shared
+  from its menu (the web's and iOS's Saved Flights: Share, Share with
+  N123AB, Stop Sharing): `POST /api/flights/{id}/share` makes the link,
+  read-only, read by anyone with it at `GET /api/shared-flights/{token}`
+  (the route, altitudes, departure time, airplane type, picks and nav log;
+  never the pilot's name, notes or risk, and the N-number only where they
+  chose), until `DELETE /api/flights/{id}/share` (Stop Sharing) ends it for
+  everyone. Android has no Saved Flights yet, so it opens these but makes
+  none.
+
+Opened, the link is never planned by itself: the web takes its keys off
+the address before the planner reads its route (`features/shared-flight`),
+the phones read `open=shared` before a route (`Links`). The preview shows
+the route, altitude, departure time, the airplane type (the receiver's own
+airplane flies it; none is assumed), the rules and, for a saved flight, its
+filed nav log; **Use This Plan** plans it and opens its nav log, **Not Now**
+leaves the receiver's plan as it was. Messages, Slack and the like preview
+the web address with the route as its title ("KMSN → KOSH · 3,500 ft") and,
+for a saved flight, its route drawn (`SharePreviewController`). The address
+is under `/app/*`, which the iOS associated domain and the Android App Links
+already claim, so it opens the app where it is installed and the web
+otherwise.
 
 ## Screens, paths and taps
 

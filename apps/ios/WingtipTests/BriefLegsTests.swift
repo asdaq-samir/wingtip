@@ -60,6 +60,15 @@ struct BriefLegsTests {
         #expect(BriefLegs.age(nil, now: now) == nil)
     }
 
+    @Test func aSourceNotUpdatingSaysSoAndSinceWhen() throws {
+        let ages = try decode(MapLayerAges.self, #"{"sources":[{"name":"METARs","fetched_at":"2026-10-04T14:00:00Z","stale":false},{"name":"NOTAMs","fetched_at":"2026-10-04T11:00:00Z","stale":true}]}"#)
+        let stale = BriefLegs.staleSources(ages)
+        #expect(stale.map(\.name) == ["NOTAMs"])
+        let now = AirportWords.date("2026-10-04T14:00:00Z")!
+        #expect(BriefLegs.staleWords(AirportWords.date(stale[0].fetchedAt), now: now) == "Not updating: last updated 3 h 0 min ago")
+        #expect(BriefLegs.staleWords(nil, now: now) == "Not updating")
+    }
+
     @Test func legsAreSaidAsTheNavLogNumbersThem() throws {
         #expect(BriefLegs.legWords([1]) == "Leg 2")
         #expect(BriefLegs.legWords([2, 1]) == "Legs 2–3")

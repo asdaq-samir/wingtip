@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,13 +20,15 @@ import org.springframework.transaction.annotation.Transactional;
  * fault kept, scrubbed (DiagnosticText), and written to the server's log
  * as one line too, where the owner already reads the web's; each
  * measurement put in the speed trend beside the browsers' (SpeedService),
- * under its platform's name. The oldest faults are let go after 90 days.
+ * under its platform's name. A fault is let go after 30 days (the owner,
+ * 2026-11-09), each night and as reports come in.
  */
 @Service
 public class DiagnosticsService {
 
-    /** How long a fault is kept: long enough to see a release through. */
-    static final Duration KEPT = Duration.ofDays(90);
+    /** How long a fault is kept: a release's first month, and no longer
+     *  than the server's own log keeps the same lines (CloudWatch's 30 days). */
+    static final Duration KEPT = Duration.ofDays(30);
 
     /** The most of a fault's detail kept: a symbolicated stack's worth. */
     public static final int DETAIL_MAX = 16_000;
@@ -83,6 +86,17 @@ public class DiagnosticsService {
         LocalDate last = pruned.get();
         if (!today.equals(last) && pruned.compareAndSet(last, today)) {
             faults.deleteOlderThan(now.minus(KEPT));
+        }
+    }
+
+    /** The faults past KEPT let go, each night, so a quiet day with no
+     *  report still forgets them. Off where app.diagnostics.prune-cron is "-". */
+    @Scheduled(cron = "${app.diagnostics.prune-cron:0 15 3 * * *}", zone = "UTC")
+    @Transactional
+    public void prune() {
+        int gone = faults.deleteOlderThan(Instant.now().minus(KEPT));
+        if (gone > 0) {
+            log.info("{} device faults past {} days let go", gone, KEPT.toDays());
         }
     }
 

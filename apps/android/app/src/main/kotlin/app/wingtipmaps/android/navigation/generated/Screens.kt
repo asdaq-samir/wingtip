@@ -24,6 +24,7 @@ enum class Screen(
     MINIMUMS("minimums", "Personal Minimums"),
     DOWNLOADS("downloads", "Downloads"),
     PASSENGERS("passengers", "Passenger Briefing"),
+    SHARED("shared", "Shared Flight"),
     ABOUT("about", "About"),
     ;
 
@@ -36,4 +37,21 @@ enum class Screen(
         /** The screen a link's value names, or null for none Android has. */
         fun of(id: String?): Screen? = entries.firstOrNull { it.id == id }
     }
+}
+
+/** The plan's own keys a link carries beside `open` (a shared flight's among them). */
+enum class LinkKey(
+    val key: String,
+) {
+    DEP("dep"),
+    DEST("dest"),
+    STOPS("stops"),
+    PLACE("place"),
+    FLIGHT("flight"),
+    ALTITUDE_FT("altitude_ft"),
+    DEPART("depart"),
+    TYPE("type"),
+    RULES("rules"),
+    TAIL("tail"),
+    SHARE("share"),
 }

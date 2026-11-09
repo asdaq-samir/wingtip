@@ -67,9 +67,10 @@ def test_each_app_is_its_own_area():
 
 
 def test_the_sites_sources_reach_it():
-    # Its colours are the tokens' and its legal pages the web app's.
+    # Its colours are the tokens' and its legal pages the web app's; the
+    # tokens are also what the brand guard (arch) holds every app to.
     assert areas("apps/web/public/privacy.html") == ["web", "site"]
-    assert areas("design/tokens.json") == ["web", "ios", "android", "site"]
+    assert areas("design/tokens.json") == ["web", "ios", "android", "site", "arch"]
 
 
 def test_words_alone_check_only_the_versions_they_name():

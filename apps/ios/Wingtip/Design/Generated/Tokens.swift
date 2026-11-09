@@ -9,7 +9,7 @@ private func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> UIColor {
             blue: CGFloat(hex & 0xFF) / 255, alpha: alpha)
 }
 
-/// Wingtip's colours: the chart's, the flight categories', the mark's.
+/// Wingtip's colours: the chart's, the flight categories', the mark's, the badges'.
 enum WingtipColor {
     enum Chart {
         /// The course line's magenta, as an FAA chart draws a course: the route, a hold's racetrack, a top of climb's tag. The same at night.
@@ -72,6 +72,28 @@ enum WingtipColor {
         static let tfr = rgb(0xDC2626)
         /// The emergency assistant's line to the field picked: the system red a pilot reads as now.
         static let emergency = rgb(0xFF3B30)
+        /// The white a mark, a line or a label is cased and haloed in so it reads over any part of the chart, and the paper under a diagram.
+        static let casing = rgb(0xFFFFFF)
+        /// The dark ground a label sits on over the chart: an airport's name halo, a field's tag on the route, a traffic label, an airspace's chip.
+        static let tag = rgb(0x14181F)
+        /// The dark ring round a checkpoint's halo and the edge of a map control, at about half strength.
+        static let shade = rgb(0x0A141C)
+        /// Something in the way on the chart and in the side view: terrain or an obstacle at or above the airplane, a track off the route (iOS's accessible system red).
+        static let warning = rgb(0xD70015)
+        /// The side view's and the pilot's-eye view's amber: ground within the engine's caution band below the airplane.
+        static let caution = rgb(0xFFB000)
+        /// The ground in a profile, the nav log's and the side view's.
+        static let terrain = rgb(0x8B6F47)
+        /// The ring round the field whose card is open and round a point picked on the chart.
+        static let selected = rgb(0xFF3B00)
+        /// The course's magenta a step darker, for a chip with white words on it (6:1; the course's own is 3.8:1): a way's name and time on its line.
+        static let courseChip = rgb(0xB000B0)
+        /// A traffic pattern's legs and arrows, in teal so they stand apart from the route's magenta (ForeFlight draws its in a cyan).
+        static let pattern = rgb(0x0E8F8A)
+        /// A pattern leg's name ground, a step darker: white words on it 5.2:1, where the line's teal is 3.95:1 (WCAG 1.4.3).
+        static let patternLabel = rgb(0x0B7A75)
+        /// An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red.
+        static let obstacle = rgb(0x7A1F1F)
     }
     enum Category {
         static let vfr = rgb(0x1A7F37)
@@ -103,10 +125,67 @@ enum WingtipColor {
         /// What is flown already, on the strip's ribbon.
         static let flown = rgb(0x8E8E93)
     }
+    enum Badge {
+        static let tower = rgb(0x2465B8)
+        static let ground = rgb(0x0F766E)
+        static let weather = rgb(0x0284C7)
+        static let approach = rgb(0x5B5BD6)
+        static let traffic = rgb(0xC2410C)
+        static let other = rgb(0x6B7280)
+        static let runway = rgb(0x3F4652)
+        static let chart = rgb(0x475569)
+        static let rule = rgb(0x64748B)
+        static let hazard = rgb(0xB42318)
+        static let lights = rgb(0xA16207)
+        /// A stop's services: the fuel, a car, food, a bed.
+        static let fuel = rgb(0xB45309)
+        static let car = rgb(0x2563EB)
+        static let food = rgb(0xBE185D)
+        static let lodging = rgb(0x7E3FB8)
+        /// The Stops sheet's kinds, one colour each for a pill, a line, a Find Nearby tile and the map's pin (the owner's picks on the Stops canvas, 2026-10-27): fuel.
+        static let stopFuel = rgb(0xD97706)
+        static let stopFood = rgb(0xDC2626)
+        static let stopRepair = rgb(0x0F766E)
+        static let stopTraining = rgb(0x0369A1)
+    }
+    enum Weather {
+        static let convective = rgb(0xC2410C)
+        static let icing = rgb(0x2563EB)
+        static let turbulence = rgb(0xD97706)
+        static let ifr = rgb(0x7C3AED)
+        /// Mountains obscured.
+        static let mountains = rgb(0x78716C)
+        /// Low-level wind shear.
+        static let shear = rgb(0xBE185D)
+        /// Strong surface winds.
+        static let wind = rgb(0x0F766E)
+        /// Volcanic ash, and a PIREP of nothing in particular.
+        static let ash = rgb(0x57534E)
+        /// An area whose hazard has no colour of its own.
+        static let other = rgb(0x9333EA)
+        /// An urgent PIREP (UUA).
+        static let urgent = rgb(0xDC2626)
+    }
+    enum Score {
+        /// Under 3.
+        static let step1 = rgb(0xD99A1E)
+        /// 3 to 3.5.
+        static let step2 = rgb(0xB98014)
+        /// 3.5 to 4.
+        static let step3 = rgb(0x96660E)
+        /// 4 to 4.5.
+        static let step4 = rgb(0x724D09)
+        /// 4.5 and up.
+        static let step5 = rgb(0x4E3406)
+    }
+    enum Signal {
+        static let green = rgb(0x16A34A)
+        static let red = rgb(0xDC2626)
+        static let white = rgb(0xF8FAFC)
+    }
 }
 
-/// One scheme's surfaces, words and states, as the web's cascade resolves them
-/// (design/tokens.json color.theme and color.look).
+/// One scheme's surfaces, words and states, as the web's cascade resolves them (color.theme, color.look).
 struct WingtipPalette: Sendable {
     let airspaceBlueText: UIColor
     let airspaceMagentaText: UIColor
@@ -133,6 +212,7 @@ struct WingtipPalette: Sendable {
     let secondary: UIColor
     let secondaryForeground: UIColor
     let muted: UIColor
+    let mutedForegroundShade: UIColor
     let mutedForeground: UIColor
     let accent: UIColor
     let accentForeground: UIColor
@@ -180,6 +260,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0xF5F5F5),
         secondaryForeground: rgb(0x171717),
         muted: rgb(0xF5F5F5),
+        mutedForegroundShade: rgb(0x636363),
         mutedForeground: rgb(0x696969),
         accent: rgb(0xF5F5F5),
         accentForeground: rgb(0x171717),
@@ -227,6 +308,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0x20354C),
         secondaryForeground: rgb(0xEEF3F9),
         muted: rgb(0x20354C),
+        mutedForegroundShade: rgb(0xA9B8CA),
         mutedForeground: rgb(0xA9B8CA),
         accent: rgb(0x20354C),
         accentForeground: rgb(0xEEF3F9),
@@ -274,6 +356,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0xEEEEEE),
         secondaryForeground: rgb(0x000000),
         muted: rgb(0xEEEEEE),
+        mutedForegroundShade: rgb(0x636363),
         mutedForeground: rgb(0x333333),
         accent: rgb(0xEEEEEE),
         accentForeground: rgb(0x000000),
@@ -321,6 +404,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0xF5F5F5),
         secondaryForeground: rgb(0x171717),
         muted: rgb(0xF5F5F5),
+        mutedForegroundShade: rgb(0x636363),
         mutedForeground: rgb(0x696969),
         accent: rgb(0xF5F5F5),
         accentForeground: rgb(0x171717),
@@ -368,6 +452,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0x20354C),
         secondaryForeground: rgb(0xEEF3F9),
         muted: rgb(0x20354C),
+        mutedForegroundShade: rgb(0xA9B8CA),
         mutedForeground: rgb(0xA9B8CA),
         accent: rgb(0x20354C),
         accentForeground: rgb(0xEEF3F9),
@@ -415,6 +500,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0xEFE8DA),
         secondaryForeground: rgb(0x1F1A14),
         muted: rgb(0xEFE8DA),
+        mutedForegroundShade: rgb(0x636363),
         mutedForeground: rgb(0x5A5048),
         accent: rgb(0xEFE8DA),
         accentForeground: rgb(0x1F1A14),
@@ -462,6 +548,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0x262A33),
         secondaryForeground: rgb(0xEEF1F5),
         muted: rgb(0x262A33),
+        mutedForegroundShade: rgb(0xA9AEB8),
         mutedForeground: rgb(0xA9AEB8),
         accent: rgb(0x262A33),
         accentForeground: rgb(0xEEF1F5),
@@ -520,6 +607,7 @@ enum WingtipType {
 
 enum WingtipSpace {
     static let unit: CGFloat = 4
+    static let xxs: CGFloat = 2
     static let xs: CGFloat = 4
     static let sm: CGFloat = 8
     static let md: CGFloat = 12
@@ -532,7 +620,10 @@ enum WingtipRadius {
     static let base: CGFloat = 10
     static let cockpit: CGFloat = 8
     static let ink: CGFloat = 12
+    static let badge: CGFloat = 7
+    static let control: CGFloat = 14
     static let card: CGFloat = 18
+    static let banner: CGFloat = 22
     static let dialog: CGFloat = 28
     static let sheet: CGFloat = 36
 }

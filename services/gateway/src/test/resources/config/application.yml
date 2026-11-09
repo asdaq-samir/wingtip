@@ -12,3 +12,13 @@ spring:
   session:
     jdbc:
       cleanup-cron: "-"
+
+# Nor the gateway's own jobs on a clock that would reach out the same way
+# from every kept context: the monitor's minute (UptimeWatch), which would
+# look for a planner no test runs, and the nightly letting go of old device
+# faults (DiagnosticsService.prune). Their tests call them directly.
+app:
+  monitoring:
+    cron: "-"
+  diagnostics:
+    prune-cron: "-"

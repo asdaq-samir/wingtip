@@ -54,6 +54,8 @@ struct BriefView: View {
                 }
                 if let briefing = plan.briefing {
                     let weatherAt = weatherPart(briefing)
+                    // The briefing kept, shown with no signal, with its age.
+                    KeptAgeLine(kind: .briefing, key: ReadyToFly.flightKey(plan))
                     WordsSection(title: "The weather in words", said: weatherWords, writing: writingWords)
                     if let notRecommended = briefing.vfrNotRecommended, !notRecommended.isEmpty {
                         Section {
@@ -71,7 +73,7 @@ struct BriefView: View {
                     if !briefing.hazards.isEmpty {
                         Section(title: "Hazards") {
                             ForEach(Array(briefing.hazards.enumerated()), id: \.offset) { i, hazard in
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text([hazard.type, hazard.hazard].compactMap { $0 }.joined(separator: " · ")).font(.headline)
                                     if let low = hazard.altitudeLowFt, let high = hazard.altitudeHighFt {
                                         Text(Format.altitudeRange(low, high)).font(.footnote).foregroundStyle(.secondary)
@@ -87,7 +89,7 @@ struct BriefView: View {
                     if let gairmets = briefing.gairmets, !gairmets.isEmpty {
                         Section(title: "G-AIRMETs") {
                             ForEach(Array(gairmets.enumerated()), id: \.offset) { i, g in
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text([g.hazard, g.severity].compactMap { $0 }.joined(separator: " · ")).font(.headline)
                                     HStack(spacing: WingtipSpace.sm) {
                                         if let low = g.altitudeLowFt, let high = g.altitudeHighFt { Text(Format.altitudeRange(low, high)) }
@@ -104,7 +106,7 @@ struct BriefView: View {
                     if let tfrs = briefing.tfrs, !tfrs.isEmpty {
                         Section(title: "TFRs on the Way") {
                             ForEach(Array(tfrs.enumerated()), id: \.offset) { i, tfr in
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack {
                                         Text(tfr.title ?? tfr.notamId).font(.headline)
                                         if tfr.crosses { Text("crosses").foregroundStyle(.red).font(.footnote.weight(.semibold)) }
@@ -125,7 +127,7 @@ struct BriefView: View {
                     if let pireps = briefing.pireps, !pireps.isEmpty {
                         Section(title: "Pilot Reports") {
                             ForEach(Array(pireps.enumerated()), id: \.offset) { i, p in
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack(spacing: WingtipSpace.sm) {
                                         Text("\(Format.distance(p.alongTrackNm, decimals: 0)) along").font(.headline)
                                         if let turbulence = p.turbulence { Text("turbulence \(turbulence)") }
@@ -146,7 +148,7 @@ struct BriefView: View {
                         LabeledContent("Lowest visibility", value: briefing.forecast.minVisibilitySm.map { String(format: "%g SM", $0) } ?? "—")
                         ForEach(Array(briefing.forecast.stations.enumerated()), id: \.offset) { _, station in
                             if let raw = station.raw {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text(station.icaoId).font(.headline)
                                     Text(raw).font(.footnote.monospaced()).foregroundStyle(.secondary)
                                 }
@@ -156,8 +158,9 @@ struct BriefView: View {
                     let stations = briefing.metars.keys.sorted()
                     if !stations.isEmpty {
                         Section(title: "METARs") {
+                            KeptAgeLine(kind: .weather, key: ReadyToFly.flightKey(plan))
                             ForEach(stations, id: \.self) { ident in
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack {
                                         Text(ident).font(.headline)
                                         if let category = briefing.metars[ident]??.flightCategory { Text(category).font(.footnote.weight(.semibold)).foregroundStyle(.secondary) }

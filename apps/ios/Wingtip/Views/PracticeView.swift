@@ -12,7 +12,7 @@ struct PracticeRows: View {
     }
 
     private func row(_ title: String, _ detail: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             Text(title)
             Text(detail).font(.footnote).foregroundStyle(.secondary)
         }

@@ -6,6 +6,7 @@ import { Slider } from "../../components/ui/slider";
 import { GLASS } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
 import { frameTime } from "./loopFrames";
+import KeptAge from "../../components/KeptAge";
 import { useWeatherLoop } from "./useWeatherLoop";
 
 /** What each loop is called on the bar. */
@@ -42,7 +43,7 @@ export function LoopBar() {
         : null;
   return (
     <div
-      className={cn(GLASS, "pointer-events-auto flex w-[min(100%,24rem)] items-center gap-2 rounded-[22px] py-1 pr-3 pl-1")}
+      className={cn(GLASS, "pointer-events-auto flex w-[min(100%,24rem)] items-center gap-2 rounded-(--radius-banner) py-1 pr-3 pl-1")}
       data-testid="weather-loop-bar"
       role="group"
       aria-label={`${name} loop`}
@@ -86,6 +87,15 @@ export function LoopBar() {
                 </span>
               </span>
             )}
+            {/* The frame list kept on this device, with its age, where no
+                signal asked it again (lib/kept). */}
+            <KeptAge
+              kind="weather_loop"
+              path="/api/planner/weather/loop"
+              atMs={loop.fetchedAt}
+              failed={loop.refreshFailed}
+              className="truncate"
+            />
           </>
         )}
       </div>

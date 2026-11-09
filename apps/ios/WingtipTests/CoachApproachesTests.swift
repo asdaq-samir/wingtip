@@ -113,6 +113,8 @@ struct CoachApproachesTests {
         let drawing = try CoachApproaches.drawing(planned("I08-Y"))
         let flown = try #require(try Engine.approachDebrief(drawing: drawing, points: ilsFlown()))
         let a = CoachApproaches.trimmed(flown, elevationFt: nil, flownOn: "2026-10-30")
+        // The chart's name for it, so the coach says which approach.
+        #expect(a.procedure == flown.name && a.procedure?.isEmpty == false)
         #expect(a.elevationFt == nil)
         #expect(a.findings == flown.findings.map { APICoachFinding(text: $0.text, tone: $0.tone) })
         #expect(a.profile == flown.profile.track.map { APICoachProfilePoint(altFt: $0.altFt, off: $0.off, toGoNm: $0.toGoNm) })

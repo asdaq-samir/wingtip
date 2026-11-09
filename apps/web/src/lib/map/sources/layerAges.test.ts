@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Traffic } from "../../api/types";
-import { ageWords, trafficAt } from "./layerAges";
+import { ageWords, staleWords, trafficAt } from "./layerAges";
 
 const NOW = Date.parse("2026-10-26T15:00:00Z");
 
@@ -24,5 +24,12 @@ describe("trafficAt", () => {
       ]),
     ).toBe(NOW - 12_000);
     expect(trafficAt([])).toBeNull();
+  });
+});
+
+describe("staleWords", () => {
+  it("says a source is not updating, and since when where it is known", () => {
+    expect(staleWords("2026-10-26T12:00:00Z", NOW)).toBe("Not updating: last updated 3h ago");
+    expect(staleWords(null, NOW)).toBe("Not updating");
   });
 });

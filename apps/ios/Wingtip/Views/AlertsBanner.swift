@@ -30,7 +30,7 @@ struct AlertsBanner: View {
                 .accessibilityLabel(danger ? "Danger ahead" : "Caution ahead")
                 // It rings each time a new alert comes to the front.
                 .symbolRing(on: first.id)
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(first.name).font(.subheadline.weight(.semibold)).lineLimit(1)
                 Text("\(first.need) · \(Format.duration(first.seconds / 60)), \(Format.distance(first.distanceNm))").font(.footnote).lineLimit(1)
                     .accessibilityLabel("\(first.need), in \(SpokenFigures.minutes(first.seconds / 60)), \(SpokenFigures.nauticalMiles(first.distanceNm))")
@@ -43,7 +43,7 @@ struct AlertsBanner: View {
         }
         .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
         .foregroundStyle(.white)
-        .background(first.level == "stop" || first.level == "danger" ? Color.red : Color.orange, in: RoundedRectangle(cornerRadius: 14))
+        .background(first.level == "stop" || first.level == "danger" ? Color.red : Color.orange, in: RoundedRectangle(cornerRadius: WingtipRadius.banner))
         .padding(.horizontal, WingtipSpace.md)
         .padding(.top, WingtipSpace.sm)
         .accessibilityElement(children: .combine)
