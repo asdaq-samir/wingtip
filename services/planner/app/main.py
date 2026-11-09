@@ -68,7 +68,7 @@ from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan
 from .routers import clearance, copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain
-from .routers import coach, engine as engine_router, logbook_draft, notam_rank, offline, traffic, weather_map, window, words
+from .routers import coach, engine as engine_router, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window, words
 from .schemas.chart import DetectMessage
 from .schemas.common import Index
 from .schemas.plan import NavLogMessage
@@ -405,10 +405,9 @@ async def _unknown_aircraft(request: Request, exc: UnknownAircraft):
 
 @app.get("/")
 def index() -> Index:
-    """This service has no pages. The front end is built into the Spring
-    Boot gateway's jar and served from there, which is also the only
-    thing that calls this -- so this answers a health probe and says
-    where the UI went."""
+    """This service has no pages. The front end is built into the Spring Boot gateway's jar and served
+    from there, which is also the only thing that calls this -- so this answers a health probe and
+    says where the UI went."""
     return Index(service="planner", ui="served by the gateway at /app", warm=WARM.is_set())
 
 
@@ -432,6 +431,7 @@ for module in (
     packs,
     words,
     weather_map,
+    weather_loop,
     pilot,
     live,
     feeds,

@@ -64,8 +64,10 @@ class SecurityRulesTest {
                 mockMvc.perform(get("/api/me")).andReturn().getResponse().getHeader("Content-Security-Policy");
         assertThat(policy)
                 .containsPattern(
-                        "img-src 'self' data:[^;]* https://basemap\\.nationalmap\\.gov https://tile\\.googleapis\\.com https://mesonet\\.agron\\.iastate\\.edu https://t\\.plnspttrs\\.net;");
-        assertThat(policy).contains("connect-src 'self' https://tile.googleapis.com https://api.planespotters.net;");
+                        "img-src 'self' data:[^;]* https://basemap\\.nationalmap\\.gov https://tile\\.googleapis\\.com https://mesonet\\.agron\\.iastate\\.edu https://nowcoast\\.noaa\\.gov https://t\\.plnspttrs\\.net;");
+        assertThat(policy)
+                .contains(
+                        "connect-src 'self' https://tile.googleapis.com https://mesonet.agron.iastate.edu https://nowcoast.noaa.gov https://api.planespotters.net;");
         assertThat(policy).doesNotContain("*");
     }
 

@@ -12,7 +12,7 @@ The pace while planning keeps each product inside the time its source
 updates it in: aviationweather.gov's cache files every minute (TAFs every
 ten), the GFS's runs every six hours with an hourly forecast step, GLMP's
 issues hourly at half past, tfr.faa.gov's shapes every few minutes, the
-radar mosaic every five minutes.
+radar mosaic and the GOES pictures every five minutes.
 """
 
 import functools
@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     #: When the radar mosaic was made (IEM).
     radar_every_s: float = 120.0
     radar_idle_every_s: float = 900.0
+    #: When each GOES picture was taken (nowCOAST's capabilities).
+    satellite_every_s: float = 300.0
+    satellite_idle_every_s: float = 1800.0
 
 
 class SettingsError(ValueError):

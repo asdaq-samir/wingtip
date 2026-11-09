@@ -39,7 +39,7 @@ from collections.abc import Callable
 
 from wingtip import tracing, weather_store
 
-from . import aviationweather, fetch, gfs, glmp, radar, tfr
+from . import aviationweather, fetch, gfs, glmp, radar, satellite, tfr
 from .settings import get_settings
 
 log = logging.getLogger("weather")
@@ -73,6 +73,7 @@ PRODUCTS = (
     Product("glmp", glmp.fetch_latest, "glmp"),
     Product("tfrs", tfr.fetch, "tfrs"),
     Product("radar", radar.fetch, "radar"),
+    Product("satellite", satellite.fetch, "satellite"),
 )
 
 #: What a fetch may fail with: its source, in its own words.
@@ -82,6 +83,7 @@ FAILURES = (
     glmp.GlmpUnavailable,
     tfr.TfrUnavailable,
     radar.RadarUnavailable,
+    satellite.SatelliteUnavailable,
     ET.ParseError,
     OSError,
     ValueError,
