@@ -884,6 +884,198 @@ class DiversionSolved(BaseModel):
     wca: Annotated[float | None, Field(title='Wca')] = None
 
 
+class DraftApproach(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    airport: Annotated[str | None, Field(title='Airport')] = None
+    also_fits: Annotated[list[str] | None, Field(title='Also Fits')] = None
+    faf_at: Annotated[
+        float | None,
+        Field(
+            description='When it crossed the final approach fix inbound, ms.',
+            title='Faf At',
+        ),
+    ] = None
+    id: Annotated[str | None, Field(title='Id')] = None
+    name: Annotated[str | None, Field(title='Name')] = None
+    outcome: Annotated[
+        Literal['landed', 'missed', 'unknown'] | None, Field(title='Outcome')
+    ] = None
+
+
+class DraftBlock(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    from_: Annotated[float | None, Field(alias='from', title='From')] = None
+    to: Annotated[float | None, Field(title='To')] = None
+
+
+class DraftCrossCountry(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    farthest_nm: Annotated[float | None, Field(title='Farthest Nm')] = None
+    landed_elsewhere: Annotated[
+        bool | None,
+        Field(description='A landing elsewhere: 61.1(b)(i).', title='Landed Elsewhere'),
+    ] = None
+    over_50_nm: Annotated[
+        bool | None,
+        Field(
+            description='A landing more than 50 nm from the departure: 61.1(b)(ii).',
+            title='Over 50 Nm',
+        ),
+    ] = None
+
+
+class DraftEntry(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    airHours: Annotated[
+        float | None,
+        Field(description='Takeoff roll to landing roll.', title='Airhours'),
+    ] = None
+    aircraft: Annotated[str | None, Field(title='Aircraft')] = None
+    aircraftType: Annotated[str | None, Field(title='Aircrafttype')] = None
+    approaches: Annotated[int | None, Field(title='Approaches')] = None
+    crossCountryHours: Annotated[
+        float | None,
+        Field(
+            description='Where a landing was more than 50 nm from the departure (61.1(b)(ii)).',
+            title='Crosscountryhours',
+        ),
+    ] = None
+    dayLandings: Annotated[
+        int | None,
+        Field(
+            description='Every landing not counted at night (61.57(a)).',
+            title='Daylandings',
+        ),
+    ] = None
+    distanceNm: Annotated[float | None, Field(title='Distancenm')] = None
+    flownOn: Annotated[str | None, Field(title='Flownon')] = None
+    holding: Annotated[bool | None, Field(title='Holding')] = None
+    longestLegNm: Annotated[float | None, Field(title='Longestlegnm')] = None
+    nightHours: Annotated[
+        float | None,
+        Field(description="Of the flight time, in 1.1's night.", title='Nighthours'),
+    ] = None
+    nightLandings: Annotated[
+        int | None,
+        Field(
+            description="To a full stop in 61.57(b)'s period.", title='Nightlandings'
+        ),
+    ] = None
+    remarks: Annotated[str | None, Field(title='Remarks')] = None
+    route: Annotated[str | None, Field(title='Route')] = None
+    totalHours: Annotated[
+        float | None,
+        Field(
+            description="14 CFR 1.1's flight time, to the tenth.", title='Totalhours'
+        ),
+    ] = None
+    touchAndGoes: Annotated[
+        int | None,
+        Field(
+            description='Of the day landings, the touch-and-goes.', title='Touchandgoes'
+        ),
+    ] = None
+    toweredLandings: Annotated[int | None, Field(title='Toweredlandings')] = None
+    tracking: Annotated[bool | None, Field(title='Tracking')] = None
+
+
+class DraftHold(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    fix: Annotated[str | None, Field(title='Fix')] = None
+    from_: Annotated[float | None, Field(alias='from', title='From')] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    racetracks: Annotated[int | None, Field(title='Racetracks')] = None
+    to: Annotated[float | None, Field(title='To')] = None
+
+
+class DraftInstrument(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    approaches: Annotated[int | None, Field(title='Approaches')] = None
+    holding: Annotated[bool | None, Field(title='Holding')] = None
+    tracking: Annotated[bool | None, Field(title='Tracking')] = None
+
+
+class DraftLanding(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    counts_night: Annotated[
+        bool | None,
+        Field(description="To a full stop in 61.57(b)'s period.", title='Counts Night'),
+    ] = None
+    field: Annotated[str | None, Field(title='Field')] = None
+    kind: Annotated[
+        Literal['full_stop', 'touch_and_go'] | None, Field(title='Kind')
+    ] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    night: Annotated[
+        bool | None, Field(description="1.1's night there and then.", title='Night')
+    ] = None
+    passenger_night: Annotated[
+        bool | None,
+        Field(
+            description="61.57(b)'s period: from 1 hour after sunset to 1 hour before sunrise.",
+            title='Passenger Night',
+        ),
+    ] = None
+    t: Annotated[float | None, Field(title='T')] = None
+    towered: Annotated[bool | None, Field(title='Towered')] = None
+
+
+class DraftReason(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    item: Annotated[str | None, Field(title='Item')] = None
+    says: Annotated[str | None, Field(title='Says')] = None
+    source: Annotated[str | None, Field(title='Source')] = None
+
+
+class DraftTakeoff(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    field: Annotated[str | None, Field(title='Field')] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    night: Annotated[
+        bool | None, Field(description="1.1's night there and then.", title='Night')
+    ] = None
+    passenger_night: Annotated[
+        bool | None,
+        Field(
+            description="61.57(b)'s period: from 1 hour after sunset to 1 hour before sunrise.",
+            title='Passenger Night',
+        ),
+    ] = None
+    t: Annotated[float | None, Field(title='T')] = None
+    towered: Annotated[bool | None, Field(title='Towered')] = None
+
+
+class DraftTrackPoint(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    alt_ft: Annotated[float | None, Field(title='Alt Ft')] = None
+    lat: Annotated[float | None, Field(ge=-90.0, le=90.0, title='Lat')] = None
+    lon: Annotated[float | None, Field(ge=-180.0, le=180.0, title='Lon')] = None
+    t: Annotated[float | None, Field(title='T')] = None
+
+
 class EmergencyFrequency(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -1357,6 +1549,74 @@ class LoadingStation(BaseModel):
     arm_in: Annotated[float | None, Field(title='Arm In')] = None
     max_lb: Annotated[float | None, Field(title='Max Lb')] = None
     name: Annotated[str | None, Field(title='Name')] = None
+
+
+class LogbookDraft(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    approaches: Annotated[list[DraftApproach] | None, Field(title='Approaches')] = None
+    block: DraftBlock | None = None
+    cross_country: DraftCrossCountry | None = None
+    ends_airborne: Annotated[bool | None, Field(title='Ends Airborne')] = None
+    entry: DraftEntry | None = None
+    holds: Annotated[list[DraftHold] | None, Field(title='Holds')] = None
+    instrument: DraftInstrument | None = None
+    landings: Annotated[list[DraftLanding] | None, Field(title='Landings')] = None
+    reasons: Annotated[list[DraftReason] | None, Field(title='Reasons')] = None
+    takeoffs: Annotated[list[DraftTakeoff] | None, Field(title='Takeoffs')] = None
+
+
+class Aircraft(RootModel[str | None]):
+    root: Annotated[
+        str | None,
+        Field(description="The airplane's N-number.", max_length=16, title='Aircraft'),
+    ] = None
+
+
+class AircraftType(RootModel[str | None]):
+    root: Annotated[str | None, Field(max_length=16, title='Aircrafttype')] = None
+
+
+class Picked(RootModel[str | None]):
+    root: Annotated[
+        str | None,
+        Field(
+            description='The approach picked for the flight, its CIFP id.',
+            max_length=16,
+            title='Picked',
+        ),
+    ] = None
+
+
+class LogbookDraftAsk(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    aircraft: Annotated[
+        Aircraft | None, Field(description="The airplane's N-number.", title='Aircraft')
+    ] = None
+    aircraftType: Annotated[AircraftType | None, Field(title='Aircrafttype')] = None
+    picked: Annotated[
+        Picked | None,
+        Field(
+            description='The approach picked for the flight, its CIFP id.',
+            title='Picked',
+        ),
+    ] = None
+    points: Annotated[
+        list[DraftTrackPoint] | None,
+        Field(max_length=5000, min_length=2, title='Points'),
+    ] = None
+    utcOffsetMin: Annotated[
+        float | None,
+        Field(
+            description="The pilot's clock against UTC, minutes.",
+            ge=-840.0,
+            le=840.0,
+            title='Utcoffsetmin',
+        ),
+    ] = 0
 
 
 class LogbookEntry(BaseModel):

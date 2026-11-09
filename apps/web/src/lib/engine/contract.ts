@@ -1115,6 +1115,20 @@ export interface EngineContract {
     answer: PilotExperienceAnswer;
   };
   /**
+   * Where a flown track took off, landed or came down low, for the host to find the fields within `within_nm` of each (the logbook entry drawn from the track, pilot's autolog).
+   */
+  logbook_track_places: {
+    input: LogbookTrackPlacesInput;
+    answer: LogbookTrackPlacesAnswer;
+  };
+  /**
+   * A logbook entry drawn from the app's own flown track, a draft for the pilot to change and confirm: 14 CFR 1.1's flight time and night, 61.57's landings (full stop or touch-and-go, 61.57(b)'s period), the approaches matched to the CIFP procedures given and the holds (61.57(c), offered apart in `instrument`: they count only when flown by instruments, 61.51(g)(1)), cross-country by 61.1(b), and a reason for each figure.
+   */
+  logbook_from_track: {
+    input: LogbookFromTrackInput;
+    answer: LogbookFromTrackAnswer;
+  };
+  /**
    * An ATC clearance heard, read into its items as the web's lib/clearance read it (AIM 4-4-3), camelCase.
    */
   read_clearance: {
@@ -3882,6 +3896,304 @@ export interface ExperienceItem {
   unit: "h" | "landings" | "flights";
   met: boolean;
 }
+export interface LogbookTrackPlacesInput {
+  /**
+   * The track, in any order; put in time order first.
+   */
+  points: TrackPoint[];
+}
+export interface LogbookTrackPlacesAnswer {
+  places: LogbookTrackPlace[];
+  /**
+   * How far round each place a field is looked for.
+   */
+  within_nm: number;
+}
+export interface LogbookTrackPlace {
+  /**
+   * ms since 1970.
+   */
+  t: number;
+  lat: number;
+  lon: number;
+  kind: "takeoff" | "landing" | "low";
+}
+export interface LogbookFromTrackInput {
+  /**
+   * The track, in any order; put in time order first.
+   */
+  points: TrackPoint[];
+  /**
+   * The fields near the places logbook_track_places named.
+   */
+  fields?: LogbookTrackField[] | null;
+  /**
+   * Those fields' approaches, as /api/procedure draws them.
+   */
+  drawings?: ProcedureDrawing[] | null;
+  /**
+   * The approach picked for the flight, by its CIFP id.
+   */
+  picked?: string | null;
+  aircraft?: string | null;
+  aircraft_type?: string | null;
+  /**
+   * The pilot's clock against UTC, minutes; 0 where left out.
+   */
+  utc_offset_min?: number | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "LogbookTrackField".
+ */
+export interface LogbookTrackField {
+  ident: string;
+  lat: number;
+  lon: number;
+  /**
+   * NASR's elevation, ft MSL.
+   */
+  elevation_ft?: number | null;
+  /**
+   * A control tower (NASR APT_BASE TWR_TYPE_CODE).
+   */
+  towered?: boolean | null;
+}
+/**
+ * A procedure as the planner draws it from the FAA's CIFP (/api/procedure's answer as it comes); only the members the engine reads.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ProcedureDrawing".
+ */
+export interface ProcedureDrawing {
+  airport?: string | null;
+  /**
+   * "approach", "arrival" or "departure".
+   */
+  kind?: string | null;
+  id?: string | null;
+  name?: string | null;
+  transition?: string | null;
+  stale?: boolean | null;
+  glidepath_deg?: number | null;
+  final_course_deg?: number | null;
+  lines?:
+    | {
+        /**
+         * "transition", "final", "missed", "common" or "runway".
+         */
+        role?: string | null;
+        points?: [number, number][] | null;
+      }[]
+    | null;
+  holds?:
+    | {
+        fix?: string | null;
+        /**
+         * "hold" or "procedure turn".
+         */
+        kind?: string | null;
+        missed?: boolean | null;
+      }[]
+    | null;
+  fixes?:
+    | {
+        ident?: string | null;
+        lat: number;
+        lon: number;
+        /**
+         * "IAF", "IF", "FACF", "FAF", "MAP", "hold".
+         */
+        roles?: string[] | null;
+        min_ft?: number | null;
+        max_ft?: number | null;
+        missed?: boolean | null;
+      }[]
+    | null;
+  missed_legs?: ApproachMissedLeg[] | null;
+  runway_path?: ApproachRunwayPath | null;
+}
+/**
+ * A missed approach's coded leg (ARINC 424-18 5.21).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ApproachMissedLeg".
+ */
+export interface ApproachMissedLeg {
+  /**
+   * ARINC 424-18 5.21's path and terminator: "CA", "VI", "CF", "HM" ...
+   */
+  path?: string | null;
+  fix?: string | null;
+  course_deg?: number | null;
+  /**
+   * "L" or "R".
+   */
+  turn?: string | null;
+  min_ft?: number | null;
+  max_ft?: number | null;
+}
+/**
+ * The glidepath placed on its runway: its threshold, the height it crosses it at and its angle.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ApproachRunwayPath".
+ */
+export interface ApproachRunwayPath {
+  lat: number;
+  lon: number;
+  /**
+   * Threshold crossing height, ft MSL.
+   */
+  ft: number;
+  /**
+   * Glidepath angle, degrees.
+   */
+  deg: number;
+}
+export interface LogbookFromTrackAnswer {
+  entry: LogbookDraftEntry;
+  instrument: LogbookInstrument;
+  takeoffs: LogbookTakeoff[];
+  landings: LogbookLanding[];
+  approaches: LogbookApproach[];
+  holds: LogbookHold[];
+  block: LogbookBlock;
+  cross_country: LogbookCrossCountry;
+  ends_airborne: boolean;
+  reasons: LogbookReason[];
+}
+export interface LogbookDraftEntry {
+  /**
+   * YYYY-MM-DD on the pilot's clock (61.51(b)(1)(i)).
+   */
+  flownOn: string;
+  aircraft: string | null;
+  aircraftType: string | null;
+  route: string;
+  /**
+   * 1.1's flight time, to the tenth.
+   */
+  totalHours: number;
+  /**
+   * Takeoff roll to landing roll, to the tenth.
+   */
+  airHours: number;
+  /**
+   * Of the flight time, in 1.1's night.
+   */
+  nightHours: number;
+  /**
+   * The flight time where a landing was more than 50 nm from the departure (61.1(b)(ii)), else 0.
+   */
+  crossCountryHours: number;
+  /**
+   * Every landing not counted at night: 61.57(a).
+   */
+  dayLandings: number;
+  /**
+   * To a full stop in 61.57(b)'s period.
+   */
+  nightLandings: number;
+  /**
+   * Of the day landings, the touch-and-goes (61.57(a) counts them, (b) does not).
+   */
+  touchAndGoes: number;
+  toweredLandings: number;
+  distanceNm: number;
+  longestLegNm: number;
+  /**
+   * 0: added from `instrument` where flown by instruments.
+   */
+  approaches: number;
+  holding: boolean;
+  tracking: boolean;
+  remarks: string;
+}
+/**
+ * 61.57(c)(1)'s items the track shows, to add to the entry where flown by instruments.
+ */
+export interface LogbookInstrument {
+  approaches: number;
+  holding: boolean;
+  tracking: boolean;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "LogbookTakeoff".
+ */
+export interface LogbookTakeoff {
+  t: number;
+  lat: number;
+  lon: number;
+  field: string | null;
+  towered: boolean;
+  /**
+   * 14 CFR 1.1's night there and then.
+   */
+  night: boolean;
+  /**
+   * 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise.
+   */
+  passenger_night: boolean;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "LogbookLanding".
+ */
+export interface LogbookLanding {
+  t: number;
+  lat: number;
+  lon: number;
+  field: string | null;
+  towered: boolean;
+  /**
+   * 14 CFR 1.1's night there and then.
+   */
+  night: boolean;
+  /**
+   * 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise.
+   */
+  passenger_night: boolean;
+  kind: "full_stop" | "touch_and_go";
+  /**
+   * To a full stop in 61.57(b)'s period.
+   */
+  counts_night: boolean;
+}
+export interface LogbookApproach {
+  airport: string;
+  id: string;
+  name: string;
+  /**
+   * When it crossed the final approach fix inbound, ms.
+   */
+  faf_at: number;
+  outcome: "landed" | "missed" | "unknown";
+  also_fits: string[];
+}
+export interface LogbookHold {
+  from: number;
+  to: number;
+  racetracks: number;
+  lat: number;
+  lon: number;
+  fix: string | null;
+}
+export interface LogbookBlock {
+  from: number | null;
+  to: number | null;
+}
+export interface LogbookCrossCountry {
+  landed_elsewhere: boolean;
+  over_50_nm: boolean;
+  farthest_nm: number;
+}
+export interface LogbookReason {
+  item: string;
+  says: string;
+  source: string;
+}
 export interface ReadClearanceInput {
   text: string;
 }
@@ -5795,101 +6107,9 @@ export interface GlidepathFtInput {
   runway_path: ApproachRunwayPath;
   nm_out: number;
 }
-/**
- * The glidepath placed on its runway: its threshold, the height it crosses it at and its angle.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "ApproachRunwayPath".
- */
-export interface ApproachRunwayPath {
-  lat: number;
-  lon: number;
-  /**
-   * Threshold crossing height, ft MSL.
-   */
-  ft: number;
-  /**
-   * Glidepath angle, degrees.
-   */
-  deg: number;
-}
 export interface ApproachAttemptsInput {
   drawing: ProcedureDrawing;
   points?: TrackPoint[] | null;
-}
-/**
- * A procedure as the planner draws it from the FAA's CIFP (/api/procedure's answer as it comes); only the members the engine reads.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "ProcedureDrawing".
- */
-export interface ProcedureDrawing {
-  airport?: string | null;
-  /**
-   * "approach", "arrival" or "departure".
-   */
-  kind?: string | null;
-  id?: string | null;
-  name?: string | null;
-  transition?: string | null;
-  stale?: boolean | null;
-  glidepath_deg?: number | null;
-  final_course_deg?: number | null;
-  lines?:
-    | {
-        /**
-         * "transition", "final", "missed", "common" or "runway".
-         */
-        role?: string | null;
-        points?: [number, number][] | null;
-      }[]
-    | null;
-  holds?:
-    | {
-        fix?: string | null;
-        /**
-         * "hold" or "procedure turn".
-         */
-        kind?: string | null;
-        missed?: boolean | null;
-      }[]
-    | null;
-  fixes?:
-    | {
-        ident?: string | null;
-        lat: number;
-        lon: number;
-        /**
-         * "IAF", "IF", "FACF", "FAF", "MAP", "hold".
-         */
-        roles?: string[] | null;
-        min_ft?: number | null;
-        max_ft?: number | null;
-        missed?: boolean | null;
-      }[]
-    | null;
-  missed_legs?: ApproachMissedLeg[] | null;
-  runway_path?: ApproachRunwayPath | null;
-}
-/**
- * A missed approach's coded leg (ARINC 424-18 5.21).
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "ApproachMissedLeg".
- */
-export interface ApproachMissedLeg {
-  /**
-   * ARINC 424-18 5.21's path and terminator: "CA", "VI", "CF", "HM" ...
-   */
-  path?: string | null;
-  fix?: string | null;
-  course_deg?: number | null;
-  /**
-   * "L" or "R".
-   */
-  turn?: string | null;
-  min_ft?: number | null;
-  max_ft?: number | null;
 }
 /**
  * An attempt at an approach as indices into the track's points: where it crossed the final approach fix inbound, and the points it runs from and to.

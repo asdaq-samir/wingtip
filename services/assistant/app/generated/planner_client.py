@@ -568,6 +568,15 @@ def local_flight(*, dep: str, dest: str, duration_min: float | None = None, stop
     return _LOCAL_FLIGHT.validate_python(found)
 
 
+_DRAFT = _Answer(m.LogbookDraft)
+
+
+def draft(*, body: m.LogbookDraftAsk | dict[str, Any]) -> m.LogbookDraft:
+    """POST /api/logbook-draft: Draft"""
+    found = _send('POST', '/api/logbook-draft', query={}, body=_body(body), headers={})
+    return _DRAFT.validate_python(found)
+
+
 _LOST_COMMS = _Answer(m.LostComms)
 
 

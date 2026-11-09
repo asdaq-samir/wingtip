@@ -128,6 +128,9 @@ export type ClearancePlaces = Schemas["ClearancePlaces"];
 export type DepartureWindowAsk = Schemas["DepartureWindowAsk"];
 export type DepartureWindow = Schemas["DepartureWindow"];
 export type WindowHour = Schemas["WindowHour"];
+/** A flight logged from the app's own track: the draft entry and its reasons (app.routers.logbook_draft). */
+export type LogbookDraftAsk = Schemas["LogbookDraftAsk"];
+export type LogbookDraft = Schemas["LogbookDraft"];
 export type DepartureWindowRun = Schemas["Window"];
 export type ClearanceWords = Schemas["ClearanceWords"];
 export type OralGrade = Assistant["OralGrade"];

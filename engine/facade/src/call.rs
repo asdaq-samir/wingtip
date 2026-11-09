@@ -564,6 +564,17 @@
 //!   `vor_check_limit_deg` from `{"kind"}` (pilot::records: 61.87, 61.93(d),
 //!   61.95, 91.171, 91.207, 91.409, 91.411, 91.413).
 //!
+//! A logbook entry drawn from the app's own flown track (crate::autolog):
+//!
+//! - `logbook_track_places`: where the track took off, landed or came
+//!   down low, `{"places": [{"t", "lat", "lon", "kind"}], "within_nm"}`,
+//!   from `{"points"}`, for the host to find the fields there;
+//! - `logbook_from_track`: the draft entry, `{"entry", "instrument",
+//!   "takeoffs", "landings", "approaches", "holds", "block",
+//!   "cross_country", "ends_airborne", "reasons"}`, from `{"points",
+//!   "fields"?, "drawings"?, "aircraft"?, "aircraft_type"?,
+//!   "utc_offset_min"?}` (14 CFR 1.1, 61.1(b), 61.51, 61.57).
+//!
 //! The FAA's data sets on their cycles (crate::cycles):
 //!
 //! - `data_cycle`: whether an edition is in force on a day, `{"kind",
@@ -1181,6 +1192,10 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         _ if crate::rvr::NAMES.contains(&name) => crate::rvr::call(name, ask.v),
         _ if crate::altitude::calls::NAMES.contains(&name) => crate::altitude::calls::call(name, ask.v),
         _ if crate::aircraft::calls::NAMES.contains(&name) => crate::aircraft::calls::call(name, ask.v),
+        // A logbook entry drawn from the app's own flown track (pilot's
+        // autolog): 1.1's flight time and night, 61.57's landings,
+        // approaches and holds, 61.1(b)'s cross-country.
+        _ if crate::autolog::NAMES.contains(&name) => crate::autolog::call(name, ask.v),
         // Instrument approaches taught and debriefed (approach::calls).
         _ if crate::approach::calls::NAMES.contains(&name) => crate::approach::calls::call(name, ask.v),
         // The flight under way: the best fields to go to and the in-flight

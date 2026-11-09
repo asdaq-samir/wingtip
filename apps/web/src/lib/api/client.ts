@@ -4,7 +4,7 @@ import type { paths as AssistantPaths } from "./assistant-schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
 import type { AirportAtis, AirportRvr, CopilotAround, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses } from "./types";
-import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, IcingForecast, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, Obstacles, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces, EmergencyFields, DepartureWindow, DepartureWindowAsk, DueItem, DueItemRequest, Paperwork } from "./types";
+import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, IcingForecast, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, Obstacles, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces, EmergencyFields, DepartureWindow, DepartureWindowAsk, DueItem, DueItemRequest, Paperwork, LogbookDraft, LogbookDraftAsk } from "./types";
 
 /**
  * Every call the pages make. Both servers' calls go through
@@ -120,6 +120,10 @@ export class GatewayRequest extends Request {
 }
 
 const planner = createClient<paths>({ baseUrl: "", Request: GatewayRequest });
+
+/** A logbook entry's columns kept of one drawn from the app's own track
+ *  (features/logbook-auto), which a typed or imported entry has none of. */
+type TrackColumns = "airHours" | "touchAndGoes" | "fromTrack" | "flightId";
 planner.use(csrfAndFailures);
 
 /** The assistant service's endpoints -- every Claude call: the narrative,
@@ -567,6 +571,11 @@ export const api = {
    *  forecasts reach, and the best windows (the planner's app.window). */
   departureWindow: (body: DepartureWindowAsk, signal?: AbortSignal) =>
     planner.POST("/api/departure-window", { body, signal }).then(data<DepartureWindow>),
+  /** The logbook entry a recorded track makes, for the pilot to review
+   *  (the engine's logbook_from_track, the fields and approaches round
+   *  the track found by the planner); nothing saved. */
+  logbookDraft: (body: LogbookDraftAsk, signal?: AbortSignal) =>
+    planner.POST("/api/logbook-draft", { body, signal }).then(data<LogbookDraft>),
 
   /** The mock oral (the planner's app.oral): a question about this
    *  flight, and an answer graded. The developer's, for now. */
@@ -890,8 +899,11 @@ export const api = {
     reminders: () => gateway.GET("/api/logbook/reminders").then(data<Reminders>),
     setReminders: (on: boolean) => gateway.PUT("/api/logbook/reminders", { body: { on } }).then(data<Reminders>),
     /** Flights from a file, those already in the logbook left out. */
-    importAll: (entries: LogbookEntryRequest[]) =>
-      gateway.POST("/api/logbook/import", { body: { entries } }).then(data<LogbookImportResult>),
+    importAll: (entries: Omit<LogbookEntryRequest, TrackColumns>[]) =>
+      gateway.POST("/api/logbook/import", {
+        // A file's flights were not drawn from a track (features/logbook-auto).
+        body: { entries: entries.map(e => ({ ...e, airHours: 0, touchAndGoes: 0, fromTrack: false, flightId: null })) },
+      }).then(data<LogbookImportResult>),
   },
 
   /** What falls due for the pilot and their airplanes, soonest first, each

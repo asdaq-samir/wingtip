@@ -35,6 +35,13 @@ pub const FLIGHT_REVIEW_MONTHS: i64 = 24;
 pub const INSTRUMENT_MONTHS: i64 = 6;
 /// 61.57(c)(1)(i): "Six instrument approaches."
 pub const APPROACHES: f64 = 6.0;
+/// 14 CFR 61.1(b), "Cross-country time" (ii) and (vi): for the private,
+/// commercial and instrument experience (61.109, 61.129, 61.65) and the
+/// ATP's, a point of landing "more than 50 nautical miles" in a straight
+/// line from the original point of departure; 61.109(a)(5)(ii)'s solo
+/// segment is the same distance. The track's logbook entry (autolog) logs
+/// cross-country time by it.
+pub const CROSS_COUNTRY_NM: f64 = 50.0;
 
 /// A day as (year, month, day); Err where `iso` is no such day.
 pub(crate) fn day(name: &str, iso: &str) -> Result<(i64, u32, u32), String> {
@@ -393,7 +400,7 @@ pub fn experience(entries: &[Entry], today: (i64, u32, u32)) -> Vec<Item> {
             "longSoloCrossCountry",
             "61.109(a)(5)(ii)",
             "A solo cross-country of 150 nm, full-stop landings at three points, one leg over 50 nm",
-            any(&|e| solo(e) && e.distance_nm >= 150.0 && e.longest_leg_nm > 50.0 && e.landings() >= 3.0),
+            any(&|e| solo(e) && e.distance_nm >= 150.0 && e.longest_leg_nm > CROSS_COUNTRY_NM && e.landings() >= 3.0),
             1.0,
             "flights",
         ),

@@ -72,6 +72,16 @@ public class LogbookEntry {
     private boolean holding;
     private boolean tracking;
 
+    // What an entry drawn from the app's own track adds (V34): the air time,
+    // the touch-and-goes among the day landings (61.57(a) counts them,
+    // (b) does not), that it came from a track, and the saved flight it
+    // was flown as -- whose debrief it opens. Kept as sent: the engine
+    // drew them and the pilot confirmed them.
+    private double airHours;
+    private int touchAndGoes;
+    private boolean fromTrack;
+    private Long flightId;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -109,6 +119,15 @@ public class LogbookEntry {
         this.toweredLandings = toweredLandings;
         this.distanceNm = distanceNm;
         this.longestLegNm = longestLegNm;
+        return this;
+    }
+
+    /** The track's columns, as the entry's form sends them. */
+    public LogbookEntry track(double airHours, int touchAndGoes, boolean fromTrack, Long flightId) {
+        this.airHours = airHours;
+        this.touchAndGoes = touchAndGoes;
+        this.fromTrack = fromTrack;
+        this.flightId = flightId;
         return this;
     }
 
