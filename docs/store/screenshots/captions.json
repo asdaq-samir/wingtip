@@ -1,0 +1,22 @@
+{
+  "01-map": {
+    "title": "The FAA chart, like Maps",
+    "sub": "Your route over the sectional, with the airspace it crosses"
+  },
+  "02-brief": {
+    "title": "Go or no-go, first",
+    "sub": "The Brief leads with the verdict and what to do about it"
+  },
+  "03-navlog": {
+    "title": "A nav log from the winds aloft",
+    "sub": "Headings, groundspeeds, times and fuel for every leg"
+  },
+  "04-airport": {
+    "title": "Every field at a glance",
+    "sub": "Its flight category, airspace, runways and diagram on one card"
+  },
+  "05-downloads": {
+    "title": "Charts with no signal",
+    "sub": "Download the sectionals for your flight before you go"
+  }
+}
