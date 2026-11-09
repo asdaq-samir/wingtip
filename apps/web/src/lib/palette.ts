@@ -16,7 +16,7 @@ export const closePalette = () => usePalette.setState({ open: null });
 
 /** Whether the keys are a Mac's (⌘) or another's (Ctrl), for what a menu
  *  shows beside a command. */
-export const onMac = (): boolean => typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
+const onMac = (): boolean => typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
 
 /** The palette's own keys as a menu shows them. */
 export const paletteKeys = (): string => (onMac() ? "⌘K" : "Ctrl K");
