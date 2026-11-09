@@ -16,9 +16,25 @@ spring:
   # (server.servlet.session below): sign in once per device a month,
   # not after every half hour away or every gateway restart. The tables
   # come from Flyway (V8__spring_session.sql).
+  # Boot 4 no longer takes the session store's timeout from
+  # server.servlet.session.timeout: a stored session lasted Spring
+  # Session's own default (30 minutes) until this said 30 days again.
   session:
+    timeout: 30d
     jdbc:
       initialize-schema: never
+  # Jackson 3 refuses a null or missing value for a primitive field,
+  # where Jackson 2 read it as 0 or false. The request records were
+  # written to that contract: a logbook entry's training, instrument and
+  # track columns are "none when not sent" (LogbookEntryRequest), and the
+  # form, the ForeFlight import and the phones leave them out or send
+  # null, so every add, edit and import was a 500. A primitive that must
+  # be sent is checked by its constraint (@Positive, @Min(1)); one whose
+  # 0 would be a wrong figure rather than none is a boxed @NotNull field
+  # (VorCheckRequest.errorDeg, TrackPointDto's time and position).
+  jackson:
+    deserialization:
+      fail-on-null-for-primitives: false
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/wingtip}
     username: ${SPRING_DATASOURCE_USERNAME:wingtip}

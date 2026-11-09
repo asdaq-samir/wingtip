@@ -21,6 +21,9 @@ public record VorCheckRequest(
         @Size(max = 80, message = "place must be at most 80 characters") @Nullable
         String place,
 
+        // Boxed and required: a check sent without its error must be
+        // refused, not recorded as a 0-degree error, which passes 91.171.
+        @NotNull(message = "errorDeg is required")
         @DecimalMin(value = "-30", message = "errorDeg must be within 30 degrees")
         @DecimalMax(value = "30", message = "errorDeg must be within 30 degrees")
-        double errorDeg) {}
+        Double errorDeg) {}

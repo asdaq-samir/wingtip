@@ -124,7 +124,14 @@ class AccountDeletionTest {
             plannerAsked.add(
                     exchange.getRequestMethod() + " " + exchange.getRequestURI().getPath() + " pilot="
                             + exchange.getRequestHeaders().getFirst("X-Pilot-Id"));
-            byte[] body = "{\"removed\":1}".getBytes();
+            // The export's training record asks the engine what the
+            // endorsements say; it answers every field its document
+            // requires, as the planner does: under Jackson 3 the generated
+            // model leaves a missing list null rather than empty.
+            byte[] body = (exchange.getRequestURI().getPath().equals("/api/pilot/endorsements")
+                            ? "{\"checks\":[],\"soloUntil\":null,\"until\":[]}"
+                            : "{\"removed\":1}")
+                    .getBytes();
             exchange.sendResponseHeaders(plannerStatus, body.length);
             exchange.getResponseBody().write(body);
             exchange.close();
