@@ -1,0 +1,241 @@
+{
+  "x-call": "wingtip_pilot::coach::call",
+  "description": "A pilot's proficiency plan: what is due and when (the flight review, 14 CFR 61.56(c); passengers by day and at night, 61.57(a), (b); instrument currency, 61.57(c), (d); a student's solo endorsement, 61.87(n), (p); the medical as given), the reminders for those lapsing within remind_days, the weak areas the pilot's own debriefs show (an approach off course or glidepath under the 500 ft gate, AC 61-98D 2.1.4; an approach past full scale or under a minimum; a downwind off pattern altitude, ACS PA.III.B; a leg not held, PA.VI.A), each with its evidence, and up to four sessions: what to practise, why, the nearest suited field of `places`, how long, and whether it may count toward a WINGS flight activity (AC 61-91K 7.3). Every decision is the engine's; a model only words it, citing the ids.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProficiencyPlanInput",
+      "type": "object",
+      "properties": {
+        "today": {
+          "type": "string",
+          "description": "YYYY-MM-DD."
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LogbookEntry"
+          }
+        },
+        "flight_review_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The last flight review, YYYY-MM-DD."
+        },
+        "medical_expires_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD, as the pilot gives it."
+        },
+        "ipc_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The last instrument proficiency check, YYYY-MM-DD."
+        },
+        "ratings": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "student",
+              "private",
+              "commercial",
+              "atp",
+              "instrument",
+              "cfi"
+            ]
+          },
+          "description": "\"student\" holds the pilot to the solo endorsement instead of the flight review (61.56(g)); \"instrument\" adds instrument currency."
+        },
+        "held": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "AC 61-65K's, as endorsement_kinds names it."
+              },
+              "on": {
+                "type": "string",
+                "description": "YYYY-MM-DD."
+              }
+            },
+            "required": [
+              "code",
+              "on"
+            ]
+          },
+          "description": "A student's endorsements."
+        },
+        "debriefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CoachDebrief"
+          }
+        },
+        "places": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PracticePlace"
+          }
+        },
+        "remind_days": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "How many days before a currency lapses its reminder shows; 30 where null."
+        }
+      },
+      "required": [
+        "today",
+        "entries"
+      ]
+    },
+    "answer": {
+      "title": "ProficiencyPlanAnswer",
+      "type": "object",
+      "properties": {
+        "today": {
+          "type": "string"
+        },
+        "due": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProficiencyDue"
+          }
+        },
+        "reminders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              },
+              "until": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "days_left": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "key",
+              "text",
+              "until",
+              "days_left"
+            ],
+            "additionalProperties": false
+          },
+          "description": "The currencies lapsing within remind_days, in a sentence each."
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "\"ev:1\"..., newest first."
+              },
+              "flown_on": {
+                "type": "string"
+              },
+              "place": {
+                "type": "string"
+              },
+              "area": {
+                "type": "string",
+                "description": "The weak area's key."
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "flown_on",
+              "place",
+              "area",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "description": "The lines from the pilot's debriefs of the last half year."
+        },
+        "weak_areas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "enum": [
+                  "unstable_approach",
+                  "approach_deviation",
+                  "pattern_altitude",
+                  "cruise_holding"
+                ]
+              },
+              "label": {
+                "type": "string"
+              },
+              "acs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "key",
+              "label",
+              "acs",
+              "evidence"
+            ],
+            "additionalProperties": false
+          },
+          "description": "The most evidence first."
+        },
+        "sessions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProficiencySession"
+          }
+        }
+      },
+      "required": [
+        "today",
+        "due",
+        "reminders",
+        "evidence",
+        "weak_areas",
+        "sessions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

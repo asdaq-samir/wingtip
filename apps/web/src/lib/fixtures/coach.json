@@ -1,0 +1,119 @@
+{
+  "about": "Fixture pilots for the engine's proficiency_plan (engine/crates/pilot/src/coach): their logbooks, dates, debriefs and the fields near home, with what the plan must say -- each currency's status and last day (14 CFR 61.56(c), 61.57(a)-(d), 61.87(n), (p)), the weak areas and how much evidence each has, and the sessions in order with the field each is flown at. The engine (engine/facade/tests/coach.rs) and the planner (services/planner/tests/test_coach.py) are held to it.",
+  "pilots": [
+    {
+      "name": "Avery: night currency lapsing in 9 days, flight review in 21, two unstable approaches into KMSN",
+      "ask": {
+        "today": "2026-11-09",
+        "ratings": ["private", "instrument"],
+        "flight_review_on": "2024-11-20",
+        "medical_expires_on": "2027-06-30",
+        "entries": [
+          { "flownOn": "2026-10-25", "totalHours": 1.4, "dayLandings": 2, "instrumentHours": 1.0, "approaches": 2, "holding": true },
+          { "flownOn": "2026-10-12", "totalHours": 1.1, "crossCountryHours": 1.1, "dayLandings": 1 },
+          { "flownOn": "2026-09-30", "totalHours": 1.2, "dayLandings": 1, "instrumentHours": 0.8, "approaches": 2, "tracking": true },
+          { "flownOn": "2026-08-20", "totalHours": 1.2, "nightHours": 1.2, "nightLandings": 3 },
+          { "flownOn": "2026-06-10", "totalHours": 1.5, "dayLandings": 1, "instrumentHours": 1.2, "approaches": 3 }
+        ],
+        "debriefs": [
+          {
+            "kind": "approach", "flown_on": "2026-10-25", "place": "KMSN", "elevation_ft": 887,
+            "profile": [
+              { "to_go_nm": 4.0, "alt_ft": 2150, "off": false },
+              { "to_go_nm": 1.5, "alt_ft": 1420, "off": false },
+              { "to_go_nm": 1.0, "alt_ft": 1300, "off": true },
+              { "to_go_nm": 0.6, "alt_ft": 1190, "off": false }
+            ],
+            "findings": [
+              { "tone": "stop", "text": "Below the glide slope's full scale for 0.4 nm" },
+              { "tone": "info", "text": "Landed 12 s after the MAP" }
+            ]
+          },
+          {
+            "kind": "approach", "flown_on": "2026-09-30", "place": "KMSN", "elevation_ft": 887,
+            "profile": [
+              { "to_go_nm": 2.0, "alt_ft": 1700, "off": true },
+              { "to_go_nm": 0.8, "alt_ft": 1250, "off": true }
+            ],
+            "findings": [
+              { "tone": "stop", "text": "Full scale left of the course for 0.3 nm on final, 0.4 nm off at most" }
+            ]
+          },
+          {
+            "kind": "flight", "flown_on": "2026-10-12", "place": "KMSN-KJVL",
+            "legs": [ { "from": "KMSN", "to": "KJVL", "altitude_within": 0.92, "course_within": 0.97, "ok": true } ],
+            "patterns": [ { "ident": "KJVL", "off_ft": 220, "ok": false } ]
+          }
+        ],
+        "places": [
+          { "ident": "C29", "name": "Middleton Muni - Morey Fld", "distance_nm": 0, "lighted": true, "towered": false,
+            "approaches": [ { "name": "RNAV (GPS) RWY 28", "precision": false } ] },
+          { "ident": "KMSN", "name": "Dane County Rgnl/Truax Fld", "distance_nm": 7.6, "lighted": true, "towered": true,
+            "approaches": [ { "name": "ILS OR LOC RWY 36", "precision": true }, { "name": "RNAV (GPS) RWY 18", "precision": false } ] }
+        ]
+      },
+      "expected": {
+        "due": {
+          "flight_review": ["due_soon", "2026-11-30"],
+          "day_passengers": ["current", "2027-01-10"],
+          "night_passengers": ["due_soon", "2026-11-18"],
+          "medical": ["current", "2027-06-30"],
+          "instrument": ["current", "2026-12-31"]
+        },
+        "reminders": ["flight_review", "night_passengers"],
+        "weak_areas": { "unstable_approach": 2, "approach_deviation": 2, "pattern_altitude": 1 },
+        "sessions": [
+          ["flight_review", null],
+          ["night_passengers", "C29"],
+          ["unstable_approach", "KMSN"],
+          ["approach_deviation", "C29"]
+        ]
+      }
+    },
+    {
+      "name": "Blake: night currency lapsed, no debriefs, no instrument rating",
+      "ask": {
+        "today": "2026-11-09",
+        "ratings": ["private"],
+        "flight_review_on": "2025-06-01",
+        "entries": [
+          { "flownOn": "2026-10-30", "totalHours": 1.0, "dayLandings": 3 },
+          { "flownOn": "2026-07-01", "totalHours": 1.3, "nightHours": 1.3, "nightLandings": 3 }
+        ],
+        "places": [
+          { "ident": "3CK", "name": "Lake In The Hills", "distance_nm": 0, "lighted": false },
+          { "ident": "KDKB", "name": "De Kalb Taylor Muni", "distance_nm": 21.4, "lighted": true }
+        ]
+      },
+      "expected": {
+        "due": {
+          "flight_review": ["current", "2027-06-30"],
+          "day_passengers": ["current", "2027-01-28"],
+          "night_passengers": ["lapsed", "2026-09-29"]
+        },
+        "reminders": [],
+        "weak_areas": {},
+        "sessions": [ ["night_passengers", "KDKB"] ]
+      }
+    },
+    {
+      "name": "Casey: a student whose solo endorsement runs out in 21 days, held to it instead of a flight review (61.56(g))",
+      "ask": {
+        "today": "2026-11-09",
+        "ratings": ["student"],
+        "held": [ { "code": "solo-first", "on": "2026-07-01" }, { "code": "solo-90", "on": "2026-09-01" } ],
+        "entries": [ { "flownOn": "2026-11-01", "totalHours": 1.0, "soloHours": 1.0, "dayLandings": 3 } ]
+      },
+      "expected": {
+        "due": {
+          "solo": ["due_soon", "2026-11-30"],
+          "day_passengers": ["current", "2027-01-30"],
+          "night_passengers": ["unknown", null]
+        },
+        "reminders": ["solo"],
+        "weak_areas": {},
+        "sessions": [ ["solo", null] ]
+      }
+    }
+  ]
+}

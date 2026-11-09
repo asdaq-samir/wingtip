@@ -1,0 +1,110 @@
+{
+  "title": "ProficiencySession",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "\"session:1\"..."
+    },
+    "key": {
+      "type": "string",
+      "description": "The currency (\"night_passengers\", \"ipc\") or weak area (\"unstable_approach\") it answers."
+    },
+    "practise": {
+      "type": "string",
+      "description": "What to practise, with its source."
+    },
+    "why": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The ids it answers: \"due:<key>\" and evidence ids."
+    },
+    "place": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "distance_nm": {
+              "type": "number"
+            },
+            "approach": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The approach to fly there."
+            }
+          },
+          "required": [
+            "ident",
+            "name",
+            "distance_nm",
+            "approach"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The nearest field suited to it; null where any will do or none was given."
+    },
+    "minutes": {
+      "type": "integer",
+      "description": "The plan's suggestion of its length, not a rule."
+    },
+    "instructor": {
+      "type": "boolean",
+      "description": "Flown with an instructor."
+    },
+    "wings": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "area": {
+              "type": "string",
+              "description": "The accident causal factor's area (AC 61-91K 6)."
+            },
+            "acs": {
+              "type": "string",
+              "description": "The ACS task flown to."
+            },
+            "note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "area",
+            "acs",
+            "note"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Where it may count toward a WINGS flight activity; never a claim that it does."
+    }
+  },
+  "required": [
+    "id",
+    "key",
+    "practise",
+    "why",
+    "place",
+    "minutes",
+    "instructor",
+    "wings"
+  ],
+  "additionalProperties": false
+}

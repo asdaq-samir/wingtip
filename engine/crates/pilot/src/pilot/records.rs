@@ -66,7 +66,7 @@ pub fn solo_until(held: &[Held]) -> Option<i64> {
 }
 
 /// "5 Oct 2026", as the review sheet says a day.
-fn said(day: i64) -> String {
+pub(crate) fn said(day: i64) -> String {
     const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     let (y, m, d) = crate::time::civil_from_days(day);
     format!("{d} {} {y}", MONTHS[(m - 1) as usize])
@@ -110,7 +110,7 @@ pub fn solo_xc_checks(flight_on: i64, held: &[Held]) -> Vec<(&'static str, &'sta
 /// done in -- an annual on 5 October 2025 is good through 31 October 2026.
 pub const INSPECTIONS: [(&str, i64); 4] = [("annual", 12), ("elt", 12), ("static_check", 24), ("transponder_check", 24)];
 
-fn held_of(name: &str, v: &Value) -> Result<Vec<Held>, String> {
+pub(crate) fn held_of(name: &str, v: &Value) -> Result<Vec<Held>, String> {
     let list = match v.get("held") {
         None | Some(Value::Null) => return Ok(Vec::new()),
         Some(l) => l.as_array().ok_or_else(|| format!("{name}: \"held\" is not a list"))?,

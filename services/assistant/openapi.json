@@ -100,6 +100,55 @@
           }
         ]
       },
+      "CoachWordsAnswer": {
+        "description": "The paragraph that passed the check, the line kept for each\nsession (by its id), the sources they cite and which model wrote them.",
+        "properties": {
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "sentences": {
+            "items": {
+              "$ref": "#/components/schemas/Sentence"
+            },
+            "title": "Sentences",
+            "type": "array"
+          },
+          "session_lines": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SessionLine"
+            },
+            "title": "Session Lines",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/Source"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "unavailable": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable"
+          }
+        },
+        "required": [
+          "sentences",
+          "sources",
+          "model"
+        ],
+        "title": "CoachWordsAnswer",
+        "type": "object"
+      },
       "Context": {
         "description": "The pilot's plan, position and record as the app has them.",
         "properties": {
@@ -1232,6 +1281,35 @@
         "title": "Sentence",
         "type": "object"
       },
+      "SessionLine": {
+        "properties": {
+          "session": {
+            "description": "The session's id, exactly as given (\"session:1\").",
+            "title": "Session",
+            "type": "string"
+          },
+          "sources": {
+            "description": "The ids it rests on: its session's and those the session answers.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "text": {
+            "description": "One short sentence: what to practise there and why.",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session",
+          "text",
+          "sources"
+        ],
+        "title": "SessionLine",
+        "type": "object"
+      },
       "Source": {
         "description": "A raw thing a sentence can rest on, shown to the pilot as sent.",
         "properties": {
@@ -2113,6 +2191,53 @@
           }
         },
         "summary": "Changes Words",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 65536,
+          "paid": "WORDS"
+        }
+      }
+    },
+    "/api/words/coach": {
+      "post": {
+        "description": "A proficiency plan in a short paragraph and a line a session, each\nciting the plan's own ids. The plan is the engine's; where the model\ncannot be reached the answer has no words and says why, and the\nscreen shows the plan as it is.",
+        "operationId": "coach_words_api_words_coach_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "description": "The planner's POST /api/pilot/coach answer, passed on whole.",
+                "title": "Plan",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoachWordsAnswer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Coach Words",
         "x-gateway": {
           "access": "signed-in",
           "bodyLimit": 65536,

@@ -490,6 +490,177 @@ class ClearanceWords(BaseModel):
     words: Annotated[list[str] | None, Field(title='Words')] = None
 
 
+class Home(RootModel[str | None]):
+    root: Annotated[
+        str | None,
+        Field(
+            description="The pilot's home field, where the sessions' fields are looked for round.",
+            max_length=8,
+            title='Home',
+        ),
+    ] = None
+
+
+class RemindDays(RootModel[int | None]):
+    root: Annotated[int | None, Field(ge=0, le=365, title='Reminddays')] = None
+
+
+class CoachDue(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    days_left: Annotated[int | None, Field(title='Days Left')] = None
+    detail: Annotated[str | None, Field(title='Detail')] = None
+    from_: Annotated[date | None, Field(alias='from', title='From')] = None
+    id: Annotated[str | None, Field(title='Id')] = None
+    key: Annotated[
+        Literal['flight_review', 'solo', 'day_passengers', 'night_passengers', 'instrument', 'medical'] | None,
+        Field(title='Key'),
+    ] = None
+    label: Annotated[str | None, Field(title='Label')] = None
+    rule: Annotated[str | None, Field(title='Rule')] = None
+    status: Annotated[
+        Literal['current', 'due_soon', 'lapsed', 'pending', 'unknown'] | None,
+        Field(title='Status'),
+    ] = None
+    until: Annotated[date | None, Field(title='Until')] = None
+
+
+class CoachEndorsement(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    code: Annotated[str | None, Field(max_length=32, title='Code')] = None
+    on: Annotated[date | None, Field(title='On')] = None
+
+
+class CoachEvidence(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    area: Annotated[str | None, Field(title='Area')] = None
+    flown_on: Annotated[date | None, Field(title='Flown On')] = None
+    id: Annotated[str | None, Field(title='Id')] = None
+    place: Annotated[str | None, Field(title='Place')] = None
+    text: Annotated[str | None, Field(title='Text')] = None
+
+
+class CoachFinding(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    text: Annotated[str | None, Field(max_length=300, title='Text')] = None
+    tone: Annotated[
+        Literal['stop', 'caution', 'ok', 'info'] | None, Field(title='Tone')
+    ] = None
+
+
+class CoachLeg(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    altitude_within: Annotated[float | None, Field(title='Altitude Within')] = None
+    course_within: Annotated[float | None, Field(title='Course Within')] = None
+    from_: Annotated[str | None, Field(alias='from', title='From')] = None
+    ok: Annotated[bool | None, Field(title='Ok')] = None
+    to: Annotated[str | None, Field(title='To')] = None
+
+
+class CoachLogbookEntry(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    approaches: Annotated[int | None, Field(title='Approaches')] = 0
+    crossCountryHours: Annotated[float | None, Field(title='Crosscountryhours')] = 0
+    dayLandings: Annotated[
+        int | None,
+        Field(
+            description='Every landing, by day or at night (14 CFR 61.57(a)).',
+            title='Daylandings',
+        ),
+    ] = 0
+    dualHours: Annotated[float | None, Field(title='Dualhours')] = 0
+    flownOn: Annotated[date | None, Field(title='Flownon')] = None
+    holding: Annotated[bool | None, Field(title='Holding')] = False
+    instrumentHours: Annotated[float | None, Field(title='Instrumenthours')] = 0
+    nightHours: Annotated[float | None, Field(title='Nighthours')] = 0
+    nightLandings: Annotated[
+        int | None,
+        Field(
+            description='Landings to a full stop at night (61.57(b)).',
+            title='Nightlandings',
+        ),
+    ] = 0
+    soloHours: Annotated[float | None, Field(title='Solohours')] = 0
+    totalHours: Annotated[float | None, Field(title='Totalhours')] = 0
+    tracking: Annotated[bool | None, Field(title='Tracking')] = False
+
+
+class CoachPattern(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    ident: Annotated[str | None, Field(title='Ident')] = None
+    off_ft: Annotated[float | None, Field(title='Off Ft')] = None
+    ok: Annotated[bool | None, Field(title='Ok')] = None
+
+
+class CoachPlace(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    approach: Annotated[str | None, Field(title='Approach')] = None
+    distance_nm: Annotated[float | None, Field(title='Distance Nm')] = None
+    ident: Annotated[str | None, Field(title='Ident')] = None
+    name: Annotated[str | None, Field(title='Name')] = None
+
+
+class CoachProfilePoint(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    alt_ft: Annotated[float | None, Field(title='Alt Ft')] = None
+    off: Annotated[bool | None, Field(title='Off')] = None
+    to_go_nm: Annotated[float | None, Field(title='To Go Nm')] = None
+
+
+class CoachReminder(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    days_left: Annotated[int | None, Field(title='Days Left')] = None
+    key: Annotated[str | None, Field(title='Key')] = None
+    text: Annotated[str | None, Field(title='Text')] = None
+    until: Annotated[date | None, Field(title='Until')] = None
+
+
+class CoachWeakArea(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    acs: Annotated[list[str] | None, Field(title='Acs')] = None
+    evidence: Annotated[list[str] | None, Field(title='Evidence')] = None
+    key: Annotated[
+        Literal['unstable_approach', 'approach_deviation', 'pattern_altitude', 'cruise_holding'] | None,
+        Field(title='Key'),
+    ] = None
+    label: Annotated[str | None, Field(title='Label')] = None
+
+
+class CoachWings(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    acs: Annotated[str | None, Field(title='Acs')] = None
+    area: Annotated[
+        str | None,
+        Field(
+            description="The accident causal factor's area (AC 61-91K 6).", title='Area'
+        ),
+    ] = None
+    note: Annotated[str | None, Field(title='Note')] = None
+
+
 class CopilotArea(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -3430,6 +3601,56 @@ class ClearancePlaces(BaseModel):
     ] = []
 
 
+class CoachDebrief(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    elevation_ft: Annotated[
+        float | None,
+        Field(
+            description="The field's, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4).",
+            title='Elevation Ft',
+        ),
+    ] = None
+    findings: Annotated[
+        list[CoachFinding] | None,
+        Field(max_length=40, title='Findings', validate_default=True),
+    ] = []
+    flown_on: Annotated[date | None, Field(title='Flown On')] = None
+    kind: Annotated[Literal['approach', 'flight'] | None, Field(title='Kind')] = None
+    legs: Annotated[
+        list[CoachLeg] | None, Field(max_length=40, title='Legs', validate_default=True)
+    ] = []
+    patterns: Annotated[
+        list[CoachPattern] | None,
+        Field(max_length=40, title='Patterns', validate_default=True),
+    ] = []
+    place: Annotated[str | None, Field(max_length=40, title='Place')] = ''
+    profile: Annotated[
+        list[CoachProfilePoint] | None,
+        Field(max_length=400, title='Profile', validate_default=True),
+    ] = []
+
+
+class CoachSession(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    id: Annotated[str | None, Field(title='Id')] = None
+    instructor: Annotated[bool | None, Field(title='Instructor')] = None
+    key: Annotated[str | None, Field(title='Key')] = None
+    minutes: Annotated[int | None, Field(title='Minutes')] = None
+    place: CoachPlace | None = None
+    practise: Annotated[str | None, Field(title='Practise')] = None
+    why: Annotated[list[str] | None, Field(title='Why')] = None
+    wings: Annotated[
+        CoachWings | None,
+        Field(
+            description='Where it may count toward a WINGS flight activity; never that it does.'
+        ),
+    ] = None
+
+
 class CorridorStatus(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -4176,6 +4397,20 @@ class ProcedureList(BaseModel):
     stale: Annotated[bool | None, Field(title='Stale')] = False
 
 
+class ProficiencyPlan(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    due: Annotated[list[CoachDue] | None, Field(title='Due')] = None
+    evidence: Annotated[list[CoachEvidence] | None, Field(title='Evidence')] = None
+    reminders: Annotated[list[CoachReminder] | None, Field(title='Reminders')] = None
+    sessions: Annotated[
+        list[CoachSession] | None, Field(max_length=4, title='Sessions')
+    ] = None
+    today: Annotated[date | None, Field(title='Today')] = None
+    weak_areas: Annotated[list[CoachWeakArea] | None, Field(title='Weak Areas')] = None
+
+
 class RiskAssessment(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -4534,6 +4769,39 @@ class ChartsStatus(BaseModel):
     refresh_window: Annotated[str | None, Field(title='Refresh Window')] = ''
     refresh_workers: Annotated[int | None, Field(title='Refresh Workers')] = 1
     tiles_cached: Annotated[int | None, Field(title='Tiles Cached')] = None
+
+
+class CoachAsk(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    debriefs: Annotated[
+        list[CoachDebrief] | None,
+        Field(max_length=40, title='Debriefs', validate_default=True),
+    ] = []
+    entries: Annotated[
+        list[CoachLogbookEntry] | None, Field(max_length=5000, title='Entries')
+    ] = None
+    flightReviewOn: Annotated[date | None, Field(title='Flightreviewon')] = None
+    held: Annotated[
+        list[CoachEndorsement] | None,
+        Field(max_length=60, title='Held', validate_default=True),
+    ] = []
+    home: Annotated[
+        Home | None,
+        Field(
+            description="The pilot's home field, where the sessions' fields are looked for round.",
+            title='Home',
+        ),
+    ] = None
+    ipcOn: Annotated[date | None, Field(title='Ipcon')] = None
+    medicalExpiresOn: Annotated[date | None, Field(title='Medicalexpireson')] = None
+    ratings: Annotated[
+        list[Literal['student', 'private', 'commercial', 'atp', 'instrument', 'cfi']] | None,
+        Field(title='Ratings'),
+    ] = []
+    remindDays: Annotated[RemindDays | None, Field(title='Reminddays')] = None
+    today: Annotated[date | None, Field(title='Today')] = None
 
 
 class CopilotField(BaseModel):

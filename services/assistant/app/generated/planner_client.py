@@ -703,6 +703,15 @@ def add_pick(*, body: m.PickRequest | dict[str, Any]) -> m.PickSaved:
     return _ADD_PICK.validate_python(found)
 
 
+_COACH_PLAN = _Answer(m.ProficiencyPlan)
+
+
+def coach_plan(*, body: m.CoachAsk | dict[str, Any]) -> m.ProficiencyPlan:
+    """POST /api/pilot/coach: Coach Plan"""
+    found = _send('POST', '/api/pilot/coach', query={}, body=_body(body), headers={})
+    return _COACH_PLAN.validate_python(found)
+
+
 _CURRENCY = _Answer(m.Currency)
 
 
@@ -962,6 +971,15 @@ def changes_sources(*, body: m.ChangesAsk | dict[str, Any]) -> m.WordsSources:
     """POST /api/words/changes/sources: Changes Sources"""
     found = _send('POST', '/api/words/changes/sources', query={}, body=_body(body), headers={})
     return _CHANGES_SOURCES.validate_python(found)
+
+
+_COACH_SOURCES = _Answer(m.WordsSources)
+
+
+def coach_sources(*, body: m.ProficiencyPlan | dict[str, Any]) -> m.WordsSources:
+    """POST /api/words/coach/sources: Coach Sources"""
+    found = _send('POST', '/api/words/coach/sources', query={}, body=_body(body), headers={})
+    return _COACH_SOURCES.validate_python(found)
 
 
 _DEBRIEF_SOURCES = _Answer(m.WordsSources)

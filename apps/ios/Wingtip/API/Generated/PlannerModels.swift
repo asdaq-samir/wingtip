@@ -941,6 +941,91 @@ struct APIClearanceWords: Codable, Equatable, Sendable {
     var words: [String]
 }
 
+/// What the app holds of the pilot: the logbook and the dates from the
+/// gateway, the ratings the pilot gives, a student's endorsements, the
+/// debriefs of their recent flights, their home field and their day.
+// MARK: - APICoachAsk
+struct APICoachAsk: Codable, Equatable, Sendable {
+    var debriefs: [APICoachDebrief]?
+    var entries: [APICoachLogbookEntry]
+    var flightReviewOn: String?
+    var held: [APICoachEndorsement]?
+    /// The pilot's home field, where the sessions' fields are looked for round.
+    var home: String?
+    var ipcOn, medicalExpiresOn: String?
+    var ratings: [String]?
+    var remindDays: Int?
+    var today: String
+}
+
+/// One of the pilot's own debriefed flights, trimmed (the engine's
+/// CoachDebrief): an approach's profile and findings, or a flight's legs
+/// and pattern entries.
+// MARK: - APICoachDebrief
+struct APICoachDebrief: Codable, Equatable, Sendable {
+    /// The field's, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4).
+    var elevationFt: Double?
+    var findings: [APICoachFinding]?
+    var flownOn, kind: String
+    var legs: [APICoachLeg]?
+    var patterns: [APICoachPattern]?
+    var place: String?
+    var profile: [APICoachProfilePoint]?
+}
+
+// MARK: - APICoachFinding
+struct APICoachFinding: Codable, Equatable, Sendable {
+    var text: String
+    var tone: String
+}
+
+// MARK: - APICoachLeg
+struct APICoachLeg: Codable, Equatable, Sendable {
+    var altitudeWithin, courseWithin: Double?
+    var from: String
+    var ok: Bool
+    var to: String
+}
+
+// MARK: - APICoachPattern
+struct APICoachPattern: Codable, Equatable, Sendable {
+    var ident: String
+    var offFt: Double
+    var ok: Bool
+}
+
+// MARK: - APICoachProfilePoint
+struct APICoachProfilePoint: Codable, Equatable, Sendable {
+    var altFt: Double
+    var off: Bool
+    var toGoNm: Double?
+}
+
+/// One logbook entry, the columns the currency rules read; a column
+/// missing is none of it.
+// MARK: - APICoachLogbookEntry
+struct APICoachLogbookEntry: Codable, Equatable, Sendable {
+    var approaches: Int?
+    var crossCountryHours: Double?
+    /// Every landing, by day or at night (14 CFR 61.57(a)).
+    var dayLandings: Int?
+    var dualHours: Double?
+    var flownOn: String
+    var holding: Bool?
+    var instrumentHours, nightHours: Double?
+    /// Landings to a full stop at night (61.57(b)).
+    var nightLandings: Int?
+    var soloHours, totalHours: Double?
+    var tracking: Bool?
+}
+
+/// An endorsement a student holds: AC 61-65K's code and its day.
+// MARK: - APICoachEndorsement
+struct APICoachEndorsement: Codable, Equatable, Sendable {
+    var code: String
+    var on: String
+}
+
 /// What the copilot reads now; `unavailable` names a source ("tfr",
 /// "sua") that could not be read, `at` when this was gathered.
 // MARK: - APICopilotAround
@@ -3547,6 +3632,74 @@ struct APIProcedureSummary: Codable, Equatable, Sendable {
     var id, kind, name: String
     var runway: String?
     var runwayTransitions, transitions: [String]
+}
+
+/// The engine's proficiency_plan answer.
+// MARK: - APIProficiencyPlan
+struct APIProficiencyPlan: Codable, Equatable, Sendable {
+    var due: [APICoachDue]
+    var evidence: [APICoachEvidence]
+    var reminders: [APICoachReminder]
+    var sessions: [APICoachSession]
+    var today: String
+    var weakAreas: [APICoachWeakArea]
+}
+
+// MARK: - APICoachDue
+struct APICoachDue: Codable, Equatable, Sendable {
+    var daysLeft: Int?
+    var detail: String
+    var from: String?
+    var id, key, label, rule: String
+    var status: String
+    var until: String?
+}
+
+// MARK: - APICoachEvidence
+struct APICoachEvidence: Codable, Equatable, Sendable {
+    var area, flownOn, id, place: String
+    var text: String
+}
+
+// MARK: - APICoachReminder
+struct APICoachReminder: Codable, Equatable, Sendable {
+    var daysLeft: Int
+    var key, text: String
+    var until: String?
+}
+
+// MARK: - APICoachSession
+struct APICoachSession: Codable, Equatable, Sendable {
+    var id: String
+    var instructor: Bool
+    var key: String
+    var minutes: Int
+    var place: APICoachPlace?
+    var practise: String
+    var why: [String]
+    /// Where it may count toward a WINGS flight activity; never that it does.
+    var wings: APICoachWings?
+}
+
+// MARK: - APICoachPlace
+struct APICoachPlace: Codable, Equatable, Sendable {
+    var approach: String?
+    var distanceNm: Double
+    var ident, name: String
+}
+
+// MARK: - APICoachWings
+struct APICoachWings: Codable, Equatable, Sendable {
+    var acs: String
+    /// The accident causal factor's area (AC 61-91K 6).
+    var area: String
+    var note: String
+}
+
+// MARK: - APICoachWeakArea
+struct APICoachWeakArea: Codable, Equatable, Sendable {
+    var acs, evidence: [String]
+    var key, label: String
 }
 
 /// The training run's container as the sidecar left it: `started`

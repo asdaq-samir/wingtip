@@ -4078,6 +4078,743 @@
         "title": "ClearanceWords",
         "type": "object"
       },
+      "CoachAsk": {
+        "description": "What the app holds of the pilot: the logbook and the dates from the\ngateway, the ratings the pilot gives, a student's endorsements, the\ndebriefs of their recent flights, their home field and their day.",
+        "properties": {
+          "debriefs": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachDebrief"
+            },
+            "maxItems": 40,
+            "title": "Debriefs",
+            "type": "array"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/CoachLogbookEntry"
+            },
+            "maxItems": 5000,
+            "title": "Entries",
+            "type": "array"
+          },
+          "flightReviewOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flightreviewon"
+          },
+          "held": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachEndorsement"
+            },
+            "maxItems": 60,
+            "title": "Held",
+            "type": "array"
+          },
+          "home": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The pilot's home field, where the sessions' fields are looked for round.",
+            "title": "Home"
+          },
+          "ipcOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipcon"
+          },
+          "medicalExpiresOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medicalexpireson"
+          },
+          "ratings": {
+            "default": [],
+            "items": {
+              "enum": [
+                "student",
+                "private",
+                "commercial",
+                "atp",
+                "instrument",
+                "cfi"
+              ],
+              "type": "string"
+            },
+            "title": "Ratings",
+            "type": "array"
+          },
+          "remindDays": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminddays"
+          },
+          "today": {
+            "format": "date",
+            "title": "Today",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entries",
+          "today"
+        ],
+        "title": "CoachAsk",
+        "type": "object"
+      },
+      "CoachDebrief": {
+        "description": "One of the pilot's own debriefed flights, trimmed (the engine's\nCoachDebrief): an approach's profile and findings, or a flight's legs\nand pattern entries.",
+        "properties": {
+          "elevation_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The field's, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4).",
+            "title": "Elevation Ft"
+          },
+          "findings": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachFinding"
+            },
+            "maxItems": 40,
+            "title": "Findings",
+            "type": "array"
+          },
+          "flown_on": {
+            "format": "date",
+            "title": "Flown On",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "approach",
+              "flight"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "legs": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachLeg"
+            },
+            "maxItems": 40,
+            "title": "Legs",
+            "type": "array"
+          },
+          "patterns": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachPattern"
+            },
+            "maxItems": 40,
+            "title": "Patterns",
+            "type": "array"
+          },
+          "place": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Place",
+            "type": "string"
+          },
+          "profile": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoachProfilePoint"
+            },
+            "maxItems": 400,
+            "title": "Profile",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "flown_on"
+        ],
+        "title": "CoachDebrief",
+        "type": "object"
+      },
+      "CoachDue": {
+        "properties": {
+          "days_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Left"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "enum": [
+              "flight_review",
+              "solo",
+              "day_passengers",
+              "night_passengers",
+              "instrument",
+              "medical"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "rule": {
+            "title": "Rule",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "current",
+              "due_soon",
+              "lapsed",
+              "pending",
+              "unknown"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "key",
+          "id",
+          "label",
+          "rule",
+          "until",
+          "from",
+          "days_left",
+          "status",
+          "detail"
+        ],
+        "title": "CoachDue",
+        "type": "object"
+      },
+      "CoachEndorsement": {
+        "description": "An endorsement a student holds: AC 61-65K's code and its day.",
+        "properties": {
+          "code": {
+            "maxLength": 32,
+            "title": "Code",
+            "type": "string"
+          },
+          "on": {
+            "format": "date",
+            "title": "On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "on"
+        ],
+        "title": "CoachEndorsement",
+        "type": "object"
+      },
+      "CoachEvidence": {
+        "properties": {
+          "area": {
+            "title": "Area",
+            "type": "string"
+          },
+          "flown_on": {
+            "format": "date",
+            "title": "Flown On",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "place": {
+            "title": "Place",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "flown_on",
+          "place",
+          "area",
+          "text"
+        ],
+        "title": "CoachEvidence",
+        "type": "object"
+      },
+      "CoachFinding": {
+        "properties": {
+          "text": {
+            "maxLength": 300,
+            "title": "Text",
+            "type": "string"
+          },
+          "tone": {
+            "enum": [
+              "stop",
+              "caution",
+              "ok",
+              "info"
+            ],
+            "title": "Tone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tone",
+          "text"
+        ],
+        "title": "CoachFinding",
+        "type": "object"
+      },
+      "CoachLeg": {
+        "properties": {
+          "altitude_within": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude Within"
+          },
+          "course_within": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Course Within"
+          },
+          "from": {
+            "title": "From",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "ok"
+        ],
+        "title": "CoachLeg",
+        "type": "object"
+      },
+      "CoachLogbookEntry": {
+        "description": "One logbook entry, the columns the currency rules read; a column\nmissing is none of it.",
+        "properties": {
+          "approaches": {
+            "default": 0,
+            "title": "Approaches",
+            "type": "integer"
+          },
+          "crossCountryHours": {
+            "default": 0,
+            "title": "Crosscountryhours",
+            "type": "number"
+          },
+          "dayLandings": {
+            "default": 0,
+            "description": "Every landing, by day or at night (14 CFR 61.57(a)).",
+            "title": "Daylandings",
+            "type": "integer"
+          },
+          "dualHours": {
+            "default": 0,
+            "title": "Dualhours",
+            "type": "number"
+          },
+          "flownOn": {
+            "format": "date",
+            "title": "Flownon",
+            "type": "string"
+          },
+          "holding": {
+            "default": false,
+            "title": "Holding",
+            "type": "boolean"
+          },
+          "instrumentHours": {
+            "default": 0,
+            "title": "Instrumenthours",
+            "type": "number"
+          },
+          "nightHours": {
+            "default": 0,
+            "title": "Nighthours",
+            "type": "number"
+          },
+          "nightLandings": {
+            "default": 0,
+            "description": "Landings to a full stop at night (61.57(b)).",
+            "title": "Nightlandings",
+            "type": "integer"
+          },
+          "soloHours": {
+            "default": 0,
+            "title": "Solohours",
+            "type": "number"
+          },
+          "totalHours": {
+            "default": 0,
+            "title": "Totalhours",
+            "type": "number"
+          },
+          "tracking": {
+            "default": false,
+            "title": "Tracking",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "flownOn"
+        ],
+        "title": "CoachLogbookEntry",
+        "type": "object"
+      },
+      "CoachPattern": {
+        "properties": {
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "off_ft": {
+            "title": "Off Ft",
+            "type": "number"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ident",
+          "off_ft",
+          "ok"
+        ],
+        "title": "CoachPattern",
+        "type": "object"
+      },
+      "CoachPlace": {
+        "properties": {
+          "approach": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approach"
+          },
+          "distance_nm": {
+            "title": "Distance Nm",
+            "type": "number"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ident",
+          "name",
+          "distance_nm",
+          "approach"
+        ],
+        "title": "CoachPlace",
+        "type": "object"
+      },
+      "CoachProfilePoint": {
+        "properties": {
+          "alt_ft": {
+            "title": "Alt Ft",
+            "type": "number"
+          },
+          "off": {
+            "title": "Off",
+            "type": "boolean"
+          },
+          "to_go_nm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Go Nm"
+          }
+        },
+        "required": [
+          "alt_ft",
+          "off"
+        ],
+        "title": "CoachProfilePoint",
+        "type": "object"
+      },
+      "CoachReminder": {
+        "properties": {
+          "days_left": {
+            "title": "Days Left",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "key",
+          "text",
+          "until",
+          "days_left"
+        ],
+        "title": "CoachReminder",
+        "type": "object"
+      },
+      "CoachSession": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "instructor": {
+            "title": "Instructor",
+            "type": "boolean"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "place": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoachPlace"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "practise": {
+            "title": "Practise",
+            "type": "string"
+          },
+          "why": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Why",
+            "type": "array"
+          },
+          "wings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoachWings"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where it may count toward a WINGS flight activity; never that it does."
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "practise",
+          "why",
+          "place",
+          "minutes",
+          "instructor",
+          "wings"
+        ],
+        "title": "CoachSession",
+        "type": "object"
+      },
+      "CoachWeakArea": {
+        "properties": {
+          "acs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Acs",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "key": {
+            "enum": [
+              "unstable_approach",
+              "approach_deviation",
+              "pattern_altitude",
+              "cruise_holding"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "acs",
+          "evidence"
+        ],
+        "title": "CoachWeakArea",
+        "type": "object"
+      },
+      "CoachWings": {
+        "properties": {
+          "acs": {
+            "title": "Acs",
+            "type": "string"
+          },
+          "area": {
+            "description": "The accident causal factor's area (AC 61-91K 6).",
+            "title": "Area",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "area",
+          "acs",
+          "note"
+        ],
+        "title": "CoachWings",
+        "type": "object"
+      },
       "CopilotArea": {
         "description": "A TFR, a special-use area SFDPS has spoken of, or a convective\nSIGMET on the rest of the route, at a point the route meets it (a\nSIGMET's, inside its area): whether it is in force now, when it\nstarts and ends (UNIX s).",
         "properties": {
@@ -15484,6 +16221,62 @@
         "title": "ProcedureSummary",
         "type": "object"
       },
+      "ProficiencyPlan": {
+        "description": "The engine's proficiency_plan answer.",
+        "properties": {
+          "due": {
+            "items": {
+              "$ref": "#/components/schemas/CoachDue"
+            },
+            "title": "Due",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/CoachEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/CoachReminder"
+            },
+            "title": "Reminders",
+            "type": "array"
+          },
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/CoachSession"
+            },
+            "maxItems": 4,
+            "title": "Sessions",
+            "type": "array"
+          },
+          "today": {
+            "format": "date",
+            "title": "Today",
+            "type": "string"
+          },
+          "weak_areas": {
+            "items": {
+              "$ref": "#/components/schemas/CoachWeakArea"
+            },
+            "title": "Weak Areas",
+            "type": "array"
+          }
+        },
+        "required": [
+          "today",
+          "due",
+          "reminders",
+          "evidence",
+          "weak_areas",
+          "sessions"
+        ],
+        "title": "ProficiencyPlan",
+        "type": "object"
+      },
       "ProfileAirspace": {
         "description": "A Class B, C or D the route passes through: where along it, from\nits floor to its ceiling (feet MSL; the ceiling None where the FAA's\nfile has none).",
         "properties": {
@@ -25005,6 +25798,43 @@
         }
       }
     },
+    "/api/pilot/coach": {
+      "post": {
+        "description": "The pilot's proficiency plan: each currency with its last day and\nstatus, the reminders for those lapsing within remindDays (30 where\nnot given), the weak areas their debriefs of the last half year show\nwith each line of evidence, and up to four sessions -- what to\npractise, why, where, how long and whether it may count toward a\nWINGS flight activity (AC 61-91K 7.3).",
+        "operationId": "coach_plan_api_pilot_coach_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoachAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProficiencyPlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "A day or a debrief not of the engine's shape"
+          }
+        },
+        "summary": "Coach Plan",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 1048576,
+          "csrf": false
+        }
+      }
+    },
     "/api/pilot/currency": {
       "post": {
         "description": "The pilot's currency from their logbook (14 CFR 61.56, 61.57).",
@@ -27015,6 +27845,45 @@
           }
         },
         "summary": "Changes Sources"
+      }
+    },
+    "/api/words/coach/sources": {
+      "post": {
+        "description": "A proficiency plan's lines for the assistant to put into words.",
+        "operationId": "coach_sources_api_words_coach_sources_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProficiencyPlan"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordsSources"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Coach Sources"
       }
     },
     "/api/words/debrief/sources": {

@@ -76,6 +76,27 @@ struct ASCheckpointNoteMessage: Codable, Equatable, Sendable {
     var source: String?
 }
 
+/// The paragraph that passed the check, the line kept for each
+/// session (by its id), the sources they cite and which model wrote them.
+// MARK: - ASCoachWordsAnswer
+struct ASCoachWordsAnswer: Codable, Equatable, Sendable {
+    var model: String
+    var sentences: [ASSentence]
+    var sessionLines: [ASSessionLine]?
+    var sources: [ASSource]
+    var unavailable: String?
+}
+
+// MARK: - ASSessionLine
+struct ASSessionLine: Codable, Equatable, Sendable {
+    /// The session's id, exactly as given ("session:1").
+    var session: String
+    /// The ids it rests on: its session's and those the session answers.
+    var sources: [String]
+    /// One short sentence: what to practise there and why.
+    var text: String
+}
+
 // MARK: - ASDebriefWordsAnswer
 struct ASDebriefWordsAnswer: Codable, Equatable, Sendable {
     var instructorNote: String?

@@ -1,0 +1,48 @@
+{
+  "title": "PracticePlace",
+  "type": "object",
+  "description": "A field near the pilot's home, as the host found it in its data.",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "distance_nm": {
+      "type": "number",
+      "description": "From the pilot's home field."
+    },
+    "lighted": {
+      "type": "boolean",
+      "description": "A lighted runway (NASR), for night landings."
+    },
+    "towered": {
+      "type": "boolean"
+    },
+    "approaches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "precision": {
+            "type": "boolean",
+            "description": "Has an electronic glidepath by its name: an ILS or a GLS."
+          }
+        },
+        "required": [
+          "name",
+          "precision"
+        ]
+      },
+      "description": "Its instrument approaches (the FAA's CIFP)."
+    }
+  },
+  "required": [
+    "ident",
+    "distance_nm"
+  ]
+}
