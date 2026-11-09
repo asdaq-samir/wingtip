@@ -62,6 +62,62 @@ object EngineContract {
         val heardS: Double? = null,
     )
 
+    @Serializable
+    data class AirplaneFiguresAnswer(
+        val figures: List<EngineContract.AirplaneFiguresAnswerFiguresItem>,
+        val profile: Map<String, JsonElement>? = null,
+    )
+
+    @Serializable
+    data class AirplaneFiguresAnswerFiguresItem(
+        /**
+         * The figure's name, the gateway record's and the planner's query's in snake case.
+         */
+        val key: String,
+        val value: Double? = null,
+        /**
+         * Where the value comes from; null where there is none.
+         */
+        val source: String? = null,
+        /**
+         * The type's book figure, what "Reset to book figure" puts back; null where the book has none.
+         */
+        val book: Double? = null,
+    )
+
+    @Serializable
+    data class AirplaneFiguresInput(
+        /**
+         * The type's stock profile (the planner's /api/aircraft-profiles entry); null for a type with none.
+         */
+        val book: Map<String, JsonElement>? = null,
+        /**
+         * The figures its pilot confirmed off a photographed handbook page (handbook_figures' answer); null for none.
+         */
+        val handbook: Map<String, JsonElement>? = null,
+        /**
+         * The pilot's own figures by key (cruise_tas_kt, glide_ratio ...), a number or null each; null for none.
+         */
+        val own: Map<String, JsonElement>? = null,
+    )
+
+    @Serializable
+    data class AirplaneNeedsAnswer(
+        /**
+         * The inputs' names in order: a figure's key (taxi_fuel_gal, glide_ratio ...), a table (loading, takeoff, landing), or airplane.
+         */
+        val missing: List<String>,
+    )
+
+    @Serializable
+    data class AirplaneNeedsInput(
+        /**
+         * The airplane (airplane_figures' profile); null for no airplane.
+         */
+        val profile: Map<String, JsonElement>? = null,
+        val figure: String,
+    )
+
     /**
      * A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
      */

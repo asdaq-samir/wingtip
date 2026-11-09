@@ -116,8 +116,14 @@ impl Airplane {
 
     /// The climb speed: the profile's own, or None where it gives none --
     /// no stock airplane's ratio of climb to cruise fills the gap (the
-    /// owner, 2026-11-09), and the nav log then flies no climb.
+    /// owner, 2026-11-09), and the nav log then flies no climb. None too
+    /// where the profile has no sea-level climb rate or no service
+    /// ceiling (a pilot's own airplane of no stock type, whose record
+    /// may carry neither): the climb's minutes are its rate falling to
+    /// 100 fpm at the ceiling (climb_rate_fpm), and neither is guessed.
     pub fn climb_tas_kt(&self) -> Option<f64> {
+        given(self.climb_rate_fpm_sea_level)?;
+        given(Some(self.service_ceiling_ft))?;
         given(self.climb_tas_kt)
     }
 

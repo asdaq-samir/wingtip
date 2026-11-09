@@ -917,6 +917,20 @@ export interface EngineContract {
     answer: AirborneNowAnswer;
   };
   /**
+   * An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's ("pilot"), else its photographed handbook page's ("handbook"), else its type's stock profile's ("book"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).
+   */
+  airplane_figures: {
+    input: AirplaneFiguresInput;
+    answer: AirplaneFiguresAnswer;
+  };
+  /**
+   * The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. ["airplane"] with no airplane.
+   */
+  airplane_needs: {
+    input: AirplaneNeedsInput;
+    answer: AirplaneNeedsAnswer;
+  };
+  /**
    * The airspace over a point in bands, from the ground to FL600 (14 CFR 71.33, 71.71): a B, C or D where it is drawn, the most restrictive where they overlap, E from its floor or 14,500 ft, G under it all, A from 18,000 ft, split where 91.155's minimums, 91.117's speed or 91.215's transponder rule changes. The volumes are the caller's, read from the NASR shapefile or a cycle pack.
    */
   airspace_column: {
@@ -3144,6 +3158,52 @@ export interface AirborneNowInput {
   airborne?: boolean | null;
   arrived?: boolean | null;
   heard_s?: number | null;
+}
+export interface AirplaneFiguresInput {
+  /**
+   * The type's stock profile (the planner's /api/aircraft-profiles entry); null for a type with none.
+   */
+  book?: {} | null;
+  /**
+   * The figures its pilot confirmed off a photographed handbook page (handbook_figures' answer); null for none.
+   */
+  handbook?: {} | null;
+  /**
+   * The pilot's own figures by key (cruise_tas_kt, glide_ratio ...), a number or null each; null for none.
+   */
+  own?: {} | null;
+}
+export interface AirplaneFiguresAnswer {
+  figures: AirplaneFigure[];
+  profile: {} | null;
+}
+export interface AirplaneFigure {
+  /**
+   * The figure's name, the gateway record's and the planner's query's in snake case.
+   */
+  key: string;
+  value: number | null;
+  /**
+   * Where the value comes from; null where there is none.
+   */
+  source: ("book" | "handbook" | "pilot") | null;
+  /**
+   * The type's book figure, what "Reset to book figure" puts back; null where the book has none.
+   */
+  book: number | null;
+}
+export interface AirplaneNeedsInput {
+  /**
+   * The airplane (airplane_figures' profile); null for no airplane.
+   */
+  profile?: {} | null;
+  figure: "legs" | "fuel_totals" | "glide" | "climb" | "weight_balance" | "takeoff_landing";
+}
+export interface AirplaneNeedsAnswer {
+  /**
+   * The inputs' names in order: a figure's key (taxi_fuel_gal, glide_ratio ...), a table (loading, takeoff, landing), or airplane.
+   */
+  missing: string[];
 }
 export interface AirspaceColumnInput {
   ground_ft?: number | null;

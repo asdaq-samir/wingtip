@@ -1,0 +1,37 @@
+{
+  "x-call": "wingtip_pilot::aircraft::figures::call",
+  "description": "The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. [\"airplane\"] with no airplane.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AirplaneNeedsInput",
+      "type": "object",
+      "properties": {
+        "profile": {
+          "description": "The airplane (airplane_figures' profile); null for no airplane.",
+          "type": ["object", "null"]
+        },
+        "figure": {
+          "type": "string",
+          "enum": ["legs", "fuel_totals", "glide", "climb", "weight_balance", "takeoff_landing"]
+        }
+      },
+      "required": ["figure"]
+    },
+    "answer": {
+      "title": "AirplaneNeedsAnswer",
+      "type": "object",
+      "properties": {
+        "missing": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The inputs' names in order: a figure's key (taxi_fuel_gal, glide_ratio ...), a table (loading, takeoff, landing), or airplane."
+        }
+      },
+      "required": ["missing"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["input", "answer"],
+  "additionalProperties": false
+}

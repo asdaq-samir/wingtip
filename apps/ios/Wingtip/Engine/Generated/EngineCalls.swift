@@ -24,6 +24,16 @@ extension Engine {
         try rule("airborne_now", EngineContract.AirborneNowInput(before: before, airborne: airborne, arrived: arrived, heardS: heardS))
     }
 
+    /// An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's ("pilot"), else its photographed handbook page's ("handbook"), else its type's stock profile's ("book"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).
+    static func airplaneFigures(book: [String: JSONValue]? = nil, handbook: [String: JSONValue]? = nil, own: [String: JSONValue]? = nil) throws -> EngineContract.AirplaneFiguresAnswer {
+        try rule("airplane_figures", EngineContract.AirplaneFiguresInput(book: book, handbook: handbook, own: own))
+    }
+
+    /// The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. ["airplane"] with no airplane.
+    static func airplaneNeeds(profile: [String: JSONValue]? = nil, figure: String) throws -> EngineContract.AirplaneNeedsAnswer {
+        try rule("airplane_needs", EngineContract.AirplaneNeedsInput(profile: profile, figure: figure))
+    }
+
     /// The airspace over a point in bands, from the ground to FL600 (14 CFR 71.33, 71.71): a B, C or D where it is drawn, the most restrictive where they overlap, E from its floor or 14,500 ft, G under it all, A from 18,000 ft, split where 91.155's minimums, 91.117's speed or 91.215's transponder rule changes. The volumes are the caller's, read from the NASR shapefile or a cycle pack.
     static func airspaceColumn(groundFt: Double? = nil, inVeil: Bool? = nil, volumes: [EngineContract.AirspaceColumnInputVolumesItem]) throws -> [EngineContract.AirspaceBand] {
         try rule("airspace_column", EngineContract.AirspaceColumnInput(groundFt: groundFt, inVeil: inVeil, volumes: volumes))

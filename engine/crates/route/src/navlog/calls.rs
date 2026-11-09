@@ -69,8 +69,10 @@ fn context<T>(name: &str, r: R<T>) -> R<T> {
 fn plan<'a>(name: &'a str, v: &'a Value, p: Option<&'a Profile>, air: &'a [super::LegAir]) -> R<Option<Plan<'a>>> {
     let fixes = list(name, v, "fixes")?;
     let Some(candidates) = candidates(list(name, v, "segments")?, fixes.len().saturating_sub(1), p)? else { return Ok(None) };
+    // No service ceiling asked: a pilot's own airplane's record may not
+    // carry one, and its plans then fly no climb (Airplane::climb_tas_kt).
     if let Some(p) = p {
-        p.need(name, &["cruise_tas_kt", "fuel_burn_gph", "service_ceiling_ft"])?;
+        p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
     }
     Ok(Some(Plan {
         flights: Flights::new(name, fixes, p, air)?,
@@ -133,7 +135,7 @@ fn answer(name: &str, v: &Value) -> R<String> {
         "navlog_with_climbs" => {
             // No airplane, no climbs: the legs as they are.
             let Some(p) = opt_profile(name, v)? else { return Ok(write_objs(objs(name, v, "legs")?)) };
-            p.need(name, &["cruise_tas_kt", "fuel_burn_gph", "service_ceiling_ft"])?;
+            p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
             write_objs(with_climbs(&objs(name, v, "legs")?, opt_num(name, v, "start_altitude_ft")?, &p, &Climber::new(&p.airplane))?)
         }
         "navlog_with_descents" => {
