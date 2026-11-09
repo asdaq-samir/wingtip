@@ -100,6 +100,7 @@ struct LogbookView: View {
             ProblemLine(problem)
         }
         .navigationTitle("Logbook")
+        .glassScrollEdges()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if session.signedIn {

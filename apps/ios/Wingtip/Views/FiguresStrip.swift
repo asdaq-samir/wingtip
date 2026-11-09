@@ -109,6 +109,8 @@ private struct StripFigure: View {
                 // colour (the owner's rule: warn, never limit).
                 if warn { Image(systemName: "exclamationmark.triangle.fill").font(.caption2) }
                 Text(value).font(.headline.monospacedDigit())
+                    // ETE, fuel and distance roll as they count down.
+                    .figureTransition(value)
             }
             .foregroundStyle(warn ? Color.red : Color.primary)
             .lineLimit(size.isAccessibilitySize ? nil : 1)

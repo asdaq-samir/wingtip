@@ -14,7 +14,7 @@ struct NavLogPage: View {
             } else {
                 Section {
                     ForEach(Array(plan.legs.enumerated()), id: \.element.id) { i, leg in
-                        NavigationLink(value: leg) { LegRow(leg: leg, number: i + 1) }
+                        NavigationLink(value: leg) { LegRow(leg: leg, number: i + 1) }.cardSource(leg.id)
                     }
                 } header: {
                     // The page is titled Nav Log; its section says at what.
@@ -23,6 +23,8 @@ struct NavLogPage: View {
             }
         }
         .navigationTitle("Nav Log")
+        // A long list: its rows soften under the bar and the tab bar.
+        .glassScrollEdges()
     }
 }
 

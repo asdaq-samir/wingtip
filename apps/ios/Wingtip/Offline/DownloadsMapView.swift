@@ -43,17 +43,20 @@ struct DownloadsMapView: View {
             if let picked {
                 LabeledContent(picked.name, value: DownloadsView.size(model.size(of: picked)))
                 Button("Download \(picked.name)") { asking = true }
-                    .buttonStyle(.borderedProminent)
+                    .glassProminentButton()
                     .disabled(model.archives.isEmpty || model.busy.contains(picked.id))
             } else {
                 Text("Tap a sheet, or download the map's view.").foregroundStyle(.secondary)
             }
             Button("Download This View") { Task { await downloadView() } }
+                .glassButton()
                 .disabled(view == nil || model.archives.isEmpty)
             ProblemLine(model.problem)
         }
         .padding()
-        .background(.regularMaterial)
+        // Over the chart, not a scroller: the sheet's glass behind it,
+        // solid with Reduce Transparency on (Design/Glass.swift).
+        .glassBackground()
         .confirmationDialog(picked.map { "Download \($0.name)?" } ?? "", isPresented: $asking, titleVisibility: .visible) {
             if let picked {
                 Button("Download \(DownloadsView.size(model.size(of: picked)))") { Task { await model.download(picked.id) } }

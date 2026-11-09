@@ -56,6 +56,7 @@ struct FPLView: View {
                         let voice = ClearanceListener.shared.canListen
                         Button { focused = nil; ClearanceListener.shared.sheetText = nil; ClearanceListener.shared.sheetShown = true } label: {
                             Image(systemName: !voice ? "text.bubble" : ClearanceListener.shared.listening ? "mic.fill" : "mic")
+                                .symbolListening(ClearanceListener.shared.listening).symbolSwap()
                                 // The 44-point hit area round the glyph, which does not grow.
                                 .contentShape(Rectangle().inset(by: -10))
                         }
@@ -164,7 +165,7 @@ struct FPLView: View {
             .navigationTitle("Flight Plan")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { FPLToolbar(plan: plan, flights: { open(.flights) }) }
-            .navigationDestination(for: Leg.self) { leg in LegDetailView(leg: leg).closesBack() }
+            .navigationDestination(for: Leg.self) { leg in LegDetailView(leg: leg).closesBack().zoomsFrom(leg.id) }
             .navigationDestination(for: String.self) { page in
                 Group {
                     switch Page(rawValue: page) {
@@ -193,6 +194,8 @@ struct FPLView: View {
                 }
             }
         }
+        // A leg's detail grows out of its nav log row (CardZoom).
+        .cardZoomStack()
     }
 
     private func routeField(_ label: String, text: Binding<String>, field: Field) -> some View {

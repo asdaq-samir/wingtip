@@ -13,6 +13,18 @@ extension View {
     func zoomsFrom(_ id: some Hashable, in space: Namespace.ID) -> some View {
         modifier(CardZoom(id: AnyHashable(id), space: space))
     }
+
+    /// A stack whose rows open cards (the nav log's legs, a field's row,
+    /// a flown flight): one namespace for its rows and cards to zoom in,
+    /// put on the NavigationStack so its pages see it as well.
+    func cardZoomStack() -> some View { modifier(CardZoomStack()) }
+
+    /// The row a card opens from, in the stack's namespace (cardZoomStack);
+    /// unchanged outside one.
+    func cardSource(_ id: some Hashable) -> some View { modifier(StackCardSource(id: AnyHashable(id))) }
+
+    /// The card, zooming from its row in the stack's namespace.
+    func zoomsFrom(_ id: some Hashable) -> some View { modifier(StackCardZoom(id: AnyHashable(id))) }
 }
 
 private struct CardZoom: ViewModifier {
@@ -26,5 +38,36 @@ private struct CardZoom: ViewModifier {
         } else {
             content.navigationTransition(.zoom(sourceID: id, in: space))
         }
+    }
+}
+
+extension EnvironmentValues {
+    /// The namespace of the stack's card zooms (cardZoomStack), nil outside one.
+    @Entry var cardZoomSpace: Namespace.ID?
+}
+
+private struct CardZoomStack: ViewModifier {
+    @Namespace private var space
+
+    func body(content: Content) -> some View {
+        content.environment(\.cardZoomSpace, space)
+    }
+}
+
+private struct StackCardSource: ViewModifier {
+    let id: AnyHashable
+    @Environment(\.cardZoomSpace) private var space
+
+    func body(content: Content) -> some View {
+        if let space { content.matchedTransitionSource(id: id, in: space) } else { content }
+    }
+}
+
+private struct StackCardZoom: ViewModifier {
+    let id: AnyHashable
+    @Environment(\.cardZoomSpace) private var space
+
+    func body(content: Content) -> some View {
+        if let space { content.modifier(CardZoom(id: id, space: space)) } else { content }
     }
 }

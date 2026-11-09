@@ -29,7 +29,10 @@ struct DepartureWindowSection: View {
                             ForEach(answer.hours, id: \.depart) { hour in tile(hour) }
                         }
                         .padding(.vertical, WingtipSpace.xs)
+                        .scrollTargetLayout()
                     }
+                    // A flick comes to rest on an hour, not between two.
+                    .scrollTargetBehavior(.viewAligned)
                     .accessibilityLabel("Departure hours")
                     if let hour = model.selected { detail(hour) }
                 }

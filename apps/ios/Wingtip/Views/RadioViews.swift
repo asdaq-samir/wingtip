@@ -9,7 +9,6 @@ import SwiftUI
 struct RadioOverlay: View {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var listener: ClearanceListener { ClearanceListener.shared }
 
     var body: some View {
@@ -23,10 +22,10 @@ struct RadioOverlay: View {
                     listener.sheetShown = true
                 } label: {
                     HStack(alignment: .top, spacing: WingtipSpace.sm) {
-                        // The pulse says it is listening; with Reduce Motion
-                        // on the tint and the words say it instead.
+                        // The glyph breathes while it listens; with Reduce
+                        // Motion on the tint and the words say it instead.
                         Image(systemName: "mic.fill").foregroundStyle(listener.listening ? Color.accentColor : .secondary)
-                            .symbolEffect(.pulse, isActive: listener.listening && !reduceMotion)
+                            .symbolListening(listener.listening)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             if let problem = listener.problem {
@@ -120,7 +119,7 @@ struct RadioCallBanner: View {
                     }
                     if let squawk = clearance.squawk { Text("Squawk \(squawk)").font(.subheadline.weight(.semibold)) }
                 }
-                .buttonStyle(.bordered)
+                .glassButton()
                 .buttonBorderShape(.capsule)
             }
             if let problem { ProblemLine(problem) }

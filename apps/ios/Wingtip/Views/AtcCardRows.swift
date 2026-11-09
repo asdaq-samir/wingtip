@@ -26,7 +26,7 @@ struct AtcCardRows: View {
                 Button(card.readback == nil ? "Read Back" : "Read Back Again") {
                     Task { await AtcCopilot.shared.readBack(card.id, tail: tail) }
                 }
-                .buttonStyle(.bordered).buttonBorderShape(.capsule)
+                .glassButton().buttonBorderShape(.capsule)
             }
         }
         .accessibilityElement(children: .contain)

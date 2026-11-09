@@ -7,7 +7,7 @@ import AppIntents
 /// Recents: AirportEntityQuery.suggestedEntities), so the app calls
 /// `updateAppShortcutParameters()` when those change. A navaid or a fix
 /// for Direct To is free text, asked for after the phrase. Shown in the
-/// Shortcuts app and Spotlight as well. Apple allows ten; these are eight.
+/// Shortcuts app and Spotlight as well. Apple allows ten; these are nine.
 struct WingtipShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -38,6 +38,16 @@ struct WingtipShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Nearest Airports",
             systemImageName: "mappin.and.ellipse")
+        // The assistant by its name, never "emergency" alone, which is
+        // the phone's own Emergency SOS to Siri.
+        AppShortcut(
+            intent: EmergencyIntent(),
+            phrases: [
+                "Open the emergency assistant in \(.applicationName)",
+                "Emergency assistant in \(.applicationName)",
+            ],
+            shortTitle: "Emergency Assistant",
+            systemImageName: "exclamationmark.triangle.fill")
         AppShortcut(
             intent: WeatherAtIntent(),
             phrases: [

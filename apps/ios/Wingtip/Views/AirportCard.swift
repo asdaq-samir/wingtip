@@ -73,7 +73,7 @@ struct AirportCard: View {
                     let kept = shelf.isFavorite(place.ident)
                     Button { shelf.toggleFavorite(KeptAirport(place)) } label: {
                         Image(systemName: kept ? "star.fill" : "star")
-                            .foregroundStyle(kept ? Color.yellow : Color.accentColor)
+                            .foregroundStyle(kept ? Color.yellow : Color.accentColor).symbolSwap()
                     }
                     .accessibilityLabel(kept ? "Remove from Favorites" : "Add to Favorites")
                 }
@@ -117,23 +117,23 @@ struct AirportCard: View {
     /// next stop; Call and Address from the FAA's airport file, greyed
     /// where it lists none.
     private func actions(_ place: AirportPlace) -> some View {
-        HStack(spacing: WingtipSpace.sm) {
+        GlassRow {
             Button { plan.dest = place.ident; Feel.tap(.directTo); plan.plan() } label: { CardActionLabel(.flyHere) }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButton()
             Button { plan.stops.append(place.ident); plan.plan() } label: { CardActionLabel(.addStop) }
-                .buttonStyle(.bordered)
+                .glassButton()
                 .disabled(!plan.routed || plan.idents.contains(place.ident))
             if let phone = place.phone, let call = URL(string: "tel:" + phone.filter { !$0.isWhitespace }) {
                 Link(destination: call) { CardActionLabel(.call) }
-                    .buttonStyle(.bordered)
+                    .glassButton()
                     .accessibilityLabel("Call \(phone)")
             } else {
                 Button {} label: { CardActionLabel(.call) }
-                    .buttonStyle(.bordered).disabled(true)
+                    .glassButton().disabled(true)
                     .accessibilityLabel("Call: no phone listed")
             }
             Link(destination: Self.mapsLink(place)) { CardActionLabel(.address) }
-                .buttonStyle(.bordered)
+                .glassButton()
                 .accessibilityLabel(place.address.map { "\($0), in Maps" } ?? "Where it is, in Maps")
         }
         .listRowBackground(Color.clear)

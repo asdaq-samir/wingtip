@@ -435,9 +435,9 @@ struct ProcedureFixesView: View {
                                 Button(direct == fix.ident ? "Fly \(pick.name) as Charted" : "Direct To \(fix.ident)") {
                                     plan.setProcedureDirect(pick, fix: direct == fix.ident ? nil : fix.ident)
                                 }
-                                .buttonStyle(.bordered)
+                                .glassButton()
                                 Button("Cross at…") { FlightUI.shared.crossAt = fix.ident }
-                                    .buttonStyle(.bordered)
+                                    .glassButton()
                             }
                         }
                     }

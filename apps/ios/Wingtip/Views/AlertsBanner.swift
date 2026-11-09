@@ -14,6 +14,8 @@ struct AlertsBanner: View {
                 let danger = first.level == "stop" || first.level == "danger"
                 Image(systemName: danger ? "exclamationmark.octagon.fill" : "exclamationmark.triangle.fill")
                     .accessibilityLabel(danger ? "Danger ahead" : "Caution ahead")
+                    // It rings each time a new alert comes to the front.
+                    .symbolRing(on: first.id)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(first.name).font(.subheadline.weight(.semibold)).lineLimit(1)
                     Text("\(first.need) · \(Format.duration(first.seconds / 60)), \(Format.distance(first.distanceNm))").font(.footnote).lineLimit(1)
