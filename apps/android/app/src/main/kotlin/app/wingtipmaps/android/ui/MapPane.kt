@@ -36,6 +36,8 @@ import app.wingtipmaps.android.api.AirportPin
 import app.wingtipmaps.android.atc.AtcCopilotHost
 import app.wingtipmaps.android.copilot.CopilotBanner
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.dryrun.DryRun
+import app.wingtipmaps.android.dryrun.DryRunBar
 import app.wingtipmaps.android.emergency.EmergencyModel
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.Geo
@@ -173,6 +175,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // to the field it picked (the same model EmergencyHost holds).
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
     val emergency by viewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
+    // The dry run's airplane, drawn as own ship while a run is open (DryRun).
+    val dryRun by viewModel<DryRun>().state.collectAsStateWithLifecycle()
 
     val mapSaid = if (fieldsInView.isEmpty()) stringResource(R.string.said_map) else pluralStringResource(R.plurals.said_map_fields, fieldsInView.size, fieldsInView.size)
     val fieldActions = fieldsInView.map { pin ->
@@ -202,7 +206,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             night = night,
             bottomInset = with(density) { covered.roundToPx() },
             opensAt = opensAt,
-            ownShip = if (ownShip.on) fix else null,
+            ownShip = dryRun.fix ?: if (ownShip.on) fix else null,
             trail = flown,
             // Off unless the pilot keeps it on, on by itself while the
             // emergency assistant is open (GlideRing).
@@ -225,6 +229,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         ) {
             ReceiverChip()
             WeatherLoopBar()
+            DryRunBar(rules = state.rules)
         }
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of
