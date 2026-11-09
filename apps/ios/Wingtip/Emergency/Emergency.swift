@@ -97,6 +97,14 @@ final class Emergency {
         }
     }
 
+    /// What to do with no airplane picked (the owner, 2026-11-09): the
+    /// engine's emergency_guidance, each item with its source (AIM 6-1,
+    /// 6-2, 6-3; FAA-H-8083-3C ch. 18); nil with one picked, whose own
+    /// checklist shows instead. Never an airplane's checklist or figure.
+    static func guidance(airplaneChosen: Bool) -> [EngineContract.EmergencyGuidanceAnswerItemsItem]? {
+        airplaneChosen ? nil : ((try? Engine.emergencyGuidance().items) ?? [])
+    }
+
     /// Magnetic variation at a point today, east positive (the engine's WMM).
     static func variation(at: CLLocationCoordinate2D, on day: Date = Date()) -> Double? {
         try? Engine.magneticVariation(lat: at.latitude, lon: at.longitude, date: String(ISO8601DateFormatter().string(from: day).prefix(10)))

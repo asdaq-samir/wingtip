@@ -41,8 +41,8 @@ export const MAGENTA = CHART.untowered;
  * was 4.2:1 in the light and 2:1 in the dark, under WCAG's 4.5.
  */
 const AIRSPACE: Record<Space, { name: string; style: CSSProperties }> = {
-  B: { name: "Class B", style: { backgroundColor: BLUE, color: "#ffffff" } },
-  C: { name: "Class C", style: { backgroundColor: MAGENTA, color: "#ffffff" } },
+  B: { name: "Class B", style: { backgroundColor: BLUE, color: CHART.casing } },
+  C: { name: "Class C", style: { backgroundColor: MAGENTA, color: CHART.casing } },
   D: {
     name: "Class D",
     style: { outline: `2.5px dashed ${BLUE}`, outlineOffset: -2.5, backgroundColor: `${BLUE}1f`, color: "var(--airspace-blue-ink)" },

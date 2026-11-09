@@ -233,7 +233,7 @@ export function StepRow({ n, title, description }: { n: number; title: ReactNode
       media={
         <span
           className={cn(
-            "flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-[0.8125rem] font-semibold text-primary-foreground",
+            "flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-(length:--type-note) font-semibold text-primary-foreground",
           )}
         >
           {n}

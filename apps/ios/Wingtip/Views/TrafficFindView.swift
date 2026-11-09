@@ -55,7 +55,7 @@ struct TrafficFindView: View {
                         Button {
                             if let hex = record.modeSHex { open(hex.lowercased(), plane: nil) }
                         } label: {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(record.nNumber).font(.headline)
                                 Text([[record.manufacturer, record.model].compactMap { $0 }.joined(separator: " ").nonEmpty,
                                       found?.checked == false ? "not yet known whether it is flying" : "not in the air now"]
@@ -158,7 +158,7 @@ struct KeptRow: View {
     var body: some View {
         HStack {
             Image(systemName: "airplane").foregroundStyle(.tint).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(kept.name).font(.headline)
                 if let type = kept.type { Text(type).font(.footnote).foregroundStyle(.secondary) }
             }

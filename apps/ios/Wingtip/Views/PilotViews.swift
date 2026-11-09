@@ -108,7 +108,7 @@ struct SavedFlightRow: View {
     var body: some View {
         let route = SavedFlightsModel.route(flight)
         let title = SavedFlightsModel.title(flight)
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             Text(title).font(title == route ? .headline.monospaced() : .headline)
             if title != route { Text(route).font(.subheadline.monospaced()).foregroundStyle(.secondary) }
             HStack(spacing: WingtipSpace.md) {

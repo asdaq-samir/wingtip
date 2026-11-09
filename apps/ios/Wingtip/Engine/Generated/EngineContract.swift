@@ -1714,6 +1714,8 @@ enum EngineContract {
         var flownOn: String
         /// Where: the approach's field, or the flight's route ("KMSN-KJVL").
         var place: String?
+        /// An approach's procedure as the chart names it ("ILS Y RWY 08"); none for a flight.
+        var procedure: String?
         /// The field's elevation, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4); without it the gate is not checked.
         var elevationFt: Double?
         /// An approach's profile.track as its debrief gives it.
@@ -1729,6 +1731,7 @@ enum EngineContract {
             case kind
             case flownOn = "flown_on"
             case place
+            case procedure
             case elevationFt = "elevation_ft"
             case profile
             case findings
@@ -7461,6 +7464,8 @@ enum EngineContract {
         var id: String
         var flownOn: String
         var place: String
+        /// The approach procedure flown ("ILS Y RWY 08"), where the line is an approach's.
+        var procedure: String?
         /// The weak area's key.
         var area: String
         var text: String
@@ -7469,6 +7474,7 @@ enum EngineContract {
             case id
             case flownOn = "flown_on"
             case place
+            case procedure
             case area
             case text
         }

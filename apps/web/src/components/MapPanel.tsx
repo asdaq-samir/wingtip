@@ -114,9 +114,8 @@ const rootPx = () => (rootFont ??= parseFloat(getComputedStyle(document.document
 
 /** Under the head, the body and the foot a shade darker than the glass
  *  over them, the grey of notes and the blue of tappable words a step
- *  darker on it for WCAG's 4.5:1 (--tint-shade, index.css). */
-const SHEET_BELOW =
-  "[--muted-foreground:oklch(0.5_0_0)] [--tint:var(--tint-shade)] dark:[--muted-foreground:oklch(0.708_0_0)] print:bg-transparent";
+ *  darker on it for WCAG's 4.5:1 (design/tokens.json's -shade tokens). */
+const SHEET_BELOW = "[--muted-foreground:var(--muted-foreground-shade)] [--tint:var(--tint-shade)] print:bg-transparent";
 
 /**
  * The page's one panel over the map, the way Maps on an iPhone has one:
@@ -610,13 +609,13 @@ export default function MapPanel({
       className={cn(
         "absolute inset-x-0 z-30 mx-auto flex w-24 touch-none justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset print:hidden",
         "after:inset-x-0! after:top-0! after:bottom-0!",
-        fromBottom ? "top-0 h-2.5 items-start pt-1" : "bottom-0 h-4 items-end pb-[5px]",
+        fromBottom ? "top-0 h-2.5 items-start pt-1" : "bottom-0 h-4 items-end pb-1.25",
       )}
     >
       <span
         className={cn(
           "h-[5px] w-9 rounded-full",
-          ownHead || pillPictured ? "bg-white/75 shadow-[0_0_3px_rgba(0,0,0,.5)]" : "bg-muted-foreground/40",
+          ownHead || pillPictured ? "bg-white/75 shadow-xs shadow-black/50" : "bg-muted-foreground/40",
         )}
         aria-hidden="true"
       />
@@ -754,7 +753,7 @@ export default function MapPanel({
                   ? "contents"
                   : cn(
                       "@container flex items-center gap-2 print:hidden",
-                      atPill ? cn("px-[9px] pb-3", ROW_PAD) : top == null ? undefined : cn("px-3 pb-1", barHere ? "pt-1" : ROW_PAD),
+                      atPill ? cn("px-2.25 pb-3", ROW_PAD) : top == null ? undefined : cn("px-3 pb-1", barHere ? "pt-1" : ROW_PAD),
                     )
               }
             >

@@ -8322,6 +8322,10 @@ export interface CoachDebrief {
    */
   place?: string;
   /**
+   * An approach's procedure as the chart names it ("ILS Y RWY 08"); none for a flight.
+   */
+  procedure?: string | null;
+  /**
    * The field's elevation, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4); without it the gate is not checked.
    */
   elevation_ft?: number | null;
@@ -8413,6 +8417,10 @@ export interface ProficiencyPlanAnswer {
     id: string;
     flown_on: string;
     place: string;
+    /**
+     * The approach procedure flown ("ILS Y RWY 08"), where the line is an approach's.
+     */
+    procedure: string | null;
     /**
      * The weak area's key.
      */

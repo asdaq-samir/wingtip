@@ -37,9 +37,10 @@ describe("the coach's plan", () => {
     expect(guessed([], undefined, undefined)).toBe("private");
   });
 
-  it("trims an approach's debrief to its profile, findings and the field's elevation", () => {
+  it("trims an approach's debrief to its procedure, profile, findings and the field's elevation", () => {
     const a = {
       airport: "KMSN",
+      name: "ILS Y RWY 08",
       findings: [{ tone: "stop", text: "Below the glide slope's full scale for 0.4 nm" }],
       profile: { track: [{ toGoNm: 1, altFt: 1300, off: true }], fixes: [], glidepath: null },
     } as unknown as ApproachDebrief;
@@ -47,6 +48,7 @@ describe("the coach's plan", () => {
       kind: "approach",
       flown_on: "2026-10-25",
       place: "KMSN",
+      procedure: "ILS Y RWY 08",
       elevation_ft: 887,
       profile: [{ to_go_nm: 1, alt_ft: 1300, off: true }],
       legs: [],

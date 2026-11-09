@@ -24,6 +24,7 @@ import { iconMarker } from "../htmlMarker";
 import { useGlLines, type GlRun } from "../useGlLines";
 import { ROUTE_PRIORITY } from "../declutter";
 import { useGlMarks, type GlMark } from "../useGlMarks";
+import { CHART } from "../../../tokens";
 
 const levelOf = (map: ReturnType<typeof useGlMap>["map"]) => Math.floor(appZoomOf(map.getZoom()) + 1e-9);
 
@@ -84,8 +85,8 @@ export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
     () => patterns.map((p) => ({ points: [pair(p.entry.from), pair(p.entry.to)], colour: TEAL, width: 3 })),
     [patterns],
   );
-  useGlLines("patterns", "route", circuits, { colour: "#ffffff", width: 7, opacity: 0.9 });
-  useGlLines("pattern-entries", "route", entries, { colour: "#ffffff", width: 7, opacity: 0.9 }, [7 / 3, 2]);
+  useGlLines("patterns", "route", circuits, { colour: CHART.casing, width: 7, opacity: 0.9 });
+  useGlLines("pattern-entries", "route", entries, { colour: CHART.casing, width: 7, opacity: 0.9 }, [7 / 3, 2]);
   const marks = useMemo<GlMark[]>(
     () =>
       level < PATTERN_WORDS_FROM_ZOOM
@@ -145,8 +146,8 @@ export function ProceduresGl({
       ]),
     [drawings],
   );
-  useGlLines("procedures", "route", lines, { colour: "#ffffff", width: 7, opacity: 0.9 });
-  useGlLines("procedures-missed", "route", missed, { colour: "#ffffff", width: 6, opacity: 0.9 }, [8 / 3, 7 / 3]);
+  useGlLines("procedures", "route", lines, { colour: CHART.casing, width: 7, opacity: 0.9 });
+  useGlLines("procedures-missed", "route", missed, { colour: CHART.casing, width: 6, opacity: 0.9 }, [8 / 3, 7 / 3]);
   const marks = useMemo<GlMark[]>(
     () =>
       drawings.flatMap((d) =>
@@ -216,7 +217,7 @@ function Plate({ id, url, box: [w, s, e, n] }: { id: string; url: string; box: [
       [id]: { type: "image", url, coordinates },
     },
     [
-      { id: `${id}-sheet`, type: "fill", source: `${id}-sheet`, paint: { "fill-color": "#ffffff", "fill-opacity": 0.8 } },
+      { id: `${id}-sheet`, type: "fill", source: `${id}-sheet`, paint: { "fill-color": CHART.casing, "fill-opacity": 0.8 } },
       { id, type: "raster", source: id, paint: { "raster-fade-duration": 0 } },
     ],
   );
@@ -239,8 +240,7 @@ export function HoldTracksGl({ legs }: { legs: Leg[] }) {
  *  room of their own: a pill on a checkpoint's badge or a field's ident
  *  moves a little clear of it, or is left out (declutter). */
 export function LegPointsGl({ legs: allLegs, onSelectPoint }: { legs: Leg[]; onSelectPoint: (lat: number, lon: number) => void }) {
-  // No airplane picked, no tops of climb and descent: they are its climb
-  // and descent (the owner, 2026-11-08: "don't assume").
+  // No airplane picked, no tops of climb and descent: they are its climb and descent (the owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
   const legs = airplane ? allLegs : NO_LEGS;
   const marks = useMemo<GlMark[]>(
@@ -356,26 +356,26 @@ const RINGS: CircleLayerSpecification[] = [
     id: "picked-ring-outer",
     type: "circle",
     source: RING_SOURCE,
-    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": "rgba(10,20,28,.55)", "circle-stroke-width": 9 },
+    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": `${CHART.shade}8c`, "circle-stroke-width": 9 },
   },
   {
     id: "picked-ring-inner",
     type: "circle",
     source: RING_SOURCE,
-    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": "#ffffff", "circle-stroke-width": 6 },
+    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": CHART.casing, "circle-stroke-width": 6 },
   },
   {
     id: "picked-ring",
     type: "circle",
     source: RING_SOURCE,
-    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": "#ff3b00", "circle-stroke-width": 3 },
+    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": CHART.selected, "circle-stroke-width": 3 },
   },
   {
     id: "held-dot",
     type: "circle",
     source: RING_SOURCE,
     filter: ["get", "held"],
-    paint: { "circle-radius": 6, "circle-color": MAP_BLUE, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 },
+    paint: { "circle-radius": 6, "circle-color": MAP_BLUE, "circle-stroke-color": CHART.casing, "circle-stroke-width": 2 },
   },
 ];
 
@@ -446,7 +446,7 @@ export function LessonGl() {
                   className: "",
                   iconSize: [34, 34],
                   iconAnchor: [17, 17],
-                  html: `<span style="position:absolute;inset:0;border-radius:9999px;border:3px solid ${MAP_BLUE};background:rgba(0,122,255,.12)"></span>`,
+                  html: `<span style="position:absolute;inset:0;border-radius:9999px;border:3px solid ${MAP_BLUE};background:${MAP_BLUE}1f"></span>`,
                 },
               },
             },

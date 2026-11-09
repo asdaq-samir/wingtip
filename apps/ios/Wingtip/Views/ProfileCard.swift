@@ -185,7 +185,7 @@ struct ProfileChart: View {
             for point in profile.terrain { ground.addLine(to: CGPoint(x: x(point.alongNm), y: y(point.groundFt))) }
             ground.addLine(to: CGPoint(x: size.width, y: size.height))
             ground.closeSubpath()
-            context.fill(ground, with: .color(Color(red: 0.55, green: 0.38, blue: 0.2).opacity(0.75)))
+            context.fill(ground, with: .color(Color(uiColor: WingtipColor.Chart.terrain).opacity(0.75)))
             // The altitude line: the legs' own where they are in, else
             // one altitude across.
             var line = Path()

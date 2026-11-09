@@ -67,7 +67,7 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
         // One Line, the owner's pick L1 of the canvas (2026-11-05): the
         // route split in three, each end its own tap, the stops between
         // them the box's.
-        <Suspense fallback={<div className="h-[3.25rem] rounded-[1.625rem] bg-card" />}>
+        <Suspense fallback={<div className="h-[3.25rem] rounded-full bg-card" />}>
           <RouteSplit
             dep={planned.dep}
             dest={planned.dest}
@@ -111,7 +111,7 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
   ) : (
     <div className="min-w-0 flex-1">
       {/* Its room while its code comes: the box's own line. */}
-      <Suspense fallback={<div className="h-10 rounded-[20.5px] bg-card" />}>
+      <Suspense fallback={<div className="h-10 rounded-(--radius-banner) bg-card" />}>
         <SearchNear.Provider value={searchNear}>
           <RouteBox
             dep={planned.dep}

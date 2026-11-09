@@ -62,7 +62,7 @@ struct TrainingView: View {
             ProblemLine(found, "The codes in what you pasted")
             if codes.isEmpty { Text("No codes yet").foregroundStyle(.secondary) }
             ForEach(codes, id: \.self) { code in
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     Text(code).font(.body.monospaced())
                     if let table = AcsTable.bundled {
                         Text(table.words(code) ?? "Not in \(table.editions.joined(separator: " or "))").font(.footnote).foregroundStyle(.secondary)
@@ -103,7 +103,7 @@ struct TrainingView: View {
                     if let e = signed[kind.code] {
                         SignedEndorsementRow(label: kind.label, rule: kind.rule, e: e)
                     } else {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             OptionalDayRow(title: kind.label, day: Binding(get: { recorded[kind.code]?.endorsedOn }, set: { day in
                                 Task { await act { try await Gateway.recordEndorsement(kind.code, on: day) } }
                             }), upTo: Date())
@@ -261,7 +261,7 @@ struct SignedEndorsementRow: View {
                 Button("Void It", role: .destructive, action: onVoid)
             }
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(label)
                 Text([who, rule, e.voided ? "Voided" : "Signed \(Day.said(e.signedOn))"].compactMap { $0 }.joined(separator: " · "))
                     .font(.footnote).foregroundStyle(.secondary)

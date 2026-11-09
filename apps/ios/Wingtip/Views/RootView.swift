@@ -224,7 +224,8 @@ struct RootView: View {
                     // The radar or satellite loop's bar while one is on.
                     WeatherLoopBar()
                 }
-                .padding(.trailing, 64)
+                // Clear of the map's buttons down the right: a button and the gutters round it.
+                .padding(.trailing, WingtipSize.tapTarget + WingtipSpace.lg + WingtipSpace.xs)
             }
             .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: WingtipSpace.sm) {

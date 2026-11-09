@@ -6,7 +6,7 @@ import { Button } from "../../../../components/ui/button";
 import type { FlightRules } from "../../../../lib/preferences";
 import { NONE, type WelcomeModel } from "../../hooks/useWelcome";
 
-const BIG = "h-12 rounded-[14px] font-semibold";
+const BIG = "h-12 rounded-(--radius-control) font-semibold";
 
 /** The welcome's page for its step: what it asks, each answer kept at once. */
 export function WelcomePage({ vm }: { vm: WelcomeModel }) {

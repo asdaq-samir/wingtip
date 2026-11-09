@@ -250,6 +250,12 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             };
             // Class A is above its floor whatever is asked of it (71.33).
             let class = if class != 'A' && msl >= CLASS_A_FLOOR_FT { 'A' } else { class };
+            // An airplane at a height, not a band from a floor: 91.155(a)'s
+            // Class G row is "1,200 feet or less above the surface", so at
+            // 1,200 ft exactly it is the low row (by day 1 sm, clear of
+            // clouds). rules::minimums reads a band whose floor is at 1,200
+            // ft as above it, which it is; asked at the ground, the low row.
+            let agl = if agl <= G_LOW_AGL_FT { 0.0 } else { agl };
             Ok(match rules::minimums(class, msl, agl) {
                 None => "null".to_owned(),
                 Some(m) => {

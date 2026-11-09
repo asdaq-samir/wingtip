@@ -8,7 +8,7 @@ import { TEXT } from "../../lib/text";
  * on the light material, the map blurred through it, rows edge to edge
  * with a hairline between them and a wider grey band between groups.
  */
-export const MENU_CONTENT = `min-w-56 rounded-[14px] p-0 shadow-overlay ${MATERIAL}`;
+export const MENU_CONTENT = `min-w-56 rounded-(--radius-control) p-0 shadow-overlay ${MATERIAL}`;
 
 /** A row: 44 points to a finger, as iOS's menus' rows and the grouped
  *  lists' are (GroupedList), a row's words (TEXT.row), and the hairline

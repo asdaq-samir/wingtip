@@ -30,7 +30,7 @@ interface Props {
 // query measures the row inside its padding: 296 points in Slide Over,
 // 351 on an iPhone SE, which keeps its chevrons.)
 const NARROW_PICKER =
-  "min-w-16 px-1.5 @max-[25rem]:min-w-0 @max-[25rem]:px-1 @max-[25rem]:pointer-coarse:text-[0.9375rem] @max-[25rem]:[&_svg]:size-3.5 @max-[20rem]:[&_svg]:hidden @min-[30rem]:min-w-24 @min-[30rem]:px-2.5";
+  "min-w-16 px-1.5 @max-[25rem]:min-w-0 @max-[25rem]:px-1 @max-[25rem]:pointer-coarse:text-(length:--type-detail) @max-[25rem]:[&_svg]:size-3.5 @max-[20rem]:[&_svg]:hidden @min-[30rem]:min-w-24 @min-[30rem]:px-2.5";
 
 /**
  * DEP `->` DEST plus its own trailing action button, as one bordered
@@ -62,7 +62,7 @@ export default function RouteInputGroup({ dep, dest, onDepChange, onDestChange, 
         className={cn(
           "px-0.5 text-muted-foreground @max-[25rem]:px-0 @min-[30rem]:px-1",
           TEXT.row,
-          "@max-[25rem]:pointer-coarse:text-[0.9375rem]",
+          "@max-[25rem]:pointer-coarse:text-(length:--type-detail)",
         )}
         aria-hidden="true"
       >

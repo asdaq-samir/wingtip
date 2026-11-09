@@ -41,7 +41,7 @@ struct CopilotBanner: View {
                 actions(message)
             }
             .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
-            .floatingGlass(in: RoundedRectangle(cornerRadius: 22))
+            .floatingGlass(in: RoundedRectangle(cornerRadius: WingtipRadius.banner))
             .padding(.horizontal, WingtipSpace.md)
             .accessibilityElement(children: .contain)
         }

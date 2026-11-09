@@ -41,7 +41,7 @@ struct ProminentButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .fontWeight(.semibold)
-            .padding(.horizontal, 14).padding(.vertical, 7)
+            .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
             .foregroundStyle(isEnabled ? Color.white : WingtipInk.inactive)
             .background(isEnabled ? AnyShapeStyle(.tint) : AnyShapeStyle(WingtipInk.inactiveFill), in: .capsule)
             .opacity(configuration.isPressed ? 0.7 : 1)

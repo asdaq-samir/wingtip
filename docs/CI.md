@@ -91,6 +91,10 @@ owner's token's merge commit starts CI like the owner's push. One that
 main does not merge into cleanly gets the label `needs-merge`, taken off
 once its branch is current again: merge main into it by hand.
 
+A test tagged `@flight-critical` runs on every pull request too: the
+journey a pilot cannot be without in the air (plan, nav log, emergency,
+offline), kept to one.
+
 A test belongs in the smoke set (`{ tag: "@smoke" }` on the `test(...)`)
 when it is the one that proves a journey works end to end -- planning a
 route, the nav log, the map, the brief, sign-in -- and is fast. Everything
@@ -122,10 +126,11 @@ change needs; a job it skips counts as passing.
 | `test-web` | `npm run types`, `tsc`, ESLint and Vitest over `apps/web`, and that the phones' API models are the committed ones |
 | `test-gateway` | `mvn test`: the gateway's JUnit suite, with a real Postgres in Testcontainers |
 | `test-planner`, `test-ingest`, `test-assistant`, `test-weather` | ruff and pytest over each service's own suite |
-| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` set on a pull request, everything at night |
+| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` and `@flight-critical` sets on a pull request, everything at night |
 | `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build |
 | `android`, `ios` | The phone builds, when a pull request touches them (above) |
 | `rules-boundary` | No aviation rule outside the engine (below) |
+| `flight-critical` | **Flight-critical**, on every change whatever it touched: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs |
 | `architecture` | No source file new or grown past 400 lines (below, "The layers") |
 | `links` | Every relative link and `#anchor` in the Markdown resolves (`scripts/ci/check_links.py`) |
 | `api-compat` | No breaking change to an OpenAPI document (below) |

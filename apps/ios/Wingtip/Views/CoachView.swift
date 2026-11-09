@@ -24,7 +24,7 @@ struct CoachView: View {
                 }
                 Section {
                     Button { Task { await model.make(home: session.pilot?.homeBase) } } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(model.plan == nil ? "Make My Plan" : "Make It Again")
                             Text(model.making ? "Reading your logbook…" : "From your logbook and the fields near \(home)")
                                 .font(WingtipType.note).foregroundStyle(.secondary)
@@ -77,7 +77,7 @@ struct CoachView: View {
                 ForEach(plan.weakAreas, id: \.key) { w in
                     DisclosureGroup {
                         ForEach(plan.evidence.filter { w.evidence.contains($0.id) }, id: \.id) { e in
-                            Text("\(Day.said(e.flownOn)) at \(e.place): \(e.text)").font(WingtipType.detail).foregroundStyle(.secondary)
+                            Text(CoachModel.evidenceLine(e)).font(WingtipType.detail).foregroundStyle(.secondary)
                         }
                     } label: {
                         Text("\(w.label) · \(w.evidence.count) · ACS \(w.acs.joined(separator: ", "))")
@@ -99,7 +99,7 @@ struct CoachView: View {
     }
 
     private func sessionRow(_ s: CoachSession, line: String?) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             Text(s.practise).font(WingtipType.row)
             Text(CoachModel.sessionDetail(s)).font(WingtipType.note).foregroundStyle(.secondary)
             if let wings = s.wings {

@@ -84,7 +84,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg pointer-coarse:text-[1.0625rem] leading-none font-semibold", className)}
+      className={cn("text-lg pointer-coarse:text-(length:--type-row) leading-none font-semibold", className)}
       {...props}
     />
   );
@@ -94,7 +94,7 @@ function DialogDescription({ className, ...props }: React.ComponentProps<typeof 
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-sm pointer-coarse:text-[0.9375rem] text-muted-foreground", className)}
+      className={cn("text-sm pointer-coarse:text-(length:--type-detail) text-muted-foreground", className)}
       {...props}
     />
   );

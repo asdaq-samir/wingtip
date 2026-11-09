@@ -36,7 +36,7 @@ function AtcLine() {
     .join(" · ");
   return (
     <p
-      className={cn(GLASS, "w-fit max-w-full rounded-[22px] px-3 py-2 tabular-nums", TEXT.detail)}
+      className={cn(GLASS, "w-fit max-w-full rounded-(--radius-banner) px-3 py-2 tabular-nums", TEXT.detail)}
       role="status"
       data-testid="copilot-atc-line"
     >
@@ -62,7 +62,7 @@ export default function CopilotBanner() {
   if (!message || message.elsewhere) return <AtcLine />;
   const Icon = ICON[message.level];
   return (
-    <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-copilot-banner={message.kind}>
+    <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-(--radius-banner)")} data-copilot-banner={message.kind}>
       <Alert
         // Told to a screen reader once by useCopilot (lib/announce): a
         // live region arriving with its words in it is not read by every
@@ -70,7 +70,7 @@ export default function CopilotBanner() {
         role="region"
         aria-label="Copilot"
         className={cn(
-          "flex min-h-11 gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
+          "flex min-h-11 gap-2 rounded-(--radius-banner) border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
           open ? "items-start *:[svg]:mt-[0.6rem]" : "items-center",
           INK[message.level],
         )}

@@ -50,6 +50,8 @@ class CoachApproachesTest {
         val a = CoachApproaches.trimmed(flown, 778.0, "2026-10-30")
         assertEquals("approach", a.kind)
         assertEquals("KBUR", a.place)
+        // The chart's name for it, so the coach says which approach.
+        assertEquals("ILS Y RWY 08", a.procedure)
         assertEquals("2026-10-30", a.flownOn)
         assertEquals(778.0, a.elevationFt!!, 0.0)
         assertEquals(listOf(CoachProfilePoint(altFt = 1100.0, off = true, toGoNm = 1.0)), a.profile)

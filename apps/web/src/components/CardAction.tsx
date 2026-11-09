@@ -62,7 +62,7 @@ export function CardAction({
   // Apple's Maps on the web draws a place's Call and Website (the owner's
   // screenshot, 2026-10-26).
   const look = cn(
-    "h-auto min-w-0 flex-col gap-[2px] rounded-xl px-1 py-[6px] [&_svg:not([class*='size-'])]:size-[20px]",
+    "h-auto min-w-0 flex-col gap-0.5 rounded-xl px-1 py-1.5 [&_svg:not([class*='size-'])]:size-[20px]",
     !filled &&
       cn(
         GLASS_BUTTON,
@@ -70,9 +70,7 @@ export function CardAction({
         // on the darker grey the tint read 4.44 to 1, short of WCAG's 4.5 (the
         // iOS audit's P15, an airplane's Alert menu, 2026-11-05); the menu
         // under it says it is open.
-        destructive
-          ? "text-destructive-ink hover:text-destructive-ink"
-          : "text-tint hover:text-tint dark:text-[#8cc4ff] dark:hover:text-[#8cc4ff]",
+        destructive ? "text-destructive-ink hover:text-destructive-ink" : "text-tint hover:text-tint",
         "aria-expanded:bg-foreground/8",
       ),
   );

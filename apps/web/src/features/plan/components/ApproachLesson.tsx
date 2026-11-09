@@ -28,6 +28,7 @@ import { airportQuery, procedureQuery } from "../../../lib/queryClient";
 import { FINDING_TONE } from "../../../lib/findings";
 import { GROUP_HEADING, TEXT, TEXT_POINTS } from "../../../lib/text";
 import { altFt } from "../../../lib/format";
+import { CHART } from "../../../lib/tokens";
 
 /** The lesson's one safety line, its subtitle: the plate, not this, is
  *  what is flown (CLAUDE.md's safety principle, kept off the pilot's
@@ -162,8 +163,7 @@ export default function ApproachLesson({
 function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) {
   const [page, setPage] = useState<Page>("brief");
   const [gs, setGs] = useState<number>(90);
-  // The approach on the chart while the lesson is open; each page says
-  // what of it its step shows (its effects run before this one).
+  // The approach on the chart while the lesson is open; each page says what of it its step shows (its effects run before this one).
   useEffect(() => {
     useLessonMap.setState({ drawing: input.drawing });
   }, [input.drawing]);
@@ -381,7 +381,7 @@ function LessonProfile({ drawing, steps, at }: { drawing: ProcedureDrawing; step
           cy={y(here.ft!)}
           r={5}
           fill="var(--tint)"
-          stroke="#fff"
+          stroke={CHART.casing}
           strokeWidth={2}
           data-testid="approach-profile-airplane"
         />

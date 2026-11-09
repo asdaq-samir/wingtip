@@ -19,7 +19,7 @@ struct ForecastIcingSection: View {
                         Image(systemName: leg.severity == nil ? "questionmark.circle" : iced ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                             .foregroundStyle(leg.severity == nil ? Color.secondary : iced ? WingtipInk.caution : WingtipInk.go)
                             .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(on.map { "\($0.from) → \($0.to)" } ?? "Leg \(leg.index + 1)").lineLimit(1)
                             Text(ForecastIcing.value(leg)).fontWeight(.semibold)
                                 .foregroundStyle(iced ? WingtipInk.caution : Color.primary)

@@ -75,7 +75,7 @@ export function NewStopCard({
           in, as the box's Suggested were; held off the text box's blur,
           which would take the empty card away before the tap. */}
       {via && via.length > 0 && (
-        <ul className="mt-2 pl-[2.375rem]" aria-label="Suggested" data-testid="route-new-stop-via">
+        <ul className="mt-2 pl-9.5" aria-label="Suggested" data-testid="route-new-stop-via">
           {via.map((d) => (
             <li key={d.ident}>
               <button

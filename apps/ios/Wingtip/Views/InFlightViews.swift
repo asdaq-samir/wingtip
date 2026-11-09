@@ -87,7 +87,7 @@ struct CheckpointNotesView: View {
                         editing = point
                         typed = notes[Self.key(point.lat, point.lon)]?.text ?? ""
                     } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(point.name ?? point.waypoint ?? point.category).font(.headline).foregroundStyle(.primary)
                             if let note = notes[Self.key(point.lat, point.lon)], !note.text.isEmpty {
                                 Text(note.text).font(.subheadline).foregroundStyle(note.source == "saved" ? Color.primary : Color.secondary)

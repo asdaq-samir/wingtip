@@ -4299,6 +4299,19 @@
             "title": "Place",
             "type": "string"
           },
+          "procedure": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "An approach's procedure as the chart names it (\"ILS Y RWY 08\").",
+            "title": "Procedure"
+          },
           "profile": {
             "default": [],
             "items": {
@@ -4446,6 +4459,18 @@
           "place": {
             "title": "Place",
             "type": "string"
+          },
+          "procedure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The approach procedure flown (\"ILS Y RWY 08\"), where the line is an approach's.",
+            "title": "Procedure"
           },
           "text": {
             "title": "Text",

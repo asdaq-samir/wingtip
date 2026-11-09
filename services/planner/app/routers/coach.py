@@ -75,7 +75,8 @@ def plan_sources(p: ProficiencyPlan) -> list[Source]:
         start = f", current from {d.from_.isoformat()}" if d.from_ else ""
         out.append(Source(id=d.id, label=d.label, text=f"{d.label}: {STATUS_WORDS[d.status]}{until}{start} ({d.rule}). {d.detail}."))
     for e in p.evidence:
-        out.append(Source(id=e.id, label=f"{e.place} {e.flown_on.isoformat()}", text=f"{e.flown_on.isoformat()} at {e.place}: {e.text}."))
+        where = f"{e.place}, {e.procedure}" if e.procedure else e.place
+        out.append(Source(id=e.id, label=f"{where} {e.flown_on.isoformat()}", text=f"{e.flown_on.isoformat()} at {where}: {e.text}."))
     for i, s in enumerate(p.sessions, 1):
         where = ""
         if s.place:
