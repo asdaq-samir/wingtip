@@ -98,7 +98,11 @@ enum ReadyFacts {
     static func dayWords(_ iso: String) -> String {
         let parts = iso.split(separator: "-").compactMap { Int($0) }
         guard parts.count == 3, (1...12).contains(parts[1]) else { return iso }
-        return "\(parts[2]) \(Calendar(identifier: .gregorian).shortMonthSymbols[parts[1] - 1])"
+        // The FAA's own English month, whatever the phone's language: a
+        // cycle date reads as the chart's edition does.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "en_US_POSIX")
+        return "\(parts[2]) \(calendar.shortMonthSymbols[parts[1] - 1])"
     }
 }
 
