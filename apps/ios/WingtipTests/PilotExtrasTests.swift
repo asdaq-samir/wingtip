@@ -8,14 +8,14 @@ import Testing
 @MainActor
 struct PilotRecordsTests {
     @Test func anAirplaneWithItsInspectionsSquawksAndVorCheck() throws {
-        let json = #"{"id":7,"tailNumber":"N3429J","typeDesignator":"P28A","cruiseTasKt":110.0,"fuelBurnGph":8.5,"usableFuelGal":48.0,"cruisePowerPct":null,"climbTasKt":null,"climbFuelBurnGph":null,"equipment":"SDFGRY","surveillance":"B1","colour":"White, blue stripe","createdAt":"2026-10-01T12:00:00Z","dueItems":[],"inspections":{"annualOn":"2026-03-01","annualGoodThrough":"2027-03-31","eltBatteryDueOn":null,"eltInspectedOn":null,"eltInspectionGoodThrough":null,"hoursNow":2410.5,"hundredHourAtHours":2350.0,"hundredHourDueAtHours":2450.0,"staticCheckGoodThrough":null,"staticCheckOn":null,"transponderCheckGoodThrough":"2027-05-31","transponderCheckOn":"2025-05-10","forHire":false},"openSquawks":[{"id":3,"reportedOn":"2026-10-20","text":"Landing light out","inoperative":true,"deferredFor":"VFR_DAY","fixedOn":null,"fixNote":null}],"vorCheck":{"checkedOn":"2026-10-10","errorDeg":2.0,"goodThrough":"2026-11-09","kind":"VOT","limitDeg":4.0,"place":"KDLH VOT","withinLimit":true}}"#
+        let json = #"{"id":7,"tailNumber":"N3429J","typeDesignator":"P28A","cruiseTasKt":110.0,"fuelBurnGph":8.5,"usableFuelGal":48.0,"cruisePowerPct":null,"climbTasKt":null,"climbFuelBurnGph":null,"equipment":"SDFGRY","surveillance":"B1","colour":"White, blue stripe","createdAt":"2026-10-01T12:00:00Z","figures":{},"dueItems":[],"inspections":{"annualOn":"2026-03-01","annualGoodThrough":"2027-03-31","eltBatteryDueOn":null,"eltInspectedOn":null,"eltInspectionGoodThrough":null,"hoursNow":2410.5,"hundredHourAtHours":2350.0,"hundredHourDueAtHours":2450.0,"staticCheckGoodThrough":null,"staticCheckOn":null,"transponderCheckGoodThrough":"2027-05-31","transponderCheckOn":"2025-05-10","forHire":false},"openSquawks":[{"id":3,"reportedOn":"2026-10-20","text":"Landing light out","inoperative":true,"deferredFor":"VFR_DAY","fixedOn":null,"fixNote":null}],"vorCheck":{"checkedOn":"2026-10-10","errorDeg":2.0,"goodThrough":"2026-11-09","kind":"VOT","limitDeg":4.0,"place":"KDLH VOT","withinLimit":true}}"#
         let a = try JSONDecoder().decode(OwnAircraftRecord.self, from: Data(json.utf8))
         #expect(a.inspections.hundredHourDueAtHours == 2450 && a.inspections.annualGoodThrough == "2027-03-31")
         #expect(a.openSquawks.first?.deferredFor == "VFR_DAY" && a.vorCheck?.withinLimit == true && a.vorCheck?.place == "KDLH VOT")
         #expect(a.tailNumber == "N3429J" && a.usableFuelGal == 48 && a.cruisePowerPct == nil)
         // An airplane with nothing recorded: the gateway's nulls, and
         // inspections with no dates (it always sends the object).
-        let bare = #"{"id":8,"tailNumber":"N1","typeDesignator":"C172","cruiseTasKt":110,"fuelBurnGph":8,"usableFuelGal":null,"cruisePowerPct":null,"climbTasKt":null,"climbFuelBurnGph":null,"equipment":null,"surveillance":null,"colour":null,"createdAt":"2026-10-01T12:00:00Z","inspections":{"forHire":false},"dueItems":[],"openSquawks":[],"vorCheck":null}"#
+        let bare = #"{"id":8,"tailNumber":"N1","typeDesignator":"C172","cruiseTasKt":110,"fuelBurnGph":8,"usableFuelGal":null,"cruisePowerPct":null,"climbTasKt":null,"climbFuelBurnGph":null,"equipment":null,"surveillance":null,"colour":null,"createdAt":"2026-10-01T12:00:00Z","figures":{},"inspections":{"forHire":false},"dueItems":[],"openSquawks":[],"vorCheck":null}"#
         let b = try JSONDecoder().decode(OwnAircraftRecord.self, from: Data(bare.utf8))
         #expect(b.vorCheck == nil && b.openSquawks == [])
     }
@@ -209,11 +209,11 @@ struct DrillsTests {
 struct DeviceKeptTests {
     @Test func signingOutForgetsThePilotsFiguresAndFavorites() throws {
         let defaults = try #require(UserDefaults(suiteName: "wingtip-tests-\(UUID().uuidString)"))
-        defaults.set(Data(), forKey: "figures:N3429J")
+        defaults.set(Data(), forKey: OwnFigureStore.prefix + "N3429J")
         defaults.set(Data(), forKey: "aircraftFavorites")
         defaults.set(true, forKey: "traffic")
         Session.forgetPilot(defaults)
-        #expect(defaults.data(forKey: "figures:N3429J") == nil && defaults.data(forKey: "aircraftFavorites") == nil)
+        #expect(defaults.data(forKey: OwnFigureStore.prefix + "N3429J") == nil && defaults.data(forKey: "aircraftFavorites") == nil)
         #expect(defaults.bool(forKey: "traffic"))
 
         // The Favorites live in the store now: they go, the Recents stay.

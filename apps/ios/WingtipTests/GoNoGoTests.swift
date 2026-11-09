@@ -135,7 +135,7 @@ struct OwnAirplaneAskTests {
     /// open squawks only.
     @Test func theRecordsInThePlannersNames() throws {
         let json = """
-        {"id":7,"tailNumber":"N3429J","typeDesignator":"P28A","cruiseTasKt":108,"fuelBurnGph":8.4,"createdAt":"2026-10-01T12:00:00Z","dueItems":[],
+        {"id":7,"tailNumber":"N3429J","typeDesignator":"P28A","cruiseTasKt":108,"fuelBurnGph":8.4,"createdAt":"2026-10-01T12:00:00Z","figures":{},"dueItems":[],
          "inspections":{"annualOn":"2026-03-02","annualGoodThrough":"2027-03-31","hoursNow":4210.5,"hundredHourDueAtHours":4280,"forHire":true},
          "openSquawks":[{"id":1,"reportedOn":"2026-10-01","text":"Nav light out","inoperative":true,"deferredFor":"91.213(d)"},
                         {"id":2,"reportedOn":"2026-09-01","text":"Door seal","inoperative":false,"fixedOn":"2026-09-20"}],
