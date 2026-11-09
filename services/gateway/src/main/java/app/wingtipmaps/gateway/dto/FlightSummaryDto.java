@@ -29,9 +29,9 @@ public record FlightSummaryDto(
         /* The other picks it was planned with, as the planner's address
          *  writes them; null for none. */
         @Nullable String picks,
-        /** The pilot's own name for it; null where it is shown by its route. */
+        /* The pilot's own name for it; null where it is shown by its route. */
         @Nullable String name,
-        /** The pilot's notes on it; null for none. */
+        /* The pilot's notes on it; null for none. */
         @Nullable String notes) {
 
     public static FlightSummaryDto of(Flight f) {
