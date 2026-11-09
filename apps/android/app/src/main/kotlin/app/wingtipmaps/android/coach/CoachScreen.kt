@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -96,7 +97,6 @@ private fun LazyListScope.plan(plan: ProficiencyPlan, state: CoachModel.State) {
     val lines = CoachLines.sessionLines(plan, state.words)
     items(plan.sessions, key = { "s:" + it.id }) { s ->
         ListItem(
-            headlineContent = { Text(s.practise) },
             supportingContent = {
                 Column {
                     Text(CoachLines.session(s))
@@ -105,15 +105,16 @@ private fun LazyListScope.plan(plan: ProficiencyPlan, state: CoachModel.State) {
                 }
             },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            content = { Text(s.practise) },
         )
     }
     item { SectionTitle(stringResource(R.string.coach_due)) }
     items(plan.due, key = { "d:" + it.key }) { d ->
         ListItem(
-            headlineContent = { Text(d.label) },
             supportingContent = { Text(CoachLines.dueDetail(d)) },
             trailingContent = { Text(CoachLines.status(d), color = toneColor(CoachLines.tone(d))) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            content = { Text(d.label) },
         )
     }
     if (plan.weakAreas.isNotEmpty()) {
@@ -121,10 +122,10 @@ private fun LazyListScope.plan(plan: ProficiencyPlan, state: CoachModel.State) {
         items(plan.weakAreas, key = { "w:" + it.key }) { w ->
             var open by rememberSaveable(w.key) { mutableStateOf(false) }
             ListItem(
-                headlineContent = { Text(CoachLines.weakTitle(w)) },
                 trailingContent = { Icon(if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { open = !open },
+                content = { Text(CoachLines.weakTitle(w)) },
             )
             if (open) {
                 CoachLines.evidence(plan, w).forEach { Muted(CoachLines.evidenceLine(it), Modifier.padding(start = WingtipSpace.Lg)) }

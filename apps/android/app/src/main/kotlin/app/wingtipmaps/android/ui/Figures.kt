@@ -30,7 +30,6 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.RollingFigure
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.design.titleMediumEmphasized
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.stripFuel

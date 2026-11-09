@@ -136,9 +136,9 @@ private fun Tfrs(tfrs: List<TfrHere>, unavailable: Boolean) {
 private fun Row(icon: (@Composable () -> Unit)?, title: String, lines: List<String>, onClick: (() -> Unit)? = null) {
     ListItem(
         leadingContent = icon,
-        headlineContent = { Text(title, style = MaterialTheme.typography.titleMedium) },
         supportingContent = { Column { lines.forEach { Text(it) } } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = if (onClick != null) Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick) else Modifier.fillMaxWidth(),
+        content = { Text(title, style = MaterialTheme.typography.titleMedium) },
     )
 }

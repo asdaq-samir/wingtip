@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 import design_tokens_haptic as haptic
-import design_tokens_spring as spring
+import design_tokens_typography as typography
 from design_tokens_formats import gen_formats
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -525,9 +525,6 @@ def kt_colour(c):
     return "Color(0x%02X%02X%02X%02X)" % (round(a * 255), r, g, b)
 
 
-ANDROID_WEIGHT = {400: "FontWeight.Normal", 500: "FontWeight.Medium", 600: "FontWeight.SemiBold", 700: "FontWeight.Bold"}
-
-
 def gen_kotlin(tree, sch):
     names = all_names(sch)
     L = [
@@ -588,21 +585,7 @@ def gen_kotlin(tree, sch):
             slots[android["slot"]] = {**r["$value"], **{k: v for k, v in android.items() if k != "slot"}}
         elif android:
             slots[android] = r["$value"]
-    L.append("val WingtipTypography = Typography(")
-    for slot, v in slots.items():
-        args = [
-            "fontFamily = FontFamily.SansSerif",
-            "fontWeight = %s" % ANDROID_WEIGHT[v.get("fontWeight", 400)],
-            "fontSize = %g.sp" % v["fontSize"],
-            "lineHeight = %g.sp" % v["lineHeight"],
-        ]
-        if "letterSpacing" in v:
-            args.append("letterSpacing = %g.em" % v["letterSpacing"])
-        if v.get("tabular"):
-            args.append('fontFeatureSettings = "tnum"')
-        L.append("    %s = TextStyle(%s)," % (slot, ", ".join(args)))
-    L.append(")")
-    L.append("")
+    L += typography.kotlin(slots)
     for obj, group in (("WingtipSpace", "space"), ("WingtipRadius", "radius")):
         L.append("object %s {" % obj)
         for k, t in tokens(tree[group]).items():
@@ -619,7 +602,6 @@ def gen_kotlin(tree, sch):
             L.append("    const val %s_MS = %d" % (re.sub("-", "_", k).upper(), round(v * 1000)))
     L.append("}")
     L.append("")
-    L += spring.kotlin(tokens(tree["spring"]), pascal)
     L += haptic.kotlin(tokens(tree["haptic"]))
     L.append("object WingtipSize {")
     for k, t in tokens(tree["size"]).items():

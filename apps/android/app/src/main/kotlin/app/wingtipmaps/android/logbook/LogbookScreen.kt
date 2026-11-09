@@ -60,10 +60,10 @@ fun LogbookScreen(model: LogbookModel = viewModel()) {
             // The pilot's proficiency plan, a row of the logbook it is
             // made from, as the web's Logbook has it.
             ListItem(
-                headlineContent = { Text(stringResource(R.string.coach), color = MaterialTheme.colorScheme.primary) },
                 supportingContent = { Text(stringResource(R.string.coach_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { coach = true },
+                content = { Text(stringResource(R.string.coach), color = MaterialTheme.colorScheme.primary) },
             )
             if (state.currency.isNotEmpty()) SectionTitle(stringResource(R.string.currency))
         }

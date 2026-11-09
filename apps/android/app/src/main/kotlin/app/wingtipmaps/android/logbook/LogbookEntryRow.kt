@@ -45,7 +45,6 @@ fun LogbookEntryRow(e: LogbookEntryDto, state: LogbookModel.State, model: Logboo
     if (state.editing != e.id) {
         ListItem(
             overlineContent = { Text(e.flownOn) },
-            headlineContent = { Text(LogbookModel.line(e)) },
             // The airplane's N-number, its own tap to the airplane's profile
             // inside the row's tap to edit.
             supportingContent = e.aircraft?.let { tail ->
@@ -53,6 +52,7 @@ fun LogbookEntryRow(e: LogbookEntryDto, state: LogbookModel.State, model: Logboo
             },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = stringResource(R.string.logbook_edit_entry, e.flownOn)) { model.edit(e.id) },
+            content = { Text(LogbookModel.line(e)) },
         )
         return
     }

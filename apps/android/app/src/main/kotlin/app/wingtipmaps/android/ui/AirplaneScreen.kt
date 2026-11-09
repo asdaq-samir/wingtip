@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -132,12 +133,12 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         ChecklistKind.entries.forEach { kind ->
             val normal = kind == ChecklistKind.NORMAL
             ListItem(
-                headlineContent = { Text(stringResource(if (normal) R.string.checklist_normal else R.string.checklist_emergency)) },
                 supportingContent = {
                     Text(stringResource(if (normal) R.string.checklist_normal_line else R.string.checklist_emergency_line), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { checklist = kind },
+                content = { Text(stringResource(if (normal) R.string.checklist_normal else R.string.checklist_emergency)) },
             )
         }
         // Under the checklists, as the emergency checklist has it: 2 taps.
@@ -232,10 +233,10 @@ private fun PassengersRow() {
     val choices = remember(context) { FlightChoices.of(context) }
     val aboard by choices.passengers.collectAsStateWithLifecycle()
     ListItem(
-        headlineContent = { Text(stringResource(R.string.passengers_aboard)) },
         trailingContent = { Switch(checked = aboard, onCheckedChange = null) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().toggleable(value = aboard, role = Role.Switch, onValueChange = choices::setPassengers),
+        content = { Text(stringResource(R.string.passengers_aboard)) },
     )
 }
 

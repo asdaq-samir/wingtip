@@ -55,9 +55,9 @@ fun LegSheet(number: Int?, leg: Leg, onClose: () -> Unit) {
 @Composable
 private fun Row(name: String, value: String, said: String = value) {
     ListItem(
-        headlineContent = { Text(name) },
         trailingContent = { Text(value, style = MaterialTheme.typography.bodyLarge) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clearAndSetSemantics { contentDescription = "$name, $said" },
+        content = { Text(name) },
     )
 }

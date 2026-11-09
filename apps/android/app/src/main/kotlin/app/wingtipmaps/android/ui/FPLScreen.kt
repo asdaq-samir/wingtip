@@ -43,7 +43,7 @@ import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.ChoiceGroup
-import app.wingtipmaps.android.design.LoadingIndicator
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
@@ -97,7 +97,7 @@ fun FPLScreen(plan: Plan) {
             // The route's Brief beside its Plan, where the pilot looks for it
             // once the route is in (OpenScreen's sheet, as the strip has it).
             if (state.routed && !state.planning) TextButton(onClick = { ScreenRequests.ask(Screen.BRIEF) }) { Text(stringResource(R.string.brief)) }
-            if (state.planning) LoadingIndicator(Modifier.size(WingtipSpace.Xl))
+            if (state.planning) Loading(Modifier.size(WingtipSpace.Xl))
             state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
         FlightRulesRow(onChanged = { if (state.routed) plan.plan() })

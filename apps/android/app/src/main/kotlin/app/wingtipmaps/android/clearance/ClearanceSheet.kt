@@ -215,10 +215,10 @@ private fun Craft(c: Clearance, state: ClearanceModel.State) {
 @Composable
 private fun CraftRow(name: String, value: String, spoken: String? = null) {
     ListItem(
-        headlineContent = { Text(name) },
         trailingContent = { Text(value, style = MaterialTheme.typography.titleMedium) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clearAndSetSemantics { contentDescription = "$name, ${spoken ?: value}" },
+        content = { Text(name) },
     )
 }
 
@@ -254,10 +254,10 @@ private fun Mark(ok: Boolean, words: String) {
 private fun HeardLog(heard: List<Heard>, onPick: (String) -> Unit) {
     heard.filter { it.final }.asReversed().take(10).forEach { t ->
         ListItem(
-            headlineContent = { Text(t.text) },
             supportingContent = { Text(Format.clock(t.atMs), color = MaterialTheme.colorScheme.onSurfaceVariant) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { onPick(t.text) },
+            content = { Text(t.text) },
         )
     }
 }

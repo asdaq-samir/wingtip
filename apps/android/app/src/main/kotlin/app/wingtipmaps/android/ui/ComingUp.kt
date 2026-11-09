@@ -49,10 +49,10 @@ fun ComingUpSection(signedInAs: String) {
             )
             else -> items.forEach { due ->
                 ListItem(
-                    headlineContent = { Text(Paperwork.named(due)) },
                     supportingContent = { Text(Paperwork.detail(due)) },
                     trailingContent = { Text(Paperwork.whenWords(due), color = toneColor(Paperwork.tone(due))) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    content = { Text(Paperwork.named(due)) },
                 )
             }
         }

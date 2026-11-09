@@ -155,10 +155,10 @@ internal fun Head(colour: Color, kind: String, subtitle: String?) {
 @Composable
 internal fun Fact(name: String, value: String, description: Boolean = false) {
     ListItem(
-        headlineContent = { Text(name) },
         supportingContent = if (description) ({ Text(value) }) else null,
         trailingContent = if (description) null else ({ Text(value, style = MaterialTheme.typography.bodyLarge) }),
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        content = { Text(name) },
     )
 }
 

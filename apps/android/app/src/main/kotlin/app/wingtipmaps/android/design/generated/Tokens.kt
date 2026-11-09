@@ -552,6 +552,17 @@ val WingtipTypography = Typography(
     labelSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp),
     labelLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.007.em),
     headlineMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 31.sp, fontFeatureSettings = "tnum"),
+    headlineLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, lineHeight = 34.sp),
+    headlineSmallEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, lineHeight = 32.sp),
+    titleLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 25.sp),
+    titleMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp),
+    bodyLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp),
+    bodyMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
+    bodySmallEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
+    labelMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
+    labelSmallEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, lineHeight = 16.sp),
+    labelLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.007.em),
+    headlineMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 26.sp, lineHeight = 31.sp, fontFeatureSettings = "tnum"),
 )
 
 object WingtipSpace {
@@ -584,26 +595,6 @@ object WingtipMotion {
     const val QUICK_MS = 150
     const val PAGE_MS = 250
     const val SKELETON_PULSE_MS = 1500
-}
-
-/** A spring: Compose's spring() damping ratio and stiffness. */
-@Immutable
-data class WingtipSpringSpec(val dampingRatio: Float, val stiffness: Float)
-
-/** Material 3 Expressive's springs, the motion scheme's. */
-object WingtipSpring {
-    /** A small part's move: a button's corners on a press, a choice's pill. */
-    val FastSpatial = WingtipSpringSpec(0.6f, 800f)
-    /** A card's or a menu's move. */
-    val DefaultSpatial = WingtipSpringSpec(0.8f, 380f)
-    /** A move across much of the screen. */
-    val SlowSpatial = WingtipSpringSpec(0.8f, 200f)
-    /** A small part's colour or opacity. */
-    val FastEffects = WingtipSpringSpec(1f, 3800f)
-    /** A card's colour or opacity. */
-    val DefaultEffects = WingtipSpringSpec(1f, 1600f)
-    /** A large area's colour or opacity. */
-    val SlowEffects = WingtipSpringSpec(1f, 800f)
 }
 
 /** The taps felt on a key action, as View.performHapticFeedback's constants; one

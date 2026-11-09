@@ -9,6 +9,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -48,7 +50,7 @@ fun RollingFigure(
         Text(value, modifier, color = color, style = steady, maxLines = maxLines, overflow = TextOverflow.Ellipsis)
         return
     }
-    val motion = ExpressiveMotion.current
+    val motion = MaterialTheme.motionScheme
     // Every digit rolls the way the whole figure went, as a counter's
     // wheels do (19 to 20 rolls both digits up).
     val last = remember { arrayOf(value) }
@@ -76,7 +78,7 @@ fun RollingFigure(
 
 /** One roll: the new text in from below and the old out at the top as
  *  the figure grows, the other way as it shrinks, clipped to the line. */
-private fun roll(motion: WingtipMotionScheme, up: Boolean): ContentTransform {
+private fun roll(motion: MotionScheme, up: Boolean): ContentTransform {
     val sign = if (up) 1 else -1
     val enter = slideInVertically(motion.fastSpatialSpec<IntOffset>()) { sign * it } + fadeIn(motion.fastEffectsSpec())
     val exit = slideOutVertically(motion.fastSpatialSpec<IntOffset>()) { -sign * it } + fadeOut(motion.fastEffectsSpec())

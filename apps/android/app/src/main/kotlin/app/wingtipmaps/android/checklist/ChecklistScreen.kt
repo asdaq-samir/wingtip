@@ -62,10 +62,10 @@ fun ChecklistScreen(airplane: String, kind: ChecklistKind, modifier: Modifier = 
         // MAYDAY (decision 0010: its way in, with no map button).
         if (state.kind == ChecklistKind.EMERGENCY) {
             ListItem(
-                headlineContent = { Text(stringResource(R.string.emergency_assistant), color = MaterialTheme.colorScheme.primary) },
                 supportingContent = { Text(stringResource(R.string.emergency_assistant_line)) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { EmergencyOpen.open(EmergencyOpen.From.CHECKLIST) },
+                content = { Text(stringResource(R.string.emergency_assistant), color = MaterialTheme.colorScheme.primary) },
             )
         }
         when (state.mode) {
@@ -109,11 +109,11 @@ private fun RunView(state: ChecklistModel.State, model: ChecklistModel, modifier
                 itemsIndexed(section.items, key = { i, _ -> "s$s/$i" }) { i, item ->
                     val on = ChecklistRun.key(s, i) in state.ticked
                     ListItem(
-                        headlineContent = { Text(item.challenge) },
                         leadingContent = { Checkbox(checked = on, onCheckedChange = null) },
                         trailingContent = item.response?.takeIf { it.isNotEmpty() }?.let { { Text(it, style = MaterialTheme.typography.bodyLarge) } },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Checkbox, onValueChange = { model.tick(s, i) }),
+                        content = { Text(item.challenge) },
                     )
                 }
             }

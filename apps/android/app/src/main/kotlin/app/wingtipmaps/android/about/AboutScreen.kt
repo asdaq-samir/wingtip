@@ -121,9 +121,9 @@ private fun Credit(credit: AboutCredits.Credit) {
 @Composable
 private fun LegalRow(title: String, onOpen: () -> Unit) {
     ListItem(
-        headlineContent = { Text(title, color = MaterialTheme.colorScheme.primary) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen),
+        content = { Text(title, color = MaterialTheme.colorScheme.primary) },
     )
 }
 

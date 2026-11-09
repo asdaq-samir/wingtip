@@ -36,7 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.design.LoadingIndicator
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -125,7 +125,7 @@ internal fun ReadyActionRow(item: EngineContract.ReadyItem, fixer: ReadyFixer, b
             item.line, color = if (tappable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
         )
-        if (busy) LoadingIndicator(Modifier.size(WingtipSpace.Lg))
+        if (busy) Loading(Modifier.size(WingtipSpace.Lg))
     }
 }
 
@@ -134,7 +134,6 @@ internal fun ReadyActionRow(item: EngineContract.ReadyItem, fixer: ReadyFixer, b
 @Composable
 private fun ReadyItemRow(item: EngineContract.ReadyItem, raw: List<String>) {
     ListItem(
-        headlineContent = { Text(item.line) },
         supportingContent = {
             Column {
                 Text(item.detail)
@@ -144,6 +143,7 @@ private fun ReadyItemRow(item: EngineContract.ReadyItem, raw: List<String>) {
         },
         leadingContent = { FindingIcon(BriefModel.finding(item.finding)) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        content = { Text(item.line) },
     )
 }
 

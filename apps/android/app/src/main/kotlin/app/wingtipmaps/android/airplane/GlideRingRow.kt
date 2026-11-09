@@ -37,7 +37,6 @@ fun GlideRingRow(plan: Plan) {
     val on = kept == true
     Column {
         ListItem(
-            headlineContent = { Text(stringResource(R.string.glide_ring)) },
             supportingContent = {
                 val line = when (why) {
                     GlideRing.Unavailable.NO_AIRPLANE -> stringResource(R.string.glide_ring_no_airplane)
@@ -49,6 +48,7 @@ fun GlideRingRow(plan: Plan) {
             trailingContent = { Switch(checked = on && why == null, onCheckedChange = null, enabled = why == null) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().toggleable(value = on, enabled = why == null, role = Role.Switch) { GlideRing.set(context, it) },
+            content = { Text(stringResource(R.string.glide_ring)) },
         )
         if (why == GlideRing.Unavailable.NO_GLIDE) {
             val name = airplane.name ?: stringResource(R.string.this_airplane)

@@ -81,9 +81,9 @@ fun AirplaneProfileScreen(airplane: AirplaneNow, focus: String?, model: Airplane
 @Composable
 private fun Line(name: String, value: String) {
     ListItem(
-        headlineContent = { Text(name) },
         trailingContent = { Text(value, style = MaterialTheme.typography.bodyLarge) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        content = { Text(name) },
     )
 }
 
@@ -94,11 +94,11 @@ private fun FigureRow(airplane: AirplaneNow, key: FigureKey, onEdit: () -> Unit,
     val source = stringResource(AirplaneProfileModel.sourceLabel(f?.source?.takeIf { f.value != null }))
     val book = f?.book?.takeIf { f.source == "pilot" }?.let { " · " + stringResource(R.string.source_book) + " " + key.show(it) }.orEmpty()
     ListItem(
-        headlineContent = { Text(stringResource(key.label)) },
         supportingContent = { Text(source + book, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         trailingContent = { Text(f?.value?.let(key::show) ?: "—", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onEdit),
+        content = { Text(stringResource(key.label)) },
     )
     if (AirplaneProfileModel.resettable(f?.source, f?.book)) {
         TextButton(onClick = onReset) { Text(stringResource(R.string.reset_to_book)) }

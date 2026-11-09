@@ -68,11 +68,11 @@ fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
         items.forEach { item ->
             val on = item.key in state.ticked
             ListItem(
-                headlineContent = { Text(item.title) },
                 supportingContent = { Text(item.rule, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 leadingContent = { Checkbox(checked = on, onCheckedChange = null) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Checkbox, onValueChange = { model.tick(item.key) }),
+                content = { Text(item.title) },
             )
         }
         SectionTitle(stringResource(R.string.the_flight))

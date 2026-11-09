@@ -28,7 +28,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.LogbookDraft
-import app.wingtipmaps.android.design.LoadingIndicator
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
@@ -61,7 +61,7 @@ fun FlightLoggedSheet(state: LogbookDraftModel.State, model: LogbookDraftModel) 
             if (!state.signedIn) Text(stringResource(R.string.flight_logged_sign_in), style = MaterialTheme.typography.bodyMedium)
             if (state.pending) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                    LoadingIndicator(Modifier.size(WingtipSize.Chip))
+                    Loading(Modifier.size(WingtipSize.Chip))
                     Text(stringResource(R.string.flight_logged_drawing), style = MaterialTheme.typography.bodyMedium)
                 }
             }
@@ -107,11 +107,11 @@ private fun DraftRows(draft: LogbookDraft, state: LogbookDraftModel.State, model
         val n = draft.instrument.approaches
         val found = pluralStringResource(if (draft.instrument.holding) R.plurals.flight_logged_found_hold else R.plurals.flight_logged_found, n, n)
         ListItem(
-            headlineContent = { Text(stringResource(R.string.flown_by_instruments)) },
             supportingContent = { Text(listOf(found, said).filter { it.isNotEmpty() }.joinToString(" ")) },
             trailingContent = { Checkbox(checked = state.byInstruments, onCheckedChange = null) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().toggleable(value = state.byInstruments, role = Role.Checkbox, onValueChange = model::byInstruments),
+            content = { Text(stringResource(R.string.flown_by_instruments)) },
         )
     }
 }

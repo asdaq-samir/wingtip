@@ -27,9 +27,9 @@ internal fun NoAirplaneGuidance(state: EmergencyModel.State, picker: @Composable
     SectionTitle(stringResource(R.string.emergency_guidance))
     state.guidance.forEach { item ->
         ListItem(
-            headlineContent = { Text(item.title) },
             supportingContent = { Text("${item.detail} (${item.source})") },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            content = { Text(item.title) },
         )
     }
 }

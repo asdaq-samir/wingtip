@@ -20,6 +20,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -118,11 +119,15 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
                     state.frames.isEmpty() -> Text(stringResource(R.string.loop_fetching, name.lowercase()), style = MaterialTheme.typography.bodyMedium)
                     else -> {
                         val frameLabel = stringResource(R.string.loop_frame, name)
+                        // A stop per frame; the slider's state follows the
+                        // loop's frame, which a drag seeks.
+                        val steps = maxOf(0, state.frames.size - 2)
+                        val range = 0f..maxOf(1, state.frames.lastIndex).toFloat()
+                        val scrub = remember(steps, range) { SliderState(steps = steps, trackRange = range) }
+                        scrub.value = state.shown.coerceAtLeast(0).toFloat()
                         Slider(
-                            value = state.shown.coerceAtLeast(0).toFloat(),
+                            state = scrub,
                             onValueChange = { loop.seek(it.roundToInt()) },
-                            valueRange = 0f..maxOf(1, state.frames.lastIndex).toFloat(),
-                            steps = maxOf(0, state.frames.size - 2),
                             enabled = state.ready,
                             modifier = Modifier.fillMaxWidth().semantics { contentDescription = frameLabel },
                         )
@@ -167,7 +172,6 @@ fun WeatherLoopRows() {
 private fun MenuRow(title: String, value: String, choices: List<Pair<String, () -> Unit>>) {
     var open by remember { mutableStateOf(false) }
     ListItem(
-        headlineContent = { Text(title) },
         trailingContent = {
             Box {
                 TextButton(onClick = { open = true }) { Text(value) }
@@ -183,5 +187,6 @@ private fun MenuRow(title: String, value: String, choices: List<Pair<String, () 
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth(),
+        content = { Text(title) },
     )
 }

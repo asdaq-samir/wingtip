@@ -37,11 +37,11 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
 @Composable
 fun YourAirplanesRow(onOpen: () -> Unit) {
     ListItem(
-        headlineContent = { Text(stringResource(R.string.your_airplanes)) },
         supportingContent = { Text(stringResource(R.string.your_airplanes_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
         leadingContent = { Icon(Icons.Outlined.Flight, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen),
+        content = { Text(stringResource(R.string.your_airplanes)) },
     )
 }
 
@@ -87,10 +87,10 @@ private fun AirplaneList(state: AircraftModel.State, model: AircraftModel) {
 @Composable
 private fun AirplaneRow(a: AircraftDto, onOpen: () -> Unit) {
     ListItem(
-        headlineContent = { Text(a.tailNumber) },
         supportingContent = { Text("${a.typeDesignator} · ${AircraftForm.figuresLine(a)}", color = MaterialTheme.colorScheme.onSurfaceVariant) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen),
+        content = { Text(a.tailNumber) },
     )
 }
 

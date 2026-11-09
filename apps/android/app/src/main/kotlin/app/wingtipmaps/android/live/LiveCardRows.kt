@@ -41,7 +41,6 @@ fun SpecialUseRows(lat: Double, lon: Double, model: SpecialUseModel = viewModel(
     state.areas.orEmpty().forEach { area ->
         ListItem(
             leadingContent = { Icon(Icons.Filled.Shield, contentDescription = null) },
-            headlineContent = { Text("${area.name} · ${area.kind}", fontWeight = FontWeight.SemiBold) },
             supportingContent = {
                 Column {
                     if (area.line.isNotEmpty()) Text(area.line)
@@ -51,6 +50,7 @@ fun SpecialUseRows(lat: Double, lon: Double, model: SpecialUseModel = viewModel(
                 }
             },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            content = { Text("${area.name} · ${area.kind}", fontWeight = FontWeight.SemiBold) },
         )
     }
 }

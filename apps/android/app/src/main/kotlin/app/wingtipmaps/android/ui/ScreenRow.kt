@@ -27,10 +27,10 @@ import app.wingtipmaps.android.navigation.generated.Screen
 @Composable
 internal fun ScreenRow(screen: Screen, @StringRes title: Int, @StringRes line: Int) {
     ListItem(
-        headlineContent = { Text(stringResource(title), color = MaterialTheme.colorScheme.primary) },
         supportingContent = { Text(stringResource(line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { ScreenRequests.ask(screen) },
+        content = { Text(stringResource(title), color = MaterialTheme.colorScheme.primary) },
     )
 }
 
