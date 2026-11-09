@@ -372,11 +372,15 @@ with ingest, weather and the assistant,
   ```
 
 - **Faults on pilots' devices** (the web's uncaught errors, the iPhone's
-  MetricKit diagnostics, Android's exit reasons and crashes) are kept 90
+  MetricKit diagnostics, Android's exit reasons and crashes) are kept 30
   days in the `diagnostics` table, read by the developer at `GET
   /api/diagnostics`, and logged in the gateway's stream as `web|ios|android
   <version> [<kind>] ...` lines (`DiagnosticsController`): the signature
   and the scrubbed stack, nothing of the pilot's.
+- **A service down or a feed stale** is mailed to `APP_ALERT_EMAILS` (the
+  developers where unset) by the gateway's minute check, and logged as
+  `ALERT` and `RECOVERED` lines in its stream: what is watched, and after
+  how long, is in [OPERATIONS.md](OPERATIONS.md).
 
 ### Chart cycles
 

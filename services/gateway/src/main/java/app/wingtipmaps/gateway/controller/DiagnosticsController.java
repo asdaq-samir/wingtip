@@ -144,7 +144,8 @@ public class DiagnosticsController {
             description = "At most 200, newest first, from the last few days; the developer's.")
     @GetMapping
     public List<DiagnosticDto> recent(@RequestParam(defaultValue = "7") int days) {
-        return diagnostics.recent(Math.max(1, Math.min(90, days))).stream()
+        // Held to the 30 days a fault is kept (DiagnosticsService.KEPT).
+        return diagnostics.recent(Math.max(1, Math.min(30, days))).stream()
                 .map(d -> new DiagnosticDto(
                         d.getReceivedAt(),
                         d.getOccurredAt(),

@@ -2,7 +2,7 @@ import { originOf, type DiagnosticsReport } from "./diagnostics";
 
 /**
  * What goes wrong on a pilot's device, sent to the gateway's diagnostics
- * (DiagnosticsController, lib/diagnostics), kept 90 days and written to
+ * (DiagnosticsController, lib/diagnostics), kept 30 days and written to
  * the server's log, so the owner hears of it without the pilot writing
  * in: an error nobody caught, a promise nobody caught, a render React
  * could not finish (main.tsx).
