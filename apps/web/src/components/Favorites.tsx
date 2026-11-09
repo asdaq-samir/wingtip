@@ -287,7 +287,7 @@ export function SmallTile({ mark, title, detail, label, onClick, testId, wide = 
   return (
     <button
       type="button" onClick={onClick} data-testid={testId} aria-label={label}
-      className={cn(wide ? "w-24" : "w-[4.5rem]", "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+      className={cn(wide ? "w-24" : "w-[4.5rem]", "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ring")}
     >
       {mark}
       <span className={cn("w-full truncate text-center font-medium text-foreground", TEXT.detail)}>{title}</span>

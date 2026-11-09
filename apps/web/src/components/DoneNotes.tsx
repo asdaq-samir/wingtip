@@ -21,7 +21,7 @@ export default function DoneNotes() {
             key={n.id}
             data-testid="done-note"
             className={cn(
-              "liquid-glass absolute flex max-w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 items-center gap-1.5 rounded-full px-3 py-1.5 shadow-md",
+              "liquid-glass absolute flex max-w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 items-center gap-2 rounded-full px-3 py-2 shadow-md",
               "animate-in fade-in duration-200 motion-reduce:animate-none",
               above ? "-translate-y-full" : "",
             )}

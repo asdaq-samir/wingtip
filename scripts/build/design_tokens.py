@@ -229,6 +229,7 @@ def gen_css(tree):
     ]
     root += [("motion-%s" % k, bezier(v) if isinstance(v, list) else "%gs" % v) for k, v in motion.items()]
     root += [("tap-target", "%gpx" % tree["size"]["tap-target"]["$value"])]
+    root += [("size-%s" % k, "%gpx" % t["$value"]) for k, t in tokens(tree["size"]).items() if k != "tap-target"]
     root += decls("color", "theme", "light")
     ink_all = [
         ("brand-font", font_stack(tree, "font.brand").rsplit(",", 1)[0]),
@@ -342,6 +343,8 @@ def gen_ts(tree):
         "/** Corners, in points. */\nexport const RADIUS = %s as const;" % ts_obj(radius),
         "/** The spacing scale, in points. */\nexport const SPACE = %s as const;" % ts_obj(space),
         "/** The least hit area, in points (Apple's HIG). */\nexport const TAP_TARGET = %d;" % tree["size"]["tap-target"]["$value"],
+        "/** Sizes, in points: a chip's height, the map panel's widths and the desktop's least width. */\nexport const SIZE = %s as const;"
+        % ts_obj({camel(k): t["$value"] for k, t in tokens(tree["size"]).items()}),
     ]
     return "\n\n".join(parts) + "\n"
 

@@ -239,7 +239,7 @@ export function describeError(err: unknown, fallback = "request failed"): string
   // "Bad Gateway"), which the Brief printed raw ("Words unavailable: Not
   // Found", the UI audit, 2026-11-09): said as what it means to a pilot.
   if (err instanceof ApiError && firstLine && BARE_REASON.test(firstLine)) {
-    return err.status === 404 ? "Not available for this flight yet" : err.status >= 500 ? "The planner is not answering; try again in a moment" : fallback;
+    return err.status === 404 ? "Not available yet" : err.status >= 500 ? "The planner is not answering; try again in a moment" : fallback;
   }
   return firstLine || fallback;
 }

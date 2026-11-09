@@ -470,17 +470,17 @@ enum WingtipType {
     static let hero: Font = Font.system(.title, weight: .bold)
     /// A card's name: an airport's, the airspace's, Nearest's (iOS Title 2).
     static let card: Font = Font.system(.title2, weight: .bold)
-    /// A section's title in the panel's tabs (iOS Title 3); 18 with a mouse.
+    /// A section's title in the panel's tabs (iOS Title 3), 20 with a mouse too (decision 0021).
     static let heading: Font = Font.system(.title3, weight: .semibold)
     /// A drawer's or a sheet's own title, as a navigation bar's (iOS Headline); 16 with a mouse.
     static let title: Font = Font.system(.headline, weight: .semibold)
-    /// A row's name and its value, the body (iOS Body); 14 with a mouse.
+    /// A row's name and its value, the body (iOS Body); 16 with a mouse, a desktop's body size (it was 14, and the desktop panel read small: the UI audit, 2026-11-09).
     static let row: Font = Font.system(.body, weight: .regular)
-    /// What is read rather than scanned: a summary, a paragraph (iOS Subheadline); 14 with a mouse.
+    /// What is read rather than scanned: a summary, a paragraph (iOS Subheadline); 16 with a mouse.
     static let prose: Font = Font.system(.subheadline, weight: .regular)
-    /// The line under a row's name (iOS Subheadline); 12 with a mouse.
+    /// The line under a row's name (iOS Subheadline); 14 with a mouse.
     static let detail: Font = Font.system(.subheadline, weight: .regular)
-    /// A section's line of help, a group's heading, a key (iOS Footnote); 12 with a mouse.
+    /// A section's line of help, a group's heading, a key (iOS Footnote); 13 with a mouse too, the least a desktop's words are.
     static let note: Font = Font.system(.footnote, weight: .regular)
     /// The panel's tabs' words (iOS Footnote).
     static let tab: Font = Font.system(.footnote, weight: .regular)
@@ -529,5 +529,8 @@ enum WingtipMotion {
 enum WingtipSize {
     static let tapTarget: CGFloat = 44
     static let chip: CGFloat = 32
+    static let panel: CGFloat = 384
+    static let panelWide: CGFloat = 448
+    static let desktop: CGFloat = 1024
     static let glassBlur: CGFloat = 15
 }

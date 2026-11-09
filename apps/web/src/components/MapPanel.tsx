@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import { useIsMobile } from "../hooks/use-mobile";
+import { useIsDesktop } from "../hooks/use-desktop";
+import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useKeyboardInset, useSafeArea, useWindowHeight } from "../hooks/use-viewport";
 import {
@@ -155,6 +157,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   const cardFit = raised === "half" && measuredFit && measuredFit.id === topCard ? measuredFit.px : null;
   const toEdge = layer !== "console" && edgeAsked && !cardsUp;
   const onPhone = useIsMobile();
+  const desktop = useIsDesktop();
   const edge = useNavEdge();
   const safe = useSafeArea();
   const windowHeight = useWindowHeight();
@@ -342,8 +345,11 @@ export default function MapPanel({ label, top, kept, controls, compact, children
     // All the way up only as far as a short card on top needs (cardFit):
     // a fix's card was a line and an empty sheet up to the status bar.
     const full = cardFit === null ? whole : Math.max(Math.min(half, whole), Math.min(whole, headHeight + halfChrome + cardFit));
-    return { peek, half: Math.min(half, full), full };
-  }, [pillHeight, pillHeights, pillKey, tabsAlone, pillChrome, room, halfChrome, headHeight, footHalf, cardFit]);
+    // On a desktop the panel out is a side panel, the window's height at
+    // either size, as a desktop web app's sidebar is: a half-height card
+    // left two thirds of the column empty map (the UI audit, 2026-11-09).
+    return { peek, half: desktop ? full : Math.min(half, full), full };
+  }, [pillHeight, pillHeights, pillKey, tabsAlone, pillChrome, room, halfChrome, headHeight, footHalf, cardFit, desktop]);
   const halfBody = Math.max(0, detents.half - headHeight - halfChrome - footHalf);
   const fullBody = Math.max(0, detents.full - headHeight - halfChrome - footFull);
 
@@ -360,7 +366,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
     }
   }, [headBand, footNode]);
   const { ask, startDrag, swallow, dragBody } = useSheetMotion({
-    size, setSize, sizeRef, moving, setMoving, movingRef, detents, pageState, tellPage, tellInsets, onPhone, fromBottom, floating, footShown, safeTop: safe.top,
+    size, setSize, sizeRef, moving, setMoving, movingRef, detents, pageState, tellPage, tellInsets, onPhone, wide: desktop, fromBottom, floating, footShown, safeTop: safe.top,
     panel, panelRef, partsRef: parts, pillHeight, atPill, landed,
   });
   const setBody = useCallback((node: HTMLDivElement | null) => {
@@ -374,11 +380,17 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   useEffect(() => {
     if (!panel || !expanded) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.defaultPrevented) ask("peek", true);
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      // On a desktop the side panel stays out: Escape goes back one level
+      // by its close, as a web app's Escape does (useShortcuts' backOne);
+      // only with nothing to go back from does it lower the panel.
+      event.preventDefault();
+      if (desktop && backOne(panel.ownerDocument)) return;
+      ask("peek", true);
     };
     panel.addEventListener("keydown", onKey);
     return () => panel.removeEventListener("keydown", onKey);
-  }, [panel, expanded, ask]);
+  }, [panel, expanded, ask, desktop]);
 
   // Half way the body is laid out at its full height and cut off at the
   // sheet's edge, as Apple Maps' is: what is under that edge is reached
@@ -539,7 +551,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
         // tabs: the browser's own scroll took it and cancelled the drag.
         pillHere ? "touch-none border-transparent [&_[data-pill-hides]]:hidden [&>*]:flex-none" : cn("border-border/60", SHEET_BELOW),
       ),
-      style: { "--sheet-progress": at === "half" ? "0" : "1", ...(toEdge && fromBottom && !pillHere ? { paddingBottom: Math.max(10, edgeInset) } : {}) } as CSSProperties,
+      style: { "--sheet-progress": at === "half" && !desktop ? "0" : "1", ...(toEdge && fromBottom && !pillHere ? { paddingBottom: Math.max(10, edgeInset) } : {}) } as CSSProperties,
     };
   };
   // Half's look for the box, for its measure before the sheet is first
@@ -575,7 +587,10 @@ export default function MapPanel({ label, top, kept, controls, compact, children
               // it, blurred, the same pane whether it is the pill or the sheet.
               onPhone ? GLASS : MATERIAL,
               onPhone ? "inset-x-0" : cn(
-                "left-[max(1rem,env(safe-area-inset-left))] w-[24rem] ring-1 ring-black/5 dark:ring-white/10",
+                // A card at the left from a tablet's width, a side panel with
+                // room for a desktop's type from 1024 (design/tokens.json
+                // size.panel, panel-wide; the UI audit, 2026-11-09).
+                "left-[max(1rem,env(safe-area-inset-left))] w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-black/5 dark:ring-white/10",
                 // Floating, its edge drawn inside: the clip at its top (place)
                 // cuts whatever is outside its box, a ring's or a shadow's.
                 floating ? "ring-inset" : "shadow-[0_2px_10px_rgba(0,0,0,0.12)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.45)]",

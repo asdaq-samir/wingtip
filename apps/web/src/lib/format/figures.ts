@@ -109,7 +109,9 @@ export function miles(sm: number | null | undefined): string {
  * the nav log wrote 000 and its own workings 360.
  */
 export function bearing(deg: number): string {
-  return `${threeFigures(deg)}°`;
+  // A course the planner could not work out is no course: an em dash, not
+  // "NaN°", which a nav log row with a leg's figures missing printed.
+  return Number.isFinite(deg) ? `${threeFigures(deg)}°` : "—";
 }
 
 /** The same three figures with no degree sign, as a VOR's radial, a

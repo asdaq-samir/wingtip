@@ -26,6 +26,10 @@
   --motion-fade: 0.2s;
   --motion-quick: 0.15s;
   --tap-target: 44px;
+  --size-chip: 32px;
+  --size-panel: 384px;
+  --size-panel-wide: 448px;
+  --size-desktop: 1024px;
   --airspace-blue-text: #2465b8;
   --airspace-magenta-text: #c0309f;
   --course: #e600e6;
