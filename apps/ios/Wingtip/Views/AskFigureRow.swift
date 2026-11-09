@@ -38,7 +38,7 @@ struct AskFigureRow: View {
             Text(figure.question(name)).font(WingtipType.row)
             HStack(spacing: WingtipSpace.sm) {
                 TextField(figure.label, text: $model.text)
-                    .keyboardType(.decimalPad).textFieldStyle(.roundedBorder).focused($typing)
+                    .keyboardType(.decimalPad).textFieldStyle(.roundedBorder).font(WingtipType.row.monospacedDigit()).focused($typing)
                     .submitLabel(.done)
                     .onSubmit { Task { await model.save(figure, plan: plan, signedIn: session.signedIn) } }
                     .accessibilityLabel(figure.label)

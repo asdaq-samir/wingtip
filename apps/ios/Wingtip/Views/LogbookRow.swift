@@ -13,11 +13,11 @@ struct LogbookRow: View {
         let landings = e.dayLandings + e.nightLandings
         let rest = [isNNumber(e.aircraft) ? nil : e.aircraft, e.aircraftType, "\(landings) landing\(landings == 1 ? "" : "s")", e.remarks]
             .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             HStack {
-                Text(Day.said(e.flownOn) + (e.route.map { " · \($0)" } ?? "")).font(.headline)
+                Text(Day.said(e.flownOn) + (e.route.map { " · \($0)" } ?? "")).font(WingtipType.title)
                 Spacer()
-                Text(Format.hours(e.totalHours)).font(.subheadline.monospacedDigit())
+                Text(Format.hours(e.totalHours)).font(WingtipType.detail.monospacedDigit())
             }
             HStack(spacing: WingtipSpace.xs) {
                 if let tail = e.aircraft, isNNumber(tail) {
@@ -26,7 +26,7 @@ struct LogbookRow: View {
                 }
                 Text(rest).foregroundStyle(.secondary)
             }
-            .font(.footnote)
+            .font(WingtipType.note)
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: edit)

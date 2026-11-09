@@ -139,3 +139,15 @@ struct OwnFiguresTests {
         #expect(InFlight.ringRatio(plan: plan, defaults: d, airplanes: airplanes) == 9)
     }
 }
+
+/// The loading takes the airplane's own empty weight and moment.
+struct OwnEmptyWeightTests {
+    @Test func theRecordsEmptyWeightAndMomentStandForTheSampleAirplanes() throws {
+        let sample = AirplaneLoad(emptyArmIn: 38.12, emptyWeightLb: 1642, fuelGal: 53, stationsLb: [170, 0])
+        #expect(Verdict.ownEmpty(sample, figures: Figures()) == nil)
+        #expect(Verdict.ownEmpty(sample, figures: Figures(emptyWeightLb: 1700)) == nil)
+        let own = try #require(Verdict.ownEmpty(sample, figures: Figures(emptyWeightLb: 1700, emptyMomentLbIn: 68000)))
+        // 68,000 lb-in over 1,700 lb is a 40 in arm (FAA-H-8083-1B).
+        #expect(own.emptyWeightLb == 1700 && own.emptyArmIn == 40 && own.stationsLb == [170, 0] && own.fuelGal == 53)
+    }
+}

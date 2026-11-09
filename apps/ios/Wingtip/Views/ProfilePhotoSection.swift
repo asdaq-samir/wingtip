@@ -23,10 +23,10 @@ struct ProfilePhotoSection: View {
                 Button("Save Read Figures") { words = []; save() }
             }
         } footer: {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 if !words.isEmpty {
-                    Text("Read from the page: check each against it before saving.").bold()
-                    ForEach(words, id: \.self) { Text($0) }
+                    Text("Read from the page: check each against it before saving.").font(WingtipType.label)
+                    ForEach(words, id: \.self) { Text($0).font(WingtipType.note) }
                 }
                 ProblemLine(problem)
             }

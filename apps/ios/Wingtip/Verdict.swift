@@ -66,7 +66,10 @@ final class Verdict {
         ask.climbRateFpm = figures.climbRateFpm; ask.taxiFuelGal = figures.taxiFuelGal; ask.glideRatio = figures.glideRatio
         ask.day = Day.string(today)
         ask.minimums = minimums
-        ask.load = loads[plan.loadKey]
+        // The loading kept for the airplane, else the last one the planner
+        // weighed with the airplane's own empty weight and moment from its
+        // record, where set, in place of its handbook's sample airplane's.
+        ask.load = loads[plan.loadKey] ?? Self.ownEmpty(answer?.balance?.load, figures: figures)
         ask.ticked = ticked.sorted()
         // The gateway's currency is the planner's PilotCurrency by name.
         ask.currency = try currency.map { try Engine.recoded($0) }
@@ -104,6 +107,16 @@ final class Verdict {
     func logbookChanged() {
         currencyAsked = false
         currency = nil
+    }
+
+    /// A loading with the airplane's own basic empty weight and moment
+    /// (its weight and balance record): the arm is the moment over the
+    /// weight (FAA-H-8083-1B, chapter 2). Nil where either is not given.
+    nonisolated static func ownEmpty(_ load: AirplaneLoad?, figures: Figures) -> AirplaneLoad? {
+        guard var load, let weight = figures.emptyWeightLb, let moment = figures.emptyMomentLbIn, weight > 0 else { return nil }
+        load.emptyWeightLb = weight
+        load.emptyArmIn = moment / weight
+        return load
     }
 
     /// The findings that need an airplane's figures: the fuel, the

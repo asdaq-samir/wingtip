@@ -19,8 +19,10 @@ struct EmergencySheet: View {
     private var model: Emergency { .shared }
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
     /// The airplane's profile for its glide, none with none picked (the
-    /// web's useEmergency): never a type assumed.
-    private var emergencyAircraft: String? { plan.plannerAircraft }
+    /// web's useEmergency): never a type assumed. An own airplane of no
+    /// stock type is "own" here whatever its cruise figures, its glide
+    /// ratio alone being what the fields are ranked on.
+    private var emergencyAircraft: String? { plan.airplaneChosen ? plan.aircraft : nil }
 
     var body: some View {
         NavigationStack {
