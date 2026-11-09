@@ -1,0 +1,19 @@
+# Commits git blame passes over: whole-tree reformats, which changed the
+# layout of lines and nothing they do. GitHub's blame reads this file by
+# itself; locally, `git config blame.ignoreRevsFile .git-blame-ignore-revs`
+# (scripts/dev/install-hooks.sh sets it). Each reformat is its own commit,
+# kept by the pull request's merge commit, so these hashes stay true.
+
+# 2026-11-09, one formatter a language (scripts/dev/format.sh)
+# ruff format, the Python
+a472cf201e0e6c545c7c08fae64d096744966187
+# rustfmt, the engine
+c26be7a05f817493bd19c579970e5d53ffc30850
+# SwiftFormat, apps/ios
+f46f25331b6af32de06cf126c40006fa5259fad7
+# ktlint, apps/android
+81cc4d284520618d3cd56faaf89c1f7506303cd6
+# palantir-java-format, services/gateway
+dbfb9b277676a00681351d5f3afaa40333bef1e5
+# Prettier, apps/web and scripts/build/*.mjs
+3a31b1df6b4e08dd781d4d2fc9cc32f10d62c026
