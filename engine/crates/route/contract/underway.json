@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Whether own ship moves at flying speed.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "UnderwayInput",
+      "type": "object",
+      "properties": {
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "UnderwayAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,16 @@
+{
+  "title": "RouteOptionsHazard",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "name"
+  ]
+}

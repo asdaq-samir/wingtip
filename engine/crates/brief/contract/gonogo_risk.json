@@ -1,0 +1,55 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The risk assessment (PAVE, IMSAFE): its points, level, line, what to do, and every factor marked.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "$ref": "#/definitions/GonogoRiskInput"
+    },
+    "answer": {
+      "title": "GonogoRiskAnswer",
+      "type": "object",
+      "properties": {
+        "score": {
+          "type": "integer"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "low",
+            "caution",
+            "high"
+          ]
+        },
+        "line": {
+          "type": "string"
+        },
+        "words": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "What to do at this level."
+        },
+        "factors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GonogoFactor"
+          }
+        }
+      },
+      "required": [
+        "score",
+        "level",
+        "line",
+        "words",
+        "factors"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

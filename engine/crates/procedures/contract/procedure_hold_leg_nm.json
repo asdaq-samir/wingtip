@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_procedures::paths::call",
+  "description": "A hold's leg, nm: a timed leg flown at 120 kt (AIM 5-3-8 j.4), else the distance the CIFP codes; null with neither.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProcedureHoldLegNmInput",
+      "type": "object",
+      "properties": {
+        "minutes": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "distance_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": []
+    },
+    "answer": {
+      "title": "ProcedureHoldLegNmAnswer",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

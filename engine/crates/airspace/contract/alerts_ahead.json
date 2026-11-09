@@ -1,0 +1,453 @@
+{
+  "x-call": "wingtip_airspace::ahead::call",
+  "description": "What is ahead of own ship from the planner's data (ahead.rs): the Class B, C and D (91.129-91.131), special-use areas (91.133, AIM 3-4) and TFRs (91.137-91.145, 99.7) its track goes into in the next five minutes, and the ground or a DOF obstacle it comes within 500 ft of in the next minute (borrowed from 91.119(c)); warnings first, then the soonest. Nothing under 40 kt. Advisory: not a TAWS (TSO-C151). A list given as null was not read, and is named in `unavailable`.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AlertsAheadInput",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "track_deg": {
+          "type": "number"
+        },
+        "gs_kt": {
+          "type": "number"
+        },
+        "alt_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "vs_fpm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "now": {
+          "type": "number",
+          "description": "Unix seconds."
+        },
+        "ground_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The ground under the airplane."
+        },
+        "airspace": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "class": {
+                "type": "string"
+              },
+              "floor_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "ceiling_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "None: up to Class A."
+              },
+              "polygons": {
+                "$ref": "#/definitions/AheadPolygons"
+              }
+            },
+            "required": [
+              "name",
+              "class",
+              "polygons"
+            ]
+          }
+        },
+        "special_use": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "description": "P, R, MOA, W or A."
+              },
+              "floor_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "floor_ref": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ceiling_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "ceiling_ref": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "times_of_use": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ground_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "The ground under the area, for AGL heights."
+              },
+              "polygons": {
+                "$ref": "#/definitions/AheadPolygons"
+              }
+            },
+            "required": [
+              "name",
+              "type",
+              "polygons"
+            ]
+          }
+        },
+        "tfrs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "notam_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "rule": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "floor_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "floor_ref": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ceiling_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "ceiling_ref": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "effective": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Unix seconds."
+              },
+              "expires": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Unix seconds."
+              },
+              "ground_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "polygons": {
+                "$ref": "#/definitions/AheadPolygons"
+              }
+            },
+            "required": [
+              "notam_id",
+              "polygons"
+            ]
+          }
+        },
+        "near_field": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "distance_nm": {
+              "type": "number"
+            },
+            "elevation_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "distance_nm"
+          ]
+        },
+        "swath_ground_ft": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "description": "The ground at ahead_frame's swath, its rows."
+        },
+        "obstacles": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "amsl_ft": {
+                "type": "number"
+              },
+              "type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "lat",
+              "lon",
+              "amsl_ft"
+            ]
+          }
+        }
+      },
+      "required": [
+        "lat",
+        "lon",
+        "track_deg",
+        "gs_kt",
+        "now"
+      ]
+    },
+    "answer": {
+      "title": "AlertsAheadAnswer",
+      "type": "object",
+      "properties": {
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "airspace",
+                  "special_use",
+                  "tfr",
+                  "terrain",
+                  "obstacle"
+                ]
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "warning",
+                  "caution"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "class": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "need": {
+                "type": "string"
+              },
+              "inside": {
+                "type": "boolean"
+              },
+              "seconds": {
+                "type": "number"
+              },
+              "distance_nm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "lat": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "lon": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "floor_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "ceiling_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "top_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "clearance_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "times_of_use": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "notam_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "level",
+              "name",
+              "class",
+              "need",
+              "inside",
+              "seconds",
+              "distance_nm",
+              "lat",
+              "lon",
+              "floor_ft",
+              "ceiling_ft",
+              "top_ft",
+              "clearance_ft",
+              "times_of_use",
+              "notam_id"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "unavailable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tfrs_as_of": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ground_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The ground under the airplane as given (ground_ft), or null: the member the phones' answer from the packs carries too, which their glide ring stands on (#218)."
+        }
+      },
+      "required": [
+        "alerts",
+        "unavailable",
+        "tfrs_as_of"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

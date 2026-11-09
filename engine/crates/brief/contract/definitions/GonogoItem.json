@@ -1,0 +1,39 @@
+{
+  "title": "GonogoItem",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "tab": {
+      "type": "string",
+      "description": "The planning panel's tab that shows it in full."
+    },
+    "section": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The section of that tab, by its title."
+    },
+    "finding": {
+      "type": "string",
+      "description": "\"ok\", \"caution\", \"stop\", \"unknown\" or \"pending\"; \"\" for a risk level not known (verdict::risk_finding)."
+    },
+    "detail": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "key",
+    "label",
+    "tab",
+    "section",
+    "finding",
+    "detail"
+  ],
+  "description": "One tab's finding and where it is shown in full."
+}

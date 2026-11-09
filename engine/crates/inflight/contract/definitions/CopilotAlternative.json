@@ -1,0 +1,94 @@
+{
+  "title": "CopilotAlternative",
+  "type": "object",
+  "description": "The best alternative: best_fields' first diversion pick that the copilot's weather and fuel checks find good.",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "distance_nm": {
+      "type": "number"
+    },
+    "course_deg": {
+      "type": "number",
+      "description": "True, from own ship."
+    },
+    "side": {
+      "enum": [
+        "ahead",
+        "left",
+        "right",
+        "behind",
+        null
+      ]
+    },
+    "minutes": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "category": {
+      "enum": [
+        "VFR",
+        "MVFR",
+        "IFR",
+        "LIFR",
+        null
+      ]
+    },
+    "runway": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "fuel": {
+      "type": "boolean"
+    },
+    "fuel_at_landing_min": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "reserve_min": {
+      "type": "number"
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "best_fields' reasons."
+    }
+  },
+  "required": [
+    "ident",
+    "name",
+    "lat",
+    "lon",
+    "distance_nm",
+    "course_deg",
+    "side",
+    "minutes",
+    "category",
+    "runway",
+    "fuel",
+    "fuel_at_landing_min",
+    "reserve_min",
+    "reasons"
+  ]
+}

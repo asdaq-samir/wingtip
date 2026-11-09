@@ -1,0 +1,27 @@
+{
+  "title": "ApproachRunwayPath",
+  "type": "object",
+  "properties": {
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "ft": {
+      "type": "number",
+      "description": "Threshold crossing height, ft MSL."
+    },
+    "deg": {
+      "type": "number",
+      "description": "Glidepath angle, degrees."
+    }
+  },
+  "required": [
+    "lat",
+    "lon",
+    "ft",
+    "deg"
+  ],
+  "description": "The glidepath placed on its runway: its threshold, the height it crosses it at and its angle."
+}

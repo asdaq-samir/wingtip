@@ -8,7 +8,7 @@ import { Button } from "../../../../components/ui/button";
 import { Textarea } from "../../../../components/ui/textarea";
 import { api } from "../../../../lib/api/client";
 import type { OralCitation, OralGrade, OralQuestion } from "../../../../lib/api/types";
-import { nextFocus } from "../../../../lib/oral";
+import { nextFocus } from "../../lib/oral";
 import { pilotQuery, trainingQuery } from "../../../../lib/queryClient";
 import { TEXT } from "../../../../lib/text";
 import { useAcsTable } from "../../../../lib/useAcsTable";

@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { library, openConsole, showTabs } from "./helpers";
 
 /**
- * A saved flight's debrief (FlightPage, lib/debrief, lib/track): its page
+ * A saved flight's debrief (FlightPage, features/pilot/debrief, lib/track): its page
  * from the console's Flights, a GPX track log imported against its nav
  * log, kept on the device, then saved to the account. Spring's flight
  * endpoints are mocked; the planner's pattern altitudes are real.

@@ -4,10 +4,10 @@ import { api } from "../../lib/api/client";
 import { aircraftKey, shortName } from "../../lib/aircraftChoice";
 import { checklistOf } from "../../lib/checklist";
 import { checklistText, useChecklists } from "../../lib/checklists";
-import { bestFields, checklistSection, maydayCall, positionWords, variationAt } from "../../lib/emergency";
-import { useEmergencyLine } from "../../lib/map/emergencyLine";
-import { usePointActions } from "../../lib/map/pointActions";
-import { useOwnFix, useOwnShip } from "../../lib/map/ownShip";
+import { bestFields, checklistSection, maydayCall, positionWords, variationAt } from "./emergency";
+import { useEmergencyLine } from "../../lib/map/marks/emergencyLine";
+import { usePointActions } from "../../lib/map/cards/pointActions";
+import { useOwnFix, useOwnShip } from "../../lib/map/position/ownShip";
 import { magneticOf } from "../../lib/magnetic";
 import { usePreferences } from "../../lib/preferences";
 import { closeEmergency, useEmergencyOpen } from "./emergencyStore";
@@ -20,9 +20,9 @@ const at = (deg: number) => Math.round(deg / STEP_DEG) * STEP_DEG;
 
 /**
  * The emergency assistant's one view model (MVVM): the fields within a
- * glide ranked (lib/emergency's bestFields, the engine's best_fields) from
+ * glide ranked (features/emergency/emergency's bestFields, the engine's best_fields) from
  * the planner's /api/emergency/fields, the field picked and its line on
- * the map (lib/map/emergencyLine), the airplane's own emergency checklist
+ * the map (lib/map/marks/emergencyLine), the airplane's own emergency checklist
  * opened at the emergency asked (checklistSection), and the MAYDAY filled
  * from all of it (maydayCall). The views only draw what this gives.
  */

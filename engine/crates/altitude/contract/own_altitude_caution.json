@@ -1,0 +1,87 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, into Class B (91.131), over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "OwnAltitudeCautionInput",
+      "type": "object",
+      "properties": {
+        "selection": {
+          "type": "object",
+          "description": "select_cruise_altitude's answer: its `rules` and `segments`."
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "altitude_ft": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "altitude_ft"
+            ]
+          }
+        },
+        "between": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[from_ident, to_ident]"
+        },
+        "profile": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The airplane: `supplemental_oxygen` or `pressurized` true takes 91.211's cautions away."
+        }
+      },
+      "required": [
+        "selection",
+        "legs",
+        "between"
+      ]
+    },
+    "answer": {
+      "title": "OwnAltitudeCautionAnswer",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "from_ident": {
+          "type": "string"
+        },
+        "to_ident": {
+          "type": "string"
+        },
+        "altitude_ft": {
+          "type": "number"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "from_ident",
+        "to_ident",
+        "altitude_ft",
+        "reasons"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

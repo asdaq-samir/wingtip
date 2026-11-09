@@ -1,0 +1,217 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A route's radio calls, field by field (AIM 4-2, AC 90-66C): the broadcast to listen to first, the tower's or the CTAF's calls, flight following, and the arrival, figures as spoken (AIM 4-2-8, 4-2-9).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RadioScriptInput",
+      "type": "object",
+      "properties": {
+        "call_sign": {
+          "type": "string",
+          "description": "As spoken (radio_call_sign)."
+        },
+        "airports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "airspace_class": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "frequencies": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "description": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "frequency_mhz": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              },
+              "pattern_altitude_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "takeoff": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "ident": {
+                    "type": "string",
+                    "description": "As painted, \"27\"."
+                  },
+                  "traffic": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "\"left\" or \"right\" (91.126(b)(1))."
+                  }
+                },
+                "required": [
+                  "ident"
+                ],
+                "description": "The runway end the host picked (gonogo_runway_flown); null where none has a heading."
+              },
+              "landing": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "ident": {
+                    "type": "string",
+                    "description": "As painted, \"27\"."
+                  },
+                  "traffic": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "\"left\" or \"right\" (91.126(b)(1))."
+                  }
+                },
+                "required": [
+                  "ident"
+                ],
+                "description": "The runway end the host picked (gonogo_runway_flown); null where none has a heading."
+              }
+            },
+            "required": [
+              "ident",
+              "frequencies"
+            ]
+          }
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "true_course_deg": {
+                "type": "number"
+              },
+              "altitude_ft": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "from",
+              "to",
+              "true_course_deg",
+              "altitude_ft"
+            ]
+          }
+        }
+      },
+      "required": [
+        "call_sign",
+        "airports",
+        "legs"
+      ]
+    },
+    "answer": {
+      "title": "RadioScriptAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "ident": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "departure",
+              "arrival"
+            ]
+          },
+          "calls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "to": {
+                  "type": "string"
+                },
+                "mhz": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "words": {
+                  "type": "string"
+                },
+                "note": {
+                  "type": "string"
+                },
+                "listen": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "to",
+                "mhz",
+                "words"
+              ]
+            }
+          }
+        },
+        "required": [
+          "title",
+          "ident",
+          "kind",
+          "calls"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

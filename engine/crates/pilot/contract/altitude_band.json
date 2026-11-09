@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_pilot::aircraft::calls::call",
+  "description": "An altitude's band: low below 3,000 ft, mid to 10,000, high to 18,000, flight levels from 18,000 MSL (14 CFR 71.33(a)); null for none.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AltitudeBandInput",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "AltitudeBandAnswer",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "low",
+        "mid",
+        "high",
+        "flight-levels",
+        null
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

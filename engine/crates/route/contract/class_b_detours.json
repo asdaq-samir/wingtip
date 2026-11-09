@@ -1,0 +1,113 @@
+{
+  "x-call": "wingtip_route::route::options::call",
+  "x-feature": "route-options",
+  "description": "Named fixes to fly through so neither leg comes within a mile of the Class B whose floor is under below_ft (route/options/classb.rs): those adding the least distance first, a VFR waypoint before a GPS fix that saves under 10 nm, at most 5, none adding over 40 nm.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ClassBDetoursInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "end": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "below_ft": {
+          "type": "number"
+        },
+        "shelves": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ClassBShelf"
+          }
+        },
+        "fixes": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "title": "ClassBDetourFix",
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "vfr": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "kind": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "ident",
+              "lat",
+              "lon"
+            ]
+          }
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "below_ft"
+      ]
+    },
+    "answer": {
+      "type": "array",
+      "items": {
+        "title": "ClassBDetour",
+        "type": "object",
+        "properties": {
+          "ident": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "added_nm": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "ident",
+          "kind",
+          "added_nm"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

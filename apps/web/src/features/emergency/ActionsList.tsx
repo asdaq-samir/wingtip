@@ -6,7 +6,7 @@ import { TEXT } from "../../lib/text";
 import type { EmergencyModel } from "./useEmergency";
 
 /**
- * What to do on the radio and the transponder, the engine's (lib/emergency
+ * What to do on the radio and the transponder, the engine's (features/emergency/emergency
  * maydayCall): squawk 7700 (AIM 6-2-2, an assigned code kept while
  * talking to ATC), the frequencies to try -- the one in use, the nearest
  * approach and tower the FAA lists, 121.5 (AIM 6-3-1(d)) -- and the

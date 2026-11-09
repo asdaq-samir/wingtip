@@ -6,13 +6,13 @@ import { CardMark, CardThread } from "../routeCard";
 import { CARD_BODY, CARD_GAP, POINT_CARD, ROUTE_LINE } from "../routeListStyle";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import type { Runway } from "../../../../lib/api/types";
-import type { RunwayEnd } from "../../../../lib/pattern";
+import type { RunwayEnd } from "../../lib/pattern";
 import { sameField } from "../../../../lib/procedures";
 import { TEXT } from "../../../../lib/text";
-import { endFit } from "../../../../lib/runwayFit";
+import { endFit } from "./runwayFit";
 import { etaAt } from "../../format";
 import { AirportMark, PointMark } from "../navlog/PointMark";
-import { colourOf } from "../../../../lib/map/flightCategory";
+import { colourOf } from "../../../../lib/map/marks/flightCategory";
 import FixBranch from "../FixBranch";
 import DepartPicker from "../navlog/DepartPicker";
 import ProcedureMenu from "../ProcedureMenu";
@@ -285,7 +285,7 @@ export function FieldStep({ vm, a, row, last, leads }: {
       </Collapsible>
     );
   };
-  // Each runway end's fit today (lib/runwayFit): its crosswind against the
+  // Each runway end's fit today (features/plan/components/procedures/runwayFit): its crosswind against the
   // airplane's demonstrated, and its length against the distance needed,
   // marked on its chip and said in the field's info, at the owner's ask.
   const card = cards[i]?.data;

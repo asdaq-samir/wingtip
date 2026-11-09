@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { locateOnOpen, useOwnShipNear } from "../../../lib/map/ownShip";
+import { locateOnOpen, useOwnShipNear } from "../../../lib/map/position/ownShip";
 import { useKeptAirport } from "../../../lib/preferences";
 import { airportQuery, nearestQuery } from "../../../lib/queryClient";
 import type { PlannedRoute } from "./planAddress";

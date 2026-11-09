@@ -65,7 +65,7 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   }
   const runways = glance.getByTestId("brief-line-runways");
   await expect(runways).toHaveAttribute("data-finding", "caution");
-  // The gusts' crosswind, the figure held against the demonstrated (lib/runwayCheck).
+  // The gusts' crosswind, the figure held against the demonstrated (features/plan/lib/runwayCheck).
   await expect(runways.getByTestId("brief-line-words")).toContainText(/C81 has 22 kt across, past the POH's demonstrated: ask for another runway, or wait for the wind/);
   // The rest folded into one row.
   await expect(glance.getByTestId("brief-rest")).toBeVisible();

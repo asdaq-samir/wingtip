@@ -3,7 +3,7 @@ import { ChartMark, PillStrip, SmallTile, TileChartMark } from "../../../compone
 import type { NearestAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
 import { nmAway } from "../../../lib/useAway";
-import { useOwnShip } from "../../../lib/map/ownShip";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { TEXT } from "../../../lib/text";
 
 // Apart from Nearest's list in full (NearestCard), which is loaded when it

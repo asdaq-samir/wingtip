@@ -93,7 +93,7 @@ container) builds the map's FAA overlays as one vector-tile PMTiles
 archive a cycle, with tippecanoe from the planner's cycle pack
 (`charts/overlays.py`, `wingtip.vector_tiles`); the planner serves it at
 `/api/overlay-tiles`, and the web's MapLibre
-(`apps/web/src/lib/map/overlayTiles.ts`) and the phones' read it in byte
+(`apps/web/src/lib/map/sources/overlayTiles.ts`) and the phones' read it in byte
 ranges. Zooms 4 to 12, lines within `tolerance_m` (4.1 m) of the FAA's,
 nothing dropped for size. A sample of the 29 Oct 2026 cycle (92 to 84 W,
 38 to 46 N, about a tenth of its features) made an 8.6 MB archive in 90 s

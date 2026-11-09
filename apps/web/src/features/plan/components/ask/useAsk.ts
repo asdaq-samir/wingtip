@@ -9,7 +9,7 @@
  *
  * The context goes with every question, read as it is asked: the plan
  * as the Brief has it (lib/briefPlan), where the airplane is
- * (lib/map/ownShip) and what the app knows of the pilot -- their
+ * (lib/map/position/ownShip) and what the app knows of the pilot -- their
  * personal minimums (lib/minimums) and currency (the logbook's
  * CurrencyDto), null where it knows neither. The conversation is
  * append-only: an answer goes back as the next assistant message, and
@@ -28,7 +28,7 @@ import { describeError } from "../../../../lib/api/client";
 import type { Currency } from "../../../../lib/api/types";
 import { useBriefPlan } from "../../../../lib/briefPlan";
 import { clockTime, localDay } from "../../../../lib/format";
-import { useOwnShip } from "../../../../lib/map/ownShip";
+import { useOwnShip } from "../../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../../lib/preferences";
 import { currencyQuery, queryClient } from "../../../../lib/queryClient";
 import { speak } from "../../../../lib/speech";

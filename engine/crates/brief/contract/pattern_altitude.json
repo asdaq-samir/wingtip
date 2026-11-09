@@ -1,0 +1,63 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PatternAltitudeInput",
+      "type": "object",
+      "properties": {
+        "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "published_agl_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "PatternAltitudeAnswer",
+      "type": "object",
+      "properties": {
+        "agl_ft": {
+          "type": "number"
+        },
+        "altitude_ft": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Feet MSL, whole; null with no elevation."
+        },
+        "flown_ft": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Feet MSL to the nearest hundred (halves to even), as the planner flies down to it; null with no elevation."
+        },
+        "published": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "agl_ft",
+        "altitude_ft",
+        "flown_ft",
+        "published"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

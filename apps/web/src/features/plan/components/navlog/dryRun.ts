@@ -2,7 +2,7 @@ import type { PastFlightPoint } from "../../../../lib/api/types";
 import { callEngine } from "../../../../lib/engine/engine";
 import type { NavLogRow } from "./rows";
 
-/** The planned flight as a replay's reports (lib/map/pastFlight), and
+/** The planned flight as a replay's reports (features/plan/map/pastFlight), and
  *  what it has flown and burnt by each, for the figures under it. */
 export interface DryRun {
   points: PastFlightPoint[];

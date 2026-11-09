@@ -1,11 +1,11 @@
 import { useCallback } from "react";
 import type { SetURLSearchParams } from "react-router-dom";
 import type { Detour, ProcedureDrawing } from "../../../lib/api/types";
-import { fieldListParams, fieldListsOf, prunedFieldLists } from "../../../lib/fieldLists";
+import { fieldListParams, fieldListsOf, prunedFieldLists } from "../lib/fieldLists";
 import { MAX_STOPS, altitudesOf, altitudesParam, departureOf, identOf, routeOf, stopsOf } from "../../../lib/identSchema";
 import { sameField, type PickedProcedure } from "../../../lib/procedures";
 import { courseQuery, queryClient } from "../../../lib/queryClient";
-import { rebasedRoute } from "../../../lib/routeRebase";
+import { rebasedRoute } from "../lib/routeRebase";
 import { patched } from "../../../lib/useSearchParamsNow";
 import type { RouteParts } from "../components/RouteBox";
 
@@ -39,7 +39,7 @@ export function useRouteEdits({ planned, routePoints, setSearchParams }: {
   // as the route's close leaves it (clearRoute).
   // An edit is worked out from the route this render drew; made while the
   // address is a change ahead of it, it is carried onto the address's
-  // route (lib/routeRebase), never written over it.
+  // route (features/plan/lib/routeRebase), never written over it.
   const drawnDep = planned.dep, drawnDest = planned.dest, stops = planned.stops;
   const setRoute = useCallback((parts: RouteParts, fuelAdded: string[] = [], keepLists = false) => {
     const { dep, dest } = parts;

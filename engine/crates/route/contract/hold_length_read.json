@@ -1,0 +1,54 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A hold's length from its code (\"2T\", \"10M\"), or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HoldLengthReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "HoldLengthReadAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "turns": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "turns"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "minutes": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "minutes"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

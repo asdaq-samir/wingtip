@@ -1,0 +1,48 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A hold's lap and time held, in minutes, and its standard-rate turn radius (AIM 5-3-8); held_min is one lap where neither turns nor minutes is given.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HoldFiguresInput",
+      "type": "object",
+      "properties": {
+        "hold": {
+          "$ref": "#/definitions/RouteHoldIn"
+        },
+        "tas_kt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "hold",
+        "tas_kt"
+      ]
+    },
+    "answer": {
+      "title": "HoldFiguresAnswer",
+      "type": "object",
+      "properties": {
+        "lap_min": {
+          "type": "number"
+        },
+        "held_min": {
+          "type": "number"
+        },
+        "turn_radius_nm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "lap_min",
+        "held_min",
+        "turn_radius_nm"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

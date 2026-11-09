@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { beforeTheRoute, closeProfile, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
 
 /**
- * The ground under the chart (lib/map/gl/terrain), from the Map menu's
+ * The ground under the chart (features/plan/map/terrain), from the Map menu's
  * Terrain: its relief shaded over the chart, then stood up in 3D with the
  * route drawn at its altitudes; and the dry run seen from the pilot's seat,
  * its key saying it is a view, not terrain clearance. The map's own element

@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A field's FAA ident (the K of a US ICAO code left off).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "BareFieldInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ident"
+      ]
+    },
+    "answer": {
+      "title": "BareFieldAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -5,32 +5,6 @@ use super::{awc, field, hours, route};
 use crate::json::{self, Value};
 use crate::{metar, winds};
 
-/// The names this module answers.
-pub const NAMES: [&str; 22] = [
-    "flight_category",
-    "ceiling_visibility",
-    "field_hours",
-    "awc_metars_read",
-    "awc_tafs_read",
-    "awc_airsigmets_read",
-    "awc_pireps_read",
-    "awc_gairmets_read",
-    "weather_held_until",
-    "gairmet_hazards",
-    "taf_window",
-    "tafs_along_route",
-    "sigmets_along_route",
-    "pireps_along_route",
-    "pireps_in_box",
-    "gairmets_along_route",
-    "freezing_level",
-    "temperature_at",
-    "service_ceiling_on_the_day",
-    "wind_at_altitude",
-    "forecast_hour",
-    "field_taf",
-];
-
 type R<T> = Result<T, String>;
 
 /// A member that is a number, or None where it is missing or null.

@@ -32,7 +32,7 @@ const LONGEST_MS = 30000;
 
 let stopping: (() => void) | null = null;
 
-/** The ATIS being heard (lib/atis), stopped as the radio or the microphone
+/** The ATIS being heard (features/plan/lib/atis), stopped as the radio or the microphone
  *  starts: one recognizer at a time, as two in a page cut each other off
  *  and each listen() starts its own again. The tap that starts listening
  *  wins, the ATIS row saying why it stopped. */

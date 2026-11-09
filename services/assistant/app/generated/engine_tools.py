@@ -11,6 +11,331 @@ import json
 TOOLS: list[dict] = json.loads(r'''
 [
   {
+    "name": "airspace_entry_rules",
+    "description": "A Class B, C or D's entry, equipment and speed rules (14 CFR 91.117, 91.129-91.131, 91.215, 91.225), each with its cite, and whom to call. Any other one-letter class answers no rules.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "class": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1,
+          "description": "One letter: B, C or D."
+        }
+      },
+      "required": [
+        "class"
+      ]
+    }
+  },
+  {
+    "name": "altitude_allowed",
+    "description": "Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ft": {
+          "type": "number"
+        },
+        "ifr": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ft"
+      ]
+    }
+  },
+  {
+    "name": "altitude_limits",
+    "description": "The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ifr": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "approach_category",
+    "description": "The approach category (14 CFR 97.3) from VREF, or 1.3 VSO, or null with neither.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "vref_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "vso_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "approach_descent_fpm",
+    "description": "The descent rate on the path, ft/min (the TPP's rate of descent table).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "gs_kt": {
+          "type": "number"
+        },
+        "angle_deg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "gs_kt",
+        "angle_deg"
+      ]
+    }
+  },
+  {
+    "name": "below_vfr_minimums",
+    "description": "Whether a ceiling or a visibility is under 14 CFR 91.155(c), (d)'s basic VFR minimums (1,000 ft, 3 sm); a missing figure is below nothing.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "cloud_clearance_at_ft",
+    "description": "The distance 14 CFR 91.155(a) keeps below the clouds at an altitude: 1,000 ft at or above 10,000 ft MSL, 500 ft below.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "altitude_ft"
+      ]
+    }
+  },
+  {
+    "name": "distance_nm",
+    "description": "The geodesic distance between two points on the WGS 84 ellipsoid, nm.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "lat1": {
+          "type": "number"
+        },
+        "lon1": {
+          "type": "number"
+        },
+        "lat2": {
+          "type": "number"
+        },
+        "lon2": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "lat1",
+        "lon1",
+        "lat2",
+        "lon2"
+      ]
+    }
+  },
+  {
+    "name": "filed_endurance",
+    "description": "Item 19's endurance in whole minutes: the fuel aboard at the cruise burn, to the minute below (AIM Appendix 4); null where the burn is not a positive figure.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "fuel_gal": {
+          "type": "number"
+        },
+        "burn_gph": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "fuel_gal",
+        "burn_gph"
+      ]
+    }
+  },
+  {
+    "name": "flight_category",
+    "description": "A field's flight category (AIM 7-1-7); with no visibility, LIFR only under a 500 ft ceiling and else null.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_unknown": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "The lowest broken, overcast or obscured layer was sent with no height (OVC///): the ceiling is not known, and only a visibility under a mile says the category (14 CFR 1.1)."
+        }
+      }
+    }
+  },
+  {
+    "name": "fuel_estimate",
+    "description": "The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the start and taxi allowance (the Cessna 172S handbook's 1.4 gal, the planner's default) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short. Null where the book gives no speed, or no burn for the fuel.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "distance_nm": {
+          "type": "number"
+        },
+        "cruise_tas_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_burn_gph": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "distance_nm"
+      ]
+    }
+  },
+  {
+    "name": "glide_range",
+    "description": "Still-air glide range, nm (1.5 nm per 1,000 ft, the C172S POH figure 3-1), or null on the ground or with no height.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ground_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "glide_reaches",
+    "description": "Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "distance_nm": {
+          "type": "number"
+        },
+        "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "distance_nm"
+      ]
+    }
+  },
+  {
+    "name": "gonogo_density_altitude",
+    "description": "Density altitude, ft, from pressure altitude and temperature (PHAK ch. 4).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "pressure_alt_ft": {
+          "type": "number"
+        },
+        "temp_c": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "pressure_alt_ft",
+        "temp_c"
+      ]
+    }
+  },
+  {
+    "name": "highest_under_clouds_ft",
+    "description": "The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "cloud_base_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "cloud_base_ft"
+      ]
+    }
+  },
+  {
     "name": "holding",
     "description": "The planner's /api/holding answer (AIM 5-3-8): the entry and its steps, the other entry near a sector's edge, and the legs in the wind where a true airspeed, wind and altitude are all given.",
     "input_schema": {
@@ -82,30 +407,265 @@ TOOLS: list[dict] = json.loads(r'''
     }
   },
   {
-    "name": "wind_triangle",
-    "description": "The wind triangle for a true course: the correction (+ right), the true heading and the ground speed; null where no heading holds the course (the wind triangle, FAA-H-8083-25C ch. 16).",
+    "name": "ifr_alternate_check",
+    "description": "Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).",
     "input_schema": {
       "type": "object",
       "properties": {
-        "tc": {
-          "type": "number"
+        "ident": {
+          "type": "string"
         },
-        "tas": {
-          "type": "number"
+        "approaches": {
+          "type": "object",
+          "properties": {
+            "any": {
+              "type": "boolean"
+            },
+            "precision": {
+              "type": "boolean"
+            },
+            "alternate_minimums_url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "any",
+            "precision"
+          ],
+          "description": "The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page."
         },
-        "wind_from_deg": {
-          "type": "number"
+        "forecast": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ceiling_unknown": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "raw": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "description": "The worst its TAF forecasts over the window (taf_window), null where no TAF covers it."
+        }
+      },
+      "required": [
+        "ident",
+        "approaches"
+      ]
+    }
+  },
+  {
+    "name": "ifr_alternate_destination",
+    "description": "Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
         },
-        "wind_kt": {
+        "approaches": {
+          "type": "object",
+          "properties": {
+            "any": {
+              "type": "boolean"
+            },
+            "precision": {
+              "type": "boolean"
+            },
+            "alternate_minimums_url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "any",
+            "precision"
+          ],
+          "description": "The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page."
+        },
+        "forecast": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ceiling_unknown": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "raw": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "description": "The worst its TAF forecasts over the window (taf_window), null where no TAF covers it."
+        }
+      },
+      "required": [
+        "ident",
+        "approaches"
+      ]
+    }
+  },
+  {
+    "name": "isa_temp_c",
+    "description": "A standard day's temperature at a pressure altitude (ICAO Doc 7488).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
           "type": "number"
         }
       },
       "required": [
-        "tc",
-        "tas",
-        "wind_from_deg",
-        "wind_kt"
+        "altitude_ft"
       ]
+    }
+  },
+  {
+    "name": "legal_cruising_altitudes",
+    "description": "Every legal cruising altitude for a magnetic course from the floor up to the ceiling, ascending: under VFR 14 CFR 91.159(a)'s thousands plus 500 under Class A (71.33), and every 500 ft up to rule_from_ft (3,000 ft over the lowest ground); under IFR 91.179(b)'s thousands (FAA Order JO 7110.65 TBL 4-5-1) to FL410.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "floor_ft": {
+          "type": "number"
+        },
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "magnetic_course_deg": {
+          "type": "number"
+        },
+        "rule_from_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "rules": {
+          "enum": [
+            "vfr",
+            "ifr",
+            null
+          ]
+        }
+      },
+      "required": [
+        "floor_ft",
+        "magnetic_course_deg"
+      ]
+    }
+  },
+  {
+    "name": "lowest_vfr_cruising_altitude",
+    "description": "The lowest VFR cruising altitude at or above a floor for a magnetic course: odd thousands plus 500 eastbound, even westbound (14 CFR 91.159(a)).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "floor_ft": {
+          "type": "number"
+        },
+        "magnetic_course_deg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "floor_ft",
+        "magnetic_course_deg"
+      ]
+    }
+  },
+  {
+    "name": "magnetic_variation",
+    "description": "Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "date": {
+          "type": "string",
+          "description": "YYYY-MM-DD."
+        },
+        "year": {
+          "type": "number",
+          "description": "The model's decimal year (2026.5 mid-2026), in place of the date."
+        }
+      },
+      "required": [
+        "lat",
+        "lon"
+      ]
+    }
+  },
+  {
+    "name": "pattern_altitude",
+    "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "published_agl_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
     }
   },
   {
@@ -249,77 +809,6 @@ TOOLS: list[dict] = json.loads(r'''
     }
   },
   {
-    "name": "magnetic_variation",
-    "description": "Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "lat": {
-          "type": "number"
-        },
-        "lon": {
-          "type": "number"
-        },
-        "date": {
-          "type": "string",
-          "description": "YYYY-MM-DD."
-        },
-        "year": {
-          "type": "number",
-          "description": "The model's decimal year (2026.5 mid-2026), in place of the date."
-        }
-      },
-      "required": [
-        "lat",
-        "lon"
-      ]
-    }
-  },
-  {
-    "name": "vfr_basic_minimums",
-    "description": "The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).",
-    "input_schema": {
-      "type": "object",
-      "properties": {}
-    }
-  },
-  {
-    "name": "reserve_min",
-    "description": "The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "ifr": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "night": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        }
-      }
-    }
-  },
-  {
-    "name": "isa_temp_c",
-    "description": "A standard day's temperature at a pressure altitude (ICAO Doc 7488).",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "altitude_ft": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "altitude_ft"
-      ]
-    }
-  },
-  {
     "name": "pressure_altitude_ft",
     "description": "Pressure altitude from a field's elevation and its altimeter setting, a thousand feet an inch from 29.92 (PHAK ch. 4).",
     "input_schema": {
@@ -339,296 +828,20 @@ TOOLS: list[dict] = json.loads(r'''
     }
   },
   {
-    "name": "lowest_vfr_cruising_altitude",
-    "description": "The lowest VFR cruising altitude at or above a floor for a magnetic course: odd thousands plus 500 eastbound, even westbound (14 CFR 91.159(a)).",
+    "name": "reserve_min",
+    "description": "The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).",
     "input_schema": {
       "type": "object",
       "properties": {
-        "floor_ft": {
-          "type": "number"
-        },
-        "magnetic_course_deg": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "floor_ft",
-        "magnetic_course_deg"
-      ]
-    }
-  },
-  {
-    "name": "distance_nm",
-    "description": "The geodesic distance between two points on the WGS 84 ellipsoid, nm.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "lat1": {
-          "type": "number"
-        },
-        "lon1": {
-          "type": "number"
-        },
-        "lat2": {
-          "type": "number"
-        },
-        "lon2": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "lat1",
-        "lon1",
-        "lat2",
-        "lon2"
-      ]
-    }
-  },
-  {
-    "name": "gonogo_density_altitude",
-    "description": "Density altitude, ft, from pressure altitude and temperature (PHAK ch. 4).",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "pressure_alt_ft": {
-          "type": "number"
-        },
-        "temp_c": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "pressure_alt_ft",
-        "temp_c"
-      ]
-    }
-  },
-  {
-    "name": "wind_components",
-    "description": "A wind's head- and crosswind on a heading: a tailwind negative, a crosswind from the right positive (the crosswind component chart's figures, FAA-H-8083-25C ch. 11).",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "from_deg": {
-          "type": "number"
-        },
-        "kt": {
-          "type": "number"
-        },
-        "heading_deg": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "from_deg",
-        "kt",
-        "heading_deg"
-      ]
-    }
-  },
-  {
-    "name": "pattern_altitude",
-    "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "elevation_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "published_agl_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
-        }
-      }
-    }
-  },
-  {
-    "name": "flight_category",
-    "description": "A field's flight category (AIM 7-1-7); with no visibility, LIFR only under a 500 ft ceiling and else null.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "ceiling_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "visibility_sm": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "ceiling_unknown": {
+        "ifr": {
           "type": [
             "boolean",
             "null"
-          ],
-          "description": "The lowest broken, overcast or obscured layer was sent with no height (OVC///): the ceiling is not known, and only a visibility under a mile says the category (14 CFR 1.1)."
-        }
-      }
-    }
-  },
-  {
-    "name": "airspace_entry_rules",
-    "description": "A Class B, C or D's entry, equipment and speed rules (14 CFR 91.117, 91.129-91.131, 91.215, 91.225), each with its cite, and whom to call. Any other one-letter class answers no rules.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "class": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 1,
-          "description": "One letter: B, C or D."
-        }
-      },
-      "required": [
-        "class"
-      ]
-    }
-  },
-  {
-    "name": "approach_descent_fpm",
-    "description": "The descent rate on the path, ft/min (the TPP's rate of descent table).",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "gs_kt": {
-          "type": "number"
-        },
-        "angle_deg": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "gs_kt",
-        "angle_deg"
-      ]
-    }
-  },
-  {
-    "name": "approach_category",
-    "description": "The approach category (14 CFR 97.3) from VREF, or 1.3 VSO, or null with neither.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "vref_kt": {
-          "type": [
-            "number",
-            "null"
           ]
         },
-        "vso_kt": {
+        "night": {
           "type": [
-            "number",
-            "null"
-          ]
-        }
-      }
-    }
-  },
-  {
-    "name": "glide_range",
-    "description": "Still-air glide range, nm (1.5 nm per 1,000 ft, the C172S POH figure 3-1), or null on the ground or with no height.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "altitude_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "speed_kt": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "ground_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
-        }
-      }
-    }
-  },
-  {
-    "name": "glide_reaches",
-    "description": "Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft).",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "altitude_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "speed_kt": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "distance_nm": {
-          "type": "number"
-        },
-        "elevation_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "distance_nm"
-      ]
-    }
-  },
-  {
-    "name": "fuel_estimate",
-    "description": "The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the start and taxi allowance (the Cessna 172S handbook's 1.4 gal, the planner's default) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short. Null where the book gives no speed, or no burn for the fuel.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "distance_nm": {
-          "type": "number"
-        },
-        "cruise_tas_kt": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "fuel_burn_gph": {
-          "type": [
-            "number",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "distance_nm"
-      ]
-    }
-  },
-  {
-    "name": "squawk_meaning",
-    "description": "What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "squawk": {
-          "type": [
-            "string",
+            "boolean",
             "null"
           ]
         }
@@ -665,71 +878,26 @@ TOOLS: list[dict] = json.loads(r'''
     }
   },
   {
-    "name": "legal_cruising_altitudes",
-    "description": "Every legal cruising altitude for a magnetic course from the floor up to the ceiling, ascending: under VFR 14 CFR 91.159(a)'s thousands plus 500 under Class A (71.33), and every 500 ft up to rule_from_ft (3,000 ft over the lowest ground); under IFR 91.179(b)'s thousands (FAA Order JO 7110.65 TBL 4-5-1) to FL410.",
+    "name": "squawk_meaning",
+    "description": "What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.",
     "input_schema": {
       "type": "object",
       "properties": {
-        "floor_ft": {
-          "type": "number"
-        },
-        "ceiling_ft": {
+        "squawk": {
           "type": [
-            "number",
+            "string",
             "null"
-          ]
-        },
-        "magnetic_course_deg": {
-          "type": "number"
-        },
-        "rule_from_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "rules": {
-          "enum": [
-            "vfr",
-            "ifr",
-            null
           ]
         }
-      },
-      "required": [
-        "floor_ft",
-        "magnetic_course_deg"
-      ]
+      }
     }
   },
   {
-    "name": "highest_under_clouds_ft",
-    "description": "The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.",
+    "name": "vfr_basic_minimums",
+    "description": "The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).",
     "input_schema": {
       "type": "object",
-      "properties": {
-        "cloud_base_ft": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "cloud_base_ft"
-      ]
-    }
-  },
-  {
-    "name": "cloud_clearance_at_ft",
-    "description": "The distance 14 CFR 91.155(a) keeps below the clouds at an altitude: 1,000 ft at or above 10,000 ft MSL, 500 ft below.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "altitude_ft": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "altitude_ft"
-      ]
+      "properties": {}
     }
   },
   {
@@ -765,61 +933,6 @@ TOOLS: list[dict] = json.loads(r'''
     }
   },
   {
-    "name": "altitude_limits",
-    "description": "The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "ifr": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        }
-      }
-    }
-  },
-  {
-    "name": "altitude_allowed",
-    "description": "Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "ft": {
-          "type": "number"
-        },
-        "ifr": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "ft"
-      ]
-    }
-  },
-  {
-    "name": "filed_endurance",
-    "description": "Item 19's endurance in whole minutes: the fuel aboard at the cruise burn, to the minute below (AIM Appendix 4); null where the burn is not a positive figure.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "fuel_gal": {
-          "type": "number"
-        },
-        "burn_gph": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "fuel_gal",
-        "burn_gph"
-      ]
-    }
-  },
-  {
     "name": "vor_check_limit_deg",
     "description": "The largest bearing error 14 CFR 91.171 allows for a kind of VOR check: 4 degrees for a test signal (VOT or a repair station's, (b)(1)), a surface checkpoint ((b)(2)) and one receiver against the other ((c)); 6 for an airborne checkpoint ((b)(3)) and a radial along an airway ((b)(4)).",
     "input_schema": {
@@ -842,166 +955,53 @@ TOOLS: list[dict] = json.loads(r'''
     }
   },
   {
-    "name": "ifr_alternate_destination",
-    "description": "Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.",
+    "name": "wind_components",
+    "description": "A wind's head- and crosswind on a heading: a tailwind negative, a crosswind from the right positive (the crosswind component chart's figures, FAA-H-8083-25C ch. 11).",
     "input_schema": {
       "type": "object",
       "properties": {
-        "ident": {
-          "type": "string"
+        "from_deg": {
+          "type": "number"
         },
-        "approaches": {
-          "type": "object",
-          "properties": {
-            "any": {
-              "type": "boolean"
-            },
-            "precision": {
-              "type": "boolean"
-            },
-            "alternate_minimums_url": {
-              "type": [
-                "string",
-                "null"
-              ]
-            }
-          },
-          "required": [
-            "any",
-            "precision"
-          ],
-          "description": "The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page."
+        "kt": {
+          "type": "number"
         },
-        "forecast": {
-          "type": [
-            "object",
-            "null"
-          ],
-          "properties": {
-            "ceiling_ft": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "ceiling_unknown": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            },
-            "visibility_sm": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "raw": {
-              "type": [
-                "string",
-                "null"
-              ]
-            }
-          },
-          "description": "The worst its TAF forecasts over the window (taf_window), null where no TAF covers it."
+        "heading_deg": {
+          "type": "number"
         }
       },
       "required": [
-        "ident",
-        "approaches"
+        "from_deg",
+        "kt",
+        "heading_deg"
       ]
     }
   },
   {
-    "name": "ifr_alternate_check",
-    "description": "Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).",
+    "name": "wind_triangle",
+    "description": "The wind triangle for a true course: the correction (+ right), the true heading and the ground speed; null where no heading holds the course (the wind triangle, FAA-H-8083-25C ch. 16).",
     "input_schema": {
       "type": "object",
       "properties": {
-        "ident": {
-          "type": "string"
+        "tc": {
+          "type": "number"
         },
-        "approaches": {
-          "type": "object",
-          "properties": {
-            "any": {
-              "type": "boolean"
-            },
-            "precision": {
-              "type": "boolean"
-            },
-            "alternate_minimums_url": {
-              "type": [
-                "string",
-                "null"
-              ]
-            }
-          },
-          "required": [
-            "any",
-            "precision"
-          ],
-          "description": "The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page."
+        "tas": {
+          "type": "number"
         },
-        "forecast": {
-          "type": [
-            "object",
-            "null"
-          ],
-          "properties": {
-            "ceiling_ft": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "ceiling_unknown": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            },
-            "visibility_sm": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "raw": {
-              "type": [
-                "string",
-                "null"
-              ]
-            }
-          },
-          "description": "The worst its TAF forecasts over the window (taf_window), null where no TAF covers it."
+        "wind_from_deg": {
+          "type": "number"
+        },
+        "wind_kt": {
+          "type": "number"
         }
       },
       "required": [
-        "ident",
-        "approaches"
+        "tc",
+        "tas",
+        "wind_from_deg",
+        "wind_kt"
       ]
-    }
-  },
-  {
-    "name": "below_vfr_minimums",
-    "description": "Whether a ceiling or a visibility is under 14 CFR 91.155(c), (d)'s basic VFR minimums (1,000 ft, 3 sm); a missing figure is below nothing.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "ceiling_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "visibility_sm": {
-          "type": [
-            "number",
-            "null"
-          ]
-        }
-      }
     }
   }
 ]

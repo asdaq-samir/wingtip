@@ -26,9 +26,6 @@ use wingtip_procedures::figures::words::{bearing, grouped};
 
 use crate::json::{self, Value};
 
-/// The names this module answers.
-pub const NAMES: [&str; 1] = ["mayday_call"];
-
 /// The emergency frequency, MHz (AIM 6-3-1(d)).
 pub const GUARD_MHZ: f64 = 121.5;
 /// The emergency code (AIM 6-2-2).

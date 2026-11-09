@@ -5,9 +5,9 @@ import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-g
 import { CollapsibleContent } from "../../../../components/ui/collapsible";
 import { Skeleton } from "../../../../components/ui/skeleton";
 import type { Runway } from "../../../../lib/api/types";
-import { runwayNumber, type RunwayEnd, type WindPick } from "../../../../lib/pattern";
+import { runwayNumber, type RunwayEnd, type WindPick } from "../../lib/pattern";
 import { trafficPattern } from "../../../../lib/trafficPattern";
-import type { EndFit } from "../../../../lib/runwayFit";
+import type { EndFit } from "./runwayFit";
 import { useOpenRunwayLines, type ProcedureAirport } from "../../hooks/useProceduresRoute";
 import { CHIP } from "../routeListStyle";
 
@@ -139,7 +139,7 @@ export interface Landing {
 
 export function PatternChips({ airport: a, wind, chosen, landing, note, label, fitOf, onPick, trailing }: {
   airport: ProcedureAirport;
-  /** Each end's fit today, marked on its chip (lib/runwayFit). */
+  /** Each end's fit today, marked on its chip (features/plan/components/procedures/runwayFit). */
   fitOf: (runway: Runway, end: RunwayEnd) => EndFit | null;
   /** The chips' name to a screen reader, where not the pattern's. */
   label?: string;

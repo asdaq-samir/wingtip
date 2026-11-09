@@ -7,7 +7,7 @@ import { planHrefOf, recentHrefOf } from "../../../lib/flightLink";
 import { altitudesOf, altitudesParam, routeOf, stopsOf } from "../../../lib/identSchema";
 import { usePreferences } from "../../../lib/preferences";
 import { courseQuery, flightsQuery, queryClient } from "../../../lib/queryClient";
-import { sameStops } from "../../../lib/routeWays";
+import { sameStops } from "../lib/routeWays";
 import { altitudeChoiceOf, type PlannedRoute } from "./planAddress";
 import { navlogQuery, type PlanParams } from "./usePlan";
 

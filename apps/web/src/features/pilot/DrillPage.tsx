@@ -3,7 +3,7 @@ import { formatDistanceStrict } from "date-fns";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
-import { answered, deckOf, dueCards, keepProgress, keptProgress, nextDue, type Card, type DeckKey, type Light } from "../../lib/drills";
+import { answered, deckOf, dueCards, keepProgress, keptProgress, nextDue, type Card, type DeckKey, type Light } from "./drills";
 import { TEXT } from "../../lib/text";
 
 const LIGHT: Record<Light, string> = { green: "#16a34a", red: "#dc2626", white: "#f8fafc" };
@@ -33,7 +33,7 @@ function Lamp({ light }: { light: NonNullable<Card["light"]> }) {
 }
 
 /**
- * One drill (lib/drills): the cards due, one at a time -- the prompt,
+ * One drill (features/pilot/drills): the cards due, one at a time -- the prompt,
  * Show the answer, then Knew it or Missed it, which moves the card up a
  * box or back to the first. A card missed comes round again before the
  * session ends. With nothing due, when the next card is, and Practice

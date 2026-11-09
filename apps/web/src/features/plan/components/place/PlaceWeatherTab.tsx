@@ -5,7 +5,7 @@ import { RowBadge } from "../../../../components/RowBadge";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { ago, zuluTime } from "../../../../lib/format";
 import { compassPoint } from "../../../../lib/compass";
-import type { Hour } from "../../../../lib/hourly";
+import type { Hour } from "../../lib/hourly";
 import { BADGE } from "../../../../lib/rowBadges";
 import { TEXT } from "../../../../lib/text";
 import { feet, miles } from "../../../../lib/format";
@@ -40,7 +40,7 @@ export function PlaceWeatherTab({ ident, place, known, chip, hourly, weatherLine
   known: unknown;
   /** Its category's chip, in the FAA's colour (PlaceCard). */
   chip: ReactNode;
-  /** Hour by hour, and a sentence of what the hours say (lib/hourly). */
+  /** Hour by hour, and a sentence of what the hours say (features/plan/lib/hourly). */
   hourly: { hours: Hour[]; sentence: string | null };
   /** The weather in a line where there is no forecast to say. */
   weatherLine: string;

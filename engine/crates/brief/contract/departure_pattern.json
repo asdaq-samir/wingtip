@@ -1,0 +1,61 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "The pattern to leave an end, toward a place where given, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DeparturePatternInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runway": {
+          "$ref": "#/definitions/CircuitRunwayIn"
+        },
+        "end_ident": {
+          "type": "string"
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "toward": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        }
+      },
+      "required": [
+        "runway",
+        "end_ident"
+      ]
+    },
+    "answer": {
+      "$ref": "#/definitions/TrafficPatternOut"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

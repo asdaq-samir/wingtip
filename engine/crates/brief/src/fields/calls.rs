@@ -10,9 +10,6 @@ use crate::runway::performance::{FieldReport, FitWind};
 
 type R<T> = Result<T, String>;
 
-/// The names this module answers.
-pub const NAMES: [&str; 1] = ["best_fields"];
-
 /// The most fields answered where `limit` is not given.
 const LIMIT: usize = 10;
 

@@ -1,0 +1,52 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogWithClimbsInput",
+      "type": "object",
+      "properties": {
+        "legs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLeg"
+          }
+        },
+        "start_altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
+        }
+      },
+      "required": [
+        "legs",
+        "profile"
+      ]
+    },
+    "answer": {
+      "title": "NavLogWithClimbsAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NavLogLeg"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

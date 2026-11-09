@@ -1,0 +1,40 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The attempts at the approach in a track, as point indices.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachAttemptsInput",
+      "type": "object",
+      "properties": {
+        "drawing": {
+          "$ref": "#/definitions/ProcedureDrawing"
+        },
+        "points": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/TrackPoint"
+          }
+        }
+      },
+      "required": [
+        "drawing"
+      ]
+    },
+    "answer": {
+      "title": "ApproachAttemptsAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ApproachAttempt"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

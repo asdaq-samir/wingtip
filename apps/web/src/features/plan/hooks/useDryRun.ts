@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Candidate, Leg } from "../../../lib/api/types";
-import { DRY_RUN, clearPastFlight, usePastFlight } from "../../../lib/map/pastFlight";
+import { DRY_RUN, clearPastFlight, usePastFlight } from "../map/pastFlight";
 import { dryRunOf, type DryRun } from "../components/navlog/dryRun";
 import { legOf, navLogRows, type RouteEnds } from "../components/navlog/rows";
 

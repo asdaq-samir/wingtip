@@ -15,7 +15,7 @@ describe("a value kept in this browser", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("reads what the keepers wrote before persist, and writes it in the same shape", () => {
-    // A drill deck's progress as lib/drills wrote it: the bare JSON.
+    // A drill deck's progress as features/pilot/drills wrote it: the bare JSON.
     const { held } = heldStorage(new Map([["t.old", JSON.stringify({ "light-1": { box: 2, due: 5 } })]]));
     const store = keptStore<Record<string, { box: number; due: number }>>("t.old", {});
     expect(store.getState().value).toEqual({ "light-1": { box: 2, due: 5 } });

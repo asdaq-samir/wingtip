@@ -1,0 +1,58 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The PIREPs of the last 90 minutes at or under 18,000 ft within the corridor of the route, urgent first, then in route order, each with along_track_nm.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PirepsAlongRouteInput",
+      "type": "object",
+      "properties": {
+        "reports": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon], degrees."
+          },
+          "description": "The route flown, [[lat, lon], ...]."
+        },
+        "corridor_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "now": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "reports",
+        "path",
+        "now"
+      ]
+    },
+    "answer": {
+      "title": "PirepsAlongRouteAnswer",
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

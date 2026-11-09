@@ -4,8 +4,8 @@ import { useConsoleOpen, type PanelState } from "../../../components/mapChrome";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { pointOf } from "../../../lib/airspace";
 import { identOf } from "../../../lib/identSchema";
-import { choosePastFlight, clearPastFlight, usePastFlight } from "../../../lib/map/pastFlight";
-import { track, useTracking } from "../../../lib/map/tracking";
+import { choosePastFlight, clearPastFlight, usePastFlight } from "../map/pastFlight";
+import { track, useTracking } from "../../../lib/map/position/tracking";
 import { patched } from "../../../lib/useSearchParamsNow";
 
 /**
@@ -50,7 +50,7 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
   // both": lists keep their place as cards do), where four were the
   // workspace's own state, put away at any tab picked, and one the
   // Aircraft card's. A reload starts clean, cards and lists alike
-  // (lib/freshLoad).
+  // (features/shell/freshLoad).
   const listParam = searchParams.get("list");
   const list = (LISTS as readonly string[]).includes(listParam ?? "") ? listParam as TabList : null;
   const openList = useCallback((name: TabList) => {
@@ -129,7 +129,7 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
     setPanel("full");
   }, [setSearchParams, setPanel]);
   // The address's flight and list into the tracking the map draws from
-  // (lib/map/tracking), and the map's tap on an airplane back to here.
+  // (lib/map/position/tracking), and the map's tap on an airplane back to here.
   useEffect(() => { track(flight); }, [flight]);
   // Each put back on its own: `pick` changes with the panel's setter, and
   // putting `listing` back with it hid the traffic while the list was up.
@@ -212,7 +212,7 @@ export function usePanelTabs({ cards, route, hasRoute, panel, setPanel, searchPa
 
   const keptCards = useRef<Partial<Record<PanelTab, [string, string][]>>>({});
   const keptReplay = useRef<{ hex: string; id: number; at: number | null; playing: boolean } | null>(null);
-  // The address's past flight drawn on the map (lib/map/pastFlight), and
+  // The address's past flight drawn on the map (features/plan/map/pastFlight), and
   // let go with its card; back on its tab, the replay where it was,
   // playing if it was.
   useEffect(() => {

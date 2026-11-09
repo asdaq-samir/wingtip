@@ -14,7 +14,7 @@ services/planner/app/gonogo/words.py 1
 apps/web/src/lib/diversion.ts 1
 
 # The airport card's hours: a day of hourly rows, a display span.
-apps/web/src/lib/hourly.ts 1
+apps/web/src/features/plan/lib/hourly.ts 1
 
 # How far back the instructor's page lists what they signed: 14 CFR
 # 61.189(c)'s three years of an instructor's own records, which the gateway

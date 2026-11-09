@@ -1,0 +1,35 @@
+{
+  "x-call": "wingtip_pilot::aircraft::calls::call",
+  "description": "Whether an airplane is in an emergency: 7500, 7600 or 7700 set, or an emergency sent (AIM 6-2-2, 6-3-4, 6-4-2).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "InEmergencyInput",
+      "type": "object",
+      "properties": {
+        "squawk": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "emergency": {
+          "type": [
+            "string",
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "InEmergencyAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

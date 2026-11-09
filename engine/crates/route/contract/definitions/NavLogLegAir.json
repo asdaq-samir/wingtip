@@ -1,0 +1,20 @@
+{
+  "title": "NavLogLegAir",
+  "type": "object",
+  "properties": {
+    "variation_deg": {
+      "type": "number",
+      "description": "Magnetic variation, east positive."
+    },
+    "at": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NavLogAirAt"
+      }
+    }
+  },
+  "required": [
+    "variation_deg",
+    "at"
+  ]
+}

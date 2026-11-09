@@ -1,0 +1,48 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's \"Class B\"): one string from text, or each of texts as a list (a null row answers \"\").",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FaaWordsInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "texts": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": "A long list's rows in one call; where given, text is not read."
+        }
+      }
+    },
+    "answer": {
+      "title": "FaaWordsAnswer",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

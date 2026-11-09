@@ -1,0 +1,88 @@
+{
+  "x-call": "wingtip_route::route::options::call",
+  "x-feature": "route-options",
+  "description": "The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TerrainWayFrameInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "end": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "ceiling_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "ceiling_ft"
+      ]
+    },
+    "answer": {
+      "title": "TerrainWayFrameAnswer",
+      "type": "object",
+      "properties": {
+        "lat0": {
+          "type": "number"
+        },
+        "lon0": {
+          "type": "number"
+        },
+        "rows": {
+          "type": "integer"
+        },
+        "cols": {
+          "type": "integer"
+        },
+        "cell_deg": {
+          "type": "number"
+        },
+        "per_cell": {
+          "type": "integer"
+        },
+        "top_ft": {
+          "type": "number"
+        },
+        "data_box": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "lat0",
+        "lon0",
+        "rows",
+        "cols",
+        "cell_deg",
+        "per_cell",
+        "top_ft",
+        "data_box"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

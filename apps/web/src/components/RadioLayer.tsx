@@ -11,8 +11,8 @@ import { callToUs, chosenOutside, heardThrough, lostWords, useAtcRadio, useRadio
 import { clearedRoute, heardAny, placesAsked, readClearance, type Found } from "../lib/clearance";
 import { stopwatch } from "../lib/diversion";
 import { callOf } from "../lib/heardCall";
-import { metarWords } from "../lib/metarWords";
-import { commandsOf } from "../lib/pilotCommand";
+import { metarWords } from "./metarWords";
+import { commandsOf } from "./pilotCommand";
 import { altitudeWords, readbackCheck } from "../lib/readback";
 import { say } from "../lib/speech";
 import { TEXT } from "../lib/text";
@@ -37,7 +37,7 @@ const load = () => import("../lib/atcListening").then(m => (listening = m));
  * Enter Route for a clearance (its places found and the route it gives
  * entered, its SID and STAR picked, its altitude flown), Fly the
  * altitude, the frequency copied, the code shown; and of the pilot's own
- * words (lib/pilotCommand): the nearest airports, an approach's page,
+ * words (components/pilotCommand): the nearest airports, an approach's page,
  * the weather at a field said aloud, a timer, and a clearance read back
  * and checked (lib/readback). Nothing is done until a chip is tapped;
  * `done` puts what was heard away after one.

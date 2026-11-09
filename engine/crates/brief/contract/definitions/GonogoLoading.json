@@ -1,0 +1,104 @@
+{
+  "title": "GonogoLoading",
+  "type": "object",
+  "properties": {
+    "max_ramp_lb": {
+      "type": "number"
+    },
+    "max_takeoff_lb": {
+      "type": "number"
+    },
+    "max_landing_lb": {
+      "type": "number"
+    },
+    "sample_empty_weight_lb": {
+      "type": "number"
+    },
+    "sample_empty_moment_lb_in": {
+      "type": "number"
+    },
+    "stations": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "arm_in": {
+            "type": "number"
+          },
+          "max_lb": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "arm_in"
+        ]
+      }
+    },
+    "baggage_combined_max_lb": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "fuel_arm_in": {
+      "type": "number"
+    },
+    "fuel_max_gal": {
+      "type": "number"
+    },
+    "fuel_lb_per_gal": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "6 where not given, avgas's standard (FAA-H-8083-1B)."
+    },
+    "start_taxi_fuel_lb": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "envelope": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "additionalItems": false
+      },
+      "description": "The CG envelope's points, [arm in, weight lb]."
+    }
+  },
+  "required": [
+    "max_ramp_lb",
+    "max_takeoff_lb",
+    "max_landing_lb",
+    "sample_empty_weight_lb",
+    "sample_empty_moment_lb_in",
+    "fuel_arm_in",
+    "fuel_max_gal"
+  ],
+  "description": "A profile's loading: limits, stations, fuel and envelope."
+}

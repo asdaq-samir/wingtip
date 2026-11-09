@@ -72,7 +72,7 @@ public class SecurityConfig {
     // mosaics, drawn by the browser straight from IEM's tile cache.
     private static final String OVERLAY_IMAGES = "https://basemap.nationalmap.gov https://tile.googleapis.com https://mesonet.agron.iastate.edu";
     private static final String OVERLAY_CONNECT = "https://tile.googleapis.com";
-    // An airplane's photo on its card (apps/web/src/lib/planePhoto.ts): asked of
+    // An airplane's photo on its card (apps/web/src/features/plan/lib/planePhoto.ts): asked of
     // Planespotters.net's API by the browser, as its terms have an app's
     // pages do, and its thumbnail shown from Planespotters' own server.
     private static final String PHOTO_IMAGES = "https://t.plnspttrs.net";
@@ -316,7 +316,7 @@ public class SecurityConfig {
                                         + "style-src 'self' 'unsafe-inline'; "
                                         // 'wasm-unsafe-eval': WebAssembly compiled from
                                         // this origin's own files, the page reader's
-                                        // engine (web lib/readPage); no script eval.
+                                        // engine (web features/plan/lib/readPage); no script eval.
                                         + "script-src 'self' 'wasm-unsafe-eval'; "
                                         + "connect-src 'self' " + OVERLAY_CONNECT + " " + PHOTO_CONNECT + "; "
                                         + "object-src 'none'; "

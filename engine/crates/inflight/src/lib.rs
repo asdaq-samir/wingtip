@@ -20,9 +20,6 @@ pub mod watch;
 
 use wingtip_core::json::{self, Value};
 
-/// The names this crate answers (call.rs).
-pub const NAMES: [&str; 1] = ["copilot_watch"];
-
 /// The rule `name` worked on `v`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let answer = match name {

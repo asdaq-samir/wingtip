@@ -8,8 +8,8 @@ import { FrequencyRow } from "../FrequencyRow";
 import { PublicationRows } from "../PublicationRows";
 import { RunwayRow } from "../RunwayRow";
 import PatternRadio from "./PatternRadio";
-import { fieldPhases } from "../../../../lib/radio";
-import { useRunwayPicks } from "../../../../lib/useRunwayPicks";
+import { fieldPhases } from "../../lib/radio";
+import { useRunwayPicks } from "../../lib/useRunwayPicks";
 
 /**
  * The Brief's airports: a section for each field the flight leaves or

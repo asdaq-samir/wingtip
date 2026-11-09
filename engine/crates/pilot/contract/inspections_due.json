@@ -1,0 +1,161 @@
+{
+  "x-call": "wingtip_pilot::pilot::records::call",
+  "description": "The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "InspectionsDueInput",
+      "type": "object",
+      "properties": {
+        "annual_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        },
+        "elt_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        },
+        "static_check_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        },
+        "transponder_check_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        },
+        "hundred_hour_at_hours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "vor_check": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "on": {
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "VOT",
+                    "REPAIR_STATION",
+                    "GROUND",
+                    "AIRBORNE",
+                    "RADIAL",
+                    "DUAL"
+                  ]
+                },
+                "error_deg": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "on",
+                "kind",
+                "error_deg"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "InspectionsDueAnswer",
+      "type": "object",
+      "properties": {
+        "annual_until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        },
+        "elt_until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        },
+        "static_check_until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        },
+        "transponder_check_until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        },
+        "hundred_hour_due_at_hours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "vor_check": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "limit_deg": {
+                  "type": "number"
+                },
+                "within": {
+                  "type": "boolean"
+                },
+                "until": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "limit_deg",
+                "within",
+                "until"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "annual_until",
+        "elt_until",
+        "static_check_until",
+        "transponder_check_until",
+        "hundred_hour_due_at_hours",
+        "vor_check"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

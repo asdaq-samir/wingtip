@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
-import { EXPANDED_BUTTON } from "../lib/expandedButton";
+import { EXPANDED_BUTTON } from "./expandedButton";
 
 /**
  * A drawer header's action: its icon with a short word under it, as an

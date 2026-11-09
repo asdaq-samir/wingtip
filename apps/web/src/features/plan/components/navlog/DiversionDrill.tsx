@@ -15,7 +15,7 @@ import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
 import { bearing, grouped, windCorrection } from "../../../../lib/format";
 import { FINDING_TONE } from "../../../../lib/findings";
-import { typedNumber, written } from "../../../../lib/workings";
+import { typedNumber, written } from "./workings";
 import { nearestQuery } from "../../../../lib/queryClient";
 
 /** The diversion worked out, step by step, once checked. */

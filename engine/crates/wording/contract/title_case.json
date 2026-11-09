@@ -1,0 +1,47 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "The FAA's capitals in title case, from text, or each of texts as a list (a null row answers \"\").",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TitleCaseInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "texts": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "answer": {
+      "title": "TitleCaseAnswer",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

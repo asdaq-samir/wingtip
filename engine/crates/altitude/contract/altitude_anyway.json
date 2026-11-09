@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "The altitude a route with no legal one is flown at anyway (the owner's warn, never limit): the lowest over the floor everywhere on the course's own altitudes (14 CFR 91.159, 91.179(b)); null where no floor is known.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AltitudeAnywayInput",
+      "type": "object",
+      "properties": {
+        "selection": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "selection"
+      ]
+    },
+    "answer": {
+      "title": "AltitudeAnywayAnswer",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

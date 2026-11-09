@@ -12,7 +12,7 @@ import { TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
  *   all the way up, and the open one tapped again up there takes it back
  *   half way, as the route's tabs do (PanelTabs).
  * - CardTabPanel: a tab's content, spaced as every card's is.
- * - useCardTab (lib/cardTab): the tab picked, kept for each airport while
+ * - useCardTab (features/plan/lib/cardTab): the tab picked, kept for each airport while
  *   the page is open: back from a card over it, the same tab.
  */
 

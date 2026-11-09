@@ -1,10 +1,10 @@
 import { Cloud, CloudLightning, CloudRain, CloudSnow, CloudSun, Sun } from "lucide-react";
 import { cn } from "cn";
-import { colourOf } from "../../../lib/map/flightCategory";
+import { colourOf } from "../../../lib/map/marks/flightCategory";
 import { clockTime } from "../../../lib/format";
 import { altFt } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
-import type { Hour } from "../../../lib/hourly";
+import type { Hour } from "../lib/hourly";
 import { reportedWind } from "../format";
 
 /** The hour's glyph: its weather where it has one worth showing, else its sky. */
@@ -28,8 +28,8 @@ function spokenOf(hour: Hour, label: string, wind: ReturnType<typeof reportedWin
 /**
  * The field's hours across the weather's card, as Apple's Weather lays
  * out its hourly forecast, at the owner's pick (G1, 2026-10-29): Now and
- * each hour after it (lib/hourly), a column each -- the time, the sky,
- * a bar in the flight category's colour (the FAA's, lib/map/flightCategory)
+ * each hour after it (features/plan/lib/hourly), a column each -- the time, the sky,
+ * a bar in the flight category's colour (the FAA's, lib/map/marks/flightCategory)
  * with the weather at times a lighter one under it, the ceiling in feet,
  * and the wind, true, as FPL's list writes it on a field (reportedWind).
  * The row alone scrolls sideways, not the page: the panel's swipe back
@@ -38,7 +38,7 @@ function spokenOf(hour: Hour, label: string, wind: ReturnType<typeof reportedWin
  */
 export function HourlyForecast({ hours, arrival }: {
   hours: Hour[];
-  /** The planned arrival's hour (lib/hourly arrivalHour) and its time. */
+  /** The planned arrival's hour (features/plan/lib/hourly arrivalHour) and its time. */
   arrival: { index: number; at: number } | null;
 }) {
   return (

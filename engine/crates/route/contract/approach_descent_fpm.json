@@ -1,0 +1,33 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The descent rate on the path, ft/min (the TPP's rate of descent table).",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachDescentFpmInput",
+      "type": "object",
+      "properties": {
+        "gs_kt": {
+          "type": "number"
+        },
+        "angle_deg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "gs_kt",
+        "angle_deg"
+      ]
+    },
+    "answer": {
+      "title": "ApproachDescentFpmAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

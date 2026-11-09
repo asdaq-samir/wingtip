@@ -1,0 +1,76 @@
+{
+  "title": "GonogoPicks",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "pattern": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "additionalItems": false
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Field to end, as an object or [field, end] pairs."
+        },
+        "takeoff": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "additionalItems": false
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Field to end, as an object or [field, end] pairs."
+        }
+      }
+    },
+    {
+      "type": "null"
+    }
+  ],
+  "description": "The pilot's picked runway ends, landing (pattern) and takeoff."
+}

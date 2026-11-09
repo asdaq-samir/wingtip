@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_brief::alternates::call",
+  "description": "The fields offered as the IFR alternate: those that will do, or that meet the standard minimums and publish their own, good first then nearest, `limit` of them.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "IfrAlternatesRankedInput",
+      "type": "object",
+      "properties": {
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "An ifr_alternate_check answer with its distance_nm."
+          }
+        },
+        "limit": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "checks"
+      ]
+    },
+    "answer": {
+      "title": "IfrAlternatesRankedAnswer",
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

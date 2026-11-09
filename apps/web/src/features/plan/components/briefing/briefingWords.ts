@@ -1,5 +1,5 @@
 import { altFt } from "../../format";
-import type { SuaWhen, TfrWhen } from "../../../../lib/passTimes";
+import type { SuaWhen, TfrWhen } from "../../lib/passTimes";
 import type { Finding } from "../../../../lib/findings";
 
 // The words the briefing's parts share (FlightBriefingView), apart from
@@ -16,7 +16,7 @@ export function hazardAltitudeRange(lowFt: number | null, highFt: number | null)
 }
 
 /** A special-use area's word for the pass: its times of use's
- *  (lib/passTimes), or SFDPS's status now where it holds then
+ *  (features/plan/lib/passTimes), or SFDPS's status now where it holds then
  *  (lib/liveReports liveWhen). */
 type AreaWhen = SuaWhen | "active-now" | "cold-now";
 

@@ -5,7 +5,7 @@ import SwitchRow from "./SwitchRow";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { useWeatherLayers, type WindsAt } from "../lib/map/weatherLayers";
+import { useWeatherLayers, type WindsAt } from "../lib/map/sources/weatherLayers";
 import { TEXT } from "../lib/text";
 import { WINDS_MODELLED_LABEL } from "../lib/windsAloft";
 
@@ -24,7 +24,7 @@ const WINDS: { value: WindsAt; label: string }[] = [
  * "A layers button on the map"): the radar, the satellite picture, the
  * SIGMETs and G-AIRMETs, the pilot reports, each on or off, and the winds
  * aloft at an altitude picked from a menu (discrete altitudes, not a
- * slider). Kept on this device (lib/map/weatherLayers).
+ * slider). Kept on this device (lib/map/sources/weatherLayers).
  */
 export default function WeatherSettings() {
   const { radar, satellite, areas, pireps, winds, set } = useWeatherLayers();

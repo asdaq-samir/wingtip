@@ -2,9 +2,9 @@ import { Fragment } from "react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import type { Briefing, Leg } from "../../../../lib/api/types";
-import { compassWord, entryFor, exitFor, patternSideDeg, runwayNumber, type RunwayEnd } from "../../../../lib/pattern";
-import { fieldPhases, type RadioCall, type RadioPhase } from "../../../../lib/radio";
-import { useRunwayPicks } from "../../../../lib/useRunwayPicks";
+import { compassWord, entryFor, exitFor, patternSideDeg, runwayNumber, type RunwayEnd } from "../../lib/pattern";
+import { fieldPhases, type RadioCall, type RadioPhase } from "../../lib/radio";
+import { useRunwayPicks } from "../../lib/useRunwayPicks";
 import { altFt } from "../../format";
 import { Mhz } from "../FrequencyRow";
 
@@ -162,7 +162,7 @@ function PatternRows({ phase, facilities, courseDeg }: { phase: RadioPhase; faci
  * card and radio scripts, ACS PA.III.A and B), in the Brief's section
  * for it: leaving it or arriving -- both at a stop -- its pattern
  * drawn for the runway the wind favours, then the calls in the order they
- * are made (lib/radio), worked out over the whole route so each field's
+ * are made (features/plan/lib/radio), worked out over the whole route so each field's
  * calls know the next. Nothing for a local flight: there is no route to
  * call along.
  */

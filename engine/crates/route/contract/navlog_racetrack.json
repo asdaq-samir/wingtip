@@ -1,0 +1,72 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "One turn round a hold's racetrack from the fix, [lat, lon] pairs: standard-rate turns (3 degrees a second) and legs of leg_nm, true degrees.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogRacetrackInput",
+      "type": "object",
+      "properties": {
+        "fix": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "inbound_true_deg": {
+          "type": "number"
+        },
+        "right": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "tas_kt": {
+          "type": "number"
+        },
+        "leg_nm": {
+          "type": "number"
+        },
+        "steps": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "fix",
+        "inbound_true_deg",
+        "tas_kt",
+        "leg_nm"
+      ]
+    },
+    "answer": {
+      "title": "NavLogRacetrackAnswer",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

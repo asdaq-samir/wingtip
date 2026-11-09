@@ -1,0 +1,128 @@
+{
+  "x-call": "wingtip_route::route::options::call",
+  "x-feature": "route-options",
+  "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route and the most filed one with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "$ref": "#/definitions/RouteOptionsInput"
+    },
+    "answer": {
+      "title": "RouteOptionsAnswer",
+      "type": "object",
+      "properties": {
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RouteOption"
+          }
+        },
+        "own": {
+          "$ref": "#/definitions/RouteOption"
+        },
+        "filed": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RouteOption"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "current_path": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "direct": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "ends": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "current": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "current_along": {
+          "$ref": "#/definitions/RouteOptionsAlong"
+        },
+        "current_marginal": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "hazards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RouteOptionsHazard"
+          }
+        },
+        "unchecked": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "food_unread": {
+          "type": "array",
+          "items": {
+            "title": "RouteOptionsFoodUnread",
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "ident",
+              "lat",
+              "lon"
+            ]
+          }
+        }
+      },
+      "required": [
+        "options",
+        "own",
+        "filed",
+        "current_path",
+        "direct",
+        "ends",
+        "current",
+        "current_along",
+        "current_marginal",
+        "hazards",
+        "unchecked",
+        "food_unread"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

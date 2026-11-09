@@ -50,7 +50,7 @@ interface AtcRadio {
    *  was chosen), for the pill, the captions and the card to name; null
    *  while none is held, as in every browser that cannot pick one. */
   input: HeardInput | null;
-  /** Stops the ATIS being heard (lib/atis's hearAtis), while it is: the
+  /** Stops the ATIS being heard (features/plan/lib/atis's hearAtis), while it is: the
    *  radio or the microphone started meanwhile stops it first, so one
    *  recognizer listens at a time. */
   atisStop: (() => void) | null;
@@ -158,7 +158,7 @@ export interface PlannedRoute { dep: string; stops: string[]; dest: string }
  *  direct to a place as said, which answers why not where it cannot; an
  *  altitude to fly; a clearance's route entered over the route planned,
  *  with its SID and STAR and the altitude it gives; and of the pilot's
- *  own commands (lib/pilotCommand), the Nearest list and an approach's
+ *  own commands (components/pilotCommand), the Nearest list and an approach's
  *  page in the procedures sheet, which answers why not where it cannot. */
 export const useRadioActions = create<{
   directTo: ((said: string) => Promise<string | null>) | null;

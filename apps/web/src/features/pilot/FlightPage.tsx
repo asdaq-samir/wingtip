@@ -10,11 +10,11 @@ import { api } from "../../lib/api/client";
 import type { Flight, FlightSummary } from "../../lib/api/types";
 import {
   debrief, type Debrief,
-} from "../../lib/debrief";
+} from "./debrief";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../lib/frat";
 import { TEXT } from "../../lib/text";
 import { keepTrack, keptTrack, readTrack, thin, TrackError, type TrackPoint } from "../../lib/track";
-import { useFlownTrack } from "../../lib/map/flownTrack";
+import { useFlownTrack } from "../../lib/map/position/flownTrack";
 import { routeName } from "../../lib/identSchema";
 import { altFt, bearing, feet, gal, grouped, nm } from "../../lib/format";
 import { mayUse, useEntitlement } from "../../lib/subscription";
@@ -174,7 +174,7 @@ type Track = { source: string; points: TrackPoint[] };
 
 /**
  * The debrief: a track imported from the pilot's own app (GPX or KML),
- * read against the saved flight's nav log (lib/debrief). The track stays
+ * read against the saved flight's nav log (features/pilot/debrief). The track stays
  * on this device unless the pilot saves it to their account, and either
  * can be forgotten.
  */

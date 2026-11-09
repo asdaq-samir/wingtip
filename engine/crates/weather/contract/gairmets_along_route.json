@@ -1,0 +1,56 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (AC 00-45H).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GairmetsAlongRouteInput",
+      "type": "object",
+      "properties": {
+        "advisories": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon], degrees."
+          },
+          "description": "The route flown, [[lat, lon], ...]."
+        },
+        "start": {
+          "type": "number"
+        },
+        "end": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "advisories",
+        "path",
+        "start",
+        "end"
+      ]
+    },
+    "answer": {
+      "title": "GairmetsAlongRouteAnswer",
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

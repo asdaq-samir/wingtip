@@ -1,0 +1,27 @@
+{
+  "title": "WeatherWorst",
+  "description": "The worst a TAF forecasts in a window, TEMPO and PROB groups included.",
+  "type": "object",
+  "properties": {
+    "ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ceiling_unknown": {
+      "type": "boolean"
+    },
+    "visibility_sm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "ceiling_ft",
+    "ceiling_unknown",
+    "visibility_sm"
+  ]
+}

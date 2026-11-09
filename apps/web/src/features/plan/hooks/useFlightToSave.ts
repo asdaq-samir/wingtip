@@ -6,7 +6,7 @@ import { NO_PLAN, useBriefPlan } from "../../../lib/briefPlan";
 import { picksOf } from "../../../lib/flightLink";
 import { identOf } from "../../../lib/identSchema";
 import { patched } from "../../../lib/useSearchParamsNow";
-import { useWindPicks } from "../../../lib/windPicks";
+import { useWindPicks } from "../lib/windPicks";
 import { useAsk } from "../components/ask/useAsk";
 import { useTabAsk } from "../components/navlog/panelTab";
 import { briefingLegs } from "./briefingLegs";
@@ -63,7 +63,7 @@ export function useFlightToSave({
   // Offered once the plan has settled: no stage still being planned, and
   // the runways into the wind picked -- they plan the route again with
   // their patterns flown, and a Save before them filed the plan before
-  // them (the owner's yes, 2026-10-28; lib/windPicks). Nor while the log
+  // them (the owner's yes, 2026-10-28; features/plan/lib/windPicks). Nor while the log
   // on screen is the one before a new runway or altitude, held there till
   // its own is in (usePlan's `replanning`): its stage is not said, and a
   // Save then filed the plan being replaced.

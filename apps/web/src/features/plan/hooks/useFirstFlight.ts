@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { api } from "../../../lib/api/client";
-import { positionNow } from "../../../lib/map/ownShip";
+import { positionNow } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
 import { FIRST_FLIGHT, unseen, useTips } from "../../../lib/firstRunTips";
 import type { RouteParts } from "../components/RouteBox";

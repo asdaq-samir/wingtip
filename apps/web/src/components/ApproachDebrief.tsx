@@ -8,7 +8,7 @@ import { api } from "../lib/api/client";
 import type { ProcedureDrawing, ProcedureList } from "../lib/api/types";
 import {
   findApproaches, withMinimums, withTransition, type ApproachDebrief as Debriefed, type Tone,
-} from "../lib/approachDebrief";
+} from "./approachDebriefModel";
 import { clockTime } from "../lib/format";
 import { rad } from "../lib/geo";
 import { sameField, transitionWords, type PickedProcedure } from "../lib/procedures";
@@ -42,7 +42,7 @@ function Mark({ tone }: { tone: Tone }) {
 
 /**
  * The approaches a track flew, each debriefed against its procedure
- * (lib/approachDebrief): of the fields' approaches in the FAA's CIFP, the
+ * (components/approachDebriefModel): of the fields' approaches in the FAA's CIFP, the
  * one whose final the track came down, the one picked for the flight
  * where it fits as well, and then its transition. Nothing where none was
  * flown. For the pilot's own flight (FlightPage) and an airplane followed

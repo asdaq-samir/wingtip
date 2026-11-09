@@ -1,0 +1,66 @@
+{
+  "title": "ShortFieldTable",
+  "type": "object",
+  "properties": {
+    "pressure_altitudes_ft": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "temperatures_c": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "weights_lb": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ground_roll_ft": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "total_50ft_ft": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "required": [
+          "ground_roll_ft",
+          "total_50ft_ft"
+        ]
+      },
+      "description": "One per weight, each a grid of altitudes by temperatures."
+    },
+    "grass_ground_roll_pct": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "pressure_altitudes_ft",
+    "temperatures_c",
+    "weights_lb",
+    "tables",
+    "grass_ground_roll_pct"
+  ],
+  "description": "A POH's short-field takeoff or landing table: at least two altitudes and two temperatures, a grid of them for every weight."
+}

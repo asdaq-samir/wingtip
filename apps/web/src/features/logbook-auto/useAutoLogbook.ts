@@ -4,7 +4,7 @@ import { api } from "../../lib/api/client";
 import type { LogbookEntry } from "../../lib/api/types";
 import { callEngine } from "../../lib/engine/engine";
 import { useEngineReady } from "../../lib/engine/useEngineReady";
-import { useOwnShip } from "../../lib/map/ownShip";
+import { useOwnShip } from "../../lib/map/position/ownShip";
 import { airplaneChosen, usePreferences } from "../../lib/preferences";
 import { flightsQuery, pilotQuery } from "../../lib/queryClient";
 import { entryRequest, flightEnded, likelyFlight, type Edits } from "./draftEntry";

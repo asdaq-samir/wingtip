@@ -1,0 +1,35 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A hold read from the route's text (\"VPBNG/090/30:270:R:1M:2T\"), or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HoldReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "HoldReadAnswer",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/RouteHold"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

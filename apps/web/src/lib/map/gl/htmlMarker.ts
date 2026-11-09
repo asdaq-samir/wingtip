@@ -1,6 +1,6 @@
 import { Marker } from "maplibre-gl";
 import { prefersReducedMotion } from "../../motion";
-import type { IconLike } from "../icons";
+import type { IconLike } from "../marks/icons";
 
 export type { IconLike };
 

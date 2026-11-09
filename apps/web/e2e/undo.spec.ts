@@ -5,7 +5,7 @@ import { clearTheRoute, openPanel, settle, sideDrawer } from "./helpers";
  * Undo in place of asking first (the owner's "make the pilot aware, never
  * restrict them"): the route cleared or a stop taken out goes at once,
  * and the bar that says so takes it back; Cmd-Z or Ctrl-Z does too, and
- * Shift with it gives the change again (lib/planHistory).
+ * Shift with it gives the change again (hooks/planHistory).
  *
  * Only the route's own address is looked at, so the planner's answers are
  * not waited for: they are let go.

@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A hold as the route's text writes it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HoldWriteInput",
+      "type": "object",
+      "properties": {
+        "hold": {
+          "$ref": "#/definitions/RouteHoldIn"
+        }
+      },
+      "required": [
+        "hold"
+      ]
+    },
+    "answer": {
+      "title": "HoldWriteAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

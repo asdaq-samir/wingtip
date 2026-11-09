@@ -6,8 +6,8 @@ import AfterPaint from "../../../../components/AfterPaint";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Input } from "../../../../components/ui/input";
 import type { AircraftProfile, Briefing, Course } from "../../../../lib/api/types";
-import { runwayChecks, type RunwayDistance } from "../../../../lib/runwayCheck";
-import { useRunwayPicks } from "../../../../lib/useRunwayPicks";
+import { runwayChecks, type RunwayDistance } from "../../lib/runwayCheck";
+import { useRunwayPicks } from "../../lib/useRunwayPicks";
 import { FINDING_TONE } from "../../../../lib/findings";
 import FindingIcon from "../../../../components/FindingIcon";
 import { windOnRunway } from "../../format";
@@ -125,7 +125,7 @@ function RunwayBar({ distance, lengthFt }: { distance: RunwayDistance; lengthFt:
 
 /**
  * The runway check at each airport the flight takes off from or lands at
- * (lib/runwayCheck): the runway the wind favours, the POH's short-field
+ * (features/plan/lib/runwayCheck): the runway the wind favours, the POH's short-field
  * distances on it at the field's pressure altitude and temperature, the
  * weight from Weight & Balance and the reported wind -- drawn against the
  * runway's length -- then the density altitude the airplane performs at,

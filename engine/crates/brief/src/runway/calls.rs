@@ -1,7 +1,7 @@
 //! The runway rules by name (crate::call lists them): each reads its input
 //! as the planner's and the web's own objects in snake_case -- a runway as
 //! the planner sends one (`runway_ends`, `wind`), a METAR's wind, a POH's
-//! ShortField -- and answers JSON, None where the name is not one of them.
+//! ShortField -- and answers JSON.
 
 use super::circuit::{self, CircuitEnd, CircuitRunway, Pattern, Point};
 use super::performance::{self, FieldReport, FitWind};
@@ -12,10 +12,11 @@ use crate::json::{self, Value};
 
 type R<T> = Result<T, String>;
 
-/// The rule `name` on `v`; None where the name is not a runway rule.
-pub fn call(name: &str, v: &Value) -> Option<R<String>> {
+/// The rule `name` on `v`, as the runway rules' contract files
+/// (crates/brief/contract) name it to the dispatcher.
+pub fn call(name: &str, v: &Value) -> R<String> {
     let i = In { name };
-    Some(match name {
+    match name {
         "wind_components" => (|| {
             let (from, kt, heading) = (i.num(v, "from_deg")?, i.num(v, "kt")?, i.num(v, "heading_deg")?);
             let mut out = String::from("{\"headwind_kt\":");
@@ -145,8 +146,8 @@ pub fn call(name: &str, v: &Value) -> Option<R<String>> {
                 }
             })
         })(),
-        _ => return None,
-    })
+        _ => Err(format!("the engine has no rule called {name:?}")),
+    }
 }
 
 fn number(n: f64) -> String {

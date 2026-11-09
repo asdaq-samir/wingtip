@@ -3,9 +3,9 @@ import { useEffect, useRef } from "react";
 import { SHEET_SECONDS } from "../../../../components/mapChrome";
 import { prefersReducedMotion } from "../../../motion";
 import { usePreferences } from "../../../preferences";
-import { underway } from "../../glide";
-import { ownShipHtml } from "../../icons";
-import { useOwnShip } from "../../ownShip";
+import { underway } from "../../position/glide";
+import { ownShipHtml } from "../../marks/icons";
+import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
 

@@ -1,0 +1,24 @@
+{
+  "x-call": "wingtip_airspace::drills::call",
+  "description": "The oral's flash cards in the regulation's words: the tower's light signals (14 CFR 91.125) on the ground and in flight, and the basic VFR weather minimums (91.155(a), worded from the airspace column's own table; Class A from 91.135, the night pattern exception 91.155(b)(2)).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DrillDecksInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/DrillDeck"
+      },
+      "title": "DrillDecksAnswer"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

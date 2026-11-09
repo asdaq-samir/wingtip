@@ -1,0 +1,55 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "A runway's wind's crosswind, steady or gust, whichever is more.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RunwayCrosswindInput",
+      "type": "object",
+      "properties": {
+        "wind": {
+          "type": "object",
+          "properties": {
+            "end": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "headwind_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "crosswind_kt": {
+              "type": "number"
+            },
+            "gust_crosswind_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "in_use": {}
+          },
+          "required": [
+            "crosswind_kt"
+          ]
+        }
+      },
+      "required": [
+        "wind"
+      ]
+    },
+    "answer": {
+      "title": "RunwayCrosswindAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

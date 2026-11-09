@@ -4,7 +4,7 @@ import { api } from "../../../lib/api/client";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { type AircraftFilter, filtering, inEmergency, keptFilter, matches, relationTo, sameField } from "../../../lib/fbo";
 import { distanceNm, type LatLon } from "../../../lib/geo";
-import { squawkMeaning } from "../../../lib/squawks";
+import { squawkMeaning } from "../lib/squawks";
 import { nmAway } from "../../../lib/useAway";
 import { usePreferences } from "../../../lib/preferences";
 import { grouped } from "../../../lib/format";
@@ -55,7 +55,7 @@ function asAsked(f: AircraftFilter): AircraftFilter {
   return f.place === "map" && !filtering(f) ? { ...f, place: "near" } : f;
 }
 
-export { useTrafficFocus } from "../../../lib/map/tracking";
+export { useTrafficFocus } from "../../../lib/map/position/tracking";
 
 /**
  * The airplanes the strip's question keeps, of those its place gives: the

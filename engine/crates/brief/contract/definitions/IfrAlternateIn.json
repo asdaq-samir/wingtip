@@ -1,0 +1,67 @@
+{
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "approaches": {
+      "type": "object",
+      "properties": {
+        "any": {
+          "type": "boolean"
+        },
+        "precision": {
+          "type": "boolean"
+        },
+        "alternate_minimums_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "any",
+        "precision"
+      ],
+      "description": "The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page."
+    },
+    "forecast": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_unknown": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "The worst its TAF forecasts over the window (taf_window), null where no TAF covers it."
+    }
+  },
+  "required": [
+    "ident",
+    "approaches"
+  ]
+}

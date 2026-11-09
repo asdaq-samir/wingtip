@@ -1,0 +1,47 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A town's name as it is spelt (\"McCook\"), from text, or each of texts as a list (a null row answers \"\").",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PlaceNameInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "texts": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "answer": {
+      "title": "PlaceNameAnswer",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

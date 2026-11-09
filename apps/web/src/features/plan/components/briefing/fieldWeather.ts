@@ -1,13 +1,13 @@
 /**
  * A field's forecast, as the briefing's weather reads it (WeatherAlongRoute)
- * and the Brief's glance says it (lib/glance): the places of the route in
+ * and the Brief's glance says it (features/plan/lib/glance): the places of the route in
  * order, a field's own TAF or the nearest within the engine's reach
  * (`field_taf`, 25 nm), and the flight category for when the flight is
  * there.
  */
 import type { Briefing, Course } from "../../../../lib/api/types";
 import { distanceNm } from "../../../../lib/geo";
-import { categoryOf } from "../../../../lib/map/flightCategory";
+import { categoryOf } from "../../../../lib/map/marks/flightCategory";
 import { callEngine } from "../../../../lib/engine/engine";
 
 export type Station = Briefing["forecast"]["stations"][number];
@@ -65,7 +65,7 @@ export function nearestStation(stations: Station[], place: Place): { s: Station;
 
 /** A field's flight category for when the flight is there, as its
  *  Forecast row says it: its own TAF's, else the nearest's; else its
- *  METAR's; null where none says. The Brief's glance (lib/glance). */
+ *  METAR's; null where none says. The Brief's glance (features/plan/lib/glance). */
 export function fieldCategory(briefing: Briefing, course: Course, ident: string): string | null {
   const stations = briefing.forecast.stations;
   const place = placesOf(course).find(p => p.ident === ident);

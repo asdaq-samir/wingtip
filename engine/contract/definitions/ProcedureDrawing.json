@@ -1,0 +1,198 @@
+{
+  "title": "ProcedureDrawing",
+  "type": "object",
+  "properties": {
+    "airport": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "kind": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "\"approach\", \"arrival\" or \"departure\"."
+    },
+    "id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "transition": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stale": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "glidepath_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "final_course_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "lines": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "\"transition\", \"final\", \"missed\", \"common\" or \"runway\"."
+          },
+          "points": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "description": "[lat, lon, ...]",
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "additionalItems": false
+            }
+          }
+        }
+      }
+    },
+    "holds": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "fix": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "\"hold\" or \"procedure turn\"."
+          },
+          "missed": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "fixes": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "ident": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          },
+          "roles": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "\"IAF\", \"IF\", \"FACF\", \"FAF\", \"MAP\", \"hold\"."
+          },
+          "min_ft": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "max_ft": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "missed": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "lat",
+          "lon"
+        ]
+      }
+    },
+    "missed_legs": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/ApproachMissedLeg"
+      }
+    },
+    "runway_path": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ApproachRunwayPath"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "description": "A procedure as the planner draws it from the FAA's CIFP (/api/procedure's answer as it comes); only the members the engine reads."
+}

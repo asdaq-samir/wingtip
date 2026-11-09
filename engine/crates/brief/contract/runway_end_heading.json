@@ -1,0 +1,44 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "A runway end's true heading, the table's or its number's magnetic heading turned true; null where it has neither.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RunwayEndHeadingInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "heading_true_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "variation_deg": {
+          "type": "number",
+          "description": "Degrees, east positive."
+        }
+      },
+      "required": [
+        "variation_deg"
+      ]
+    },
+    "answer": {
+      "title": "RunwayEndHeadingAnswer",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

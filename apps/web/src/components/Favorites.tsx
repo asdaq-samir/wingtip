@@ -3,8 +3,8 @@ import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from "re
 import { useQuery } from "@tanstack/react-query";
 import type { AircraftKind } from "../lib/aircraftKind";
 import { cn } from "cn";
-import { airportMarkSvg } from "../lib/map/airportMark";
-import { colourOf } from "../lib/map/flightCategory";
+import { airportMarkSvg } from "../lib/map/marks/airportMark";
+import { colourOf } from "../lib/map/marks/flightCategory";
 import type { AirspaceClass, RecentAirport } from "../lib/preferences";
 import { useAirspace } from "../lib/useAirspace";
 import { holdOpenCard } from "../lib/openCards";
@@ -485,7 +485,7 @@ export function SmallMark({ icon, className, style }: { icon: ReactNode; classNa
 }
 
 /** An airport's own chart symbol, small, as the map draws it
- *  (lib/map/airportMark): its airspace's ring and colour, its METAR's
+ *  (lib/map/marks/airportMark): its airspace's ring and colour, its METAR's
  *  dot, a military or private field's letter -- one mark for the pills'
  *  airports, Favorites' as Nearest's, at the owner's ask ("Airports should
  *  have the same symbols as nearest"). */

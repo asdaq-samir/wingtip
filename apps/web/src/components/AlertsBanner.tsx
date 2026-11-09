@@ -6,8 +6,8 @@ import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { GLASS } from "./mapChrome";
 import { TEXT } from "../lib/text";
-import { acknowledge, alertTitle, alertWhen, alertWhere, useAhead } from "../lib/map/ahead";
-import { useSpokenAlerts } from "../lib/map/speak";
+import { acknowledge, alertTitle, alertWhen, alertWhere, useAhead } from "../lib/map/position/ahead";
+import { useSpokenAlerts } from "./speak";
 import { saaWords } from "../lib/liveReports";
 
 /** A warning's red and a caution's amber, as a cockpit's are. */
@@ -17,7 +17,7 @@ const INK = {
 } as const;
 
 /**
- * What is ahead of own ship in the air (lib/map/ahead), over the map
+ * What is ahead of own ship in the air (lib/map/position/ahead), over the map
  * where the pilot looks, above the system's problems: the first thing
  * ahead -- a warning before a caution, then the soonest -- with when and
  * how far, and how many more; a tap on the words opens all of them with

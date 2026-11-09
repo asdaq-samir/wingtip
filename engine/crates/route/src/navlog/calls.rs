@@ -11,28 +11,6 @@ use super::{read_air, read_leg_air, Obj, Profile, R};
 use crate::json::{self, Value};
 use wingtip_flight::performance::Climber;
 
-/// The names this module answers.
-pub const NAMES: [&str; 18] = [
-    "performance_cruise",
-    "performance_climb",
-    "navlog_leg",
-    "navlog_legs",
-    "navlog_with_climbs",
-    "navlog_with_descents",
-    "navlog_approach_end",
-    "navlog_totals",
-    "navlog_fuel_plan",
-    "navlog_alternate_leg",
-    "navlog_candidates",
-    "navlog_plans",
-    "navlog_legs_at",
-    "navlog_join_plans",
-    "navlog_join_figures",
-    "navlog_hold",
-    "navlog_racetrack",
-    "navlog_fuel_stop_need",
-];
-
 fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
     match v.get(key) {
         None | Some(Value::Null) => Ok(None),

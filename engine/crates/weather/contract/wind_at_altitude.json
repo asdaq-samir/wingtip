@@ -1,0 +1,87 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for \"altitudes\".",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WindAtAltitudeInput",
+      "type": "object",
+      "properties": {
+        "levels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "wind_dir_true_deg": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "wind_speed_kt": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "temp_c": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "description": "A station's levels by altitude in feet, as the weather store keeps them."
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "altitudes": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "levels"
+      ]
+    },
+    "answer": {
+      "title": "WindAtAltitudeAnswer",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/WindAloft"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/WindAloft"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

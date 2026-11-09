@@ -11,7 +11,7 @@ import { persist, type PersistStorage, type StateStorage } from "zustand/middlew
  */
 
 /** What each key was last written with, so the same is not written again:
- *  own ship's store is set at every GPS fix (lib/map/ownShip). */
+ *  own ship's store is set at every GPS fix (lib/map/position/ownShip). */
 const written = new Map<string, string>();
 /** The keys whose last write the browser refused. */
 const refused = new Set<string>();

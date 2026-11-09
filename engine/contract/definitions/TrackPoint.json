@@ -1,0 +1,29 @@
+{
+  "title": "TrackPoint",
+  "type": "object",
+  "properties": {
+    "t": {
+      "type": "number",
+      "description": "ms since 1970."
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "alt_ft": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "GPS altitude, ft."
+    }
+  },
+  "required": [
+    "t",
+    "lat",
+    "lon"
+  ],
+  "description": "A flown track's point."
+}

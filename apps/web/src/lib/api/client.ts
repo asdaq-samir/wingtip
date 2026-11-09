@@ -375,7 +375,7 @@ export const api = {
   mapAges: () => planner.GET("/api/map/ages").then(data<MapLayerAges>),
   nearestAirports: (lat: number, lon: number) =>
     planner.GET("/api/airports/nearest", { params: { query: { lat, lon, limit: 10 } } }).then(data<NearestAirports>).then(r => r.airports),
-  /** What the emergency assistant ranks (lib/emergency): the fields round
+  /** What the emergency assistant ranks (features/emergency/emergency): the fields round
    *  own ship, the wind at its altitude and the stock profile's glide. */
   emergencyFields: (lat: number, lon: number, altitudeFt: number | null, aircraft: string | null) =>
     planner.GET("/api/emergency/fields", {
@@ -651,7 +651,7 @@ export const api = {
   weatherMap: (box: { south: number; west: number; north: number; east: number }, altitudeFt: number | null) =>
     planner.GET("/api/weather/map", { params: { query: { ...box, altitude_ft: altitudeFt ?? undefined } } }).then(data<WeatherMap>),
 
-  /** What is ahead of own ship in the air (lib/map/ahead): airspace,
+  /** What is ahead of own ship in the air (lib/map/position/ahead): airspace,
    *  special-use areas and TFRs its track goes into, the ground and
    *  obstacles it comes near. */
   airspaceAhead: (ask: { lat: number; lon: number; track: number; gs: number; alt?: number; vs: number }) =>
@@ -730,7 +730,7 @@ export const api = {
 
   /** The cycle's overlay tiles -- airspace, special use, airports, navaids
    *  and fixes as one PMTiles archive -- by name, zooms and layers, for a
-   *  MapLibre map's source (lib/map/overlayTiles). */
+   *  MapLibre map's source (lib/map/sources/overlayTiles). */
   overlayTiles: () => planner.GET("/api/overlay-tiles").then(data<OverlayTiles>),
 
   /**

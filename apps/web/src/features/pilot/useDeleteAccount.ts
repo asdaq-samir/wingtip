@@ -3,7 +3,7 @@ import { api } from "../../lib/api/client";
 import { showError } from "../../lib/problems";
 
 /** What this device keeps for a pilot -- their preferences, the tracks
- *  they flew (lib/track), their drills (lib/drills), the charts kept for
+ *  they flew (lib/track), their drills (features/pilot/drills), the charts kept for
  *  a route -- all under the app's two prefixes in localStorage. */
 const ON_THIS_DEVICE = ["vfr.", "wingtip."];
 

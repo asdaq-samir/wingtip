@@ -1,0 +1,24 @@
+{
+  "title": "GonogoLine",
+  "type": "object",
+  "properties": {
+    "finding": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "caution",
+        "stop",
+        "unknown",
+        "pending"
+      ]
+    },
+    "words": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "finding",
+    "words"
+  ],
+  "description": "What the findings come to, in a line over them."
+}

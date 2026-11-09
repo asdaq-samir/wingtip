@@ -1,0 +1,33 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "Density altitude, ft, from pressure altitude and temperature (PHAK ch. 4).",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoDensityAltitudeInput",
+      "type": "object",
+      "properties": {
+        "pressure_alt_ft": {
+          "type": "number"
+        },
+        "temp_c": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "pressure_alt_ft",
+        "temp_c"
+      ]
+    },
+    "answer": {
+      "title": "GonogoDensityAltitudeAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

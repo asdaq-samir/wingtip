@@ -4,7 +4,7 @@ import type { SetURLSearchParams } from "react-router-dom";
 import type { PanelState } from "../../../components/mapChrome";
 import type { AircraftChoice, AirportPlace } from "../../../lib/api/types";
 import { positionIdent } from "../../../lib/identSchema";
-import { positionNow, useOwnShip } from "../../../lib/map/ownShip";
+import { positionNow, useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
 import { checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
 import { loadRoutePanel } from "../routePanelParts";

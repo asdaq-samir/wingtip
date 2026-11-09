@@ -1,14 +1,14 @@
 import { useEffect, useRef } from "react";
 import { useFlying } from "../../../components/mapChrome";
 import type { PanelState } from "../../../components/mapChrome";
-import { underway } from "../../../lib/map/glide";
-import { useOwnShip } from "../../../lib/map/ownShip";
-import { DRY_RUN, usePastFlight } from "../../../lib/map/pastFlight";
+import { underway } from "../../../lib/map/position/glide";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
+import { DRY_RUN, usePastFlight } from "../map/pastFlight";
 
 /**
  * Flying mode, the canvas's Flying screen (the owner's "Do it all",
  * 2026-11-03): once own ship is underway -- at flying speed by the
- * engine's rule (lib/map/glide's `underway`), the GPS's or a dry run's --
+ * engine's rule (lib/map/position/glide's `underway`), the GPS's or a dry run's --
  * with a route to fly, the planner screen is the flight's: the next
  * checkpoint over the map (FlyingHead), the flight's figures grown at the
  * sheet's foot (FlightLine's `flying`), the map's buttons 60 points with

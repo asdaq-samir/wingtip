@@ -1,0 +1,84 @@
+{
+  "title": "Clearance",
+  "type": "object",
+  "properties": {
+    "limit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "route": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ClearanceItem"
+      }
+    },
+    "asFiled": {
+      "type": "boolean"
+    },
+    "maintainFt": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "maintainLimit": {
+      "enum": [
+        "at or below",
+        "at or above",
+        null
+      ]
+    },
+    "vfr": {
+      "type": "boolean"
+    },
+    "expectFt": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "expectMin": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "frequency": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "facility": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "squawk": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "classB": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "limit",
+    "route",
+    "asFiled",
+    "maintainFt",
+    "maintainLimit",
+    "vfr",
+    "expectFt",
+    "expectMin",
+    "frequency",
+    "facility",
+    "squawk",
+    "classB"
+  ]
+}

@@ -1,5 +1,5 @@
 {
- "_note": "The weather reading moved into the engine (#482 phase 2) from the planner's wingtip.weather and the web's lib/hourly: each case's answer is what the planner's Python (or the web's reading) gave for it. engine/facade/tests/weather_along.rs asks the engine each by name; the planner and the web ask the same names.",
+ "_note": "The weather reading moved into the engine (#482 phase 2) from the planner's wingtip.weather and the web's features/plan/lib/hourly: each case's answer is what the planner's Python (or the web's reading) gave for it. engine/facade/tests/weather_along.rs asks the engine each by name; the planner and the web ask the same names.",
  "tafWindow": [
   {
    "fcsts": [

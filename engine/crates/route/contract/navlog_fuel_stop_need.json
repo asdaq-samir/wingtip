@@ -1,0 +1,170 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogFuelStopNeedInput",
+      "type": "object",
+      "properties": {
+        "totals": {
+          "type": "object",
+          "description": "The flight's nav log totals with its fuel check (navlog_totals, navlog_fuel_plan).",
+          "properties": {
+            "fuel_margin_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "usable_fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "distance_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ete_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "taxi_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "reserve_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "rules": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "night": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "distance_nm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "fuel_gal": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "start": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "end": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "depart_s": {
+          "type": "number",
+          "description": "The departure, unix seconds (now where none was given: the engine has no clock)."
+        }
+      },
+      "required": [
+        "totals",
+        "legs",
+        "start",
+        "end",
+        "depart_s"
+      ]
+    },
+    "answer": {
+      "title": "NavLogFuelStopNeedAnswer",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "fuel_per_nm": {
+          "type": "number"
+        },
+        "min_per_nm": {
+          "type": "number"
+        },
+        "usable_gal": {
+          "type": "number"
+        },
+        "taxi_gal": {
+          "type": "number"
+        },
+        "reserve_gal": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "fuel_per_nm",
+        "min_per_nm",
+        "usable_gal",
+        "taxi_gal",
+        "reserve_gal"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

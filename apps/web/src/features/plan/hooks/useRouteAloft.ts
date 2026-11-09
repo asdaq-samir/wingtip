@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import type { AloftPoint } from "../../../lib/map/gl/terrain/geometry";
-import type { TerrainMode } from "../../../lib/map/gl/terrain/useTerrainView";
+import type { AloftPoint } from "../map/terrain/geometry";
+import type { TerrainMode } from "../map/terrain/useTerrainView";
 import { dryRunOf } from "../components/navlog/dryRun";
 import type { NavLogRow } from "../components/navlog/rows";
 

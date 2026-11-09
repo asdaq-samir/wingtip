@@ -1,0 +1,36 @@
+{
+  "description": "A Class B shelf other than the flight's own (whose surface area holds one of its ends), as the FAA's Class Airspace shapefile has it: its floor and ceiling, ft MSL, and its rings of [lat, lon].",
+  "title": "ClassBShelf",
+  "type": "object",
+  "properties": {
+    "floor_ft_msl": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ceiling_ft_msl": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "rings": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    }
+  },
+  "required": [
+    "rings"
+  ]
+}

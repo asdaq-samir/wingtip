@@ -1,0 +1,44 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Still-air glide range, nm (1.5 nm per 1,000 ft, the C172S POH figure 3-1), or null on the ground or with no height.",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GlideRangeInput",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ground_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "GlideRangeAnswer",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -2,7 +2,7 @@ import { test, expect, type Page, type Route } from "@playwright/test";
 import { openMapSettings, settle, slow } from "./helpers";
 
 /**
- * What is ahead of own ship in the air (lib/map/ahead), said over the map
+ * What is ahead of own ship in the air (lib/map/position/ahead), said over the map
  * beside its buttons (AlertsBanner) and drawn where it is (AheadLayer).
  * The GPS is a fake one in flight -- east at 120 kt, 3,000 ft, near
  * Campbell Airport (C81) -- and the planner's answer is stubbed: what it

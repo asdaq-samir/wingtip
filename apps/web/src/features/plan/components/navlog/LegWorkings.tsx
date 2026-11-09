@@ -9,7 +9,7 @@ import Segmented from "../../../../components/Segmented";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import type { Leg } from "../../../../lib/api/types";
-import { ANSWERS, checks, typedNumber, workingsOf, written, type AnswerKey, type Workings } from "../../../../lib/workings";
+import { ANSWERS, checks, typedNumber, workingsOf, written, type AnswerKey, type Workings } from "./workings";
 import { TEXT } from "../../../../lib/text";
 import { FINDING_TONE } from "../../../../lib/findings";
 

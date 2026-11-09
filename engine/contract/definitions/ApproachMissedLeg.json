@@ -1,0 +1,45 @@
+{
+  "title": "ApproachMissedLeg",
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "ARINC 424-18 5.21's path and terminator: \"CA\", \"VI\", \"CF\", \"HM\" ..."
+    },
+    "fix": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "course_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "turn": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "\"L\" or \"R\"."
+    },
+    "min_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "max_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "description": "A missed approach's coded leg (ARINC 424-18 5.21)."
+}

@@ -1,0 +1,79 @@
+{
+  "x-call": "wingtip_pilot::pilot::kinds::call",
+  "description": "An endorsement filled in to sign (AC 61-65K appendix A): the fields it takes, each tidied to single spaces and \"\" where not given, any it does not take left out; the labels of the required ones still empty; and its words with the student and the fields in, as endorsement_render fills them. Null for a code no endorsement has.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "EndorsementFillInput",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "student": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fields": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Words by field name."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "code"
+      ]
+    },
+    "answer": {
+      "title": "EndorsementFillAnswer",
+      "anyOf": [
+        {
+          "title": "EndorsementFilled",
+          "type": "object",
+          "properties": {
+            "fields": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "fields",
+            "missing",
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

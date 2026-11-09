@@ -20,9 +20,9 @@ import { usePreferences } from "../../preferences";
 import { chartQuery, overlayTilesQuery, queryClient } from "../../queryClient";
 import { prefersReducedMotion } from "../../motion";
 import { FIT_MARGIN } from "../clear";
-import { CardCloseContext } from "../cardClose";
-import { prefetchRing, registerOverlayProtocol } from "../overlayTiles";
-import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../ownShip";
+import { CardCloseContext } from "../cards/cardClose";
+import { prefetchRing, registerOverlayProtocol } from "../sources/overlayTiles";
+import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../position/ownShip";
 import { GlMapContext, SLOTS, adoptLayers, parkLayers, slotId, sweepLayers, type DrawnImage, type GlMapApi, type GlTap, type Slot } from "./glLayer";
 import { OVERLAY_SOURCE, addOverlays, applyOverlayFilters, overlayPictures, overlayStyle } from "./glOverlays";
 import { glZoom } from "./glStyle";
@@ -50,7 +50,7 @@ const PARK_MS = 10_000;
 const REVEAL_EVENT = "mapreveal";
 const flight = () =>(prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 * 2);
 
-// The overlay tiles' protocol, once for the page (lib/map/overlayTiles).
+// The overlay tiles' protocol, once for the page (lib/map/sources/overlayTiles).
 registerOverlayProtocol(maplibregl);
 
 /** The overlays' pictures, once drawn (glOverlays' overlayPictures), for

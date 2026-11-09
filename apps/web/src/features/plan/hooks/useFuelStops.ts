@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { sameField } from "../../../lib/procedures";
-import { useSearchParam } from "../../../lib/useSearchParam";
+import { useSearchParam } from "../lib/useSearchParam";
 
 /**
  * The stops the pilot put in from the planner's fuel stops (FPL's Add fuel
