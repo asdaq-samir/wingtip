@@ -133,11 +133,16 @@ const SHEET_BELOW = "[--muted-foreground:oklch(0.5_0_0)] [--tint:var(--tint-shad
  *  the tabs ran into the window's top). */
 const FLOAT_PX = 16;
 
-function insetsOf(s: PanelState, d: Detents, onPhone: boolean, fromBottom: boolean): MapInsets {
+// The screen's top under a sheet from the bottom is the status bar's and
+// the Dynamic Island's (`safeTop`, env(safe-area-inset-top), about 59 pt on
+// an iPhone 16 Pro with viewport-fit=cover): kept out of the map's room, as
+// HIG's layout keeps content inside the safe area, where a fit put KOSH at
+// y = 38 under it (the FPL audit's A11). A sheet from the top covers it.
+function insetsOf(s: PanelState, d: Detents, onPhone: boolean, fromBottom: boolean, safeTop = 0): MapInsets {
   const up = s === "full";
-  if (!onPhone && s !== "peek") return { top: 0, bottom: 0, left: 16 + CARD, out: true, up };
+  if (!onPhone && s !== "peek") return { top: safeTop, bottom: 0, left: 16 + CARD, out: true, up };
   const strip = onPhone ? (s === "peek" ? d.peek : d.half) : d.peek + SHEET_MARGIN + (fromBottom ? 0 : FLOAT_PX);
-  return fromBottom ? { top: 0, bottom: strip, left: 0, out: s !== "peek", up } : { top: strip, bottom: 0, left: 0, out: s !== "peek", up };
+  return fromBottom ? { top: safeTop, bottom: strip, left: 0, out: s !== "peek", up } : { top: strip, bottom: 0, left: 0, out: s !== "peek", up };
 }
 
 /** What a phone's sheet says as it sets off for another size, on its
@@ -380,7 +385,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   const fullBody = Math.max(0, detents.full - headHeight - halfChrome - footFull);
 
   // What it covers of the map where it comes to rest (insetsOf).
-  const insetsFor = useCallback((s: PanelState, d: Detents) => insetsOf(s, d, onPhone, fromBottom), [onPhone, fromBottom]);
+  const insetsFor = useCallback((s: PanelState, d: Detents) => insetsOf(s, d, onPhone, fromBottom, safe.top), [onPhone, fromBottom, safe.top]);
 
   // The parts held in sight, `off` px in from where the popup's free edge
   // is laid out (its full height less its height now): a bottom sheet's
