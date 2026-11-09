@@ -1,0 +1,48 @@
+{
+  "description": "A special-use area (type P, R, MOA, W, A ...) or a TFR in force (notam_id, title): its rings of [lat, lon], an odd number of them holding a point inside.",
+  "title": "RouteOptionsArea",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notam_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "title": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "rings": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    }
+  },
+  "required": [
+    "rings"
+  ]
+}

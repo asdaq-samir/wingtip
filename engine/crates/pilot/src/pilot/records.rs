@@ -152,9 +152,6 @@ pub fn vor_limit_deg(kind: &str) -> Option<f64> {
     }
 }
 
-/// The names this module answers.
-pub const NAMES: [&str; 3] = ["endorsement_records", "inspections_due", "vor_check_limit_deg"];
-
 /// The rule `name` worked on `v`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {

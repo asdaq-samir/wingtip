@@ -1,0 +1,94 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoBalanceInput",
+      "type": "object",
+      "properties": {
+        "loading": {
+          "$ref": "#/definitions/GonogoLoading"
+        },
+        "load": {
+          "$ref": "#/definitions/GonogoLoad"
+        },
+        "trip_fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "loading",
+        "load"
+      ]
+    },
+    "answer": {
+      "title": "GonogoBalanceAnswer",
+      "type": "object",
+      "properties": {
+        "takeoff": {
+          "type": "object",
+          "properties": {
+            "weight_lb": {
+              "type": "number"
+            },
+            "arm_in": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "null where the weight is zero."
+            }
+          },
+          "required": [
+            "weight_lb",
+            "arm_in"
+          ]
+        },
+        "landing": {
+          "type": "object",
+          "properties": {
+            "weight_lb": {
+              "type": "number"
+            },
+            "arm_in": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "null where the weight is zero."
+            }
+          },
+          "required": [
+            "weight_lb",
+            "arm_in"
+          ]
+        },
+        "problems": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "takeoff_words": {
+          "type": "string",
+          "description": "\"2,407 lb at 41.2 in\"."
+        }
+      },
+      "required": [
+        "takeoff",
+        "landing",
+        "problems",
+        "takeoff_words"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

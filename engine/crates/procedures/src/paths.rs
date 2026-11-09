@@ -145,8 +145,6 @@ pub fn climb_nm(altitude_ft: Option<f64>, known_ft: Option<f64>) -> f64 {
     }
 }
 
-pub const NAMES: [&str; 5] = ["procedure_arc", "procedure_hold", "procedure_turn", "procedure_climb_nm", "procedure_hold_leg_nm"];
-
 fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
     v.get(key).and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"{key}\" is not a number"))
 }

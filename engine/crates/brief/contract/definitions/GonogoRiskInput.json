@@ -1,0 +1,204 @@
+{
+  "title": "GonogoRiskInput",
+  "type": "object",
+  "properties": {
+    "vfr_not_recommended": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+    },
+    "under_minimums": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "tfr_on_route": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+    },
+    "hazards": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The number of SIGMETs and G-AIRMETs on the route."
+    },
+    "night": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+    },
+    "night_passengers": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it."
+    },
+    "fuel_margin_gal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ifr": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+    },
+    "vor_check": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "good_through": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "within_limit": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The VOR check (14 CFR 91.171): left out for a stock profile, null for none recorded."
+    },
+    "inspections": {
+      "$ref": "#/definitions/GonogoInspections"
+    },
+    "squawks": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "inoperative": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+          },
+          "deferred_for": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "currency": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "flights": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "total_hours": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "day_passengers_until": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "night_passengers_until": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "instrument_current_until": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "instrument_current_from": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "pilot_currency's instrumentCurrentFrom: before this day the pilot is not instrument current yet."
+            },
+            "ipc_needed_after": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "flight_review_until": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "medical_expires_on": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "day": {
+      "type": "string",
+      "description": "The day flown, yyyy-mm-dd."
+    },
+    "ticked": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {},
+      "description": "The self checks ticked, by key, true where ticked."
+    }
+  },
+  "required": [
+    "day"
+  ]
+}

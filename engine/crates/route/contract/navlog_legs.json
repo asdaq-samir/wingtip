@@ -1,0 +1,57 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "A leg between each consecutive pair of fixes, all at altitude_ft, each in its own air (air, one a leg).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogLegsInput",
+      "type": "object",
+      "properties": {
+        "fixes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogFix"
+          }
+        },
+        "altitude_ft": {
+          "type": "number"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
+        },
+        "air": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLegAir"
+          }
+        }
+      },
+      "required": [
+        "fixes",
+        "altitude_ft",
+        "profile",
+        "air"
+      ]
+    },
+    "answer": {
+      "title": "NavLogLegsAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NavLogLeg"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

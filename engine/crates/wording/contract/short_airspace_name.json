@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "An airspace's name shortened for a card.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ShortAirspaceNameInput",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "ShortAirspaceNameAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

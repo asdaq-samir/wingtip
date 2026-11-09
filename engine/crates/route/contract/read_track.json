@@ -1,0 +1,78 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "A GPX or KML track read: its points in time order, or the words for the pilot where it has none to use.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReadTrackInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "ReadTrackAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "t": {
+                    "type": "number",
+                    "description": "ms since 1970."
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "alt_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "t",
+                  "lat",
+                  "lon",
+                  "alt_ft"
+                ]
+              }
+            }
+          },
+          "required": [
+            "points"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "error": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "error"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

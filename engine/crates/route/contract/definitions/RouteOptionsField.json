@@ -1,0 +1,36 @@
+{
+  "description": "A public field selling 100LL (NASR APT_BASE), its longest open paved runway and whether there is somewhere to eat (null: not read yet).",
+  "title": "RouteOptionsField",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "runway_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "food": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "ident",
+    "lat",
+    "lon"
+  ]
+}

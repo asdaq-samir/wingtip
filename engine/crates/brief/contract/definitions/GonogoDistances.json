@@ -1,0 +1,26 @@
+{
+  "title": "GonogoDistances",
+  "type": "object",
+  "properties": {
+    "ground_roll_ft": {
+      "type": "number"
+    },
+    "total_ft": {
+      "type": "number",
+      "description": "Over a 50 ft obstacle."
+    },
+    "caveats": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten."
+    }
+  },
+  "required": [
+    "ground_roll_ft",
+    "total_ft",
+    "caveats"
+  ],
+  "description": "The POH's short-field distances."
+}

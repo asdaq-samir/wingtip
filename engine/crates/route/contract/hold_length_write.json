@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A hold's length as its code, from exactly one of whole turns or minutes.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HoldLengthWriteInput",
+      "type": "object",
+      "properties": {
+        "turns": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "minutes": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "HoldLengthWriteAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

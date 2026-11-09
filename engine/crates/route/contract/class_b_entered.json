@@ -1,0 +1,55 @@
+{
+  "x-call": "wingtip_route::route::options::call",
+  "x-feature": "route-options",
+  "description": "Whether a straight leg flown at altitude_ft enters Class B (route/options/classb.rs): a shelf whose floor is at or under it and whose ceiling at or over it, which the leg goes into (14 CFR 91.131(a): an ATC clearance before entering). Under a shelf or over the top, it does not.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ClassBEnteredInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "end": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "altitude_ft": {
+          "type": "number"
+        },
+        "shelves": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ClassBShelf"
+          }
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "altitude_ft"
+      ]
+    },
+    "answer": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

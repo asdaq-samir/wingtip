@@ -1,0 +1,41 @@
+{
+  "title": "LogbookTakeoff",
+  "type": "object",
+  "properties": {
+    "t": {
+      "type": "number"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "field": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "towered": {
+      "type": "boolean"
+    },
+    "night": {
+      "type": "boolean",
+      "description": "14 CFR 1.1's night there and then."
+    },
+    "passenger_night": {
+      "type": "boolean",
+      "description": "61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise."
+    }
+  },
+  "required": [
+    "t",
+    "lat",
+    "lon",
+    "field",
+    "towered",
+    "night",
+    "passenger_night"
+  ]
+}

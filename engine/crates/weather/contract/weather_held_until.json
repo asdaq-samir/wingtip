@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "To when a stored copy may be served when later fetches fail, by its product's own validity (AC 00-45H): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WeatherHeldUntilInput",
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "string",
+          "enum": [
+            "metars",
+            "tafs",
+            "airsigmets",
+            "pireps",
+            "gairmets"
+          ]
+        },
+        "data": {},
+        "fetched": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "product",
+        "fetched"
+      ]
+    },
+    "answer": {
+      "title": "WeatherHeldUntilAnswer",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "The legs' totals: miles (procedures' miles more included), time and fuel (null while a leg is unflyable), unflyable legs and legs with no winds aloft.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogTotalsOfInput",
+      "type": "object",
+      "properties": {
+        "legs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLeg"
+          }
+        }
+      },
+      "required": [
+        "legs"
+      ]
+    },
+    "answer": {
+      "title": "NavLogTotalsOfAnswer",
+      "$ref": "#/definitions/NavLogTotals"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

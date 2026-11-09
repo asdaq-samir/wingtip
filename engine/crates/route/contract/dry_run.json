@@ -1,0 +1,206 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "The planned flight flown on paper along the nav log's rows, by its procedures and holds, going missed when asked.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DryRunInput",
+      "type": "object",
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogRow"
+          }
+        },
+        "start_s": {
+          "type": "number",
+          "description": "Seconds since 1970 at the start."
+        },
+        "line": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon], degrees.",
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "additionalItems": false
+          },
+          "description": "The route's line, [lat, lon] points."
+        },
+        "missed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "rows",
+        "start_s"
+      ]
+    },
+    "answer": {
+      "title": "DryRunAnswer",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "t": {
+                "type": "number"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "alt_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "gs_kt": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "track_deg": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "t",
+              "lat",
+              "lon",
+              "alt_ft",
+              "gs_kt",
+              "track_deg"
+            ]
+          }
+        },
+        "along_nm": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "fuel_gal": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "row_t": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "bends": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "route": {
+                "type": "number"
+              },
+              "run": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "route",
+              "run"
+            ]
+          }
+        },
+        "missable": {
+          "type": "boolean"
+        },
+        "final": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "number"
+                },
+                "to": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "from",
+                "to"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "landings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "t": {
+                "type": "number"
+              },
+              "nm": {
+                "type": "number"
+              },
+              "fuel": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "ident",
+              "t",
+              "nm",
+              "fuel"
+            ]
+          }
+        }
+      },
+      "required": [
+        "points",
+        "along_nm",
+        "fuel_gal",
+        "row_t",
+        "bends",
+        "missable",
+        "final",
+        "landings"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

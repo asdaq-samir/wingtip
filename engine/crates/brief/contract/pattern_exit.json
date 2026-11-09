@@ -1,0 +1,29 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "How to leave the pattern (AC 90-66C 11.8).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PatternExitInput",
+      "type": "object",
+      "properties": {
+        "traffic": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "\"right\" for right traffic; anything else, or none, is left (14 CFR 91.126(b)(1))."
+        }
+      }
+    },
+    "answer": {
+      "title": "PatternExitAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

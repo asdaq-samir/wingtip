@@ -1,0 +1,55 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The approaches a track flew, each debriefed.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachFindInput",
+      "type": "object",
+      "properties": {
+        "drawings": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ProcedureDrawing"
+          }
+        },
+        "points": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/TrackPoint"
+          }
+        },
+        "picked": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "minimums_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "ApproachFindAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ApproachDebrief"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,59 @@
+{
+  "x-call": "wingtip_procedures::paths::call",
+  "description": "A CIFP hold's racetrack (HA, HF, HM) at its fix, inbound on the true course to the fix, turning right or left, with standard-rate turns at a light airplane's 120 kt (AIM 5-3-8): the fix, the turn out, the outbound leg, the turn in, and back to the fix.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProcedureHoldInput",
+      "type": "object",
+      "properties": {
+        "fix": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon]"
+        },
+        "inbound_deg": {
+          "type": "number"
+        },
+        "turn": {
+          "type": "string",
+          "enum": [
+            "R",
+            "L"
+          ]
+        },
+        "leg_nm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "fix",
+        "inbound_deg",
+        "turn",
+        "leg_nm"
+      ]
+    },
+    "answer": {
+      "title": "ProcedureHoldAnswer",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2,
+        "description": "[lat, lon]"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

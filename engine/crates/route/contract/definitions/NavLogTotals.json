@@ -1,0 +1,38 @@
+{
+  "title": "NavLogTotals",
+  "type": "object",
+  "properties": {
+    "distance_nm": {
+      "type": "number"
+    },
+    "procedure_nm": {
+      "type": "number"
+    },
+    "ete_min": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "fuel_gal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "unflyable_legs": {
+      "type": "number"
+    },
+    "legs_without_wind": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "distance_nm",
+    "procedure_nm",
+    "ete_min",
+    "fuel_gal",
+    "unflyable_legs",
+    "legs_without_wind"
+  ]
+}

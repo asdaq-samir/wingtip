@@ -1,0 +1,82 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "Each piece of the route's procedures text with its pick as the web app reads it, or null, and whether it is one exactly as the planner takes it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProceduresReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "ProceduresReadAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "part": {
+            "type": "string"
+          },
+          "pick": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string",
+                    "description": "The airport."
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "The procedure's id."
+                  },
+                  "transition": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "direct": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "ident",
+                  "id",
+                  "transition",
+                  "direct"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "exact": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "part",
+          "pick",
+          "exact"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

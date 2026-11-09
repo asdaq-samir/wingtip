@@ -1,0 +1,45 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A field's radio as the kneeboard lists it, [short name, MHz] in its order (the tower's before the CTAF's).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "KneeboardRadioInput",
+      "type": "object",
+      "properties": {
+        "frequencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldFrequency"
+          }
+        }
+      },
+      "required": [
+        "frequencies"
+      ]
+    },
+    "answer": {
+      "title": "KneeboardRadioAnswer",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "additionalItems": false
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

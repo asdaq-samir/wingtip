@@ -1,0 +1,21 @@
+{
+  "x-call": "crate::call::rule",
+  "description": "The planned descent: 1,000 ft for every 3 nm, about a 3 degree path (AIM 2-1-2), feet a nautical mile.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DescentFtPerNmInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "DescentFtPerNmAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

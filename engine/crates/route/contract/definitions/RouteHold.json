@@ -1,0 +1,56 @@
+{
+  "title": "RouteHold",
+  "description": "A pilot's hold as the route's address writes it (\"VPBNG/090/30:270:R:1M:2T\"): legs by minutes or by nm, length by turns or by minutes, the other of each pair null.",
+  "type": "object",
+  "properties": {
+    "fix": {
+      "type": "string",
+      "description": "The point held at: an airport, a fix, or the pilot's own point off one."
+    },
+    "inbound": {
+      "type": "integer",
+      "description": "The inbound course to the fix, magnetic degrees, 0 to 359."
+    },
+    "right": {
+      "type": "boolean",
+      "description": "Right turns (standard, AIM 5-3-8)."
+    },
+    "leg_min": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The legs in minutes, or null where they are in nm."
+    },
+    "leg_nm": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The legs in nm, or null where they are in minutes."
+    },
+    "turns": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Laps to fly, or null where held by minutes."
+    },
+    "minutes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Minutes to hold, or null where held by turns."
+    }
+  },
+  "required": [
+    "fix",
+    "inbound",
+    "right",
+    "leg_min",
+    "leg_nm",
+    "turns",
+    "minutes"
+  ]
+}

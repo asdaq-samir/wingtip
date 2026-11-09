@@ -1,0 +1,49 @@
+{
+  "title": "GonogoMetar",
+  "type": "object",
+  "properties": {
+    "ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "visibility_sm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "altimeter_in_hg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "temp_c": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "wind_dir_true_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "wind_speed_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "wind_gust_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "description": "A field's METAR, as much as the rules read of it."
+}

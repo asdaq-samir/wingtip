@@ -1,0 +1,59 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "Whether a flight in a hazard from `enter` to `leave` is there while it is valid: \"before\" it starts, \"after\" it ends, else \"during\", its window widened by `margin_min` either way (30, PASS_MARGIN_MIN, where missing: an ETA is an estimate); null where it gives no window.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoHazardWindowInput",
+      "type": "object",
+      "properties": {
+        "enter": {
+          "type": "number"
+        },
+        "leave": {
+          "type": "number"
+        },
+        "valid_from": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "valid_to": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "margin_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "enter",
+        "leave"
+      ]
+    },
+    "answer": {
+      "title": "GonogoHazardWindowAnswer",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "before",
+        "during",
+        "after",
+        null
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

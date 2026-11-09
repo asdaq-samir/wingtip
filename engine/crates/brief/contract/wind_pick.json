@@ -1,0 +1,143 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "The wind a field's runways are chosen by (lib/pattern WindPick, AC 90-66C 11.5), or null with no wind to go by.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WindPickInput",
+      "type": "object",
+      "properties": {
+        "runways": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/Runway"
+          }
+        },
+        "nearby": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "station": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "distance_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "dir_true_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "speed_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "gust_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "description": "The nearest report's wind, for a field that reports none (a TAF's, with forecast_at)."
+        },
+        "forecast_at": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Seconds since 1970."
+        }
+      }
+    },
+    "answer": {
+      "title": "WindPickAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string",
+              "description": "The end as painted, \"\" where none is."
+            },
+            "headwind_kt": {
+              "type": "number"
+            },
+            "crosswind_kt": {
+              "type": "number"
+            },
+            "gust_crosswind_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "calm": {
+              "type": "boolean"
+            },
+            "variable_kt": {
+              "type": "number",
+              "description": "A variable wind's speed, there only for one."
+            },
+            "in_use": {
+              "const": true,
+              "description": "There only where calm picked the runway in use."
+            },
+            "from": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "ident": {
+                  "type": "string"
+                },
+                "nm": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "ident",
+                "nm"
+              ],
+              "description": "Where the wind was reported when not at the field."
+            },
+            "forecast_at": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "ident",
+            "headwind_kt",
+            "crosswind_kt",
+            "gust_crosswind_kt",
+            "calm",
+            "from"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

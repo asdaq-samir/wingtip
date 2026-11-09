@@ -29,9 +29,6 @@
 use crate::figures::words::{feet, grouped};
 use crate::json::{self, Value};
 
-/// The names this module answers.
-pub const NAMES: [&str; 1] = ["icing_forecast_route"];
-
 /// The AWC's severity categories by their number (the GFA's legend; "heavy"
 /// is the AWC's word where AIM 7-1-19's scale ends at "severe").
 pub const SEVERITY: [&str; 5] = ["none", "trace", "light", "moderate", "heavy"];

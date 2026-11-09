@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The frequencies an approach brief says.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachBriefFrequenciesInput",
+      "type": "object",
+      "properties": {
+        "frequencies": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/FieldFrequency"
+          }
+        }
+      }
+    },
+    "answer": {
+      "title": "ApproachBriefFrequenciesAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

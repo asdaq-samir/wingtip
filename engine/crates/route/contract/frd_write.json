@@ -1,0 +1,36 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A fix-radial-distance point's ident.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FrdWriteInput",
+      "type": "object",
+      "properties": {
+        "base": {
+          "type": "string"
+        },
+        "course": {
+          "type": "number"
+        },
+        "distance_nm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "base",
+        "course",
+        "distance_nm"
+      ]
+    },
+    "answer": {
+      "title": "FrdWriteAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

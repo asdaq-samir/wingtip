@@ -33,88 +33,23 @@ fn schema_names() -> BTreeSet<String> {
     contract()["properties"].as_object().unwrap().keys().cloned().collect()
 }
 
-/// The names in a module's `NAMES` list.
-fn names_const(src: &str) -> BTreeSet<String> {
-    let start = src.find("pub const NAMES").expect("a NAMES list");
-    // Past the type's `[&str; n]`, from the `=` to the list's end.
-    let open = start + src[start..].find('=').unwrap();
-    let list = &src[open..open + src[open..].find("];").unwrap()];
-    quoted(list)
-}
-
-/// The string literals in `text`.
-fn quoted(text: &str) -> BTreeSet<String> {
-    text.split('"').skip(1).step_by(2).map(str::to_owned).collect()
-}
-
-/// The names a dispatching `fn` matches on: its arms that are only string
-/// literals, alone or joined by `|`, before `=>` (or running on to the
-/// next line, as call.rs lists the runway rules).
-fn arms(src: &str, start: &str) -> BTreeSet<String> {
-    let at = src.find(start).unwrap_or_else(|| panic!("no {start:?}"));
-    let body = &src[at..at + src[at..].find("\n}\n").unwrap()];
-    let mut out = BTreeSet::new();
-    for line in body.lines() {
-        let pattern = line.split("=>").next().unwrap().trim().trim_start_matches('|').trim();
-        let pieces: Vec<&str> = pattern.split('|').map(str::trim).filter(|p| !p.is_empty()).collect();
-        let literal = |p: &&str| p.len() > 2 && p.starts_with('"') && p.ends_with('"') && p[1..p.len() - 1].chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
-        if !pieces.is_empty() && pieces.iter().all(literal) {
-            out.extend(pieces.iter().map(|p| p[1..p.len() - 1].to_owned()));
-        }
-    }
-    out
-}
-
-/// Every name the engine answers, read from its source, not its doc: the
-/// arms of call.rs's `call`, of motion's and the Go / No-Go's (which have no
-/// list), and the NAMES of the modules call.rs asks by them.
-fn code_names() -> BTreeSet<String> {
-    let mut names = BTreeSet::new();
-    names.extend(arms(include_str!("../src/call.rs"), "pub fn call("));
-    names.extend(arms(include_str!("../../crates/route/src/motion/mod.rs"), "pub fn call("));
-    names.extend(arms(include_str!("../../crates/brief/src/gonogo/calls.rs"), "pub fn call("));
-    for src in [
-        include_str!("../../crates/wording/src/wording/mod.rs"),
-        include_str!("../../crates/airspace/src/drills.rs"),
-        include_str!("../../crates/airspace/src/ahead.rs"),
-        include_str!("../../crates/pilot/src/pilot/records.rs"),
-        include_str!("../../crates/pilot/src/pilot/kinds.rs"),
-        include_str!("../../crates/brief/src/passengers.rs"),
-        include_str!("../../crates/procedures/src/paths.rs"),
-        include_str!("../../crates/weather/src/forecast/calls.rs"),
-        include_str!("../../crates/weather/src/rvr.rs"),
-        include_str!("../../crates/altitude/src/altitude/calls.rs"),
-        include_str!("../../crates/brief/src/alternates.rs"),
-        include_str!("../../crates/brief/src/fields/calls.rs"),
-        include_str!("../../crates/radio/src/mayday.rs"),
-        include_str!("../../crates/radio/src/atc.rs"),
-        include_str!("../../crates/brief/src/icing_forecast.rs"),
-        include_str!("../../crates/pilot/src/aircraft/calls.rs"),
-        include_str!("../../crates/pilot/src/autolog/mod.rs"),
-        include_str!("../../crates/route/src/approach/calls.rs"),
-        include_str!("../../crates/route/src/route/answers.rs"),
-        include_str!("../../crates/route/src/navlog/calls.rs"),
-        include_str!("../../crates/route/src/route/options.rs"),
-        include_str!("../../crates/inflight/src/lib.rs"),
-    ] {
-        names.extend(names_const(src));
-    }
-    names
-}
-
 #[test]
 fn every_name_dispatched_is_in_the_contract_and_no_other() {
-    let code = code_names();
+    // The dispatcher's table and the contract are both written from the
+    // rules' contract files (build.rs, engine/contract/gen), so they hold
+    // the same names unless the committed contract is stale, which
+    // wingtip-contract-gen's own test also catches.
+    let code: BTreeSet<String> = wingtip_engine::call::names().map(str::to_owned).collect();
     let schema = schema_names();
     let missing: Vec<_> = code.difference(&schema).collect();
     let extra: Vec<_> = schema.difference(&code).collect();
     assert!(missing.is_empty(), "the engine answers these, and the contract has no entry for them: {missing:?}");
     assert!(extra.is_empty(), "the contract has these, and the engine dispatches no such name: {extra:?}");
-    // The reading of the source finds real names: each is one the engine
-    // knows (asked with nothing, it may refuse the input, never the name).
+    // Each file's "x-call" is a function that answers its name: asked with
+    // nothing, it may refuse the input, never the name.
     for name in &code {
         if let Err(e) = call(name, "{}") {
-            assert!(!e.contains("has no rule called"), "{name}: {e}");
+            assert!(!e.contains("has no rule called"), "{name}: its contract file's \"x-call\" does not answer it: {e}");
         }
     }
     let required: BTreeSet<String> = contract()["required"].as_array().unwrap().iter().map(|n| n.as_str().unwrap().to_owned()).collect();

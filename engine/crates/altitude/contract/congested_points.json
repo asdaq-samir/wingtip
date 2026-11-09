@@ -1,0 +1,61 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "Whether each point is over a congested area or within 2,000 ft of one (14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet'), east-west by the cosine of the point's latitude, from the towns the planner reads (Census urban areas and gazetteer places).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CongestedPointsInput",
+      "type": "object",
+      "properties": {
+        "areas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AheadPolygons"
+          },
+          "description": "Each town's outline."
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "[[lat, lon], ...]."
+        },
+        "candidates": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "description": "For each point, the indices of the areas to measure it against; null, all of them."
+        }
+      },
+      "required": [
+        "areas",
+        "points"
+      ]
+    },
+    "answer": {
+      "title": "CongestedPointsAnswer",
+      "type": "array",
+      "items": {
+        "type": "boolean"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

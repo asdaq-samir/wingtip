@@ -1,0 +1,41 @@
+{
+  "x-call": "crate::call::rule",
+  "description": "The geodesic distance between two points on the WGS 84 ellipsoid, nm.",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DistanceNmInput",
+      "type": "object",
+      "properties": {
+        "lat1": {
+          "type": "number"
+        },
+        "lon1": {
+          "type": "number"
+        },
+        "lat2": {
+          "type": "number"
+        },
+        "lon2": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "lat1",
+        "lon1",
+        "lat2",
+        "lon2"
+      ]
+    },
+    "answer": {
+      "title": "DistanceNmAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,139 @@
+{
+  "title": "NavLogRow",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "enum": [
+        "departure",
+        "checkpoint",
+        "stop",
+        "destination",
+        "toc",
+        "tod"
+      ]
+    },
+    "airport": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "elevation_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "kind": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "\"fix\" for a fix flown through rather than a field."
+            },
+            "lat": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "lon": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cp": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "point": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "along_nm": {
+              "type": "number"
+            },
+            "altitude_ft": {
+              "type": "number"
+            },
+            "to_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "pattern": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "leg": {
+      "anyOf": [
+        {
+          "type": "object",
+          "description": "The planner's Leg (/api/plan), as it comes."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "part": {
+      "anyOf": [
+        {
+          "type": "object",
+          "description": "The piece of the leg that arrives at this row, where a top of climb or descent cuts it."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "kind"
+  ],
+  "description": "A nav log row, the web's NavLogRow: its place is the checkpoint's (cp), the top of climb's or descent's (point) or the airport's."
+}

@@ -1,0 +1,116 @@
+{
+  "x-call": "wingtip_route::route::options::call",
+  "x-feature": "route-options",
+  "description": "A way round high ground (route/options/terrain.rs): the fields with fuel and the way's own turns (ident null, for the planner to name off a fix) to fly by, in order, every leg clear of cells whose highest ground with 1,000 ft (14 CFR 91.119) and the coarse read's 1,000 is over the highest cruising altitude the airplane reaches; [] where the straight line is clear, null where there is no way in reach.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TerrainWayRoundInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "end": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "ceiling_ft": {
+          "type": "number"
+        },
+        "terrain_ft": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "fields": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "title": "TerrainWayField",
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "ident",
+              "name",
+              "lat",
+              "lon"
+            ]
+          }
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "ceiling_ft",
+        "terrain_ft"
+      ]
+    },
+    "answer": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "title": "TerrainWayStone",
+        "type": "object",
+        "properties": {
+          "ident": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "ident",
+          "name",
+          "lat",
+          "lon"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,16 @@
+{
+  "title": "HeardToken",
+  "type": "object",
+  "properties": {
+    "word": {
+      "type": "string"
+    },
+    "num": {
+      "type": "string",
+      "description": "The run of figures said as one number, as digits; left out where the word is no figure."
+    }
+  },
+  "required": [
+    "word"
+  ]
+}

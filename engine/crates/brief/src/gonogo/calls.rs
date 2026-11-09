@@ -117,11 +117,11 @@ fn members(v: Option<&Value>) -> &[(String, Value)] {
     }
 }
 
-/// The rule `name` on `v`; None where the name is not one of the Go /
-/// No-Go's.
-pub fn call(name: &str, v: &Value) -> Option<R<String>> {
+/// The rule `name` on `v`, as the Go / No-Go's contract files
+/// (crates/brief/contract) name it to the dispatcher.
+pub fn call(name: &str, v: &Value) -> R<String> {
     let i = In { name };
-    Some(match name {
+    match name {
         "gonogo_verdict_items" => verdict_input(i, v).map(|input| verdict::items_json(&verdict::verdict_items(&input))),
         "departure_window" => super::window_calls::read(i, v).map(|input| super::window_calls::answer_json(&super::window::departure_window(&input))),
         "gonogo_verdict_line" => items(i, v, "items").map(|items| {
@@ -240,8 +240,8 @@ pub fn call(name: &str, v: &Value) -> Option<R<String>> {
             let utc = clock("utc")?.map_or_else(|| i.err("utc", "is missing"), Ok)?;
             Ok(format!("\"{}\"", pass_times::sua_when(i.opt_str(v, "times_of_use")?.as_deref(), utc, clock("local")?)))
         })(),
-        _ => return None,
-    })
+        _ => Err(format!("the engine has no rule called {name:?}")),
+    }
 }
 
 // --- verdict ----------------------------------------------------------------

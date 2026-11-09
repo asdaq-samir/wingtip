@@ -1,0 +1,40 @@
+{
+  "x-call": "crate::call::rule",
+  "description": "The nav log's wind correction angle, degrees, + right (the E6B's wind triangle); a crosswind past the airspeed held at 90.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WindCorrectionDegInput",
+      "type": "object",
+      "properties": {
+        "true_course_deg": {
+          "type": "number"
+        },
+        "wind_from_deg": {
+          "type": "number"
+        },
+        "wind_kt": {
+          "type": "number"
+        },
+        "tas_kt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "true_course_deg",
+        "wind_from_deg",
+        "wind_kt",
+        "tas_kt"
+      ]
+    },
+    "answer": {
+      "title": "WindCorrectionDegAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

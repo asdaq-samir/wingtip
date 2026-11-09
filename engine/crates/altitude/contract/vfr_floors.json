@@ -1,0 +1,163 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "The VFR floor of each piece of the route between consecutive breaks: the ground plus 1,000 ft, or a DOF obstacle's top plus 14 CFR 91.119's clearance where it stands (1,000 ft over a congested area, (b); 500 elsewhere, (c); 1,000 where the towns are not known), rounded up to the next 100 ft; with 91.119's own minimum under it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "VfrFloorsInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon], degrees."
+        },
+        "end": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon], degrees."
+        },
+        "breaks_nm": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "ground": {
+          "type": "object",
+          "properties": {
+            "along_nm": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "high_ft": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "low_ft": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "congested": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "boolean"
+              }
+            }
+          },
+          "required": [
+            "along_nm",
+            "high_ft",
+            "low_ft"
+          ],
+          "description": "The ground along the direct line, feet MSL; congested null where the towns could not be read."
+        },
+        "obstacles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "amsl_ft": {
+                "type": "number"
+              },
+              "type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "congested": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "lat",
+              "lon",
+              "amsl_ft"
+            ]
+          }
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "breaks_nm",
+        "ground"
+      ]
+    },
+    "answer": {
+      "title": "VfrFloorsAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "floor_ft": {
+            "type": "number"
+          },
+          "lowest_ground_ft": {
+            "type": "number"
+          },
+          "highest_ft": {
+            "type": "number"
+          },
+          "highest_is_obstacle": {
+            "type": "boolean"
+          },
+          "obstacle_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "clearance_ft": {
+            "type": "number"
+          },
+          "congested": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "floor_ft",
+          "lowest_ground_ft",
+          "highest_ft",
+          "highest_is_obstacle",
+          "clearance_ft"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

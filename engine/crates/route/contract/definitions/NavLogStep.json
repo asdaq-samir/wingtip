@@ -1,0 +1,28 @@
+{
+  "title": "NavLogStep",
+  "type": "object",
+  "properties": {
+    "from": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "to": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "altitude_ft": {
+      "type": "number"
+    },
+    "distance_nm": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "altitude_ft",
+    "distance_nm"
+  ]
+}

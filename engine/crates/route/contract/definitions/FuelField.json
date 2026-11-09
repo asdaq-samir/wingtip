@@ -1,0 +1,57 @@
+{
+  "description": "A public field as NASR's APT_BASE has it (its ICAO ident where it has one, and the FAA's), with what fuel it sells and its longest open paved runway (OurAirports' runways).",
+  "title": "FuelField",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "faa_ident": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "city": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "elevation_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "fuel_types": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "runway_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "ident",
+    "lat",
+    "lon"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Whether a watched airplane is in the air: true, false, or null where not known.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AirborneNowInput",
+      "type": "object",
+      "properties": {
+        "before": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "airborne": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "arrived": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "heard_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "AirborneNowAnswer",
+      "type": [
+        "boolean",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

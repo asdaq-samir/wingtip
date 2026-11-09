@@ -1,0 +1,52 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "A field's flight category (AIM 7-1-7); with no visibility, LIFR only under a 500 ft ceiling and else null.",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FlightCategoryInput",
+      "type": "object",
+      "properties": {
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_unknown": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "The lowest broken, overcast or obscured layer was sent with no height (OVC///): the ceiling is not known, and only a visibility under a mile says the category (14 CFR 1.1)."
+        }
+      }
+    },
+    "answer": {
+      "title": "FlightCategoryAnswer",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "VFR",
+        "MVFR",
+        "IFR",
+        "LIFR",
+        null
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

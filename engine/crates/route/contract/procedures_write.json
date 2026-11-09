@@ -1,0 +1,55 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "The route's procedures text from the picks (an empty transition or direct is none).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProceduresWriteInput",
+      "type": "object",
+      "properties": {
+        "picks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "transition": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "direct": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "ident",
+              "id"
+            ]
+          }
+        }
+      },
+      "required": [
+        "picks"
+      ]
+    },
+    "answer": {
+      "title": "ProceduresWriteAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,44 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "A route with stops' figures at each altitude any hop offers, each hop at its own nearest; times and fuel unknown and none flown everywhere where a hop offers none.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogJoinFiguresInput",
+      "type": "object",
+      "properties": {
+        "by_hop": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/NavLogFigure"
+            }
+          }
+        },
+        "lengths": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "by_hop",
+        "lengths"
+      ]
+    },
+    "answer": {
+      "title": "NavLogJoinFiguresAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NavLogFigure"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

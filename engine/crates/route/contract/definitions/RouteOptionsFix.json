@@ -1,0 +1,45 @@
+{
+  "description": "A fix as the planner reads it (wingtip.fixes): a navaid with its own magnetic variation (east positive), a VFR waypoint or any other.",
+  "title": "RouteOptionsFix",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "navaid": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "vfr": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "kind": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "mag_var": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "ident",
+    "lat",
+    "lon"
+  ]
+}

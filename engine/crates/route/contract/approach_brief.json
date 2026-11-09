@@ -1,0 +1,75 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The approach briefed, item by item.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachBriefInput",
+      "type": "object",
+      "properties": {
+        "drawing": {
+          "$ref": "#/definitions/ProcedureDrawing"
+        },
+        "frequencies": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/FieldFrequency"
+          }
+        },
+        "vref_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "vso_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "drawing"
+      ]
+    },
+    "answer": {
+      "title": "ApproachBriefAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "focus": {
+            "$ref": "#/definitions/LessonFocus"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "lines",
+          "focus"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,32 @@
+{
+  "title": "GonogoLoad",
+  "type": "object",
+  "properties": {
+    "empty_weight_lb": {
+      "type": "number"
+    },
+    "empty_arm_in": {
+      "type": "number"
+    },
+    "stations_lb": {
+      "type": "array",
+      "items": {
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "description": "Each station's load, in the loading's station order."
+    },
+    "fuel_gal": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "empty_weight_lb",
+    "empty_arm_in",
+    "stations_lb",
+    "fuel_gal"
+  ],
+  "description": "What is aboard."
+}

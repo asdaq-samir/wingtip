@@ -1,0 +1,140 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Where an airplane is along the planned route: the nearest point of `line` (or of the route's own `points`, those not placed left out), the miles along it, to go and off it, whether it is on the route (within 3 nm, the debrief's tolerance for the distance from the planned route, ACS PA.VI.A.S5), the leg it is on and how far along it (by the legs' miles where `legs` is given, else by the points, an index into `points` as given), and the fuel the plan's legs have burnt by there (planning figures, not a gauge); null with no line to be on.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RoutePositionInput",
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "line": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2
+          }
+        },
+        "points": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "legs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "distance_nm": {
+                "type": "number"
+              },
+              "fuel_gal": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "distance_nm"
+            ]
+          }
+        }
+      },
+      "required": [
+        "at"
+      ]
+    },
+    "answer": {
+      "title": "RoutePositionAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "along_nm": {
+              "type": "number"
+            },
+            "total_nm": {
+              "type": "number"
+            },
+            "left_nm": {
+              "type": "number"
+            },
+            "off_nm": {
+              "type": "number"
+            },
+            "leg": {
+              "type": "number"
+            },
+            "leg_fraction": {
+              "type": "number"
+            },
+            "burnt_gal": {
+              "type": "number"
+            },
+            "on_route": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "along_nm",
+            "total_nm",
+            "left_nm",
+            "off_nm",
+            "on_route",
+            "leg",
+            "leg_fraction",
+            "burnt_gal"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

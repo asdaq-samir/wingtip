@@ -1,0 +1,35 @@
+{
+  "x-call": "crate::call::rule",
+  "description": "A TAF as sent, read into the planner's TAF dict (AC 00-45H), its day-and-hour times placed nearest `near` (Unix seconds); null where it cannot be read.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TafReadInput",
+      "type": "object",
+      "properties": {
+        "raw": {
+          "type": "string"
+        },
+        "near": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "raw",
+        "near"
+      ]
+    },
+    "answer": {
+      "title": "TafReadAnswer",
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

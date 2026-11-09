@@ -50,9 +50,6 @@ pub const COMPARABLE: [(f64, f64); 7] = [
 /// The most an RVR system reports, ft (AIM 7-1-13).
 pub const MOST_FT: f64 = 6000.0;
 
-/// The names this module answers.
-pub const NAMES: [&str; 1] = ["rvr_check"];
-
 /// The RVR the table pairs with a visibility minimum: the row's, or the
 /// next row up's for one between rows; None past the table (more than
 /// 1 1/4 SM), which no RVR reading shows.

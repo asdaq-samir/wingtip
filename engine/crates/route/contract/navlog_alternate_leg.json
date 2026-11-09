@@ -1,0 +1,150 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "The leg from the destination on to the IFR alternate for 14 CFR 91.167(a)(2)'s fuel, at the last altitude in its air, or in still air (still_air) where none was read or the leg cannot be flown in it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogAlternateLegInput",
+      "type": "object",
+      "properties": {
+        "dest": {
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "ident",
+            "lat",
+            "lon"
+          ],
+          "additionalProperties": true
+        },
+        "alternate": {
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "ident",
+            "lat",
+            "lon"
+          ],
+          "additionalProperties": true
+        },
+        "altitude_ft": {
+          "type": "number"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
+        },
+        "air": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "variation_deg": {
+                  "type": "number"
+                },
+                "wind": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/NavLogWind"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "oat_c": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "variation_deg"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "dest",
+        "alternate",
+        "altitude_ft",
+        "profile"
+      ]
+    },
+    "answer": {
+      "title": "NavLogAlternateLegAnswer",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "distance_nm": {
+          "type": "number"
+        },
+        "ete_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "altitude_ft": {
+          "type": "number"
+        },
+        "still_air": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ident",
+        "distance_nm",
+        "ete_min",
+        "fuel_gal",
+        "altitude_ft",
+        "still_air"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

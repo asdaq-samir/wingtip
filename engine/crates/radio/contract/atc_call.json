@@ -1,0 +1,71 @@
+{
+  "x-call": "wingtip_radio::atc::call",
+  "description": "A transmission heard by the ATC copilot: who said it, by our call sign's place (AIM 4-2-3 c, 4-2-4), and its items in the order said (AIM 4-4-7 b.2).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AtcCallInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "tail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prior": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "ago_s": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "text",
+            "ago_s"
+          ]
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "AtcCallAnswer",
+      "type": "object",
+      "properties": {
+        "who": {
+          "enum": [
+            "to_us",
+            "from_us",
+            "other"
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AtcItem"
+          }
+        }
+      },
+      "required": [
+        "who",
+        "items"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

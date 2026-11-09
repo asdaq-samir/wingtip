@@ -1,0 +1,35 @@
+{
+  "x-call": "wingtip_procedures::paths::call",
+  "description": "How far a leg flown to an altitude (CA, VA, FA) is drawn, nm: from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; 2 nm where either is not known or it is no climb.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProcedureClimbNmInput",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "known_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": []
+    },
+    "answer": {
+      "title": "ProcedureClimbNmAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

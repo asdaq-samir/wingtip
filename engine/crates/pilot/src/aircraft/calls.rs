@@ -1,24 +1,9 @@
-//! The aircraft rules as crate::call answers them, JSON in and out; the
-//! names and their inputs are listed in call.rs with the others.
+//! The aircraft rules as crate::call answers them, JSON in and out; each
+//! name and its input are in its file in crates/pilot/contract.
 
 use super::filters::{self, Filter, Heard, Plane};
 use super::registry;
 use crate::json::{self, Value};
-
-/// The names this module answers.
-pub const NAMES: [&str; 11] = [
-    "traffic_kind",
-    "emitter_category",
-    "altitude_band",
-    "operator_of",
-    "in_emergency",
-    "squawk_meaning",
-    "field_relation",
-    "traffic_matches",
-    "n_number",
-    "registered_profile",
-    "traffic_reach",
-];
 
 type R<T> = Result<T, String>;
 

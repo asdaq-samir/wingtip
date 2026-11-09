@@ -44,8 +44,6 @@ use wingtip_core::json::{self, Value};
 use wingtip_procedures::figures::debrief::{airborne, ground_speeds, Point, AIRBORNE_KT};
 use wingtip_route::approach::Drawing;
 
-pub const NAMES: [&str; 2] = ["logbook_track_places", "logbook_from_track"];
-
 /// A field near the track: its place, its elevation (NASR's, ft MSL)
 /// where known, and whether it has a control tower (NASR APT_BASE's
 /// TWR_TYPE_CODE).

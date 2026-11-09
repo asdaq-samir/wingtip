@@ -1,0 +1,68 @@
+{
+  "title": "NavLogPlan",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NavLogStep"
+      }
+    },
+    "needs_oxygen": {
+      "type": "boolean"
+    },
+    "ete_min": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "fuel_gal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "climb_penalty_min": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "tailwind_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "unflyable_legs": {
+      "type": "number"
+    },
+    "legs_without_wind": {
+      "type": "number"
+    },
+    "legs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NavLogLeg"
+      }
+    },
+    "totals": {
+      "$ref": "#/definitions/NavLogTotals"
+    }
+  },
+  "required": [
+    "steps",
+    "needs_oxygen",
+    "ete_min",
+    "fuel_gal",
+    "climb_penalty_min",
+    "tailwind_kt",
+    "unflyable_legs",
+    "legs_without_wind"
+  ],
+  "additionalProperties": true
+}

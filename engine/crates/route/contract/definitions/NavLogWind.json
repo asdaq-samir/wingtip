@@ -1,0 +1,18 @@
+{
+  "title": "NavLogWind",
+  "type": "object",
+  "properties": {
+    "wind_dir_true_deg": {
+      "type": "number"
+    },
+    "wind_speed_kt": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "wind_dir_true_deg",
+    "wind_speed_kt"
+  ],
+  "additionalProperties": true,
+  "description": "The wind aloft, the direction it blows from in true degrees, carried onto the leg as it is."
+}

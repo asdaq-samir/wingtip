@@ -1,4 +1,4 @@
-//! The ATC copilot's rules, this crate's own block in call.rs:
+//! The ATC copilot's rules (their contract files in crates/radio/contract):
 //!
 //! - `atc_call`: a transmission heard, who said it and what it asks.
 //!   `{"who": "to_us"|"from_us"|"other", "items": [...]}` from `{"text",
@@ -19,9 +19,6 @@ use crate::callsign::{self, Who};
 use crate::instruction::{self, Item};
 use crate::json::{self, Value};
 use crate::readback;
-
-/// The names this crate answers by its own block (call.rs).
-pub const NAMES: [&str; 2] = ["atc_call", "readback_check"];
 
 /// How soon after a call to us a transmission with no call sign may be
 /// our readback, s: a readback follows at once, and a controller's next

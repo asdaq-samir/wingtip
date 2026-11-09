@@ -1,0 +1,32 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The glidepath's height, ft MSL, nm_out from the runway.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GlidepathFtInput",
+      "type": "object",
+      "properties": {
+        "runway_path": {
+          "$ref": "#/definitions/ApproachRunwayPath"
+        },
+        "nm_out": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "runway_path",
+        "nm_out"
+      ]
+    },
+    "answer": {
+      "title": "GlidepathFtAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

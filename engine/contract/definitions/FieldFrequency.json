@@ -1,0 +1,26 @@
+{
+  "title": "FieldFrequency",
+  "description": "A field's frequency as the planner sends it (NASR's type code, description and MHz).",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "NASR's code: TWR, GND, ATIS, CTAF, UNICOM..."
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "frequency_mhz": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  }
+}

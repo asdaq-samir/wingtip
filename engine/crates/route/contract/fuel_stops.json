@@ -1,0 +1,105 @@
+{
+  "x-call": "wingtip_route::route::options::call",
+  "x-feature": "route-options",
+  "description": "The fuel stops a flight too long for its tanks needs (route/options/fuel.rs): the fields with fuel no more than 30 nm off its line on a paved runway of 2,500 ft, chained so every landing keeps the reserve (14 CFR 91.151(a), 91.167(a)(3)) at the flight's own burn and minutes a mile, the tanks filled at each, the quickest trip with ground_min (30) a stop, among first stops within 5 minutes of it the one nearest the line then the one whose landings keep the most fuel, at most 8 stops; and up to 4 other first stops. Both empty where none is needed or no field reaches.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FuelStopsInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "end": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "fuel_per_nm": {
+          "type": "number"
+        },
+        "min_per_nm": {
+          "type": "number"
+        },
+        "usable_gal": {
+          "type": "number"
+        },
+        "taxi_gal": {
+          "type": "number"
+        },
+        "reserve_gal": {
+          "type": "number"
+        },
+        "ground_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "skip": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "fields": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/FuelField"
+          }
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "fuel_per_nm",
+        "min_per_nm",
+        "usable_gal",
+        "taxi_gal",
+        "reserve_gal"
+      ]
+    },
+    "answer": {
+      "title": "FuelStopsAnswer",
+      "type": "object",
+      "properties": {
+        "stops": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FuelStop"
+          }
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FuelStop"
+          }
+        }
+      },
+      "required": [
+        "stops",
+        "choices"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

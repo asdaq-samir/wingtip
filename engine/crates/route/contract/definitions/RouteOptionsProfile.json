@@ -1,0 +1,34 @@
+{
+  "title": "RouteOptionsProfile",
+  "type": "object",
+  "properties": {
+    "cruise_tas_kt": {
+      "type": "number"
+    },
+    "fuel_burn_gph": {
+      "type": "number"
+    },
+    "usable_fuel_gal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "taxi_fuel_gal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "service_ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "cruise_tas_kt",
+    "fuel_burn_gph"
+  ]
+}

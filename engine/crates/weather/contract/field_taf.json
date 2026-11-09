@@ -1,0 +1,99 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FieldTafInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "at": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ],
+          "description": "Where the field is; null where it is not known (its own TAF only)."
+        },
+        "stations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "icao_id": {
+                "type": "string"
+              },
+              "lat": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "lon": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "icao_id"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ident",
+        "stations"
+      ]
+    },
+    "answer": {
+      "title": "FieldTafAnswer",
+      "type": "object",
+      "properties": {
+        "index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The station's index in `stations`; null for none within reach."
+        },
+        "nm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "How far the nearest is; null for the field's own."
+        },
+        "reach_nm": {
+          "type": "number",
+          "description": "How far a TAF is taken to speak for a field without its own."
+        }
+      },
+      "required": [
+        "index",
+        "nm",
+        "reach_nm"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

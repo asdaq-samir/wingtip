@@ -1,0 +1,96 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The least crosswind of the open runways' (gusts' where more), or the whole reported wind where no runway has components; null with none.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoBestCrosswindInput",
+      "type": "object",
+      "properties": {
+        "runways": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "closed": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+              },
+              "wind": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/GonogoRunwayWind"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "reported": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "speed_kt": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "gust_kt": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "GonogoBestCrosswindAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "end": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "kt": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "end",
+            "kt"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

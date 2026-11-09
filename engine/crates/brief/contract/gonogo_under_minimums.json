@@ -1,0 +1,170 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The sentences where the weather is under the pilot's own minimums, at each field landed at and the destination's forecast.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoUnderMinimumsInput",
+      "type": "object",
+      "properties": {
+        "minimums": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "ceiling_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "visibility_sm": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "crosswind_kt": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "wind_kt": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The pilot's personal minimums."
+        },
+        "landings": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "The fields landed at, by ident."
+        },
+        "dest": {
+          "type": "string"
+        },
+        "metars": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/GonogoMetar"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": "The briefing's METARs by field ident; null or missing for none."
+        },
+        "airports": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "runways": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "$ref": "#/definitions/Runway"
+                }
+              }
+            }
+          },
+          "description": "The briefing's airports by field ident, each with its runways."
+        },
+        "forecast": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "stations": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "icaoId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "ceiling_ft": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "visibility_sm": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "min_ceiling_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min_visibility_sm": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The briefing's forecast along the route."
+        }
+      },
+      "required": [
+        "dest"
+      ]
+    },
+    "answer": {
+      "title": "GonogoUnderMinimumsAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

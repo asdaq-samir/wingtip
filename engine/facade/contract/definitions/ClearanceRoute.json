@@ -1,0 +1,23 @@
+{
+  "title": "ClearanceRoute",
+  "type": "object",
+  "properties": {
+    "dep": {
+      "type": "string"
+    },
+    "stops": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dest": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "dep",
+    "stops",
+    "dest"
+  ]
+}

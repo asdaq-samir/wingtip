@@ -1,0 +1,61 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "How far along a path a place is, nm.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachAlongNmInput",
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "lat",
+              "lon"
+            ]
+          }
+        },
+        "at": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        }
+      },
+      "required": [
+        "at"
+      ]
+    },
+    "answer": {
+      "title": "ApproachAlongNmAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

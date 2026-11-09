@@ -1,0 +1,62 @@
+{
+  "x-call": "crate::call::rule",
+  "description": "Dawn and dusk (the beginning of morning and the end of evening civil twilight, 14 CFR 1.1) of the civil day whose solar noon falls on the UTC day `day_s` lies in; null each in a polar day, `night_all_day` then saying which kind.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CivilTwilightInput",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "day_s": {
+          "type": "number",
+          "description": "Any instant of the UTC day, UNIX seconds."
+        }
+      },
+      "required": [
+        "lat",
+        "lon",
+        "day_s"
+      ]
+    },
+    "answer": {
+      "title": "CivilTwilightAnswer",
+      "type": "object",
+      "properties": {
+        "dawn_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "dusk_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "night_all_day": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "dawn_s",
+        "dusk_s",
+        "night_all_day"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

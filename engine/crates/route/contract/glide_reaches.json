@@ -1,0 +1,47 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft).",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GlideReachesInput",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "distance_nm": {
+          "type": "number"
+        },
+        "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "distance_nm"
+      ]
+    },
+    "answer": {
+      "title": "GlideReachesAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

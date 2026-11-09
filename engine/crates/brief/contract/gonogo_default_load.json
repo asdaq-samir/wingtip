@@ -1,0 +1,56 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The load a profile starts with: its sample empty weight and arm, stations empty, the fuel given.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoDefaultLoadInput",
+      "type": "object",
+      "properties": {
+        "loading": {
+          "$ref": "#/definitions/GonogoLoading"
+        },
+        "fuel_gal": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "loading",
+        "fuel_gal"
+      ]
+    },
+    "answer": {
+      "title": "GonogoDefaultLoadAnswer",
+      "type": "object",
+      "properties": {
+        "empty_weight_lb": {
+          "type": "number"
+        },
+        "empty_arm_in": {
+          "type": "number"
+        },
+        "stations_lb": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "170 lb at the first station, 0 at the others."
+        },
+        "fuel_gal": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "empty_weight_lb",
+        "empty_arm_in",
+        "stations_lb",
+        "fuel_gal"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

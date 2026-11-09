@@ -16,32 +16,6 @@ pub mod script;
 use crate::json::{self, Value};
 use radio::Frequency;
 
-/// The names this module answers.
-pub const NAMES: [&str; 22] = [
-    "faa_words",
-    "title_case",
-    "place_name",
-    "sigmet_hazard",
-    "gairmet_title",
-    "pirep_conditions",
-    "sua_altitudes",
-    "fuel_names",
-    "short_airspace_name",
-    "airspace_entry_rules",
-    "frequency_line",
-    "frequency_of",
-    "ctaf_of",
-    "kneeboard_radio",
-    "radial_of",
-    "fix_radial_distance",
-    "morse",
-    "service_volume",
-    "navaid_hours",
-    "radio_script",
-    "radio_call_sign",
-    "radio_place_name",
-];
-
 fn opt_text<'a>(name: &str, v: &'a Value, key: &str) -> Result<Option<&'a str>, String> {
     match v.get(key) {
         None | Some(Value::Null) => Ok(None),
@@ -119,7 +93,7 @@ fn station(name: &str, v: &Value) -> Result<navaid::Station, String> {
     })
 }
 
-/// The rule `name` worked on `v`; the names are in NAMES.
+/// The rule `name` worked on `v`, as its contract file (crates/wording/contract) names it.
 pub fn answer(name: &str, v: &Value) -> Result<String, String> {
     match name {
         // Each of `texts` where it is given, else `text`: a list's rows in

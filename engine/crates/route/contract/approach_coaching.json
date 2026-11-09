@@ -1,0 +1,92 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The approach flown fix by fix, with a word at each.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachCoachingInput",
+      "type": "object",
+      "properties": {
+        "drawing": {
+          "$ref": "#/definitions/ProcedureDrawing"
+        },
+        "gs_kt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "drawing",
+        "gs_kt"
+      ]
+    },
+    "answer": {
+      "title": "ApproachCoachingAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "say": {
+            "type": "string"
+          },
+          "why": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "at": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "lat",
+                  "lon"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "focus": {
+            "$ref": "#/definitions/LessonFocus"
+          },
+          "altitude_ft": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "say",
+          "why",
+          "at",
+          "focus",
+          "altitude_ft"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

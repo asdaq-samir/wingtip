@@ -1,0 +1,32 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "Whether a and b name one field (KSTL and STL).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SameFieldInput",
+      "type": "object",
+      "properties": {
+        "a": {
+          "type": "string"
+        },
+        "b": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "a",
+        "b"
+      ]
+    },
+    "answer": {
+      "title": "SameFieldAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

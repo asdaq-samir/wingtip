@@ -1,0 +1,92 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "One leg from start to end at an altitude in the air given (wingtip.navlog.assemble_leg): true course and distance, the airplane's cruise in its air, the wind triangle (PHAK ch. 16), magnetic heading (true less variation, east positive), ground speed, time and fuel; an unflyable leg's time is null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogLegOneInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "end": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "altitude_ft": {
+          "type": "number"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
+        },
+        "wind": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogWind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "oat_c": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "variation_deg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "altitude_ft",
+        "profile",
+        "variation_deg"
+      ]
+    },
+    "answer": {
+      "title": "NavLogLegOneAnswer",
+      "$ref": "#/definitions/NavLogLeg"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

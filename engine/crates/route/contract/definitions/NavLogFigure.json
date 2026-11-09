@@ -1,0 +1,38 @@
+{
+  "title": "NavLogFigure",
+  "type": "object",
+  "properties": {
+    "altitude_ft": {
+      "type": "number"
+    },
+    "ete_min": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "fuel_gal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "tailwind_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "everywhere": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "altitude_ft",
+    "ete_min",
+    "fuel_gal",
+    "tailwind_kt",
+    "everywhere"
+  ],
+  "description": "The route flown at one altitude for the altitude wheel: each leg at it where legal, else at its nearest legal one."
+}

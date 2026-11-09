@@ -1,0 +1,44 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "A route with stops' four plans from each hop's: steps in turn, times and fuel summed (null where a hop's is), the tailwind weighed by each hop's length; none where a hop has none.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogJoinPlansInput",
+      "type": "object",
+      "properties": {
+        "by_hop": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/NavLogPlan"
+            }
+          }
+        },
+        "lengths": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "by_hop",
+        "lengths"
+      ]
+    },
+    "answer": {
+      "title": "NavLogJoinPlansAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NavLogPlan"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

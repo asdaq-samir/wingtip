@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A G-AIRMET's title in words.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GairmetTitleInput",
+      "type": "object",
+      "properties": {
+        "hazard": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "severity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "GairmetTitleAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

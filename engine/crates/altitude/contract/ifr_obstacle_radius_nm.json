@@ -1,0 +1,21 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "How far from the course 14 CFR 91.177(a)(2) takes the highest obstacle: 4 nm.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "IfrObstacleRadiusNmInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "IfrObstacleRadiusNmAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

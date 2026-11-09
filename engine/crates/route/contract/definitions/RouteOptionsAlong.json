@@ -1,0 +1,28 @@
+{
+  "description": "What a way meets: its weather as runs by the minutes they last, the mean wind along it (positive a tailwind), its floor (the highest ground with 14 CFR 91.119's 1,000 ft) and its miles out of glide of dry land.",
+  "title": "RouteOptionsAlong",
+  "type": "object",
+  "properties": {
+    "bands": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/RouteOptionsBand"
+      }
+    },
+    "tail_kt": {
+      "type": "number"
+    },
+    "floor_ft": {
+      "type": "integer"
+    },
+    "water_nm": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "bands",
+    "tail_kt",
+    "floor_ft",
+    "water_nm"
+  ]
+}

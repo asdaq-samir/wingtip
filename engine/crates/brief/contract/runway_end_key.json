@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "A runway end's ident as a key: its number, trimmed and upper-cased.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RunwayEndKeyInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "RunwayEndKeyAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

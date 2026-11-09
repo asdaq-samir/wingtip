@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "Whether a runway's surface is grass, turf, dirt or gravel.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoSoftSurfaceInput",
+      "type": "object",
+      "properties": {
+        "surface": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "GonogoSoftSurfaceAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

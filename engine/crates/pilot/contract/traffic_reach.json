@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_pilot::aircraft::calls::call",
+  "description": "How far round an airport its traffic is asked for, nm: around_nm, about the field (its pattern and one joining it, past 91.117(b)'s 4 nm), and relation_nm, the reach of an airplane inbound or departing, the figures field_relation judges by.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TrafficReachInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "TrafficReachAnswer",
+      "type": "object",
+      "properties": {
+        "around_nm": {
+          "type": "number"
+        },
+        "relation_nm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "around_nm",
+        "relation_nm"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

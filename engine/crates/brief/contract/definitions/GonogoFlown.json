@@ -1,0 +1,30 @@
+{
+  "title": "GonogoFlown",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "runway": {
+          "type": "integer",
+          "description": "Index into the runways given."
+        },
+        "end": {
+          "type": "integer",
+          "description": "Index into that runway's ends."
+        },
+        "by_wind": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "runway",
+        "end",
+        "by_wind"
+      ]
+    },
+    {
+      "type": "null"
+    }
+  ],
+  "description": "The runway and end flown, by index, or null."
+}

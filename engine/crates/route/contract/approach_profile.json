@@ -1,0 +1,113 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The approach seen from the side: its fixes along the way in and the path down from the final approach fix.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachProfileInput",
+      "type": "object",
+      "properties": {
+        "drawing": {
+          "$ref": "#/definitions/ProcedureDrawing"
+        }
+      },
+      "required": [
+        "drawing"
+      ]
+    },
+    "answer": {
+      "title": "ApproachProfileAnswer",
+      "type": "object",
+      "properties": {
+        "marks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "along_nm": {
+                "type": "number"
+              },
+              "ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "faf": {
+                "type": "boolean"
+              },
+              "map": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "ident",
+              "along_nm",
+              "ft",
+              "faf",
+              "map"
+            ]
+          }
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "object",
+                  "properties": {
+                    "nm": {
+                      "type": "number"
+                    },
+                    "ft": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "nm",
+                    "ft"
+                  ]
+                },
+                "to": {
+                  "type": "object",
+                  "properties": {
+                    "nm": {
+                      "type": "number"
+                    },
+                    "ft": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "nm",
+                    "ft"
+                  ]
+                }
+              },
+              "required": [
+                "from",
+                "to"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "marks",
+        "path"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

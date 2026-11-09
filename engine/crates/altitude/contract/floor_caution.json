@@ -1,0 +1,36 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FloorCautionInput",
+      "type": "object",
+      "properties": {
+        "segment": {
+          "type": "object",
+          "description": "A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested."
+        },
+        "altitude_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "segment",
+        "altitude_ft"
+      ]
+    },
+    "answer": {
+      "title": "FloorCautionAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "The pattern to land on an end (lib/trafficPattern TrafficPattern), or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TrafficPatternInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runway": {
+          "$ref": "#/definitions/CircuitRunwayIn"
+        },
+        "end_ident": {
+          "type": "string"
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "runway",
+        "end_ident"
+      ]
+    },
+    "answer": {
+      "$ref": "#/definitions/TrafficPatternOut"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,54 @@
+{
+  "title": "TrafficPlane",
+  "type": "object",
+  "properties": {
+    "hex": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "altitude_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "vertical_fpm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "track_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "speed_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "seen_s": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "How old its position is, s."
+    }
+  },
+  "required": [
+    "lat",
+    "lon"
+  ],
+  "description": "An airplane as the traffic feed sends it: what the rules read of it."
+}

@@ -1,0 +1,49 @@
+{
+  "description": "A field's weather: a TAF (its worst over the flight, with the weather of every group then) or a METAR.",
+  "title": "RouteOptionsReport",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "wx": {
+      "type": [
+        "array",
+        "string",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "visibility_sm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ceiling_unknown": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "ident",
+    "lat",
+    "lon"
+  ]
+}

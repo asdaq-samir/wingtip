@@ -1,0 +1,37 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "At most `most` (4,000 where not given) of `points`, even steps through, the first and last kept; each point as it came.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ThinTrackInput",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {}
+        },
+        "most": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 2
+        }
+      },
+      "required": [
+        "points"
+      ]
+    },
+    "answer": {
+      "title": "ThinTrackAnswer",
+      "type": "array",
+      "items": {}
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

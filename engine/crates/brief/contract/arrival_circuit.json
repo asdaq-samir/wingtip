@@ -1,0 +1,62 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "The arrival's circuit as the planner draws it, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ArrivalCircuitInput",
+      "type": "object",
+      "properties": {
+        "runway": {
+          "$ref": "#/definitions/CircuitRunwayIn"
+        },
+        "end_ident": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "runway",
+        "end_ident"
+      ]
+    },
+    "answer": {
+      "title": "ArrivalCircuitAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "[lat, lon]",
+                "items": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "additionalItems": false
+              }
+            }
+          },
+          "required": [
+            "points"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

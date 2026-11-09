@@ -1,0 +1,75 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A fix's altitude restriction as the chart draws it: the kind of crossing, and each figure underlined (at or above) or overlined (at or below).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AltitudeLinesInput",
+      "type": "object",
+      "properties": {
+        "min_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "max_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "AltitudeLinesAnswer",
+      "type": "object",
+      "properties": {
+        "crossing": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "at",
+            "between",
+            "at_or_above",
+            "at_or_below",
+            null
+          ]
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ft": {
+                "type": "number"
+              },
+              "under": {
+                "type": "boolean"
+              },
+              "over": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "ft",
+              "under",
+              "over"
+            ]
+          }
+        }
+      },
+      "required": [
+        "crossing",
+        "lines"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}
