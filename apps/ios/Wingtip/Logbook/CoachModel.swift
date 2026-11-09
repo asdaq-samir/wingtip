@@ -64,11 +64,17 @@ final class CoachModel {
 
     private let calls: CoachCalls
     private let fetchPilot: @Sendable () async throws -> CoachPilot
+    private let fetchDebriefs: @Sendable () async -> [CoachDebrief]
+    /// The saved flights' debriefs (CoachDebriefs), gathered as the plan is
+    /// asked for.
+    private(set) var debriefs: [CoachDebrief] = []
     private let defaults: UserDefaults
 
-    init(calls: CoachCalls = .gateway, fetchPilot: @escaping @Sendable () async throws -> CoachPilot = CoachPilot.fetch, defaults: UserDefaults = .standard) {
+    init(calls: CoachCalls = .gateway, fetchPilot: @escaping @Sendable () async throws -> CoachPilot = CoachPilot.fetch,
+         fetchDebriefs: @escaping @Sendable () async -> [CoachDebrief] = CoachDebriefs.fetch, defaults: UserDefaults = .standard) {
         self.calls = calls
         self.fetchPilot = fetchPilot
+        self.fetchDebriefs = fetchDebriefs
         self.defaults = defaults
     }
 
@@ -104,14 +110,13 @@ final class CoachModel {
         }
     }
 
-    /// The ask from what the app holds; the debriefs are none yet, as the
-    /// iPhone does not gather its saved flights' debriefs.
+    /// The ask from what the app holds, the saved flights' debriefs with it.
     func ask(home: String?, today: String = Day.today()) -> CoachAsk {
         let certificate = certificate
         let entries = (pilot?.entries ?? []).map(Self.entry)
         let held = certificate == .student ? (pilot?.training?.endorsements ?? []).map { APICoachEndorsement(code: $0.code, on: $0.endorsedOn) } : []
         let home = home.flatMap { $0.isEmpty ? nil : $0.uppercased() }
-        return CoachAsk(debriefs: [], entries: entries, flightReviewOn: pilot?.currency?.flightReviewOn, held: held, home: home,
+        return CoachAsk(debriefs: debriefs, entries: entries, flightReviewOn: pilot?.currency?.flightReviewOn, held: held, home: home,
                         ipcOn: pilot?.currency?.ipcOn, medicalExpiresOn: pilot?.currency?.medicalExpiresOn,
                         ratings: certificate.ratings, remindDays: nil, today: today)
     }
@@ -124,6 +129,7 @@ final class CoachModel {
         words = nil
         wordsProblem = nil
         let planned: CoachPlanned
+        debriefs = await fetchDebriefs()
         do {
             planned = try await calls.plan(ask(home: home))
             plan = planned.plan

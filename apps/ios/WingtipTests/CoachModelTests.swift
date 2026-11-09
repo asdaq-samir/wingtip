@@ -51,7 +51,7 @@ struct CoachModelTests {
                 return try Planner.snakeCase.decode(CoachWords.self, from: Data(words.utf8))
             })
         let defaults = UserDefaults(suiteName: "coach-tests-\(UUID().uuidString)")!
-        return CoachModel(calls: calls, fetchPilot: { pilot }, defaults: defaults)
+        return CoachModel(calls: calls, fetchPilot: { pilot }, fetchDebriefs: { [] }, defaults: defaults)
     }
 
     @Test func eachSessionGetsItsOwnLineAndThePlanShows() async throws {
