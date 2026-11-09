@@ -21,6 +21,10 @@ import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.FlightService;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.Mailer;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsements;
+import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
+import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.TrainingService;
 import java.time.Instant;
@@ -94,11 +98,12 @@ class InstructorFlowTest {
     @org.junit.jupiter.api.BeforeEach
     void theEnginesAnswer() {
         org.mockito.BDDMockito.given(planner.endorsements(any(), any())).willAnswer(ask -> {
-            List<PlannerClient.Held> held = ask.getArgument(0);
+            List<PlannerHeldEndorsement> held = ask.getArgument(0);
             LocalDate flightOn = ask.getArgument(1);
-            return new PlannerClient.Endorsements(java.util.Collections.nCopies(held.size(), (LocalDate) null),
-                    held.stream().anyMatch(h -> List.of("solo-first", "solo-90").contains(h.code())) ? SOLO_UNTIL : null,
-                    flightOn == null ? List.of() : CHECKS);
+            return new PlannerEndorsements().until(java.util.Collections.nCopies(held.size(), (LocalDate) null))
+                    .soloUntil(held.stream().anyMatch(h -> List.of("solo-first", "solo-90").contains(h.getCode())) ? SOLO_UNTIL : null)
+                    .checks(flightOn == null ? List.of() : CHECKS.stream().map(c -> new PlannerReviewCheck()
+                            .rule(c.rule()).label(c.label()).met(c.met()).detail(c.detail())).toList());
         });
         // AC 61-65K's words are the engine's (kinds.rs, records.json's
         // fills); here every code is one, its words standing in for them.
@@ -106,7 +111,8 @@ class InstructorFlowTest {
                 new app.wingtipmaps.gateway.dto.EndorsementKindDto(ask.getArgument(0), "A.10", "61.93(c)(3)", "An endorsement", "",
                         List.of())));
         org.mockito.BDDMockito.given(planner.fill(any(), any(), any())).willAnswer(ask ->
-                new PlannerClient.Filled(ask.getArgument(2), List.of(), words(ask.getArgument(0), ask.getArgument(1))));
+                new PlannerEndorsementFilled().fields(ask.getArgument(2)).missing(List.of())
+                        .text(words(ask.getArgument(0), ask.getArgument(1))));
     }
 
     /** The words the engine's stand-in gives an endorsement of `code`. */

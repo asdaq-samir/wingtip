@@ -3,6 +3,7 @@ package app.wingtipmaps.gateway.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -11,10 +12,27 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
+import app.wingtipmaps.gateway.dto.EndorsementFieldDto;
 import app.wingtipmaps.gateway.dto.EndorsementKindDto;
 import app.wingtipmaps.gateway.dto.ExperienceItemDto;
 import app.wingtipmaps.gateway.dto.ReviewCheckDto;
+import app.wingtipmaps.gateway.planner.model.PlannerCurrency;
+import app.wingtipmaps.gateway.planner.model.PlannerCurrencyAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFillAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsementKind;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsements;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsementsAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerExperienceAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerExperienceItem;
+import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
+import app.wingtipmaps.gateway.planner.model.PlannerInspections;
+import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerLogbookEntry;
+import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
+import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -26,9 +44,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -66,10 +86,15 @@ public class PlannerClient {
     static final ObjectMapper JSON = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    /** The same, reading the planner's days ("2026-10-11") as LocalDate. */
+    /** The same, reading and writing the planner's days ("2026-10-11") as
+     *  LocalDate, for the planner's own asks and answers: types generated
+     *  from services/planner/openapi.json as this app is built (the pom's
+     *  openapi-generator-maven-plugin, package planner.model), so a field
+     *  the planner renames fails the build where it is used. */
     static final ObjectMapper DATES = JsonMapper.builder()
             .addModule(new JavaTimeModule())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
             .build();
 
     /** A rule from the logbook is the engine's work on a few hundred
@@ -170,20 +195,21 @@ public class PlannerClient {
     /**
      * Where the pilot stands on {@code today} from their logbook and the
      * dates they give (POST /api/pilot/currency): 14 CFR 61.56 and 61.57,
-     * worked out by the shared engine's pilot_currency. The planner's
-     * answer has CurrencyDto's members, so it is read straight into it.
+     * worked out by the shared engine's pilot_currency, as this app's own
+     * CurrencyDto.
      *
      * @throws Unavailable when the planner cannot be reached or refuses
      */
     public CurrencyDto currency(List<LogbookEntry> entries, LocalDate flightReviewOn, LocalDate medicalExpiresOn,
                                 LocalDate ipcOn, LocalDate today) {
-        ObjectNode body = DATES.createObjectNode();
-        body.set("entries", entriesOf(entries));
-        body.put("flightReviewOn", flightReviewOn == null ? null : flightReviewOn.toString());
-        body.put("medicalExpiresOn", medicalExpiresOn == null ? null : medicalExpiresOn.toString());
-        body.put("ipcOn", ipcOn == null ? null : ipcOn.toString());
-        body.put("today", today.toString());
-        return read(post("/api/pilot/currency", body, "the currency"), CurrencyDto.class, "the currency");
+        PlannerCurrencyAsk ask = new PlannerCurrencyAsk(entriesOf(entries), today)
+                .flightReviewOn(flightReviewOn).medicalExpiresOn(medicalExpiresOn).ipcOn(ipcOn);
+        return answer("/api/pilot/currency", ask, PlannerCurrency.class, "the currency", c -> new CurrencyDto(
+                c.getDayPassengersUntil(), c.getNightPassengersUntil(), c.getFlightReviewOn(), c.getFlightReviewUntil(),
+                c.getMedicalExpiresOn(), c.getTotalHours().doubleValue(), c.getNightHours().doubleValue(),
+                c.getCrossCountryHours().doubleValue(), c.getLandings(), c.getFlights(), c.getInstrumentCurrentUntil(),
+                c.getInstrumentCurrentFrom(), c.getIpcOn(), c.getIpcNeededAfter(), c.getApproachesInWindow(),
+                c.getHoldingInWindow(), c.getTrackingInWindow()));
     }
 
     /**
@@ -194,75 +220,60 @@ public class PlannerClient {
      * @throws Unavailable when the planner cannot be reached or refuses
      */
     public List<ExperienceItemDto> experience(List<LogbookEntry> entries, LocalDate today) {
-        ObjectNode body = DATES.createObjectNode();
-        body.set("entries", entriesOf(entries));
-        body.put("today", today.toString());
-        return List.of(read(post("/api/pilot/experience", body, "the experience"), ExperienceItemDto[].class, "the experience"));
+        return answer("/api/pilot/experience", new PlannerExperienceAsk(entriesOf(entries), today), PlannerExperienceItem[].class,
+                "the experience", items -> Arrays.stream(items).map(i -> new ExperienceItemDto(i.getKey(), i.getRule(), i.getLabel(),
+                        i.getHave().doubleValue(), i.getNeed().doubleValue(), i.getUnit().getValue(), i.getMet())).toList());
     }
 
-    /** The columns the planner's rules read, as the planner's LogbookEntry
-     *  names them. */
-    private static ArrayNode entriesOf(List<LogbookEntry> entries) {
-        ArrayNode out = DATES.createArrayNode();
-        for (LogbookEntry e : entries) {
-            ObjectNode n = out.addObject();
-            n.put("flownOn", e.getFlownOn().toString());
-            n.put("totalHours", e.getTotalHours());
-            n.put("nightHours", e.getNightHours());
-            n.put("crossCountryHours", e.getCrossCountryHours());
-            n.put("dayLandings", e.getDayLandings());
-            n.put("nightLandings", e.getNightLandings());
-            n.put("dualHours", e.getDualHours());
-            n.put("soloHours", e.getSoloHours());
-            n.put("instrumentHours", e.getInstrumentHours());
-            n.put("toweredLandings", e.getToweredLandings());
-            n.put("distanceNm", e.getDistanceNm());
-            n.put("longestLegNm", e.getLongestLegNm());
-            n.put("approaches", e.getApproaches());
-            n.put("holding", e.isHolding());
-            n.put("tracking", e.isTracking());
-        }
-        return out;
+    /** The columns the planner's rules read, as its LogbookEntry has them. */
+    private static List<PlannerLogbookEntry> entriesOf(List<LogbookEntry> entries) {
+        return entries.stream().map(e -> new PlannerLogbookEntry(e.getFlownOn())
+                .totalHours(decimal(e.getTotalHours()))
+                .nightHours(decimal(e.getNightHours()))
+                .crossCountryHours(decimal(e.getCrossCountryHours()))
+                .dayLandings(e.getDayLandings())
+                .nightLandings(e.getNightLandings())
+                .dualHours(decimal(e.getDualHours()))
+                .soloHours(decimal(e.getSoloHours()))
+                .instrumentHours(decimal(e.getInstrumentHours()))
+                .toweredLandings(e.getToweredLandings())
+                .distanceNm(decimal(e.getDistanceNm()))
+                .longestLegNm(decimal(e.getLongestLegNm()))
+                .approaches(e.getApproaches())
+                .holding(e.isHolding())
+                .tracking(e.isTracking())).toList();
     }
 
     /** An endorsement held, as the engine reads one: its code, the day it
      *  was given, and the make and model it names where it says. */
-    public record Held(String code, LocalDate on, String makeModel) {
-    }
-
-    /** What the endorsements say (POST /api/pilot/endorsements, the
-     *  engine's endorsement_records): each one's last good day in order
-     *  (null where it does not run out), the day the solo endorsement runs
-     *  out (14 CFR 61.87(n), (p)), and 61.93(d)'s checks for a solo
-     *  cross-country on the day asked. */
-    public record Endorsements(List<LocalDate> until, LocalDate soloUntil, List<ReviewCheckDto> checks) {
+    public static PlannerHeldEndorsement held(String code, LocalDate on, String makeModel) {
+        return new PlannerHeldEndorsement(code, on).makeModel(makeModel);
     }
 
     /**
-     * What a student's endorsements say, for a solo cross-country on
-     * {@code flightOn} where it is given.
+     * What a student's endorsements say (POST /api/pilot/endorsements, the
+     * engine's endorsement_records): each one's last good day in order
+     * (null where it does not run out), the day the solo endorsement runs
+     * out (14 CFR 61.87(n), (p)), and 61.93(d)'s checks for a solo
+     * cross-country on {@code flightOn} where it is given ({@link #checkOf}).
      *
      * @throws Unavailable when the planner cannot be reached or refuses
      */
-    public Endorsements endorsements(List<Held> held, LocalDate flightOn) {
-        ObjectNode body = DATES.createObjectNode();
-        ArrayNode list = body.putArray("held");
-        for (Held h : held) {
-            ObjectNode n = list.addObject();
-            n.put("code", h.code());
-            n.put("on", h.on().toString());
-            n.put("makeModel", h.makeModel());
-        }
-        body.put("flightOn", flightOn == null ? null : flightOn.toString());
-        return read(post("/api/pilot/endorsements", body, "the endorsements"), Endorsements.class, "the endorsements");
+    public PlannerEndorsements endorsements(List<PlannerHeldEndorsement> held, LocalDate flightOn) {
+        return answer("/api/pilot/endorsements", new PlannerEndorsementsAsk(held).flightOn(flightOn), PlannerEndorsements.class,
+                "the endorsements", e -> e);
+    }
+
+    /** One of 61.93(d)'s checks, as this app sends it on. */
+    public static ReviewCheckDto checkOf(PlannerReviewCheck c) {
+        return new ReviewCheckDto(c.getRule(), c.getLabel(), c.getMet(), c.getDetail());
     }
 
     /**
      * AC 61-65K's endorsements a student meets, in order, word for word
      * (GET /api/pilot/endorsement-kinds, the engine's endorsement_kinds):
      * the catalogue the Checkride page lists, a student records from paper
-     * and an instructor signs from. The planner's answer has
-     * EndorsementKindDto's members.
+     * and an instructor signs from.
      *
      * @throws Unavailable when the planner cannot be reached or refuses
      */
@@ -271,7 +282,12 @@ public class PlannerClient {
                 .GET()
                 .timeout(RULE_TIMEOUT)
                 .build();
-        return List.of(read(sendAgainOnce(request, "the endorsements' words"), EndorsementKindDto[].class, "the endorsements' words"));
+        String what = "the endorsements' words";
+        return read(sendAgainOnce(request, what), PlannerEndorsementKind[].class, what, kinds -> Arrays.stream(kinds)
+                .map(k -> new EndorsementKindDto(k.getCode(), k.getParagraph(), k.getRule(), k.getLabel(), k.getTemplate(),
+                        k.getFields().stream().map(f -> new EndorsementFieldDto(f.getKey(), f.getLabel(), f.getExample(), f.getRequired()))
+                                .toList()))
+                .toList());
     }
 
     /** The endorsement of {@code code} in the catalogue, if there is one. */
@@ -279,62 +295,63 @@ public class PlannerClient {
         return endorsementKinds().stream().filter(k -> k.code().equals(code)).findFirst();
     }
 
-    /** An endorsement made ready to sign (the engine's endorsement_fill):
-     *  each field it takes, tidied, "" where not given; the labels of the
-     *  required ones still empty; and the words as they are signed. */
-    public record Filled(Map<String, String> fields, List<String> missing, String text) {
-    }
-
     /**
      * An endorsement of a code {@link #endorsementKinds} lists, filled in
      * with the student's name and the instructor's fields (POST
-     * /api/pilot/endorsement-fill).
+     * /api/pilot/endorsement-fill, the engine's endorsement_fill): each
+     * field it takes, tidied, "" where not given; the labels of the
+     * required ones still empty; and the words as they are signed.
      *
      * @throws Unavailable when the planner cannot be reached or refuses,
      *     a code it does not know among them
      */
-    public Filled fill(String code, String student, Map<String, String> fields) {
-        ObjectNode body = DATES.createObjectNode();
-        body.put("code", code);
-        body.put("student", student);
-        ObjectNode given = body.putObject("fields");
-        (fields == null ? Map.<String, String>of() : fields).forEach((k, v) -> given.put(k, v == null ? "" : v));
-        return read(post("/api/pilot/endorsement-fill", body, "the endorsement's words"), Filled.class, "the endorsement's words");
-    }
-
-    /** A VOR check's figures as the engine judges them: the largest error
-     *  91.171 allows for its kind, whether it was within, and its last
-     *  good day (30 days on). */
-    public record VorCheckDue(double limitDeg, boolean within, LocalDate until) {
-    }
-
-    /** When the airplane's inspections fall due (POST /api/aircraft/inspections,
-     *  the engine's inspections_due), each null where none was recorded. */
-    public record Inspections(LocalDate annualUntil, LocalDate eltUntil, LocalDate staticCheckUntil,
-                              LocalDate transponderCheckUntil, Double hundredHourDueAtHours, VorCheckDue vorCheck) {
+    public PlannerEndorsementFilled fill(String code, String student, Map<String, String> fields) {
+        PlannerEndorsementFillAsk ask = new PlannerEndorsementFillAsk(code).student(student);
+        (fields == null ? Map.<String, String>of() : fields).forEach((k, v) -> ask.putFieldsItem(k, v == null ? "" : v));
+        return answer("/api/pilot/endorsement-fill", ask, PlannerEndorsementFilled.class, "the endorsement's words", f -> f);
     }
 
     /**
-     * When an airplane's inspections and checks fall due: 14 CFR 91.409(a)
-     * and (b), 91.207(d), 91.411(a), 91.413(a) and 91.171.
+     * When an airplane's inspections and checks fall due (POST
+     * /api/aircraft/inspections, the engine's inspections_due), each null
+     * where none was recorded: 14 CFR 91.409(a) and (b), 91.207(d),
+     * 91.411(a), 91.413(a), and 91.171 for the VOR check -- the largest
+     * error allowed for its kind, whether it was within, and its last good
+     * day (30 days on). The VOR check is sent only with its day, kind and
+     * error all recorded.
      *
      * @throws Unavailable when the planner cannot be reached or refuses
      */
-    public Inspections inspections(LocalDate annualOn, LocalDate eltOn, LocalDate staticCheckOn, LocalDate transponderCheckOn,
-                                   Double hundredHourAtHours, LocalDate vorCheckOn, String vorCheckKind, Double vorCheckErrorDeg) {
-        ObjectNode body = DATES.createObjectNode();
-        body.put("annualOn", annualOn == null ? null : annualOn.toString());
-        body.put("eltOn", eltOn == null ? null : eltOn.toString());
-        body.put("staticCheckOn", staticCheckOn == null ? null : staticCheckOn.toString());
-        body.put("transponderCheckOn", transponderCheckOn == null ? null : transponderCheckOn.toString());
-        body.put("hundredHourAtHours", hundredHourAtHours);
+    public PlannerInspections inspections(LocalDate annualOn, LocalDate eltOn, LocalDate staticCheckOn, LocalDate transponderCheckOn,
+                                          Double hundredHourAtHours, LocalDate vorCheckOn, String vorCheckKind, Double vorCheckErrorDeg) {
+        PlannerInspectionsAsk ask = new PlannerInspectionsAsk().annualOn(annualOn).eltOn(eltOn).staticCheckOn(staticCheckOn)
+                .transponderCheckOn(transponderCheckOn).hundredHourAtHours(decimal(hundredHourAtHours));
         if (vorCheckOn != null && vorCheckKind != null && vorCheckErrorDeg != null) {
-            ObjectNode vor = body.putObject("vorCheck");
-            vor.put("on", vorCheckOn.toString());
-            vor.put("kind", vorCheckKind);
-            vor.put("errorDeg", vorCheckErrorDeg);
+            ask.vorCheck(new PlannerVorCheckAsk(decimal(vorCheckErrorDeg), PlannerVorCheckAsk.KindEnum.fromValue(vorCheckKind), vorCheckOn));
         }
-        return read(post("/api/aircraft/inspections", body, "the inspections"), Inspections.class, "the inspections");
+        return answer("/api/aircraft/inspections", ask, PlannerInspections.class, "the inspections", i -> i);
+    }
+
+    /** A JSON number, which the generated types hold as BigDecimal (the
+     *  pom says why), as the Double this app keeps; null where none. */
+    public static Double number(BigDecimal n) {
+        return n == null ? null : n.doubleValue();
+    }
+
+    private static BigDecimal decimal(Double d) {
+        return d == null ? null : BigDecimal.valueOf(d);
+    }
+
+    /** {@code ask} sent to the planner's {@code path}, its answer read into
+     *  the generated {@code type} and made into what the caller keeps. */
+    private <A, T> T answer(String path, Object ask, Class<A> type, String what, Function<A, T> made) {
+        String body;
+        try {
+            body = DATES.writeValueAsString(ask);
+        } catch (JsonProcessingException unwritable) {
+            throw new IllegalStateException("the ask for " + what + " could not be written", unwritable);
+        }
+        return read(post(path, body, what), type, what, made);
     }
 
     /**
@@ -349,9 +366,9 @@ public class PlannerClient {
      * connection: the pool may hold several gone stale together, and a
      * second one from it failed the same way. A timeout is not tried again.
      */
-    private String post(String path, ObjectNode body, String what) {
+    private String post(String path, String body, String what) {
         HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + path))
-                .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
+                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .timeout(RULE_TIMEOUT)
                 .build();
@@ -371,10 +388,13 @@ public class PlannerClient {
         }
     }
 
-    private static <T> T read(String answer, Class<T> type, String what) {
+    /** A field the planner always sends that is missing is not its answer
+     *  either: the generated types box every value, so it shows as a
+     *  NullPointerException where it is made into this app's own. */
+    private static <A, T> T read(String answer, Class<A> type, String what, Function<A, T> made) {
         try {
-            return DATES.readValue(answer, type);
-        } catch (JsonProcessingException notItsAnswer) {
+            return made.apply(DATES.readValue(answer, type));
+        } catch (JsonProcessingException | NullPointerException notItsAnswer) {
             throw new Unavailable("the planner's answer to " + what + " was not its answer", notItsAnswer);
         }
     }

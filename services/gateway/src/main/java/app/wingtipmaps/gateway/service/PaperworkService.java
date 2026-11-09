@@ -6,6 +6,7 @@ import app.wingtipmaps.gateway.domain.DueItemKind;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.PaperworkDto;
+import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
 import app.wingtipmaps.gateway.repository.LogbookRepository;
 import java.time.LocalDate;
@@ -99,28 +100,28 @@ public class PaperworkService {
      * recorded, so one never recorded is not listed -- and the owner's
      * items. `due` may be null where no answer was had.
      */
-    public static List<Due> ofAircraft(Aircraft a, PlannerClient.Inspections due, List<AircraftDueItem> kept) {
+    public static List<Due> ofAircraft(Aircraft a, PlannerInspections due, List<AircraftDueItem> kept) {
         List<Due> out = new ArrayList<>();
         String tail = a.getTailNumber();
         if (due != null) {
-            plane(out, a, "annual", "Annual inspection", "14 CFR 91.409(a)", due.annualUntil(), tail + "'s annual inspection runs out");
-            if (a.isForHire() && due.hundredHourDueAtHours() != null) {
+            plane(out, a, "annual", "Annual inspection", "14 CFR 91.409(a)", due.getAnnualUntil(), tail + "'s annual inspection runs out");
+            if (a.isForHire() && due.getHundredHourDueAtHours() != null) {
                 out.add(new Due("hundred-hour", "aircraft-" + a.getId() + "-hundred-hour", "100-hour inspection",
-                        "14 CFR 91.409(b)", a.getId(), tail, null, null, due.hundredHourDueAtHours(), a.getHoursNow(),
+                        "14 CFR 91.409(b)", a.getId(), tail, null, null, PlannerClient.number(due.getHundredHourDueAtHours()), a.getHoursNow(),
                         tail + "'s 100-hour inspection is due", false));
             }
-            plane(out, a, "elt", "ELT inspection", "14 CFR 91.207(d)", due.eltUntil(), tail + "'s ELT inspection runs out");
+            plane(out, a, "elt", "ELT inspection", "14 CFR 91.207(d)", due.getEltUntil(), tail + "'s ELT inspection runs out");
         }
         plane(out, a, "elt-battery", "ELT battery", "14 CFR 91.207(c)", a.getEltBatteryDueOn(),
                 tail + "'s ELT battery is to be replaced by");
         if (due != null) {
-            plane(out, a, "static", "Altimeter and static system", "14 CFR 91.411(a)", due.staticCheckUntil(),
+            plane(out, a, "static", "Altimeter and static system", "14 CFR 91.411(a)", due.getStaticCheckUntil(),
                     tail + "'s altimeter and static system test runs out");
-            plane(out, a, "transponder", "Transponder", "14 CFR 91.413(a)", due.transponderCheckUntil(),
+            plane(out, a, "transponder", "Transponder", "14 CFR 91.413(a)", due.getTransponderCheckUntil(),
                     tail + "'s transponder test runs out");
-            if (due.vorCheck() != null && due.vorCheck().within()) {
+            if (due.getVorCheck() != null && Boolean.TRUE.equals(due.getVorCheck().getWithin())) {
                 out.add(new Due("vor-check", "aircraft-" + a.getId() + "-vor-check", "VOR check for IFR",
-                        "14 CFR 91.171(a)(2)", a.getId(), tail, null, due.vorCheck().until(), null, null,
+                        "14 CFR 91.171(a)(2)", a.getId(), tail, null, due.getVorCheck().getUntil(), null, null,
                         tail + "'s VOR check runs out", false));
             }
         }

@@ -21,7 +21,8 @@ import java.util.TreeSet;
  * One service's OpenAPI document, read as a contract a hand-written client
  * is held to on what it sends: does an operation exist, and does a body or
  * a query the client sends fit what the operation takes. What it reads
- * back is {@link AnswerContract}'s. Every problem is a sentence naming the
+ * back is generated from the document; {@link AnswerContract} samples an
+ * answer for a stub to send. Every problem is a sentence naming the
  * field, for the caller to prefix with the client method it came from.
  */
 public final class OpenApiContract {
