@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import { cn } from "cn";
 import IconButton from "./IconButton";
-import { ROUND_BUTTON } from "./mapChrome";
+import { ROUND_BUTTON } from "../lib/mapChrome";
 
 /**
  * A round pane of glass on the map's panel, as Maps' buttons are on iOS

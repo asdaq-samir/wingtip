@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { PanelState } from "../../components/mapChrome";
+import type { PanelState } from "../../lib/mapChrome";
 
 /**
  * What a workspace (the pilot's planner, the developer's training)

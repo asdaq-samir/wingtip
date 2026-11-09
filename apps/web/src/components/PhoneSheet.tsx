@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ComponentProps, type PointerEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import { SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
-import { SHEET_CORNERS } from "./mapChrome";
+import { SHEET_CORNERS } from "../lib/mapChrome";
 import type { NavEdge } from "../lib/preferences";
 import { TEXT } from "../lib/text";
 import { useKeyboardInset, useVisualHeight } from "../hooks/use-viewport";

@@ -43,11 +43,16 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.atc.AtcSettingRow
 import app.wingtipmaps.android.briefing.PassengerScreen
+import app.wingtipmaps.android.copilot.CopilotMode
+import app.wingtipmaps.android.copilot.CopilotSetting
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
+import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.map.MapLayersStore
+import app.wingtipmaps.android.pilot.MinimumsRows
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
@@ -64,6 +69,7 @@ fun SetupScreen(session: Session) {
     // passenger briefing's flight.
     val plan: Plan = viewModel()
     var briefing by rememberSaveable { mutableStateOf(false) }
+    var logbook by rememberSaveable { mutableStateOf(false) }
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val loaded by session.loaded.collectAsStateWithLifecycle()
     val problem by session.problem.collectAsStateWithLifecycle()
@@ -112,6 +118,19 @@ fun SetupScreen(session: Session) {
         // What falls due, the pilot's and their airplanes': under the
         // account it belongs to.
         signedIn?.let { ComingUpSection(signedInAs = it.email ?: it.displayName ?: "") }
+        // The pilot's logbook and its currency, with their account.
+        if (signedIn != null) {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.logbook)) },
+                supportingContent = { Text(stringResource(R.string.logbook_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { logbook = true },
+            )
+        }
+        // The pilot's own minimums, kept on this phone (no sign-in), as
+        // the web keeps them with the pilot's own things.
+        SectionTitle(stringResource(R.string.personal_minimums))
+        MinimumsRows()
 
         SectionTitle(stringResource(R.string.map))
         MapLayerRows()
@@ -121,6 +140,19 @@ fun SetupScreen(session: Session) {
         val spoken = remember(context) { SpokenAlerts.of(context) }
         val spokenOn by spoken.on.collectAsStateWithLifecycle()
         SwitchRow(stringResource(R.string.speak_alerts), spokenOn, spoken::setOn)
+        // The in-flight copilot: off, shown, or shown and said (a setting
+        // of three is a segmented control, decision 0017).
+        SectionTitle(stringResource(R.string.copilot))
+        val copilot = remember(context) { CopilotSetting.of(context) }
+        val copilotMode by copilot.mode.collectAsStateWithLifecycle()
+        Segmented(
+            listOf(CopilotMode.OFF to stringResource(R.string.copilot_off), CopilotMode.ON to stringResource(R.string.copilot_on), CopilotMode.SPOKEN to stringResource(R.string.copilot_spoken)),
+            selected = copilotMode, onPick = copilot::set,
+        )
+        // The ATC copilot: the radio listened to while flying, calls to
+        // us read into cards; off until the pilot turns it on.
+        SectionTitle(stringResource(R.string.atc))
+        AtcSettingRow()
 
         // The passenger briefing for the planned flight (#223), where the
         // field's "passenger briefing" opens Setup.
@@ -135,6 +167,9 @@ fun SetupScreen(session: Session) {
             Text(stringResource(R.string.server), style = MaterialTheme.typography.bodyMedium)
             Text(Config.host, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+    if (logbook) {
+        WingtipSheet(title = stringResource(R.string.logbook), onClose = { logbook = false }, full = true) { LogbookScreen() }
     }
     if (briefing) {
         WingtipSheet(title = stringResource(R.string.passenger_briefing), onClose = { briefing = false }, full = true) {

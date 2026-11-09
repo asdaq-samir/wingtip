@@ -10,7 +10,7 @@ import { usePointActions } from "../../lib/map/cards/pointActions";
 import { useOwnFix, useOwnShip } from "../../lib/map/position/ownShip";
 import { magneticOf } from "../../lib/magnetic";
 import { usePreferences } from "../../lib/preferences";
-import { closeEmergency, useEmergencyOpen } from "./emergencyStore";
+import { closeEmergency, useEmergencyOpen } from "../../lib/emergencyStore";
 
 /** How far own ship moves before the fields are asked for again: a
  *  hundredth of a degree, about half a mile, as a light single glides in

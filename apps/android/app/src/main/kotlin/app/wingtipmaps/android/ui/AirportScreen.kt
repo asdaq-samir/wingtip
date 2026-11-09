@@ -34,6 +34,7 @@ import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.live.LiveAirportRows
 
 /**
  * The Airport tab: a field found by ident or name, and its card -- the
@@ -120,5 +121,7 @@ fun PlaceCard(place: AirportPlace) {
         } else {
             Text(stringResource(R.string.no_weather_report), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        // What SWIM says now: the D-ATIS, the RVR, a ground stop or delay.
+        LiveAirportRows(place.ident)
     }
 }

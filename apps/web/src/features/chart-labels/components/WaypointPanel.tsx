@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { cn } from "cn";
 import { BrainCircuit, Ellipsis, Eraser, ListFilter, Undo2 } from "lucide-react";
-import { useRetrain } from "../../dev/useRetrain";
+import { useRetrain } from "../dev/useRetrain";
 import ToolbarButton from "../../../components/ToolbarButton";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,

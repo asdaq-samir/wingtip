@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 // on the phone (the design audit, 2026-10-08).
 const FILES = [
   "features/plan/components/PointAltitudeDialog.tsx",
-  "features/pilot/SignInModal.tsx",
+  "components/SignInModal.tsx",
   "features/pilot/LinkSignIn.tsx",
   "features/plan/components/PlaceCard.tsx",
   "components/AccordionSection.tsx",

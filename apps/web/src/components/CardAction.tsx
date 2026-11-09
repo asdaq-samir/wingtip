@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
-import { GLASS_BUTTON } from "./mapChrome";
+import { GLASS_BUTTON } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 import { Spinner } from "./ui/spinner";
 

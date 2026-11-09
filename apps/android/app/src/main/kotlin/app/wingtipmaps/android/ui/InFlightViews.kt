@@ -21,6 +21,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import app.wingtipmaps.android.emergency.EmergencyOpen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,10 +68,12 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
  * nothing else was drawn. Nothing moves for them.
  */
 @Composable
-fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifier = Modifier) {
+fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifier = Modifier, copilot: @Composable () -> Unit = {}) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(modifier.padding(top = top + 8.dp, start = 8.dp, end = 64.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         AlertsBanner(ahead)
+        // The copilot's one message, under what is ahead (CopilotBanner).
+        copilot()
         InstrumentsBar(state, onNearest)
         // A rule of the engine that failed for this fix, in its words.
         state.problem?.let { ProblemLine(it) }
@@ -151,6 +155,11 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
                 // Material's tonal button: 40 dp drawn, its 48-dp touch
                 // target its own, nothing grown.
                 FilledTonalButton(onClick = onNearest) { Text(stringResource(R.string.nearest)) }
+                // The emergency assistant's way in from flying mode, in its
+                // own bar rather than a map button (decision 0010).
+                TextButton(onClick = { EmergencyOpen.open(EmergencyOpen.From.FLYING) }) {
+                    Text(stringResource(R.string.emergency), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+                }
                 Text(
                     "Planning aid · not for navigation",
                     style = MaterialTheme.typography.labelSmall,

@@ -1,5 +1,5 @@
 import { useContext, useEffect } from "react";
-import { MapInsetsContext, SHEET_SECONDS } from "../../../components/mapChrome";
+import { MapInsetsContext, SHEET_SECONDS } from "../../../lib/mapChrome";
 import { prefersReducedMotion } from "../../../lib/motion";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { useGlMap } from "../../../lib/map/gl/glLayer";

@@ -5,7 +5,7 @@ found here, and there are none to send where nothing changed."""
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.routers import briefing as briefing_router
+from app import route_briefing
 from app.routers import words as words_router
 from app.schemas.common import Briefing
 
@@ -76,7 +76,7 @@ def test_the_weather_sources_are_the_briefings_with_the_flight_first(monkeypatch
         asked.update(dep=dep, dest=dest, stops=stops, ete_min=ete_min, fixes=fixes)
         return briefing()
 
-    monkeypatch.setattr(briefing_router, "briefing", fake_briefing)
+    monkeypatch.setattr(route_briefing, "briefing", fake_briefing)
 
     found = _sources(client.post("/api/words/weather/sources", json={
         "dep": "c81", "dest": "kdlh", "stops": ["KMSN"], "ete_min": 150, "depart": "2026-10-06T14:00:00Z",

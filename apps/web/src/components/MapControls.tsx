@@ -8,7 +8,7 @@ import MapSettingsButton from "./MapSettingsButton";
 import RadioButton from "./RadioButton";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useIsMobile } from "../hooks/use-mobile";
-import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "./mapChrome";
+import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome";
 
 /**
  * The map's buttons, in one group floating over the chart, as Maps

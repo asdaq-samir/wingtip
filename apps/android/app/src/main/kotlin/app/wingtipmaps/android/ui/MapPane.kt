@@ -19,6 +19,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.atc.AtcCopilotHost
+import app.wingtipmaps.android.copilot.CopilotBanner
+import app.wingtipmaps.android.emergency.EmergencyModel
+import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnTrail
@@ -26,6 +30,7 @@ import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Tracking
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.ChartMap
+import app.wingtipmaps.android.map.EmergencyLine
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.MapLoading
 import app.wingtipmaps.android.map.MapPick
@@ -33,6 +38,8 @@ import app.wingtipmaps.android.map.MapRest
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.TrafficDrawing
+import app.wingtipmaps.android.route.RouteLegModel
+import app.wingtipmaps.android.route.RoutePoints
 
 /**
  * The map and what is over it, the same under either layout: the chart
@@ -55,6 +62,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val chartProblem by charts.problem.collectAsStateWithLifecycle()
     val closeTiles by charts.closeTiles.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
+    // The route's points, where its line is cut into legs, and the leg
+    // whose sheet is open (RouteLegModel), cased in green.
+    val routePoints = remember(state.course) { RoutePoints.of(state.course) }
+    val selectedLeg by viewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
     val density = LocalDensity.current
     val template = remember(info, density.density) { Charts.template(info, density.density) }
     val base = remember(info) { Charts.base(info) }
@@ -108,6 +119,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     LaunchedEffect(groundFt) { InFlight.shared.terrainFt = groundFt }
     LaunchedEffect(fix, ownShip.on, state.course, state.legs) { InFlight.shared.took(if (ownShip.on) fix else null, state) }
     LaunchedEffect(ahead) { SpokenAlerts.of(context).hear(ahead) }
+    // While the emergency assistant is open, the line from the airplane
+    // to the field it picked (the same model EmergencyHost holds).
+    val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
+    val emergency by viewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize()) {
         ChartMap(
@@ -118,6 +133,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             maxZoom = base?.maxZoom ?: 12,
             line = state.course?.courseLine.orEmpty(),
             modifier = Modifier.fillMaxSize(),
+            routePoints = routePoints,
+            selectedLeg = selectedLeg,
             overlays = overlays,
             layers = layers,
             terminal = terminal,
@@ -131,6 +148,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             ownShip = if (ownShip.on) fix else null,
             trail = flown,
             glide = if (ownShip.on) inFlight.glide?.ring.orEmpty() else emptyList(),
+            emergency = if (emergencyFrom != null && ownShip.on) EmergencyLine.of(emergency) else null,
             follow = ownShip.following,
             onDragged = { ownShip.following = false },
             onRevealed = { revealed = true },
@@ -142,7 +160,11 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of
             // the buttons where nothing else was (#218).
-            InFlightTop(state = inFlight, ahead = ahead, onNearest = onNearest, modifier = Modifier.align(Alignment.TopStart))
+            InFlightTop(state = inFlight, ahead = ahead, onNearest = onNearest, modifier = Modifier.align(Alignment.TopStart)) {
+                CopilotBanner(state, flying = inFlight.underway, fix = fix, ahead = ahead)
+                // The ATC copilot's card for the newest call to us.
+                AtcCopilotHost(plan, flying = inFlight.underway, fix = fix)
+            }
         }
         if (ownShip.on && (approximate || denied)) {
             // Why the airplane is not on the map, where the pilot looks

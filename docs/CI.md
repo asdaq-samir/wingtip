@@ -126,6 +126,7 @@ change needs; a job it skips counts as passing.
 | `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build |
 | `android`, `ios` | The phone builds, when a pull request touches them (above) |
 | `rules-boundary` | No aviation rule outside the engine (below) |
+| `architecture` | No source file new or grown past 400 lines (below, "The layers") |
 | `links` | Every relative link and `#anchor` in the Markdown resolves (`scripts/ci/check_links.py`) |
 | `api-compat` | No breaking change to an OpenAPI document (below) |
 | `infra` | cfn-lint, shellcheck, `docker compose config` and `caddy validate` over the production files |
@@ -170,6 +171,28 @@ not a rule -- the owner's FL-045 formatting, a display span -- is listed
 in `scripts/ci/rules_boundary_allow.txt` as a count per file with why. A
 file past its count fails: move the rule into the engine and ask it by
 name, or list the file with its reason. `--list` prints every hit.
+
+## The layers
+
+The architecture holds itself (the owner, 2026-11-09: "follow modular
+architecture"), each layer by a check that fails the run:
+
+- **The web app:** ESLint's `boundaries/layers` (`apps/web/eslint/boundaries.js`,
+  in `test-web`'s ESLint): `lib/` and `hooks/` import neither `components/`
+  nor `features/`; a component or another feature reaches a feature only
+  through its `index.ts` ([apps/web/README.md](../apps/web/README.md#project-layout)).
+- **The planner:** `lint-imports` (`services/planner/.importlinter`, in
+  `test` and `test-planner`): `wingtip` never imports `app`, no router
+  imports another, and only `app.main` imports the routers.
+- **The engine:** `scripts/ci/engine_layers.py` (in `test`): each crate's
+  wingtip-* dependencies are exactly engine/README.md's crate table's.
+- **Every language:** `architecture` ("File sizes") runs
+  `scripts/ci/file_sizes.py`: no tracked TypeScript, Python, Rust, Swift,
+  Kotlin or Java file over 400 lines, generated files aside, past
+  `scripts/ci/file_sizes_allow.txt`, which lists the files over it when the
+  budget came in at the lines they had. A listed file may not grow, and
+  the list may not gain or raise an entry against the base branch's; a
+  split lowers its count (`--write`).
 
 ## API compatibility
 

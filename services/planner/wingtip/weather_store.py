@@ -36,6 +36,7 @@ import time
 from pathlib import Path
 from typing import NamedTuple
 
+from . import tracing
 from .config import get_settings
 
 #: The winds aloft's periods, each a product of its own ("winds-06" ...):
@@ -126,7 +127,14 @@ _READ_LOCK = threading.Lock()
 
 def read(name: str) -> Record | None:
     """The copy of `name` the service last wrote; None where it has written
-    none. Decoded once per copy: a second read of the same file is a stat."""
+    none. Decoded once per copy: a second read of the same file is a stat.
+    A span in a traced request (wingtip.tracing), so a plan's trace shows
+    which products it read."""
+    with tracing.span("weather_store.read", **{"wingtip.weather.product": name}):
+        return _read(name)
+
+
+def _read(name: str) -> Record | None:
     path = _path(name)
     try:
         stat = path.stat()

@@ -35,7 +35,7 @@ own maps follow this table.
 ## The panel's tabs (`TAB_ICON`)
 
 The tab glyphs are the app's own, on one 28-point grid with a 2-point line,
-each with a filled face for the tab that is up (apps/web/src/components/tabGlyphs.tsx).
+each with a filled face for the tab that is up (apps/web/src/lib/glyphs/tabGlyphs.tsx).
 
 | Tab | Glyph | iOS | Android |
 |---|---|---|---|

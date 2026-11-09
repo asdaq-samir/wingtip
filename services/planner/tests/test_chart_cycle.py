@@ -9,7 +9,7 @@ from wingtip import chart_next, charts
 
 from app import chart_refresh
 from app.chart_cycle import check
-from app.routers import devservices
+from app import dev_services
 
 
 def _plan(staging=True):
@@ -20,7 +20,7 @@ def _plan(staging=True):
 @pytest.fixture
 def started(monkeypatch):
     names: list = []
-    monkeypatch.setattr(devservices, "start", lambda name: names.append(name) or True)
+    monkeypatch.setattr(dev_services, "start", lambda name: names.append(name) or True)
     monkeypatch.setattr(check, "AUTO", True)
     monkeypatch.setattr(charts, "refresh_running", lambda: False)
     monkeypatch.setattr(chart_next, "read_status", lambda root=None: None)

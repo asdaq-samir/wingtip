@@ -9,8 +9,8 @@ import { Input } from "../../../../components/ui/input";
 import { Spinner } from "../../../../components/ui/spinner";
 import { useAtcRadio } from "../../../../lib/atcRadio";
 import { TEXT } from "../../../../lib/text";
-import SourceChips from "./SourceChips";
-import { useAsk, type AskTurn } from "./useAsk";
+import SourceChips from "../../../../components/SourceChips";
+import { useAsk, type AskTurn } from "../../../../lib/ask/useAsk";
 
 /** The listening code (lib/atcListening), in a chunk of its own, fetched
  *  as the card comes so the mic's tap starts listening at once: Safari

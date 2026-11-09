@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { MapInsets } from "./mapChrome";
+import type { MapInsets } from "../lib/mapChrome";
 
 /**
  * Wingtip Maps' mark turning in the middle of the map while it loads (the

@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { GLASS_BUTTON, GLASS_PICKED } from "../../../components/mapChrome";
+import { GLASS_BUTTON, GLASS_PICKED } from "../../../lib/mapChrome";
 import { TEXT } from "../../../lib/text";
 
 // The classes and styles FPL's route list (ProceduresRoute) and its parts

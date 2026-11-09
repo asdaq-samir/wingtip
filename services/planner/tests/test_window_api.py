@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from wingtip import planning
 
 from app.main import app
-from app.routers import gonogo
+from app.gonogo import flight
 from app.window import hours as window_hours
 from .test_gonogo_api import briefing, legs, nav, totals
 
@@ -35,7 +35,7 @@ def stubbed(monkeypatch):
 
     def plan(q, r):
         world["plans"] += 1
-        return gonogo.Planned(nav=nav(), legs=legs(), totals=totals())
+        return flight.Planned(nav=nav(), legs=legs(), totals=totals())
 
     monkeypatch.setattr(window_hours, "plan_for", plan)
 
@@ -51,7 +51,7 @@ def stubbed(monkeypatch):
                             vfr_not_recommended=["C81 reporting IFR"])
         return briefing()
 
-    monkeypatch.setattr(gonogo, "brief_for", brief)
+    monkeypatch.setattr(flight, "brief_for", brief)
     return world
 
 

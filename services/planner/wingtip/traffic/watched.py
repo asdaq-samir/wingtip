@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import math
 
+from .. import tracing
 from ..config import get_settings
 from .common import STALE_S, TrafficUnavailable, _LOCK, _NM_PER_DEG, _aircraft, _clock, _sleep, _wall
 from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced
@@ -79,7 +80,10 @@ def follow_forever(stop=None) -> None:
     while stop is None or not stop.is_set():
         started = _clock()
         try:
-            follow_round()
+            # A trace of its own where tracing is on (ingest's): the
+            # round's asks of adsb.fi under it.
+            with tracing.span("follow round", root=True):
+                follow_round()
         except Exception:  # noqa: BLE001 -- a bad round is not the end of following
             log.exception("Following the airplanes failed this round")
         _sleep(max(1.0, FOLLOW_EVERY_S - (_clock() - started)))

@@ -6,6 +6,7 @@ import vitest from "@vitest/eslint-plugin";
 import testingLibrary from "eslint-plugin-testing-library";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import boundaries from "./eslint/boundaries.js";
 
 export default tseslint.config(
   { ignores: ["dist", "node_modules", "playwright-report", "test-results", "src/lib/api/schema.d.ts", "src/lib/api/assistant-schema.d.ts", "src/lib/engine/contract.ts"] },
@@ -35,6 +36,14 @@ export default tseslint.config(
       // rewriting that pattern to please the linter.
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     },
+  },
+  // The layers: lib/ and hooks/ under components/, under the features, and
+  // a feature reached by another only through its index.ts
+  // (eslint/boundaries.js, apps/web/README.md's "Project layout").
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    plugins: { boundaries },
+    rules: { "boundaries/layers": "error" },
   },
   {
     files: ["e2e/**/*.ts", "**/*.test.ts", "**/*.test.tsx"],

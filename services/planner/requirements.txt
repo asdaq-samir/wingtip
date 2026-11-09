@@ -12,12 +12,9 @@
 # Pillow among them is pinned once, 13.0.0, in services/planner/requirements-wingtip-charts.txt.
 fastapi==0.142.2
 uvicorn[standard]==0.54.0
-# Traces to an OTLP collector, only where OTEL_EXPORTER_OTLP_ENDPOINT is
-# set (app.tracing; docker-compose's tracing profile).
-opentelemetry-sdk==1.45.0
-opentelemetry-exporter-otlp-proto-http==1.45.0
+# The FastAPI app's spans (app.tracing); the rest of tracing is wingtip's
+# (requirements-wingtip.txt, wingtip.tracing).
 opentelemetry-instrumentation-fastapi==0.66b0
-opentelemetry-instrumentation-requests==0.66b0
 
 # The chart model's runtime (app.chart_scorer loads the promoted
 # model.joblib in this process). A joblib artifact is a pickle of

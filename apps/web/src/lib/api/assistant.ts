@@ -11,6 +11,7 @@
  * appended to and never edited (useAsk).
  */
 import { ApiError, csrfHeaders, failIfNotOk, ndjson } from "./client";
+import { requestIdHeaders } from "./requestId";
 
 export interface AssistantMessage {
   role: "user" | "assistant";
@@ -114,7 +115,7 @@ export async function askAssistant(body: AssistantRequest, onEvent: (event: Assi
   // The gateway's prefix is written in as GatewayRequest writes it.
   const res = await fetch("/api/planner/assistant", {
     method: "POST", signal, body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json", Accept: "application/x-ndjson", ...csrfHeaders("POST") },
+    headers: { "Content-Type": "application/json", Accept: "application/x-ndjson", ...csrfHeaders("POST"), ...requestIdHeaders() },
   });
   if (res.status === 401) throw new ApiError("Sign in to ask about the flight", 401);
   await failIfNotOk(res);

@@ -2,8 +2,9 @@ import { isEndpoint, type Point, type Rating, type Role, type Source } from "../
 import { compassPoint } from "../../lib/compass";
 import { normalizeDeg } from "../../lib/geo";
 import { SCORE_STEPS } from "../../lib/scoreScale";
+import { DEFAULT_FILTERS, FILTER_KEYS, type FilterKey, type Filters } from "../../lib/pointFilters";
 
-export { compassPoint };
+export { compassPoint, DEFAULT_FILTERS, FILTER_KEYS, type FilterKey, type Filters };
 
 /**
  * The decisions the training workspace makes, with no map and no document in
@@ -45,18 +46,6 @@ export const CATEGORIES = [
   "road_or_rail", "stadium", "tower", "town", "vor", "water",
   "wind_farm", "other",
 ] as const;
-
-export const FILTER_KEYS = [
-  "dr", "visual", "detected", "added", "rated", "unrated",
-] as const;
-export type FilterKey = (typeof FILTER_KEYS)[number];
-export type Filters = Record<FilterKey, boolean>;
-
-export const DEFAULT_FILTERS: Filters = {
-  dr: true, visual: false,
-  detected: true, added: true,
-  rated: true, unrated: true,
-};
 
 /**
  * What job a point does. A detection carries no role until it is rated,

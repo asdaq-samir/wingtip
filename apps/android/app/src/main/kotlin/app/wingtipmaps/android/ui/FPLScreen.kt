@@ -38,6 +38,12 @@ import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.plan.FlightRules
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.ui.platform.LocalContext
 
 /**
  * The flight plan: the route typed, planned, and the nav log's legs as
@@ -81,6 +87,7 @@ fun FPLScreen(plan: Plan) {
             if (state.planning) CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
             state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
+        FlightRulesRow(onChanged = { if (state.routed) plan.plan() })
         ProblemLine(state.problem)
         LazyColumn(Modifier.weight(1f)) {
             itemsIndexed(state.legs) { i, leg ->
@@ -98,6 +105,34 @@ fun FPLScreen(plan: Plan) {
     open?.let { i -> state.legs.getOrNull(i)?.let { LegSheet(number = null, leg = it, onClose = { open = null }) } }
 }
 
+/**
+ * The flight rules the route is planned and briefed under, VFR or IFR
+ * (the web's Flight Rules in FPL's profile card): a choice of two is a
+ * segmented control (decision 0017). A change plans the route again,
+ * since the planner picks the altitudes by them (14 CFR 91.159 for VFR,
+ * 91.179 for IFR).
+ */
+@Composable
+private fun FlightRulesRow(onChanged: () -> Unit) {
+    val context = LocalContext.current
+    val choices = remember(context) { FlightChoices.of(context) }
+    val rules by choices.rules.collectAsStateWithLifecycle()
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        FlightRules.entries.forEachIndexed { i, r ->
+            SegmentedButton(
+                selected = rules == r,
+                onClick = {
+                    if (rules != r) {
+                        choices.setRules(r)
+                        onChanged()
+                    }
+                },
+                shape = SegmentedButtonDefaults.itemShape(index = i, count = FlightRules.entries.size),
+            ) { Text(r.name, maxLines = 1) }
+        }
+    }
+}
+
 /** One leg's row: to where at what cruise altitude, how far, the
  *  magnetic heading, the time; a tap opens the leg. */
 @Composable
@@ -111,8 +146,12 @@ private fun LegRow(leg: Leg, onOpen: () -> Unit) {
             Text(Format.cruiseAltitude(leg.altitudeFt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Figure(stringResource(R.string.figure_dist), Format.distance(leg.distanceNm))
-        Figure(stringResource(R.string.figure_mh), leg.magneticHeadingDeg?.let(Format::heading) ?: Format.NONE)
-        Figure(stringResource(R.string.figure_ete), leg.eteMin?.let(Format::navLogTime) ?: Format.NONE)
+        // The heading needs the airplane's airspeed against the wind: with
+        // none chosen, the leg's magnetic course instead (decision 0011).
+        val heading = leg.magneticHeadingDeg
+        if (heading != null) Figure(stringResource(R.string.figure_mh), Format.heading(heading))
+        else Figure(stringResource(R.string.figure_mc), Format.heading(leg.magneticCourseDeg))
+        leg.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.navLogTime(it)) }
     }
 }
 
@@ -122,9 +161,11 @@ private fun TotalsRows(totals: NavLogTotals) {
     val warn = (totals.fuelMarginGal ?: 0.0) < 0
     Row(Modifier.fillMaxWidth()) {
         Figure(stringResource(R.string.figure_dist), Format.distance(totals.distanceNm))
-        Figure(stringResource(R.string.figure_ete), totals.eteMin?.let(Format::duration) ?: Format.NONE)
-        Figure(stringResource(R.string.figure_fuel), Format.fuel(totals.fuelGal), warn = warn)
-        Figure(stringResource(R.string.figure_required), Format.fuel(totals.fuelRequiredGal), warn = warn)
+        // Time and fuel only with an airplane: the planner sends none
+        // without one, and none is guessed (decision 0011).
+        totals.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.duration(it)) }
+        totals.fuelGal?.let { Figure(stringResource(R.string.figure_fuel), Format.fuel(it), warn = warn) }
+        totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn) }
     }
     if (warn) ProblemLine(stringResource(R.string.under_reserve), Modifier.padding(top = WingtipSpace.Xs))
 }

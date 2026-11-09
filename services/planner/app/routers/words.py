@@ -35,7 +35,7 @@ from ..gonogo.schemas import RiskAssessment
 from ..gonogo.words import WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, gairmet_title, num, one, sigmet_hazard
 from ..schemas.common import Briefing, ForecastStation, GAirmet, Hazard, OnRoute
 from ..schemas.words import WordsSource as Source, WordsSources
-from . import briefing as briefing_router
+from .. import route_briefing
 
 router = APIRouter()
 
@@ -478,7 +478,7 @@ def notam_sources(ask: RouteAsk) -> WordsSources:
     start = _start(ask.depart)
     found = notams.at_fields(fields, now=start)
     path = [(a["lat"], a["lon"]) for a in r.airports]
-    end = start + briefing_router.DEFAULT_ETE_MIN * 60 + briefing_router.MARGIN_S
+    end = start + route_briefing.DEFAULT_ETE_MIN * 60 + route_briefing.MARGIN_S
     unchecked = []
     try:
         tfrs = tfr.along_route(path, datetime.fromtimestamp(start, timezone.utc), datetime.fromtimestamp(end, timezone.utc))
@@ -496,10 +496,10 @@ def weather_sources(ask: WeatherAsk) -> WordsSources:
     time there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields
     below VFR and its own "VFR flight not recommended"), the flight first.
     A briefing that cannot be had fails as it does there (a 502)."""
-    raw = briefing_router.briefing(ask.dep, ask.dest, ",".join(ask.stops), ask.depart, ask.ete_min, ask.fixes, ask.leg_min)
+    raw = route_briefing.briefing(ask.dep, ask.dest, ",".join(ask.stops), ask.depart, ask.ete_min, ask.fixes, ask.leg_min)
     b = Briefing.model_validate(raw)
     flight = _flight_source(ask.dep.upper(), ask.dest.upper(), ask.stops, _start(ask.depart),
-                            ask.ete_min if ask.ete_min is not None else briefing_router.DEFAULT_ETE_MIN)
+                            ask.ete_min if ask.ete_min is not None else route_briefing.DEFAULT_ETE_MIN)
     return WordsSources(sources=[flight, *_briefing_sources(b)])
 
 

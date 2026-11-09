@@ -7,8 +7,8 @@ import type { Debrief } from "./debrief";
 import { pilotQuery, trainingQuery } from "../../lib/queryClient";
 import { useCopied } from "../../lib/share";
 import { TEXT } from "../../lib/text";
-import WordsSection from "../plan/components/briefing/WordsSection";
-import { wordsState } from "../plan/components/briefing/wordsState";
+import WordsSection from "../../components/WordsSection";
+import { wordsState } from "../../lib/wordsState";
 
 /** The debrief as the words are asked of it: its figures -- the legs,
  *  the checkpoints, the patterns, the notes -- without the flown line

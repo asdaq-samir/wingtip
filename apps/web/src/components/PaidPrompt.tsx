@@ -11,7 +11,7 @@ import { PRICE, subscriptionQuery, useEntitlement, useSold } from "../lib/subscr
 import { TEXT } from "../lib/text";
 
 /** Only for a pilot signed out, so not in the planner's first load. */
-const SignInModal = lazy(() => import("../features/pilot/SignInModal"));
+const SignInModal = lazy(() => import("./SignInModal"));
 
 const TITLES: Record<PaidFeature, string> = {
   NARRATIVE: "Written Briefing",

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
 import { flushSync } from "react-dom";
 import type { SetURLSearchParams } from "react-router-dom";
-import type { PanelState } from "../../../components/mapChrome";
+import type { PanelState } from "../../../lib/mapChrome";
 import type { AircraftChoice, AirportPlace } from "../../../lib/api/types";
 import { positionIdent } from "../../../lib/identSchema";
 import { positionNow, useOwnShip } from "../../../lib/map/position/ownShip";

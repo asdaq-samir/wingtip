@@ -38,6 +38,13 @@ import app.wingtipmaps.android.checklist.ChecklistKind
 import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.plan.FlightChoices
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.ui.platform.LocalContext
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -88,7 +95,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
             OutlinedTextField(
-                value = picked?.let(::label) ?: state.aircraft.uppercase(),
+                value = picked?.let(::label) ?: state.aircraft.uppercase().ifEmpty { stringResource(R.string.no_airplane) },
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(stringResource(R.string.tab_airplane)) },
@@ -96,6 +103,14 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
                 modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
             )
             ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                // None is a choice, and the default: no airplane is assumed.
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.no_airplane)) },
+                    onClick = {
+                        plan.setAircraft("")
+                        expanded = false
+                    },
+                )
                 profiles.forEach { profile ->
                     DropdownMenuItem(
                         text = { Text(label(profile)) },
@@ -109,6 +124,12 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         }
         ProblemLine(problem)
         picked?.let { ProfileFigures(it) }
+        RegistrationField()
+        PassengersRow()
+        if (!state.airplane) {
+            Text(stringResource(R.string.no_airplane_line), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@Column
+        }
         // The airplane's own checklists (#220), kept on this phone: the
         // normal procedures, and the emergency ones a tap away.
         SectionTitle(stringResource(R.string.checklists))
@@ -130,6 +151,44 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
             ChecklistScreen(airplane = state.aircraft, kind = kind)
         }
     }
+}
+
+/** The airplane's registration (N-number), the call sign the ATC copilot
+ *  listens for and the logbook's airplane; kept as typed, upper-cased. */
+@Composable
+private fun RegistrationField() {
+    val context = LocalContext.current
+    val choices = remember(context) { FlightChoices.of(context) }
+    val tail by choices.tail.collectAsStateWithLifecycle()
+    var typed by remember { mutableStateOf(tail.orEmpty()) }
+    OutlinedTextField(
+        value = typed,
+        onValueChange = {
+            typed = it.uppercase()
+            choices.setTail(it)
+        },
+        label = { Text(stringResource(R.string.registration)) },
+        placeholder = { Text(stringResource(R.string.registration_hint)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+/** Whether anyone but the pilot is aboard: where the web reads it from
+ *  the load's seats, the phone, which has no load yet, asks. The copilot
+ *  reads it for 61.57(b)'s passengers at night. */
+@Composable
+private fun PassengersRow() {
+    val context = LocalContext.current
+    val choices = remember(context) { FlightChoices.of(context) }
+    val aboard by choices.passengers.collectAsStateWithLifecycle()
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.passengers_aboard)) },
+        trailingContent = { Switch(checked = aboard, onCheckedChange = null) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = Modifier.fillMaxWidth().toggleable(value = aboard, role = Role.Switch, onValueChange = choices::setPassengers),
+    )
 }
 
 /** "Cessna 172 · C172": the type's name and the planner's key for it. */

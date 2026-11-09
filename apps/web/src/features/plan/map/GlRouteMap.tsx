@@ -5,14 +5,14 @@ import type { TrafficPattern } from "../../../lib/trafficPattern";
 import { DRY_RUN, usePastFlight } from "./pastFlight";
 import type { RouteWay } from "../../../lib/map/route/routeWays";
 import type { StopPin } from "../../../lib/map/marks/stopPins";
-import GlMapShell from "../../../lib/map/gl/GlMapShell";
+import GlMapShell from "../../../components/map/GlMapShell";
 import { AirportsGl } from "./layers/AirportsGl";
-import { AirspaceGl } from "../../../lib/map/gl/layers/AirspaceGl";
+import { AirspaceGl } from "../../../components/map/layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "../../../lib/map/gl/layers/BaseGl";
 import { ChartGl } from "../../../lib/map/gl/layers/ChartGl";
 import { EmergencyGl } from "./layers/EmergencyGl";
 import { AheadGl, ClassBGl } from "./layers/MarksGl";
-import { NavaidsGl, WaypointsGl } from "../../../lib/map/gl/layers/NavaidsGl";
+import { NavaidsGl, WaypointsGl } from "../../../components/map/layers/NavaidsGl";
 import { OwnShipGl } from "../../../lib/map/gl/layers/OwnShipGl";
 import {
   FuelStopsGl, HoldTracksGl, LegPointsGl, LessonGl, PatternsGl, PickedGl, PlatesGl, ProceduresGl, StopFieldsGl, WaysGl,

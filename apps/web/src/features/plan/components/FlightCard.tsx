@@ -5,7 +5,7 @@ import { cn } from "cn";
 import { PanelCard } from "../../../components/PanelCard";
 import { PhotoHead, type HeadSlide } from "../../../components/PhotoHead";
 import { PhotoSlide } from "../../../components/PictureSlides";
-import { FAVORITE_STAR_ON, useCardTitle } from "../../../components/mapChrome";
+import { FAVORITE_STAR_ON, useCardTitle } from "../../../lib/mapChrome";
 import RoundButton from "../../../components/RoundButton";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { PillSection } from "../../../components/Favorites";

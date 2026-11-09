@@ -1,5 +1,6 @@
 import { Suspense, lazy, type ReactNode, type ComponentProps } from "react";
 import { cn } from "cn";
+import { loadAccountPanels } from "../../../pilot";
 import type { LatLon } from "../../../../lib/geo";
 import { pickKeptAircraft } from "../../lib/tabSearch";
 import { MAX_STOPS, routeName } from "../../../../lib/identSchema";
@@ -23,7 +24,7 @@ import ProfileSideView from "./ProfileSideView";
 
 /** The saved flights in full, FPL's card (the console's list, loaded as
  *  it opens). */
-const SavedFlights = lazy(() => import("../../../pilot/AccountPanels").then(m => ({ default: m.FlightsPanel })));
+const SavedFlights = lazy(() => loadAccountPanels().then(m => ({ default: m.FlightsPanel })));
 // The Favorites in full, airports' and airplanes', when one is opened:
 // their drag to reorder (dnd-kit, SortableRows) is kept out of the first
 // load (scripts/first-load.mjs's budget, 2026-11-05).

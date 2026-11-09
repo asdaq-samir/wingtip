@@ -33,7 +33,11 @@ import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.emergency.EmergencyHost
+import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.route.RouteLegHost
+import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.strip.StripLayout
 import app.wingtipmaps.android.ui.sheet.DockedSheet
 import app.wingtipmaps.android.ui.sheet.SheetStop
@@ -102,8 +106,12 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     // A tapped field opens in the Airport tab, the sheet raised a stop to
     // show it, as the web's map opens a field's card; under the strip,
     // which has no tab, and for everything else, its card over the map.
+    val legs: RouteLegModel = viewModel()
     val onPick: (MapPick) -> Unit = { pick ->
-        if (pick is MapPick.Airport && layout != LayoutPreference.STRIP) {
+        if (pick is MapPick.RouteLeg) {
+            // A leg of the route: its Route Leg sheet, the leg cased green.
+            legs.open(pick.index)
+        } else if (pick is MapPick.Airport && layout != LayoutPreference.STRIP) {
             airport = pick.ident
             tab = Tabs.AIRPORT.ordinal
             scope.launch { if (sheet.stop == SheetStop.PILL) sheet.moveTo(SheetStop.HALF) }
@@ -171,6 +179,10 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         )
     }
     picked?.let { pick -> MapCardSheet(pick, plan, onClose = { picked = null }) }
+    RouteLegHost(plan, ownShipOn = ownShip.on, model = legs)
+    EmergencyHost(plan, ownShip)
+    // A flight recorded and ended, offered for the logbook.
+    AutoLogbookHost(plan, session)
 }
 
 /** The pill: the drag handle, the figures' line and the tabs (Material's

@@ -83,6 +83,9 @@ object WingtipColors {
         /** A temporary flight restriction's red (14 CFR 91.137 to 91.145). */
         val Tfr = Color(0xFFDC2626)
         const val TFR_HEX = "#dc2626"
+        /** The emergency assistant's line to the field picked: the system red a pilot reads as now. */
+        val Emergency = Color(0xFFFF3B30)
+        const val EMERGENCY_HEX = "#ff3b30"
     }
     object Category {
         val Vfr = Color(0xFF1A7F37)

@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { CardClose } from "../../../components/PanelCard";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import QueryState from "../../../components/QueryState";
-import { ADD_CAPSULE } from "../../../components/mapChrome";
+import { ADD_CAPSULE } from "../../../lib/mapChrome";
 import PullDown from "../../../components/PullDown";
 import StopKindGlyph from "../../../components/StopKindGlyph";
 import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group";

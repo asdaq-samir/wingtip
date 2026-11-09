@@ -1,0 +1,107 @@
+package app.wingtipmaps.android.emergency
+
+import app.wingtipmaps.android.MainRule
+import app.wingtipmaps.android.api.generated.EmergencyField
+import app.wingtipmaps.android.api.generated.EmergencyFields
+import app.wingtipmaps.android.api.generated.EmergencyFrequency
+import app.wingtipmaps.android.checklist.ChecklistSection
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.flight.OwnShip
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+
+/** The emergency assistant's model over fakes of the planner and the
+ *  engine: the fields asked as the airplane moves, the first ranked
+ *  picked, the checklist opened at the emergency, the MAYDAY filled. */
+class EmergencyModelTest {
+    @get:Rule val main = MainRule()
+
+    private fun field(ident: String, nm: Double, bearing: Double) = EmergencyField(
+        bearingDeg = bearing, distanceNm = nm, ident = ident, lat = 42.0, lon = -88.0, name = "$ident Field", runways = emptyList(),
+        phone = "555-0100", frequencies = listOf(EmergencyFrequency(kind = "TWR", mhz = 120.5)),
+    )
+
+    private class Rules : EmergencyRules {
+        var facts: MaydayFacts? = null
+        var frequencies = 0
+        override fun bestFields(data: EmergencyFields, fix: OwnShip.Fix) = Result.success(
+            EngineContract.BestFieldsAnswer(
+                mode = "glide", needsAirplane = data.airplane == null,
+                fields = data.fields.sortedBy { it.distanceNm }.map {
+                    EngineContract.BestField(
+                        ident = it.ident, name = it.name, lat = it.lat, lon = it.lon, distanceNm = it.distanceNm, courseDeg = it.bearingDeg,
+                        reach = "unknown", towered = false, private = false, military = false, reasons = emptyList(),
+                    )
+                },
+            ),
+        )
+        override fun mayday(facts: MaydayFacts, data: EmergencyFields?): Result<EngineContract.MaydayCallAnswer> {
+            this.facts = facts
+            frequencies = data?.fields?.sumOf { it.frequencies.orEmpty().size } ?: 0
+            return Result.success(EngineContract.MaydayCallAnswer(lines = listOf("MAYDAY MAYDAY MAYDAY"), words = "", missing = emptyList(), squawk = "7700", squawkWords = "", channels = emptyList()))
+        }
+        override fun checklistSection(titles: List<String>) = titles.indexOfFirst { it.startsWith("Engine failure in flight") }.takeIf { it >= 0 }
+        override fun sections(text: String) = if (text.isEmpty()) emptyList() else listOf(
+            ChecklistSection("Engine fire", emptyList()),
+            ChecklistSection("Engine failure in flight", listOf(EngineContract.ChecklistReadSectionsItemItemsItem("Airspeed", "68 KIAS"))),
+        )
+        override fun compassWord(bearingDeg: Double) = if (bearingDeg in 180.0..270.0) "SW" else "NE"
+    }
+
+    private val fix = OwnShip.Fix(lat = 42.1, lon = -88.1, altitudeFt = 4520.0, trackDeg = 300.0, groundspeedKt = 100.0, accuracyM = 5.0, atMs = 0L)
+
+    @Test
+    fun theFieldsAreRankedAndTheMaydayFilled() {
+        var asks = 0
+        var askedAircraft: String? = "?"
+        val rules = Rules()
+        val model = EmergencyModel({ _, _, alt, aircraft -> asks++; askedAircraft = aircraft; assertEquals(4500.0, alt!!, 0.0); EmergencyFields(fields = listOf(field("KUGN", 6.2, 30.0), field("C81", 3.4, 45.0))) }, rules)
+        model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "# x")
+        model.took(fix, trackMagDeg = 304.0)
+        val s = model.state.value
+        assertEquals(1, asks)
+        assertEquals("c172", askedAircraft)
+        assertEquals("C81", s.picked!!.ident)
+        assertEquals("555-0100", s.phone)
+        // The checklist opened at the engine failure, the section the call names.
+        assertEquals(1, s.section)
+        val facts = rules.facts!!
+        assertEquals("Engine failure in flight", facts.nature)
+        assertEquals("Landing at C81 Field, C81", facts.intentions)
+        assertEquals("3 nm SW of C81 Field", facts.position)
+        assertEquals(304.0, facts.headingMagDeg!!, 0.0)
+        assertEquals(4500.0, facts.altitudeFt!!, 0.0)
+        assertEquals(2, rules.frequencies)
+        // A small move asks nothing new; the pilot's pick and words stand.
+        model.took(fix.copy(lat = 42.1001), trackMagDeg = 304.0)
+        assertEquals(1, asks)
+        model.pick("KUGN")
+        model.souls("2 people")
+        assertEquals("KUGN", model.state.value.picked!!.ident)
+        assertEquals(2.0, rules.facts!!.souls!!, 0.0)
+    }
+
+    @Test
+    fun noAirplaneAndNoChecklistAreSaidNotGuessed() {
+        var askedAircraft: String? = "?"
+        val model = EmergencyModel({ _, _, _, aircraft -> askedAircraft = aircraft; EmergencyFields(fields = listOf(field("C81", 3.4, 45.0))) }, Rules())
+        model.start(aircraft = "", airplaneName = null, callsign = null, checklist = "")
+        model.took(fix, trackMagDeg = null)
+        assertNull(askedAircraft)
+        assertTrue(model.state.value.ranked!!.needsAirplane)
+        assertNull(model.state.value.section)
+    }
+
+    @Test
+    fun thePilotsOwnWordsOpenIt() {
+        assertTrue(EmergencyOpen.asked("Mayday mayday"))
+        assertTrue(EmergencyOpen.asked("engine failure"))
+        assertTrue(EmergencyOpen.asked("I have an emergency"))
+        assertFalse(EmergencyOpen.asked("KDPA to KMSN"))
+        assertFalse(EmergencyOpen.asked("engine start"))
+    }
+}

@@ -19,7 +19,7 @@ from ..router_basics import DEFAULT_AIRCRAFT
 from ..figures.schemas import DebriefAnswer, DebriefAsk, Diversion, Holding, LostComms, LostCommsAsk
 from wingtip.planning import aircraft_profile, forecast_hour_for
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
-from .plan import CruisePower, CruiseTas
+from ..plan_query import CruisePower, CruiseTas
 
 router = APIRouter()
 log = logging.getLogger(__name__)

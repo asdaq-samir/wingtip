@@ -21,7 +21,7 @@ import signal
 import threading
 import time
 
-from wingtip import traffic
+from wingtip import traffic, tracing
 from wingtip.traffic import store
 
 from . import swim
@@ -55,6 +55,9 @@ def run(stop: threading.Event) -> None:
 
 def main() -> None:
     logging.basicConfig(level=get_settings().log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    # Traces with TRACING=1 (docs/LOCAL-DEV.md, "Tracing"): each round of
+    # following a trace, its adsb.fi asks under it; nothing otherwise.
+    tracing.start("ingest")
     stop = threading.Event()
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, lambda *_: stop.set())

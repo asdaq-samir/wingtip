@@ -53,7 +53,7 @@ class BriefModel : ViewModel() {
      *  route not planned, and nothing again for the same route. */
     fun brief(plan: Plan.State) {
         if (!plan.routed || plan.totals == null || plan.planning) return
-        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, plan.holds.joinToString(",")).joinToString("|")
+        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, plan.holds.joinToString(","), plan.rules).joinToString("|")
         if (route == _state.value.route && (_state.value.verdict != null || _state.value.loading)) return
         asking?.cancel()
         _state.value = State(route = route, loading = true)
@@ -62,7 +62,8 @@ class BriefModel : ViewModel() {
                 val answer = Planner.goNoGo(
                     GoNoGoAsk(
                         dep = plan.dep, dest = plan.dest, stops = plan.stops.joinToString(",").ifEmpty { null },
-                        aircraft = plan.aircraft, holds = plan.holds.joinToString(",").ifEmpty { null },
+                        aircraft = plan.aircraft.ifEmpty { Planner.NO_AIRPLANE }, holds = plan.holds.joinToString(",").ifEmpty { null },
+                        rules = plan.rules,
                     ),
                 )
                 _state.update { it.copy(loading = false) + answer }

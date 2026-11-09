@@ -5,14 +5,15 @@ import { Check, GraduationCap, Save } from "lucide-react";
 import { done } from "../../../../lib/doneNote";
 import { DropdownMenuItem } from "../../../../components/ui/dropdown-menu";
 import { ResponsivePopoverContent } from "../../../../components/ResponsivePopover";
-import { ReviewAskForm, type ReviewAsk } from "../../../pilot/ReviewAsk";
+import { ReviewAskForm, type ReviewAsk } from "../../../../components/ReviewAsk";
 import { localDay } from "../../../../lib/format";
 import { TEXT } from "../../../../lib/text";
 import { api } from "../../../../lib/api/client";
 import { pilotQuery, trainingQuery } from "../../../../lib/queryClient";
 import type { SaveFlightRequest } from "../../../../lib/api/types";
 import { FINDING_TONE } from "../../../../lib/findings";
-import { planOf, SAVE_FLIGHT, useSaveRequest, type FlightToSave } from "./saveFlightRequest";
+import { planOf, SAVE_FLIGHT, useSaveRequest } from "./saveFlightRequest";
+import type { FlightToSave } from "../../../../lib/briefPlan";
 import { Spinner } from "../../../../components/ui/spinner";
 
 /**

@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { words } from "../../../../lib/api/words";
 import { routeKeyOf, useBriefPlan } from "../../../../lib/briefPlan";
 import { useVerdict, verdictLine } from "../../../../lib/verdict";
-import { contextNow } from "../ask/useAsk";
+import { contextNow } from "../../../../lib/ask/useAsk";
 import type { PanelTab } from "../navlog/panelTab";
-import WordsSection from "./WordsSection";
+import WordsSection from "../../../../components/WordsSection";
 import { notamCredit, notamNone } from "./briefingWords";
-import { wordsState } from "./wordsState";
+import { wordsState } from "../../../../lib/wordsState";
 
 /** The words are asked once for a route and its time, and kept: not on
  *  every render, and not again for ten minutes. */

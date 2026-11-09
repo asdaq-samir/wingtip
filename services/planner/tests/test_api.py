@@ -16,7 +16,8 @@ from wingtip import model_registry, tfr, weather
 from wingtip.weather import WeatherServiceError
 
 from app.main import app
-from app.routers import devservices, system
+from app import dev_services
+from app.routers import system
 
 client = TestClient(app)
 
@@ -80,7 +81,7 @@ def test_checkpoints_translates_a_chart_that_would_not_read_to_502(monkeypatch):
 
 
 def test_status_reports_every_service_and_the_data_on_disk(monkeypatch):
-    monkeypatch.setattr(devservices, "SIDECAR_URL", None)
+    monkeypatch.setattr(dev_services, "SIDECAR_URL", None)
     monkeypatch.setattr(system, "_gateway_status", lambda: (
         system.ServiceStatus(up=True, detail="HTTP 200"), system.ServiceStatus(up=False, detail="HTTP 503")))
     # Not the chart model's real count: that reads the real ratings'
@@ -141,7 +142,7 @@ class FakeResponse:
 
 def test_retrain_writes_the_chart_models_table_and_says_how_without_the_sidecar(monkeypatch):
     written = []
-    monkeypatch.setattr(devservices, "SIDECAR_URL", None)
+    monkeypatch.setattr(dev_services, "SIDECAR_URL", None)
     monkeypatch.setattr(system, "_training", lambda: None)
     monkeypatch.setattr(system.chart_model, "write_training_table", lambda: written.append(True))
 
@@ -155,7 +156,7 @@ def test_retrain_writes_the_chart_models_table_and_says_how_without_the_sidecar(
 
 def test_retrain_starts_the_training_runs_container(monkeypatch):
     sidecar = FakeSidecar("exited")
-    monkeypatch.setattr(devservices, "_sidecar", sidecar)
+    monkeypatch.setattr(dev_services, "ask", sidecar)
     monkeypatch.setattr(system, "_training", lambda: None)
     monkeypatch.setattr(system.chart_model, "write_training_table", lambda: None)
 
@@ -170,7 +171,7 @@ def test_retrain_while_a_run_is_going_leaves_it_and_its_table_alone(monkeypatch)
     # One run at a time: the table a run trains on is not written under it.
     written = []
     sidecar = FakeSidecar("running")
-    monkeypatch.setattr(devservices, "_sidecar", sidecar)
+    monkeypatch.setattr(dev_services, "ask", sidecar)
     monkeypatch.setattr(system, "_training", lambda: None)
     monkeypatch.setattr(system.chart_model, "write_training_table", lambda: written.append(True))
 
@@ -185,7 +186,7 @@ def test_retrain_with_too_few_ratings_says_why_instead_of_starting_a_run(monkeyp
     # It started the run, which failed minutes later with the news in a
     # log nobody was shown.
     sidecar = FakeSidecar("exited")
-    monkeypatch.setattr(devservices, "_sidecar", sidecar)
+    monkeypatch.setattr(dev_services, "ask", sidecar)
     monkeypatch.setattr(system, "_training", lambda: system.TrainingReadiness(
         usable=28, needed=30, ready=False, rated=32, off_detection=4, reading=[],
         message="28 of the 30 ratings training needs."))
@@ -205,21 +206,21 @@ def test_the_pipeline_status_is_the_runs_own_file_and_its_container(tmp_path, mo
         "stages": [{"name": "chart_retrain", "state": "running", "detail": None}],
     }))
 
-    monkeypatch.setattr(devservices, "_sidecar", FakeSidecar("running"))
+    monkeypatch.setattr(dev_services, "ask", FakeSidecar("running"))
     going = system._pipeline_status()
     assert going.startable is True
     assert (going.last_run.state, going.last_run.stage) == ("running", "chart_retrain")
 
     # The container stopped with the file still saying running: the run
     # was cut short, which reads as a failure, not a run going for ever.
-    monkeypatch.setattr(devservices, "_sidecar", FakeSidecar("exited"))
+    monkeypatch.setattr(dev_services, "ask", FakeSidecar("exited"))
     stopped = system._pipeline_status()
     assert stopped.last_run.state == "failed"
     assert stopped.last_run.error == "The run stopped before it finished."
 
     # Just started: the container runs before the run has written itself down.
     run_file.write_text(json.dumps({"run_id": "earlier", "state": "success", "stages": []}))
-    monkeypatch.setattr(devservices, "_sidecar", FakeSidecar("running"))
+    monkeypatch.setattr(dev_services, "ask", FakeSidecar("running"))
     assert system._pipeline_status().last_run.state == "running"
 
 

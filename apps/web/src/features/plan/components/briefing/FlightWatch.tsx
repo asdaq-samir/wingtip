@@ -5,14 +5,14 @@ import { Switch } from "../../../../components/ui/switch";
 import { api, describeError } from "../../../../lib/api/client";
 import type { SaveFlightRequest } from "../../../../lib/api/types";
 import { flightWatch, type FlightWatch as Watch } from "../../../../lib/api/words";
-import { useBriefPlan } from "../../../../lib/briefPlan";
+import { useBriefPlan, type FlightToSave } from "../../../../lib/briefPlan";
 import { clockTime } from "../../../../lib/format";
 import { useMinuteClock } from "../../../../lib/useMinuteClock";
 import { pilotQuery } from "../../../../lib/queryClient";
 import { TEXT } from "../../../../lib/text";
-import SourceChips from "../ask/SourceChips";
+import SourceChips from "../../../../components/SourceChips";
 import DepartPicker from "../navlog/DepartPicker";
-import { planOf, SAVE_FLIGHT, useSaveRequest, type FlightToSave } from "./saveFlightRequest";
+import { planOf, SAVE_FLIGHT, useSaveRequest } from "./saveFlightRequest";
 
 /** How often the watch is read while the Brief is open: the gateway
  *  checks on its own clock, and the Brief shows what it found. */

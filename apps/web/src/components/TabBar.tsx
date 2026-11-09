@@ -1,12 +1,12 @@
 import { useContext, useEffect, useRef, type ReactNode } from "react";
 import { ChevronDown, Share } from "lucide-react";
-import { GearGlyph, type TabGlyph } from "./tabGlyphs";
+import { GearGlyph, type TabGlyph } from "../lib/glyphs/tabGlyphs";
 import CloseButton from "./CloseButton";
 import RoundButton from "./RoundButton";
 import { cn } from "cn";
 import { closeTopCard, useOpenCards, type RouteCard } from "../lib/openCards";
 import { TEXT } from "../lib/text";
-import { BarOverPicture, PanelSize, TabBarMinimized, useConsoleOpen, useTabsShown } from "./mapChrome";
+import { BarOverPicture, PanelSize, TabBarMinimized, useConsoleOpen, useTabsShown } from "../lib/mapChrome";
 import { ON_PILL_PICTURE } from "./PillPicture";
 import { barHeadRef, closeSheetCards, useSheetCards } from "../lib/sheetCards";
 

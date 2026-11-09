@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { Alert } from "../../components/ui/alert";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
-import { GLASS } from "../../components/mapChrome";
+import { GLASS } from "../../lib/mapChrome";
 import { LATEST_KEPT_MS, useLatestAtcCall } from "../../lib/atc/latestCall";
 import { TEXT } from "../../lib/text";
 import { useCopilot } from "./useCopilot";

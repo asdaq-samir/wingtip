@@ -28,6 +28,8 @@ import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.route.RouteEdits
+import app.wingtipmaps.android.plan.FlightChoices
 
 /**
  * The route being planned and what the planner has said of it so far: the
@@ -42,9 +44,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val dep: String = "",
         val dest: String = "",
         val stops: List<String> = emptyList(),
-        /** The planner's aircraft profile; the airplane by N-number is a
-         *  later phase. */
-        val aircraft: String = "c172",
+        /** The planner's aircraft profile; "" for none, the default:
+         *  no airplane is ever assumed (decision 0011), and the figures
+         *  that need one are left out until one is chosen. */
+        val aircraft: String = "",
         /** The holds the pilot put on the route, as the planner reads them
          *  (the engine's hold_write: "VPBNG/090/30:270:R:1M:2T"). */
         val holds: List<String> = emptyList(),
@@ -56,8 +59,17 @@ class Plan(app: Application) : AndroidViewModel(app) {
         /** Why there is no plan, in the planner's words; null when there is. */
         val problem: String? = null,
         val planning: Boolean = false,
+        /** The point a Route Leg's Direct flies to, and the route as it was
+         *  before, for its Cancel (the web's `direct` and `was`). */
+        val direct: String? = null,
+        val was: RouteEdits.Route? = null,
+        /** The flight rules it was planned under (FlightChoices), "vfr" or "ifr". */
+        val rules: String = "vfr",
     ) {
         val routed: Boolean get() = dep.isNotEmpty() && dest.isNotEmpty()
+
+        /** An airplane is chosen: time, fuel and groundspeed can be had. */
+        val airplane: Boolean get() = aircraft.isNotEmpty()
     }
 
     private val prefs = app.getSharedPreferences("plan", Context.MODE_PRIVATE)
@@ -80,9 +92,32 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 dep = dep.trim().uppercase(),
                 dest = dest.trim().uppercase(),
                 stops = stops.map { s -> s.trim().uppercase() }.filter { s -> s.isNotEmpty() },
+                direct = null, was = null,
             )
         }
         plan()
+    }
+
+    /** A Route Leg's Direct: from the airplane (else the departure) to the
+     *  leg's end and on (RouteEdits.direct), the route kept for Cancel. */
+    fun directToStop(ident: String, at: OwnShip.Fix?) {
+        val s = _state.value
+        val was = s.was ?: RouteEdits.Route(s.dep, s.stops, s.dest)
+        val next = RouteEdits.direct(was, ident, at?.let(::positionIdent)) ?: return
+        plan(next.dep, next.dest, next.stops)
+        _state.update { it.copy(direct = ident, was = was) }
+    }
+
+    /** Cancel Direct: the route as it was before it. */
+    fun cancelDirect() {
+        val was = _state.value.was ?: return
+        plan(was.dep, was.dest, was.stops)
+    }
+
+    /** A Route Leg's Remove: the stop taken out of the route. */
+    fun removeStop(ident: String) {
+        val s = _state.value
+        plan(s.dep, s.dest, RouteEdits.without(s.stops, ident))
     }
 
     /** One of the planner's airplane types picked; the route, where there
@@ -95,6 +130,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
     /** Plans the route as entered: the course first, for the map, then the
      *  nav log streamed in. */
     fun plan() {
+        _state.update { it.copy(rules = FlightChoices.of(getApplication()).rules.value.word) }
         val asked = _state.value
         if (!asked.routed) return
         running?.cancel()
@@ -104,7 +140,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, asked.aircraft, asked.holds).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, asked.aircraft, asked.holds, asked.rules).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
                         is NavLogMessage.Altitude -> {}
@@ -147,10 +183,13 @@ class Plan(app: Application) : AndroidViewModel(app) {
 
     /** Direct To: from where the airplane is to the point, then on along
      *  the route, the point taken out of the stops after it. */
-    fun directTo(point: ChartPoint, at: OwnShip.Fix) {
+    fun directTo(point: ChartPoint, at: OwnShip.Fix) = directTo(point.ident, at)
+
+    /** Direct To by ident alone: a card's, or a fix ATC named (atc/). */
+    fun directTo(ident: String, at: OwnShip.Fix) {
         val s = _state.value
-        val stops = listOf(point.ident) + s.stops.filterNot { it.equals(point.ident, ignoreCase = true) }
-        plan(positionIdent(at), s.dest.ifEmpty { point.ident }, if (s.dest.isEmpty()) emptyList() else stops)
+        val stops = listOf(ident) + s.stops.filterNot { it.equals(ident, ignoreCase = true) }
+        plan(positionIdent(at), s.dest.ifEmpty { ident }, if (s.dest.isEmpty()) emptyList() else stops)
     }
 
     /** Add Stop and Add to Route: the point among the stops where it

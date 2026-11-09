@@ -11,7 +11,7 @@ import { useStripShows } from "../hooks/useStripShows";
 import { RecentRouteTiles } from "./RecentRoutes";
 
 // The sign-in sheet's code with its first tap, not FPL's first load.
-const SignInModal = lazy(() => import("../../pilot/SignInModal"));
+const SignInModal = lazy(() => import("../../../components/SignInModal"));
 
 /** The most the strip shows, newest first; Saved's title opens them all. */
 const STRIP_MOST = 10;

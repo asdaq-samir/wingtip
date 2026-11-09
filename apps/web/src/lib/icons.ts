@@ -3,8 +3,8 @@ import {
   Navigation, Phone, Repeat2, Route, Send, Share, Sparkles, X, type LucideIcon,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
-import DirectToIcon from "../components/DirectToIcon";
-import { AirplaneGlyph, AirportGlyph, GearGlyph, RouteGlyph, type TabGlyph } from "../components/tabGlyphs";
+import DirectToIcon from "./glyphs/DirectToIcon";
+import { AirplaneGlyph, AirportGlyph, GearGlyph, RouteGlyph, type TabGlyph } from "./glyphs/tabGlyphs";
 
 /**
  * One concept, one glyph: the web's half of the icon concept table

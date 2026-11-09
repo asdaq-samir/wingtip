@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { create } from "zustand";
-import { useFlying } from "../../components/mapChrome";
+import { useFlying } from "../../lib/mapChrome";
 import { useLatestAtcCall } from "../../lib/atc/latestCall";
 import { useAtcListen } from "../../lib/atc/listenSetting";
 import { listenOnce, startRadio, stopRadio } from "../../lib/atcListening";

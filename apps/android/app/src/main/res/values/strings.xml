@@ -30,6 +30,7 @@
     <string name="figure_ete">ETE</string>
     <string name="figure_fuel">FUEL</string>
     <string name="figure_mh">MH</string>
+    <string name="figure_mc">MC</string>
     <string name="figure_required">REQUIRED</string>
     <string name="figure_cruise">CRUISE</string>
     <string name="figure_burn">BURN</string>
@@ -156,4 +157,140 @@
     <string name="the_flight">The Flight</string>
     <string name="server">Server</string>
     <string name="pilot_menu">The pilot\'s menu</string>
+
+    <!-- Live reports from SWIM on the airport and airspace cards (live/). -->
+    <string name="live_programs">Ground Stops and Delays</string>
+    <string name="live_programs_credit">FAA Command Center, through SWIM</string>
+    <string name="live_rvr">Runway Visual Range, ft</string>
+    <string name="live_rvr_runway">RVR %1$s</string>
+    <string name="live_rvr_parts">Touchdown · midpoint · rollout</string>
+    <string name="live_rvr_credit">FAA RVR, through SWIM</string>
+    <string name="live_as_sent">As Sent</string>
+    <string name="live_hide_sent">Hide As Sent</string>
+    <string name="live_atis_credit">FAA D-ATIS</string>
+    <string name="special_use">Special Use</string>
+    <string name="special_use_none">None here</string>
+    <string name="special_use_unavailable">The FAA\'s special-use airspace did not answer. Check the chart.</string>
+
+    <!-- The Brief's forecast icing (brief/). -->
+    <string name="icing_forecast">Forecast Icing</string>
+    <string name="icing_unchecked">The forecast icing could not be checked: aviationweather.gov didn\'t respond. Verify separately before flight.</string>
+
+    <!-- The Route Leg sheet, from a tap on the route's line (route/). -->
+    <string name="route_leg">Route Leg</string>
+    <string name="route_leg_to">to</string>
+    <string name="route_leg_active">Active Leg</string>
+    <string name="route_leg_direct">Direct %1$s</string>
+    <string name="route_leg_cancel_direct">Cancel Direct</string>
+    <string name="route_leg_remove">Remove %1$s</string>
+    <string name="route_leg_distance">Distance</string>
+    <string name="route_leg_course">Course</string>
+
+    <!-- The emergency assistant (emergency/, decision 0010). -->
+    <string name="emergency">Emergency</string>
+    <string name="emergency_assistant">Emergency Assistant</string>
+    <string name="emergency_assistant_line">Best fields within a glide, the checklist and the MAYDAY</string>
+    <string name="best_fields">Best Fields</string>
+    <string name="best_fields_glide">Best Fields · Glide About %1$d nm in Still Air</string>
+    <string name="show_my_position">Show My Position</string>
+    <string name="show_my_position_line">The fields within a glide are worked out from it</string>
+    <string name="glide_needs_airplane">Glide Needs an Airplane</string>
+    <string name="glide_needs_airplane_line">Choose one with its best-glide figures; nearest first meanwhile</string>
+    <string name="this_airplane">this airplane</string>
+    <string name="emergency_no_checklist">No emergency checklist for %1$s</string>
+    <string name="emergency_no_checklist_line">Write it from the airplane\'s handbook in the Airplane tab\'s Checklists</string>
+    <string name="emergency_other">Other</string>
+    <string name="emergency_radio">Transponder and Radio</string>
+    <string name="emergency_squawk">Squawk %1$s</string>
+    <string name="emergency_mayday">MAYDAY</string>
+    <string name="emergency_souls">People on Board</string>
+    <string name="emergency_fuel">Fuel, Minutes</string>
+    <string name="emergency_phone">Phone</string>
+    <string name="emergency_call_field">Call %1$s</string>
+    <string name="emergency_call_field_line">The airport\'s phone, as the FAA lists it</string>
+    <string name="emergency_call_911">Call 911</string>
+
+    <!-- The in-flight copilot (copilot/). -->
+    <string name="copilot">Copilot</string>
+    <string name="copilot_off">Off</string>
+    <string name="copilot_on">On</string>
+    <string name="copilot_spoken">Spoken</string>
+    <string name="ok">OK</string>
+
+    <!-- No airplane chosen (decision 0011). -->
+    <string name="no_airplane">No Airplane</string>
+    <string name="no_airplane_line">Distances and courses only: choose an airplane for times, fuel and headings.</string>
+
+    <!-- "When should I go?" in the Brief (brief/). -->
+    <string name="when_to_go">When to Go</string>
+    <string name="when_to_go_sign_in">Sign in to see the hours to go across the next day.</string>
+    <string name="when_to_go_none">No TAF along the route reaches past the next hour.</string>
+    <string name="when_to_go_no_go">No hour with nothing against it before %1$s.</string>
+    <string name="when_to_go_leaving">%1$s leaving %2$s</string>
+    <!-- The pilot's personal minimums (pilot/) and the flight's choices (plan/). -->
+    <string name="personal_minimums">Personal Minimums</string>
+    <string name="minimum_off">Off</string>
+    <string name="minimum_ceiling">Ceiling</string>
+    <string name="minimum_visibility">Visibility</string>
+    <string name="minimum_crosswind">Crosswind</string>
+    <string name="minimum_wind">Wind, with Gusts</string>
+    <string name="passengers_aboard">Passengers Aboard</string>
+    <!-- The ATC copilot (atc/). -->
+    <string name="atc">ATC</string>
+    <string name="atc_off">Off</string>
+    <string name="atc_while_flying">While Flying</string>
+    <string name="atc_put_away">Put away</string>
+    <string name="atc_read_back">Read Back</string>
+    <string name="atc_read_back_again">Read Back Again</string>
+    <string name="atc_read_it_back">Read it back…</string>
+    <string name="atc_set">Set</string>
+    <string name="atc_direct_to">Direct To</string>
+    <string name="atc_set_next">Set Next</string>
+    <string name="atc_set_code">Set Code</string>
+    <string name="atc_kept_next">Next: %1$s</string>
+    <string name="atc_kept_code">Code %1$s</string>
+    <string name="atc_no_tail">ATC: give your airplane\'s registration in the Airplane tab to listen for its call sign</string>
+    <string name="atc_allow_mic">ATC: allow the microphone to listen to the radio</string>
+    <string name="atc_allow">Allow</string>
+    <string name="atc_not_listening">ATC: not listening yet</string>
+    <string name="atc_listen">Listen</string>
+    <string name="atc_direct_needs_position">Direct To needs your position: show it on the map.</string>
+    <string name="registration">Registration</string>
+    <string name="registration_hint">N123AB</string>
+    <!-- The logbook, and a recorded flight offered for it (logbook/). -->
+    <string name="logbook">Logbook</string>
+    <string name="logbook_line">Your entries, and the currency they give</string>
+    <string name="logbook_entries">Entries</string>
+    <string name="logbook_empty">Nothing logged yet. A flight recorded by the app is offered here once it ends.</string>
+    <string name="currency">Currency</string>
+    <string name="flight_logged">Flight Logged</string>
+    <string name="flight_logged_line">Drawn from this flight\'s track. Change anything, then Log it.</string>
+    <string name="flight_logged_sign_in">Sign in to log it: the track is kept on this phone until then.</string>
+    <string name="flight_logged_drawing">Drawing the entry from the track…</string>
+    <string name="flight_logged_done">%1$s · %2$s h, in your logbook; your currency is worked out again from it.</string>
+    <string name="flight_logged_flight">Flight</string>
+    <string name="flight_logged_date">Date</string>
+    <string name="flight_logged_route">Route</string>
+    <string name="flight_logged_time">Time</string>
+    <string name="flight_logged_total">Total</string>
+    <string name="flight_logged_air">In the air %1$s h</string>
+    <string name="flight_logged_night">Night</string>
+    <string name="flight_logged_xc">Cross-Country</string>
+    <string name="flight_logged_landings">Landings</string>
+    <string name="flight_logged_day">Day</string>
+    <string name="flight_logged_night_full_stop">Night, Full Stop</string>
+    <string name="flight_logged_instrument">Instrument</string>
+    <plurals name="flight_logged_found">
+        <item quantity="one">%1$d approach.</item>
+        <item quantity="other">%1$d approaches.</item>
+    </plurals>
+    <plurals name="flight_logged_found_hold">
+        <item quantity="one">%1$d approach, a hold.</item>
+        <item quantity="other">%1$d approaches, a hold.</item>
+    </plurals>
+    <string name="flown_by_instruments">Flown by Instruments</string>
+    <string name="log">Log</string>
+    <string name="later">Later</string>
+    <string name="not_a_flight">Not a Flight to Log</string>
+    <string name="try_again">Try Again</string>
 </resources>

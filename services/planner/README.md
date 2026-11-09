@@ -17,11 +17,17 @@ It serves no pages. The front end is in [`apps/web/`](../../apps/web) and ships 
 
 The Python behind it lives in [`services/planner/wingtip`](wingtip). This is a thin
 HTTP layer over it: `app/main.py` builds the app, `app/routers/` holds
-the endpoints one module per concern (plan, chart, classb, build,
-briefing, notes, devml, devservices, system), and the work they share -- resolving a route
-(`common.py`), scoring and selecting its checkpoints (`scoring.py`), the
-cruise altitude and course line (`planning.py`), the corridor read
-(`detection.py`) -- sits beside them. The legs themselves are
+the endpoints one module per concern (plan, chart, classb, briefing,
+gonogo, notes, devml, devservices, system ...), and the work they share --
+resolving a route (`router_basics.py`), what a plan is asked
+(`plan_query.py`), a route's briefing (`route_briefing.py`), the Go / No-Go's
+plan and findings (`gonogo/flight.py`), the dev-services sidecar
+(`dev_services.py`), scoring the checkpoints (`checkpoint_scoring.py`), the
+corridor read (`detection.py`) -- sits beside them. A router only parses,
+calls and returns, and never imports another: `lint-imports` holds that
+(`.importlinter`: no router imports another, only `app/main.py` imports
+the routers, and `wingtip` never imports `app`), in check.sh's py and
+planner areas and in CI. The legs themselves are
 `wingtip.navlog`'s. The planner calls no model: every Claude call is the
 `assistant` service's (services/assistant), which asks the endpoints
 here for its figures.
