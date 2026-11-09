@@ -395,6 +395,16 @@
             "title": "Fuel Burn Gph",
             "type": "number"
           },
+          "glide": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GlideFigures"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -402,6 +412,17 @@
           "service_ceiling_ft": {
             "title": "Service Ceiling Ft",
             "type": "number"
+          },
+          "taxi_fuel_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxi Fuel Gal"
           },
           "type": {
             "title": "Type",

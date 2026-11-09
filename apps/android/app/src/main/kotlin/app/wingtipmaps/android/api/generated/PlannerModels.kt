@@ -45,12 +45,28 @@ data class AircraftProfileSummary (
     @SerialName("fuel_burn_gph")
     val fuelBurnGph: Double,
 
+    val glide: GlideFigures? = null,
     val name: String,
 
     @SerialName("service_ceiling_ft")
     val serviceCeilingFt: Double,
 
+    @SerialName("taxi_fuel_gal")
+    val taxiFuelGal: Double? = null,
+
     val type: String
+)
+
+/**
+ * The POH's best-glide speed and glide ratio (Section 3).
+ */
+@Serializable
+data class GlideFigures (
+    @SerialName("best_glide_kias")
+    val bestGlideKias: Double,
+
+    val ratio: Double,
+    val source: String
 )
 
 @Serializable
@@ -2832,18 +2848,6 @@ data class DemonstratedCrosswind (
     @SerialName("demonstrated_kt")
     val demonstratedKt: Double,
 
-    val source: String
-)
-
-/**
- * The POH's best-glide speed and glide ratio (Section 3).
- */
-@Serializable
-data class GlideFigures (
-    @SerialName("best_glide_kias")
-    val bestGlideKias: Double,
-
-    val ratio: Double,
     val source: String
 )
 

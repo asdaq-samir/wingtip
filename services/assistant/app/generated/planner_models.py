@@ -37,28 +37,6 @@ class AheadAlert(BaseModel):
     top_ft: Annotated[float | None, Field(title='Top Ft')] = None
 
 
-class AircraftProfileSummary(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-    cruise_tas_kt: Annotated[float | None, Field(title='Cruise Tas Kt')] = None
-    fuel_burn_gph: Annotated[float | None, Field(title='Fuel Burn Gph')] = None
-    name: Annotated[str | None, Field(title='Name')] = None
-    service_ceiling_ft: Annotated[float | None, Field(title='Service Ceiling Ft')] = (
-        None
-    )
-    type: Annotated[str | None, Field(title='Type')] = None
-
-
-class AircraftProfiles(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-    profiles: Annotated[
-        list[AircraftProfileSummary] | None, Field(title='Profiles')
-    ] = None
-
-
 class AircraftRegistration(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -3451,6 +3429,30 @@ class AircraftBases(BaseModel):
         None
     )
     pending: Annotated[list[str] | None, Field(title='Pending')] = None
+
+
+class AircraftProfileSummary(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    cruise_tas_kt: Annotated[float | None, Field(title='Cruise Tas Kt')] = None
+    fuel_burn_gph: Annotated[float | None, Field(title='Fuel Burn Gph')] = None
+    glide: GlideFigures | None = None
+    name: Annotated[str | None, Field(title='Name')] = None
+    service_ceiling_ft: Annotated[float | None, Field(title='Service Ceiling Ft')] = (
+        None
+    )
+    taxi_fuel_gal: Annotated[float | None, Field(title='Taxi Fuel Gal')] = None
+    type: Annotated[str | None, Field(title='Type')] = None
+
+
+class AircraftProfiles(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    profiles: Annotated[
+        list[AircraftProfileSummary] | None, Field(title='Profiles')
+    ] = None
 
 
 class AirportAtis(BaseModel):

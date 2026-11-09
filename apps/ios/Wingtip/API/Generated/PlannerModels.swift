@@ -28,9 +28,18 @@ struct APIAircraftProfiles: Codable, Equatable, Sendable {
 // MARK: - APIAircraftProfileSummary
 struct APIAircraftProfileSummary: Codable, Equatable, Sendable {
     var cruiseTasKt, fuelBurnGph: Double
+    var glide: APIGlideFigures?
     var name: String
     var serviceCeilingFt: Double
+    var taxiFuelGal: Double?
     var type: String
+}
+
+/// The POH's best-glide speed and glide ratio (Section 3).
+// MARK: - APIGlideFigures
+struct APIGlideFigures: Codable, Equatable, Sendable {
+    var bestGlideKias, ratio: Double
+    var source: String
 }
 
 // MARK: - APIAirportAtis
@@ -1720,13 +1729,6 @@ struct APIEmergencyAirplane: Codable, Equatable, Sendable {
 // MARK: - APIDemonstratedCrosswind
 struct APIDemonstratedCrosswind: Codable, Equatable, Sendable {
     var demonstratedKt: Double
-    var source: String
-}
-
-/// The POH's best-glide speed and glide ratio (Section 3).
-// MARK: - APIGlideFigures
-struct APIGlideFigures: Codable, Equatable, Sendable {
-    var bestGlideKias, ratio: Double
     var source: String
 }
 
