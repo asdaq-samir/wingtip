@@ -320,7 +320,29 @@ export default function RouteBox({
     if (el && focused && at === null) el.scrollTo({ left: el.scrollWidth, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, [pointCount, focused, at]);
   const isRoom = (e: MouseEvent<HTMLDivElement>) => e.target === e.currentTarget || e.target === slide.current;
+  // A finger's 44 points round each pill, as iOS gives a control: the
+  // pills are 28 tall in a row that clips them (it slides sideways), so
+  // their own ::after could not reach, and a tap 8 points over or under
+  // one landed on the box, which started typing a new destination (the
+  // FPL audit's A18). A tap on the box's room, or the footer's, within
+  // 22 points of a pill's middle and across it is that pill's.
+  const pillNear = (e: MouseEvent<HTMLDivElement>): HTMLElement | null => {
+    const el = slide.current;
+    if (!el) return null;
+    for (const pill of el.querySelectorAll<HTMLElement>("[data-point]")) {
+      const r = pill.getBoundingClientRect();
+      if (e.clientX >= r.left && e.clientX <= r.right && Math.abs(e.clientY - (r.top + r.height / 2)) <= 22) return pill;
+    }
+    return null;
+  };
   const toEnd = (e: MouseEvent<HTMLDivElement>) => {
+    const footerRoom = (e.target as HTMLElement).dataset.testid === "route-box-footer";
+    if (!isRoom(e) && !footerRoom) return;
+    const near = pillNear(e);
+    if (near) {
+      near.querySelector<HTMLElement>("button")?.click();
+      return;
+    }
     if (!isRoom(e)) return;
     if (atNow.current === null || (atNow.current === 0 && !hasDep)) {
       field.current?.focus();
