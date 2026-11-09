@@ -24,5 +24,9 @@ public record LogbookEntryDto(
         double longestLegNm,
         int approaches,
         boolean holding,
-        boolean tracking) {
+        boolean tracking,
+        double airHours,
+        int touchAndGoes,
+        boolean fromTrack,
+        @Nullable Long flightId) {
 }

@@ -51,7 +51,10 @@ class UpstreamRoutesTest {
             "GET /api/copilot/around", "planner public csrf",
             // The 3D map's terrain tiles and the obstacles standing in a box.
             "GET /api/terrain-tile/{z}/{x}/{y}.png", "planner public csrf",
-            "GET /api/terrain/obstacles", "planner public csrf");
+            "GET /api/terrain/obstacles", "planner public csrf",
+            // A logbook entry drawn from the app's own track: the pilot's,
+            // and it changes nothing (the phones hold no CSRF cookie).
+            "POST /api/logbook-draft", "planner signed-in no-csrf");
 
     @Test
     void theEmergencyFieldsArePublicFromThePlanner() {

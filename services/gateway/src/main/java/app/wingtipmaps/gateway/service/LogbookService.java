@@ -4,6 +4,7 @@ import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.LogbookEntryRequest;
 import app.wingtipmaps.gateway.dto.LogbookImportResult;
+import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.LogbookRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import java.time.LocalDate;
@@ -24,10 +25,12 @@ public class LogbookService {
 
     private final LogbookRepository entries;
     private final PilotRepository pilots;
+    private final FlightRepository flights;
 
-    public LogbookService(LogbookRepository entries, PilotRepository pilots) {
+    public LogbookService(LogbookRepository entries, PilotRepository pilots, FlightRepository flights) {
         this.entries = entries;
         this.pilots = pilots;
+        this.flights = flights;
     }
 
     public List<LogbookEntry> list(Pilot pilot) {
@@ -35,11 +38,20 @@ public class LogbookService {
     }
 
     public LogbookEntry add(Pilot pilot, LogbookEntryRequest r) {
-        return entries.save(fill(new LogbookEntry(pilot), r));
+        return entries.save(fill(new LogbookEntry(pilot), r).track(r.airHours(), r.touchAndGoes(), r.fromTrack(),
+                ownFlight(pilot, r.flightId())));
+    }
+
+    /** The saved flight an entry was flown as, where it is the pilot's
+     *  own; none otherwise. */
+    private Long ownFlight(Pilot pilot, Long flightId) {
+        return flightId == null ? null
+                : flights.findByIdAndPilotId(flightId, pilot.getId()).map(f -> flightId).orElse(null);
     }
 
     public Optional<LogbookEntry> update(Pilot pilot, Long id, LogbookEntryRequest r) {
-        return entries.findByIdAndPilotId(id, pilot.getId()).map(e -> entries.save(fill(e, r)));
+        return entries.findByIdAndPilotId(id, pilot.getId()).map(e -> entries.save(fill(e, r)
+                .track(r.airHours(), r.touchAndGoes(), r.fromTrack(), ownFlight(pilot, r.flightId()))));
     }
 
     /** Entries brought in from a file, all or none: each not already in the

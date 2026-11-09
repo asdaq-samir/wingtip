@@ -6436,6 +6436,480 @@
         "title": "DiversionSolved",
         "type": "object"
       },
+      "DraftApproach": {
+        "properties": {
+          "airport": {
+            "title": "Airport",
+            "type": "string"
+          },
+          "also_fits": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Also Fits",
+            "type": "array"
+          },
+          "faf_at": {
+            "description": "When it crossed the final approach fix inbound, ms.",
+            "title": "Faf At",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "landed",
+              "missed",
+              "unknown"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "airport",
+          "id",
+          "name",
+          "faf_at",
+          "outcome",
+          "also_fits"
+        ],
+        "title": "DraftApproach",
+        "type": "object"
+      },
+      "DraftBlock": {
+        "properties": {
+          "from": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From"
+          },
+          "to": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "title": "DraftBlock",
+        "type": "object"
+      },
+      "DraftCrossCountry": {
+        "properties": {
+          "farthest_nm": {
+            "title": "Farthest Nm",
+            "type": "number"
+          },
+          "landed_elsewhere": {
+            "description": "A landing elsewhere: 61.1(b)(i).",
+            "title": "Landed Elsewhere",
+            "type": "boolean"
+          },
+          "over_50_nm": {
+            "description": "A landing more than 50 nm from the departure: 61.1(b)(ii).",
+            "title": "Over 50 Nm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "landed_elsewhere",
+          "over_50_nm",
+          "farthest_nm"
+        ],
+        "title": "DraftCrossCountry",
+        "type": "object"
+      },
+      "DraftEntry": {
+        "description": "The entry as the gateway's form takes it (LogbookEntryRequest).",
+        "properties": {
+          "airHours": {
+            "description": "Takeoff roll to landing roll.",
+            "title": "Airhours",
+            "type": "number"
+          },
+          "aircraft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aircraft"
+          },
+          "aircraftType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aircrafttype"
+          },
+          "approaches": {
+            "title": "Approaches",
+            "type": "integer"
+          },
+          "crossCountryHours": {
+            "description": "Where a landing was more than 50 nm from the departure (61.1(b)(ii)).",
+            "title": "Crosscountryhours",
+            "type": "number"
+          },
+          "dayLandings": {
+            "description": "Every landing not counted at night (61.57(a)).",
+            "title": "Daylandings",
+            "type": "integer"
+          },
+          "distanceNm": {
+            "title": "Distancenm",
+            "type": "number"
+          },
+          "flownOn": {
+            "title": "Flownon",
+            "type": "string"
+          },
+          "holding": {
+            "title": "Holding",
+            "type": "boolean"
+          },
+          "longestLegNm": {
+            "title": "Longestlegnm",
+            "type": "number"
+          },
+          "nightHours": {
+            "description": "Of the flight time, in 1.1's night.",
+            "title": "Nighthours",
+            "type": "number"
+          },
+          "nightLandings": {
+            "description": "To a full stop in 61.57(b)'s period.",
+            "title": "Nightlandings",
+            "type": "integer"
+          },
+          "remarks": {
+            "title": "Remarks",
+            "type": "string"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          },
+          "totalHours": {
+            "description": "14 CFR 1.1's flight time, to the tenth.",
+            "title": "Totalhours",
+            "type": "number"
+          },
+          "touchAndGoes": {
+            "description": "Of the day landings, the touch-and-goes.",
+            "title": "Touchandgoes",
+            "type": "integer"
+          },
+          "toweredLandings": {
+            "title": "Toweredlandings",
+            "type": "integer"
+          },
+          "tracking": {
+            "title": "Tracking",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "flownOn",
+          "aircraft",
+          "aircraftType",
+          "route",
+          "totalHours",
+          "airHours",
+          "nightHours",
+          "crossCountryHours",
+          "dayLandings",
+          "nightLandings",
+          "touchAndGoes",
+          "toweredLandings",
+          "distanceNm",
+          "longestLegNm",
+          "approaches",
+          "holding",
+          "tracking",
+          "remarks"
+        ],
+        "title": "DraftEntry",
+        "type": "object"
+      },
+      "DraftHold": {
+        "properties": {
+          "fix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix"
+          },
+          "from": {
+            "title": "From",
+            "type": "number"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "racetracks": {
+            "title": "Racetracks",
+            "type": "integer"
+          },
+          "to": {
+            "title": "To",
+            "type": "number"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "racetracks",
+          "lat",
+          "lon",
+          "fix"
+        ],
+        "title": "DraftHold",
+        "type": "object"
+      },
+      "DraftInstrument": {
+        "description": "61.57(c)(1)'s items the track shows, added to the entry only where\nthe pilot says it was flown by instruments (61.51(g)(1)).",
+        "properties": {
+          "approaches": {
+            "title": "Approaches",
+            "type": "integer"
+          },
+          "holding": {
+            "title": "Holding",
+            "type": "boolean"
+          },
+          "tracking": {
+            "title": "Tracking",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "approaches",
+          "holding",
+          "tracking"
+        ],
+        "title": "DraftInstrument",
+        "type": "object"
+      },
+      "DraftLanding": {
+        "properties": {
+          "counts_night": {
+            "description": "To a full stop in 61.57(b)'s period.",
+            "title": "Counts Night",
+            "type": "boolean"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "kind": {
+            "enum": [
+              "full_stop",
+              "touch_and_go"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "night": {
+            "description": "1.1's night there and then.",
+            "title": "Night",
+            "type": "boolean"
+          },
+          "passenger_night": {
+            "description": "61.57(b)'s period: from 1 hour after sunset to 1 hour before sunrise.",
+            "title": "Passenger Night",
+            "type": "boolean"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          },
+          "towered": {
+            "title": "Towered",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "t",
+          "lat",
+          "lon",
+          "field",
+          "towered",
+          "night",
+          "passenger_night",
+          "kind",
+          "counts_night"
+        ],
+        "title": "DraftLanding",
+        "type": "object"
+      },
+      "DraftReason": {
+        "properties": {
+          "item": {
+            "title": "Item",
+            "type": "string"
+          },
+          "says": {
+            "title": "Says",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item",
+          "says",
+          "source"
+        ],
+        "title": "DraftReason",
+        "type": "object"
+      },
+      "DraftTakeoff": {
+        "properties": {
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "night": {
+            "description": "1.1's night there and then.",
+            "title": "Night",
+            "type": "boolean"
+          },
+          "passenger_night": {
+            "description": "61.57(b)'s period: from 1 hour after sunset to 1 hour before sunrise.",
+            "title": "Passenger Night",
+            "type": "boolean"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          },
+          "towered": {
+            "title": "Towered",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "t",
+          "lat",
+          "lon",
+          "field",
+          "towered",
+          "night",
+          "passenger_night"
+        ],
+        "title": "DraftTakeoff",
+        "type": "object"
+      },
+      "DraftTrackPoint": {
+        "description": "A point of the app's recorded track: when, ms since 1970; GPS\naltitude, ft MSL, where the phone gave one.",
+        "properties": {
+          "alt_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alt Ft"
+          },
+          "lat": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lon",
+            "type": "number"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          }
+        },
+        "required": [
+          "t",
+          "lat",
+          "lon"
+        ],
+        "title": "DraftTrackPoint",
+        "type": "object"
+      },
       "EmergencyAirplane": {
         "description": "The stock profile's figures the ranking uses (data/aircraft); each\nNone where the profile has none: no glide, and the glide is not\nguessed.",
         "properties": {
@@ -10421,6 +10895,141 @@
           "arm_in"
         ],
         "title": "LoadingStation",
+        "type": "object"
+      },
+      "LogbookDraft": {
+        "description": "The draft: the entry, 61.57(c)'s items apart, what the track\nshowed, and a reason for each figure.",
+        "properties": {
+          "approaches": {
+            "items": {
+              "$ref": "#/components/schemas/DraftApproach"
+            },
+            "title": "Approaches",
+            "type": "array"
+          },
+          "block": {
+            "$ref": "#/components/schemas/DraftBlock"
+          },
+          "cross_country": {
+            "$ref": "#/components/schemas/DraftCrossCountry"
+          },
+          "ends_airborne": {
+            "title": "Ends Airborne",
+            "type": "boolean"
+          },
+          "entry": {
+            "$ref": "#/components/schemas/DraftEntry"
+          },
+          "holds": {
+            "items": {
+              "$ref": "#/components/schemas/DraftHold"
+            },
+            "title": "Holds",
+            "type": "array"
+          },
+          "instrument": {
+            "$ref": "#/components/schemas/DraftInstrument"
+          },
+          "landings": {
+            "items": {
+              "$ref": "#/components/schemas/DraftLanding"
+            },
+            "title": "Landings",
+            "type": "array"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/DraftReason"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "takeoffs": {
+            "items": {
+              "$ref": "#/components/schemas/DraftTakeoff"
+            },
+            "title": "Takeoffs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "entry",
+          "instrument",
+          "takeoffs",
+          "landings",
+          "approaches",
+          "holds",
+          "block",
+          "cross_country",
+          "ends_airborne",
+          "reasons"
+        ],
+        "title": "LogbookDraft",
+        "type": "object"
+      },
+      "LogbookDraftAsk": {
+        "description": "The track (as many points as the gateway keeps of one, thinned by\nthe app) and what the app knows besides: the airplane, the pilot's\nclock and the approach picked for the flight.",
+        "properties": {
+          "aircraft": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The airplane's N-number.",
+            "title": "Aircraft"
+          },
+          "aircraftType": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aircrafttype"
+          },
+          "picked": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The approach picked for the flight, its CIFP id.",
+            "title": "Picked"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/DraftTrackPoint"
+            },
+            "maxItems": 5000,
+            "minItems": 2,
+            "title": "Points",
+            "type": "array"
+          },
+          "utcOffsetMin": {
+            "default": 0,
+            "description": "The pilot's clock against UTC, minutes.",
+            "maximum": 840.0,
+            "minimum": -840.0,
+            "title": "Utcoffsetmin",
+            "type": "number"
+          }
+        },
+        "required": [
+          "points"
+        ],
+        "title": "LogbookDraftAsk",
         "type": "object"
       },
       "LogbookEntry": {
@@ -22741,6 +23350,42 @@
         "summary": "Local Flight",
         "x-gateway": {
           "access": "public"
+        }
+      }
+    },
+    "/api/logbook-draft": {
+      "post": {
+        "description": "The logbook entry a flown track makes, each figure with its reason\n(14 CFR 1.1, 61.1(b), 61.51, 61.57): flight, air and night time, the\nlandings by kind and by 61.57's day and night, the cross-country, and\napart 61.57(c)'s approaches (matched to the CIFP's), holds and tracking\nfor the pilot to add where flown by instruments.",
+        "operationId": "draft_api_logbook_draft_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogbookDraftAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogbookDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "The track is not of the engine's shape"
+          }
+        },
+        "summary": "Draft",
+        "x-gateway": {
+          "access": "signed-in",
+          "csrf": false
         }
       }
     },

@@ -1458,6 +1458,10 @@
       },
       "LogbookEntryDto" : {
         "properties" : {
+          "airHours" : {
+            "format" : "double",
+            "type" : "number"
+          },
           "aircraft" : {
             "type" : [ "string", "null" ]
           },
@@ -1484,9 +1488,16 @@
             "format" : "double",
             "type" : "number"
           },
+          "flightId" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
           "flownOn" : {
             "format" : "date",
             "type" : "string"
+          },
+          "fromTrack" : {
+            "type" : "boolean"
           },
           "holding" : {
             "type" : "boolean"
@@ -1525,6 +1536,10 @@
             "format" : "double",
             "type" : "number"
           },
+          "touchAndGoes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "toweredLandings" : {
             "format" : "int32",
             "type" : "integer"
@@ -1533,11 +1548,15 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "aircraft", "aircraftType", "approaches", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flownOn", "holding", "id", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "totalHours", "toweredLandings", "tracking" ],
+        "required" : [ "airHours", "aircraft", "aircraftType", "approaches", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flightId", "flownOn", "fromTrack", "holding", "id", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "totalHours", "touchAndGoes", "toweredLandings", "tracking" ],
         "type" : "object"
       },
       "LogbookEntryRequest" : {
         "properties" : {
+          "airHours" : {
+            "format" : "double",
+            "type" : "number"
+          },
           "aircraft" : {
             "maxLength" : 16,
             "minLength" : 0,
@@ -1568,9 +1587,16 @@
             "format" : "double",
             "type" : "number"
           },
+          "flightId" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
           "flownOn" : {
             "format" : "date",
             "type" : "string"
+          },
+          "fromTrack" : {
+            "type" : "boolean"
           },
           "holding" : {
             "type" : "boolean"
@@ -1610,6 +1636,10 @@
             "maximum" : 24,
             "type" : "number"
           },
+          "touchAndGoes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "toweredLandings" : {
             "format" : "int32",
             "type" : "integer"
@@ -1618,7 +1648,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "aircraft", "aircraftType", "approaches", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flownOn", "holding", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "totalHours", "toweredLandings", "tracking" ],
+        "required" : [ "airHours", "aircraft", "aircraftType", "approaches", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flightId", "flownOn", "fromTrack", "holding", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "totalHours", "touchAndGoes", "toweredLandings", "tracking" ],
         "type" : "object"
       },
       "LogbookImportRequest" : {

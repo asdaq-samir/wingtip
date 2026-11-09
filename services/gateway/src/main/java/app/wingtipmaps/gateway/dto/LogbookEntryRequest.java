@@ -10,7 +10,10 @@ import org.springframework.lang.Nullable;
 /** A logbook entry as its form sends it -- POST/PUT /api/logbook. The
  *  hours and landings are none or more; the text no longer than its
  *  columns (V12). The training columns (V13) and the instrument ones
- *  (V20) are none when not sent. */
+ *  (V20) are none when not sent; so are those of an entry drawn from
+ *  the app's track (V34): its air time, its touch-and-goes, that it came
+ *  from a track and the saved flight it was flown as (the pilot's own,
+ *  else none kept). */
 public record LogbookEntryRequest(
         @NotNull(message = "flownOn is required") LocalDate flownOn,
         @Size(max = 16, message = "aircraft must be at most 16 characters") @Nullable String aircraft,
@@ -31,5 +34,9 @@ public record LogbookEntryRequest(
         @PositiveOrZero(message = "longestLegNm must be zero or more") double longestLegNm,
         @PositiveOrZero(message = "approaches must be zero or more") int approaches,
         boolean holding,
-        boolean tracking) {
+        boolean tracking,
+        @PositiveOrZero(message = "airHours must be zero or more") double airHours,
+        @PositiveOrZero(message = "touchAndGoes must be zero or more") int touchAndGoes,
+        boolean fromTrack,
+        @Nullable Long flightId) {
 }
