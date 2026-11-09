@@ -3,10 +3,8 @@
 Wingtip Maps as a pure SwiftUI app (`apps/ios/`), with no web view: the same
 planner and gateway as the website, and only the screens on the phone.
 The plan, its phases and gates are in the owner's doc "Native iOS
-Transition Plan" (24 October 2026). It is the iOS app: the Capacitor
-shell that wrapped the website went on 2026-11-06, at the owner's word
-("native only, delete the wrappers"). The Android twin, the same engine behind Compose and MapLibre,
-is docs/NATIVE-ANDROID.md.
+Transition Plan" (24 October 2026). The Android twin, the same engine
+behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
 
 ## What is here
 
@@ -328,7 +326,7 @@ code:
   frequency tag, and the web's colours from `chartColors.ts`,
   `airportMark.ts` and `glStyle.ts`.
 - **Close in, Apple's map**: the chart lies over Apple's map and fades
-  out from Leaflet's 13 to 14 (`ChartFade`), and each field's runways are
+  out from zoom 13 to 14 (`ChartFade`), and each field's runways are
   drawn from the FAA's data at their own width with their numbers turned
   to their true headings (`RunwaySurface`). The runways come from the
   planner's field (`/api/airport/{ident}`: NASR's surveyed ends and

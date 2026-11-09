@@ -6,13 +6,21 @@
 - **[What it costs](#what-it-costs)**
 - **[Rehearse it locally](#rehearse-it-locally)**
 - **[The first deploy](#the-first-deploy)** — [Before anything (the owner)](#before-anything-the-owner) · [The stack](#the-stack) · [The images and the server](#the-images-and-the-server) · [Mail](#mail) · [The first chart cycle](#the-first-chart-cycle) · [The chart model](#the-chart-model)
-- **[Running it](#running-it)** — [Deploys](#deploys) · [On the server](#on-the-server) · [Chart cycles](#chart-cycles) · [Backups and restore](#backups-and-restore) · [A replaced server](#a-replaced-server) · [Teardown](#teardown)
+- **[Running it](#running-it)** — [Deploys](#deploys) · [On the server](#on-the-server) · [Chart cycles](#chart-cycles) · [Backups and restore](#backups-and-restore) · [A new server](#a-new-server) · [Teardown](#teardown)
 - **[Gotchas](#gotchas)**
 
 ## The design
 
 The app runs on one small server behind CloudFront. What is the same for
 every pilot is drawn ahead of time and served from the edge.
+
+**Status:** written and checked, not deployed. The template passes
+`cfn-lint`, every image builds, and the server's files are checked in CI
+(the `infra` job); what remains is the owner's AWS account and domain,
+then `aws cloudformation deploy` ([The first deploy](#the-first-deploy),
+issue #115).
+
+![The AWS design](architecture-aws.svg)
 
 The expensive parts of the old design, an ALB, RDS, a NAT gateway, VPC
 endpoints and Fargate services running all month, cost about $200–250

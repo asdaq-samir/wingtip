@@ -16,7 +16,7 @@
 
 ## Overview
 
-A teaching document; `README.md` is the reference. This explains *why*
+A teaching document; [`README.md`](README.md) is the index of the reference docs. This explains *why*
 the repo is built the way it is, concept by concept, so you walk away
 able to rebuild something like it yourself. Each section introduces an
 idea, then shows exactly where in this repo that idea shows up.
@@ -27,8 +27,10 @@ later as a refresher while you build.
 The project has four layers, each with one job. The Rust engine
 (`engine/`) holds every aviation rule and figure once, with no network,
 no screen and no clock. The planner (`planner` over
-`services/planner/wingtip`, FastAPI) works out a flight: it fetches the data, runs the
-chart model and the assistant, and asks the engine every rule. Spring
+`services/planner/wingtip`, FastAPI) works out a flight: it reads the data the
+`ingest` and `weather` services keep, runs the chart model, and asks the
+engine every rule; the `assistant` service makes every Claude call over
+the planner's figures. Spring
 Boot (`gateway`) is who the pilot is and what they saved, with no aviation
 logic of its own. The apps (web, iOS, Android) get data, keep state and
 draw, and ask the engine the rest. §4 says why it is cut this way.
@@ -55,7 +57,12 @@ flowchart LR
     apps([web · iOS · Android]) --> gateway
     apps --> engine
 
-    planner -->|"§5 the written briefing<br/>(Anthropic SDK)"| claude([Claude API])
+    gateway --> assistant["§5 assistant<br/>(every Claude call)"]
+    assistant -->|figures| planner
+    assistant -->|"Anthropic SDK"| claude([Claude API])
+    ingest["ingest<br/>(SWIM, adsb.fi)"] --> stores[("the stores<br/>live · weather")]
+    weatherSvc["weather<br/>(METAR, TAF, GFS)"] --> stores
+    stores --> planner
 
 ```
 
@@ -230,14 +237,14 @@ Per service, four keys matter most:
   type into your browser; the right side is what the app inside actually
   binds to.
 - `environment:` — env vars injected into the container. Notice
-  `${ANTHROPIC_API_KEY:-}` on `planner`: `:-` means
+  `${ANTHROPIC_API_KEY:-}` on `assistant`: `:-` means
   "empty if unset". Its sibling `${VAR:?message}` means "fail immediately
   with this message if unset", and this file used that until it was tried
   from a clean checkout — Compose interpolates the *whole* file before it
   decides which services to start, so one required-variable marker failed
   every command, including `docker compose up gateway` and even
   `docker compose config`. A worked lesson in where a check belongs: the
-  planner's Claude features now find the key missing when they are used,
+  assistant's Claude features now find the key missing when they are used,
   and say so, so the failure reaches only the people using them.
 - `profiles:` — a service with a profile is left out of a plain
   `docker compose up`. `--profile notebooks` includes `ml`, and naming the
@@ -505,7 +512,7 @@ and what they saved). Under both, and under every app, is the engine.
 - **The engine** ([`engine/`](../engine/README.md)) is a Rust library
   with no network, no screen and no clock: give it JSON by a rule's
   name (`engine/facade/src/call.rs`), get JSON back. It is a facade over
-  ten crates, each allowed to use only the ones under it, so the
+  eleven crates, each allowed to use only the ones under it, so the
   compiler keeps geography from reaching for the Go / No-Go. The same
   bytes run in the planner (PyO3), in the browser (WebAssembly) and on
   both phones (a C interface), so a pilot's figure is the same offline
@@ -544,8 +551,8 @@ to the training image's.
 ### Select → the checkpoints actually flown
 
 A scored ranking is not a flight plan.
-[`services/planner/wingtip/checkpoints.py`](../services/planner/wingtip/checkpoints.py) is the step between
-them: `select_checkpoints()` walks the model's candidates highest-score
+The engine's [`route/checkpoints.rs`](../engine/crates/route/src/route/checkpoints.rs) is the step between
+them (the planner's `select_checkpoints()` asks it): it walks the model's candidates highest-score
 first and takes each one that sits at least `min_spacing_nm` from
 everything already chosen. On C81→KDLH that turns 206 scored candidates
 into 21 checkpoints and 20 legs, averaging 15.7 nm apart.
@@ -670,17 +677,15 @@ endpoints, on purpose.
 
 ## 5. The Gen AI layer
 
-Every Claude call in this project is made from `planner` with the
-Anthropic Python SDK directly — no agent framework in between. The
-project once had two (a LangGraph agent served over MCP, with a pgvector
-memory of past briefings, and the same task again in CrewAI, to compare
-the frameworks); the owner removed both on 2026-11-06, because the
-project is a product, not a framework showcase, and every feature they
-offered was one SDK call.
+Every Claude call in this project is made from the `assistant` service
+(`services/assistant`) with the Anthropic Python SDK directly — no agent
+framework in between. The owner's rule (2026-11-06): the project is a
+product, not a framework showcase, and every feature a framework offered
+here was one SDK call.
 
 ### What "an agent" actually means here
 
-The written briefing ([`app/narrative.py`](../services/planner/app/narrative.py),
+The written briefing (the assistant service's [`app/narrative.py`](../services/assistant/app/narrative.py),
 `POST /api/briefing/narrative`) is the clearest case. Everything a pilot
 reads in it — the checkpoints, each leg's legal cruising altitude from
 real terrain/airspace/weather constraints, the dead-reckoning legs with
@@ -702,7 +707,7 @@ whole.
 
 ### When the model does choose: the tool runner
 
-The pilot's assistant ([`app/assistant.py`](../services/planner/app/assistant.py))
+The pilot's assistant ([`app/assistant.py`](../services/assistant/app/assistant.py))
 is the one place the model decides what to do next. It is given the
 planner's own functions as tools (the plan, the weather at a field, the
 briefing, the Go / No-Go, a hold's entry, a diversion) and the SDK's
@@ -725,15 +730,6 @@ what it's already tracked (in a `flyway_schema_history` table) on next
 startup, in version order, once each, forever. Never edit an already-applied
 migration file — add a new one instead; Flyway (like every migration
 tool) assumes each version's content is immutable once it's run anywhere.
-
-A database made before 2026-11-06 may still hold a `nav_log_agent`
-schema — the removed briefing agent's memory and its own small migrations
-table — and the `vector` extension it needed. Nothing reads them. They
-are not dropped by a Flyway migration because they cannot be once the
-database runs on plain `postgres`: dropping a `vector` column or the
-extension loads pgvector's library, which only the old
-`pgvector/pgvector:pg18` image has. Drop them by hand on that image (docs/README.md's
-"Database & migrations" says how).
 
 The pattern Flyway replaces: letting your ORM auto-generate schema
 changes at startup based on what your code currently looks like (JPA's
@@ -854,14 +850,14 @@ step, which leg leaves a checkpoint — are functions of plain objects, so
 [`apps/web/src/features/chart-labels/logic.ts`](../apps/web/src/features/chart-labels/logic.ts) and
 [`apps/web/src/features/plan/format.ts`](../apps/web/src/features/plan/format.ts)
 hold them and `vitest` covers them in under a second with no browser.
-What is left in the components — binding Leaflet layers, rendering rows —
+What is left in the components — binding MapLibre layers, rendering rows —
 is the part where a test would mostly restate the code. The general
 lesson is worth more than the JavaScript: when something is hard to
 test, it is often because a decision and its rendering are tangled
 together, and separating them is what makes both better.
 
 **Rendering still has to be looked at.** A layout fault — the map
-inheriting no height, so Leaflet fits the route against a container it
+inheriting no height, so MapLibre fits the route against a container it
 measured wrong — breaks no pure function and fails no unit test. So
 `apps/web/e2e/` renders the pages in a real browser, at a phone and a desktop
 viewport, and checks what the DOM alone cannot: nothing overflows, the
