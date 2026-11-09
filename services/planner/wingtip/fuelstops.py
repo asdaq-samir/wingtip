@@ -116,7 +116,7 @@ def _table(fields: pd.DataFrame) -> list[dict]:
     longest = paved_runways()
 
     def runway_of(idents: pd.Series) -> np.ndarray:
-        return idents.fillna("").astype(str).str.strip().str.upper().map(longest).fillna(0).astype(int).to_numpy()
+        return idents.astype(str).fillna("").str.strip().str.upper().map(longest).fillna(0).astype(int).to_numpy()
 
     faa = fields["faa_ident"] if "faa_ident" in fields else fields["ident"]
     runway = np.maximum(runway_of(fields["ident"]), runway_of(faa))
