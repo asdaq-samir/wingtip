@@ -15,7 +15,6 @@ from wingtip.weather import WeatherServiceError
 
 from wingtip.engine import ask as engine
 
-from ..router_basics import DEFAULT_AIRCRAFT
 from ..figures.schemas import DebriefAnswer, DebriefAsk, Diversion, Holding, LostComms, LostCommsAsk
 from wingtip.planning import aircraft_profile, forecast_hour_for
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
@@ -70,7 +69,7 @@ def diversion(
     lon: Annotated[float, Query(ge=-180, le=180)],
     to: Annotated[str, Query(min_length=2, max_length=8)],
     altitude_ft: Annotated[float, Query(gt=0, le=17_999)],
-    aircraft: str = DEFAULT_AIRCRAFT,
+    aircraft: str | None = None,
     cruise_tas_kt: CruiseTas = None,
     fuel_burn_gph: Annotated[float | None, Query(gt=0, le=100)] = None,
     cruise_power_pct: CruisePower = None,
@@ -88,7 +87,12 @@ def diversion(
     the WMM) -- the true course and distance, the wind triangle, the
     magnetic heading, ground speed, time and fuel, each step in words;
     and the student's estimates (`mh`, `gs`, `ete`, `fuel`) checked
-    against it, each within the drill's allowance or not."""
+    against it, each within the drill's allowance or not. With no
+    `aircraft` a 422: the heading, ground speed, time and fuel are all
+    worked at an airplane's speed and burn, and no stock airplane's is
+    assumed (the owner, 2026-11-09)."""
+    if not aircraft:
+        raise HTTPException(422, "Pick an airplane: the diversion's heading, ground speed, time and fuel are worked at its speed and burn.")
     place = airports.find_place(to)
     if place is None:
         raise HTTPException(404, f"No US airport goes by {to.strip().upper()!r}.")

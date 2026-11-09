@@ -18,7 +18,7 @@ from wingtip import fixes, fuelstops, geo, route_options, sua, terrain_detour, t
 DEP = {"ident": "AAA", "lat": 0.0, "lon": 0.0}
 DEST = {"ident": "BBB", "lat": 0.0, "lon": 4.0}   # about 240 nm east
 PROFILE = {"cruise_tas_kt": 120.0, "fuel_burn_gph": 10.0, "usable_fuel_gal": 50.0, "taxi_fuel_gal": 1.0,
-           "service_ceiling_ft": 13000.0}
+           "service_ceiling_ft": 13000.0, "glide": {"best_glide_kias": 68.0, "ratio": 9.0}}
 
 
 def fields(*rows) -> pd.DataFrame:
@@ -309,9 +309,9 @@ def test_out_of_glide_is_the_water_beyond_a_glide_of_land():
     flat = water.is_water
     try:
         water.is_water = lambda lats, lons: (np.asarray(lons) > 1.0) & (np.asarray(lons) < 1.5)
-        share = water.cell_shares(water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=110.0), 4, 10)
+        share = water.cell_shares(water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=110.0, glide_ratio=9.0), 4, 10)
         # Too slow to be flying (under the engine's 40 kt): no glide, all of it out of reach.
-        stopped = water.cell_shares(water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=0.0), 4, 10)
+        stopped = water.cell_shares(water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=0.0, glide_ratio=9.0), 4, 10)
     finally:
         water.is_water = flat
     assert share[:, 0].max() == 0.0                      # dry land
@@ -323,7 +323,7 @@ def test_out_of_glide_is_the_water_beyond_a_glide_of_land():
 def test_the_options_judge_water_from_the_lowest_cruise_and_the_airplanes_speed(monkeypatch, sky):
     seen = {}
 
-    def spy(lat0, lon0, rows, cols, cell, height_ft, speed_kt):
+    def spy(lat0, lon0, rows, cols, cell, height_ft, speed_kt, glide_ratio=None):
         seen.update(height_ft=height_ft, speed_kt=speed_kt)
         per = int(round(cell / water.STEP_DEG))
         return np.zeros((rows * per, cols * per), dtype=bool)
@@ -335,12 +335,16 @@ def test_the_options_judge_water_from_the_lowest_cruise_and_the_airplanes_speed(
 
 
 def test_the_glide_to_shore_is_the_engines_by_height():
-    # The C172S POH's maximum glide, 1.5 nm a thousand feet (motion/glide.rs):
-    # 6 nm from 4,000 ft over the water, 3.75 nm from the 2,500 ft the
-    # grid's lowest cruise is, none under the engine's 500 ft.
-    assert water.glide_nm(4000.0, 110.0) == 6.0
-    assert water.glide_nm(2500.0, 110.0) == 3.75
-    assert water.glide_nm(400.0, 110.0) == 0.0
+    # The C172S POH's maximum glide, 9 to 1 (figure 3-1, the c172 profile's
+    # glide.ratio): 9,000 ft forward for every 1,000 down, 5.9 nm from
+    # 4,000 ft over the water, 3.7 nm from the 2,500 ft the grid's lowest
+    # cruise is, none under the engine's 500 ft -- and none at all for an
+    # airplane whose profile gives no glide, which is not assumed.
+    ft_per_nm = 1852.0 / 0.3048
+    assert water.glide_nm(4000.0, 110.0, 9.0) == pytest.approx(4 * 9000.0 / ft_per_nm)
+    assert water.glide_nm(2500.0, 110.0, 9.0) == pytest.approx(2.5 * 9000.0 / ft_per_nm)
+    assert water.glide_nm(400.0, 110.0, 9.0) == 0.0
+    assert water.glide_nm(4000.0, 110.0, None) == 0.0
 
 
 def test_a_turn_is_made_at_a_fix_nearby_where_one_keeps_the_way(monkeypatch, sky):

@@ -80,7 +80,7 @@ class TripToolbox(Toolbox):
             hours: How many hours to look at, 1 to 48.
         """
         c = self.context
-        body = {"dep": dep.strip().upper(), "dest": dest.strip().upper(), "stops": stops, "aircraft": c.aircraft or "c172",
+        body = {"dep": dep.strip().upper(), "dest": dest.strip().upper(), "stops": stops, "aircraft": c.aircraft or None,
                 "airplane": bool(c.aircraft), "rules": c.rules, "start": _utc(self.depart(start)), "hours": max(1, min(48, int(hours)))}
         try:
             found = planner.departure_window(body={k: v for k, v in body.items() if v not in (None, "")})

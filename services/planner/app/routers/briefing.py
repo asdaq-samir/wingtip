@@ -16,8 +16,9 @@ summed instead of overlapped, was the whole reason this page felt slow to
 open even though no single piece actually is."""
 import time
 from datetime import datetime, timezone
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from wingtip import data_cycles, tfr, weather
 from wingtip import icing_forecast
 
@@ -91,13 +92,14 @@ def briefing(dep: str, dest: str, stops: str = "", depart: datetime | None = Non
 
 
 @router.get("/api/alternate", openapi_extra=PUBLIC)
-def alternate(dest: str, eta: datetime, tas_kt: float = 110.0, alternate: str = "") -> Alternates:
+def alternate(dest: str, eta: datetime, tas_kt: Annotated[float, Query(gt=0, le=1000)], alternate: str = "") -> Alternates:
     """The IFR alternate for a flight arriving at `dest` at `eta` (UTC when
     naive): whether the destination needs one (14 CFR 91.169(b), the
     "1-2-3" rule, from its TAF an hour either side of the ETA), the
     pilot's `alternate` checked against its minimums at the ETA there
     (91.169(c)), and the nearest fields with a TAF that will do, each
-    reached at `tas_kt` from the destination (wingtip.alternates)."""
+    reached at `tas_kt` from the destination (wingtip.alternates): the
+    picked airplane's cruise, asked for, never a stock airplane's."""
     return route_briefing.alternate(dest, eta, tas_kt, alternate)
 
 

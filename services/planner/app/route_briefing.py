@@ -228,7 +228,7 @@ def briefing(dep: str, dest: str, stops: str = "", depart: datetime | None = Non
     }
 
 
-def alternate(dest: str, eta: datetime, tas_kt: float = 110.0, alternate: str = "") -> Alternates:
+def alternate(dest: str, eta: datetime, tas_kt: float, alternate: str = "") -> Alternates:
     """The IFR alternate for a flight arriving at `dest` at `eta`, as
     /api/alternate answers it (14 CFR 91.169; app.routers.briefing)."""
     arrival = (eta if eta.tzinfo else eta.replace(tzinfo=timezone.utc)).timestamp()

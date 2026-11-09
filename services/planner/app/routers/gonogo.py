@@ -42,9 +42,11 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
         "risk": {"level": assessment["level"], "line": assessment["line"]} if assessment else None,
     })
     # Under IFR, the alternate (14 CFR 91.169), its ETA the nav log's.
-    if q.rules == "ifr" and totals and totals.get("ete_min") is not None:
+    # The way on is flown at the airplane's own cruise; with none (no
+    # airplane, so no ETA either) there is no alternate to time.
+    tas = ((nav or {}).get("aircraft") or {}).get("cruise_tas_kt")
+    if q.rules == "ifr" and totals and totals.get("ete_min") is not None and tas:
         eta = depart + timedelta(minutes=totals["ete_min"])
-        tas = ((nav or {}).get("aircraft") or {}).get("cruise_tas_kt") or 110
         items = with_alternate(items, alternate_finding(flight.alternate_for(r.idents[-1], eta, tas, q.alternate)))
 
     return GoNoGo(
