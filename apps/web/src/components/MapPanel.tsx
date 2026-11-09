@@ -353,24 +353,39 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   useLayoutEffect(() => {
     pillLaid.current = atPill && !moving;
   }, [atPill, moving]);
+  // What the pill is made of, which sets its height: the figures, or the
+  // tab bar, or a card's name -- one height kept for each as it is
+  // measured (pillHeights), so a sheet coming down on another tab or
+  // with a card lands at that pill's own height. It landed at the last
+  // one measured, FPL's figures' 62, and then hopped to the tabs' 68 (or
+  // a card's name's 65) as the pill was measured at rest: a second move,
+  // the settle 615-681 ms where it is 260-280 (the FPL audit's B1).
+  const pillKey = [footShown, layer, cardOver, cardsUp, !!bar && barShown, top != null, pictureCard, !!pill, flying].join("|");
+  // The tabs alone, the bar's own fixed 4.25 rem band (below): known
+  // before it is first measured.
+  const tabsAlone = !!bar && barShown && !footShown && !cardsUp && !cardOver && !flying;
+  const [pillHeights, setPillHeights] = useState<Record<string, number>>({});
   useEffect(() => {
     if (!atPill || moving || !headBand) return;
     const measure = () => {
       if (!pillLaid.current || movingRef.current) return;
-      setPillHeight(Math.ceil(headBand.offsetHeight + (footShown && footNode ? footNode.offsetHeight : 0) + pillChrome));
+      const h = Math.ceil(headBand.offsetHeight + (footShown && footNode ? footNode.offsetHeight : 0) + pillChrome);
+      setPillHeight(h);
+      setPillHeights(was => (was[pillKey] === h ? was : { ...was, [pillKey]: h }));
     };
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(headBand);
     if (footShown && footNode) watch.observe(footNode);
     return () => watch.disconnect();
-  }, [atPill, moving, headBand, footNode, footShown, pillChrome]);
+  }, [atPill, moving, headBand, footNode, footShown, pillChrome, pillKey]);
 
   const footHalf = footHeights.half ?? footHeights.other ?? 0;
   const footFull = footHeights.other ?? footHeights.half ?? 0;
   // Where it comes to rest: the pill, half and all the way up, in px.
   const detents = useMemo<Detents>(() => {
-    const peek = pillHeight ?? Math.round(4.25 * rootPx()) + pillChrome;
+    const tabsPill = Math.round(4.25 * rootPx()) + pillChrome;
+    const peek = pillHeights[pillKey] ?? (tabsAlone ? tabsPill : pillHeight ?? tabsPill);
     const whole = Math.max(peek, room);
     const askedHalf = Math.max(peek, Math.min(Math.round(HALF_REM * rootPx()) + halfChrome, Math.round(whole * HALF_MOST)));
     const body = askedHalf - headHeight - halfChrome - footHalf;
@@ -379,7 +394,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
     // a fix's card was a line and an empty sheet up to the status bar.
     const full = cardFit === null ? whole : Math.max(Math.min(half, whole), Math.min(whole, headHeight + halfChrome + cardFit));
     return { peek, half: Math.min(half, full), full };
-  }, [pillHeight, pillChrome, room, halfChrome, headHeight, footHalf, cardFit]);
+  }, [pillHeight, pillHeights, pillKey, tabsAlone, pillChrome, room, halfChrome, headHeight, footHalf, cardFit]);
   const detentsRef = useRef(detents);
   const halfBody = Math.max(0, detents.half - headHeight - halfChrome - footHalf);
   const fullBody = Math.max(0, detents.full - headHeight - halfChrome - footFull);
