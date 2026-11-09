@@ -2,15 +2,12 @@ import { useId } from "react";
 import { cn } from "cn";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { LINK } from "./link";
 import { FIGURE_WORDS, tablesWords } from "../../lib/airplane/figureWords";
 import type { NeedsFigure } from "../../lib/airplane/figures";
 import { useAskFigure } from "../../lib/airplane/useAskFigure";
 import { requestAirplanePick } from "../../lib/pickAirplane";
 import { TEXT } from "../../lib/text";
-
-/** A link in the ask's line: the blue tint, its 44-point area made by a
- *  pseudo-element, the button itself its text's size. */
-const LINK = "relative h-auto p-0 text-tint after:absolute after:-inset-3";
 
 /**
  * Where an airplane figure is needed and the airplane has none, the one ask
@@ -42,14 +39,14 @@ export function AskFigure({
     return (
       <div className={cn("flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground", TEXT.prose)} data-testid={testId}>
         <span>{what} needs an airplane.</span>
-        <Button variant="ghost" size="sm" className={LINK} onClick={requestAirplanePick} data-testid="pick-airplane">
+        <Button variant="link" size="sm" className={LINK} onClick={requestAirplanePick} data-testid="pick-airplane">
           Pick an airplane
         </Button>
       </div>
     );
   }
   const edit = vm.tail && (
-    <Button variant="ghost" size="sm" className={LINK} onClick={() => vm.edit()} data-testid="ask-edit">
+    <Button variant="link" size="sm" className={LINK} onClick={() => vm.edit()} data-testid="ask-edit">
       Edit {vm.tail}
     </Button>
   );
@@ -88,7 +85,7 @@ export function AskFigure({
           <Button type="submit" size="sm" disabled={vm.saving || !vm.typed.trim()} data-testid="ask-save">
             {vm.saving ? "Saving…" : "Save"}
           </Button>
-          <Button type="button" variant="ghost" size="sm" className={LINK} onClick={vm.notNow} data-testid="ask-not-now">
+          <Button type="button" variant="link" size="sm" className={LINK} onClick={vm.notNow} data-testid="ask-not-now">
             Not now
           </Button>
           {edit}

@@ -16,6 +16,7 @@ import { altFt, pounds } from "../../../../lib/format";
 import { useLoad } from "../../hooks/useLoad";
 import { armText } from "../../../../lib/weightBalance";
 import { phasesOf, type Phase } from "./sections";
+import { AirplaneLink } from "../../../../components/airplane/AirplaneLink";
 import { AskFigure } from "../../../../components/airplane/AskFigure";
 import { useNotInProfileSummary } from "./notInProfileSummary";
 
@@ -100,7 +101,7 @@ export function WeightBalanceSection({
       ) : (
         <div className="space-y-4" data-testid="weight-balance">
           {/* From its own weight and balance record; the POH's sample airplane until set. */}
-          <ListGroup title="The airplane">
+          <ListGroup title="The airplane" action={<AirplaneLink focus="empty_weight_lb" testId="wb-airplane-profile" />}>
             <ListRow title="Empty weight">
               <NumberField
                 value={load.emptyWeightLb}
@@ -259,6 +260,7 @@ export function TakeoffLandingSection({
         </p>
       ) : (
         <div className="space-y-4" data-testid="takeoff-landing">
+          <AirplaneLink testId="tl-airplane-profile" />
           {checks.map((c, i) => {
             const length = c.runway?.length_ft ?? null;
             return (

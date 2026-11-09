@@ -47,12 +47,9 @@ export function bestFields(
     variation_deg: variationDeg,
     airplane: data.airplane
       ? {
-          // The engine flies the glide at its best glide speed: a glide
-          // with none (an own airplane's ratio alone) is not worked out.
-          glide:
-            data.airplane.glide?.best_glide_kias != null
-              ? { ...data.airplane.glide, best_glide_kias: data.airplane.glide.best_glide_kias }
-              : null,
+          // An own airplane's ratio with no best glide speed is passed too:
+          // the engine works its still-air reach (with a wind aloft, none).
+          glide: data.airplane.glide ?? null,
           landing: data.airplane.landing ?? null,
           crosswind: data.airplane.crosswind ?? null,
           cruise_tas_kt: data.airplane.cruise_tas_kt ?? null,

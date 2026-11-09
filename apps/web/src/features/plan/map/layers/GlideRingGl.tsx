@@ -8,10 +8,11 @@ import { useGlideRingSetting } from "../../../../lib/map/position/glideRingSetti
 import { useOwnFix } from "../../../../lib/map/position/ownShip";
 import { useGlideRatio } from "../../../../lib/map/position/useGlideRatio";
 import { nearestQuery } from "../../../../lib/queryClient";
+import { CHART } from "../../../../lib/tokens";
 
 const SOURCE = "glide-ring";
-/** The tint's blue, a ring the pilot turned on, not the emergency's red. */
-const BLUE = "#007aff";
+/** The map's blue (design/tokens.json), a ring the pilot turned on, not the emergency's red. */
+const BLUE = CHART.mapBlue;
 
 const LAYERS: LayerSpecification[] = [
   {

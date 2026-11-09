@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { cn } from "cn";
 import SheetDialog from "../../components/SheetDialog";
+import { LINK } from "../../components/airplane/link";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -28,9 +29,9 @@ function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfile
             {row.resettable && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="link"
                 size="sm"
-                className="relative h-auto p-0 text-tint after:absolute after:-inset-3"
+                className={LINK}
                 disabled={vm.busy === row.key}
                 onClick={() => vm.reset(row.key)}
                 data-testid={`figure-reset-${row.key}`}
