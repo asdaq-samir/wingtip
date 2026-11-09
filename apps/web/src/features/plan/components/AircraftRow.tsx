@@ -1,4 +1,4 @@
-import { PlaneMark } from "../../../components/Favorites";
+import { PlaneMark } from "../../../components/PlaneMarks";
 import { ListRow } from "../../../components/GroupedList";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import type { LatLon } from "../../../lib/geo";

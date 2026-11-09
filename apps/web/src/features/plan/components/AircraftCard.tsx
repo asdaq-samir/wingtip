@@ -8,17 +8,8 @@ import type { AircraftRegistration, TrafficAircraft } from "../../../lib/api/typ
 import { useOwnFix } from "../../../lib/map/position/ownShip";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { pickKeptAircraft, useTabSearch } from "../lib/tabSearch";
-import {
-  HomePlane,
-  ListPageHead,
-  PLANE_TILE,
-  PillSection,
-  PillStrip,
-  PlaneMark,
-  SmallMark,
-  SmallTile,
-  StripNote,
-} from "../../../components/Favorites";
+import { ListPageHead, PillSection, PillStrip, SmallMark, SmallTile, StripNote } from "../../../components/Favorites";
+import { HomePlane, PLANE_TILE, PlaneMark } from "../../../components/PlaneMarks";
 import { planeLink } from "../../../lib/flightLink";
 import TabPage from "../../../components/TabPage";
 import { ClearList, SwipeToDelete } from "../../../components/SwipeToDelete";

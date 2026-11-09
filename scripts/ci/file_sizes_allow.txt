@@ -39,7 +39,7 @@ apps/web/e2e/tab-pills.spec.ts 503
 apps/web/e2e/tracking.spec.ts 917
 apps/web/src/components/ApproachDebrief.tsx 426
 apps/web/src/components/ClearanceCard.tsx 561
-apps/web/src/components/Favorites.tsx 778
+apps/web/src/components/Favorites.tsx 480
 apps/web/src/components/MapPanel.tsx 839
 apps/web/src/components/MapSettings.tsx 435
 apps/web/src/components/RadioLayer.tsx 550

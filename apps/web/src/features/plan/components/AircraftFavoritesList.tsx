@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { EditToggle, HomePlane, ListPageHead, Mark, PLANE_ROW, PlaneMark, RemoveMinus } from "../../../components/Favorites";
+import { EditToggle, ListPageHead, Mark, RemoveMinus } from "../../../components/Favorites";
+import { HomePlane, PLANE_ROW, PlaneMark } from "../../../components/PlaneMarks";
 import { MoveHandle, SortableRow, SortableRows } from "../../../components/SortableRows";
 import { keptKind } from "../../../lib/aircraftKind";
 import { planeLink } from "../../../lib/flightLink";

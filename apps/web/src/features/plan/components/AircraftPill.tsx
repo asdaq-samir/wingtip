@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { cn } from "cn";
 import AirportPicker from "../../../components/AirportPicker";
-import { PillStrip, PlaneMark, SmallTile, StripNote, StripSection } from "../../../components/Favorites";
+import { PillStrip, SmallTile, StripNote, StripSection } from "../../../components/Favorites";
+import { PlaneMark } from "../../../components/PlaneMarks";
 import { DropdownMenuCheckboxItem } from "../../../components/ui/dropdown-menu";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { inEmergency } from "../../../lib/fbo";

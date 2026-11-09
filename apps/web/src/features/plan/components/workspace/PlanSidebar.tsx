@@ -10,8 +10,7 @@ import { AirportRecentsPage, RecentAirportTiles, SearchResults } from "../../../
 import { FavoriteStrip } from "../../../../components/Favorites";
 import { sameField } from "../../../../lib/procedures";
 import { NearestStrip } from "../NearestStrip";
-import AircraftCard, { AircraftRecentsPage } from "../AircraftCard";
-import AircraftPill from "../AircraftPill";
+import { AircraftCard, AircraftPill, AircraftRecentsPage, usePrefetchAircraftTab } from "../../aircraftTabChunk";
 import TabKept from "../../../../components/TabKept";
 import TabPage from "../../../../components/TabPage";
 import PullToRefresh from "../../../../components/PullToRefresh";
@@ -147,6 +146,7 @@ export default function PlanSidebar({
     tabTap,
     toggleFavoriteAirport,
   } = vm;
+  usePrefetchAircraftTab();
   const flightCard =
     flight && past ? (
       <Suspense fallback={null}>
