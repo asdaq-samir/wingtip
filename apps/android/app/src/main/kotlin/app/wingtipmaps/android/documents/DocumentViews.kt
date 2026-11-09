@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.documents
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material3.Checkbox
@@ -17,7 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,8 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.assistant.DocumentFlag
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
@@ -105,16 +100,5 @@ fun ConfirmRow(
         trailingContent = { Checkbox(checked = checked, onCheckedChange = null, enabled = enabled) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() }),
-    )
-}
-
-/** A figure or a name the pilot may change: decimal figures, or text in
- *  capitals (a registration, a type designator). */
-@Composable
-fun FormField(@StringRes label: Int, value: String, text: Boolean = false, onChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value, onValueChange = onChange, modifier = Modifier.fillMaxWidth(),
-        label = { Text(stringResource(label)) }, singleLine = true,
-        keyboardOptions = if (text) KeyboardOptions(capitalization = KeyboardCapitalization.Characters) else KeyboardOptions(keyboardType = KeyboardType.Decimal),
     )
 }

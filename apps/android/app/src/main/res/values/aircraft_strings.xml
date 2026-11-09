@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Your Airplanes": the pilot's airplanes the gateway keeps, and the
+     one form that adds or changes each (aircraft/). -->
+<resources>
+    <string name="your_airplanes">Your Airplanes</string>
+    <string name="your_airplanes_line">Your own airplanes by registration, with their figures</string>
+    <string name="your_airplanes_sign_in">Sign in to keep your airplanes and their figures.</string>
+    <string name="your_airplanes_none">None yet. Add the airplane you fly with its cruise speed and fuel burn.</string>
+    <string name="add_airplane">Add Airplane</string>
+    <string name="edit_airplane">Edit Airplane</string>
+    <string name="delete_airplane">Delete Airplane</string>
+    <string name="delete_airplane_title">Delete %1$s?</string>
+    <string name="delete_airplane_text">Its squawks, inspections and handbook figures go with it. This can\'t be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="field_climb_tas">Climb TAS (kt)</string>
+    <string name="field_equipment">Equipment (item 10a)</string>
+    <string name="field_surveillance">Surveillance (item 10b)</string>
+    <string name="field_colour">Colour and Markings</string>
+</resources>

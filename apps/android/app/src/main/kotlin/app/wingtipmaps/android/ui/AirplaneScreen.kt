@@ -38,6 +38,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.aircraft.YourAirplanesRow
+import app.wingtipmaps.android.aircraft.YourAirplanesSheet
 import app.wingtipmaps.android.api.AircraftProfileSummary
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.checklist.ChecklistKind
@@ -81,8 +83,8 @@ class AirplaneModel : ViewModel() {
  * The Airplane tab (decision 0020: "airplane", the FAA's word): one of
  * the planner's airplane types picked from a menu (a discrete setting is
  * a menu, not a slider), the handbook figures the planner flies it on,
- * and its checklists. The airplane by N-number, with the pilot's own
- * figures, is a later phase.
+ * and its checklists; the pilot's own airplanes, with their figures,
+ * in Your Airplanes.
  */
 @Composable
 fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
@@ -91,6 +93,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     val state by plan.state.collectAsStateWithLifecycle()
     var checklist by remember { mutableStateOf<ChecklistKind?>(null) }
     var photo by remember { mutableStateOf(false) }
+    var mine by remember { mutableStateOf(false) }
     val picked = profiles.firstOrNull { it.name == state.aircraft }
 
     Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
@@ -100,6 +103,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         RegistrationField()
         PassengersRow()
         AddFromPhotoRow(stringResource(R.string.photo_line_airplane)) { photo = true }
+        YourAirplanesRow { mine = true }
         if (!state.airplane) {
             Text(stringResource(R.string.no_airplane_line), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@Column
@@ -120,6 +124,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         }
     }
     if (photo) HandbookPhotoSheet(type = state.aircraft, onClose = { photo = false })
+    if (mine) YourAirplanesSheet(onClose = { mine = false })
     checklist?.let { kind ->
         val title = stringResource(R.string.checklists_of, state.aircraft.uppercase())
         WingtipSheet(title = title, onClose = { checklist = null }, full = true) {

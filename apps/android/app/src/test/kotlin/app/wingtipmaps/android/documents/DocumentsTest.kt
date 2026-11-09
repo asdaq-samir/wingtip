@@ -106,16 +106,16 @@ class DocumentsTest {
         assertEquals(listOf(handbook.handbook!!.cruise!![2]), asked!!.cruise)
         assertNotNull(asked!!.fuel)
         val form = model.state.value.form
-        assertEquals("113.0", form.cruiseTas)
-        assertEquals("8.5", form.burn)
-        assertEquals("65.0", form.power)
-        assertEquals("53.0", form.usableFuel)
-        assertEquals("N12345", form.tail)
-        assertEquals("C172", form.type)
-        val request = model.request(form, null)!!
+        assertEquals("113.0", form.cruiseTasKt)
+        assertEquals("8.5", form.fuelBurnGph)
+        assertEquals("65.0", form.cruisePowerPct)
+        assertEquals("53.0", form.usableFuelGal)
+        assertEquals("N12345", form.tailNumber)
+        assertEquals("C172", form.typeDesignator)
+        val request = form.request!!
         assertEquals(113.0, request.cruiseTasKt, 0.0)
         assertEquals("C172", request.typeDesignator)
-        assertNull(model.request(form.copy(burn = ""), null))
+        assertNull(form.copy(fuelBurnGph = "").request)
         val figures = HandbookReview.forGateway(handbook.handbookCheck!!.handbook)
         assertEquals(handbook.handbookCheck!!.handbook.cruise!!.size, figures.cruise.size)
     }

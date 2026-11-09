@@ -26,3 +26,8 @@ suspend fun Gateway.updateAircraft(id: Long, request: AircraftRequest): Aircraft
  *  (PUT /api/aircraft/{id}/handbook); null takes them away. */
 suspend fun Gateway.saveHandbook(id: Long, figures: HandbookFigures?): AircraftDto =
     json.decodeFromString(send("PUT", "/api/aircraft/$id/handbook", json = json.encodeToString(HandbookRequest(figures))))
+
+/** An airplane and everything kept with it deleted (DELETE /api/aircraft/{id}). */
+suspend fun Gateway.deleteAircraft(id: Long) {
+    send("DELETE", "/api/aircraft/$id")
+}
