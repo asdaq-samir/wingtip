@@ -45,6 +45,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.LocalWingtipPalette
@@ -107,7 +108,7 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
     val name = state.kind.label
     val time = state.frame?.let { FrameTime.of(it, Instant.ofEpochMilli(now), state.oldAfterS) }
     val caution = LocalWingtipPalette.current.cautionInk
-    Surface(shape = RoundedCornerShape(22.dp), tonalElevation = 3.dp, modifier = modifier.widthIn(max = 360.dp).padding(horizontal = WingtipSpace.Md)) {
+    Surface(shape = RoundedCornerShape(WingtipRadius.Banner), tonalElevation = 3.dp, modifier = modifier.widthIn(max = 360.dp).padding(horizontal = WingtipSpace.Md)) {
         Row(Modifier.padding(end = WingtipSpace.Md), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
             val playLabel = stringResource(if (state.playing) R.string.loop_pause else R.string.loop_play)
             IconButton(onClick = loop::toggle, enabled = state.frames.size >= 2) {

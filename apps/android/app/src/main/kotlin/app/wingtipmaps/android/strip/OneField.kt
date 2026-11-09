@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.atc.RadioListener
 import app.wingtipmaps.android.atc.micAllowed
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import kotlinx.coroutines.launch
 
 /**
@@ -124,11 +125,11 @@ fun FieldRow(
         )
     }
 
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
         Row(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp),
+            Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg, end = WingtipSpace.Xs),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
         ) {
             SearchBar(state = searchBarState, inputField = inputField, modifier = Modifier.weight(1f))
             ProfileButton(pilot = pilot, onOpen = onOpen, onSignOut = onSignOut)
@@ -136,7 +137,7 @@ fun FieldRow(
         if (problem != null) {
             Text(
                 problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 20.dp),
+                modifier = Modifier.padding(horizontal = WingtipSpace.Lg),
             )
         }
     }
@@ -146,8 +147,8 @@ fun FieldRow(
     ExpandedFullScreenSearchBar(state = searchBarState, inputField = inputField) {
         if (textFieldState.text.isEmpty() && suggestions.isNotEmpty()) {
             Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Md),
+                horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
             ) {
                 suggestions.forEach { words ->
                     SuggestionChip(onClick = { submit(words) }, label = { Text(words) })

@@ -45,7 +45,7 @@ fun ReceiverChip(modifier: Modifier = Modifier) {
         contentColor = if (state.live) MaterialTheme.colorScheme.onSurface else LocalWingtipPalette.current.caution,
         modifier = modifier.semantics { contentDescription = description },
     ) {
-        Text(state.summary, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = WingtipSpace.Sm, vertical = 2.dp))
+        Text(state.summary, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = WingtipSpace.Sm, vertical = WingtipSpace.Xxs))
     }
 }
 

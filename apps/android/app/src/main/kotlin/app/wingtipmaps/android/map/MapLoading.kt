@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipSpace
 
 /**
  * Wingtip Maps' mark turning in the middle of the map while it loads, as
@@ -71,7 +72,7 @@ fun MapLoading(shown: Boolean, bottomInset: Dp, modifier: Modifier = Modifier, p
                 .semantics { contentDescription = "Loading the map" },
             contentAlignment = Alignment.Center,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
                 Mark(Modifier.size(56.dp), still = problem != null)
                 if (problem != null) {
                     Text(
@@ -79,7 +80,7 @@ fun MapLoading(shown: Boolean, bottomInset: Dp, modifier: Modifier = Modifier, p
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 32.dp),
+                        modifier = Modifier.padding(horizontal = WingtipSpace.Xxl),
                     )
                 }
             }

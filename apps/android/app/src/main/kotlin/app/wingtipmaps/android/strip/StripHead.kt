@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.InkColors
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.ProblemLine
@@ -109,14 +110,14 @@ fun StripHead(
 ) {
     val ink = LocalInk.current
     val briefWord = stringResource(R.string.brief)
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         // The card reads its verdict and its line, and its action is
         // named Brief, rather than the whole card being called "Brief" and
         // the verdict never said.
         StripCard(onClick = onBrief, modifier = Modifier.fillMaxWidth().semantics { onClick(label = briefWord) { onBrief(); true } }) {
-            Column(Modifier.padding(16.dp).heightIn(min = 80.dp), verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.Bottom)) {
+            Column(Modifier.padding(WingtipSpace.Lg).heightIn(min = 80.dp), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm, Alignment.Bottom)) {
                 if (verdict != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
                         FindingIcon(verdict.finding, Modifier.size(24.dp))
                         Text(
                             verdict.words, style = MaterialTheme.typography.titleLarge,
@@ -137,7 +138,7 @@ fun StripHead(
             }
         }
         if (ways.size > 1) {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 ways.forEach { way ->
                     FilterChip(selected = way.key == wayKey, onClick = { onWay(way.key) }, label = { Text(way.label) })
                 }

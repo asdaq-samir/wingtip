@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.api.Leg
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.ui.InkColors
@@ -75,10 +76,10 @@ private fun FieldCardRow(
     onOpen: () -> Unit,
     onClearance: (() -> Unit)? = null,
 ) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).height(IntrinsicSize.Min).padding(end = 16.dp)) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).height(IntrinsicSize.Min).padding(end = WingtipSpace.Lg)) {
         Box(Modifier.width(24.dp).fillMaxHeight()) { Timeline(field = true, first = first, last = last, dotAt = 24.dp) }
         StripCard(onClick = onOpen, modifier = Modifier.weight(1f)) {
-            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.padding(WingtipSpace.Md), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 Row(verticalAlignment = Alignment.Top) {
                     Column(Modifier.weight(1f)) {
                         Text(ident, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
@@ -103,7 +104,7 @@ private fun FieldCardRow(
                 }
                 val chips = card?.chips.orEmpty()
                 if (chips.isNotEmpty() || onClearance != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                         chips.forEach { chip ->
                             AssistChip(
                                 onClick = onOpen,
@@ -131,12 +132,12 @@ private fun FieldCardRow(
  *  in words (LegWords), the written figures under it cleared. */
 @Composable
 private fun CheckpointRow(number: Int, name: String, leg: Leg, onOpen: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).height(IntrinsicSize.Min).padding(end = 16.dp)) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).height(IntrinsicSize.Min).padding(end = WingtipSpace.Lg)) {
         Box(Modifier.width(24.dp).fillMaxHeight()) { Timeline(field = false, first = false, last = false, dotAt = 24.dp) }
         TextButton(
             onClick = onOpen,
             modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = LegWords.checkpoint(number, name, leg) },
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = WingtipSpace.Sm, vertical = WingtipSpace.Xs),
         ) {
             Column(Modifier.weight(1f).clearAndSetSemantics {}) {
                 Text(
@@ -191,7 +192,7 @@ fun LazyListScope.stripList(
     shown.forEach { row ->
         when (row) {
             null -> item(key = "fold") {
-                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).height(IntrinsicSize.Min).padding(end = 16.dp)) {
+                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).height(IntrinsicSize.Min).padding(end = WingtipSpace.Lg)) {
                     Box(Modifier.width(24.dp).fillMaxHeight()) { Timeline(field = false, first = false, last = false, dotAt = 24.dp) }
                     TextButton(onClick = onUnfold, modifier = Modifier.weight(1f)) {
                         Text("$hidden more checkpoints", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
@@ -227,8 +228,8 @@ fun LazyListScope.stripList(
 @Composable
 fun StripWelcome(modifier: Modifier = Modifier) {
     StripCard(modifier = modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.padding(WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
                 Icon(
                     Icons.Filled.Flight, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp),
