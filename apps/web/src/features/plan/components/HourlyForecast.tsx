@@ -64,7 +64,7 @@ export function HourlyForecast({
       // Focusable so the keyboard can scroll the row (axe's
       // scrollable-region-focusable, WCAG 2.1.1), which the iPhone audit checks.
       role="list"
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scroller is what a keyboard needs to reach
+      // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- a scroller is what a keyboard needs to reach
       tabIndex={0}
       aria-label="Hour by hour"
       data-slides=""

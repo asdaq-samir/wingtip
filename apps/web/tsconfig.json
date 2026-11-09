@@ -14,7 +14,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "types": ["node", "vite/client", "vitest/globals"],
-    "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] },
     "incremental": true,
     "tsBuildInfoFile": "node_modules/.cache/tsc/tsconfig.tsbuildinfo"

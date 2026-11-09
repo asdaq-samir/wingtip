@@ -1,14 +1,17 @@
 import js from "@eslint/js";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
-import jsxA11y from "eslint-plugin-jsx-a11y";
+// The maintained fork of eslint-plugin-jsx-a11y (the same rules, as
+// jsx-a11y-x/...), which runs on ESLint 10; the original stops at 9.
+import jsxA11y from "eslint-plugin-jsx-a11y-x";
 import vitest from "@vitest/eslint-plugin";
 import testingLibrary from "eslint-plugin-testing-library";
+import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import boundaries from "./eslint/boundaries.js";
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       "dist",
@@ -26,7 +29,7 @@ export default tseslint.config(
       js.configs.recommended,
       ...tseslint.configs.recommended,
       reactHooks.configs.flat["recommended-latest"],
-      jsxA11y.flatConfigs.recommended,
+      jsxA11y.configs.recommended,
     ],
     languageOptions: { ecmaVersion: 2022, globals: globals.browser },
     plugins: { "react-refresh": reactRefresh },

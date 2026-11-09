@@ -816,7 +816,7 @@ export default function MapPanel({
                 sheet's foot at every size: in the pill its one row. Kept
                 under a card, out of sight, with what it holds open. */}
       {!!foot && (footShown || cardsUp) && (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to open the sheet, and the figures' own buttons stay focusable
+        // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to open the sheet, and the figures' own buttons stay focusable
         <div
           ref={setFootNode}
           className={footLook(size).className}

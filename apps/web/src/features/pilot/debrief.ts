@@ -27,7 +27,7 @@ import type { TrackPoint } from "../../lib/track";
  *  planned route; S6's time at each checkpoint against its estimate; and
  *  how near the field the downwind is taken to start, with PA.III.B.S5's
  *  pattern altitude. */
-export interface Tolerances {
+interface Tolerances {
   altitudeFt: number;
   courseDeg: number;
   offRouteNm: number;
@@ -45,7 +45,7 @@ export function airborne(points: TrackPoint[]): [number, number][] {
   return callEngine("debrief_airborne", { points: enginePoints(points) });
 }
 
-export interface LegGrade {
+interface LegGrade {
   from: string;
   to: string;
   plannedAltFt: number | null;
@@ -63,7 +63,7 @@ export interface LegGrade {
   ok: boolean;
 }
 
-export interface CheckpointPass {
+interface CheckpointPass {
   name: string;
   category: string;
   /** Minutes from the takeoff it was due, and was passed (or landed at);
@@ -80,7 +80,7 @@ export interface CheckpointPass {
   ok: boolean | null;
 }
 
-export interface PatternEntry {
+interface PatternEntry {
   ident: string;
   /** The altitude PATTERN_NM from the field, ft MSL. */
   altFt: number;

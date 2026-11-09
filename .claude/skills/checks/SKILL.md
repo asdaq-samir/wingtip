@@ -77,7 +77,7 @@ docker compose up -d
 scripts/dev/one-at-a-time.sh "session: <spec>" docker run --rm --network host -v "$PWD/apps/web":/w -w /w \
   -e BASE_URL=http://localhost:8080 -e MAILPIT_URL=http://localhost:8025 \
   -e MAILPIT_UI_AUTH="$(grep '^MAILPIT_UI_AUTH=' .env | cut -d= -f2-)" \
-  mcr.microsoft.com/playwright:v1.55.1-noble npx playwright test e2e/<spec>.spec.ts --reporter=list
+  mcr.microsoft.com/playwright:v1.65.0-noble npx playwright test e2e/<spec>.spec.ts --reporter=list
 ```
 - The image tag must equal `@playwright/test` in `apps/web/package.json`. Change both together.
 - Reach the stack at `localhost`, as CI does: the browser counts it as a secure origin and gives the page a position. Over `host.docker.internal` it is not one, and every test that taps the location arrow fails ("No position over this connection"). Four dry-run tests failed that way on 2026-10-19 and passed over `localhost`.

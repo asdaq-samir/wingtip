@@ -15,10 +15,10 @@ import type { TrafficAircraft } from "./api/types";
  * what is asked of it stay here.
  */
 
-export type FilterPlace = "map" | "near" | "airport";
-export type FilterRelation = "around" | "inbound" | "departing" | "based";
+type FilterPlace = "map" | "near" | "airport";
+type FilterRelation = "around" | "inbound" | "departing" | "based";
 export type FilterKind = "any" | "light" | "small" | "large" | "helicopter" | "other";
-export type FilterBand = "any" | "low" | "mid" | "high" | "flight-levels";
+type FilterBand = "any" | "low" | "mid" | "high" | "flight-levels";
 
 export interface AircraftFilter {
   place: FilterPlace;

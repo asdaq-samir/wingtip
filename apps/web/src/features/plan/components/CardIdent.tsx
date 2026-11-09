@@ -42,7 +42,7 @@ export default function CardIdent({
   placeholder?: string;
   /** Focused as it is drawn: a stop being added, typed into at once. By a
    *  ref, which runs as the input is put in, not the autoFocus attribute
-   *  (jsx-a11y/no-autofocus, CI's lint); the same where it is asked for. */
+   *  (jsx-a11y-x/no-autofocus, CI's lint); the same where it is asked for. */
   focused?: boolean;
   /** The rest of the card's line, not the ident's width. */
   wide?: boolean;

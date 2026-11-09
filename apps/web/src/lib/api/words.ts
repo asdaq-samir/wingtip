@@ -10,10 +10,8 @@ import { ApiError, csrfHeaders, failIfNotOk } from "./client";
 import type { Source } from "./assistant";
 import { requestIdHeaders } from "./requestId";
 
-export type { Source };
-
 /** One sentence of a reading, with the sources it rests on by id. */
-export interface WordsSentence {
+interface WordsSentence {
   text: string;
   sources: string[];
 }

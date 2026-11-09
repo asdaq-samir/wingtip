@@ -78,7 +78,7 @@ permissions:
 # apps/web/package-lock.json's @playwright/test, and the e2e job's packages
 # cache is keyed by it too.
 env:
-  PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.55.1-noble
+  PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.65.0-noble
 
 jobs:
   # The Python suites install their requirements with uv, the same
@@ -1142,7 +1142,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/web/node_modules
-          key: e2e-node-modules-pw1.55.1-${{ hashFiles('apps/web/package-lock.json') }}
+          key: e2e-node-modules-pw1.65.0-${{ hashFiles('apps/web/package-lock.json') }}
 
       # The page the gateway serves, from this commit's apps/web/ -- `npm run
       # types` and `vite build`, as services/gateway/Dockerfile builds it --
@@ -1603,7 +1603,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/web/node_modules
-          key: e2e-node-modules-pw1.55.1-${{ hashFiles('apps/web/package-lock.json') }}
+          key: e2e-node-modules-pw1.65.0-${{ hashFiles('apps/web/package-lock.json') }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
         if: steps.keys.outputs.page != ''
         with:
