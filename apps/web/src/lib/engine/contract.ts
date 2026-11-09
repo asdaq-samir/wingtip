@@ -1428,6 +1428,13 @@ export interface EngineContract {
     answer: DryRunAnswer;
   };
   /**
+   * What to do in an emergency with no airplane picked: general good practice only, each item with its source -- fly the airplane and pick a field within reach (FAA-H-8083-3C ch. 18), ask for help early (AIM 6-1-2), squawk 7700 (AIM 6-2-2), MAYDAY on the frequency in use or 121.5 (AIM 6-3-1, 6-3-2), climb if possible (AIM 6-3-2), stay in VFR conditions and the pilot in command's authority to deviate (AIM 6-2-1, 6-1-1, 14 CFR 91.3(b)). No airplane's checklist, speeds, glide or distances.
+   */
+  emergency_guidance: {
+    input: EmergencyGuidanceInput;
+    answer: EmergencyGuidanceAnswer;
+  };
+  /**
    * An ADS-B emitter category's name in DO-260B's words (GDL 90 Table 11): A1 to A7 and B1, B2; null for one not sent and for the rest.
    */
   emitter_category: {
@@ -5179,6 +5186,18 @@ export interface DryRunAnswer {
     nm: number;
     fuel: number;
   }[];
+}
+export interface EmergencyGuidanceInput {}
+export interface EmergencyGuidanceAnswer {
+  items: EmergencyGuidanceItem[];
+}
+export interface EmergencyGuidanceItem {
+  title: string;
+  detail: string;
+  /**
+   * Where it comes from: the AIM paragraph, the handbook's chapter or the CFR section.
+   */
+  source: string;
 }
 export interface EmitterCategoryInput {
   category?: string | null;

@@ -2529,6 +2529,27 @@ object EngineContract {
     )
 
     @Serializable
+    data class EmergencyGuidanceAnswer(
+        val items: List<EngineContract.EmergencyGuidanceAnswerItemsItem>,
+    )
+
+    @Serializable
+    data class EmergencyGuidanceAnswerItemsItem(
+        val title: String,
+        val detail: String,
+        /**
+         * Where it comes from: the AIM paragraph, the handbook's chapter or the CFR section.
+         */
+        val source: String,
+    )
+
+    @Serializable
+    class EmergencyGuidanceInput {
+        override fun equals(other: Any?): Boolean = other is EmergencyGuidanceInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class EmitterCategoryInput(
         val category: String? = null,
     )

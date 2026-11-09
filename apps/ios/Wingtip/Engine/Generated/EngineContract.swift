@@ -2688,6 +2688,20 @@ enum EngineContract {
         }
     }
 
+    struct EmergencyGuidanceAnswer: Codable, Equatable, Sendable {
+        var items: [EngineContract.EmergencyGuidanceAnswerItemsItem]
+    }
+
+    struct EmergencyGuidanceAnswerItemsItem: Codable, Equatable, Sendable {
+        var title: String
+        var detail: String
+        /// Where it comes from: the AIM paragraph, the handbook's chapter or the CFR section.
+        var source: String
+    }
+
+    struct EmergencyGuidanceInput: Codable, Equatable, Sendable {
+    }
+
     struct EmitterCategoryInput: Codable, Equatable, Sendable {
         var category: String?
     }

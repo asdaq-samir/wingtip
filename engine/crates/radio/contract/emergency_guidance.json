@@ -1,0 +1,50 @@
+{
+  "x-call": "wingtip_radio::guidance::call",
+  "description": "What to do in an emergency with no airplane picked: general good practice only, each item with its source -- fly the airplane and pick a field within reach (FAA-H-8083-3C ch. 18), ask for help early (AIM 6-1-2), squawk 7700 (AIM 6-2-2), MAYDAY on the frequency in use or 121.5 (AIM 6-3-1, 6-3-2), climb if possible (AIM 6-3-2), stay in VFR conditions and the pilot in command's authority to deviate (AIM 6-2-1, 6-1-1, 14 CFR 91.3(b)). No airplane's checklist, speeds, glide or distances.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "EmergencyGuidanceInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "EmergencyGuidanceAnswer",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "title": "EmergencyGuidanceItem",
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string",
+                "description": "Where it comes from: the AIM paragraph, the handbook's chapter or the CFR section."
+              }
+            },
+            "required": [
+              "title",
+              "detail",
+              "source"
+            ]
+          }
+        }
+      },
+      "required": [
+        "items"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}
