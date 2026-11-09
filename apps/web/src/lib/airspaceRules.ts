@@ -12,7 +12,7 @@
  */
 import { callEngine, type EngineAnswer } from "./engine/engine";
 
-export type AirspaceRule = EngineAnswer<"airspace_entry_rules">["rules"][number];
+type AirspaceRule = EngineAnswer<"airspace_entry_rules">["rules"][number];
 
 export function entryRules(airspaceClass: "B" | "C" | "D"): AirspaceRule[] {
   return callEngine("airspace_entry_rules", { class: airspaceClass }).rules;

@@ -166,7 +166,7 @@ export async function openBrief(page: Page) {
 /** The Brief put away, by the minimized tab bar's close or, wider, its
  *  own (closeCard), which go back one at a time: from a page to the
  *  Brief's cards (BriefGlance), then FPL's route and nav log again. */
-export async function closeBrief(page: Page) {
+async function closeBrief(page: Page) {
   const card = sideDrawer(page).getByTestId("brief-card");
   if (!(await card.isVisible().catch(() => false))) return;
   if (!(await card.getByTestId("brief-glance").isVisible())) {
@@ -709,7 +709,7 @@ export async function airportSearch(page: Page) {
 /** A chart airport as the map drew it (AirportsGl's probe,
  *  `data-airport-marks`): its ident, where it is on the page, whether it
  *  wears its mark (`chip`) and the mark's airspace, use and weather colour. */
-export interface DrawnAirport {
+interface DrawnAirport {
   ident: string; x: number; y: number; chip: boolean; space: string; use: string; weather: string;
 }
 

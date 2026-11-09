@@ -17,12 +17,11 @@ import type { OverlayTiles } from "../../api/types";
 
 /** The archive's source layers (wingtip.vector_tiles.LAYERS). */
 export const OVERLAY_LAYERS = ["airspace", "airspace_labels", "special_use", "airports", "navaids", "fixes", "runways"] as const;
-export type OverlayLayer = (typeof OVERLAY_LAYERS)[number];
 
 /** MapLibre's addProtocol, as much of it as this needs: maplibre-gl itself
  *  is the map's import, not this module's. The loader is pmtiles' own
  *  (its tilev4), whose answer MapLibre's types name differently. */
-export interface ProtocolHost {
+interface ProtocolHost {
   addProtocol(name: string, loader: never): void;
 }
 
@@ -64,7 +63,7 @@ export function registerOverlayProtocol(maplibre: ProtocolHost): void {
 
 /** The archive's address through the gateway (PlannerProxyController
  *  passes the Range on): absolute, as the pmtiles protocol fetches it. */
-export function overlayArchiveUrl(tiles: Pick<OverlayTiles, "name">, origin: string = location.origin): string {
+function overlayArchiveUrl(tiles: Pick<OverlayTiles, "name">, origin: string = location.origin): string {
   return `${origin}/api/planner/overlay-tiles/${tiles.name}.pmtiles`;
 }
 

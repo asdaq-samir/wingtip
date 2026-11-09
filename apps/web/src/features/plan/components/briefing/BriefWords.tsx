@@ -14,7 +14,7 @@ const KEPT_MS = 10 * 60_000;
 
 /** The way from a section's title to the list its words are drawn from:
  *  a page of the Brief and a section of it by its title (PanelTabs). */
-export type OpenSection = (tab: PanelTab, section: string) => void;
+type OpenSection = (tab: PanelTab, section: string) => void;
 
 /**
  * The Brief's three readings in words (WordsSection), under its verdict:

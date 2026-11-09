@@ -22,7 +22,7 @@ import { TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
  *  finger. */
 const SEGMENTED = "w-full group-data-[orientation=horizontal]/tabs:h-9 pointer-coarse:group-data-[orientation=horizontal]/tabs:h-11";
 
-export interface CardTabSpec<T extends string> {
+interface CardTabSpec<T extends string> {
   value: T;
   label: ReactNode;
 }

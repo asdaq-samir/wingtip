@@ -8,7 +8,7 @@ import { useEffect } from "react";
  * list or one page (decision 0015) -- wherever the focus is outside a
  * field. A key a field, a menu or a dialog has used is left alone.
  */
-export const TAB_KEYS: Record<string, string> = { "1": "tab-fpl", "2": "tab-airport", "3": "tab-aircraft", "4": "setup-button" };
+const TAB_KEYS: Record<string, string> = { "1": "tab-fpl", "2": "tab-airport", "3": "tab-aircraft", "4": "setup-button" };
 
 /** The panel's search field in sight: the tab's own. */
 const SEARCH = '[data-slot="map-panel"] input[type="search"]';

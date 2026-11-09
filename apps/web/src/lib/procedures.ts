@@ -114,7 +114,7 @@ export function proceduresParam(picks: PickedProcedure[]): string {
 /** One line of a fix's altitudes as an approach chart sets it (the FAA's
  *  Aeronautical Chart User's Guide, terminal procedures): a minimum
  *  altitude underlined, a maximum one overlined, a mandatory one both. */
-export interface AltitudeLine {
+interface AltitudeLine {
   text: string;
   under: boolean;
   over: boolean;

@@ -4,7 +4,7 @@ import { nmAway } from "../../../lib/useAway";
 
 /** An area's outlines as GeoJSON gives a polygon's or a multipolygon's
  *  coordinates, [lon, lat]: each polygon's rings, its outside first. */
-export type Rings = number[][][];
+type Rings = number[][][];
 
 /** Every polygon's outside ring, from a Polygon's or a MultiPolygon's
  *  coordinates. */

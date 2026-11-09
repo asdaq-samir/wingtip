@@ -11,7 +11,7 @@ import { callEngine } from "../../../lib/engine/engine";
  * The rule and its line are the shared engine's
  * (engine/crates/brief/src/gonogo/icing.rs, through lib/engine).
  */
-export interface IcingAtAltitude {
+interface IcingAtAltitude {
   /** The highest altitude flown at or above the freezing level. */
   altitudeFt: number;
   freezingLevelFt: number;

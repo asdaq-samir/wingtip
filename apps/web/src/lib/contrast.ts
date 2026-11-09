@@ -46,7 +46,7 @@ export function parseColour(value: string): Linear | null {
 }
 
 /** WCAG 2's relative luminance. */
-export const luminance = ([r, g, b]: Linear) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+const luminance = ([r, g, b]: Linear) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
 /** WCAG 2's contrast ratio, 1 to 21, the lighter over the darker. */
 export function contrast(a: Linear, b: Linear): number {

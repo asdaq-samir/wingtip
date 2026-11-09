@@ -49,9 +49,6 @@ export type TopOfClimb = Schemas["TopOfClimb"];
 /** Where a leg's descent starts (TOD), to what and at what rate. */
 export type TopOfDescent = Schemas["TopOfDescent"];
 export type Totals = Schemas["Totals"];
-/** A field with the airplane's fuel a flight short of it can land at, and
- *  the stops one such flight is offered (wingtip.fuelstops). */
-export type FuelStop = Schemas["FuelStop"];
 export type FuelStopSuggestion = Schemas["FuelStopSuggestion"];
 export type AltitudeBreakdown = Schemas["AltitudeBreakdown"];
 export type AltitudeSegment = Schemas["AltitudeSegment"];
@@ -132,7 +129,6 @@ export type WindowHour = Schemas["WindowHour"];
 export type LogbookDraftAsk = Schemas["LogbookDraftAsk"];
 export type LogbookDraft = Schemas["LogbookDraft"];
 export type DepartureWindowRun = Schemas["Window"];
-export type ClearanceWords = Schemas["ClearanceWords"];
 export type OralGrade = Assistant["OralGrade"];
 export type OralGradeRequest = Assistant["OralGradeRequest"];
 export type OralCitation = Assistant["OralCitation"];
@@ -140,7 +136,6 @@ export type AirportPin = Schemas["AirportPin"];
 export type AirportsInView = Schemas["AirportsInView"];
 /** The cycle's overlay tiles' archive (lib/map/sources/overlayTiles). */
 export type OverlayTiles = Schemas["OverlayTiles"];
-export type ModelComparisonEntry = Schemas["ModelComparisonEntry"];
 export type ModelComparison = Schemas["ModelComparison"];
 export type Status = Schemas["Status"];
 export type RetrainStarted = Schemas["RetrainStarted"];
@@ -185,7 +180,6 @@ export type SaaStatus = Schemas["SaaStatus"];
 export type AirportRvr = Schemas["AirportRvr"];
 export type RunwayRvr = Schemas["RunwayRvr"];
 export type AirportAtis = Schemas["AirportAtis"];
-export type DigitalAtis = Schemas["DigitalAtis"];
 export type FlowAtAirports = Schemas["FlowAtAirports"];
 export type FlowProgram = Schemas["FlowProgram"];
 export type DepartureEvents = Schemas["DepartureEvents"];
@@ -208,7 +202,6 @@ export type FlightRoute = Schemas["FlightRoute"];
 export type GoogleMaps = Schemas["GoogleMaps"];
 /** The FAA's Digital Obstacle File in a box, tallest first (routers/terrain). */
 export type Obstacles = Schemas["Obstacles"];
-export type Obstacle = Schemas["Obstacle"];
 export type AirspaceBand = Schemas["AirspaceBand"];
 export type VfrMinimums = Schemas["VfrMinimums"];
 /** `available` is false where the planner has no Docker API to talk

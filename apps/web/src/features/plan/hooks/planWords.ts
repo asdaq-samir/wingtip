@@ -43,7 +43,7 @@ export function tightLegWords(segments: AltitudeSegment[] | null | undefined): s
     + `${over > 0 ? `${over} ft over` : "right at"} the obstacle minimum.`;
 }
 
-export type Mark = "stop" | "caution";
+type Mark = "stop" | "caution";
 
 /** Each tab's mark: the worst of its findings on the Brief's Go / No-Go
  *  (lib/verdict), red for something to fix, amber for something to look at. */

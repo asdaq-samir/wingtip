@@ -19,7 +19,7 @@ import { callEngine } from "../../../../lib/engine/engine";
  * iPhone (Passengers.swift) and Android (briefing/PassengerBriefing.kt)
  * ask too, under the same keys.
  */
-export interface PassengerItem extends Partial<Where> {
+interface PassengerItem extends Partial<Where> {
   key: string;
   title: string;
   /** Where it comes from: the rule that asks for it, or the FAA's guidance. */

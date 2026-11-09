@@ -42,7 +42,7 @@ type SensorClass = new (options?: { frequency?: number }) => Sensor;
 export const useSunlightSensor = create<{ bright: boolean }>(() => ({ bright: false }));
 
 /** Whether the sunlight scheme is on, from the setting and the sensor. */
-export function sunlightOn(chartLight: ChartLight, bright: boolean): boolean {
+function sunlightOn(chartLight: ChartLight, bright: boolean): boolean {
   return chartLight === "on" || (chartLight === "auto" && bright);
 }
 

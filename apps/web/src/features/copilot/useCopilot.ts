@@ -13,11 +13,11 @@ import { alongLine, copilotInput, nightCurrent, rememberCategories, restOfRoute,
 /** How often the copilot looks again at where the airplane is: the
  *  engine's answer takes microseconds, but a message that changed a
  *  second ago does not need a new look every fix. */
-export const LOOK_MS = 3_000;
+const LOOK_MS = 3_000;
 /** How often the planner is asked again for the reports round the
  *  airplane: METARs come hourly and a SPECI at any time; TFRs, SFDPS and
  *  ITWS are read live. */
-export const ASK_MS = 60_000;
+const ASK_MS = 60_000;
 
 /**
  * The in-flight copilot's state: while flying (flying mode, a GPS's

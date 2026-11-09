@@ -3,7 +3,7 @@ import { api } from "../../../lib/api/client";
 
 /** Where a page of an airplane's past flights starts: a UTC day and,
  *  for the flights before those listed, the last one's takeoff. */
-export interface PastFlightsFrom {
+interface PastFlightsFrom {
   until?: string;
   before?: number;
 }

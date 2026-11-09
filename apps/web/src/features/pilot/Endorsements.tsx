@@ -22,7 +22,7 @@ export function GoodTo({ until }: { until: string | null | undefined }) {
 }
 
 /** A signed endorsement's words and signature line, as signed. */
-export function SignedWords({ text, signature }: { text: string; signature: string }) {
+function SignedWords({ text, signature }: { text: string; signature: string }) {
   return (
     <div className={cn("space-y-2 px-3 py-2.5", TEXT.prose)} data-testid="signed-words">
       <p>{text}</p>

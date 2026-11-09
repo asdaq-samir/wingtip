@@ -9,7 +9,7 @@ import type { FlightSummary } from "./api/types";
  *  SaveFlightRequest.PICK, the same keys) and a recent route keep them, so
  *  one opened again is planned as it was: they kept the route alone, and
  *  its totals differed from the ones filed (the 20 Oct audit). */
-export const PICK_KEYS = [
+const PICK_KEYS = [
   "altitude_ft", "altitude_nearest", "altitude_choice", "pattern", "takeoff", "auto", "procs", "cross", "ground", "holds",
   "class_b", "class_b_via", "alternate", "local_min",
 ] as const;

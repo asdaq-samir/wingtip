@@ -23,7 +23,7 @@ const GLANCE_ICONS: Record<GlanceItem["key"], ReactNode> = {
  *  look under a field and a suggested stop's row
  *  (StopGlance), where the two had their own sizes and colours: a note's
  *  size, in the muted grey, as the line under a row is. */
-export function Glance({ of, className, testId }: { of: Glanceable; className?: string; testId: string }) {
+function Glance({ of, className, testId }: { of: Glanceable; className?: string; testId: string }) {
   const items = glanceOf(of);
   if (!items.length) return null;
   return (
@@ -39,7 +39,7 @@ export function Glance({ of, className, testId }: { of: Glanceable; className?: 
 
 /** A suggested stop's glance, from the field's services once they are in;
  *  nothing until then, or where none is near. */
-export function StopGlance({ ident, className }: { ident: string; className?: string }) {
+function StopGlance({ ident, className }: { ident: string; className?: string }) {
   const { data } = useQuery(servicesQuery(ident));
   return data ? <Glance of={data} className={className} testId="stop-glance" /> : null;
 }

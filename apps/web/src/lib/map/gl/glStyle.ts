@@ -30,10 +30,10 @@ export const glZoom = (appZoom: number) => appZoom - 1;
 export const appZoomOf = (glZoomLevel: number) => glZoomLevel + 1;
 
 /** The chart enlarged two levels past its own last zoom. */
-export const OVERZOOM = 2;
+const OVERZOOM = 2;
 /** A region's level of the chart under it, where the
  *  chart's own tiles are not in yet. */
-export const UNDERLAY_ZOOM = 5;
+const UNDERLAY_ZOOM = 5;
 
 /** A tile address MapLibre can fetch: its requests are made from a
  *  worker or resolved against no page, so a path the planner serves
@@ -128,8 +128,8 @@ export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number
 
 /** From which zoom each class is drawn, in the app's levels:
  *  B from 6, C from 7, D (and E) and every label from 8. */
-export const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 6, C: 7, D: 8, E: 8 };
-export const AIRSPACE_LABELS_FROM = 8;
+const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 6, C: 7, D: 8, E: 8 };
+const AIRSPACE_LABELS_FROM = 8;
 
 /** A height in the tab's words: the surface "SFC", else its feet MSL
  *  whole, "2300", as ForeFlight writes them. */
@@ -170,7 +170,7 @@ const feetOf = (field: string) => ["to-string", ["round", ["get", field]]];
  *  where it is "up to but not including" it (UPPER_DESC TNI). */
 const FLOOR = ["case", ["==", ["coalesce", ["get", "floor_ft"], 0], 0], "SFC", feetOf("floor_ft")];
 const TOP = ["concat", ["case", ["==", ["get", "ceiling_excluded"], true], "<", ""], feetOf("ceiling_ft")];
-export const AIRSPACE_TILE_LABEL = ["concat", ["get", "class"], ": ", FLOOR, "–", TOP];
+const AIRSPACE_TILE_LABEL = ["concat", ["get", "class"], ": ", FLOOR, "–", TOP];
 
 /** A width by zoom, MapLibre's levels from the app's. */
 const byZoom = (stops: [appZoom: number, px: number][]) =>
@@ -180,14 +180,14 @@ const byZoom = (stops: [appZoom: number, px: number][]) =>
  *  line, the owner's screenshot, 2026-11-08): a few pixels at a
  *  region's zoom, wider as the map comes in. */
 const BAND_STOPS: [number, number][] = [[7, 3], [9, 6], [11, 10], [13, 16]];
-export const BAND_WIDTH = byZoom(BAND_STOPS);
+const BAND_WIDTH = byZoom(BAND_STOPS);
 /** The band's middle off the boundary, inwards: half the band and a
  *  little over half the line, so its edge meets the line's. A positive
  *  offset is to the right of a line's way; a vector tile's outer ring
  *  runs clockwise on the screen and its holes anticlockwise (the Mapbox
  *  Vector Tile spec 2.1, 4.3.4.4, which tippecanoe writes), so the right
  *  is always the inside, round a ring and round a hole alike. */
-export const BAND_OFFSET = byZoom(BAND_STOPS.map(([z, w]) => [z, w / 2 + 1.5]));
+const BAND_OFFSET = byZoom(BAND_STOPS.map(([z, w]) => [z, w / 2 + 1.5]));
 
 /** Each class's band and line, a line layer each drawn from that class's
  *  zoom, and the labels: white bold type in a dark tab bordered in the
@@ -278,7 +278,7 @@ const SUA_MOA = ["MOA", "A"];
 /** The hatch picture of each ink (glOverlays' SUA_PICTURES). */
 export const suaHatch = (ink: keyof typeof SUA_INK) => `sua|hatch|${ink}`;
 /** From the app's zoom 7, a few states across, as Class C. */
-export const SUA_FROM = 7;
+const SUA_FROM = 7;
 export const SUA_LAYERS = ["sua-band", "sua-line"];
 
 /** The special-use areas from the tiles' `special_use` layer: each
@@ -310,7 +310,7 @@ export function specialUseLayers(): LineLayerSpecification[] {
   ];
 }
 
-export interface RoutePoint {
+interface RoutePoint {
   /** A checkpoint's key ("lat,lon"), or an airport's ident. */
   key: string;
   lat: number;

@@ -28,22 +28,22 @@
  * only.
  */
 
-export type GearKind = "panel" | "headset" | "cable";
+type GearKind = "panel" | "headset" | "cable";
 
 /** What reaches the phone from it: the radio; only voices (a headset's
  *  boom mic, or the intercom's mics in a panel's phone mode); maybe the
  *  radio (documented only to a camera or a maker's own app, or untested
  *  with a phone); nothing, as it has no Bluetooth audio for a phone. */
-export type Gives = "radio" | "voice" | "radio-maybe" | "none";
+type Gives = "radio" | "voice" | "radio-maybe" | "none";
 
 /** How sure the entry is: the maker's own documents say it; it follows from
  *  a maker's sibling model or a retailer; or only a ground test can tell. */
-export type Confidence = "documented" | "likely" | "test";
+type Confidence = "documented" | "likely" | "test";
 
 /** What the app is hearing through the live input. */
-export type Hearing = "radio" | "voice" | "phone-mic" | "unknown";
+type Hearing = "radio" | "voice" | "phone-mic" | "unknown";
 
-export interface Gear {
+interface Gear {
   id: string;
   maker: string;
   model: string;

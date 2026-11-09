@@ -44,7 +44,7 @@ export const WEATHER_SOURCE_LABEL: Record<Briefing["weather_unavailable"][number
   gairmets: "G-AIRMETs",
 };
 
-export interface Stretch {
+interface Stretch {
   from: string;
   to: string;
   altitudeFt: number;
@@ -75,7 +75,7 @@ export function windStretches(legs: Leg[]): Stretch[] {
 
 /** The altitudes a plan flies as the nav log's header gives them: one
  *  figure, or its lowest and highest. */
-export function altitudeRange(nav: NavLogAltitude): string {
+function altitudeRange(nav: NavLogAltitude): string {
   const chosen = nav.options.find(o => o.kind === nav.flown);
   const alts = chosen ? chosen.steps.map(s => s.altitude_ft) : nav.altitude_ft != null ? [nav.altitude_ft] : [];
   if (alts.length === 0) return "No altitude";
@@ -84,7 +84,7 @@ export function altitudeRange(nav: NavLogAltitude): string {
 
 const NO_STOPS: string[] = [];
 
-export interface FlightBriefingInputs {
+interface FlightBriefingInputs {
   /** Which of the panel's tabs this is drawn in (FlightBriefingView). */
   part: BriefingPart | null;
   /** The one instance that publishes the risk, the findings and the glance. */

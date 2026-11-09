@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 /** A photo of an airplane from Planespotters.net, as its card shows it. */
-export interface PlanePhoto {
+interface PlanePhoto {
   /** Its 420 by 280 thumbnail, on Planespotters' own server. */
   src: string;
   width: number;

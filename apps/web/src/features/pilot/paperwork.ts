@@ -10,10 +10,10 @@ import type { Finding } from "../../lib/findings";
  */
 
 /** Within this many days, a thing is coming up: the reminders' first email. */
-export const SOON_DAYS = 30;
+const SOON_DAYS = 30;
 /** Within this many hours of time in service, an hour-counted item is
  *  coming up: about a fortnight's flying for an airplane flown for hire. */
-export const SOON_HOURS = 10;
+const SOON_HOURS = 10;
 
 /** Days between two ISO days, `to` less `from`: counted on the calendar,
  *  at noon UTC, so no clock change makes a day 23 hours. */
@@ -32,7 +32,7 @@ export function daysWords(days: number): string {
 
 /** What is left of an hour-counted item: "19.5 h to go", "Due now",
  *  "At 2350.0 h" where the hours now are not known. */
-export function hoursWords(due: Pick<Due, "dueAtHours" | "hoursLeft">): string {
+function hoursWords(due: Pick<Due, "dueAtHours" | "hoursLeft">): string {
   if (due.hoursLeft == null) return due.dueAtHours == null ? "" : `At ${due.dueAtHours.toFixed(1)} h`;
   return due.hoursLeft > 0 ? `${due.hoursLeft.toFixed(1)} h to go` : "Due now";
 }

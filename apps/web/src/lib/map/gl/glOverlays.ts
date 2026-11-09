@@ -33,14 +33,14 @@ export { OVERLAY_SOURCE };
 // ---- The marks' pictures --------------------------------------------------
 
 /** The chart's own ink for a fix's ident. */
-export const FIX_INK = CHART.fixInk;
+const FIX_INK = CHART.fixInk;
 /** A fix's star, ForeFlight's blue (the owner's screenshot over Lake
  *  Michigan, 2026-11-08), the Class B's. */
-export const FIX_BLUE = CHART.airspaceBlue;
+const FIX_BLUE = CHART.airspaceBlue;
 /** A VFR waypoint's ink on the WebGL map: ForeFlight's green triangle, at
  *  the owner's ask (2026-11-07, from its screenshots), where the
  *  sectional prints a magenta flag (Chart User's Guide, VFR waypoints). */
-export const VFR_GREEN = CHART.vfrGreen;
+const VFR_GREEN = CHART.vfrGreen;
 
 type Picture = [id: string, svg: () => string, stretch?: Stretch];
 
@@ -50,7 +50,7 @@ type Picture = [id: string, svg: () => string, stretch?: Stretch];
  *  the owner's screenshot over Lake Michigan, 2026-11-08), a VFR
  *  waypoint's green triangle (the owner's pick, 2026-11-07), and the
  *  VOR's blue ident box, stretched to its ident. */
-export const NAVAID_PICTURES: Picture[] = [
+const NAVAID_PICTURES: Picture[] = [
   ["nav|vor", () => `<svg width="16" height="16" viewBox="0 0 16 16"><polygon points="15,8 11.5,14.06 4.5,14.06 1,8 4.5,1.94 11.5,1.94" fill="#fff" stroke="${BLUE}" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="${BLUE}"/></svg>`],
   ["nav|fix", () => `<svg width="20" height="20" viewBox="-10 -10 20 20"><path d="M0 -9L2.2 -2.2L9 0L2.2 2.2L0 9L-2.2 2.2L-9 0L-2.2 -2.2Z" fill="${FIX_BLUE}" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>`],
   ["nav|vfr", () => `<svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,1 11.2,10.4 0.8,10.4" fill="${VFR_GREEN}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>`],
@@ -60,7 +60,7 @@ export const NAVAID_PICTURES: Picture[] = [
 /** The dark tab an airspace's altitudes sit in, as ForeFlight's: a
  *  rounded box bordered in its class's ink, its corners kept as drawn,
  *  stretched to the text. */
-export const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map(c => [
+const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map(c => [
   airspaceTab(c),
   () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.75" y="0.75" width="10.5" height="10.5" rx="3" fill="#14181f" fill-opacity="0.92" stroke="${AIRSPACE_INK[c].colour}" stroke-width="1.5"/></svg>`,
   { inset: 4 },
@@ -70,17 +70,17 @@ export const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map(c
  *  in the area's ink on a faint wash of it, repeated along the band
  *  (specialUseLayers' line-pattern), as ForeFlight and the sectional
  *  hatch the inside of the boundary. */
-export const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[]).map(ink => [
+const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[]).map(ink => [
   suaHatch(ink),
   () => `<svg width="7" height="10" viewBox="0 0 7 10"><rect width="7" height="10" fill="${SUA_INK[ink]}" fill-opacity="0.14"/><path d="M1.5 9.5L5.5 0.5" stroke="${SUA_INK[ink]}" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.9"/></svg>`,
 ]);
 
-export type AirportSize = "large" | "medium" | "small" | "other";
-export type AirportUse = "military" | "private" | "heliport" | null;
+type AirportSize = "large" | "medium" | "small" | "other";
+type AirportUse = "military" | "private" | "heliport" | null;
 
 /** A field's symbol's picture by what it is drawn as (sectionalAirportSvg):
  *  towered or not, its size, its weather pip's colour, its use. */
-export const airportMarkId = (towered: boolean, size: string, weather: string | null, use: string | null) =>
+const airportMarkId = (towered: boolean, size: string, weather: string | null, use: string | null) =>
   `apt|${towered ? "t" : "u"}|${size}|${weather ?? ""}|${use ?? ""}`;
 
 const SIZES: AirportSize[] = ["large", "medium", "small", "other"];
@@ -117,7 +117,7 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
  *  its rank (AIRPORT_MIN_ZOOM in services/jobs/charts/overlays.py):
  *  towered, then the long hard runways, other public fields, private
  *  ones, heliports. */
-export const AIRPORTS_FARTHEST_ZOOM = 4;
+const AIRPORTS_FARTHEST_ZOOM = 4;
 
 /** A field's size from its longest runway (NASR APT_RWY RWY_LEN), the
  *  symbol's size: an airline airport's 8,000 ft and more, then 5,000 and
@@ -154,7 +154,7 @@ function tileAirportIcon(colours: Map<string, string>): ExpressionSpecification 
  *  ident beside it in bold, the field's ink (the sectional sets an
  *  airport's name in the symbol's colour, Chart User's Guide, Airports),
  *  kept apart by MapLibre's collision in `rank` order. */
-export function airportMarksLayer(from: { source: string; "source-layer"?: string }, icon: ExpressionSpecification): SymbolLayerSpecification {
+function airportMarksLayer(from: { source: string; "source-layer"?: string }, icon: ExpressionSpecification): SymbolLayerSpecification {
   return {
     id: "airports", type: "symbol", ...from, minzoom: glZoom(AIRPORTS_FARTHEST_ZOOM),
     layout: {
@@ -187,7 +187,7 @@ export function airportMarksLayer(from: { source: string; "source-layer"?: strin
  *  (108.25)" as ForeFlight writes it; a fix's and a waypoint's bold, dark
  *  or green on a white halo. `kind` is the feature's ("vor", "fix",
  *  "vfr"), or the one kind every feature of a tile layer is. */
-export function navaidMarks(
+function navaidMarks(
   id: string, from: { source: string; "source-layer"?: string }, kind: ExpressionSpecification | string = ["get", "kind"],
   extra: Partial<Pick<SymbolLayerSpecification, "filter" | "minzoom">> = {},
 ): SymbolLayerSpecification[] {
@@ -216,8 +216,8 @@ export function navaidMarks(
 
 /** The navaids' zooms, in the app's levels: the VORs from a region's, the fixes
  *  and the VFR waypoints from 10 (NavaidCards, WaypointCard). */
-export const VOR_ZOOM = 8;
-export const FIX_ZOOM = 10;
+const VOR_ZOOM = 8;
+const FIX_ZOOM = 10;
 /** The VORs a pilot tunes (wingtip.fixes.VOR_KINDS, NASR NAV_TYPE). */
 const VOR_KINDS = ["VORTAC", "VOR/DME", "VOR"];
 
@@ -267,8 +267,8 @@ function runwayLayers(): LayerSpecification[] {
 export const AIRSPACE_TILE_LAYERS = [
   ...["D", "C", "B"].flatMap(c => [`airspace-${c}-band`, `airspace-${c}`]), "airspace-labels", ...SUA_LAYERS,
 ];
-export const NAVAID_TILE_LAYERS = ["navaids", "navaids-idents", "fixes", "fixes-idents"];
-export const WAYPOINT_TILE_LAYERS = ["vfr-waypoints", "vfr-waypoints-idents"];
+const NAVAID_TILE_LAYERS = ["navaids", "navaids-idents", "fixes", "fixes-idents"];
+const WAYPOINT_TILE_LAYERS = ["vfr-waypoints", "vfr-waypoints-idents"];
 
 /** The overlay tiles' source and layers, by the slot each is drawn under
  *  (glLayer's SLOTS), for the map's first style; the layers of a layer the
@@ -365,7 +365,7 @@ export function setSelectedAirport(map: MlMap, ident: string | null) {
 
 /** The tile airports' idents, the open card's field's left out: the
  *  selected layer writes it larger (AirportsGl's SELECTED_IDENT). */
-export function selectedIdentLeftOut(ident: string | null): ExpressionSpecification {
+function selectedIdentLeftOut(ident: string | null): ExpressionSpecification {
   return ident ? ["case", ["==", ["get", "ident"], ident], "", ["get", "ident"]] : ["get", "ident"];
 }
 

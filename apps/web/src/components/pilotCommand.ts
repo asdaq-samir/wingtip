@@ -14,11 +14,11 @@ import { directOf } from "../lib/heardCall";
 /** The approaches as said, each the start of the FAA's name for it in
  *  the planner's procedures (CIFP: "ILS RWY 19R", "RNAV (GPS) RWY 13",
  *  "RNAV (RNP) Y RWY 07R", "VOR RWY 31"). */
-export const APPROACHES: Record<string, string> = {
+const APPROACHES: Record<string, string> = {
   ils: "ILS", localizer: "LOC", loc: "LOC", rnav: "RNAV", gps: "RNAV (GPS)", rnp: "RNAV (RNP)", vor: "VOR", ndb: "NDB", visual: "VISUAL",
 };
 
-export type PilotCommand =
+type PilotCommand =
   | { kind: "direct"; place: string }
   | { kind: "nearest" }
   | { kind: "altitude"; ft: number }

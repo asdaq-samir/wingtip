@@ -109,29 +109,6 @@ export function ownShipHtml(headingDeg: number | null, off: boolean, look: OwnSh
   };
 }
 
-/**
- * The ring round the airport whose card is open: the selected
- * checkpoint's halo (Halo) -- red-orange, cased in white and then a dark
- * line on both sides -- so one look marks what is picked on the map, and
- * it holds over the sectional's yellow cities, its paper and its
- * linework alike. It was the brand's taxiway yellow, which the pilot
- * found hard to see; of red-orange, blue and magenta tried over KBUR's
- * Los Angeles and KMSN's Madison, red-orange stood out most, where blue
- * is Class B's and D's and magenta the chart's own airspace. Round, 40
- * across, clear of the field's mark (airportMarkIcon) by 7 on every side,
- * or round the chart's own symbol where the field wears none. It is not
- * a target: a tap there still goes to the mark under it.
- */
-export const selectionIcon = made(function selectionIcon() {
-  const ring = "pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-[3px] border-[#ff3b00]" +
-    " shadow-[0_0_0_1.5px_#fff,0_0_0_2.5px_rgba(10,20,28,.6),inset_0_0_0_1.5px_#fff,inset_0_0_0_2.5px_rgba(10,20,28,.6)]";
-  return divIcon({
-    className: "",
-    iconSize: [0, 0], iconAnchor: [0, 0],
-    html: `<span data-selected-airport="" class="${ring} size-10 rounded-full"></span>`,
-  });
-});
-
 /** A point the route flies through or works out -- a VFR or GPS waypoint,
  *  a present position (POS0), a top of climb or descent -- as a pill on
  *  the course itself, centred on its point: the chart's magenta diamond

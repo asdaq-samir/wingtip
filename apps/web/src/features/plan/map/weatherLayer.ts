@@ -11,7 +11,7 @@ type Bounds = { getSouth(): number; getWest(): number; getNorth(): number; getEa
 
 /** IEM's tile cache: the NEXRAD base reflectivity mosaic and the GOES-East
  *  infrared picture, each kept current there, five minutes apart. */
-export const IEM = "https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0";
+const IEM = "https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0";
 export const RADAR_URL = `${IEM}/nexrad-n0q-900913/{z}/{x}/{y}.png`;
 export const SATELLITE_URL = `${IEM}/goes-east-ir-4km-900913/{z}/{x}/{y}.png`;
 

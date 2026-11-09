@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type MouseEvent, type PointerEvent as Reac
 import { clampHeight, DRAG_SLOP, follow, SCROLL_SLOP_PX, sheetTakes, speedAt, type Box, type Detents, type Track } from "./engine";
 
 /** What the sheet is now, read afresh at each move. */
-export interface DragOf {
+interface DragOf {
   detents: Detents;
   fromBottom: boolean;
   /** Where the sheet is as the finger goes down, px. */

@@ -14,7 +14,7 @@ import { callEngine, type EngineAnswer } from "../../../lib/engine/engine";
 
 /** A figure read off the page, and the words it was read from; a page's
  *  figures, each left out where it was not found (the engine's contract). */
-export type PageFigures = EngineAnswer<"handbook_figures">;
+type PageFigures = EngineAnswer<"handbook_figures">;
 
 export function figuresOfPage(text: string): PageFigures {
   return callEngine("handbook_figures", { text });

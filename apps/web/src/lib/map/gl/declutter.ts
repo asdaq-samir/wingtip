@@ -17,7 +17,7 @@ import type { Map as GlMap, Marker } from "maplibre-gl";
  * its point first; one that may not (a numbered checkpoint, which is
  * where it is) is left out until the map is closer in, where it clears.
  */
-export interface Decluttered {
+interface Decluttered {
   marker: Marker;
   /** Higher stays. */
   priority: number;

@@ -24,7 +24,7 @@ export const ACTION = {
   copy: { label: "Copy", icon: ICON.copy },
 } as const;
 
-export type ActionName = keyof typeof ACTION;
+type ActionName = keyof typeof ACTION;
 
 /** The actions each card kind offers, in order. */
 export const CARD_ACTIONS = {

@@ -17,8 +17,8 @@ const OPACITY: Record<OverlayStrength, number> = { faint: 0.35, half: 0.6, full:
  *  1:500,000 (about 42 m a pixel at its last zoom), so past MapLibre's 12
  *  the chart is only enlarged. From there to 13 the street map fades in
  *  over it, as ForeFlight's does, with the runways (RunwaysGl) on top. */
-export const CLOSE_FROM = 12;
-export const CLOSE_FULL = 13;
+const CLOSE_FROM = 12;
+const CLOSE_FULL = 13;
 /** How far in the street map lets the map go (the chart alone stops two
  *  levels past its own, glStyle's OVERZOOM). */
 const CLOSE_MAX_ZOOM = 17;

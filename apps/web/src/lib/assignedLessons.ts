@@ -11,7 +11,7 @@ import type { PickedProcedure } from "./procedures";
  */
 
 /** The quiz as far as answered: right of answered, of how many. */
-export interface QuizScore {
+interface QuizScore {
   right: number;
   answered: number;
   of: number;

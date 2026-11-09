@@ -21,13 +21,12 @@ import type { LatLon } from "../../lib/geo";
 import type { Fix } from "../../lib/map/position/ownShip";
 import { fixRadialDistance, type Station } from "../../lib/navaid";
 
-export type BestFields = EngineAnswer<"best_fields">;
-export type BestField = BestFields["fields"][number];
-export type Mayday = EngineAnswer<"mayday_call">;
+type BestFields = EngineAnswer<"best_fields">;
+type Mayday = EngineAnswer<"mayday_call">;
 
 /** The phase the checklist opens at (GAMA Specification No. 1, Section 3,
  *  the engine's EMERGENCY_PHASES). */
-export const ENGINE_FAILURE = "Engine failure in flight";
+const ENGINE_FAILURE = "Engine failure in flight";
 
 /** The fields ranked from own ship, in "glide" mode: the airplane's
  *  figures as the planner sent them (none: the glide is not guessed). */

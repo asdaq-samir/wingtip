@@ -34,7 +34,7 @@ export interface FlightToSave {
   picks?: string;
 }
 
-export interface BriefPlan {
+interface BriefPlan {
   dep: string;
   dest: string;
   /** The airports landed at on the way, in order. */

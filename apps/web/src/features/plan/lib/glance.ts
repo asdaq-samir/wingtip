@@ -176,7 +176,7 @@ function sources(key: VerdictItem["key"], glance: BriefGlance | null): string[] 
   return [];
 }
 
-export interface GlanceLines {
+interface GlanceLines {
   /** The lines a pilot acts on, the stops before the cautions, at most LINES_MAX. */
   act: GlanceLine[];
   /** The rest, folded into one row. */

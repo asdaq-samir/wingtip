@@ -13,7 +13,7 @@ import { callEngine } from "../../lib/engine/engine";
 /** One field the engine reads: ForeFlight's name for it, its words on the
  *  screen, and the names other logbooks give it, most likely first,
  *  compared as `keyOf` makes them. */
-export interface ColumnTarget {
+interface ColumnTarget {
   field: string;
   label: string;
   aliases: string[];
@@ -48,7 +48,7 @@ export const COLUMN_TARGETS: ColumnTarget[] = [
 
 /** A column's name as compared, as the engine compares ForeFlight's:
  *  "Total Time" and "TotalTime" are one. */
-export function keyOf(name: string): string {
+function keyOf(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 

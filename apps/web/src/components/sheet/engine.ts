@@ -61,7 +61,7 @@ export const SCROLL_SLOP_PX = 8;
  *  Read from the last move alone, the speed stayed what it was before the
  *  finger stopped -- a touch screen sends no move while it holds still --
  *  and a sheet set down past half way and held there was thrown on. */
-export const SPEED_WINDOW = 100;
+const SPEED_WINDOW = 100;
 
 /** How far on a throw is read, in ms: the detent nearest where the finger
  *  would be a fifth of a second on is where it lands. */
@@ -108,7 +108,7 @@ export function restingAt(detents: Detents, to: number, speed: number): PanelSta
 
 /** Points a millisecond past which a release is a flick (B2's): a
  *  finger set down and held is far under it, a deliberate throw over. */
-export const FLICK_SPEED = 0.5;
+const FLICK_SPEED = 0.5;
 
 /** How long a settle over `distance` px takes, in seconds: the pill to
  *  half's time over its distance (SHEET_SECONDS over SETTLE_POINTS), the

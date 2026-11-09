@@ -22,7 +22,7 @@ const M_PER_NM = 1852;
 
 /** How finely the route aloft is cut: each piece's ground is the ground
  *  at its middle, so a short piece follows the hills under it. */
-export const ALOFT_STEP_NM = 0.5;
+const ALOFT_STEP_NM = 0.5;
 
 /** The flight's line at even steps along it, each point's altitude in
  *  proportion between the plan's points either side. */
@@ -62,7 +62,7 @@ function band(a: AloftPoint, b: AloftPoint, widthM: number): [number, number][] 
 
 /** One piece of the route aloft: its altitude at its middle, metres MSL,
  *  and its middle, where its ground is read. */
-export interface AloftPiece { altM: number; mid: [lon: number, lat: number]; ring: [number, number][] }
+interface AloftPiece { altM: number; mid: [lon: number, lat: number]; ring: [number, number][] }
 
 /** The route aloft cut into pieces `widthM` wide (resampleAloft's steps). */
 export function aloftPieces(points: AloftPoint[], widthM: number): AloftPiece[] {

@@ -24,7 +24,7 @@ export const subscriptionQuery = queryOptions({
 });
 
 /** What the page may say of the paid features now. */
-export type Entitlement =
+type Entitlement =
   | { kind: "loading" }
   /** Nobody can sign in here (one's own machine): all of it is open. */
   | { kind: "open" }

@@ -79,5 +79,3 @@ export function useDepartureWindow() {
     pick: (depart: string) => setPicked(p => (p === depart ? null : depart)),
   };
 }
-
-export type DepartureWindowModel = ReturnType<typeof useDepartureWindow>;

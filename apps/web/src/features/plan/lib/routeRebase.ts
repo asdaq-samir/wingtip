@@ -13,7 +13,7 @@
  * edit is carried over as what it did -- these points out, those in after
  * that one -- onto the route as it is now.
  */
-export interface Route { dep: string; stops: string[]; dest: string }
+interface Route { dep: string; stops: string[]; dest: string }
 
 const pointsOf = (r: Route) => [r.dep, ...r.stops, r.dest].filter(Boolean);
 const same = (a: Route, b: Route) => pointsOf(a).join("|") === pointsOf(b).join("|") && !!a.dep === !!b.dep && !!a.dest === !!b.dest;

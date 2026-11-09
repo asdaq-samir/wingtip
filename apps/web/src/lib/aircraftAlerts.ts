@@ -46,7 +46,7 @@ export interface Watched {
 }
 
 /** An alert as it went off: the banner's words and the voice's. */
-export interface FiredAlert {
+interface FiredAlert {
   id: string;
   hex: string;
   name: string;

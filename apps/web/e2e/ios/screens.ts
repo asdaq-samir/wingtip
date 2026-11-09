@@ -2,7 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import { consolePage, controlsInSight, openNavLog, grabberTo, openConsole, openProfile, openPanel, openSection, openSetup, openTab, settle, showTabs, sideDrawer, slow, stripShows } from "../helpers";
 
 /** One state of the app as a pilot sees it, reached from a fresh page. */
-export type Screen = { name: string; ready: (page: Page) => Promise<void> };
+type Screen = { name: string; ready: (page: Page) => Promise<void> };
 
 const ROUTE = "dep=C81&dest=KDLH";
 

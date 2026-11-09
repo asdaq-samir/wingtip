@@ -21,8 +21,8 @@ import { listTitle } from "./procedures/procedureWords";
 
 // The list's types and its Routes row, where PlanWorkspace and the
 // routePanel chunk import them from.
-export type { FitInputs, ProcedureAirport, ProcedureKind, ProceduresAt, RouteListEdit } from "../hooks/useProceduresRoute";
-export { RouteLine, type RouteLineChoices } from "./procedures/RouteLine";
+export type { FitInputs, ProcedureAirport, ProceduresAt } from "../hooks/useProceduresRoute";
+export { RouteLine } from "./procedures/RouteLine";
 
 // Opened only from a point's menu, so fetched as one first is: in the
 // first load they took it over its 1.10 MB budget (CI, 2026-10-20).

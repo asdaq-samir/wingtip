@@ -15,7 +15,7 @@ import { callEngine } from "./engine/engine";
  */
 export type AircraftKind = "high" | "low" | "twin" | "jet" | "helicopter" | "glider" | "balloon";
 
-export interface KindClues {
+interface KindClues {
   /** ICAO type designator, as ADS-B and the kept airplane carry it. */
   type?: string | null;
   /** The transponder's emitter category ("A1" … "B2"). */

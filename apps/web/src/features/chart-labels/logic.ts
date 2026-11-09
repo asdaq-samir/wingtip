@@ -2,9 +2,9 @@ import { isEndpoint, type Point, type Rating, type Role, type Source } from "../
 import { compassPoint } from "../../lib/compass";
 import { normalizeDeg } from "../../lib/geo";
 import { SCORE_STEPS } from "../../lib/scoreScale";
-import { DEFAULT_FILTERS, FILTER_KEYS, type FilterKey, type Filters } from "../../lib/pointFilters";
+import { DEFAULT_FILTERS, type FilterKey, type Filters } from "../../lib/pointFilters";
 
-export { compassPoint, DEFAULT_FILTERS, FILTER_KEYS, type FilterKey, type Filters };
+export { compassPoint, DEFAULT_FILTERS, type FilterKey, type Filters };
 
 /**
  * The decisions the training workspace makes, with no map and no document in

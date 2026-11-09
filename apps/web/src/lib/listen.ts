@@ -20,9 +20,9 @@
 
 /** A transmission heard so far (`id` the same until it ends), and
  *  whether the recognizer has settled on it. */
-export type OnHeard = (id: number, text: string, final: boolean) => void;
+type OnHeard = (id: number, text: string, final: boolean) => void;
 /** Listening has ended: stopped, or (`error`) refused or failed. */
-export type OnEnded = (error?: string) => void;
+type OnEnded = (error?: string) => void;
 
 /** The browser's recognizer, where it has one; Safari's and Chrome's are
  *  still prefixed. Only what is used here. */
@@ -102,7 +102,7 @@ function errorWords(code: string): string {
 
 /** A listening, ended by `stop`; `renew` starts the browser's recognizer
  *  afresh, as it is after a pause, to take another input (`track`). */
-export interface Listening {
+interface Listening {
   stop: () => void;
   renew: () => void;
 }

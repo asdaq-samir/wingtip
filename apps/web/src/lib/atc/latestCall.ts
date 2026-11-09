@@ -8,7 +8,7 @@ import { create } from "zustand";
  * reminder of the last altitude, heading and frequency given. Kept while
  * the page is; nothing is sent or saved.
  */
-export interface LatestAtcCall {
+interface LatestAtcCall {
   /** The call's one line ("Descend 3,000 ft · Left heading 270"), null
    *  before the first. */
   line: string | null;

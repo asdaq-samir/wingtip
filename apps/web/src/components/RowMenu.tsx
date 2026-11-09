@@ -6,7 +6,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
 /** One of a row's actions: Share, Clear, Delete… */
-export interface RowAction {
+interface RowAction {
   label: string;
   icon: ReactNode;
   onSelect: () => void;

@@ -64,7 +64,7 @@ function bareStorage<T>(): PersistStorage<{ value: T }> {
   };
 }
 
-export type KeptStore<T> = UseBoundStore<StoreApi<{ value: T }>>;
+type KeptStore<T> = UseBoundStore<StoreApi<{ value: T }>>;
 const stores = new Map<string, KeptStore<unknown>>();
 
 /** The store of what is kept under `name`, `fallback` where nothing is or

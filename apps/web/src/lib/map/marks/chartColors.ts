@@ -34,7 +34,7 @@ export const MAP_BLUE = CHART.mapBlue;
  *  data-brand), read where a colour is made outside a render: a canvas,
  *  a marker's html. A component asks lib/brand's useInkLook instead, so
  *  it draws again as the look changes. */
-export function isInkLook(): boolean {
+function isInkLook(): boolean {
   return typeof document !== "undefined" && document.documentElement.dataset.brand === "ink";
 }
 

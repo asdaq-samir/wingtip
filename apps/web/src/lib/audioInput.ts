@@ -34,14 +34,14 @@ import { noMicrophone, takesTrack } from "./listen";
 import { usePreferences } from "./preferences";
 
 /** One input, as enumerateDevices lists it once the page may see names. */
-export interface Input {
+interface Input {
   id: string;
   label: string;
   outside: boolean;
 }
 
 /** An input chosen, as preferences keep it: by id, then by name. */
-export interface InputChoice {
+interface InputChoice {
   id: string;
   label: string;
 }
@@ -143,7 +143,7 @@ export function heldTrack(): MediaStreamTrack | null {
 }
 
 /** Called each time a new track is held; returns its unsubscribe. */
-export function onSwitch(fn: () => void): () => void {
+function onSwitch(fn: () => void): () => void {
   switched.add(fn);
   return () => { switched.delete(fn); };
 }
@@ -164,7 +164,7 @@ export function hold(): () => void {
 }
 
 /** The input the pilot chose, as preferences keep it. */
-export function remembered(): InputChoice | null {
+function remembered(): InputChoice | null {
   try {
     return usePreferences.getState().listenInput ?? null;
   } catch {
@@ -417,7 +417,7 @@ function watch() {
  * and a second after listening starts (lib/atcListening), as starting
  * Safari's recognizer may move the route itself.
  */
-export function publish() {
+function publish() {
   const h = held;
   if (!h) {
     // An outside input wanted and not had, nothing in its place: the
@@ -525,7 +525,7 @@ function letGo() {
 }
 
 /** A listening session's hold on the input, for lib/listen. */
-export interface ListeningHold {
+interface ListeningHold {
   /** The held track, read at each start of the recognizer. */
   track: () => MediaStreamTrack | null;
   /** Starts the recognizer afresh when another input is held, where it

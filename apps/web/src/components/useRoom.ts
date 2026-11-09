@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 
 /** An element's room: its content box's width and the CSS font it is set
  *  in ("600 17px Inter Variable"), for words to be measured against it
- *  (lib/textWidth) and cut or rounded to fit -- again whenever its width
+ *  and cut or rounded to fit -- again whenever its width
  *  changes, and once the page's font has loaded. Null until it is in the
  *  page.
  *

@@ -160,7 +160,7 @@ export default function PastFlights({ hex, onOpen, nowShown = false, untitled = 
 
 /** One end of a flight, as FlightAware's list sets it: the field's ident
  *  large, its town under it, and when. */
-export interface FlightEnd {
+interface FlightEnd {
   ident: string;
   place?: string | null;
   when?: string | null;
@@ -172,7 +172,7 @@ export interface FlightEnd {
  * owner's ask, with FlightAware's list as the example: the airplane's
  * past flights on an airplane's card, and a past flight's own card.
  */
-export function FlightEnds({ from, to, local = false, testIds }: {
+function FlightEnds({ from, to, local = false, testIds }: {
   from: FlightEnd;
   to: FlightEnd;
   local?: boolean;

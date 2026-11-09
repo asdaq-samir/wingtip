@@ -65,7 +65,7 @@ function AirspaceTile({ airport, detail, onClick }: { airport: RecentAirport; de
  *  airports' here, and the Aircraft card's own (AircraftCard). */
 /** A strip's tile: its round mark over its name, a detail under it --
  *  Favorites' places. */
-export function PlaceTile({ icon, className, style, title, label, detail, tinted, onClick, disabled, testId }: {
+function PlaceTile({ icon, className, style, title, label, detail, tinted, onClick, disabled, testId }: {
   icon: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -132,7 +132,7 @@ export function PlaneMark({ trackDeg, emergency = false, small = false, kind }: 
 }
 
 /** An airplane's shape alone, sized by its container's svg rule. */
-export function KindGlyph({ kind }: { kind: AircraftKind }) {
+function KindGlyph({ kind }: { kind: AircraftKind }) {
   return (
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <KindShapes kind={kind} strokeWidth={1.5} />
@@ -420,7 +420,7 @@ export function StripSection<V extends string>({ lists, shows, onShow, menuTestI
 
 /** One of the lists a strip can show (StripSection): its name -- the
  *  heading's title and its item in the menu -- and the way to it in full. */
-export interface StripList<V extends string> {
+interface StripList<V extends string> {
   value: V;
   label: string;
   /** Its item in the menu, where that says more ("Inbound…"). */
@@ -438,7 +438,7 @@ export interface StripList<V extends string> {
 /** What a strip shows, a menu behind iOS's filter glyph at its heading's
  *  right, as Mail's filter is, a line after any item `apart` says so
  *  (StripSection). */
-export function PillMenu<V extends string>({ label, value, options, onChange, testId, className, top }: {
+function PillMenu<V extends string>({ label, value, options, onChange, testId, className, top }: {
   /** Its name, to a screen reader and a long press: what it shows now. */
   label: string;
   value: V;

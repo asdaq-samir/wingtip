@@ -27,7 +27,7 @@ export interface Card {
   light?: { colors: Light[]; flashing: boolean };
 }
 
-export interface Deck {
+interface Deck {
   key: DeckKey;
   title: string;
   /** Where the words come from, and where to read them. */

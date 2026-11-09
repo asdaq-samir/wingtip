@@ -39,7 +39,7 @@ function verticalSpeed(): number {
   return ((last.altitudeFt! - first.altitudeFt!) / (last.at - first.at)) * 60_000;
 }
 
-export interface AheadAsk {
+interface AheadAsk {
   lat: number;
   lon: number;
   track: number;

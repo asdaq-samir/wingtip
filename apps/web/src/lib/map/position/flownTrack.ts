@@ -7,7 +7,7 @@ import { create } from "zustand";
  * the pilot hides it (FlownTrackButton). Not kept past the page: the
  * track itself is kept with the flight.
  */
-export interface FlownTrack {
+interface FlownTrack {
   flightId: number;
   /** The flight, as its page names it: "C81 → KUGN". */
   title: string;

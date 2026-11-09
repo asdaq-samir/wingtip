@@ -83,7 +83,7 @@ export function departureOf(value: string | null | undefined): string {
 /** A present position's name in the route, at the owner's ask ("Let's
  *  call current position as POS0"): short as an ident is, where its
  *  coordinates filled the route's box and FPL's line. */
-export const POSITION_NAME = "POS0";
+const POSITION_NAME = "POS0";
 
 /** The pilot's own points in the route now -- one off a fix (frdOf), made
  *  by a long press on the map or Create a fix -- by the name each goes by,

@@ -95,7 +95,7 @@ let nextId = 1;
  * logged: a date the logbook has none for says nothing, rather than
  * "not current".
  */
-export function currencyWords(c: Currency, today: string): string[] {
+function currencyWords(c: Currency, today: string): string[] {
   const current = (until: string | null) => until !== null && until >= today;
   const out: string[] = [];
   if (c.dayPassengersUntil !== null) out.push(current(c.dayPassengersUntil) ? `Day passengers current through ${c.dayPassengersUntil}` : "Day passengers not current");
@@ -114,7 +114,7 @@ export function currencyWords(c: Currency, today: string): string[] {
 
 /** The route as the chip's words compare a change against it: the plan
  *  on screen (lib/briefPlan) as the change arrived. */
-export interface RouteNow {
+interface RouteNow {
   dep: string;
   dest: string;
   stops: string[];

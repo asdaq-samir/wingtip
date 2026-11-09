@@ -33,7 +33,7 @@ export interface Segment {
   minimumFt: number | null;
 }
 
-export interface Clearance {
+interface Clearance {
   assignedFt: number | null;
   expectedFt: number | null;
   /** The segment the expected altitude applies from ("expect 6,000 ten
@@ -42,7 +42,7 @@ export interface Clearance {
   expectedFrom: number;
 }
 
-export type Because = "assigned" | "minimum" | "expected";
+type Because = "assigned" | "minimum" | "expected";
 
 /** 91.185(c)(2): on each segment, the highest of the altitude assigned,
  *  the minimum for IFR operations, and the altitude ATC said to expect --

@@ -33,7 +33,7 @@ import { DRY_RUN, usePastFlight } from "../map/pastFlight";
  */
 
 /** How long under flying speed before the airplane is on the ground. */
-export const GROUND_MS = 60_000;
+const GROUND_MS = 60_000;
 
 export function useFlyingMode({ routed, setPanel, nearest, direct }: {
   /** There is a route to fly: nothing to show without one. */

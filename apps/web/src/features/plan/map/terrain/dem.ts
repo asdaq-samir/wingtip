@@ -18,7 +18,7 @@ export const HILLSHADE = "terrain-hillshade";
 /** The pilot's-eye view's colours on the ground (PilotCamera). */
 export const SV_TINT = "terrain-sv";
 /** The finest terrain tile asked for (the planner serves to 12). */
-export const DEM_MAX_ZOOM = 11;
+const DEM_MAX_ZOOM = 11;
 export const EXAGGERATION = 1;
 /** As far as the map tilts in 3D. */
 export const MAX_PITCH = 75;

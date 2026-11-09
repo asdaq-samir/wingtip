@@ -6,7 +6,7 @@ import { useSheetDrag } from "./useSheetDrag";
 
 /** A settle's curve: iOS's ease-out (feedback: no spring). Its time is
  *  engine's settleSeconds: 0.3 s from the pill to half, one size a throw. */
-export const CURVE = "cubic-bezier(0, 0, 0.58, 1)";
+const CURVE = "cubic-bezier(0, 0, 0.58, 1)";
 
 /** What a phone's sheet says as it sets off for another size, on its
  *  "sheetturn" event: the room it will leave the map (GlMapShell). */

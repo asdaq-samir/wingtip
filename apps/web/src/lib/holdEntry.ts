@@ -55,7 +55,7 @@ export function approachRelative(inboundDeg: number, headingDeg: number): number
   return callEngine("holding", { inbound: inboundDeg, heading: headingDeg }).approach_relative;
 }
 
-export interface HoldingWind {
+interface HoldingWind {
   /** The inbound leg's time, minutes: 1, or 1.5 above 14,000 ft MSL. */
   legMin: number;
   inbound: Leg;

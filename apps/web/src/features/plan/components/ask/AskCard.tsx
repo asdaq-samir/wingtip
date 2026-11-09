@@ -23,7 +23,7 @@ const load = () => import("../../../../lib/atcListening").then(m => (listening =
  *  lined up, the tool in use as a passing line while it is, the changes
  *  it proposes as filled chips to tap (useAsk's apply), then the reports
  *  it rests on (SourceChips), and what went wrong in its place. */
-export function Turn({ turn }: { turn: AskTurn }) {
+function Turn({ turn }: { turn: AskTurn }) {
   // A chip applies only where there is a plan to change (PlanWorkspace).
   const canApply = useAsk(s => s.applyChange !== null);
   return (

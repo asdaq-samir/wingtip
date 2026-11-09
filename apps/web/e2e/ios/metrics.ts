@@ -17,7 +17,7 @@ import type { Page } from "@playwright/test";
  */
 
 /** What a finger can tap. */
-export const TAPPABLE = [
+const TAPPABLE = [
   "a[href]", "button", "input:not([type=hidden])", "select", "textarea", "summary",
   "[role=button]", "[role=tab]", "[role=checkbox]", "[role=radio]", "[role=switch]",
   "[role=menuitem]", "[role=option]", "[role=slider]", "[tabindex='0']",
@@ -30,14 +30,14 @@ export const TAPPABLE = [
  *  control's segments keep iOS's own 32-point track. */
 // The map panel's grabber is the mark of where to drag, as iOS's is: the
 // whole head drags, and tapping it is a keyboard's and VoiceOver's way.
-export const HIT_EXEMPT = [".maplibregl-marker", "[data-slot=tabs-trigger]", "[data-testid=sidebar-trigger-button]"].join(", ");
+const HIT_EXEMPT = [".maplibregl-marker", "[data-slot=tabs-trigger]", "[data-testid=sidebar-trigger-button]"].join(", ");
 
 /** P3's: a marker's number or ident, centred in its dot or chip as a
  *  glyph is (icons.ts), not a line of text. */
-export const LEADING_EXEMPT = ".maplibregl-marker";
+const LEADING_EXEMPT = ".maplibregl-marker";
 
 /** iOS's text styles at the default text size: size → leading. */
-export const IOS_TYPE: Record<number, number> = {
+const IOS_TYPE: Record<number, number> = {
   11: 13, 12: 16, 13: 18, 15: 20, 16: 21, 17: 22, 20: 25, 22: 28, 28: 34, 34: 41,
 };
 
@@ -71,7 +71,7 @@ export async function quiet(page: Page) {
   await page.locator("[data-sonner-toast]").first().waitFor({ state: "detached", timeout: 20000 }).catch(() => undefined);
 }
 
-export type HitMiss = { control: string; box: string; lost: number; by: string };
+type HitMiss = { control: string; box: string; lost: number; by: string };
 
 /** P1: every control whose 44 × 44 square, centred on it, is not wholly
  *  its own, by nine elementFromPoint probes. That sees a pseudo-element
@@ -161,7 +161,7 @@ export function hitAreaMisses(page: Page, scope = "body", size = 44): Promise<Hi
   }, { scope, size, tappable: TAPPABLE, exempt: HIT_EXEMPT });
 }
 
-export type TypeFinding = {
+type TypeFinding = {
   size: number; leading: number | null; want: number | null; where: string; text: string; count: number;
   face?: string;
 };
@@ -223,7 +223,7 @@ export function typeFindings(page: Page, scope = "body"): Promise<{ offScale: Ty
   }, { scope, type: IOS_TYPE, glyphs: LEADING_EXEMPT });
 }
 
-export type RoleFinding = { role: string; text: string; where: string };
+type RoleFinding = { role: string; text: string; where: string };
 
 /** P17: reading text -- a paragraph or a list item at the prose size, 15
  *  to a finger -- and headings in the text's own colour, never in the
@@ -266,7 +266,7 @@ export function roleFindings(page: Page, scope = "body"): Promise<RoleFinding[]>
   }, scope);
 }
 
-export type ComponentFinding = { rule: string; what: string; measured: string };
+type ComponentFinding = { rule: string; what: string; measured: string };
 
 /** P18: the same component at the same size wherever it is -- what the
  *  pilot found differing from one surface to the next, which no check of
@@ -419,7 +419,7 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
   });
 }
 
-export type ContrastFinding = { text: string; ratio: number; need: number; where: string };
+type ContrastFinding = { text: string; ratio: number; need: number; where: string };
 
 /** P15: every visible word at WCAG's contrast against what is actually
  *  behind it -- 4.5:1, or 3:1 for large type (24, or 18.66 bold) -- in
@@ -565,7 +565,7 @@ export async function emulateSafeArea(page: Page, insets: Insets) {
   }, insets);
 }
 
-export type InsetFinding = { control: string; box: string };
+type InsetFinding = { control: string; box: string };
 
 /** P12: controls pinned to the screen that reach into an inset. Pinned:
  *  in a fixed or sticky box with no scroll container between (content
@@ -602,7 +602,7 @@ export function outsideSafeArea(page: Page, insets: Insets): Promise<InsetFindin
   }, { insets, tappable: TAPPABLE });
 }
 
-export type KeyboardFinding = { field: string; missing: string };
+type KeyboardFinding = { field: string; missing: string };
 
 /** P19: every field a finger types in says what its keyboard is for, as
  *  iOS's text fields do (HIG, "Text fields"): an `enterkeyhint`, so the

@@ -67,7 +67,7 @@ export async function detailOf(response: Response): Promise<string> {
  *  phone's https address -- a response has no status text at all, and a
  *  502 from the gateway with an empty body read "request failed" on the
  *  map (the owner's screen recording, 2026-10-28). */
-export function statusWords(status: number): string {
+function statusWords(status: number): string {
   if (status === 401) return "Signed out";
   if (status === 403) return "Not allowed";
   if (status === 404) return "Not found";

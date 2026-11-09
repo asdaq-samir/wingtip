@@ -242,9 +242,6 @@ export const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", fea
  *  `inset` px each way kept as drawn. */
 export interface Stretch { inset: number }
 
-/** The images each map has, or is drawing, by id. */
-const images = new WeakMap<MlMap, Map<string, Promise<void>>>();
-
 /** A picture ready for addImage: drawn, and its density and stretch. */
 export interface DrawnImage {
   image: HTMLImageElement;
@@ -277,29 +274,4 @@ export function drawSvg(svg: string, stretch?: Stretch): Promise<DrawnImage | nu
     image.onerror = () => resolve(null);
     image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(sized)}`;
   });
-}
-
-/**
- * The marks' pictures from their own SVG markup -- the same markup the
- * HTML markers and the lists draw (airportMark, icons) -- drawn
- * once each at the screen's density and given to the map by id, for a
- * symbol layer's `icon-image`. Settles once every one is in, so a layer
- * gives its features after their pictures (a feature drawn before its
- * picture is in is left without it until its tile is laid out again).
- */
-export function addSvgImages(map: MlMap, wanted: Iterable<[id: string, svg: () => string, stretch?: Stretch]>): Promise<void> {
-  let kept = images.get(map);
-  if (!kept) images.set(map, kept = new Map());
-  const waits: Promise<void>[] = [];
-  for (const [id, svg, stretch] of wanted) {
-    let wait = kept.get(id);
-    if (!wait) {
-      wait = drawSvg(svg(), stretch).then(drawn => {
-        if (drawn && map.style && !map.hasImage(id)) map.addImage(id, drawn.image, drawn.options);
-      });
-      kept.set(id, wait);
-    }
-    waits.push(wait);
-  }
-  return Promise.all(waits).then(() => {});
 }
