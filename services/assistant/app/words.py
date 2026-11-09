@@ -30,6 +30,7 @@ import anthropic
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel, Field
 
+from . import tracing
 from .generated import planner_client as planner
 from .generated.planner_models import WordsSources
 from .gateway import gateway
@@ -146,11 +147,13 @@ def _said(material: str, output: type[WordsSaid]) -> WordsSaid:
     """One call, answered by filling in `output`'s fields, so what comes
     back is data and not prose to parse; what it filled in."""
     try:
-        response = anthropic.Anthropic().messages.parse(
-            model=WORDS_MODEL, max_tokens=WORDS_MAX_TOKENS, system=SYSTEM,
-            messages=[{"role": "user", "content": material}],
-            output_format=output, output_config={"effort": WORDS_EFFORT},
-        )
+        with tracing.claude_call("words", WORDS_MODEL) as used:
+            response = anthropic.Anthropic().messages.parse(
+                model=WORDS_MODEL, max_tokens=WORDS_MAX_TOKENS, system=SYSTEM,
+                messages=[{"role": "user", "content": material}],
+                output_format=output, output_config={"effort": WORDS_EFFORT},
+            )
+            used.add(response)
     except anthropic.AnthropicError as err:
         # No key, a refused one, no network, a limit: the briefer is out,
         # whichever it was, and the answer says which.

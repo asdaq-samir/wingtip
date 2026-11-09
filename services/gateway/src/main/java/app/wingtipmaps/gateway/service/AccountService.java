@@ -3,6 +3,7 @@ package app.wingtipmaps.gateway.service;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
+import app.wingtipmaps.gateway.tracing.TraceHeaders;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -12,6 +13,7 @@ import java.time.Duration;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.Session;
@@ -58,6 +60,8 @@ public class AccountService {
     private final AppleRevocation apple;
     private final String plannerBaseUrl;
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    /** The trace's and the page's headers on the planner's request (TraceHeaders). */
+    private TraceHeaders traceHeaders = TraceHeaders.NONE;
 
     public AccountService(PilotRepository pilots, MagicLinkRepository magicLinks,
             FindByIndexNameSessionRepository<? extends Session> sessions, TransactionTemplate transaction,
@@ -69,6 +73,11 @@ public class AccountService {
         this.transaction = transaction;
         this.apple = apple;
         this.plannerBaseUrl = plannerBaseUrl.replaceAll("/+$", "");
+    }
+
+    @Autowired(required = false)
+    void setTraceHeaders(TraceHeaders traceHeaders) {
+        this.traceHeaders = traceHeaders;
     }
 
     /**
@@ -108,7 +117,7 @@ public class AccountService {
                 .timeout(Duration.ofSeconds(15))
                 .build();
         try {
-            HttpResponse<Void> response = http.send(request, HttpResponse.BodyHandlers.discarding());
+            HttpResponse<Void> response = http.send(traceHeaders.traced(request), HttpResponse.BodyHandlers.discarding());
             if (response.statusCode() != 200) {
                 throw new AccountNotDeletedException("the planner answered " + response.statusCode());
             }

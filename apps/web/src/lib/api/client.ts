@@ -3,6 +3,7 @@ import type { paths } from "./schema";
 import type { paths as AssistantPaths } from "./assistant-schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
+import { REQUEST_ID_HEADER, newRequestId } from "./requestId";
 import type { AirportAtis, AirportRvr, CopilotAround, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses } from "./types";
 import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, IcingForecast, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, Obstacles, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces, EmergencyFields, DepartureWindow, DepartureWindowAsk, DueItem, DueItemRequest, Paperwork, LogbookDraft, LogbookDraftAsk } from "./types";
 
@@ -83,10 +84,12 @@ export async function failIfNotOk(response: Response): Promise<void> {
   if (!response.ok) throw new ApiError(await detailOf(response), response.status);
 }
 
-/** The two rules above, for an openapi-fetch client. */
+/** The two rules above, for an openapi-fetch client, and each call's
+ *  request id (./requestId). */
 const csrfAndFailures: Middleware = {
   onRequest({ request }) {
     for (const [name, value] of Object.entries(csrfHeaders(request.method))) request.headers.set(name, value);
+    request.headers.set(REQUEST_ID_HEADER, newRequestId());
     return request;
   },
   async onResponse({ request, response }) {

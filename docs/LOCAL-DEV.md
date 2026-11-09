@@ -187,13 +187,57 @@ docker compose create retrain charts charts-overlays charts-next
 | `docker compose run --rm charts pack` | A cycle's loose tiles into archives (a cycle drawn before archives) |
 | `docker compose run --rm charts-next` | Stage the FAA's next cycle before its date |
 | `docker compose up ml` | Jupyter, for the notebooks ([DATA.md](DATA.md#notebooks)) |
-| `TRACING=true docker compose --profile tracing up -d jaeger gateway planner` | Traces in Jaeger |
+| `TRACING=1 docker compose --profile tracing up -d` | Traces in Jaeger ([Tracing](#tracing), below) |
 
 The planner starts the charts jobs by itself when a cycle is due, inside
 `CHARTS_REFRESH_WINDOW` (01:00 to 06:00 by default); `CHARTS_AUTO_REFRESH=0`
 and `CHARTS_CYCLE_AUTO=0` turn that off. The training run writes each
 stage to `data/models/run.json`, which the console follows; one run at a
 time. [services/jobs/README.md](../services/jobs/README.md) has the rest.
+
+## Tracing
+
+One request can be followed end to end in Jaeger: the page's call, the
+gateway, the planner, every rule it asks of the engine, every weather
+product it reads and every source it fetches, and the assistant's
+Claude calls. It is off unless asked for, and costs nothing off: no
+service makes a span or imports OpenTelemetry, and nothing is sent.
+Production sets none of it (`infra/docker-compose.prod.yml`).
+
+Turn it on for the stack and open Jaeger:
+
+```sh
+TRACING=1 docker compose --profile tracing up -d   # jaeger, and the services again with tracing on
+open http://localhost:16686                        # Jaeger's UI
+```
+
+`TRACING` must be unset, not `0`, to turn it off again (compose can only
+tell set from unset), then `docker compose up -d` brings the services
+back without it.
+
+What each service sends, over OTLP/HTTP to `jaeger:4318` on the compose
+network:
+
+| Service | Spans | Set up in |
+|---|---|---|
+| gateway | each request (Micrometer Tracing), tagged `wingtip.request_id`; the `traceparent` and `X-Request-Id` on every call to the planner and the assistant | `management.tracing` in application.yml, `gateway/tracing/` |
+| planner | each request (FastAPI) under the gateway's; each rule asked of the engine, `engine <rule>` with `wingtip.engine.rule` and no payload; each weather product read, `weather_store.read`; each source asked with requests; threads and pools kept in the trace | `app/tracing.py` over `wingtip/tracing.py` |
+| assistant | each request (FastAPI); each Claude call, `chat <model>` with `wingtip.feature`, `gen_ai.request.model` and the tokens used (`gen_ai.usage.*`), never the prompt or the answer; the planner calls (requests) and Anthropic's API (httpx) | `app/tracing.py` |
+| weather | each product's fetch, `fetch <product>`, a trace of its own, the sources under it | `wingtip/tracing.py` |
+| ingest | each round of following airplanes, `follow round`, with its adsb.fi asks | `wingtip/tracing.py` |
+
+Each call the web app makes carries an `X-Request-Id` (`lib/api/requestId.ts`);
+the gateway answers with it and writes it on the request's log lines. In
+Jaeger, search the gateway's service with the tag
+`wingtip.request_id=<id>` to find the trace of a call the page made (the
+browser's network panel shows the id). With tracing on, every log line
+written inside a span says its trace: the gateway's as `[trace,span,request id]`
+after the level, the Python services' as `trace_id=… span_id=…` at the end.
+
+The engine's spans are made only inside a request's or a fetch's, so the
+planner's start-up and its background work make no traces of their own,
+and the containers' health checks (the gateway's `/actuator`, the Python
+services' `GET /`) are left out, so they do not bury the requests.
 
 ## The developer scripts
 

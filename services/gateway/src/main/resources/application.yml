@@ -103,11 +103,19 @@ server:
     mime-types: text/html,text/css,text/javascript,application/javascript,application/json,image/svg+xml,application/wasm
     min-response-size: 1024
 
+logging:
+  pattern:
+    # Each line of a request carries its trace and span (where tracing is
+    # on) and the page's request id (RequestIdFilter), so a log line
+    # leads to its trace in Jaeger and a trace back to its lines.
+    correlation: "[%X{traceId:-},%X{spanId:-},%X{requestId:-}] "
+
 management:
   # Traces (Micrometer's OpenTelemetry bridge) only where they are asked
-  # for: docker-compose's tracing profile sets MANAGEMENT_TRACING_ENABLED
-  # and the OTLP endpoint (Jaeger's). On, each request is a span and the
-  # planner's spans go under it (StreamingProxy passes the context on).
+  # for: docker-compose sets MANAGEMENT_TRACING_ENABLED from TRACING and
+  # the OTLP endpoint (Jaeger's). On, each request is a span, and the
+  # planner's and the assistant's spans go under it (TraceHeaders passes
+  # the context on); off, no span is made and nothing is sent.
   tracing:
     enabled: false
   opentelemetry:

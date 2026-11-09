@@ -303,7 +303,8 @@ services:
       # adsb.lol turns the planner away (wingtip.traffic): off without it.
       ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
       # Traces to Jaeger, with the tracing profile up and TRACING=1 (see
-      # the jaeger service below); unset, the planner sends none.
+      # the jaeger service below); unset, the planner sends none and loads
+      # none of OpenTelemetry (app.tracing, wingtip.tracing).
       OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
       OTEL_SERVICE_NAME: planner
     healthcheck:
@@ -360,6 +361,10 @@ services:
       SWIM_QUEUE_ITWS: ${SWIM_QUEUE_ITWS:-}
       SWIM_VPN_SFDPS: ${SWIM_VPN_SFDPS:-}
       SWIM_QUEUE_SFDPS: ${SWIM_QUEUE_SFDPS:-}
+      # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
+      # it sends none and loads none of OpenTelemetry (wingtip.tracing).
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      OTEL_SERVICE_NAME: ingest
     healthcheck:
       <<: *python-healthcheck
       # Its beat in the live store, written every ten seconds (ingest.health),
@@ -401,6 +406,10 @@ services:
       # declares them; unset, its defaults.
       ASSISTANT_MODEL: ${ASSISTANT_MODEL:-claude-opus-5-5}
       ASSISTANT_FALLBACKS: ${ASSISTANT_FALLBACKS:-0}
+      # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
+      # it sends none and loads none of OpenTelemetry (app.tracing).
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      OTEL_SERVICE_NAME: assistant
     healthcheck:
       <<: *python-healthcheck
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
@@ -427,6 +436,10 @@ services:
     environment:
       # Its own code first, then the planner's folder for wingtip.
       PYTHONPATH: /workspace/services/weather:/workspace/services/planner
+      # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
+      # it sends none and loads none of OpenTelemetry (wingtip.tracing).
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      OTEL_SERVICE_NAME: weather
     # Python, the engine, and a GLMP issue's two grids at their largest
     # while it reads them: well under this, which keeps it from crowding
     # the planner (infra/docker-compose.prod.yml has the same).
@@ -639,13 +652,17 @@ services:
     command: ["npx", "--no-install", "vite", "build", "--watch"]
     restart: unless-stopped
 
-  # Traces of a request from the gateway down through the planner to every
-  # source it asks (aviationweather.gov, the FAA, the USGS),
-  # in Jaeger's UI on http://localhost:16686:
+  # Traces of a request from the page's call through the gateway, the
+  # planner (each engine rule, each weather product read, each source
+  # asked) and the assistant (each Claude call, with its model and
+  # tokens), and of the weather service's fetches and ingest's rounds, in
+  # Jaeger's UI on http://localhost:16686 (docs/LOCAL-DEV.md, "Tracing"):
   #
-  #   TRACING=true docker compose --profile tracing up -d jaeger gateway planner
+  #   TRACING=1 docker compose --profile tracing up -d
   #
-  # Without TRACING neither service sends a span.
+  # Without TRACING no service makes a span or sends one. The services
+  # send OTLP over HTTP to jaeger:4318 on the compose network; only the
+  # UI is published, on loopback.
   jaeger:
     profiles: ["tracing"]
     image: jaegertracing/jaeger:2.11.0@sha256:b585df1b6299bbbd16bf7c679da30389349736e4b6bc8f4f500142a75bf26ca8
