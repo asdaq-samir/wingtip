@@ -197,3 +197,39 @@ def test_a_ceiling_of_unknown_height_is_not_checked(stubbed):
     items = by_key(client.post("/api/go-no-go", json=ask()).json())
     assert items["weather"]["finding"] == "caution"
     assert items["weather"]["detail"] == "Not checked: the ceiling at C81"
+
+
+def test_what_swim_says_now_at_the_routes_airports_is_said_as_on_the_web(stubbed, tmp_path, monkeypatch):
+    """An ITWS alert at KDLH is a caution with its source; a ground stop
+    there is one under IFR only; an area SFDPS says is active now is said
+    so (app.gonogo.live, the web's lib/liveReports)."""
+    import time
+
+    from wingtip import live_reports
+
+    monkeypatch.setattr(live_reports, "STORE", tmp_path / "reports.sqlite")
+    live_reports.reset()
+    now = time.time()
+    try:
+        live_reports.put("flow", "DLH:ground stop", {"airport": "DLH", "program": "ground stop", "ends": None},
+                         place="DLH", ends=now + 3600)
+        items = by_key(client.post("/api/go-no-go", json=ask()).json())
+        assert items["weather"]["finding"] == "ok"
+        # No alternate needed, so the weather's own finding stands.
+        monkeypatch.setattr(gonogo, "alternate_for", lambda dest, eta, tas, filed: {"destination": {"required": False}, "alternate": None})
+        items = by_key(client.post("/api/go-no-go", json=ask(rules="ifr")).json())
+        assert (items["weather"]["finding"], items["weather"]["detail"]) == ("caution", "Ground stop at DLH (FAA Command Center)")
+        alert = {"alert": "wind shear", "words": "Runway 27 arrival wind shear alert 25 kt, runway"}
+        live_reports.put("itws", "DLH:9840", {"airport": "DLH", "product": "9840", "name": "Configured Alerts Product",
+                                              "alerts": [alert]}, place="DLH", ends=now + 120)
+        items = by_key(client.post("/api/go-no-go", json=ask()).json())
+        assert items["weather"] == {**items["weather"], "finding": "caution",
+                                    "detail": "DLH: Runway 27 arrival wind shear alert 25 kt, runway (FAA ITWS, now)"}
+        stubbed["planned"] = gonogo.Planned(nav=nav(selection={"special_use": [
+            {"name": "R-4401A", "along_track_nm": 100.0, "times_of_use": None, "time_zone": None}]}), legs=legs(), totals=totals())
+        live_reports.put("saa", "R4401A", {"designator": "R4401A", "activations": [
+            {"status": "ACTIVE", "active": True, "starts": None, "ends": None}]}, place="R4401A", ends=now + 3600)
+        items = by_key(client.post("/api/go-no-go", json=ask(depart=datetime.now(timezone.utc).isoformat())).json())
+        assert items["airspace"]["detail"] == "R-4401A active now (FAA SFDPS)"
+    finally:
+        live_reports.reset()

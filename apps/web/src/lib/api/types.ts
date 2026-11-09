@@ -165,6 +165,19 @@ export type MapPirep = Schemas["MapPirep"];
 export type StationWind = Schemas["StationWind"];
 /** What is ahead of own ship (wingtip.alerts). */
 export type AlertsAhead = Schemas["AlertsAhead"];
+// What the FAA's SWIM feeds say now (app.routers.live, lib/liveReports).
+export type ItwsAlerts = Schemas["ItwsAlerts"];
+export type ItwsProduct = Schemas["ItwsProduct"];
+export type SaaStatuses = Schemas["SaaStatuses"];
+export type SaaStatus = Schemas["SaaStatus"];
+export type AirportRvr = Schemas["AirportRvr"];
+export type RunwayRvr = Schemas["RunwayRvr"];
+export type AirportAtis = Schemas["AirportAtis"];
+export type DigitalAtis = Schemas["DigitalAtis"];
+export type FlowAtAirports = Schemas["FlowAtAirports"];
+export type FlowProgram = Schemas["FlowProgram"];
+export type DepartureEvents = Schemas["DepartureEvents"];
+export type DepartureEvent = Schemas["DepartureEvent"];
 export type AheadAlert = Schemas["AheadAlert"];
 /** The airplanes ADS-B receivers hear near a point (wingtip.traffic). */
 export type Traffic = Schemas["Traffic"];

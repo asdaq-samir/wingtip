@@ -131,6 +131,39 @@ fn asks_for_another_look_at_hazards_an_area_in_use_a_pilots_own_altitude_and_a_c
 }
 
 #[test]
+fn an_itws_alert_at_the_routes_airports_is_a_caution_saying_its_source() {
+    let mut v = quiet();
+    v.weather.terminal_alerts = strings(&["ATL: Runway 27L arrival microburst alert 40 kt, 3 mile final to runway"]);
+    let item = finding(&v, "weather");
+    assert_eq!((item.finding.as_str(), item.detail.as_str()),
+               ("caution", "ATL: Runway 27L arrival microburst alert 40 kt, 3 mile final to runway (FAA ITWS, now)"));
+    // Under the pilot's own minimums still says so first.
+    v.weather.under_minimums = strings(&["KATL 400 ft"]);
+    assert_eq!(finding(&v, "weather").finding, "stop");
+}
+
+#[test]
+fn a_ground_stop_is_a_caution_under_ifr_and_nothing_under_vfr() {
+    let mut v = quiet();
+    v.weather.flow_programs = strings(&["Ground stop at EWR until 2130Z"]);
+    assert_eq!(finding(&v, "weather").finding, "ok");
+    v.weather.ifr = true;
+    let item = finding(&v, "weather");
+    assert_eq!((item.finding.as_str(), item.detail.as_str()), ("caution", "Ground stop at EWR until 2130Z (FAA Command Center)"));
+}
+
+#[test]
+fn sfdps_saying_an_area_is_active_or_cold_now_comes_before_its_schedule() {
+    let mut v = quiet();
+    v.airspace.special_use = vec![(s("R-4401A"), s("active")), (s("W-136C"), s("active-now"))];
+    assert_eq!(finding(&v, "airspace").detail, "W-136C active now (FAA SFDPS)");
+    v.airspace.special_use = vec![(s("R-4401A"), s("cold-now")), (s("B"), s("not-scheduled"))];
+    let item = finding(&v, "airspace");
+    assert_eq!((item.finding.as_str(), item.detail.as_str()),
+               ("ok", "1 special-use area not scheduled then; 1 special-use area cold now (FAA SFDPS)"));
+}
+
+#[test]
 fn says_what_was_not_worked_out_and_what_is_still_coming() {
     let mut v = quiet();
     v.runways.worked = false;

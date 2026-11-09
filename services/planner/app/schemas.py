@@ -1197,6 +1197,10 @@ class AheadAlert(BaseModel):
     clearance_ft: float | None = None
     times_of_use: str | None = None
     notam_id: str | None = None
+    #: A special-use area's status now as SFDPS has it (wingtip.saa): active
+    #: (True) or cold (False), and until when (UNIX s); None where it has none.
+    sfdps_active: bool | None = None
+    sfdps_until: float | None = None
 
     model_config = ConfigDict(populate_by_name=True)
 

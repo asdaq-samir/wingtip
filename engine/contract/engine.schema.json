@@ -23806,6 +23806,33 @@
                 "null"
               ],
               "description": "The worst the forecast says along the route, in words."
+            },
+            "terminal_alerts": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "ITWS alerts in force now at the route's airports, each in its words with its airport (AIM 4-3-7)."
+            },
+            "flow_programs": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "The Command Center's ground stops and delay programs at the route's airports, in words; a finding under IFR only."
+            },
+            "ifr": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The flight is planned IFR. Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
             }
           }
         },
@@ -23856,7 +23883,7 @@
                   },
                   "when": {
                     "type": "string",
-                    "description": "gonogo_sua_when's answer."
+                    "description": "gonogo_sua_when's answer, or SFDPS's status now: active-now, cold-now."
                   }
                 },
                 "required": [

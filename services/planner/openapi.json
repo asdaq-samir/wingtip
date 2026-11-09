@@ -111,6 +111,28 @@
             "title": "Seconds",
             "type": "number"
           },
+          "sfdps_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sfdps Active"
+          },
+          "sfdps_until": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sfdps Until"
+          },
           "times_of_use": {
             "anyOf": [
               {

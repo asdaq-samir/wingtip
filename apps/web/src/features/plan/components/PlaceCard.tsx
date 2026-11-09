@@ -46,6 +46,7 @@ import { fuelNames } from "../../../lib/stopServices";
 import { airportQuery, photosQuery, servicesQuery } from "../../../lib/queryClient";
 import { StopServices, StopStrip, type SuggestedStop } from "./StopServices";
 import { AtisRows } from "./AtisRows";
+import { DigitalAtisRows, RvrRows } from "./LiveAirportRows";
 import { PhotoSlide } from "../../../components/PictureSlides";
 
 const SketchViewer = lazy(() => import("./SketchViewer"));
@@ -797,6 +798,8 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
             {/* Listen to ATIS: one broadcast heard and read by the engine,
                 the runway in use and the altimeter in one line (AtisRows). */}
             {place && <AtisRows key={ident} />}
+            {/* The tower's D-ATIS, where it sends one on SWIM. */}
+            {place && <DigitalAtisRows ident={place.ident} />}
           </CardTabPanel>
 
           <CardTabPanel value="runways" className="space-y-0">
@@ -814,6 +817,8 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
                   )}
                   {place.runways.length ? place.runways.map((r, i) => <RunwayRow key={`${r.ends}-${i}`} runway={r} />) : <ListRow title="None listed" />}
                 </ListGroup>
+                {/* Each runway's RVR now, where the field reports it. */}
+                <RvrRows ident={place.ident} />
               </div>
             )}
           </CardTabPanel>

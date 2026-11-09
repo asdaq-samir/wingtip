@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from .. import planning as planning_module
 from ..router_basics import load_route
+from ..gonogo import live
 from ..gonogo.frat import assessment as risk_assessment, self_checks
 from ..gonogo.icing import icing_at_altitude, icing_line
 from ..gonogo.minimums import ceiling_unknown_at, under_minimums
@@ -181,10 +182,13 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
 
     tfrs_crossed = [t for t in (briefing or {}).get("tfrs") or [] if t.get("crosses") and tfr_in_force(t)]
     special_use = []
-    for area in selection.get("special_use") or []:
+    areas = selection.get("special_use") or []
+    # SFDPS's word where it holds at the pass, as the web's Brief says it.
+    status_now = live.area_status([area["name"] for area in areas], now=datetime.now(timezone.utc).timestamp())
+    for area in areas:
         at = pass_at(area["along_track_nm"])
-        special_use.append({"name": area["name"],
-                            "when": sua_when(area.get("times_of_use"), at, area.get("time_zone")) if at else "unknown"})
+        scheduled = sua_when(area.get("times_of_use"), at, area.get("time_zone")) if at else "unknown"
+        special_use.append({"name": area["name"], "when": live.live_when(scheduled, status_now.get(area["name"]), at)})
 
     hops = (totals or {}).get("hops") or []
     margins = [m for m in [(totals or {}).get("fuel_margin_gal"), *(h["totals"].get("fuel_margin_gal") for h in hops)] if m is not None]
@@ -239,6 +243,10 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
             "worst": ceiling_and_visibility(briefing["forecast"].get("min_ceiling_ft"), briefing["forecast"].get("min_visibility_sm"))
             if briefing and (briefing["forecast"].get("min_ceiling_ft") is not None
                              or briefing["forecast"].get("min_visibility_sm") is not None) else None,
+            # What SWIM says now at the route's airports (app.gonogo.live).
+            "terminal_alerts": live.itws_lines(landings),
+            "flow_programs": live.program_lines(landings) if ifr else [],
+            "ifr": ifr,
         },
         "airspace": {
             "pending": not briefing and not failed, "unchecked": bool(failed) or unchecked("tfrs"),
