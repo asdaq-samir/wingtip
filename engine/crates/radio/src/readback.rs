@@ -54,7 +54,7 @@ pub fn grouped(n: i64) -> String {
     let digits = n.abs().to_string();
     let mut out = String::new();
     for (i, ch) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i) % 3 == 0 {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
             out.push(',');
         }
         out.push(ch);
@@ -103,7 +103,7 @@ pub fn check(cleared: &Clearance, said: &str) -> Vec<Missed> {
     // figure, "flight level two one zero"); one the reader found counts
     // as what was said. Figures said one after another with no word
     // between are one figure to the tokens, as they are to a recognizer.
-    let has_figure = |text: &str| figures.iter().any(|f| *f == text);
+    let has_figure = |text: &str| figures.contains(&text);
     let bare_ft = |ft: i64| has_figure(&ft.to_string()) || (ft >= 18000 && has_figure(&(ft / 100).to_string()));
     let bare_text = |s: &str| has_figure(s);
     let mut figure_ft = |item: &'static str, cleared_ft: Option<i64>, said_ft: Option<i64>| {
@@ -220,7 +220,7 @@ fn check_instruction(items: &[Said], cleared: &Clearance, said: &str) -> Vec<Mis
     let heard = instruction::read(said);
     let mut out = Vec::new();
     // A heading already in a clearance's route is checked with the route.
-    let in_route = |deg: i64| cleared.route.iter().any(|i| *i == Item::Heading(deg));
+    let in_route = |deg: i64| cleared.route.contains(&Item::Heading(deg));
     let route_places: Vec<String> = cleared.place_runs().iter().map(|s| place_key(s)).collect();
     for item in items {
         match item {
@@ -263,10 +263,8 @@ fn check_instruction(items: &[Said], cleared: &Clearance, said: &str) -> Vec<Mis
                     out.push(missed("direct", place.clone(), None));
                 }
             }
-            Said::Altimeter { inhg } => {
-                if !(back.text(inhg) || back.text(&inhg.replace('.', ""))) {
-                    out.push(missed("altimeter", inhg.clone(), None));
-                }
+            Said::Altimeter { inhg } if !(back.text(inhg) || back.text(&inhg.replace('.', ""))) => {
+                out.push(missed("altimeter", inhg.clone(), None));
             }
             _ => {}
         }
@@ -313,10 +311,10 @@ pub fn check_all(cleared_text: &str, said: &str, tail: Option<&str>) -> Vec<Miss
     let mut out = check(&cleared, said);
     out.extend(check_instruction(&items, &cleared, said));
     out.extend(check_order(&items, said));
-    if let Some(tail) = tail.filter(|t| !t.trim().is_empty()) {
-        if callsign::spans(said, tail).is_empty() {
-            out.push(missed("call sign", tail.trim().to_uppercase(), None));
-        }
+    if let Some(tail) = tail.filter(|t| !t.trim().is_empty())
+        && callsign::spans(said, tail).is_empty()
+    {
+        out.push(missed("call sign", tail.trim().to_uppercase(), None));
     }
     out
 }

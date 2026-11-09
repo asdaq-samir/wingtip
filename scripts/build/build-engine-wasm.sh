@@ -9,7 +9,7 @@
 #   scripts/build/build-engine-wasm.sh
 #
 # In Docker, so the bytes are the same on the owner's Mac and on GitHub's
-# runner: the Rust image pinned by digest (1.89.0, linux/amd64), the
+# runner: the Rust image pinned by digest (1.99.1, linux/amd64), the
 # workspace mounted at the same path, a fresh target directory, and
 # Cargo.lock as committed (--locked). The rustc that builds it is the
 # only thing that makes the code, and the paths it writes into panic
@@ -18,7 +18,7 @@
 # Then Binaryen's wasm-opt -Oz, the stock size pass rustc does not run,
 # pinned to one release by its checksum so its output is the same bytes
 # wherever it runs: every phone downloads the module before the first
-# draw. The features it may use are the ones rustc 1.89 already emits for
+# draw. The features it may use are the ones rustc 1.99 already emits for
 # wasm32-unknown-unknown (its defaults since 1.82 and 1.87), so the
 # optimised module asks no more of a browser than the unoptimised one.
 set -euo pipefail
@@ -27,7 +27,7 @@ here=$(cd "$(dirname "$0")/../.." && pwd)
 # Docker Desktop's CLI, where a shell's PATH lacks it (an agent's, a
 # launchd job's). The Rust is all in the container: no cargo here.
 command -v docker >/dev/null || PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin
-image=${RUST_IMAGE:-rust:1.89-slim-bookworm@sha256:d7fc7de78bb8c1469933aeecbf801314d30d7d6e9f0578bba4cfa285bfa37fe6}
+image=${RUST_IMAGE:-rust:1.99-slim-bookworm@sha256:f2c004e3d2d8b547e8cf7ffbc29205385f4e71d23e53e4e383065db5e9f822cd}
 binaryen=version_133
 binaryen_sha256=2dc9c7813f5375db93d96ead4b78222fcc3e2677bbb832297af4797782a37489
 out=apps/web/src/lib/engine/wingtip-engine.wasm

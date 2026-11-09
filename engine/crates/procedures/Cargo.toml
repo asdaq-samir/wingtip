@@ -1,7 +1,7 @@
 [package]
 name = "wingtip-procedures"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 description = "The four pilot pages' figures and their words: the debrief, the diversion drill, a hold and lost communications"
 
@@ -13,3 +13,6 @@ name = "wingtip_procedures"
 [dependencies]
 wingtip-core = { path = "../core" }
 wingtip-flight = { path = "../flight" }
+
+[lints]
+workspace = true

@@ -82,10 +82,10 @@ impl Edges {
         }
         for r in r0..=r1 {
             for c in c0..=c1 {
-                if let Some(edges) = self.by_cell.get(&(r, c)) {
-                    if check(edges) {
-                        return true;
-                    }
+                if let Some(edges) = self.by_cell.get(&(r, c))
+                    && check(edges)
+                {
+                    return true;
                 }
             }
         }

@@ -183,12 +183,11 @@ impl Reader<'_> {
     }
 
     pub fn strings(&self, v: &Value, key: &str) -> Result<Vec<String>, String> {
-        Ok(self
-            .opt_list(v, key)?
+        self.opt_list(v, key)?
             .unwrap_or(&[])
             .iter()
             .map(|s| s.as_str().map(str::to_owned).ok_or_else(|| self.bad(&format!("\"{key}\" holds a non-string"))))
-            .collect::<Result<_, _>>()?)
+            .collect::<Result<_, _>>()
     }
 
     pub fn end(&self, v: &Value, key: &str) -> Result<End, String> {

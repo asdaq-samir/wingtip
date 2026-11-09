@@ -24,9 +24,10 @@ import java.time.ZoneId
  * a track saved to the account, the newest six, debriefed against its plan
  * by the planner (POST /api/debrief, the engine's debrief: its legs and
  * its pattern entries, ACS PA.VI.A and PA.III.B), trimmed to what the
- * engine's proficiency_plan reads. Nothing is judged here: the engine
- * finds what is weak in them. Approaches flown are the web's alone for
- * now: the phone draws no approach debrief yet.
+ * engine's proficiency_plan reads, and each approach it flew into its
+ * destination debriefed against the procedure by the engine's
+ * approach_find (CoachApproaches). Nothing is judged here: the engine
+ * finds what is weak in them.
  */
 object CoachDebriefs {
     /** The newest flights looked at: a few weeks' flying. */
@@ -56,15 +57,17 @@ object CoachDebriefs {
     fun dayOf(ms: Long, zone: ZoneId = ZoneId.systemDefault()): String =
         Instant.ofEpochMilli(ms).atZone(zone).toLocalDate().toString()
 
-    /** The debriefs of the newest flights with a track; a flight whose
-     *  track or plan cannot be had is left out. */
+    /** The debriefs of the newest flights with a track, each flight's
+     *  approaches after it; a flight whose track or plan cannot be had is
+     *  left out. */
     suspend fun fetch(): List<CoachDebrief> {
         val flights = quietly { Gateway.read<List<FlightSummaryDto>>("/api/flights") } ?: return emptyList()
-        return recent(flights).mapNotNull { summary ->
-            quietly {
-                val track = Gateway.track(summary.id) ?: return@quietly null
-                val first = track.points.firstOrNull() ?: return@quietly null
-                val flight = Gateway.read<FlightDto>("/api/flights/${summary.id}") ?: return@quietly null
+        return recent(flights).flatMap { summary ->
+            val track = quietly { Gateway.track(summary.id) } ?: return@flatMap emptyList()
+            val first = track.points.firstOrNull() ?: return@flatMap emptyList()
+            val flight = quietly { Gateway.read<FlightDto>("/api/flights/${summary.id}") } ?: return@flatMap emptyList()
+            val flownOn = dayOf(first.t)
+            val flown = quietly {
                 val ask = DebriefAsk(
                     checkpoints = flight.checkpoints.map {
                         DebriefCheckpoint(it.alongTrackNm, it.altitudeFt, it.category, it.eteMin, it.lat, it.lon, it.name, it.sequenceNo, it.trueCourseDeg)
@@ -74,8 +77,9 @@ object CoachDebriefs {
                 val answer = Gateway.json.decodeFromString<DebriefAnswer>(
                     Gateway.send("POST", Config.plannerPath("/api/debrief"), Gateway.json.encodeToString(ask)),
                 )
-                trimmed(answer, "${flight.departureIdent}-${flight.destinationIdent}", dayOf(first.t))
+                trimmed(answer, "${flight.departureIdent}-${flight.destinationIdent}", flownOn)
             }
+            listOfNotNull(flown) + CoachApproaches.fetch(flight.destinationIdent, track, flownOn)
         }
     }
 

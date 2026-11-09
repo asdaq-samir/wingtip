@@ -277,13 +277,17 @@ pub fn vertical_speed(samples: &[(f64, f64)]) -> Option<f64> {
     (sxx > 0.0).then(|| sxy / sxx * 60.0)
 }
 
+/// A glide ring: its range, nm, the ground it is reckoned over, ft, and
+/// its outline, latitude and longitude.
+pub type GlideRing = (f64, f64, Vec<(f64, f64)>);
+
 /// The glide ring: its radius (motion::glide's still-air range at the picked airplane's own glide ratio) over the higher of
 /// the ground under the airplane (the pack's terrain grid) and the nearest field's elevation, and its outline on the sphere
 /// for a map that draws polygons. None on the ground, under flying speed, with no height or no glide ratio.
 pub fn glide_ring(
     lat: f64, lon: f64, altitude_ft: Option<f64>, speed_kt: Option<f64>, terrain_ft: Option<f64>, field_ft: Option<f64>,
     glide_ratio: Option<f64>,
-) -> Option<(f64, f64, Vec<(f64, f64)>)> {
+) -> Option<GlideRing> {
     // The higher ground of the two: the ring is how far the airplane
     // glides before it meets it, so the lower would draw it too wide.
     let ground = match (terrain_ft, field_ft) {

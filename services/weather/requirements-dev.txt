@@ -4,5 +4,5 @@
 -r requirements.txt
 -r ../planner/requirements-wingtip.txt
 pytest
-pytest-randomly==5.0.0   # every run in a new random order, --randomly-seed=N repeats one (docs/CI.md, "Flaky tests")
+pytest-randomly==5.1.0   # every run in a new random order, --randomly-seed=N repeats one (docs/CI.md, "Flaky tests")
 ruff

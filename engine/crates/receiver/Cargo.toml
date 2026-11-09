@@ -1,7 +1,7 @@
 [package]
 name = "wingtip-receiver"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 description = "A portable ADS-B receiver's GDL 90 stream read: its frames, own ship, the traffic it hears and the FIS-B weather it is sent"
 
@@ -12,3 +12,6 @@ name = "wingtip_receiver"
 # plain Rust, so the phones carry it as it is.
 [dependencies]
 wingtip-core = { path = "../core" }
+
+[lints]
+workspace = true

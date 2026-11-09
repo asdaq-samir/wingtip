@@ -129,11 +129,11 @@ pub fn vfr(start: Point, end: Point, breaks_nm: &[f64], ground: &Ground, obstacl
         }
         // The obstacle where it needs more than the ground, the ground on
         // a tie: the ground is under the airplane the whole way.
-        if let Some((need, o)) = tallest {
-            if need > ground_need {
-                let kind = o.kind.as_deref().map(str::trim).filter(|k| !k.is_empty()).map(str::to_owned);
-                bound = (o.amsl_ft, true, kind, clearance(o.congested));
-            }
+        if let Some((need, o)) = tallest
+            && need > ground_need
+        {
+            let kind = o.kind.as_deref().map(str::trim).filter(|k| !k.is_empty()).map(str::to_owned);
+            bound = (o.amsl_ft, true, kind, clearance(o.congested));
         }
         let (highest, is_obstacle, kind, need) = bound;
         let top_ground = here.iter().map(|&i| ground.high_ft[i]).fold(f64::NEG_INFINITY, f64::max);

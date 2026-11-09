@@ -13,14 +13,15 @@ options:
   generateEmptyDirectories: true
 settings:
   base:
-    # Swift 5 language mode under the Swift 6 compiler, with the compiler's
-    # complete concurrency checking on (Apple's direction for new code,
-    # where a data race is a diagnostic): in this mode the checks are
-    # warnings, which CI's log shows; the language mode goes to 6, where
-    # they are errors, once a run is clean (the owner's ask, 2026-11-03,
-    # after the review of the app against Apple's guidance).
-    SWIFT_VERSION: "5.0"
+    # Swift 6 language mode with complete concurrency checking, where a
+    # data race is a compile error (Apple's direction for new code; the
+    # owner's ask, 2026-11-03, made so once a run was clean, 2026-11-09).
+    SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
+    # No warnings anywhere: every target's warning is an error (the owner,
+    # 2026-11-09), Swift's and clang's alike, so none piles up unread.
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+    GCC_TREAT_WARNINGS_AS_ERRORS: YES
     # Every Text and LocalizedStringResource gathered into the string
     # catalog (Wingtip/Localizable.xcstrings) at build, Apple's way of
     # localising since Xcode 15: English today, another language a column.
@@ -113,7 +114,10 @@ targets:
         # A track file (GPX, KML) opened from Files or Mail is flown again
         # on the map (Links, RootView): the app is a viewer of both, so
         # they show it in Open In; the types declared here, as neither
-        # is a system one.
+        # is a system one. A file is read once and flown, never edited
+        # where it lies, so it is opened as a copy, not in place (what iOS
+        # did with the key unset; set to say so, as the build asks).
+        LSSupportsOpeningDocumentsInPlace: false
         CFBundleDocumentTypes:
           - CFBundleTypeName: GPS Exchange Format
             CFBundleTypeRole: Viewer

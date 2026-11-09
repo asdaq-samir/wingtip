@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # The notebooks' image: Jupyter and scikit-learn over wingtip's own list,
-# for notebooks 01-03 and 08. Python 3.14, as every other image: the
+# for notebooks 01-03 and 08. Python 3.15, as every other image: the
 # 3.13 it was held at was for TensorFlow, which went with the PyTorch,
 # Spark and sentence-transformers comparison notebooks (2026-11-06), and
 # with them the CPU torch wheel and the JDK PySpark needed.

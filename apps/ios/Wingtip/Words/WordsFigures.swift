@@ -111,7 +111,7 @@ enum WordsFigures {
         out += v.items.map { WordsSource(id: "finding:\($0.key)", label: "\($0.label): \($0.finding)", text: $0.detail) }
         if let risk = v.risk {
             out.append(WordsSource(id: "risk:line", label: "Risk assessment", text: "\(risk.line). \(risk.words) \(risk.score) points, level \(risk.level)."))
-            for f in risk.factors ?? [] {
+            for f in risk.factors {
                 let unlawful = f.stop == true ? " Makes the flight unlawful as planned." : ""
                 out.append(WordsSource(id: "risk:\(f.key)", label: f.label, text: "\(f.why ?? f.label). \(f.points) points.\(unlawful)"))
             }

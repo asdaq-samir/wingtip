@@ -65,7 +65,7 @@ run on one machine at once; stop the first.
 ### In a VS Code dev container
 
 "Reopen in Container" builds `.devcontainer/devcontainer.json`: Node 24,
-Python 3.14, Rust stable, the Docker CLI and the recommended extensions.
+Python 3.15, Rust stable, the Docker CLI and the recommended extensions.
 It shares the host's Docker (docker-outside-of-docker), so `make dev` and
 `make check` start containers beside the dev container, and it mounts the
 checkout at its own host path so those containers find its files. It has

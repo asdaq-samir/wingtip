@@ -42,7 +42,9 @@ fn same_place(a: (f64, f64, Option<usize>), b: (f64, f64, Option<usize>)) -> boo
 
 pub fn trip(points: &[Point], g: &Ground, fields: &[Field]) -> Trip {
     let at = |i: usize, field: Option<usize>| (points[i].lat, points[i].lon, field);
-    let mut stops: Vec<((f64, f64, Option<usize>), String)> = Vec::new();
+    // Each stop's place (and its field, where it is one) and its name.
+    type Stop = ((f64, f64, Option<usize>), String);
+    let mut stops: Vec<Stop> = Vec::new();
     if let Some(t) = g.takeoffs.first() {
         stops.push((at(t.i, t.field), place_name(fields, t.field, &points[t.i])));
     }

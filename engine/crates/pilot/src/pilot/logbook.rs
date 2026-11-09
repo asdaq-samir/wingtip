@@ -179,16 +179,15 @@ fn date_of(v: Option<&str>) -> Option<String> {
         return Some(s.to_owned());
     }
     let parts: Vec<&str> = s.split('/').collect();
-    if let [m, d, y] = parts[..] {
-        if (1..=2).contains(&m.len())
-            && digits(m.as_bytes())
-            && (1..=2).contains(&d.len())
-            && digits(d.as_bytes())
-            && y.len() == 4
-            && digits(y.as_bytes())
-        {
-            return Some(format!("{y}-{m:0>2}-{d:0>2}"));
-        }
+    if let [m, d, y] = parts[..]
+        && (1..=2).contains(&m.len())
+        && digits(m.as_bytes())
+        && (1..=2).contains(&d.len())
+        && digits(d.as_bytes())
+        && y.len() == 4
+        && digits(y.as_bytes())
+    {
+        return Some(format!("{y}-{m:0>2}-{d:0>2}"));
     }
     None
 }
@@ -220,12 +219,14 @@ pub fn read(text_in: &str) -> (Vec<String>, Vec<Skipped>) {
         let col = |n: &str| names.iter().position(|k| k == n);
         for row in &rows[a + 1..flights_at.unwrap_or(rows.len())] {
             let cell = |n: &str| col(n).and_then(|i| row.get(i)).map(|c| js::trim(c));
-            if let (Some(tail), Some(kind)) = (cell("aircraftid"), cell("typecode")) {
-                if !tail.is_empty() && !kind.is_empty() && tail.to_lowercase() != "text" {
-                    match types.iter_mut().find(|(t, _)| t == tail) {
-                        Some(known) => known.1 = kind.to_owned(),
-                        None => types.push((tail.to_owned(), kind.to_owned())),
-                    }
+            if let (Some(tail), Some(kind)) = (cell("aircraftid"), cell("typecode"))
+                && !tail.is_empty()
+                && !kind.is_empty()
+                && tail.to_lowercase() != "text"
+            {
+                match types.iter_mut().find(|(t, _)| t == tail) {
+                    Some(known) => known.1 = kind.to_owned(),
+                    None => types.push((tail.to_owned(), kind.to_owned())),
                 }
             }
         }

@@ -12,7 +12,7 @@
 # same sqlite and zlib there. Only the two programs are copied on:
 # tippecanoe, and tippecanoe-decode, which the tests read an archive back
 # with. It was the planner's until the jobs split (#535).
-FROM python:3.14-slim@sha256:af8a5aa14780025dbfbcfbc81bd8a91ebd87711dd5b0f48ed71090949dd7cb1d AS tippecanoe
+FROM python:3.15-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928 AS tippecanoe
 ARG TIPPECANOE_VERSION=2.79.0
 ARG TIPPECANOE_SHA256=b0fd9df49b6efc988288ea48774822c6de19eb48428017f27ee0b3b01d44f05d
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
