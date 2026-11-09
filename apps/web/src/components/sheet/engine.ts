@@ -148,6 +148,10 @@ export interface Box {
    *  scrolls while it can the way the finger goes, and only then hands
    *  the drag to the sheet. */
   scrollFirst?: boolean;
+  /** A live list that refreshes on a pull from its top (data-pull-refresh,
+   *  PullToRefresh): with the sheet all the way out, a finger moving down
+   *  there is the list's, as in an iOS sheet's refreshable list. */
+  pulls?: boolean;
   /** A scroller by its overflow (auto or scroll). */
   scroller?: boolean;
   /** Holds more than SCROLL_SLOP_PX past its own height. */
@@ -179,5 +183,8 @@ export function sheetTakes(path: Box[], dy: number, fromBottom: boolean, canOpen
   for (const box of path) {
     if (box.scroller && box.scrolls && (fromBottom ? !box.atStart : !box.atEnd)) return false;
   }
+  // All the way out, a pull down a live list refreshes it rather than
+  // lowering the sheet; below that the sheet still goes, one size a throw.
+  if (fromBottom && !canOpen && path.some(box => box.pulls)) return false;
   return true;
 }

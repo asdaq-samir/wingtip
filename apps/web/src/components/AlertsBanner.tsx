@@ -8,6 +8,7 @@ import { GLASS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 import { acknowledge, alertTitle, alertWhen, alertWhere, useAhead } from "../lib/map/position/ahead";
 import { useSpokenAlerts } from "./speak";
+import { useFeelOnNew } from "../lib/haptics";
 import { saaWords } from "../lib/liveReports";
 
 /** A warning's red and a caution's amber, as a cockpit's are. */
@@ -30,6 +31,8 @@ export default function AlertsBanner() {
   const ahead = useAhead();
   // Said aloud too, where the pilot has asked for it.
   useSpokenAlerts(ahead);
+  // And felt, as a new one comes up first (lib/haptics).
+  useFeelOnNew(ahead?.alerts[0]?.id, "warning");
   const [open, setOpen] = useState(false);
   if (!ahead) return null;
   const { alerts, unavailable, failed } = ahead;
