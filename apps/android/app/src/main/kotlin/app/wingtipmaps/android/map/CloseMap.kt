@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.map
 
+import app.wingtipmaps.android.Config
+
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -29,8 +31,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
  * as on the web.
  *
  * The planner's key is a browser key, restricted to the site's address in
- * Google Cloud; for the phone it must also allow this app (an Android app
- * restriction by package name and signing certificate), which Google reads
+ * Google Cloud; the build may carry a key of the app's own instead
+ * (Config.googleMapsAndroidKey, GOOGLE_MAPS_ANDROID_KEY), restricted to
+ * this app by package name and signing certificate, which Google reads
  * from the headers `signer` puts on every request to it.
  */
 object CloseMap {
@@ -48,7 +51,8 @@ object CloseMap {
     /** The road map's tile address for MapLibre, or null where there is
      *  no key or Google made no session. */
     suspend fun tiles(context: Context): String? {
-        val key = Planner.googleMaps()?.key ?: return null
+        // The app's own Android-restricted key first, else the deployment's.
+        val key = Config.googleMapsAndroidKey ?: Planner.googleMaps()?.key ?: return null
         val session = session(context, key) ?: return null
         return "$GOOGLE/v1/2dtiles/{z}/{x}/{y}?session=${enc(session.session)}&key=${enc(key)}"
     }
