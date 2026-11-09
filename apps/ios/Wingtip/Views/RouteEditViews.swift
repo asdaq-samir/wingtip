@@ -13,12 +13,15 @@ final class FlightUI {
         case airplane(String)
         case hold(String)
         case flown(Int, String)
+        /// A leg of the route tapped on the map, by its index (RouteLegSheet).
+        case leg(Int)
 
         var id: String {
             switch self {
             case .airplane(let hex): return "airplane:\(hex)"
             case .hold(let fix): return "hold:\(fix)"
             case .flown(let id, _): return "flown:\(id)"
+            case .leg(let index): return "leg:\(index)"
             }
         }
     }
@@ -53,6 +56,7 @@ struct FlightSheets: ViewModifier {
                     case .airplane(let hex): AirplaneCard(hex: hex)
                     case .hold(let fix): HoldSheet(fix: fix)
                     case .flown(let id, let title): FlownTrackView(flight: id, title: title)
+                    case .leg(let index): RouteLegSheet(index: index)
                     }
                 }
                 .presentationDetents([.medium, .large])

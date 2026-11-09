@@ -11,9 +11,9 @@ import SwiftUI
 final class ProcedurePolyline: MKPolyline {}
 
 /// The thin edge round the course's magenta, so it keeps its contrast on
-/// the chart (the web's route-edge). The green casing is not drawn here:
-/// ForeFlight shows it only on a selected course (the owner, 2026-11-09),
-/// and the phone has no leg selection yet.
+/// the chart (the web's route-edge). The green casing is drawn only on the
+/// leg whose sheet is open (RouteLegLayer), as ForeFlight shows it on a
+/// selected course (the owner, 2026-11-09).
 final class CourseEdgePolyline: MKPolyline {}
 
 /// The dry run's airplane: a blue arrow in a white casing, as the web app
@@ -86,6 +86,9 @@ struct ChartMap: UIViewRepresentable {
     /// A held finger's pin, the waypoints, the Class B fields and the
     /// plates (MapExtras.swift).
     var extras = MapExtrasInput()
+    /// The route's legs, the one open and the tap that opens one
+    /// (RouteLegLayer).
+    var routeLegs = RouteLegInput()
     /// Dark appearance and Setup's Chart at night, for the chart's dimming
     /// and the course's night magenta (NightPalette).
     @Environment(\.colorScheme) var colorScheme
@@ -141,6 +144,7 @@ struct ChartMap: UIViewRepresentable {
         let flight = FlightMapLayer()
         flight.attach(map)
         context.coordinator.flight = flight
+        context.coordinator.legLayer.attach(map)
         return map
     }
 
@@ -251,6 +255,7 @@ struct ChartMap: UIViewRepresentable {
                 map.setVisibleMapRect(line.boundingMapRect, edgePadding: Self.routePadding(in: map), animated: MapMotion.animated)
             }
         }
+        context.coordinator.legLayer.update(map, routeLegs, night: shade > 0, below: context.coordinator.courseEdge)
     }
 
     /// Whether two paths are the same points, to the metre: a procedure's
@@ -336,6 +341,7 @@ struct ChartMap: UIViewRepresentable {
         var setRouteAway: ((Bool) -> Void)?
         var fitted = 0
         var flight: FlightMapLayer?
+        let legLayer = RouteLegLayer()
         let locations = CLLocationManager()
         private var followed = false
         private var fetching: Task<Void, Never>?
@@ -373,6 +379,7 @@ struct ChartMap: UIViewRepresentable {
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: any MKOverlay) -> MKOverlayRenderer {
             if let renderer = flight?.renderer(for: overlay) { return renderer }
+            if let renderer = MainActor.assumeIsolated({ legLayer.renderer(for: overlay) }) { return renderer }
             if let renderer = MainActor.assumeIsolated({ overlays.renderer(for: overlay) }) { return renderer }
             if let chart = overlay as? ChartTileOverlay {
                 let renderer = ChartTileRenderer(chart: chart)

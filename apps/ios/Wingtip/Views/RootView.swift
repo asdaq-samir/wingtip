@@ -172,6 +172,13 @@ struct RootView: View {
                     plan.drop(ident, at: at, then: action == .directTo ? .direct : .add, from: action == .directTo ? dryRun.fix ?? ownShip.fix : nil)
                 } : nil
             ),
+            // A tap on the course opens its nearest leg's sheet, that leg
+            // cased in green while it is open (RouteLegSheet).
+            routeLegs: RouteLegInput(
+                legs: plan.course != nil ? RouteLegModel.mapLegs(plan) : [],
+                selected: { if case .leg(let index) = FlightUI.shared.card { return index }; return nil }(),
+                onSelect: { index in FlightUI.shared.card = .leg(index) }
+            ),
             hazardLegs: plan.hazardLegs,
             bottomInset: mapInset,
             onReveal: { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { mapShown = true } }
