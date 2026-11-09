@@ -18,5 +18,5 @@ test("a menu's rows are 44 points tall to a finger", async ({ page }) => {
   await expect(items).toHaveCount(3);
   // Each row's own height, as laid out: the menu scales in as it opens,
   // and its box measured mid-way was 43.8.
-  for (const item of await items.all()) expect(await item.evaluate(el => (el as HTMLElement).offsetHeight)).toBeGreaterThanOrEqual(44);
+  for (const item of await items.all()) expect(await item.evaluate((el) => (el as HTMLElement).offsetHeight)).toBeGreaterThanOrEqual(44);
 });

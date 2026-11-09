@@ -6,7 +6,10 @@ describe("long task reports", () => {
   it("say how many, how long in all and the longest, in whole milliseconds, and nothing else", () => {
     const report = longTaskReport([52.4, 180.6, 75], "plan", { platform: "web", version: "abc123", device: "phone" });
     expect(report).toEqual({
-      platform: "web", version: "abc123", device: "phone", page: "plan",
+      platform: "web",
+      version: "abc123",
+      device: "phone",
+      page: "plan",
       metrics: { long_tasks: 3, long_task_ms: 308, longest_task_ms: 181 },
     });
   });

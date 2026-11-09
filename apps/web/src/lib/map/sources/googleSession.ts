@@ -5,7 +5,11 @@ import { keptStore } from "../../storage";
 /** Google's Map Tiles API: a session for a kind of map, then its tiles. */
 export const GOOGLE = "https://tile.googleapis.com";
 
-interface Session { session: string; expiry: number; key: string }
+interface Session {
+  session: string;
+  expiry: number;
+  key: string;
+}
 
 /**
  * A Google map session for a kind of map, kept in the browser until a day
@@ -21,13 +25,16 @@ async function googleSession(key: string, kind: "map" | "satellite"): Promise<Se
   const held = kept.getState().value;
   if (held && held.key === key && held.expiry * 1000 - Date.now() > 24 * 3600_000) return held;
   const resp = await fetch(`${GOOGLE}/v1/createSession?key=${encodeURIComponent(key)}`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(kind === "map"
-      ? { mapType: "roadmap", language: "en-US", region: "US", imageFormat: "png" }
-      : { mapType: "satellite", language: "en-US", region: "US", layerTypes: ["layerRoadmap"] }),
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(
+      kind === "map"
+        ? { mapType: "roadmap", language: "en-US", region: "US", imageFormat: "png" }
+        : { mapType: "satellite", language: "en-US", region: "US", layerTypes: ["layerRoadmap"] },
+    ),
   });
   if (!resp.ok) throw new Error(`Google's map session: ${resp.status}`);
-  const answer = await resp.json() as { session: string; expiry: string };
+  const answer = (await resp.json()) as { session: string; expiry: string };
   const session = { session: answer.session, expiry: Number(answer.expiry), key };
   // Kept for this page only where storage is refused.
   kept.setState({ value: session });
@@ -39,7 +46,10 @@ async function googleSession(key: string, kind: "map" | "satellite"): Promise<Se
 export function useGoogleSession(kind: "map" | "satellite", wanted = true) {
   const { data: google } = useQuery(googleMapsQuery);
   return useQuery({
-    queryKey: ["googleSession", kind, google?.key], queryFn: () => googleSession(google!.key, kind),
-    enabled: wanted && !!google, staleTime: 24 * 3600_000, meta: { silent: true },
+    queryKey: ["googleSession", kind, google?.key],
+    queryFn: () => googleSession(google!.key, kind),
+    enabled: wanted && !!google,
+    staleTime: 24 * 3600_000,
+    meta: { silent: true },
   });
 }

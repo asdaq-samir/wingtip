@@ -12,7 +12,10 @@ import { clearTheRoute, openPanel, settle, sideDrawer } from "./helpers";
  */
 
 test.beforeEach(async ({ page }) => {
-  await page.route(url => /\/(checkpoints|navlog|briefing)$/.test(url.pathname), route => route.abort());
+  await page.route(
+    (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
+    (route) => route.abort(),
+  );
 });
 test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });

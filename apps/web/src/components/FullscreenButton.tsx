@@ -8,9 +8,9 @@ import IconButton from "./IconButton";
  *  iPhone (where it does not, per WebKit's own compatibility data) --
  *  the method itself may exist on both. */
 function fullscreenWorks(): boolean {
-  return typeof document !== "undefined"
-    && typeof document.documentElement.requestFullscreen === "function"
-    && !!document.fullscreenEnabled;
+  return (
+    typeof document !== "undefined" && typeof document.documentElement.requestFullscreen === "function" && !!document.fullscreenEnabled
+  );
 }
 
 /**
@@ -49,13 +49,19 @@ export default function FullscreenButton() {
     <IconButton
       label={on ? "Leave full screen" : "Full screen"}
       onClick={() => {
-        if (on) { void document.exitFullscreen().catch(() => { /* already out */ }); return; }
+        if (on) {
+          void document.exitFullscreen().catch(() => {
+            /* already out */
+          });
+          return;
+        }
         // A refusal means this browser said yes to `fullscreenEnabled`
         // and no to the request; take the button away rather than
         // leave one that does nothing.
         void document.documentElement.requestFullscreen().catch(() => setWorks(false));
       }}
-      data-testid="fullscreen-button" className="text-foreground"
+      data-testid="fullscreen-button"
+      className="text-foreground"
     >
       {on ? <Minimize className="size-5" /> : <Maximize className="size-5" />}
     </IconButton>

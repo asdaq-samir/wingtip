@@ -5,7 +5,9 @@ import { controlsInSight, settle, sideDrawer, slow, openNavLog, navLogSheet, nav
 // Saved planned ahead at idle ask the planner then -- found the page
 // closed and failed the test (navlog-fit.spec, CI, 2026-10-28): the
 // handlers taken off, their errors let go, as each test ends.
-test.afterEach(async ({ page }) => { await page.unrouteAll({ behavior: "ignoreErrors" }); });
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
 
 /**
  * The nav log fits a phone's panel, with a departure time's ETA as its
@@ -19,27 +21,41 @@ test.afterEach(async ({ page }) => { await page.unrouteAll({ behavior: "ignoreEr
 // An iPhone 16 Pro, touch: the figures at a finger's 15 points.
 test.use({ viewport: { width: 402, height: 874 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
 
-const LONG = ["River near Meadowbrookshire", "Alexander Fld South Wood County (ISW)", "Road or railway near Hawthorneville",
-  "Snow Crest Ranch (0WI4)", "Wisconsinrapidsburg Municipal"];
+const LONG = [
+  "River near Meadowbrookshire",
+  "Alexander Fld South Wood County (ISW)",
+  "Road or railway near Hawthorneville",
+  "Snow Crest Ranch (0WI4)",
+  "Wisconsinrapidsburg Municipal",
+];
 
 test("the nav log fits a phone's panel with long names, five-figure altitudes and an ETA column", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
-  await page.route(url => url.pathname.endsWith("/api/planner/checkpoints"), async route => {
-    const response = await route.fetch();
-    const json = await response.json();
-    json.selected = (json.selected as { name: string }[]).map((c, i) => ({ ...c, name: LONG[i % LONG.length] }));
-    await route.fulfill({ response, json });
-  });
-  await page.route(url => url.pathname.endsWith("/api/planner/navlog"), async route => {
-    const response = await route.fetch();
-    const body = (await response.text()).split("\n").map(line => {
-      if (!line.trim()) return line;
-      const message = JSON.parse(line);
-      if (message.type === "leg" || message.type === "altitude") message.altitude_ft = 10500;
-      return JSON.stringify(message);
-    }).join("\n");
-    await route.fulfill({ response, body });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/checkpoints"),
+    async (route) => {
+      const response = await route.fetch();
+      const json = await response.json();
+      json.selected = (json.selected as { name: string }[]).map((c, i) => ({ ...c, name: LONG[i % LONG.length] }));
+      await route.fulfill({ response, json });
+    },
+  );
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/navlog"),
+    async (route) => {
+      const response = await route.fetch();
+      const body = (await response.text())
+        .split("\n")
+        .map((line) => {
+          if (!line.trim()) return line;
+          const message = JSON.parse(line);
+          if (message.type === "leg" || message.type === "altitude") message.altitude_ft = 10500;
+          return JSON.stringify(message);
+        })
+        .join("\n");
+      await route.fulfill({ response, body });
+    },
+  );
   const depart = new Date(Date.now() + 26 * 3600_000).toISOString().slice(0, 16);
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${encodeURIComponent(depart)}&view=briefing`);
   await settle(page);
@@ -59,9 +75,11 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
   await expect(heads).toHaveText(/ETA \S+\s*GS kt/);
   const speeds = log.getByTestId("navlog-row-gs");
   await expect(speeds.nth(1)).toHaveText(/^\d+$/);
-  const rightEdges = await log.locator('[data-testid="navlog-row-eta"], [data-testid="navlog-row-gs"]').evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().right)));
+  const rightEdges = await log
+    .locator('[data-testid="navlog-row-eta"], [data-testid="navlog-row-gs"]')
+    .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().right)));
   expect(new Set(rightEdges).size).toBe(1);
-  const overflow = await scroller.evaluate(el => el.scrollWidth - el.clientWidth);
+  const overflow = await scroller.evaluate((el) => el.scrollWidth - el.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   await expect(scroller.locator('[data-testid="section-tabs"]')).toHaveCount(0);
   await closeNavLog(page);
@@ -76,18 +94,26 @@ test("a long trip's figures are set smaller to fit the strip, not cut short", as
   // book's figures, rounded, were still too wide for a phone's quarter
   // of the strip at a larger text size and cut to "131…", "≈12.…" and
   // "≈10…" (2026-10-11).
-  await page.route("**/api/planner/navlog**", route => route.fulfill({
-    status: 200, contentType: "application/x-ndjson",
-    body: [
-      { type: "stage", detail: "Planning cruise altitudes…" },
-      {
-        type: "error", retry: false, detail: "No legal VFR cruising altitude 830-858 nm along the route",
-        brief: "Aircraft ceiling restricts mountainous flying",
-        reasons: ["The aircraft's service ceiling stops at 11,700 ft."],
-        advice: "Route around the high ground, or set a cruise altitude of your own to plan it anyway.",
-      },
-    ].map(m => JSON.stringify(m)).join("\n") + "\n",
-  }));
+  await page.route("**/api/planner/navlog**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      body:
+        [
+          { type: "stage", detail: "Planning cruise altitudes…" },
+          {
+            type: "error",
+            retry: false,
+            detail: "No legal VFR cruising altitude 830-858 nm along the route",
+            brief: "Aircraft ceiling restricts mountainous flying",
+            reasons: ["The aircraft's service ceiling stops at 11,700 ft."],
+            advice: "Route around the high ground, or set a cruise altitude of your own to plan it anyway.",
+          },
+        ]
+          .map((m) => JSON.stringify(m))
+          .join("\n") + "\n",
+    }),
+  );
   await page.goto("/app/plan?dep=C81&dest=KLAS");
   await controlsInSight(page);
   await expect(sideDrawer(page).getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
@@ -100,9 +126,14 @@ test("a long trip's figures are set smaller to fit the strip, not cut short", as
   // 393-point screen's 19.65. Every figure whole in its column, none
   // overflowing into an ellipsis.
   for (const root of ["", "17.88px", "19.65px"]) {
-    await page.evaluate(size => { document.documentElement.style.fontSize = size; }, root);
-    await expect.poll(() => figures.evaluateAll(dds => dds.filter(dd => dd.scrollWidth > dd.clientWidth).map(dd => dd.textContent)),
-      { message: `at a root of ${root || "16px"}` }).toEqual([]);
+    await page.evaluate((size) => {
+      document.documentElement.style.fontSize = size;
+    }, root);
+    await expect
+      .poll(() => figures.evaluateAll((dds) => dds.filter((dd) => dd.scrollWidth > dd.clientWidth).map((dd) => dd.textContent)), {
+        message: `at a root of ${root || "16px"}`,
+      })
+      .toEqual([]);
   }
 });
 
@@ -117,18 +148,22 @@ test("each row's miles over its groundspeed come to its minutes, a pattern's mil
   await openNavLog(page);
   const log = navLogSheet(page).getByTestId("navlog-list");
   await expect(log.locator('[role="row"][data-kind="destination"]')).toBeVisible();
-  const rows = await log.locator('[role="row"][data-kind]:not([data-kind="departure"])').evaluateAll(els => els.map(el => ({
-    nm: Number(/([\d.]+) nm/.exec(el.querySelector('[data-testid="navlog-row-dist"]')?.textContent ?? "")?.[1]),
-    min: Number(/([\d.]+) min/.exec(el.textContent ?? "")?.[1]),
-    gs: Number(el.querySelector('[data-testid="navlog-row-gs"]')?.textContent),
-    said: el.querySelector('[data-testid="navlog-row-dist"]')?.textContent ?? "",
-  })));
+  const rows = await log
+    .locator('[role="row"][data-kind]:not([data-kind="departure"])')
+    .evaluateAll((els) =>
+      els.map((el) => ({
+        nm: Number(/([\d.]+) nm/.exec(el.querySelector('[data-testid="navlog-row-dist"]')?.textContent ?? "")?.[1]),
+        min: Number(/([\d.]+) min/.exec(el.textContent ?? "")?.[1]),
+        gs: Number(el.querySelector('[data-testid="navlog-row-gs"]')?.textContent),
+        said: el.querySelector('[data-testid="navlog-row-dist"]')?.textContent ?? "",
+      })),
+    );
   for (const row of rows) {
     if (!(row.gs > 0)) continue;
     // The rows' own rounding: a tenth of a mile and of a minute.
     expect(Math.abs((row.nm / row.gs) * 60 - row.min), JSON.stringify(row)).toBeLessThanOrEqual(0.3);
   }
-  expect(rows.some(r => /incl\. (departure|pattern)/.test(r.said))).toBe(true);
+  expect(rows.some((r) => /incl\. (departure|pattern)/.test(r.said))).toBe(true);
   await closeNavLog(page);
 });
 
@@ -140,13 +175,20 @@ test("the route's Profile, AI brief and ••• stay on the airplane and altit
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   for (const root of ["17.88px", "19.65px"]) {
-    await page.evaluate(size => { document.documentElement.style.fontSize = size; }, root);
+    await page.evaluate((size) => {
+      document.documentElement.style.fontSize = size;
+    }, root);
     const chip = sideDrawer(page).getByTestId("aircraft-select");
     const actions = sideDrawer(page).getByTestId("route-actions");
     await expect(actions).toBeVisible({ timeout: slow(30000) });
-    await expect.poll(async () => {
-      const [a, b] = [await chip.boundingBox(), await actions.boundingBox()];
-      return a && b ? Math.abs((a.y + a.height / 2) - (b.y + b.height / 2)) < 8 : false;
-    }, { message: `on one line at ${root}` }).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          const [a, b] = [await chip.boundingBox(), await actions.boundingBox()];
+          return a && b ? Math.abs(a.y + a.height / 2 - (b.y + b.height / 2)) < 8 : false;
+        },
+        { message: `on one line at ${root}` },
+      )
+      .toBe(true);
   }
 });

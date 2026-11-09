@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  choosePastFlight, clearPastFlight, pausePastFlight, playPastFlight, positionAt, stepPastFlight, stopPastFlight, usePastFlight,
+  choosePastFlight,
+  clearPastFlight,
+  pausePastFlight,
+  playPastFlight,
+  positionAt,
+  stepPastFlight,
+  stopPastFlight,
+  usePastFlight,
 } from "./pastFlight";
 
 const POINTS = [
@@ -24,7 +31,7 @@ describe("a past flight replayed", () => {
   it("plays from the start at its speed, stops at the end, and plays again from the start", () => {
     playPastFlight();
     expect(usePastFlight.getState().at).toBe(1000);
-    stepPastFlight(5000);                                // 5 s at 10 times: 50 s of the flight
+    stepPastFlight(5000); // 5 s at 10 times: 50 s of the flight
     expect(usePastFlight.getState().at).toBe(1050);
     pausePastFlight();
     stepPastFlight(5000);

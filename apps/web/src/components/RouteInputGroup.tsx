@@ -29,7 +29,8 @@ interface Props {
 // The bordered group still says the idents are fields. (A container
 // query measures the row inside its padding: 296 points in Slide Over,
 // 351 on an iPhone SE, which keeps its chevrons.)
-const NARROW_PICKER = "min-w-16 px-1.5 @max-[25rem]:min-w-0 @max-[25rem]:px-1 @max-[25rem]:pointer-coarse:text-[0.9375rem] @max-[25rem]:[&_svg]:size-3.5 @max-[20rem]:[&_svg]:hidden @min-[30rem]:min-w-24 @min-[30rem]:px-2.5";
+const NARROW_PICKER =
+  "min-w-16 px-1.5 @max-[25rem]:min-w-0 @max-[25rem]:px-1 @max-[25rem]:pointer-coarse:text-[0.9375rem] @max-[25rem]:[&_svg]:size-3.5 @max-[20rem]:[&_svg]:hidden @min-[30rem]:min-w-24 @min-[30rem]:px-2.5";
 
 /**
  * DEP `->` DEST plus its own trailing action button, as one bordered
@@ -40,9 +41,7 @@ const NARROW_PICKER = "min-w-16 px-1.5 @max-[25rem]:min-w-0 @max-[25rem]:px-1 @m
  * the arrow between them and the Load addon.
  */
 
-export default function RouteInputGroup({
-  dep, dest, onDepChange, onDestChange, invalid, children,
-}: Props) {
+export default function RouteInputGroup({ dep, dest, onDepChange, onDestChange, invalid, children }: Props) {
   return (
     // Slimmed below 30rem of its row so the form shares the panel's top
     // row with the panel's actions: each picker is just wide enough for
@@ -59,7 +58,16 @@ export default function RouteInputGroup({
       />
       {/* At the idents' own size (TEXT), where it was the page's 16 on a
           line of 24. */}
-      <span className={cn("px-0.5 text-muted-foreground @max-[25rem]:px-0 @min-[30rem]:px-1", TEXT.row, "@max-[25rem]:pointer-coarse:text-[0.9375rem]")} aria-hidden="true">→</span>
+      <span
+        className={cn(
+          "px-0.5 text-muted-foreground @max-[25rem]:px-0 @min-[30rem]:px-1",
+          TEXT.row,
+          "@max-[25rem]:pointer-coarse:text-[0.9375rem]",
+        )}
+        aria-hidden="true"
+      >
+        →
+      </span>
       <AirportPicker
         value={dest}
         onChange={onDestChange}

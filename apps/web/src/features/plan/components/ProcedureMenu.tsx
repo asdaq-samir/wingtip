@@ -40,7 +40,22 @@ function shortName(p: ProcedureSummary): string {
  * whole list (the Procedures sheet, with each one's fixes and plate)
  * after it. The list is asked for as the menu opens.
  */
-export default function ProcedureMenu({ ident, kind, list, loading, picked, label, runway, windward, fixes = [], look = "chip", onOpen, onPick, onAll, onLearn }: {
+export default function ProcedureMenu({
+  ident,
+  kind,
+  list,
+  loading,
+  picked,
+  label,
+  runway,
+  windward,
+  fixes = [],
+  look = "chip",
+  onOpen,
+  onPick,
+  onAll,
+  onLearn,
+}: {
   ident: string;
   kind: Kind;
   /** The field's procedures, once asked for (onOpen). */
@@ -70,8 +85,8 @@ export default function ProcedureMenu({ ident, kind, list, loading, picked, labe
    *  coaching, and a quiz. An approach's menu alone. */
   onLearn?: () => void;
 }) {
-  const all = (list?.procedures ?? []).filter(p => p.kind === kind);
-  const plates = usePreferences(s => s.plates);
+  const all = (list?.procedures ?? []).filter((p) => p.kind === kind);
+  const plates = usePreferences((s) => s.plates);
   // A runway's approaches and a procedure's transitions are pages pushed
   // in the panel's place, Back at the head's left to the one before.
   // Open, and its pages, kept by the field and the kind (useOpenMenu), not
@@ -82,9 +97,9 @@ export default function ProcedureMenu({ ident, kind, list, loading, picked, labe
   // audit, CI 2026-10-28).
   const menuKey = `${ident}:${kind}:${look}`;
   const me = useId();
-  const open = useOpenMenu(s => s.key === menuKey && s.owner === me);
-  const pages = useOpenMenu(s => (s.key === menuKey && s.owner === me ? s.pages : NO_PAGES));
-  const setPages = (next: Page[]) => useOpenMenu.setState(s => (s.owner === me ? { pages: next } : s));
+  const open = useOpenMenu((s) => s.key === menuKey && s.owner === me);
+  const pages = useOpenMenu((s) => (s.key === menuKey && s.owner === me ? s.pages : NO_PAGES));
+  const setPages = (next: Page[]) => useOpenMenu.setState((s) => (s.owner === me ? { pages: next } : s));
   useKeptOpen(menuKey, me);
   const toggle = (next: boolean) => {
     if (next) {
@@ -100,7 +115,10 @@ export default function ProcedureMenu({ ident, kind, list, loading, picked, labe
   const toSheet = useRef(false);
   const page = pages.at(-1) ?? null;
   const push = (next: Page) => setPages([...pages, next]);
-  const pick = (next: { id: string; transition: string | null; direct?: string | null } | null) => { onPick(next); toggle(false); };
+  const pick = (next: { id: string; transition: string | null; direct?: string | null } | null) => {
+    onPick(next);
+    toggle(false);
+  };
   const runwayName = (r: string) => (r === "Circling" ? "Circling" : `Runway ${r}${r === windward ? " · into the wind" : ""}`);
   // Each list's one choice the stock radio list (ListChoices), as the
   // app's other lists are: a reader hears the one picked and its place
@@ -113,17 +131,28 @@ export default function ProcedureMenu({ ident, kind, list, loading, picked, labe
   const choices = (value: string, label: string, rows: ReactNode) => (
     <div
       className="contents"
-      onKeyDownCapture={event => { if (event.key.startsWith("Arrow")) arrowing.current = true; }}
-      onKeyUpCapture={() => { arrowing.current = false; }}
+      onKeyDownCapture={(event) => {
+        if (event.key.startsWith("Arrow")) arrowing.current = true;
+      }}
+      onKeyUpCapture={() => {
+        arrowing.current = false;
+      }}
     >
-      <ListChoices value={value} onChange={() => undefined} label={label}>{rows}</ListChoices>
+      <ListChoices value={value} onChange={() => undefined} label={label}>
+        {rows}
+      </ListChoices>
     </div>
   );
-  const tapped = (act: () => void) => () => { if (!arrowing.current) act(); };
+  const tapped = (act: () => void) => () => {
+    if (!arrowing.current) act();
+  };
   const item = (p: ProcedureSummary, name: string) => (
     // Its transitions a page where it has any; else picked at a tap.
     <ListRow
-      key={p.id} radio={p.id} title={name} chevron={p.transitions.length > 0}
+      key={p.id}
+      radio={p.id}
+      title={name}
+      chevron={p.transitions.length > 0}
       onClick={tapped(() => (p.transitions.length > 0 ? push({ procedure: p, name }) : pick({ id: p.id, transition: null })))}
       data-testid="procedure-menu-item"
     />
@@ -139,14 +168,19 @@ export default function ProcedureMenu({ ident, kind, list, loading, picked, labe
   // Another runway's row says the approach picked there, where it had a
   // tick drawn by hand: it opens that runway's page, and is no choice.
   const pickedOn = (r: string) => {
-    const there = byRunway.get(r)?.find(p => p.id === picked?.id);
+    const there = byRunway.get(r)?.find((p) => p.id === picked?.id);
     return there ? shortName(there) : undefined;
   };
-  const first = kind === "approach"
-    ? [runway, windward, ...byRunway.keys()].find(r => r !== null && byRunway.has(r)) ?? null : null;
-  const others = [...byRunway.keys()].filter(r => r !== first).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  const title = page && "procedure" in page ? page.procedure.name : page && "direct" in page ? "Direct to" : page ? runwayName(page.runway)
-    : `${ident} ${TITLE[kind].toLowerCase()}`;
+  const first = kind === "approach" ? ([runway, windward, ...byRunway.keys()].find((r) => r !== null && byRunway.has(r)) ?? null) : null;
+  const others = [...byRunway.keys()].filter((r) => r !== first).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const title =
+    page && "procedure" in page
+      ? page.procedure.name
+      : page && "direct" in page
+        ? "Direct to"
+        : page
+          ? runwayName(page.runway)
+          : `${ident} ${TITLE[kind].toLowerCase()}`;
   return (
     // Expanded as everything in the app is, at the owner's ask ("whenever
     // anything is expanded it should open with the title on top with a
@@ -168,22 +202,26 @@ export default function ProcedureMenu({ ident, kind, list, loading, picked, labe
           // branch's head shows it.
           <RoundButton
             label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}, pick another`}
-            data-testid="procedure-kind" data-kind={kind} data-look={look}
+            data-testid="procedure-kind"
+            data-kind={kind}
+            data-look={look}
           >
             <ArrowLeftRight className="size-5" strokeWidth={2} />
             <span className="sr-only">{label ?? SHORT[kind]}</span>
           </RoundButton>
         ) : (
           <button
-            type="button" data-testid="procedure-kind" data-kind={kind} data-look={look}
+            type="button"
+            data-testid="procedure-kind"
+            data-kind={kind}
+            data-look={look}
             className={cn(
               "relative flex min-w-0 shrink items-center gap-0.5 text-left font-semibold outline-none",
               "after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
               // The buttons' glass, a kind to add as one picked, at the
               // owner's pick of the sketches ("B"): it was a dashed outline.
               GLASS_BUTTON,
-              look === "add" ? cn("h-8 rounded-full px-3", TEXT.detail)
-                : cn("h-8 max-w-[10rem] rounded-full px-2.5", TEXT.detail),
+              look === "add" ? cn("h-8 rounded-full px-3", TEXT.detail) : cn("h-8 max-w-[10rem] rounded-full px-2.5", TEXT.detail),
             )}
             aria-label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}`}
           >
@@ -193,68 +231,108 @@ export default function ProcedureMenu({ ident, kind, list, loading, picked, labe
         )}
       </ResponsivePopoverTrigger>
       <ResponsivePopoverContent
-        title={title} align="start" side="bottom"
+        title={title}
+        align="start"
+        side="bottom"
         className="flex h-[26rem] w-80 flex-col gap-3 overflow-y-auto p-3"
         // No Back: the close goes back a page where one is pushed, at the
         // owner's ask ("remove the back buttons, because close button should
         // behave as the back button", 2026-10-22).
-        action={<CloseButton label={page ? "Back" : "Close"} onClick={() => (page ? setPages(pages.slice(0, -1)) : toggle(false))} data-testid="procedure-menu-close" />}
+        action={
+          <CloseButton
+            label={page ? "Back" : "Close"}
+            onClick={() => (page ? setPages(pages.slice(0, -1)) : toggle(false))}
+            data-testid="procedure-menu-close"
+          />
+        }
         data-testid="procedure-menu"
-        onCloseAutoFocus={event => { if (toSheet.current) event.preventDefault(); toSheet.current = false; }}
+        onCloseAutoFocus={(event) => {
+          if (toSheet.current) event.preventDefault();
+          toSheet.current = false;
+        }}
       >
         {page && "procedure" in page ? (
-          choices(picked?.id === page.procedure.id ? picked.transition ?? NO_CHOICE : "", `${page.procedure.name} transition`, (
+          choices(
+            picked?.id === page.procedure.id ? (picked.transition ?? NO_CHOICE) : "",
+            `${page.procedure.name} transition`,
             <ListGroup>
-              {[null, ...page.procedure.transitions].map(t => (
+              {[null, ...page.procedure.transitions].map((t) => (
                 <ListRow
-                  key={t ?? NO_CHOICE} radio={t ?? NO_CHOICE} title={transitionWords(kind, t)}
-                  onClick={tapped(() => pick({ id: page.procedure.id, transition: t }))} data-testid="procedure-menu-transition"
+                  key={t ?? NO_CHOICE}
+                  radio={t ?? NO_CHOICE}
+                  title={transitionWords(kind, t)}
+                  onClick={tapped(() => pick({ id: page.procedure.id, transition: t }))}
+                  data-testid="procedure-menu-transition"
                 />
               ))}
-            </ListGroup>
-          ))
+            </ListGroup>,
+          )
         ) : page && "direct" in page && picked ? (
           // A fix ATC sent the airplane to, at the owner's ask ("the ability
           // to go direct to a fix as told by ATC"): the procedure flown from
           // there, straight to it (wingtip.procedure_paths), or as charted.
-          choices(picked.direct ?? NO_CHOICE, "Direct to", (
+          choices(
+            picked.direct ?? NO_CHOICE,
+            "Direct to",
             <ListGroup>
-              {[null, ...fixes].map(f => (
+              {[null, ...fixes].map((f) => (
                 <ListRow
-                  key={f ?? NO_CHOICE} radio={f ?? NO_CHOICE} title={f ?? "As charted"}
-                  onClick={tapped(() => pick({ id: picked.id, transition: picked.transition, direct: f }))} data-testid="procedure-menu-direct-fix"
+                  key={f ?? NO_CHOICE}
+                  radio={f ?? NO_CHOICE}
+                  title={f ?? "As charted"}
+                  onClick={tapped(() => pick({ id: picked.id, transition: picked.transition, direct: f }))}
+                  data-testid="procedure-menu-direct-fix"
                 />
               ))}
-            </ListGroup>
-          ))
+            </ListGroup>,
+          )
         ) : page && "runway" in page ? (
-          choices(picked?.id ?? "", runwayName(page.runway), <ListGroup>{(byRunway.get(page.runway) ?? []).map(p => item(p, shortName(p)))}</ListGroup>)
+          choices(
+            picked?.id ?? "",
+            runwayName(page.runway),
+            <ListGroup>{(byRunway.get(page.runway) ?? []).map((p) => item(p, shortName(p)))}</ListGroup>,
+          )
         ) : (
           <>
             {all.length === 0 && (
-              <p role="status" className={cn("px-1 text-muted-foreground", TEXT.detail)}>{loading ? "Fetching them…" : "None published"}</p>
+              <p role="status" className={cn("px-1 text-muted-foreground", TEXT.detail)}>
+                {loading ? "Fetching them…" : "None published"}
+              </p>
             )}
             {kind === "approach" && first !== null && (
               <>
-                {choices(picked?.id ?? "", runwayName(first), <ListGroup title={runwayName(first)}>{byRunway.get(first)!.map(p => item(p, shortName(p)))}</ListGroup>)}
+                {choices(
+                  picked?.id ?? "",
+                  runwayName(first),
+                  <ListGroup title={runwayName(first)}>{byRunway.get(first)!.map((p) => item(p, shortName(p)))}</ListGroup>,
+                )}
                 {others.length > 0 && (
                   <ListGroup title="Other runways">
-                    {others.map(r => (
+                    {others.map((r) => (
                       <ListRow
-                        key={r} title={runwayName(r)} chevron value={pickedOn(r)}
-                        onClick={() => push({ runway: r })} data-testid="procedure-menu-runway"
+                        key={r}
+                        title={runwayName(r)}
+                        chevron
+                        value={pickedOn(r)}
+                        onClick={() => push({ runway: r })}
+                        data-testid="procedure-menu-runway"
                       />
                     ))}
                   </ListGroup>
                 )}
               </>
             )}
-            {kind !== "approach" && all.length > 0 && choices(picked?.id ?? "", TITLE[kind], <ListGroup>{all.map(p => item(p, p.name))}</ListGroup>)}
+            {kind !== "approach" &&
+              all.length > 0 &&
+              choices(picked?.id ?? "", TITLE[kind], <ListGroup>{all.map((p) => item(p, p.name))}</ListGroup>)}
             {picked && fixes.length > 0 && (
               <ListGroup>
                 <ListRow
-                  title="Direct to" value={picked.direct ?? "As charted"} chevron
-                  onClick={() => push({ direct: true })} data-testid="procedure-menu-direct"
+                  title="Direct to"
+                  value={picked.direct ?? "As charted"}
+                  chevron
+                  onClick={() => push({ direct: true })}
+                  data-testid="procedure-menu-direct"
                 />
               </ListGroup>
             )}
@@ -262,19 +340,39 @@ export default function ProcedureMenu({ ident, kind, list, loading, picked, labe
               {/* The plate on the chart or not, at the owner's ask. */}
               {kind === "approach" && picked && (
                 <ListRow title="Plate on the map">
-                  <Switch checked={plates} onCheckedChange={on => usePreferences.getState().setPlates(on)} aria-label="Plate on the map" data-testid="procedure-menu-plate" />
+                  <Switch
+                    checked={plates}
+                    onCheckedChange={(on) => usePreferences.getState().setPlates(on)}
+                    aria-label="Plate on the map"
+                    data-testid="procedure-menu-plate"
+                  />
                 </ListRow>
               )}
               {/* The approach picked taught, at the owner's ask ("do it all",
                   2026-10-30): a card of its own, as the whole list's is. */}
               {kind === "approach" && picked && onLearn && (
                 <ListRow
-                  title="Learn This Approach" chevron
-                  onClick={() => { toSheet.current = true; toggle(false); onLearn(); }} data-testid="procedure-menu-learn"
+                  title="Learn This Approach"
+                  chevron
+                  onClick={() => {
+                    toSheet.current = true;
+                    toggle(false);
+                    onLearn();
+                  }}
+                  data-testid="procedure-menu-learn"
                 />
               )}
               {picked && <ListRow title={NONE[kind]} onClick={() => pick(null)} data-testid="procedure-menu-none" />}
-              <ListRow title={ALL[kind]} chevron onClick={() => { toSheet.current = true; toggle(false); onAll(); }} data-testid="procedure-menu-all" />
+              <ListRow
+                title={ALL[kind]}
+                chevron
+                onClick={() => {
+                  toSheet.current = true;
+                  toggle(false);
+                  onAll();
+                }}
+                data-testid="procedure-menu-all"
+              />
             </ListGroup>
           </>
         )}

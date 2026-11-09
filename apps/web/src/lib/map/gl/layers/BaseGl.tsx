@@ -36,7 +36,9 @@ function useCredit(html: string | null) {
     if (!html) return;
     const control = new AttributionControl({ compact: false, customAttribution: html });
     map.addControl(control, "bottom-left");
-    return () => { map.removeControl(control); };
+    return () => {
+      map.removeControl(control);
+    };
   }, [map, html]);
 }
 
@@ -48,7 +50,9 @@ function useImageryShown(kind: string, opacity: number | null) {
     if (opacity == null) return;
     const el = map.getContainer();
     el.dataset.imagery = `${kind} ${opacity}`;
-    return () => { delete el.dataset.imagery; };
+    return () => {
+      delete el.dataset.imagery;
+    };
   }, [map, kind, opacity]);
 }
 
@@ -87,7 +91,11 @@ function useChartDrawnFirst(): boolean {
     map.on("sourcedata", tile);
     map.once("idle", done);
     const latest = window.setTimeout(done, LAND_WATER_LATEST_MS);
-    return () => { map.off("sourcedata", tile); map.off("idle", done); window.clearTimeout(latest); };
+    return () => {
+      map.off("sourcedata", tile);
+      map.off("idle", done);
+      window.clearTimeout(latest);
+    };
   }, [map, drawn]);
   return drawn;
 }
@@ -96,18 +104,22 @@ function useChartDrawnFirst(): boolean {
  *  USGS's imagery or Google's map or satellite, at the strength picked. */
 export function OverlayGl() {
   const overlay = useShownOverlay();
-  const strength = usePreferences(s => s.overlayStrength);
+  const strength = usePreferences((s) => s.overlayStrength);
   if (overlay === "none") return <CloseBase />;
-  return overlay === "usgs"
-    ? <Usgs opacity={OPACITY[strength]} />
-    : <Google key={overlay} kind={overlay === "google-map" ? "map" : "satellite"} opacity={OPACITY[strength]} />;
+  return overlay === "usgs" ? (
+    <Usgs opacity={OPACITY[strength]} />
+  ) : (
+    <Google key={overlay} kind={overlay === "google-map" ? "map" : "satellite"} opacity={OPACITY[strength]} />
+  );
 }
 
 function Usgs({ opacity }: { opacity: number }) {
   useTiles("overlay-usgs", "imagery", USGS_URL, 16);
   useGlPaint(["overlay-usgs"], { "raster-opacity": opacity });
   useImageryShown("usgs", opacity);
-  useCredit('Imagery <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>');
+  useCredit(
+    'Imagery <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>',
+  );
   return null;
 }
 
@@ -135,27 +147,46 @@ function Google({ kind, opacity }: { kind: "map" | "satellite"; opacity: number 
     const ask = () => {
       const b = map.getBounds();
       const q = new URLSearchParams({
-        session: session.session, key: google.key, zoom: String(Math.round(map.getZoom() + 1)),
-        north: String(Math.min(89.9, b.getNorth())), south: String(Math.max(-89.9, b.getSouth())),
-        east: String(Math.max(-179.9, Math.min(179.9, b.getEast()))), west: String(Math.max(-179.9, Math.min(179.9, b.getWest()))),
+        session: session.session,
+        key: google.key,
+        zoom: String(Math.round(map.getZoom() + 1)),
+        north: String(Math.min(89.9, b.getNorth())),
+        south: String(Math.max(-89.9, b.getSouth())),
+        east: String(Math.max(-179.9, Math.min(179.9, b.getEast()))),
+        west: String(Math.max(-179.9, Math.min(179.9, b.getWest()))),
       });
-      void fetch(`${GOOGLE}/tile/v1/viewport?${q}`).then(r => (r.ok ? r.json() : null)).then((info: { copyright?: string } | null) => {
-        if (live && info?.copyright) setCopyright(info.copyright);
-      }).catch(() => { /* the copyright as it was */ });
+      void fetch(`${GOOGLE}/tile/v1/viewport?${q}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((info: { copyright?: string } | null) => {
+          if (live && info?.copyright) setCopyright(info.copyright);
+        })
+        .catch(() => {
+          /* the copyright as it was */
+        });
     };
     ask();
     map.on("moveend", ask);
-    return () => { live = false; map.off("moveend", ask); };
+    return () => {
+      live = false;
+      map.off("moveend", ask);
+    };
   }, [map, google, session]);
-  useCredit(session ? `<span aria-label="Google Maps" data-testid="google-credit">Google Maps</span>${copyright ? ` · ${copyright}` : ""}` : null);
+  useCredit(
+    session ? `<span aria-label="Google Maps" data-testid="google-credit">Google Maps</span>${copyright ? ` · ${copyright}` : ""}` : null,
+  );
   if (!google || !session) return null;
-  return <GoogleTiles key={session.session} url={`${GOOGLE}/v1/2dtiles/{z}/{x}/{y}?session=${encodeURIComponent(session.session)}&key=${encodeURIComponent(google.key)}`} max={kind === "map" ? 22 : 20} opacity={opacity} />;
+  return (
+    <GoogleTiles
+      key={session.session}
+      url={`${GOOGLE}/v1/2dtiles/{z}/{x}/{y}?session=${encodeURIComponent(session.session)}&key=${encodeURIComponent(google.key)}`}
+      max={kind === "map" ? 22 : 20}
+      opacity={opacity}
+    />
+  );
 }
 
 function GoogleTiles({ url, max, opacity }: { url: string; max: number; opacity: number | null }) {
-  return opacity == null
-    ? <CloseTiles url={url} max={max} />
-    : <OverlayTiles url={url} max={max} opacity={opacity} />;
+  return opacity == null ? <CloseTiles url={url} max={max} /> : <OverlayTiles url={url} max={max} opacity={opacity} />;
 }
 
 function OverlayTiles({ url, max, opacity }: { url: string; max: number; opacity: number }) {
@@ -170,14 +201,22 @@ function OverlayTiles({ url, max, opacity }: { url: string; max: number; opacity
  *  last zoom while it is there. */
 function CloseTiles({ url, max }: { url: string; max: number }) {
   const { map } = useGlMap();
-  useTiles("close-google", "imagery", url, max, {
-    "raster-opacity": ["interpolate", ["linear"], ["zoom"], CLOSE_FROM, 0, CLOSE_FULL, 1],
-  }, CLOSE_FROM - 0.5);
+  useTiles(
+    "close-google",
+    "imagery",
+    url,
+    max,
+    { "raster-opacity": ["interpolate", ["linear"], ["zoom"], CLOSE_FROM, 0, CLOSE_FULL, 1] },
+    CLOSE_FROM - 0.5,
+  );
   useEffect(() => {
     const was = map.getMaxZoom();
     map.setMaxZoom(Math.max(was, CLOSE_MAX_ZOOM));
     map.getContainer().dataset.closeBase = "google";
-    return () => { map.setMaxZoom(was); delete map.getContainer().dataset.closeBase; };
+    return () => {
+      map.setMaxZoom(was);
+      delete map.getContainer().dataset.closeBase;
+    };
   }, [map]);
   return null;
 }

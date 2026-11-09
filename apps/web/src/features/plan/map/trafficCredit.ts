@@ -7,14 +7,15 @@ const ATTRIBUTION = "Traffic adsb.lol, ODbL";
 /** Each source the planner names (wingtip.traffic: "adsb.lol and adsb.fi"),
  *  credited as its terms ask: adsb.fi's by its name, linked in the
  *  console's About. */
-const CREDITS: Record<string, string> = {
-  "adsb.lol": ATTRIBUTION, "ADS-B Exchange": "ADS-B Exchange", "adsb.fi": "adsb.fi",
-};
+const CREDITS: Record<string, string> = { "adsb.lol": ATTRIBUTION, "ADS-B Exchange": "ADS-B Exchange", "adsb.fi": "adsb.fi" };
 
 /** The map's traffic credit for the planner's `source`: adsb.lol's
  *  where it names none it knows. */
 export function trafficCredit(source: string | undefined): string {
-  const named = (source ?? "adsb.lol").split(" and ").map(s => CREDITS[s]).filter((c): c is string => !!c);
+  const named = (source ?? "adsb.lol")
+    .split(" and ")
+    .map((s) => CREDITS[s])
+    .filter((c): c is string => !!c);
   if (!named.length) return ATTRIBUTION;
   return named[0] === ATTRIBUTION ? [ATTRIBUTION, ...named.slice(1)].join(" · ") : `Traffic ${named.join(" · ")}`;
 }

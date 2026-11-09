@@ -6,15 +6,26 @@ const GALT = { ident: "10C", name: "Galt Field Airport", city: "Greenwood/Wonder
 const at = new Date(2026, 9, 16, 14, 5).getTime();
 
 const state = (over: Partial<FlightStatus>): FlightStatus => ({
-  hex: "a06d40", heard_s: 4, airborne: false, aircraft: null, departed: null, arrived: null, ...over,
+  hex: "a06d40",
+  heard_s: 4,
+  airborne: false,
+  aircraft: null,
+  departed: null,
+  arrived: null,
+  ...over,
 });
-const flying = (lat: number, lon: number, altitude_ft = 2500): FlightStatus => state({
-  airborne: true, departed: GALT,
-  aircraft: { hex: "a06d40", lat, lon, altitude_ft, pressure_altitude: false, track_deg: 90, speed_kt: 95 },
-});
+const flying = (lat: number, lon: number, altitude_ft = 2500): FlightStatus =>
+  state({
+    airborne: true,
+    departed: GALT,
+    aircraft: { hex: "a06d40", lat, lon, altitude_ft, pressure_altitude: false, track_deg: 90, speed_kt: 95 },
+  });
 const landed = state({ arrived: { ...GALT, at: at / 1000 - 60 } });
 const alert = (kind: AircraftAlert["kind"], over: Partial<AircraftAlert> = {}): AircraftAlert => ({
-  hex: "a06d40", name: "N12661", kind, ...over,
+  hex: "a06d40",
+  name: "N12661",
+  kind,
+  ...over,
 });
 const watched = (airborne: boolean | null, inside: Record<string, boolean> = {}): Watched => ({ airborne, inside });
 

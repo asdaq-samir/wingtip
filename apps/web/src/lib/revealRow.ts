@@ -70,9 +70,14 @@ function inView(row: HTMLElement): boolean {
  *  ten frames more. */
 function moving(el: HTMLElement): boolean {
   for (let node: Element | null = el; node; node = node.parentElement) {
-    const running = node.getAnimations().some(animation =>
-      animation.playState === "running" && animation.effect?.getTiming().iterations !== Infinity
-      && !(animation instanceof CSSTransition && COLOURS.has(animation.transitionProperty)));
+    const running = node
+      .getAnimations()
+      .some(
+        (animation) =>
+          animation.playState === "running" &&
+          animation.effect?.getTiming().iterations !== Infinity &&
+          !(animation instanceof CSSTransition && COLOURS.has(animation.transitionProperty)),
+      );
     if (running) return true;
   }
   return false;
@@ -80,8 +85,19 @@ function moving(el: HTMLElement): boolean {
 
 /** What a transition of moves nothing. */
 const COLOURS = new Set([
-  "color", "background-color", "border-color", "border-top-color", "border-right-color", "border-bottom-color",
-  "border-left-color", "outline-color", "fill", "stroke", "opacity", "box-shadow", "text-decoration-color",
+  "color",
+  "background-color",
+  "border-color",
+  "border-top-color",
+  "border-right-color",
+  "border-bottom-color",
+  "border-left-color",
+  "outline-color",
+  "fill",
+  "stroke",
+  "opacity",
+  "box-shadow",
+  "text-decoration-color",
 ]);
 
 /** The vertical band of the page not clipped away from `el` by any of

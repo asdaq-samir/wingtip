@@ -34,29 +34,51 @@ export default function TvLink() {
   const { data: pilot, isLoading } = useQuery(pilotQuery);
   const approve = useMutation({ mutationFn: (code: string) => api.approveDevice(code), meta: { silent: true } });
   // Off the address at once, so a reload does not open the box again.
-  useEffect(() => { if (open) forgetTvAddress(); }, [open]);
+  useEffect(() => {
+    if (open) forgetTvAddress();
+  }, [open]);
   if (!open) return null;
   const close = () => setOpen(false);
   return (
     <SheetDialog
-      open onOpenChange={next => { if (!next) close(); }} testId="tv-link" title="Sign in a TV"
+      open
+      onOpenChange={(next) => {
+        if (!next) close();
+      }}
+      testId="tv-link"
+      title="Sign in a TV"
       description="Enter the code the TV shows, and it signs in as you. Only enter a code from a TV you are looking at: anyone who has it can use your account."
     >
       {isLoading ? null : !pilot ? (
         <div className="flex flex-col items-start gap-3">
           <p className={TEXT.prose}>Sign in on this phone first, then open the address the TV shows again.</p>
-          <Suspense fallback={null}><SignInModal /></Suspense>
+          <Suspense fallback={null}>
+            <SignInModal />
+          </Suspense>
         </div>
       ) : approve.isSuccess ? (
         <p role="status" className={TEXT.prose} data-testid="tv-link-done">
           The TV is signing in as <span className="font-semibold">{pilot.email}</span>.
         </p>
       ) : (
-        <form className="flex flex-col gap-2" onSubmit={e => { e.preventDefault(); approve.mutate(typed); }}>
+        <form
+          className="flex flex-col gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            approve.mutate(typed);
+          }}
+        >
           <Input
-            value={typed} onChange={e => setTyped(e.target.value)} placeholder="XXXX-XXXX" aria-label="The TV's code"
-            autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false}
-            className="font-mono tracking-widest" data-testid="tv-link-code"
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            placeholder="XXXX-XXXX"
+            aria-label="The TV's code"
+            autoCapitalize="characters"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            className="font-mono tracking-widest"
+            data-testid="tv-link-code"
           />
           {approve.isError && (
             <p role="alert" className={`text-destructive ${TEXT.prose}`} data-testid="tv-link-error">

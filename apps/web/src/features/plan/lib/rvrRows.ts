@@ -35,12 +35,21 @@ export function smWords(sm: number): string {
  *  pilot's own visibility minimum, statute miles) where one is set. */
 export function rvrRows(runways: RunwayRvr[], minimumSm: number | null): RvrRow[] {
   const checked = callEngine("rvr_check", {
-    runways: runways.map(r => ({ runway: r.runway, touchdown_ft: r.touchdown_ft ?? null, midpoint_ft: r.midpoint_ft ?? null, rollout_ft: r.rollout_ft ?? null })),
+    runways: runways.map((r) => ({
+      runway: r.runway,
+      touchdown_ft: r.touchdown_ft ?? null,
+      midpoint_ft: r.midpoint_ft ?? null,
+      rollout_ft: r.rollout_ft ?? null,
+    })),
     minimum_sm: minimumSm,
   });
   return runways.map((r, i) => ({
     runway: r.runway,
-    readings: [readingWords(r.touchdown_ft, r.touchdown_more), readingWords(r.midpoint_ft, r.midpoint_more), readingWords(r.rollout_ft, r.rollout_more)].join(" · "),
+    readings: [
+      readingWords(r.touchdown_ft, r.touchdown_more),
+      readingWords(r.midpoint_ft, r.midpoint_more),
+      readingWords(r.rollout_ft, r.rollout_more),
+    ].join(" · "),
     under: checked.runways[i]?.under && minimumSm != null ? `Under your ${smWords(minimumSm)} SM minimum (14 CFR 91.175(h))` : null,
   }));
 }

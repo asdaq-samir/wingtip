@@ -42,8 +42,13 @@ describe("an ATIS heard", () => {
     expect(visibilityWords(0.75)).toBe("¾ sm");
     expect(visibilityWords(10)).toBe("10 sm");
     // The ceiling is the lowest broken or overcast layer (14 CFR 1.1).
-    expect(skyWords([{ cover: "scattered", base_ft: 1200 }, { cover: "broken", base_ft: 2500 }, { cover: "overcast", base_ft: 4000 }]))
-      .toBe("Scattered 1,200 ft · Broken 2,500 ft (ceiling) · Overcast 4,000 ft");
+    expect(
+      skyWords([
+        { cover: "scattered", base_ft: 1200 },
+        { cover: "broken", base_ft: 2500 },
+        { cover: "overcast", base_ft: 4000 },
+      ]),
+    ).toBe("Scattered 1,200 ft · Broken 2,500 ft (ceiling) · Overcast 4,000 ft");
     expect(skyWords([{ cover: "clear", base_ft: null }])).toBe("Clear");
   });
 });

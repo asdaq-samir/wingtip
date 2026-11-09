@@ -40,14 +40,17 @@ interface DragOf {
 export function useSheetDrag(of: DragOf) {
   const swallowClick = useRef(false);
   const latest = useRef(of);
-  useEffect(() => { latest.current = of; });
+  useEffect(() => {
+    latest.current = of;
+  });
 
   const startDrag = (start: ReactPointerEvent) => {
     if (start.button !== 0) return;
     const d = latest.current;
     const from = d.height();
     const sign = d.fromBottom ? -1 : 1;
-    let moved = false, to = from;
+    let moved = false,
+      to = from;
     const track: Track = [{ y: start.clientY, t: start.timeStamp }];
     let frame = 0;
     const move = (event: PointerEvent) => {
@@ -59,7 +62,11 @@ export function useSheetDrag(of: DragOf) {
       moved = true;
       follow(track, event.clientY, event.timeStamp);
       to = clampHeight(latest.current.detents, from + sign * (event.clientY - start.clientY));
-      if (!frame) frame = requestAnimationFrame(() => { frame = 0; latest.current.place(to); });
+      if (!frame)
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          latest.current.place(to);
+        });
     };
     const end = (event: PointerEvent) => {
       if (frame) cancelAnimationFrame(frame);
@@ -70,7 +77,9 @@ export function useSheetDrag(of: DragOf) {
       if (!moved) return;
       // A click from this release, if one comes, comes before any timer.
       swallowClick.current = event.type === "pointerup";
-      window.setTimeout(() => { swallowClick.current = false; }, 0);
+      window.setTimeout(() => {
+        swallowClick.current = false;
+      }, 0);
       latest.current.release(to, sign * speedAt(track, event.timeStamp));
     };
     window.addEventListener("pointermove", move);
@@ -101,7 +110,16 @@ export function useSheetDrag(of: DragOf) {
       }
       return path;
     };
-    let gesture: { x: number; y: number; from: number; target: Element; sheet: boolean | null; moved: boolean; to: number; track: Track } | null = null;
+    let gesture: {
+      x: number;
+      y: number;
+      from: number;
+      target: Element;
+      sheet: boolean | null;
+      moved: boolean;
+      to: number;
+      track: Track;
+    } | null = null;
     let frame = 0;
     const letGo = (g: { to: number }, speed: number) => latest.current.release(g.to, speed);
     const start = (event: TouchEvent) => {
@@ -111,10 +129,19 @@ export function useSheetDrag(of: DragOf) {
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
       const touch = event.touches[0];
-      gesture = touch && event.touches.length === 1 && event.target instanceof Element ? {
-        x: touch.clientX, y: touch.clientY, from: latest.current.height(), target: event.target,
-        sheet: null, moved: false, to: latest.current.height(), track: [{ y: touch.clientY, t: event.timeStamp }],
-      } : null;
+      gesture =
+        touch && event.touches.length === 1 && event.target instanceof Element
+          ? {
+              x: touch.clientX,
+              y: touch.clientY,
+              from: latest.current.height(),
+              target: event.target,
+              sheet: null,
+              moved: false,
+              to: latest.current.height(),
+              track: [{ y: touch.clientY, t: event.timeStamp }],
+            }
+          : null;
     };
     const move = (event: TouchEvent) => {
       const g = gesture;
@@ -125,12 +152,14 @@ export function useSheetDrag(of: DragOf) {
         if (g.moved) letGo(g, 0);
         return;
       }
-      const dx = touch.clientX - g.x, dy = touch.clientY - g.y;
+      const dx = touch.clientX - g.x,
+        dy = touch.clientY - g.y;
       // A first move that went nowhere says nothing of the direction.
       if (g.sheet === null && dx === 0 && dy === 0) return;
       if (g.sheet === null) {
         const { detents, fromBottom, height } = latest.current;
-        g.sheet = Math.abs(dy) > Math.abs(dx) && sheetTakes(pathOf(g.target), dy, fromBottom, height() < Math.max(...Object.values(detents)) - 1);
+        g.sheet =
+          Math.abs(dy) > Math.abs(dx) && sheetTakes(pathOf(g.target), dy, fromBottom, height() < Math.max(...Object.values(detents)) - 1);
         if (!g.sheet) {
           gesture = null;
           return;
@@ -143,7 +172,11 @@ export function useSheetDrag(of: DragOf) {
       follow(g.track, touch.clientY, event.timeStamp);
       const { detents, fromBottom } = latest.current;
       g.to = clampHeight(detents, g.from + (fromBottom ? -dy : dy));
-      if (!frame) frame = requestAnimationFrame(() => { frame = 0; if (gesture) latest.current.place(gesture.to); });
+      if (!frame)
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          if (gesture) latest.current.place(gesture.to);
+        });
     };
     const end = (event: TouchEvent) => {
       const g = gesture;

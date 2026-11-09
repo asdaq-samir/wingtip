@@ -57,11 +57,14 @@ export interface RunwayPicks {
 /** The end the pilot picked at `ident` for a takeoff or a landing, by the
  *  field's ICAO or FAA ident alike (a stop typed UES is KUES to the
  *  planner); null with no pick. */
-export function pickedEnd(picks: RunwayPicks | null | undefined, ident: string, kind: "takeoff" | "landing", departure: boolean): string | null {
+export function pickedEnd(
+  picks: RunwayPicks | null | undefined,
+  ident: string,
+  kind: "takeoff" | "landing",
+  departure: boolean,
+): string | null {
   if (!picks) return null;
-  return callEngine("gonogo_picked_end", {
-    picks: { pattern: [...picks.pattern], takeoff: [...picks.takeoff] }, ident, kind, departure,
-  });
+  return callEngine("gonogo_picked_end", { picks: { pattern: [...picks.pattern], takeoff: [...picks.takeoff] }, ident, kind, departure });
 }
 
 /** The runway end flown at a field: the pilot's pick in FPL where they
@@ -124,14 +127,26 @@ export function windPick(runways: Runway[], nearby?: ReportedWind | null, foreca
   const p = callEngine("wind_pick", {
     runways,
     nearby: nearby
-      ? { station: nearby.station, distance_nm: nearby.distanceNm, dir_true_deg: nearby.dirTrueDeg ?? null, speed_kt: nearby.speedKt ?? null, gust_kt: nearby.gustKt ?? null }
+      ? {
+          station: nearby.station,
+          distance_nm: nearby.distanceNm,
+          dir_true_deg: nearby.dirTrueDeg ?? null,
+          speed_kt: nearby.speedKt ?? null,
+          gust_kt: nearby.gustKt ?? null,
+        }
       : null,
     forecast_at: forecastAt ?? null,
   });
   if (!p) return null;
   return {
-    ident: p.ident, headwindKt: p.headwind_kt, crosswindKt: p.crosswind_kt, gustCrosswindKt: p.gust_crosswind_kt, calm: p.calm,
-    ...(p.variable_kt != null ? { variableKt: p.variable_kt } : {}), ...(p.in_use ? { inUse: true } : {}), from: p.from,
+    ident: p.ident,
+    headwindKt: p.headwind_kt,
+    crosswindKt: p.crosswind_kt,
+    gustCrosswindKt: p.gust_crosswind_kt,
+    calm: p.calm,
+    ...(p.variable_kt != null ? { variableKt: p.variable_kt } : {}),
+    ...(p.in_use ? { inUse: true } : {}),
+    from: p.from,
     ...(p.forecast_at != null ? { forecastAt: p.forecast_at } : {}),
   };
 }
@@ -167,7 +182,8 @@ interface Entry {
  */
 export function entryFor(end: RunwayEnd, courseDeg: number): Entry {
   const e = callEngine("pattern_entry", {
-    end: { ident: end.ident, heading_true_deg: end.heading_true_deg ?? null, traffic: end.traffic }, course_deg: courseDeg,
+    end: { ident: end.ident, heading_true_deg: end.heading_true_deg ?? null, traffic: end.traffic },
+    course_deg: courseDeg,
   });
   return { from: e.from, patternSide: e.pattern_side, words: e.words };
 }

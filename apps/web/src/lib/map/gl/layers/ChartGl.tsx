@@ -19,34 +19,48 @@ const CHART_LAYERS = ["chart-under", "chart", "chart-terminal"];
 export function ChartGl({ course, previewing = false }: { course: Course | null; previewing?: boolean }) {
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const chart = course ?? chartOnly ?? null;
-  const base = usePreferences(s => s.base);
+  const base = usePreferences((s) => s.base);
   // Pinned, or a Class B chip hovered (ClassBGl's `previewing`).
-  const pinned = usePreferences(s => s.tac) || previewing;
-  const chartNight = usePreferences(s => s.chartNight);
+  const pinned = usePreferences((s) => s.tac) || previewing;
+  const chartNight = usePreferences((s) => s.chartNight);
   const sunlight = useSunlight();
   const dark = useDarkTheme();
   // On <html>, for index.css's night colours.
-  useEffect(() => { document.documentElement.dataset.chartNight = chartNight; }, [chartNight]);
+  useEffect(() => {
+    document.documentElement.dataset.chartNight = chartNight;
+  }, [chartNight]);
   const spec = useMemo(() => (chart ? chartStyle(chart, base, pinned, window.location.origin) : null), [chart, base, pinned]);
   // The base and the terminal sheet each made again only as its own tiles
   // change: pinning the TAC left the sectional's tiles where they were.
-  const parts = useMemo(() => (spec ? (["base", "terminal"] as const).map(part => {
-    const ids = part === "base" ? ["chart-under", "chart"] : ["chart-terminal"];
-    const sources = Object.fromEntries(Object.entries(spec.sources).filter(([id]) => ids.includes(id)));
-    return { part, spec: { ...spec, sources, layers: spec.layers.filter(l => ids.includes(l.id)) } };
-  }).filter(p => p.spec.layers.length) : []), [spec]);
+  const parts = useMemo(
+    () =>
+      spec
+        ? (["base", "terminal"] as const)
+            .map((part) => {
+              const ids = part === "base" ? ["chart-under", "chart"] : ["chart-terminal"];
+              const sources = Object.fromEntries(Object.entries(spec.sources).filter(([id]) => ids.includes(id)));
+              return { part, spec: { ...spec, sources, layers: spec.layers.filter((l) => ids.includes(l.id)) } };
+            })
+            .filter((p) => p.spec.layers.length)
+        : [],
+    [spec],
+  );
   const night = dark && chartNight === "dimmed";
   // Which charts are drawn and how, on the map's element, for the browser
   // tests: each part's kind (its tiles' path) and the paint's look.
   const { map } = useGlMap();
-  const kinds = parts.map(p => /\/(?:chart-tile\/)?([a-z_]+)\/\{z\}/.exec(Object.values(p.spec.sources).at(-1)?.tiles?.[0] ?? "")?.[1] ?? "").join(" ");
+  const kinds = parts
+    .map((p) => /\/(?:chart-tile\/)?([a-z_]+)\/\{z\}/.exec(Object.values(p.spec.sources).at(-1)?.tiles?.[0] ?? "")?.[1] ?? "")
+    .join(" ");
   const look = night ? "dimmed" : sunlight ? "bright" : "normal";
   useEffect(() => {
     const el = map.getContainer();
     el.dataset.chartKinds = kinds;
     el.dataset.chartLook = look;
   }, [map, kinds, look]);
-  return parts.map(({ part, spec }) => <ChartSources key={`${part}:${JSON.stringify(spec.sources)}`} spec={spec} night={night} sunlight={sunlight} />);
+  return parts.map(({ part, spec }) => (
+    <ChartSources key={`${part}:${JSON.stringify(spec.sources)}`} spec={spec} night={night} sunlight={sunlight} />
+  ));
 }
 
 /** One chart's sources and layers, made again (`key`) as its tiles change;
@@ -75,7 +89,10 @@ function ChartSources({ spec, night, sunlight }: { spec: ChartStyle; night: bool
     };
     level();
     map.on("moveend", level);
-    return () => { map.off("sourcedata", drawn); map.off("moveend", level); };
+    return () => {
+      map.off("sourcedata", drawn);
+      map.off("moveend", level);
+    };
   }, [map, spec]);
   return null;
 }

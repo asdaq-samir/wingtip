@@ -29,7 +29,10 @@ export function NavaidsGl() {
 /** The VORs of the overlay tiles loaded round the view, as VorPins. */
 function tileVors(map: ReturnType<typeof useGlMap>["map"]): VorPin[] {
   const seen = new Map<string, VorPin>();
-  for (const f of map.querySourceFeatures(OVERLAY_SOURCE, { sourceLayer: "navaids", filter: ["in", ["get", "kind"], ["literal", ["VORTAC", "VOR/DME", "VOR"]]] })) {
+  for (const f of map.querySourceFeatures(OVERLAY_SOURCE, {
+    sourceLayer: "navaids",
+    filter: ["in", ["get", "kind"], ["literal", ["VORTAC", "VOR/DME", "VOR"]]],
+  })) {
     const vor = vorOfTile(f);
     seen.set(`${vor.ident}-${vor.lat}`, vor);
   }
@@ -38,22 +41,24 @@ function tileVors(map: ReturnType<typeof useGlMap>["map"]): VorPin[] {
 
 function TileNavaids() {
   const { map, openCard } = useGlMap();
-  const show = usePreferences(s => s.navaids);
+  const show = usePreferences((s) => s.navaids);
   // The VORs about the view, for the point cards' "off a VOR" (pointActions'
   // stations), at each rest.
   useEffect(() => {
     const rest = () => {
       const stations = usePreferences.getState().navaids ? tileVors(map) : [];
       const was = usePointActions.getState().stations;
-      const key = (list: readonly { ident: string; lat: number }[]) => list.map(v => `${v.ident}-${v.lat}`).join();
+      const key = (list: readonly { ident: string; lat: number }[]) => list.map((v) => `${v.ident}-${v.lat}`).join();
       if (key(stations) !== key(was)) usePointActions.setState({ stations });
     };
     rest();
     map.on("idle", rest);
-    return () => { map.off("idle", rest); };
+    return () => {
+      map.off("idle", rest);
+    };
   }, [map, show]);
-  useGlProbe("navaid-marks", ["navaids", "fixes"], f => ({ ident: f.properties.ident, kind: f.layer.id === "fixes" ? "fix" : "vor" }));
-  useGlTap(["navaids", "fixes"], TAP.mark, TAP.rank.mark + 1, feature => {
+  useGlProbe("navaid-marks", ["navaids", "fixes"], (f) => ({ ident: f.properties.ident, kind: f.layer.id === "fixes" ? "fix" : "vor" }));
+  useGlTap(["navaids", "fixes"], TAP.mark, TAP.rank.mark + 1, (feature) => {
     const at = pointOf(feature);
     if (!at) return;
     if (feature.layer.id === "navaids") {
@@ -78,10 +83,12 @@ export function WaypointsGl({ exclude }: { exclude: Set<string> }) {
 function TileWaypoints({ exclude }: { exclude: Set<string> }) {
   const { map, openCard } = useGlMap();
   const key = [...exclude].sort().join();
-  useEffect(() => { setOverlayExclusion(map, "waypoints", key ? key.split(",") : []); }, [map, key]);
+  useEffect(() => {
+    setOverlayExclusion(map, "waypoints", key ? key.split(",") : []);
+  }, [map, key]);
   useEffect(() => () => setOverlayExclusion(map, "waypoints", []), [map]);
-  useGlProbe("navaid-marks", [VFR], f => ({ ident: f.properties.ident, kind: "vfr" }));
-  useGlTap([VFR], TAP.mark, TAP.rank.mark + 1, feature => {
+  useGlProbe("navaid-marks", [VFR], (f) => ({ ident: f.properties.ident, kind: "vfr" }));
+  useGlTap([VFR], TAP.mark, TAP.rank.mark + 1, (feature) => {
     const at = pointOf(feature);
     if (!at) return;
     const w: Waypoint = { ident: String(feature.properties.ident), ...at };

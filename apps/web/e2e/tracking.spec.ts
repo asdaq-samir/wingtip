@@ -10,19 +10,63 @@ import { closeCard, drawn, grabberTo, settle, showTabs, sideDrawer, slow, stripS
  */
 
 const UAL = {
-  hex: "a0b7d8", callsign: "UAL2088", registration: "N14511", type: "A21N", lat: 42.35, lon: -88.0,
-  altitude_ft: 7000, pressure_altitude: false, track_deg: 90, speed_kt: 250, vertical_fpm: -1200, seen_s: 0.5, squawk: "3324",
+  hex: "a0b7d8",
+  callsign: "UAL2088",
+  registration: "N14511",
+  type: "A21N",
+  lat: 42.35,
+  lon: -88.0,
+  altitude_ft: 7000,
+  pressure_altitude: false,
+  track_deg: 90,
+  speed_kt: 250,
+  vertical_fpm: -1200,
+  seen_s: 0.5,
+  squawk: "3324",
 };
 const CESSNA = {
-  hex: "a128b9", callsign: "N174HA", registration: "N174HA", type: "C172", lat: 42.30, lon: -88.12,
-  altitude_ft: 2500, pressure_altitude: false, track_deg: 320, speed_kt: 94, vertical_fpm: 0, seen_s: 0.3, squawk: "1200",
+  hex: "a128b9",
+  callsign: "N174HA",
+  registration: "N174HA",
+  type: "C172",
+  lat: 42.3,
+  lon: -88.12,
+  altitude_ft: 2500,
+  pressure_altitude: false,
+  track_deg: 320,
+  speed_kt: 94,
+  vertical_fpm: 0,
+  seen_s: 0.3,
+  squawk: "1200",
 };
 const FAA = {
-  n_number: "N14511", mode_s_hex: "a0b7d8", serial: "11775", manufacturer: "Airbus S A S", model: "A321-271NX", year: 2024,
-  aircraft_type: "Fixed wing multi engine", engines: 2, seats: 246, engine: "IAE PW1133G-JM", engine_type: "Turbo-fan",
-  horsepower: null, thrust_lb: 33110, owner: "United Airlines Inc", owner_type: "Corporation", co_owners: 0, city: "Chicago",
-  state: "IL", country: "US", certificate_issued: "2024-04-05", expires: "2031-04-30", airworthiness: "Standard (transport)",
-  airworthiness_date: "2024-04-08", kit: null, fractional: false, status: "Valid", standing: "valid",
+  n_number: "N14511",
+  mode_s_hex: "a0b7d8",
+  serial: "11775",
+  manufacturer: "Airbus S A S",
+  model: "A321-271NX",
+  year: 2024,
+  aircraft_type: "Fixed wing multi engine",
+  engines: 2,
+  seats: 246,
+  engine: "IAE PW1133G-JM",
+  engine_type: "Turbo-fan",
+  horsepower: null,
+  thrust_lb: 33110,
+  owner: "United Airlines Inc",
+  owner_type: "Corporation",
+  co_owners: 0,
+  city: "Chicago",
+  state: "IL",
+  country: "US",
+  certificate_issued: "2024-04-05",
+  expires: "2031-04-30",
+  airworthiness: "Standard (transport)",
+  airworthiness_date: "2024-04-08",
+  kit: null,
+  fractional: false,
+  status: "Valid",
+  standing: "valid",
 };
 const ROUTE = {
   airports: [
@@ -32,7 +76,13 @@ const ROUTE = {
   plausible: true,
 };
 const DETAIL = {
-  hex: "a0b7d8", faa: FAA, registration: "N14511", type: "A21N", description: "AIRBUS A-321neo", operator: "UNITED AIRLINES INC", year: "2024",
+  hex: "a0b7d8",
+  faa: FAA,
+  registration: "N14511",
+  type: "A21N",
+  description: "AIRBUS A-321neo",
+  operator: "UNITED AIRLINES INC",
+  year: "2024",
   departed: { ident: "TJSJ", name: "Luis Munoz Marin International Airport", at: Date.now() / 1000 - 4 * 3600 },
   trail: [
     { t: Date.now() / 1000 - 600, lat: 42.35, lon: -88.6, alt_ft: 12000 },
@@ -44,25 +94,42 @@ const DETAIL = {
 /** The planner's traffic, an airplane's flight and a search, stubbed. */
 async function sky(page: Page, detail: object = DETAIL) {
   const reported = Date.now();
-  await page.route(url => url.pathname.endsWith("/api/planner/traffic"), route =>
-    // Seconds old, as the planner's answer is -- never past the half
-    // minute the map carries an airplane on for (CARRY_S), however long
-    // the test has run: a slow run's airplanes had all aged off the map.
-    route.fulfill({ json: { aircraft: [UAL, CESSNA], age_s: Math.min(5, (Date.now() - reported) / 1000), source: "adsb.lol", license: "ODbL 1.0" } }));
-  await page.route(url => url.pathname.startsWith("/api/planner/traffic/flight/"), route => route.fulfill({ json: detail }));
-  await page.route(url => url.pathname.endsWith("/api/planner/traffic/route"), route =>
-    route.fulfill({ json: new URL(route.request().url()).searchParams.get("callsign") === "UAL2088" ? ROUTE : null }));
-  await page.route(url => url.pathname.endsWith("/api/planner/traffic/find"), route =>
-    route.fulfill({ json: { aircraft: new URL(route.request().url()).searchParams.get("q") === "UAL2088" ? [UAL] : [] } }));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic"),
+    (route) =>
+      // Seconds old, as the planner's answer is -- never past the half
+      // minute the map carries an airplane on for (CARRY_S), however long
+      // the test has run: a slow run's airplanes had all aged off the map.
+      route.fulfill({
+        json: { aircraft: [UAL, CESSNA], age_s: Math.min(5, (Date.now() - reported) / 1000), source: "adsb.lol", license: "ODbL 1.0" },
+      }),
+  );
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/traffic/flight/"),
+    (route) => route.fulfill({ json: detail }),
+  );
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic/route"),
+    (route) => route.fulfill({ json: new URL(route.request().url()).searchParams.get("callsign") === "UAL2088" ? ROUTE : null }),
+  );
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic/find"),
+    (route) => route.fulfill({ json: { aircraft: new URL(route.request().url()).searchParams.get("q") === "UAL2088" ? [UAL] : [] } }),
+  );
   // No photo of it, unless a test gives one: Planespotters' sky is not the suite's either.
-  await page.route(url => url.hostname === "api.planespotters.net", route => route.fulfill({ json: { photos: [] } }));
+  await page.route(
+    (url) => url.hostname === "api.planespotters.net",
+    (route) => route.fulfill({ json: { photos: [] } }),
+  );
 }
 
 test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("Aircraft is a tab, finds an airplane by its callsign, and a tap on one tracks it: its card, its path, the map on it", async ({ page }) => {
+test("Aircraft is a tab, finds an airplane by its callsign, and a tap on one tracks it: its card, its path, the map on it", async ({
+  page,
+}) => {
   await sky(page);
   await page.goto("/app/plan");
   await settle(page);
@@ -146,12 +213,17 @@ test("a search finds the airplanes about as it is typed, and asks the planner on
   // fills can run past it and have "N654F" asked (this test failed twice in
   // a row on a busy Mac, 2026-10-29, and passed 6 of 6 on a quieter one).
   const asked: string[] = [];
-  await page.route(url => url.pathname.endsWith("/api/planner/traffic/find"), async route => {
-    const q = new URL(route.request().url()).searchParams.get("q")!;
-    asked.push(q);
-    await new Promise(done => setTimeout(done, 4000));
-    await route.fulfill({ json: { aircraft: q === "N654FL" ? [{ ...CESSNA, hex: "a89c1e", callsign: "N654FL", registration: "N654FL" }] : [] } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic/find"),
+    async (route) => {
+      const q = new URL(route.request().url()).searchParams.get("q")!;
+      asked.push(q);
+      await new Promise((done) => setTimeout(done, 4000));
+      await route.fulfill({
+        json: { aircraft: q === "N654FL" ? [{ ...CESSNA, hex: "a89c1e", callsign: "N654FL", registration: "N654FL" }] : [] },
+      });
+    },
+  );
   await page.goto("/app/plan?aircraft=1");
   await settle(page);
   const card = page.getByTestId("aircraft-card");
@@ -167,19 +239,43 @@ test("a search finds the airplanes about as it is typed, and asks the planner on
   }
   await expect(card.getByTestId("aircraft-found")).toHaveText([/N654FL/], { timeout: slow(15_000) });
   expect(asked.at(-1)).toBe("N654FL");
-  expect(asked.filter(q => q === "N654" || q === "N654F")).toEqual([]);
+  expect(asked.filter((q) => q === "N654" || q === "N654F")).toEqual([]);
 });
 
 test("an airplane not in the air is found by its registration, and its card says when it was last heard", async ({ page }) => {
   const piper = {
-    ...FAA, n_number: "N654FL", mode_s_hex: "a89c1e", manufacturer: "Piper", model: "PA-28-140", year: 1971, engines: 1, seats: 4,
-    engine: "Lycoming 0-320 Series", engine_type: "Reciprocating", horsepower: 180, thrust_lb: null, owner: "Roca Roja LLC", owner_type: "LLC",
-    city: "Meridian", state: "ID",
+    ...FAA,
+    n_number: "N654FL",
+    mode_s_hex: "a89c1e",
+    manufacturer: "Piper",
+    model: "PA-28-140",
+    year: 1971,
+    engines: 1,
+    seats: 4,
+    engine: "Lycoming 0-320 Series",
+    engine_type: "Reciprocating",
+    horsepower: 180,
+    thrust_lb: null,
+    owner: "Roca Roja LLC",
+    owner_type: "LLC",
+    city: "Meridian",
+    state: "ID",
   };
   const landed = Date.now() / 1000 - 3600;
-  await sky(page, { hex: "a89c1e", faa: piper, registration: "N654FL", departed: null,
-    trail: [{ t: landed - 600, lat: 43.5, lon: -116.3, alt_ft: 3000 }, { t: landed, lat: 43.56, lon: -116.22, alt_ft: null }] });
-  await page.route(url => url.pathname.endsWith("/api/planner/traffic/find"), route => route.fulfill({ json: { aircraft: [], registered: piper } }));
+  await sky(page, {
+    hex: "a89c1e",
+    faa: piper,
+    registration: "N654FL",
+    departed: null,
+    trail: [
+      { t: landed - 600, lat: 43.5, lon: -116.3, alt_ft: 3000 },
+      { t: landed, lat: 43.56, lon: -116.22, alt_ft: null },
+    ],
+  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic/find"),
+    (route) => route.fulfill({ json: { aircraft: [], registered: piper } }),
+  );
   await page.goto("/app/plan?aircraft=1");
   await settle(page);
   await page.getByTestId("aircraft-search").fill("N654FL");
@@ -209,16 +305,23 @@ test("while adsb.lol is busy a search shows what it can -- the FAA's record -- a
   await sky(page);
   let asked = 0;
   let busy = 1;
-  await page.route(url => url.pathname.endsWith("/api/planner/traffic/find"), route => {
-    asked += 1;
-    return route.fulfill({ json: asked <= busy ? { aircraft: [], registered: piper, checked: false } : { aircraft: [flying], checked: true } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic/find"),
+    (route) => {
+      asked += 1;
+      return route.fulfill({
+        json: asked <= busy ? { aircraft: [], registered: piper, checked: false } : { aircraft: [flying], checked: true },
+      });
+    },
+  );
   await page.goto("/app/plan?aircraft=1");
   await settle(page);
   const card = page.getByTestId("aircraft-card");
   await page.getByTestId("aircraft-search").fill("N654FL");
   // At once, the registration, not "Couldn't search"; then the airplane in the air.
-  await expect(card.getByTestId("aircraft-registered")).toContainText("Piper PA-28-140 · not yet known whether it is flying", { timeout: slow(15_000) });
+  await expect(card.getByTestId("aircraft-registered")).toContainText("Piper PA-28-140 · not yet known whether it is flying", {
+    timeout: slow(15_000),
+  });
   await expect(card.getByTestId("aircraft-unchecked")).toBeVisible();
   await expect(card.getByTestId("aircraft-found").first()).toContainText("N654FL", { timeout: slow(20_000) });
   await expect(card.getByTestId("aircraft-unchecked")).toHaveCount(0);
@@ -238,23 +341,42 @@ test("in the air, own ship's path flown is drawn behind it", async ({ page }) =>
   await page.addInitScript(() => {
     const started = Date.now();
     // East at 360 kt, a tenth of a mile a second, at 3,000 ft.
-    const position = () => ({
-      coords: {
-        latitude: 42.3246, longitude: -88.0741 + ((Date.now() - started) / 1000) * 0.1 / (60 * 0.7392),
-        accuracy: 10, heading: 90, speed: 360 / 1.943844, altitude: 3000 / 3.28084, altitudeAccuracy: 10, toJSON() { return this; },
-      },
-      timestamp: Date.now(), toJSON() { return this; },
-    }) as unknown as GeolocationPosition;
+    const position = () =>
+      ({
+        coords: {
+          latitude: 42.3246,
+          longitude: -88.0741 + (((Date.now() - started) / 1000) * 0.1) / (60 * 0.7392),
+          accuracy: 10,
+          heading: 90,
+          speed: 360 / 1.943844,
+          altitude: 3000 / 3.28084,
+          altitudeAccuracy: 10,
+          toJSON() {
+            return this;
+          },
+        },
+        timestamp: Date.now(),
+        toJSON() {
+          return this;
+        },
+      }) as unknown as GeolocationPosition;
     Geolocation.prototype.watchPosition = function (success: PositionCallback) {
       window.setTimeout(() => success(position()), 0);
       return window.setInterval(() => success(position()), 1000);
     };
-    Geolocation.prototype.clearWatch = function (id: number) { window.clearInterval(id); };
+    Geolocation.prototype.clearWatch = function (id: number) {
+      window.clearInterval(id);
+    };
     localStorage.removeItem("wingtip.owntrail");
-    localStorage.setItem("wingtip.ownship",
-      JSON.stringify({ state: { enabled: true, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 }));
+    localStorage.setItem(
+      "wingtip.ownship",
+      JSON.stringify({ state: { enabled: true, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 }),
+    );
   });
-  await page.route(url => url.pathname.endsWith("/api/planner/airspace/ahead"), route => route.fulfill({ json: { alerts: [], unavailable: [] } }));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airspace/ahead"),
+    (route) => route.fulfill({ json: { alerts: [], unavailable: [] } }),
+  );
   await page.goto("/app/plan");
   await settle(page);
   await expect.poll(async () => (await drawn(page, "own-trail")).length, { timeout: slow(15_000) }).toBeGreaterThan(0);
@@ -266,17 +388,43 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   const lci = { ident: "LCI", name: "Laconia Municipal Airport", city: "Laconia", region: "US-NH" };
   const lwm = { ident: "LWM", name: "Lawrence Municipal Airport", city: "Lawrence", region: "US-MA" };
   const points = Array.from({ length: 80 }, (_, i) => ({
-    t: off + i * 60, lat: 43.57 - i * 0.0107, lon: -71.42 + i * 0.0038, alt_ft: 800 + Math.min(i, 79 - i) * 120,
-    gs_kt: 100, track_deg: 165, vrate_fpm: i < 40 ? 500 : -500,
+    t: off + i * 60,
+    lat: 43.57 - i * 0.0107,
+    lon: -71.42 + i * 0.0038,
+    alt_ft: 800 + Math.min(i, 79 - i) * 120,
+    gs_kt: 100,
+    track_deg: 165,
+    vrate_fpm: i < 40 ? 500 : -500,
   }));
   await sky(page);
-  await page.route(url => /\/api\/planner\/traffic\/flight\/a0b7d8\/history$/.test(url.pathname), route => route.fulfill({ json: {
-    hex: "a0b7d8", registration: "N654FL", type: "P28A", flights: [
-      { id: Math.floor(off), origin: lci, destination: lwm, off, on: off + 79 * 60, landed: true, in_air: false, max_alt_ft: 5520 },
-      { id: Math.floor(off) - 7200, origin: lwm, destination: lci, off: off - 7200, on: off - 4400, landed: true, in_air: false, max_alt_ft: 4100 },
-    ] } }));
-  await page.route(url => /\/api\/planner\/traffic\/flight\/a0b7d8\/history\/\d+$/.test(url.pathname),
-    route => route.fulfill({ json: { id: Math.floor(off), points } }));
+  await page.route(
+    (url) => /\/api\/planner\/traffic\/flight\/a0b7d8\/history$/.test(url.pathname),
+    (route) =>
+      route.fulfill({
+        json: {
+          hex: "a0b7d8",
+          registration: "N654FL",
+          type: "P28A",
+          flights: [
+            { id: Math.floor(off), origin: lci, destination: lwm, off, on: off + 79 * 60, landed: true, in_air: false, max_alt_ft: 5520 },
+            {
+              id: Math.floor(off) - 7200,
+              origin: lwm,
+              destination: lci,
+              off: off - 7200,
+              on: off - 4400,
+              landed: true,
+              in_air: false,
+              max_alt_ft: 4100,
+            },
+          ],
+        },
+      }),
+  );
+  await page.route(
+    (url) => /\/api\/planner\/traffic\/flight\/a0b7d8\/history\/\d+$/.test(url.pathname),
+    (route) => route.fulfill({ json: { id: Math.floor(off), points } }),
+  );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");
@@ -305,7 +453,8 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await expect.poll(async () => (await flight.getByTestId("replay-chart-box").boundingBox())!.height).toBeGreaterThanOrEqual(72);
   await expect(flight.getByTestId("replay-chart-box")).toBeInViewport({ ratio: 1 });
   // The graph drawn to its box, axis and all.
-  await expect.poll(async () => (await flight.getByTestId("replay-chart-box").locator("svg.recharts-surface").boundingBox())?.height)
+  await expect
+    .poll(async () => (await flight.getByTestId("replay-chart-box").locator("svg.recharts-surface").boundingBox())?.height)
     .toBeGreaterThanOrEqual(72);
   await expect(flight.getByTestId("track-log").locator("tbody tr")).toHaveCount(60);
   await flight.getByTestId("track-log-all").click();
@@ -339,23 +488,36 @@ test("an airplane's last flights found are listed, the ones before them on askin
   // also give an option to fetch more by date".
   const lci = { ident: "LCI", name: "Laconia Municipal Airport", city: "Laconia", region: "US-NH" };
   const lwm = { ident: "LWM", name: "Lawrence Municipal Airport", city: "Lawrence", region: "US-MA" };
-  const flight = (off: number, from: typeof lci, to: typeof lci) =>
-    ({ id: Math.floor(off), origin: from, destination: to, off, on: off + 3600, landed: true, in_air: false, max_alt_ft: 4500 });
+  const flight = (off: number, from: typeof lci, to: typeof lci) => ({
+    id: Math.floor(off),
+    origin: from,
+    destination: to,
+    off,
+    on: off + 3600,
+    landed: true,
+    in_air: false,
+    max_alt_ft: 4500,
+  });
   const now = Date.now() / 1000;
   const asked: URLSearchParams[] = [];
   await sky(page);
-  await page.route(url => /\/api\/planner\/traffic\/flight\/a0b7d8\/history$/.test(url.pathname), route => {
-    const query = new URL(route.request().url()).searchParams;
-    asked.push(query);
-    const base = { hex: "a0b7d8", registration: "N14511", type: "A21N" };
-    if (query.get("before")) {
-      return route.fulfill({ json: { ...base, flights: [flight(now - 20 * 86400, lci, lwm)], next_until: null } });
-    }
-    if (query.get("until")) {
-      return route.fulfill({ json: { ...base, flights: [flight(now - 30 * 86400, lwm, lci)], next_until: null } });
-    }
-    return route.fulfill({ json: { ...base, flights: [flight(now - 86400, lci, lwm), flight(now - 2 * 86400, lwm, lci)], next_until: "2026-10-01" } });
-  });
+  await page.route(
+    (url) => /\/api\/planner\/traffic\/flight\/a0b7d8\/history$/.test(url.pathname),
+    (route) => {
+      const query = new URL(route.request().url()).searchParams;
+      asked.push(query);
+      const base = { hex: "a0b7d8", registration: "N14511", type: "A21N" };
+      if (query.get("before")) {
+        return route.fulfill({ json: { ...base, flights: [flight(now - 20 * 86400, lci, lwm)], next_until: null } });
+      }
+      if (query.get("until")) {
+        return route.fulfill({ json: { ...base, flights: [flight(now - 30 * 86400, lwm, lci)], next_until: null } });
+      }
+      return route.fulfill({
+        json: { ...base, flights: [flight(now - 86400, lci, lwm), flight(now - 2 * 86400, lwm, lci)], next_until: "2026-10-01" },
+      });
+    },
+  );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");
@@ -395,29 +557,36 @@ test("an airplane's last flights found are listed, the ones before them on askin
   await expect(card.getByTestId("past-flights-date")).toContainText("Pick a day");
 });
 
-test("an airplane quiet for a fortnight is looked for further back by itself, and said to be unheard where the archive ends", async ({ page }) => {
+test("an airplane quiet for a fortnight is looked for further back by itself, and said to be unheard where the archive ends", async ({
+  page,
+}) => {
   // The owner's N3429J: nothing in its first fortnight, "Look further
   // back" alone on the card.
   const asked: URLSearchParams[] = [];
   await sky(page);
-  await page.route(url => /\/api\/planner\/traffic\/flight\/a0b7d8\/history$/.test(url.pathname), route => {
-    const query = new URL(route.request().url()).searchParams;
-    asked.push(query);
-    const base = { hex: "a0b7d8", registration: "N3429J", type: "C150", flights: [] };
-    const next = { "": "2026-09-28", "2026-09-28": "2026-09-14", "2026-09-14": null }[query.get("until") ?? ""] ?? null;
-    return route.fulfill({ json: { ...base, next_until: next } });
-  });
+  await page.route(
+    (url) => /\/api\/planner\/traffic\/flight\/a0b7d8\/history$/.test(url.pathname),
+    (route) => {
+      const query = new URL(route.request().url()).searchParams;
+      asked.push(query);
+      const base = { hex: "a0b7d8", registration: "N3429J", type: "C150", flights: [] };
+      const next = { "": "2026-09-28", "2026-09-28": "2026-09-14", "2026-09-14": null }[query.get("until") ?? ""] ?? null;
+      return route.fulfill({ json: { ...base, next_until: next } });
+    },
+  );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");
   // At the pill's size, as every card opens; its flights all the way up.
   await grabberTo(page, "full");
   await expect(card.getByTestId("past-flights-none")).toHaveText("No flights heard in the last six weeks", { timeout: slow(15_000) });
-  expect(asked.map(q => q.get("until"))).toEqual([null, "2026-09-28", "2026-09-14"]);
+  expect(asked.map((q) => q.get("until"))).toEqual([null, "2026-09-28", "2026-09-14"]);
   await expect(card.getByTestId("past-flights-more")).toHaveCount(0);
 });
 
-test("an airplane opened is in the Aircraft card's Recents, and one starred on its card is in its Favorites, as airports are", async ({ page }) => {
+test("an airplane opened is in the Aircraft card's Recents, and one starred on its card is in its Favorites, as airports are", async ({
+  page,
+}) => {
   await sky(page);
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
@@ -462,7 +631,9 @@ test("an airplane's card on Aircraft is still open after Setup and back to Aircr
   await expect(card.getByTestId("flight-favorite")).toBeVisible();
 });
 
-test("the card's sketch of where an airplane has flown is in its heights' colours, as the map's path, with the fields it left and is bound for", async ({ page }) => {
+test("the card's sketch of where an airplane has flown is in its heights' colours, as the map's path, with the fields it left and is bound for", async ({
+  page,
+}) => {
   // The owner's ask: "Can the aircraft trace in the thumbnail have the
   // origin/destination airport? And the trace color green just like on
   // the map?"
@@ -471,10 +642,13 @@ test("the card's sketch of where an airplane has flown is in its heights' colour
     TJSJ: { lat: 18.4394, lon: -66.0018, name: "Luis Munoz Marin International Airport" },
     KORD: { lat: 41.9786, lon: -87.9048, name: "Chicago O'Hare International Airport" },
   };
-  await page.route(url => /\/api\/planner\/airport\/(TJSJ|KORD)$/.test(url.pathname), route => {
-    const ident = route.request().url().split("/").pop()!;
-    return route.fulfill({ json: { ident, ...fields[ident] } });
-  });
+  await page.route(
+    (url) => /\/api\/planner\/airport\/(TJSJ|KORD)$/.test(url.pathname),
+    (route) => {
+      const ident = route.request().url().split("/").pop()!;
+      return route.fulfill({ json: { ident, ...fields[ident] } });
+    },
+  );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const sketch = page.getByTestId("flight-card").getByTestId("trail-sketch");
@@ -484,12 +658,14 @@ test("the card's sketch of where an airplane has flown is in its heights' colour
   await expect(sketch.locator('[data-sketch-field="KORD"]')).toHaveText("KORD");
   // Its trace in the colours of its heights (heightColour), 7,000 to
   // 12,000 ft here, not the tint it was.
-  const colours = await sketch.locator("[data-sketch-run]").evaluateAll(runs => runs.map(r => r.getAttribute("stroke")));
+  const colours = await sketch.locator("[data-sketch-run]").evaluateAll((runs) => runs.map((r) => r.getAttribute("stroke")));
   expect(colours.length).toBeGreaterThan(0);
   for (const colour of colours) expect(colour).toMatch(/^hsl\(\d+ 85% 45%\)$/);
 });
 
-test("an airplane's card is laid out as an airport's: its pictures across the top and four actions under them, at the same places", async ({ page }) => {
+test("an airplane's card is laid out as an airport's: its pictures across the top and four actions under them, at the same places", async ({
+  page,
+}) => {
   // The owner's ask: "Do airport and aircraft cards have same layouts?",
   // and their pick of the two cards' redesign (A2): the same head, the
   // same row of actions.
@@ -498,8 +674,15 @@ test("an airplane's card is laid out as an airport's: its pictures across the to
   // Where the actions are from the pictures' top, half way.
   const places = async (head: string, action: string) => {
     await grabberTo(page, "half");
-    const [top, tile, sheet] = await Promise.all([page.getByTestId(head), page.getByTestId(action).first(), panel].map(async l => (await l.boundingBox())!));
-    return { head: Math.round(top.y - sheet.y), height: Math.round(top.height), actions: Math.round(tile.y - top.y), size: Math.round(tile.height) };
+    const [top, tile, sheet] = await Promise.all(
+      [page.getByTestId(head), page.getByTestId(action).first(), panel].map(async (l) => (await l.boundingBox())!),
+    );
+    return {
+      head: Math.round(top.y - sheet.y),
+      height: Math.round(top.height),
+      actions: Math.round(tile.y - top.y),
+      size: Math.round(tile.height),
+    };
   };
   await page.goto("/app/plan?place=C81");
   await settle(page);
@@ -513,11 +696,13 @@ test("an airplane's card is laid out as an airport's: its pictures across the to
   // The long model whole in its two lines over the pictures' foot.
   const what = page.getByTestId("flight-what");
   await expect(what).toContainText("Cherokee");
-  const [line, head] = await Promise.all([what, page.getByTestId("flight-head")].map(async l => (await l.boundingBox())!));
+  const [line, head] = await Promise.all([what, page.getByTestId("flight-head")].map(async (l) => (await l.boundingBox())!));
   expect(line.y + line.height).toBeLessThanOrEqual(head.y + head.height);
 });
 
-test("an airplane's card has Follow, Alert and Debrief in a row, Share at the left of its pictures and the star beside the close, its flight's state and height in its summary, and its airport a tap away", async ({ page }) => {
+test("an airplane's card has Follow, Alert and Debrief in a row, Share at the left of its pictures and the star beside the close, its flight's state and height in its summary, and its airport a tap away", async ({
+  page,
+}) => {
   // The owner's pick of the redesign (A2): the actions a row under the
   // pictures, Follow filled, as Maps' are under a place's -- three since
   // the owner moved the star beside the close and Share to the pictures'
@@ -527,7 +712,9 @@ test("an airplane's card has Follow, Alert and Debrief in a row, Share at the le
   await settle(page);
   const card = page.getByTestId("flight-card");
   await expect(card.getByTestId("flight-follow")).toBeVisible({ timeout: slow(15_000) });
-  const row = await Promise.all(["flight-follow", "flight-alert", "flight-debrief"].map(async id => (await card.getByTestId(id).boundingBox())!));
+  const row = await Promise.all(
+    ["flight-follow", "flight-alert", "flight-debrief"].map(async (id) => (await card.getByTestId(id).boundingBox())!),
+  );
   for (let i = 1; i < row.length; i++) {
     expect(Math.abs(row[i]!.y - row[0]!.y), "one row").toBeLessThan(1);
     expect(Math.abs(row[i]!.width - row[0]!.width), "equal").toBeLessThan(1);
@@ -539,11 +726,13 @@ test("an airplane's card has Follow, Alert and Debrief in a row, Share at the le
   // Share, the star and the close on the pictures, the bar's out of the
   // pill: Share at the left, the star beside the close at the right.
   const head = (await card.getByTestId("flight-head").boundingBox())!;
-  const [share, star, close] = await Promise.all(["flight-share", "flight-favorite", "flight-close"].map(async id => {
-    const button = (await card.getByTestId(id).boundingBox())!;
-    expect(button.y >= head.y && button.y + button.height <= head.y + head.height, `${id} on the pictures`).toBe(true);
-    return button;
-  }));
+  const [share, star, close] = await Promise.all(
+    ["flight-share", "flight-favorite", "flight-close"].map(async (id) => {
+      const button = (await card.getByTestId(id).boundingBox())!;
+      expect(button.y >= head.y && button.y + button.height <= head.y + head.height, `${id} on the pictures`).toBe(true);
+      return button;
+    }),
+  );
   expect(share!.x + share!.width, "Share at the left").toBeLessThan(head.x + head.width / 2);
   expect(star!.x, "the star at the right").toBeGreaterThan(head.x + head.width / 2);
   expect(star!.x + star!.width, "the star before the close").toBeLessThanOrEqual(close!.x);
@@ -570,16 +759,33 @@ test("an airplane not heard now has its last flight sketched, on the ground wher
   const lci = { ident: "LCI", name: "Laconia Municipal Airport", city: "Laconia", region: "US-NH" };
   const lwm = { ident: "LWM", name: "Lawrence Municipal Airport", city: "Lawrence", region: "US-MA" };
   const points = Array.from({ length: 80 }, (_, i) => ({
-    t: off + i * 60, lat: 43.57 - i * 0.0107, lon: -71.42 + i * 0.0038, alt_ft: 800 + Math.min(i, 79 - i) * 120,
-    gs_kt: 100, track_deg: 165, vrate_fpm: i < 40 ? 500 : -500,
+    t: off + i * 60,
+    lat: 43.57 - i * 0.0107,
+    lon: -71.42 + i * 0.0038,
+    alt_ft: 800 + Math.min(i, 79 - i) * 120,
+    gs_kt: 100,
+    track_deg: 165,
+    vrate_fpm: i < 40 ? 500 : -500,
   }));
   await sky(page, { hex: "a89c1e", registration: "N654FL", type: "P28A", departed: null, trail: [] });
-  await page.route(url => /\/api\/planner\/traffic\/flight\/a89c1e\/history$/.test(url.pathname), route => route.fulfill({ json: {
-    hex: "a89c1e", registration: "N654FL", type: "P28A",
-    flights: [{ id: Math.floor(off), origin: lci, destination: lwm, off, on: off + 79 * 60, landed: true, in_air: false, max_alt_ft: 5520 }],
-  } }));
-  await page.route(url => /\/api\/planner\/traffic\/flight\/a89c1e\/history\/\d+$/.test(url.pathname),
-    route => route.fulfill({ json: { id: Math.floor(off), points } }));
+  await page.route(
+    (url) => /\/api\/planner\/traffic\/flight\/a89c1e\/history$/.test(url.pathname),
+    (route) =>
+      route.fulfill({
+        json: {
+          hex: "a89c1e",
+          registration: "N654FL",
+          type: "P28A",
+          flights: [
+            { id: Math.floor(off), origin: lci, destination: lwm, off, on: off + 79 * 60, landed: true, in_air: false, max_alt_ft: 5520 },
+          ],
+        },
+      }),
+  );
+  await page.route(
+    (url) => /\/api\/planner\/traffic\/flight\/a89c1e\/history\/\d+$/.test(url.pathname),
+    (route) => route.fulfill({ json: { id: Math.floor(off), points } }),
+  );
   await page.goto("/app/plan?flight=a89c1e");
   await settle(page);
   const card = page.getByTestId("flight-card");
@@ -596,18 +802,36 @@ test("an airplane not heard now has its last flight sketched, on the ground wher
   await expect(page.getByTestId("past-flight-card").getByTestId("past-flight-name")).toHaveText("LCI → LWM");
 });
 
-test("an airplane's photo is across its card's top, the photographer named on it and the photo linked to its page, its sketch a swipe across", async ({ page }) => {
+test("an airplane's photo is across its card's top, the photographer named on it and the photo linked to its page, its sketch a swipe across", async ({
+  page,
+}) => {
   // The owner's ask: "I also like the idea of having the actual airframe
   // photo", as Planespotters' terms have it shown.
   await sky(page);
-  await page.route(url => url.hostname === "api.planespotters.net", route => route.fulfill({ json: { photos: [{
-    id: "1773250", thumbnail_large: { src: "https://t.plnspttrs.net/30652/1773250_280.jpg", size: { width: 420, height: 280 } },
-    link: "https://www.planespotters.net/photo/1773250/n14511", photographer: "Jane Spotter",
-  }] } }));
-  await page.route(url => url.hostname === "t.plnspttrs.net", route => route.fulfill({
-    contentType: "image/png",
-    body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64"),
-  }));
+  await page.route(
+    (url) => url.hostname === "api.planespotters.net",
+    (route) =>
+      route.fulfill({
+        json: {
+          photos: [
+            {
+              id: "1773250",
+              thumbnail_large: { src: "https://t.plnspttrs.net/30652/1773250_280.jpg", size: { width: 420, height: 280 } },
+              link: "https://www.planespotters.net/photo/1773250/n14511",
+              photographer: "Jane Spotter",
+            },
+          ],
+        },
+      }),
+  );
+  await page.route(
+    (url) => url.hostname === "t.plnspttrs.net",
+    (route) =>
+      route.fulfill({
+        contentType: "image/png",
+        body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64"),
+      }),
+  );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");
@@ -627,7 +851,9 @@ test("an airplane's photo is across its card's top, the photographer named on it
   // flown a page across.
   await expect(photo).toBeInViewport({ ratio: 0.9 });
   // The stock carousel's own next page (PictureSlides), as a swipe is.
-  await card.locator('[data-slot="carousel"]').evaluate(el => el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+  await card
+    .locator('[data-slot="carousel"]')
+    .evaluate((el) => el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
   await expect(card.getByTestId("flight-trail")).toBeInViewport({ ratio: 0.9 });
 });
 
@@ -636,13 +862,30 @@ test("an alert set on an airplane goes off on the map when it lands, once, and S
   await sky(page);
   let landed = false;
   let asked = 0;
-  await page.route(url => /\/api\/planner\/traffic\/flight\/a0b7d8\/status$/.test(url.pathname), route => {
-    asked += 1;
-    return route.fulfill({ json: landed
-      ? { hex: "a0b7d8", heard_s: 130, airborne: false, aircraft: null, departed: null,
-          arrived: { ident: "KORD", name: "Chicago O'Hare International Airport", city: "Chicago", region: "US-IL", at: Date.now() / 1000 - 60 } }
-      : { hex: "a0b7d8", heard_s: 1, airborne: true, aircraft: UAL, departed: null, arrived: null } });
-  });
+  await page.route(
+    (url) => /\/api\/planner\/traffic\/flight\/a0b7d8\/status$/.test(url.pathname),
+    (route) => {
+      asked += 1;
+      return route.fulfill({
+        json: landed
+          ? {
+              hex: "a0b7d8",
+              heard_s: 130,
+              airborne: false,
+              aircraft: null,
+              departed: null,
+              arrived: {
+                ident: "KORD",
+                name: "Chicago O'Hare International Airport",
+                city: "Chicago",
+                region: "US-IL",
+                at: Date.now() / 1000 - 60,
+              },
+            }
+          : { hex: "a0b7d8", heard_s: 1, airborne: true, aircraft: UAL, departed: null, arrived: null },
+      });
+    },
+  );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");

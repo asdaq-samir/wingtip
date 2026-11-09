@@ -5,16 +5,40 @@ import { callSign, placeName, radioScript } from "./radio";
 
 type Facilities = Briefing["airports"][string];
 
-const end = (ident: string, heading: number, traffic: "left" | "right" = "left"): RunwayEnd => ({ ident, heading_true_deg: heading, traffic });
+const end = (ident: string, heading: number, traffic: "left" | "right" = "left"): RunwayEnd => ({
+  ident,
+  heading_true_deg: heading,
+  traffic,
+});
 
 const WAUKEGAN: Facilities = {
-  name: "Waukegan National Airport", elevation_ft: 727, airspace_class: "D",
+  name: "Waukegan National Airport",
+  elevation_ft: 727,
+  airspace_class: "D",
   pattern: { agl_ft: 1000, altitude_ft: 1727, published: false },
   runways: [
-    { ends: "05/23", length_ft: 6000, width_ft: 150, surface: "ASP", lighted: true, closed: false,
-      wind: { end: "23", headwind_kt: 8, crosswind_kt: 3 }, runway_ends: [end("05", 48), end("23", 228, "right")], turf: [] },
-    { ends: "14/32", length_ft: 3750, width_ft: 100, surface: "ASP", lighted: true, closed: false,
-      wind: { end: "32", headwind_kt: 4, crosswind_kt: -1 }, runway_ends: [end("14", 144), end("32", 324)], turf: [] },
+    {
+      ends: "05/23",
+      length_ft: 6000,
+      width_ft: 150,
+      surface: "ASP",
+      lighted: true,
+      closed: false,
+      wind: { end: "23", headwind_kt: 8, crosswind_kt: 3 },
+      runway_ends: [end("05", 48), end("23", 228, "right")],
+      turf: [],
+    },
+    {
+      ends: "14/32",
+      length_ft: 3750,
+      width_ft: 100,
+      surface: "ASP",
+      lighted: true,
+      closed: false,
+      wind: { end: "32", headwind_kt: 4, crosswind_kt: -1 },
+      runway_ends: [end("14", 144), end("32", 324)],
+      turf: [],
+    },
   ],
   frequencies: [
     { type: "ATIS", description: "ATIS", frequency_mhz: 132.4 },
@@ -26,11 +50,22 @@ const WAUKEGAN: Facilities = {
 };
 
 const DACY: Facilities = {
-  name: "Dacy Airport", elevation_ft: 913, airspace_class: "G",
+  name: "Dacy Airport",
+  elevation_ft: 913,
+  airspace_class: "G",
   pattern: { agl_ft: 1000, altitude_ft: 1913, published: false },
   runways: [
-    { ends: "09/27", length_ft: 3270, width_ft: 40, surface: "ASP", lighted: true, closed: false,
-      wind: { end: "27", headwind_kt: 6, crosswind_kt: 2 }, runway_ends: [end("09", 90), end("27", 270)], turf: [] },
+    {
+      ends: "09/27",
+      length_ft: 3270,
+      width_ft: 40,
+      surface: "ASP",
+      lighted: true,
+      closed: false,
+      wind: { end: "27", headwind_kt: 6, crosswind_kt: 2 },
+      runway_ends: [end("09", 90), end("27", 270)],
+      turf: [],
+    },
   ],
   frequencies: [
     { type: "A/D", description: "CHICAGO APP/DEP", frequency_mhz: 120.55 },
@@ -38,7 +73,8 @@ const DACY: Facilities = {
   ],
 };
 
-const leg = (from: string, to: string, course: number, altitude = 5500): Leg => ({ from, to, true_course_deg: course, altitude_ft: altitude } as Leg);
+const leg = (from: string, to: string, course: number, altitude = 5500): Leg =>
+  ({ from, to, true_course_deg: course, altitude_ft: altitude }) as Leg;
 
 describe("spoken as the AIM speaks it", () => {
   // Altitudes and runways as spoken are the engine's own tests
@@ -56,7 +92,7 @@ describe("spoken as the AIM speaks it", () => {
 describe("the pattern", () => {
   test("the runway in use is the most headwind's, else the longest's", () => {
     expect(runwayInUse(WAUKEGAN.runways)).toMatchObject({ end: { ident: "23", traffic: "right" }, byWind: true });
-    const calm = WAUKEGAN.runways.map(r => ({ ...r, wind: null }));
+    const calm = WAUKEGAN.runways.map((r) => ({ ...r, wind: null }));
     expect(runwayInUse(calm)).toMatchObject({ end: { ident: "05" }, byWind: false });
     expect(runwayInUse([])).toBeNull();
   });
@@ -79,7 +115,10 @@ describe("the pattern", () => {
 describe("the radio calls", () => {
   const script = radioScript({
     callSign: "Cessna Three Four Five Sierra Papa",
-    airports: [{ ident: "C81", facilities: DACY }, { ident: "KUGN", facilities: WAUKEGAN }],
+    airports: [
+      { ident: "C81", facilities: DACY },
+      { ident: "KUGN", facilities: WAUKEGAN },
+    ],
     legs: [leg("C81", "Lake", 45), leg("Lake", "KUGN", 45, 3500)],
   });
 
@@ -99,7 +138,9 @@ describe("the radio calls", () => {
     expect(into.calls[0]).toMatchObject({ to: "Waukegan ATIS", listen: true });
     // Ten miles out on a 3:1 descent to the 1,727 ft pattern: 5,100 ft,
     // but no higher than the 3,500 ft cruise.
-    expect(into.calls[1]!.words).toBe("Waukegan Tower, Cessna Three Four Five Sierra Papa, ten miles southwest, three thousand five hundred, with information [letter], landing.");
+    expect(into.calls[1]!.words).toBe(
+      "Waukegan Tower, Cessna Three Four Five Sierra Papa, ten miles southwest, three thousand five hundred, with information [letter], landing.",
+    );
     expect(into.calls[1]!.note).toContain("self-announce on the CTAF, 120.05");
     expect(into.calls[2]!.words).toContain("clear of runway two three");
   });
@@ -107,13 +148,19 @@ describe("the radio calls", () => {
   test("into a field with no tower is the pattern called leg by leg on its side", () => {
     const [, , , back] = radioScript({
       callSign: "Cessna Three Four Five Sierra Papa",
-      airports: [{ ident: "C81", facilities: DACY }, { ident: "KUGN", facilities: WAUKEGAN }, { ident: "C81", facilities: DACY }],
+      airports: [
+        { ident: "C81", facilities: DACY },
+        { ident: "KUGN", facilities: WAUKEGAN },
+        { ident: "C81", facilities: DACY },
+      ],
       legs: [leg("C81", "KUGN", 45, 3500), leg("KUGN", "Lake", 225), leg("Lake", "C81", 225, 4500)],
     });
     expect(back!.title).toBe("Into C81");
-    const words = back!.calls.map(c => c.words);
+    const words = back!.calls.map((c) => c.words);
     // 1,913 + 3,333 = 5,246, about 5,200, under the 4,500 cruise: 4,500.
-    expect(words[0]).toBe("Dacy traffic, Cessna Three Four Five Sierra Papa, ten miles northeast, four thousand five hundred, inbound for landing, Dacy.");
+    expect(words[0]).toBe(
+      "Dacy traffic, Cessna Three Four Five Sierra Papa, ten miles northeast, four thousand five hundred, inbound for landing, Dacy.",
+    );
     expect(words).toContain("Dacy traffic, Cessna Three Four Five Sierra Papa, left downwind runway two seven, Dacy.");
     expect(words.at(-1)).toBe("Dacy traffic, Cessna Three Four Five Sierra Papa, clear of runway two seven, Dacy.");
   });

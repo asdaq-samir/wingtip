@@ -13,8 +13,8 @@ export type TerrainMode = "flat" | "shaded" | "3d";
  * script reads it to know whether to load the 3D code (TerrainGl) at all.
  */
 export function useTerrainView(): { mode: TerrainMode; pilot: boolean } {
-  const terrain = usePreferences(s => s.terrain);
-  const dryRunning = usePastFlight(s => s.hex === DRY_RUN);
-  const pilot = usePilotView(s => s.on) && dryRunning;
+  const terrain = usePreferences((s) => s.terrain);
+  const dryRunning = usePastFlight((s) => s.hex === DRY_RUN);
+  const pilot = usePilotView((s) => s.on) && dryRunning;
   return { mode: pilot ? "3d" : terrain, pilot };
 }

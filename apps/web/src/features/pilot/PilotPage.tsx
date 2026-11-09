@@ -38,9 +38,9 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
   const keep = (next: Pilot) => queryClient.setQueryData(pilotQuery.queryKey, next);
   const saveName = useMutation({
     mutationFn: (n: string) => api.training.setName(n),
-    onSuccess: training => {
+    onSuccess: (training) => {
       queryClient.setQueryData(["training"], training);
-      queryClient.setQueryData(pilotQuery.queryKey, p => (p ? { ...p, fullName: training.fullName } : p));
+      queryClient.setQueryData(pilotQuery.queryKey, (p) => (p ? { ...p, fullName: training.fullName } : p));
     },
   });
   const saveContact = useMutation({ mutationFn: api.setContact, onSuccess: keep });
@@ -58,28 +58,62 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
     <section aria-label="Pilot details">
       <ListGroup title="For your flight plans">
         <ListRow id={`${id}-name`} title="Name" description={problem(saveName.error?.message) ?? "As on your pilot certificate"}>
-          <FieldHit htmlFor={`${id}-name`}><Input
-            id={`${id}-name`} value={name} placeholder="Avery B. Pilot" maxLength={120} className="h-8 w-44 text-right sm:w-56"
-            autoComplete="name" onChange={e => setName(e.target.value)} data-testid="pilot-name"
-            onBlur={() => { if (name.trim() && name.trim() !== pilot.fullName) saveName.mutate(name.trim()); }}
-          /></FieldHit>
+          <FieldHit htmlFor={`${id}-name`}>
+            <Input
+              id={`${id}-name`}
+              value={name}
+              placeholder="Avery B. Pilot"
+              maxLength={120}
+              className="h-8 w-44 text-right sm:w-56"
+              autoComplete="name"
+              onChange={(e) => setName(e.target.value)}
+              data-testid="pilot-name"
+              onBlur={() => {
+                if (name.trim() && name.trim() !== pilot.fullName) saveName.mutate(name.trim());
+              }}
+            />
+          </FieldHit>
         </ListRow>
         <ListRow
-          id={`${id}-phone`} title="Phone"
+          id={`${id}-phone`}
+          title="Phone"
           description={problem(phoneWrong ?? saveContact.error?.message) ?? "One that reaches you at your ETA"}
         >
-          <FieldHit htmlFor={`${id}-phone`}><Input
-            id={`${id}-phone`} type="tel" value={phone} placeholder="608-555-0100" maxLength={24} className="h-8 w-44 text-right sm:w-56"
-            autoComplete="tel" inputMode="tel" aria-invalid={!!phoneWrong}
-            onChange={e => setPhone(e.target.value)} onBlur={contact} data-testid="pilot-phone"
-          /></FieldHit>
+          <FieldHit htmlFor={`${id}-phone`}>
+            <Input
+              id={`${id}-phone`}
+              type="tel"
+              value={phone}
+              placeholder="608-555-0100"
+              maxLength={24}
+              className="h-8 w-44 text-right sm:w-56"
+              autoComplete="tel"
+              inputMode="tel"
+              aria-invalid={!!phoneWrong}
+              onChange={(e) => setPhone(e.target.value)}
+              onBlur={contact}
+              data-testid="pilot-phone"
+            />
+          </FieldHit>
         </ListRow>
         <ListRow id={`${id}-home`} title="Home base" description={problem(homeWrong)}>
-          <FieldHit htmlFor={`${id}-home`}><Input
-            id={`${id}-home`} value={home} placeholder="KMSN" maxLength={11} className="h-8 w-32 text-right font-mono uppercase"
-            autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false} aria-invalid={!!homeWrong}
-            onChange={e => setHome(e.target.value)} onBlur={contact} data-testid="pilot-home-base"
-          /></FieldHit>
+          <FieldHit htmlFor={`${id}-home`}>
+            <Input
+              id={`${id}-home`}
+              value={home}
+              placeholder="KMSN"
+              maxLength={11}
+              className="h-8 w-32 text-right font-mono uppercase"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck={false}
+              aria-invalid={!!homeWrong}
+              onChange={(e) => setHome(e.target.value)}
+              onBlur={contact}
+              data-testid="pilot-home-base"
+            />
+          </FieldHit>
         </ListRow>
       </ListGroup>
     </section>

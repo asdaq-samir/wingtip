@@ -32,13 +32,14 @@ type Published = { files: string[]; replacedAt?: number }[];
 function filesUnder(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { recursive: true, withFileTypes: true })
-    .filter(e => e.isFile())
-    .map(e => relative(dir, join(e.parentPath, e.name)));
+    .filter((e) => e.isFile())
+    .map((e) => relative(dir, join(e.parentPath, e.name)));
 }
 
 // What a page asks for first goes in last: index.html names the entry
 // chunk, and the service worker names every file it precaches.
-const moveOrder = (file: string) => (file === "index.html" ? 2 : /^(sw\.js|registerSW\.js|manifest\.webmanifest|[^/]+\.html)$/.test(file) ? 1 : 0);
+const moveOrder = (file: string) =>
+  file === "index.html" ? 2 : /^(sw\.js|registerSW\.js|manifest\.webmanifest|[^/]+\.html)$/.test(file) ? 1 : 0;
 
 function publishBuild(staging: string, served: string, now = Date.now()) {
   const files = filesUnder(staging).sort((a, b) => moveOrder(a) - moveOrder(b));
@@ -46,16 +47,14 @@ function publishBuild(staging: string, served: string, now = Date.now()) {
   const ledger = join(served, PUBLISHED);
   // The first build into a directory without a ledger: whatever is there
   // is the build this one replaces.
-  let builds: Published = existsSync(ledger)
-    ? JSON.parse(readFileSync(ledger, "utf8"))
-    : [{ files: filesUnder(served) }];
+  let builds: Published = existsSync(ledger) ? JSON.parse(readFileSync(ledger, "utf8")) : [{ files: filesUnder(served) }];
   for (const file of files) {
     mkdirSync(dirname(join(served, file)), { recursive: true });
     renameSync(join(staging, file), join(served, file));
   }
   for (const build of builds) build.replacedAt ??= now;
-  builds = [...builds.filter(b => now - (b.replacedAt ?? now) < STALE_MS), { files }];
-  const keep = new Set(builds.flatMap(b => b.files));
+  builds = [...builds.filter((b) => now - (b.replacedAt ?? now) < STALE_MS), { files }];
+  const keep = new Set(builds.flatMap((b) => b.files));
   for (const file of filesUnder(served)) {
     if (file !== PUBLISHED && !keep.has(file)) rmSync(join(served, file));
   }
@@ -85,7 +84,9 @@ const publish: Plugin = {
 const require = createRequire(import.meta.url);
 const TESSERACT_FILES: [string, string][] = [
   ["worker.min.js", "tesseract.js/dist/worker.min.js"],
-  ...["lstm", "simd-lstm", "relaxedsimd-lstm"].map(k => [`tesseract-core-${k}.wasm.js`, `tesseract.js-core/tesseract-core-${k}.wasm.js`] as [string, string]),
+  ...["lstm", "simd-lstm", "relaxedsimd-lstm"].map(
+    (k) => [`tesseract-core-${k}.wasm.js`, `tesseract.js-core/tesseract-core-${k}.wasm.js`] as [string, string],
+  ),
   ["eng.traineddata.gz", "@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz"],
 ];
 const tesseractFiles: Plugin = {
@@ -109,9 +110,15 @@ const preloadEngine: Plugin = {
   transformIndexHtml: {
     order: "post",
     handler(_html, ctx) {
-      const file = Object.keys(ctx.bundle ?? {}).find(f => /(^|\/)wingtip-engine-[^/]*\.wasm$/.test(f));
+      const file = Object.keys(ctx.bundle ?? {}).find((f) => /(^|\/)wingtip-engine-[^/]*\.wasm$/.test(f));
       if (!file) return [];
-      return [{ tag: "link", attrs: { rel: "preload", href: `/app/${file}`, as: "fetch", type: "application/wasm", crossorigin: "anonymous" }, injectTo: "head" }];
+      return [
+        {
+          tag: "link",
+          attrs: { rel: "preload", href: `/app/${file}`, as: "fetch", type: "application/wasm", crossorigin: "anonymous" },
+          injectTo: "head",
+        },
+      ];
     },
   },
 };
@@ -172,11 +179,15 @@ export default defineConfig({
       manifest: {
         // The name on the Home Screen is the short one: iOS cuts a long
         // name under the icon.
-        name: "Wingtip Maps", short_name: "Wingtip",
+        name: "Wingtip Maps",
+        short_name: "Wingtip",
         description: "The map for flying: every airport and airspace on the chart, and the route, checkpoints and nav log when you go.",
-        start_url: "/app/plan", scope: "/app/", display: "standalone",
+        start_url: "/app/plan",
+        scope: "/app/",
+        display: "standalone",
         // Android's launch ground for the installed app: color.brand.launch.
-        background_color: "#ffffff", theme_color: "#ffffff",
+        background_color: "#ffffff",
+        theme_color: "#ffffff",
         icons: [
           // docs/brand/appicon.svg drawn by scripts/build/app-icons.sh: rounded
           // as shown (192, 512), full bleed where masked (maskable 192/512,
@@ -208,7 +219,11 @@ export default defineConfig({
         // only for a glyph they hold, the developer's pages (77 KB), and the
         // page reader's 15 MB (tesseract/), kept by tesseract.js itself.
         // Asked for when needed, as any request.
-        globIgnores: ["**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2", "**/{DevPanel,TrainWorkspace}-*.js", "tesseract/**"],
+        globIgnores: [
+          "**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2",
+          "**/{DevPanel,TrainWorkspace}-*.js",
+          "tesseract/**",
+        ],
         runtimeCaching: [
           {
             // Google's map tiles and its map services (OverlayTiles):
@@ -370,7 +385,8 @@ export default defineConfig({
             // asked again behind it, at the pilot's ask for a fast app:
             // a route opened again draws before the network answers.
             urlPattern: ({ url, request }) =>
-              request.method === "GET" && /^\/api\/planner\/(course|checkpoints|waypoints\/in-view|aircraft-profiles|chart)$/.test(url.pathname),
+              request.method === "GET" &&
+              /^\/api\/planner\/(course|checkpoints|waypoints\/in-view|aircraft-profiles|chart)$/.test(url.pathname),
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "planner-steady",
@@ -423,7 +439,8 @@ export default defineConfig({
           if (id.includes("node_modules/maplibre-gl/")) return "maplibre";
           // TanStack's query client alone: its table (the nav log's and the
           // kneeboard's, both lazy) stays with them, out of the first load.
-          if (/node_modules\/(react|react-dom|react-router|react-router-dom|@tanstack\/(react-query|query-core)|scheduler)\//.test(id)) return "react";
+          if (/node_modules\/(react|react-dom|react-router|react-router-dom|@tanstack\/(react-query|query-core)|scheduler)\//.test(id))
+            return "react";
           return undefined;
         },
       },

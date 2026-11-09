@@ -33,7 +33,12 @@ describe("the phases a list starts from", () => {
     expect(checklistPhases("normal").at(-1)).toBe("Securing the airplane");
     expect(checklistPhases("emergency")).toHaveLength(12);
     const text = phasesText("emergency");
-    expect(text.split("\n").filter(Boolean).every(line => line.startsWith("# "))).toBe(true);
+    expect(
+      text
+        .split("\n")
+        .filter(Boolean)
+        .every((line) => line.startsWith("# ")),
+    ).toBe(true);
     // Read, headings alone are no checklist: nothing is run until written.
     expect(checklistOf(text).sections).toEqual([]);
   });

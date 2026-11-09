@@ -52,8 +52,10 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart, narr
       <BriefingNarrativePrintBlock text={narrativeText} />
 
       <BriefChecks
-        items={items} flight={`${landings.join("-")}|${depart}`} here={TILE_SECTIONS}
-        onOpen={section => setFolds(open => (open.includes(section) ? open : [...open, section]))}
+        items={items}
+        flight={`${landings.join("-")}|${depart}`}
+        here={TILE_SECTIONS}
+        onOpen={(section) => setFolds((open) => (open.includes(section) ? open : [...open, section]))}
       />
       {/* What a tile opens, and what is done before leaving -- the
           paperwork, the passengers -- a row each, at the owner's pick
@@ -61,62 +63,70 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart, narr
           under the Go / No-Go. */}
       <SectionTitle className="mt-2 px-1 print:hidden">Before You Go</SectionTitle>
       <SectionsOpen.Provider value={printing}>
-      <Accordion type="multiple" value={folds} onValueChange={setFolds} data-testid="before-you-go">
-      {narrative}
+        <Accordion type="multiple" value={folds} onValueChange={setFolds} data-testid="before-you-go">
+          {narrative}
 
-      <AirspaceSection vm={vm} />
+          <AirspaceSection vm={vm} />
 
-      {/* What the briefing raised, and what only the pilot can say
+          {/* What the briefing raised, and what only the pilot can say
           (lib/frat). */}
-      <AccordionSection
-        title="Risk Assessment"
-        aside={assessment && assessment.level !== "low" ? (
-          <Flag finding={assessment.level === "high" ? "stop" : "caution"} testId="risk-flag">
-            {assessment.level === "high" ? "High risk" : "Risk raised"}
-          </Flag>
-        ) : undefined}
-      >
-        {!assessment ? <Pending>{briefingPendingMessage}</Pending> : <RiskAssessment assessment={assessment} />}
-      </AccordionSection>
-
-      {/* The loading, done at home: its envelope and what it changes. */}
-      <FuelSection totals={totals} />
-      <WeightBalanceSection aircraft={nav?.aircraft} tripFuelGal={totals?.fuel_gal ?? null} />
-
-      {/* The FAA's flight plan form filled in from the plan, from an
-          airport: a present position is a flight already flying. */}
-      {identOf(dep) && totals && (
-        <FlightPlanSection forms={planForms} ifr={ifr} />
-      )}
-
-      {/* The passengers' briefing (91.107), and the flight to send them. */}
-      <PassengerBriefing
-        flight={`${landings.join("-")}|${depart}`}
-        message={passengerMessage({
-          dep, dest, destName: briefing?.airports[dest]?.name ?? null,
-          depart: depart ? new Date(depart) : null, eteMin: totals?.ete_min ?? null,
-          weather: briefing?.metars[dest] ? [briefing.metars[dest]!.flight_category,
-            ceilingAndVisibility(briefing.metars[dest]!.ceiling_ft ?? null, briefing.metars[dest]!.visibility_sm ?? null)]
-            .filter(Boolean).join(", ") : null,
-        })}
-      />
-
-      {/* The airplane's own checklists, kept on this device; never on
-          paper: the pilot's own printed ones are in the airplane. */}
-      <div className="print:hidden">
-        <FlightChecklists />
-      </div>
-
-      {/* The mock oral, the developer's until a CFI has reviewed its
-          answers; never on paper. */}
-      {pilot?.developer && briefing && (
-        <div className="print:hidden">
-          <AccordionSection title="Mock Oral">
-            <MockOral plan={planText} />
+          <AccordionSection
+            title="Risk Assessment"
+            aside={
+              assessment && assessment.level !== "low" ? (
+                <Flag finding={assessment.level === "high" ? "stop" : "caution"} testId="risk-flag">
+                  {assessment.level === "high" ? "High risk" : "Risk raised"}
+                </Flag>
+              ) : undefined
+            }
+          >
+            {!assessment ? <Pending>{briefingPendingMessage}</Pending> : <RiskAssessment assessment={assessment} />}
           </AccordionSection>
-        </div>
-      )}
-      </Accordion>
+
+          {/* The loading, done at home: its envelope and what it changes. */}
+          <FuelSection totals={totals} />
+          <WeightBalanceSection aircraft={nav?.aircraft} tripFuelGal={totals?.fuel_gal ?? null} />
+
+          {/* The FAA's flight plan form filled in from the plan, from an
+          airport: a present position is a flight already flying. */}
+          {identOf(dep) && totals && <FlightPlanSection forms={planForms} ifr={ifr} />}
+
+          {/* The passengers' briefing (91.107), and the flight to send them. */}
+          <PassengerBriefing
+            flight={`${landings.join("-")}|${depart}`}
+            message={passengerMessage({
+              dep,
+              dest,
+              destName: briefing?.airports[dest]?.name ?? null,
+              depart: depart ? new Date(depart) : null,
+              eteMin: totals?.ete_min ?? null,
+              weather: briefing?.metars[dest]
+                ? [
+                    briefing.metars[dest]!.flight_category,
+                    ceilingAndVisibility(briefing.metars[dest]!.ceiling_ft ?? null, briefing.metars[dest]!.visibility_sm ?? null),
+                  ]
+                    .filter(Boolean)
+                    .join(", ")
+                : null,
+            })}
+          />
+
+          {/* The airplane's own checklists, kept on this device; never on
+          paper: the pilot's own printed ones are in the airplane. */}
+          <div className="print:hidden">
+            <FlightChecklists />
+          </div>
+
+          {/* The mock oral, the developer's until a CFI has reviewed its
+          answers; never on paper. */}
+          {pilot?.developer && briefing && (
+            <div className="print:hidden">
+              <AccordionSection title="Mock Oral">
+                <MockOral plan={planText} />
+              </AccordionSection>
+            </div>
+          )}
+        </Accordion>
       </SectionsOpen.Provider>
     </>
   );
@@ -131,43 +141,67 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
   return (
     <AccordionSection
       title="TFRs & Special Use"
-      aside={tfrsCrossed.length > 0 ? <Flag finding="stop" testId="tfr-flag">TFR on the route</Flag>
-        : specialUse.some(s => s.when === "active") ? <Flag finding="caution" testId="sua-flag">Area in use</Flag> : undefined}
+      aside={
+        tfrsCrossed.length > 0 ? (
+          <Flag finding="stop" testId="tfr-flag">
+            TFR on the route
+          </Flag>
+        ) : specialUse.some((s) => s.when === "active") ? (
+          <Flag finding="caution" testId="sua-flag">
+            Area in use
+          </Flag>
+        ) : undefined
+      }
     >
-      {!briefing ? <Pending>{briefingPendingMessage}</Pending> : (
+      {!briefing ? (
+        <Pending>{briefingPendingMessage}</Pending>
+      ) : (
         <div className="space-y-4">
           <div data-testid="tfrs">
             <ListGroup title="Temporary flight restrictions">
               {unchecked("tfrs") ? (
                 <ListRow
                   media={<FindingIcon finding="caution" />}
-                  title={<span className={FINDING_TONE.caution}>tfr.faa.gov did not answer — check it before flight</span>} href="https://tfr.faa.gov"
+                  title={<span className={FINDING_TONE.caution}>tfr.faa.gov did not answer — check it before flight</span>}
+                  href="https://tfr.faa.gov"
                 />
               ) : briefing.tfrs.length === 0 ? (
                 <ListRow media={<FindingIcon finding="ok" />} title="None within 5 nm of the route during the flight" />
-              ) : briefing.tfrs.flatMap(t => {
-                const pass = passAt(t.along_track_nm);
-                const inForce = t.crosses && tfrInForce(t);
-                return [
-                  <ListRow
-                    key={t.notam_id}
-                    media={<FindingIcon finding={inForce ? "stop" : "caution"} />}
-                    title={<span className={cn(inForce && cn("font-semibold", FINDING_TONE.stop))}>{`TFR ${t.notam_id}${t.kind ? ` · ${t.kind}` : ""}`}</span>}
-                    description={
-                      <>
-                        {[tfrAltitudes(t), tfrTimes(t)].filter(Boolean).map(line => <span key={line} className="block">{line}</span>)}
-                        {/* When the flight gets there, in the planner's words
+              ) : (
+                briefing.tfrs.flatMap((t) => {
+                  const pass = passAt(t.along_track_nm);
+                  const inForce = t.crosses && tfrInForce(t);
+                  return [
+                    <ListRow
+                      key={t.notam_id}
+                      media={<FindingIcon finding={inForce ? "stop" : "caution"} />}
+                      title={
+                        <span
+                          className={cn(inForce && cn("font-semibold", FINDING_TONE.stop))}
+                        >{`TFR ${t.notam_id}${t.kind ? ` · ${t.kind}` : ""}`}</span>
+                      }
+                      description={
+                        <>
+                          {[tfrAltitudes(t), tfrTimes(t)].filter(Boolean).map((line) => (
+                            <span key={line} className="block">
+                              {line}
+                            </span>
+                          ))}
+                          {/* When the flight gets there, in the planner's words
                             on the row under where it placed it. */}
-                        {!t.on_route?.legs.length && <PassNote when={pass && { pass, state: tfrWhen(t, pass) }} />}
-                        {(t.purpose ?? t.rule) && <span className="block">{faaWords(t.purpose ?? t.rule)}</span>}
-                      </>
-                    }
-                    value={t.crosses ? "On the route" : `${Math.round(t.along_track_nm)} nm along`}
-                    href={tfrPage(t.notam_id)}
-                  />,
-                  t.on_route?.legs.length ? <OnRouteRow key={`${t.notam_id}-on`} on={t.on_route} briefing={briefing} hazardKey={`tfr-${t.notam_id}`} /> : null,
-                ];
-              })}
+                          {!t.on_route?.legs.length && <PassNote when={pass && { pass, state: tfrWhen(t, pass) }} />}
+                          {(t.purpose ?? t.rule) && <span className="block">{faaWords(t.purpose ?? t.rule)}</span>}
+                        </>
+                      }
+                      value={t.crosses ? "On the route" : `${Math.round(t.along_track_nm)} nm along`}
+                      href={tfrPage(t.notam_id)}
+                    />,
+                    t.on_route?.legs.length ? (
+                      <OnRouteRow key={`${t.notam_id}-on`} on={t.on_route} briefing={briefing} hazardKey={`tfr-${t.notam_id}`} />
+                    ) : null,
+                  ];
+                })
+              )}
             </ListGroup>
           </div>
           {specialUse.length > 0 && (
@@ -187,7 +221,9 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
                       <>
                         <span className="block">{`${suaAltitudes(area)} · ${Math.round(area.along_track_nm)} nm along`}</span>
                         {area.times_of_use && <span className="block">In use: {faaWords(area.times_of_use)}</span>}
-                        {pass && <span className="block" data-testid="sua-pass">{`You pass about ${passLine(pass)}: ${SUA_WORDS[when]}`}</span>}
+                        {pass && (
+                          <span className="block" data-testid="sua-pass">{`You pass about ${passLine(pass)}: ${SUA_WORDS[when]}`}</span>
+                        )}
                       </>
                     }
                     data-testid="special-use-area"

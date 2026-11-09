@@ -18,15 +18,20 @@ import { TFR_RED } from "./tfrMarks";
 
 export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
   const rings = useMemo(() => outsides(tfr.geometry as { type?: string; coordinates?: unknown }), [tfr.geometry]);
-  const line = usePointActions(s => s.courseLine);
+  const line = usePointActions((s) => s.courseLine);
   const enters = useMemo(() => !!line && rings.length > 0 && lineEnters(rings, line), [rings, line]);
   const ship = useOwnFix();
   const from = ship ? areaFrom(rings, ship) : null;
   return (
     <MapCard
       // A TFR's badge, red while it is in force, as its shape is drawn.
-      media={<RowBadge colour={active ? TFR_RED : BADGE.other}><Ban /></RowBadge>}
-      title={`TFR ${tfr.notam_id}`} subtitle={[tfr.kind, active ? "In force now" : "Not yet in force"].filter(Boolean).join(" · ")}
+      media={
+        <RowBadge colour={active ? TFR_RED : BADGE.other}>
+          <Ban />
+        </RowBadge>
+      }
+      title={`TFR ${tfr.notam_id}`}
+      subtitle={[tfr.kind, active ? "In force now" : "Not yet in force"].filter(Boolean).join(" · ")}
     >
       <div className="space-y-1 text-left" data-testid="tfr-card">
         {tfrAltitudes(tfr) && <p>{tfrAltitudes(tfr)}</p>}
@@ -50,4 +55,3 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
     </MapCard>
   );
 }
-

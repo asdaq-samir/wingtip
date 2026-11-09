@@ -21,11 +21,21 @@ export default function AloftGl({ points }: { points: AloftPoint[] }) {
   const { map } = useGlMap();
   useExtrusion(map, "route-aloft-curtain", {
     type: "fill-extrusion",
-    paint: { "fill-extrusion-color": "#c0309f", "fill-extrusion-opacity": 0.22, "fill-extrusion-base": 0, "fill-extrusion-height": ["get", "top"] },
+    paint: {
+      "fill-extrusion-color": "#c0309f",
+      "fill-extrusion-opacity": 0.22,
+      "fill-extrusion-base": 0,
+      "fill-extrusion-height": ["get", "top"],
+    },
   });
   useExtrusion(map, "route-aloft", {
     type: "fill-extrusion",
-    paint: { "fill-extrusion-color": "#c0309f", "fill-extrusion-opacity": 0.9, "fill-extrusion-base": ["get", "bottom"], "fill-extrusion-height": ["get", "top"] },
+    paint: {
+      "fill-extrusion-color": "#c0309f",
+      "fill-extrusion-opacity": 0.9,
+      "fill-extrusion-base": ["get", "bottom"],
+      "fill-extrusion-height": ["get", "top"],
+    },
   });
   // The band 150 m across and 30 m deep, a few points at the zooms 3D is
   // looked at; the curtain a wall 20 m thick under it.

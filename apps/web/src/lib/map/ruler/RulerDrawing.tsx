@@ -19,14 +19,24 @@ export const PINCHED_LEVELS = 0.05;
 export function RulerDrawing({ drawn, spoken }: { drawn: Placed | null; spoken: string }) {
   return (
     <>
-      <div className="sr-only" aria-live="polite" data-testid="ruler-spoken">{spoken}</div>
+      <div className="sr-only" aria-live="polite" data-testid="ruler-spoken">
+        {spoken}
+      </div>
       {drawn && (
         // Over the map's canvas and marks, under its buttons
         // (MapControls' 1000).
         <div className="pointer-events-none absolute inset-0 z-[750]" data-testid="map-ruler" aria-hidden="true">
           <svg className="absolute inset-0 h-full w-full overflow-visible">
             {/* A dark casing under a white line, seen on the day chart and the night one. */}
-            <line x1={drawn.a.x} y1={drawn.a.y} x2={drawn.b.x} y2={drawn.b.y} stroke="rgb(0 0 0 / 0.6)" strokeWidth={5} strokeLinecap="round" />
+            <line
+              x1={drawn.a.x}
+              y1={drawn.a.y}
+              x2={drawn.b.x}
+              y2={drawn.b.y}
+              stroke="rgb(0 0 0 / 0.6)"
+              strokeWidth={5}
+              strokeLinecap="round"
+            />
             <line x1={drawn.a.x} y1={drawn.a.y} x2={drawn.b.x} y2={drawn.b.y} stroke="white" strokeWidth={2} strokeLinecap="round" />
             {[drawn.a, drawn.b].map((p, i) => (
               <circle key={i} cx={p.x} cy={p.y} r={5} fill="white" stroke="rgb(0 0 0 / 0.6)" strokeWidth={2} />
@@ -34,7 +44,12 @@ export function RulerDrawing({ drawn, spoken }: { drawn: Placed | null; spoken: 
           </svg>
           <div
             className="absolute flex flex-col items-stretch rounded-lg bg-black/70 px-2.5 py-1 font-semibold text-white tabular-nums"
-            style={{ left: drawn.middle.x, top: drawn.middle.y, width: drawn.width, transform: `translate(-50%, -50%) rotate(${drawn.angleDeg}deg)` }}
+            style={{
+              left: drawn.middle.x,
+              top: drawn.middle.y,
+              width: drawn.width,
+              transform: `translate(-50%, -50%) rotate(${drawn.angleDeg}deg)`,
+            }}
           >
             <div className={`flex justify-between gap-3 whitespace-nowrap ${TEXT.row}`}>
               <span>{drawn.words.toLeft}</span>

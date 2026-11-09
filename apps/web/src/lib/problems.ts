@@ -30,16 +30,16 @@ export const useSystemProblems = create<{ problems: SystemProblem[] }>(() => ({ 
 
 /** Said, or said again in its place: one id is one problem. */
 export function raiseProblem(problem: SystemProblem) {
-  useSystemProblems.setState(s => ({
-    problems: s.problems.some(p => p.id === problem.id)
-      ? s.problems.map(p => (p.id === problem.id ? problem : p))
+  useSystemProblems.setState((s) => ({
+    problems: s.problems.some((p) => p.id === problem.id)
+      ? s.problems.map((p) => (p.id === problem.id ? problem : p))
       : [...s.problems, problem],
   }));
 }
 
 /** What caused it has gone. */
 export function clearProblem(id: string) {
-  useSystemProblems.setState(s => ({ problems: s.problems.filter(p => p.id !== id) }));
+  useSystemProblems.setState((s) => ({ problems: s.problems.filter((p) => p.id !== id) }));
 }
 
 /** A one-off failure, for the alert: one at a time, the latest. */

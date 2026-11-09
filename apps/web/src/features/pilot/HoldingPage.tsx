@@ -26,15 +26,31 @@ function at(cx: number, cy: number, r: number, deg: number): [number, number] {
  */
 function HoldDiagram({ inbound, headingTo, turns, entry }: { inbound: number; headingTo: number; turns: Turns; entry: Entry }) {
   const side = turns === "right" ? 1 : -1;
-  const fx = 150, fy = 105, r = 32, len = 100;
+  const fx = 150,
+    fy = 105,
+    r = 32,
+    len = 100;
   const ox = fx + side * 2 * r;
   const sweep = turns === "right" ? 1 : 0;
   const track = `M${fx} ${fy} A${r} ${r} 0 0 ${sweep} ${ox} ${fy} L${ox} ${fy + len} A${r} ${r} 0 0 ${sweep} ${fx} ${fy + len} Z`;
   const line70 = turns === "right" ? [110, 290] : [250, 70];
-  const [l1x, l1y] = at(fx, fy, 150, line70[0]!), [l2x, l2y] = at(fx, fy, 150, line70[1]!);
-  const labels: [Entry, number][] = turns === "right" ? [["parallel", 52], ["teardrop", 322], ["direct", 205]] : [["parallel", 308], ["teardrop", 38], ["direct", 155]];
+  const [l1x, l1y] = at(fx, fy, 150, line70[0]!),
+    [l2x, l2y] = at(fx, fy, 150, line70[1]!);
+  const labels: [Entry, number][] =
+    turns === "right"
+      ? [
+          ["parallel", 52],
+          ["teardrop", 322],
+          ["direct", 205],
+        ]
+      : [
+          ["parallel", 308],
+          ["teardrop", 38],
+          ["direct", 155],
+        ];
   const from = approachRelative(inbound, headingTo);
-  const [ax, ay] = at(fx, fy, 128, from), [bx, by] = at(fx, fy, 30, from);
+  const [ax, ay] = at(fx, fy, 128, from),
+    [bx, by] = at(fx, fy, 30, from);
   // Each entry's turn drawn as a curve that leaves in the direction the
   // leg before it was flown and meets the inbound course heading up it.
   let path = "";
@@ -50,42 +66,92 @@ function HoldDiagram({ inbound, headingTo, turns, entry }: { inbound: number; he
     // toward the holding side through more than 180°, onto the inbound
     // course.
     const px = fx - side * 20;
-    path = `M${fx} ${fy} C${fx} ${fy + 15} ${px} ${fy + 10} ${px} ${fy + 35} L${px} ${fy + len} `
-      + `C${px} ${fy + len + 45} ${fx + side * 40} ${fy + len + 40} ${fx} ${fy + len * 0.5}`;
+    path =
+      `M${fx} ${fy} C${fx} ${fy + 15} ${px} ${fy + 10} ${px} ${fy + 35} L${px} ${fy + len} ` +
+      `C${px} ${fy + len + 45} ${fx + side * 40} ${fy + len + 40} ${fx} ${fy + len * 0.5}`;
   }
   const label = `${ENTRY_NAME[entry]} entry to a hold with ${turns} turns on an inbound course of ${bearing(inbound)}, arriving on a heading of ${bearing(headingTo)}.`;
   return (
-    <svg viewBox="0 0 300 270" className="mx-auto h-auto w-full max-w-80 text-foreground leading-4" role="img" aria-label={label} data-testid="hold-diagram">
+    <svg
+      viewBox="0 0 300 270"
+      className="mx-auto h-auto w-full max-w-80 text-foreground leading-4"
+      role="img"
+      aria-label={label}
+      data-testid="hold-diagram"
+    >
       <line x1={fx} y1={4} x2={fx} y2={266} stroke="currentColor" strokeOpacity={0.25} strokeDasharray="4 4" />
       <line x1={l1x} y1={l1y} x2={l2x} y2={l2y} stroke="currentColor" strokeOpacity={0.25} strokeDasharray="4 4" />
       <g className="text-muted-foreground" fill="currentColor" fontSize={12} textAnchor="middle">
         {labels.map(([name, deg]) => {
           const [x, y] = at(fx, fy, 92, deg);
-          return <text key={name} x={x} y={y} fontWeight={name === entry ? 700 : 400}>{ENTRY_NAME[name]}</text>;
+          return (
+            <text key={name} x={x} y={y} fontWeight={name === entry ? 700 : 400}>
+              {ENTRY_NAME[name]}
+            </text>
+          );
         })}
       </g>
-      <path d={track} fill="none" stroke="currentColor" strokeOpacity={entry === "direct" ? 1 : 0.55} strokeWidth={entry === "direct" ? 2.5 : 1.5}
-        className={entry === "direct" ? "text-tint" : undefined} />
+      <path
+        d={track}
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity={entry === "direct" ? 1 : 0.55}
+        strokeWidth={entry === "direct" ? 2.5 : 1.5}
+        className={entry === "direct" ? "text-tint" : undefined}
+      />
       {path && <path d={path} fill="none" stroke="currentColor" strokeWidth={2.5} className="text-tint" />}
-      <path d={`M${fx - 6} ${fy + len - 30} L${fx} ${fy + len - 42} L${fx + 6} ${fy + len - 30}`} fill="none" stroke="currentColor" strokeOpacity={0.55} strokeWidth={1.5} />
+      <path
+        d={`M${fx - 6} ${fy + len - 30} L${fx} ${fy + len - 42} L${fx + 6} ${fy + len - 30}`}
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity={0.55}
+        strokeWidth={1.5}
+      />
       <circle cx={fx} cy={fy} r={5} fill="currentColor" />
-      <text x={fx - side * 10} y={fy - 8} fontSize={12} textAnchor={turns === "right" ? "end" : "start"} fill="currentColor">Fix</text>
+      <text x={fx - side * 10} y={fy - 8} fontSize={12} textAnchor={turns === "right" ? "end" : "start"} fill="currentColor">
+        Fix
+      </text>
       <g className="text-tint">
         <line x1={ax} y1={ay} x2={bx} y2={by} stroke="currentColor" strokeWidth={2} strokeDasharray="5 3" />
-        <path d="M-5 4 L0 -3 L5 4" transform={`translate(${bx} ${by}) rotate(${from + 180})`} fill="none" stroke="currentColor" strokeWidth={2} />
+        <path
+          d="M-5 4 L0 -3 L5 4"
+          transform={`translate(${bx} ${by}) rotate(${from + 180})`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+        />
       </g>
     </svg>
   );
 }
 
-function NumberRow({ id, title, value, onChange, unit, testId }: {
-  id: string; title: string; value: string; onChange: (v: string) => void; unit: string; testId: string;
+function NumberRow({
+  id,
+  title,
+  value,
+  onChange,
+  unit,
+  testId,
+}: {
+  id: string;
+  title: string;
+  value: string;
+  onChange: (v: string) => void;
+  unit: string;
+  testId: string;
 }) {
   return (
     <ListRow id={id} title={title}>
       <span className="flex items-center gap-1.5">
         <FieldHit htmlFor={id}>
-          <Input id={id} inputMode="numeric" className="h-8 w-20 text-right tabular-nums" value={value} onChange={e => onChange(e.target.value)} data-testid={testId} />
+          <Input
+            id={id}
+            inputMode="numeric"
+            className="h-8 w-20 text-right tabular-nums"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            data-testid={testId}
+          />
         </FieldHit>
         <span className={cn("w-7 text-muted-foreground", TEXT.detail)}>{unit}</span>
       </span>
@@ -109,21 +175,39 @@ export default function HoldingPage() {
   const [windKt, setWindKt] = useState("15");
   const [altitude, setAltitude] = useState("5000");
   const num = (v: string) => (v.trim() === "" ? NaN : Number(v));
-  const i = num(inbound), h = num(headingTo);
+  const i = num(inbound),
+    h = num(headingTo);
   const valid = Number.isFinite(i) && Number.isFinite(h);
   const found = valid ? holdingEntry(i, h, turns) : null;
-  const wind = valid && [tas, windFrom, windKt, altitude].every(v => Number.isFinite(num(v)))
-    ? holdingWind(i, num(tas), num(windFrom), num(windKt), num(altitude)) : null;
+  const wind =
+    valid && [tas, windFrom, windKt, altitude].every((v) => Number.isFinite(num(v)))
+      ? holdingWind(i, num(tas), num(windFrom), num(windKt), num(altitude))
+      : null;
 
   return (
     <div className="space-y-4">
       <ListGroup title="The hold">
         <NumberRow id={`${id}-in`} title="Inbound course" value={inbound} onChange={setInbound} unit="°" testId="hold-inbound" />
         <ListRow title="Turns">
-          <Segmented label="Turns" value={turns} onChange={v => setTurns(v as Turns)} testId="hold-turns"
-            options={[{ value: "right", label: "Right" }, { value: "left", label: "Left" }]} />
+          <Segmented
+            label="Turns"
+            value={turns}
+            onChange={(v) => setTurns(v as Turns)}
+            testId="hold-turns"
+            options={[
+              { value: "right", label: "Right" },
+              { value: "left", label: "Left" },
+            ]}
+          />
         </ListRow>
-        <NumberRow id={`${id}-hdg`} title="Your heading to the fix" value={headingTo} onChange={setHeadingTo} unit="°" testId="hold-heading" />
+        <NumberRow
+          id={`${id}-hdg`}
+          title="Your heading to the fix"
+          value={headingTo}
+          onChange={setHeadingTo}
+          unit="°"
+          testId="hold-heading"
+        />
       </ListGroup>
 
       {found && (
@@ -133,10 +217,15 @@ export default function HoldingPage() {
               70° line on the holding side; within 5° of a line between two,
               either entry is allowed, said in a row of its own. */}
           <ListGroup>
-            <ListRow title={<span className="font-semibold">{ENTRY_NAME[found.entry]} entry</span>} description={entrySteps(i, h, turns, num(altitude))} data-testid="hold-entry" />
+            <ListRow
+              title={<span className="font-semibold">{ENTRY_NAME[found.entry]} entry</span>}
+              description={entrySteps(i, h, turns, num(altitude))}
+              data-testid="hold-entry"
+            />
             {found.either && (
               <ListRow
-                title={`Or ${ENTRY_NAME[found.either].toLowerCase()}`} description="Within 5° of the line between the two"
+                title={`Or ${ENTRY_NAME[found.either].toLowerCase()}`}
+                description="Within 5° of the line between the two"
                 data-testid="hold-entry-either"
               />
             )}
@@ -158,12 +247,23 @@ export default function HoldingPage() {
         // a half above (AIM 5-3-8); outbound timing from over or abeam the
         // fix, whichever is later.
         <ListGroup>
-          <ListRow title="Inbound heading" description={wind.words.inbound} value={bearing(wind.inbound.heading)} data-testid="hold-in-heading" />
-          <ListRow title="Outbound heading" description={wind.words.outbound} value={bearing(wind.outbound.heading)} data-testid="hold-out-heading" />
+          <ListRow
+            title="Inbound heading"
+            description={wind.words.inbound}
+            value={bearing(wind.inbound.heading)}
+            data-testid="hold-in-heading"
+          />
+          <ListRow
+            title="Outbound heading"
+            description={wind.words.outbound}
+            value={bearing(wind.outbound.heading)}
+            data-testid="hold-out-heading"
+          />
           <ListRow
             title="Outbound time"
             description={wind.words.time}
-            value={`${Math.round(wind.outboundSec)} s`} data-testid="hold-out-time"
+            value={`${Math.round(wind.outboundSec)} s`}
+            data-testid="hold-out-time"
           />
         </ListGroup>
       ) : (

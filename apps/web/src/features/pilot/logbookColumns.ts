@@ -26,17 +26,31 @@ export const COLUMN_TARGETS: ColumnTarget[] = [
   { field: "Date", label: "Date", aliases: ["date", "flightdate", "dateflown"], required: true },
   // MyFlightbook's "Aircraft ID" is its own number for the airplane, not
   // the tail: its "Tail Number" is looked for first.
-  { field: "AircraftID", label: "Airplane (tail number)", aliases: ["tailnumber", "displaytail", "aircraftid", "registration", "tail", "aircraft", "ident"], required: true },
+  {
+    field: "AircraftID",
+    label: "Airplane (tail number)",
+    aliases: ["tailnumber", "displaytail", "aircraftid", "registration", "tail", "aircraft", "ident"],
+    required: true,
+  },
   { field: "TypeCode", label: "Type", aliases: ["typecode", "icaomodel", "model", "aircrafttype", "type", "makemodel"] },
   { field: "From", label: "From", aliases: ["from", "departure", "dep", "origin"] },
   { field: "Route", label: "Route", aliases: ["route", "via"] },
   { field: "To", label: "To", aliases: ["to", "arrival", "arr", "destination", "dest"] },
-  { field: "TotalTime", label: "Total time", aliases: ["totaltime", "totalflighttime", "total", "totalduration", "duration"], required: true },
+  {
+    field: "TotalTime",
+    label: "Total time",
+    aliases: ["totaltime", "totalflighttime", "total", "totalduration", "duration"],
+    required: true,
+  },
   { field: "Night", label: "Night", aliases: ["night", "nighttime"] },
   { field: "CrossCountry", label: "Cross-country", aliases: ["crosscountry", "xcountry", "xc"] },
   { field: "AllLandings", label: "Landings, all", aliases: ["alllandings", "landings", "totallandings"] },
   { field: "DayLandingsFullStop", label: "Day full-stop landings", aliases: ["daylandingsfullstop", "fsdaylandings", "daylandings"] },
-  { field: "NightLandingsFullStop", label: "Night full-stop landings", aliases: ["nightlandingsfullstop", "fsnightlandings", "nightlandings"] },
+  {
+    field: "NightLandingsFullStop",
+    label: "Night full-stop landings",
+    aliases: ["nightlandingsfullstop", "fsnightlandings", "nightlandings"],
+  },
   { field: "DualReceived", label: "Dual received", aliases: ["dualreceived", "dual"] },
   { field: "Solo", label: "Solo", aliases: ["solo"] },
   { field: "ActualInstrument", label: "Actual instrument", aliases: ["actualinstrument", "imc", "actual"] },
@@ -63,10 +77,10 @@ export function csvRows(text: string): string[][] {
 /** The row of field names: the first that names a date and a total time,
  *  else the first with anything in it; -1 for an empty file. */
 export function headerRowOf(rows: string[][]): number {
-  const names = (field: string) => COLUMN_TARGETS.find(t => t.field === field)!.aliases;
-  const has = (row: string[], field: string) => row.some(c => names(field).includes(keyOf(c)));
-  const named = rows.findIndex(r => has(r, "Date") && has(r, "TotalTime"));
-  return named >= 0 ? named : rows.findIndex(r => r.some(c => c.trim()));
+  const names = (field: string) => COLUMN_TARGETS.find((t) => t.field === field)!.aliases;
+  const has = (row: string[], field: string) => row.some((c) => names(field).includes(keyOf(c)));
+  const named = rows.findIndex((r) => has(r, "Date") && has(r, "TotalTime"));
+  return named >= 0 ? named : rows.findIndex((r) => r.some((c) => c.trim()));
 }
 
 /** Which of the file's columns each field is read from, by index; null for
@@ -80,7 +94,7 @@ export function guessColumns(header: string[]): Columns {
   const taken = new Set<number>();
   const out: Columns = {};
   for (const t of COLUMN_TARGETS) {
-    const at = t.aliases.map(a => keys.findIndex((k, i) => k === a && !taken.has(i))).find(i => i >= 0);
+    const at = t.aliases.map((a) => keys.findIndex((k, i) => k === a && !taken.has(i))).find((i) => i >= 0);
     out[t.field] = at ?? null;
     if (at != null) taken.add(at);
   }
@@ -89,7 +103,7 @@ export function guessColumns(header: string[]): Columns {
 
 /** The fields the engine needs that no column is given to. */
 export function missingColumns(columns: Columns): ColumnTarget[] {
-  return COLUMN_TARGETS.filter(t => t.required && columns[t.field] == null);
+  return COLUMN_TARGETS.filter((t) => t.required && columns[t.field] == null);
 }
 
 /** One CSV cell as RFC 4180 writes it: quoted where it holds a comma, a
@@ -103,8 +117,8 @@ function cell(value: string): string {
  *  numbers in the engine's answer counted in this file, one row of names
  *  at its top. */
 export function remapped(rows: string[][], headerAt: number, columns: Columns): string {
-  const used = COLUMN_TARGETS.filter(t => columns[t.field] != null);
-  const lines = [used.map(t => t.field)];
-  for (const row of rows.slice(headerAt + 1)) lines.push(used.map(t => row[columns[t.field]!] ?? ""));
-  return lines.map(l => l.map(cell).join(",")).join("\r\n") + "\r\n";
+  const used = COLUMN_TARGETS.filter((t) => columns[t.field] != null);
+  const lines = [used.map((t) => t.field)];
+  for (const row of rows.slice(headerAt + 1)) lines.push(used.map((t) => row[columns[t.field]!] ?? ""));
+  return lines.map((l) => l.map(cell).join(",")).join("\r\n") + "\r\n";
 }

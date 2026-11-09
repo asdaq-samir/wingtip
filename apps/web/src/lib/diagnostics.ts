@@ -35,6 +35,8 @@ export function originOf(win: Window | undefined = globalThis.window): Pick<Diag
 
 /** Sends a report; false where the browser cannot or would not. */
 export function beacon(report: DiagnosticsReport, nav: Navigator = navigator): boolean {
-  return typeof nav.sendBeacon === "function"
-    && nav.sendBeacon("/api/diagnostics", new Blob([JSON.stringify(report)], { type: "application/json" }));
+  return (
+    typeof nav.sendBeacon === "function" &&
+    nav.sendBeacon("/api/diagnostics", new Blob([JSON.stringify(report)], { type: "application/json" }))
+  );
 }

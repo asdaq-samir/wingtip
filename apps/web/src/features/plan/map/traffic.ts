@@ -21,7 +21,10 @@ type Mark = EngineAnswer<"traffic_marks">[number];
  *  all, as a call an airplane cost 5 ms for 554 of them, each fix. */
 const marked = new WeakMap<TrafficAircraft, { own: number | null; mark: Mark }>();
 
-const heights = (p: Pick<TrafficAircraft, "altitude_ft" | "vertical_fpm">) => ({ altitude_ft: p.altitude_ft ?? null, vertical_fpm: p.vertical_fpm ?? null });
+const heights = (p: Pick<TrafficAircraft, "altitude_ft" | "vertical_fpm">) => ({
+  altitude_ft: p.altitude_ft ?? null,
+  vertical_fpm: p.vertical_fpm ?? null,
+});
 
 /** Works out the label and colour of every airplane in `planes` against
  *  own ship's height at once, for trafficLabel and nearOwnHeight to read. */
@@ -63,7 +66,13 @@ export function agedBy(planes: TrafficAircraft[], ageS: number): TrafficAircraft
 }
 
 /** Own ship's fix as the engine reads one. */
-const engineFix = (fix: Fix) => ({ lat: fix.lat, lon: fix.lon, heading_deg: fix.headingDeg, speed_kt: fix.speedKt, altitude_ft: fix.altitudeFt });
+const engineFix = (fix: Fix) => ({
+  lat: fix.lat,
+  lon: fix.lon,
+  heading_deg: fix.headingDeg,
+  speed_kt: fix.speedKt,
+  altitude_ft: fix.altitudeFt,
+});
 
 /**
  * Which airplane, if any, is own ship itself, heard by the receivers on
@@ -75,10 +84,17 @@ const engineFix = (fix: Fix) => ({ lat: fix.lat, lon: fix.lon, heading_deg: fix.
  */
 export function ownShipHex(planes: TrafficAircraft[], fix: Fix | null): string | null {
   // Only what the rule reads crosses, not each airplane's every field.
-  const heard = planes.map(p => ({ hex: p.hex, lat: p.lat, lon: p.lon, altitude_ft: p.altitude_ft, track_deg: p.track_deg, speed_kt: p.speed_kt, seen_s: p.seen_s }));
+  const heard = planes.map((p) => ({
+    hex: p.hex,
+    lat: p.lat,
+    lon: p.lon,
+    altitude_ft: p.altitude_ft,
+    track_deg: p.track_deg,
+    speed_kt: p.speed_kt,
+    seen_s: p.seen_s,
+  }));
   return callEngine("own_ship_hex", { planes: heard, fix: fix ? engineFix(fix) : null });
 }
-
 
 /** How long after its report an airplane is carried on along its track:
  *  past this it may have turned anywhere, and is not drawn (the planner
@@ -126,7 +142,17 @@ export function colourRuns(path: { lat: number; lon: number; altFt: number | nul
     const colour = heightColour(p.altFt == null ? null : Math.round(p.altFt / 1000) * 1000);
     const last = runs[runs.length - 1];
     if (last && last.colour === colour) last.points.push([p.lat, p.lon]);
-    else runs.push({ colour, points: i > 0 ? [[path[i - 1]!.lat, path[i - 1]!.lon], [p.lat, p.lon]] : [[p.lat, p.lon]] });
+    else
+      runs.push({
+        colour,
+        points:
+          i > 0
+            ? [
+                [path[i - 1]!.lat, path[i - 1]!.lon],
+                [p.lat, p.lon],
+              ]
+            : [[p.lat, p.lon]],
+      });
   });
   return runs;
 }

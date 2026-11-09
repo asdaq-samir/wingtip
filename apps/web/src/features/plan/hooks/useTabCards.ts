@@ -52,18 +52,27 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
   // Aircraft card's. A reload starts clean, cards and lists alike
   // (features/shell/freshLoad).
   const listParam = searchParams.get("list");
-  const list = (LISTS as readonly string[]).includes(listParam ?? "") ? listParam as TabList : null;
-  const openList = useCallback((name: TabList) => {
-    setSearchParams(prev => {
-      return patched(prev, { list: name });
-    }, { replace: true });
-    // A list in full all the way up, as each opened before.
-    setPanel("full");
-  }, [setSearchParams, setPanel]);
+  const list = (LISTS as readonly string[]).includes(listParam ?? "") ? (listParam as TabList) : null;
+  const openList = useCallback(
+    (name: TabList) => {
+      setSearchParams(
+        (prev) => {
+          return patched(prev, { list: name });
+        },
+        { replace: true },
+      );
+      // A list in full all the way up, as each opened before.
+      setPanel("full");
+    },
+    [setSearchParams, setPanel],
+  );
   const closeList = useCallback(() => {
-    setSearchParams(prev => {
-      return patched(prev, { list: null });
-    }, { replace: true });
+    setSearchParams(
+      (prev) => {
+        return patched(prev, { list: null });
+      },
+      { replace: true },
+    );
   }, [setSearchParams]);
   // The airport whose card is open in the panel (PlaceCard), as Maps
   // opens a place's: from a tap on the chart, held in the address so a
@@ -102,35 +111,62 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
     const at = pointOf(nearAtParam);
     return at ? { ...at, label: nearNameParam ?? `${at.lat}, ${at.lon}` } : null;
   }, [nearAtParam, nearNameParam]);
-  const setNearFrom = useCallback((from: { label: string; lat: number; lon: number } | null) => {
-    setSearchParams(prev => {
-      return patched(prev, from
-        ? { nearAt: `${from.lat.toFixed(4)},${from.lon.toFixed(4)}`, nearName: from.label }
-        : { nearAt: null, nearName: null });
-    }, { replace: true });
-  }, [setSearchParams]);
-  const selectFlight = useCallback((hex: string | null, plane?: TrafficAircraft) => {
-    track(hex, plane);
-    setSearchParams(prev => {
-      // An airplane's card half way, wherever it is opened from, as an
-      // airport's is (the owner's ask).
-      return patched(prev, {
-        flight: hex ?? null, place: null, at: null, near: null, nearAt: null, nearName: null, past: null,
-        view: hex ? null : undefined,
-      });
-    }, { replace: true });
-    if (hex) setPanel("half");
-  }, [setSearchParams, setPanel]);
-  const selectPast = useCallback((id: number | null) => {
-    setSearchParams(prev => {
-      return patched(prev, { past: id ? String(id) : null });
-    }, { replace: true });
-    // A past flight: its card all the way up.
-    setPanel("full");
-  }, [setSearchParams, setPanel]);
+  const setNearFrom = useCallback(
+    (from: { label: string; lat: number; lon: number } | null) => {
+      setSearchParams(
+        (prev) => {
+          return patched(
+            prev,
+            from ? { nearAt: `${from.lat.toFixed(4)},${from.lon.toFixed(4)}`, nearName: from.label } : { nearAt: null, nearName: null },
+          );
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+  const selectFlight = useCallback(
+    (hex: string | null, plane?: TrafficAircraft) => {
+      track(hex, plane);
+      setSearchParams(
+        (prev) => {
+          // An airplane's card half way, wherever it is opened from, as an
+          // airport's is (the owner's ask).
+          return patched(prev, {
+            flight: hex ?? null,
+            place: null,
+            at: null,
+            near: null,
+            nearAt: null,
+            nearName: null,
+            past: null,
+            view: hex ? null : undefined,
+          });
+        },
+        { replace: true },
+      );
+      if (hex) setPanel("half");
+    },
+    [setSearchParams, setPanel],
+  );
+  const selectPast = useCallback(
+    (id: number | null) => {
+      setSearchParams(
+        (prev) => {
+          return patched(prev, { past: id ? String(id) : null });
+        },
+        { replace: true },
+      );
+      // A past flight: its card all the way up.
+      setPanel("full");
+    },
+    [setSearchParams, setPanel],
+  );
   // The address's flight and list into the tracking the map draws from
   // (lib/map/position/tracking), and the map's tap on an airplane back to here.
-  useEffect(() => { track(flight); }, [flight]);
+  useEffect(() => {
+    track(flight);
+  }, [flight]);
   // Each put back on its own: `pick` changes with the panel's setter, and
   // putting `listing` back with it hid the traffic while the list was up.
   useEffect(() => {
@@ -141,7 +177,21 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
     useTracking.setState({ pick: (hex, plane) => selectFlight(hex, plane) });
     return () => useTracking.setState({ pick: null });
   }, [selectFlight]);
-  return { place, heldPoint, nearOpen, aircraftOpen, flight, past, nearFrom, setNearFrom, selectFlight, selectPast, list, openList, closeList };
+  return {
+    place,
+    heldPoint,
+    nearOpen,
+    aircraftOpen,
+    flight,
+    past,
+    nearFrom,
+    setNearFrom,
+    selectFlight,
+    selectPast,
+    list,
+    openList,
+    closeList,
+  };
 }
 
 /**
@@ -157,7 +207,15 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
  * ("the cards should stay where they are when coming back to the tab"),
  * as each of an iOS app's tabs keeps its own screen. Not past a reload.
  */
-export function usePanelTabs({ cards, route, hasRoute, panel, setPanel, searchParams, setSearchParams }: {
+export function usePanelTabs({
+  cards,
+  route,
+  hasRoute,
+  panel,
+  setPanel,
+  searchParams,
+  setSearchParams,
+}: {
   cards: ReturnType<typeof useAddressCards>;
   /** The route as the address has it, any change of which is a new one. */
   route: string;
@@ -184,7 +242,7 @@ export function usePanelTabs({ cards, route, hasRoute, panel, setPanel, searchPa
   // airport marker while being on setup tab doesn't open the [airport]
   // tab"): an airplane's is Aircraft (below), a field's or a point's
   // Airport.
-  const consoleOpen = useConsoleOpen(st => st.open);
+  const consoleOpen = useConsoleOpen((st) => st.open);
   const opened = `${place ?? ""}|${heldPoint ? JSON.stringify(heldPoint) : ""}|${flight ?? ""}`;
   const [openedSeen, setOpenedSeen] = useState(opened);
   if (opened !== openedSeen) {
@@ -206,9 +264,14 @@ export function usePanelTabs({ cards, route, hasRoute, panel, setPanel, searchPa
   // A list in full is its tab's: Airport's for its Favorites and Recents
   // -- a link or a reload landing on one lands on Airport -- FPL's for the
   // routes; Aircraft's by the address's `aircraft` already.
-  const tab: PanelTab = flight || aircraftOpen ? "aircraft"
-    : nearOpen || list === "favorites" || list === "recents" ? "airport"
-      : list === "routes" ? "fpl" : tabPick ?? "fpl";
+  const tab: PanelTab =
+    flight || aircraftOpen
+      ? "aircraft"
+      : nearOpen || list === "favorites" || list === "recents"
+        ? "airport"
+        : list === "routes"
+          ? "fpl"
+          : (tabPick ?? "fpl");
 
   const keptCards = useRef<Partial<Record<PanelTab, [string, string][]>>>({});
   const keptReplay = useRef<{ hex: string; id: number; at: number | null; playing: boolean } | null>(null);
@@ -228,34 +291,40 @@ export function usePanelTabs({ cards, route, hasRoute, panel, setPanel, searchPa
   // was on kept for it and the one kept for the tab picked opened again.
   // The tab up picked again (tabUp, closeSheet) puts its card away. At
   // the height the panel is, at the pilot's ask: a pill stays a pill.
-  const pickTab = useCallback((next: PanelTab) => {
-    const leaving = next !== tab;
-    if (leaving) {
-      keptCards.current[tab] = CARD_KEYS.flatMap(key => {
-        const value = searchParams.get(key);
-        return value ? [[key, value] as [string, string]] : [];
-      });
-      const replay = usePastFlight.getState();
-      if (flight && past && replay.hex === flight && replay.id === past) {
-        keptReplay.current = { hex: flight, id: past, at: replay.at, playing: replay.playing };
-      }
-    } else delete keptCards.current[tab];
-    const back = leaving ? keptCards.current[next] ?? [] : [];
-    setTabPick(next);
-    setSearchParams(prev => {
-      const out = new URLSearchParams(prev);
-      for (const key of [...CARD_KEYS, "aircraft", "near"]) out.delete(key);
-      if (next === "aircraft") out.set("aircraft", "1");
-      for (const [key, value] of back) out.set(key, value);
-      return out;
-      // In the same commit as the pick and Setup put away (TabBar), not in
-      // the router's transition after them: in between, the tab bar drew
-      // the tab the address still had -- Airport for a card, a list or
-      // Nearest left open on it -- a frame on the way from Setup to FPL
-      // (the owner, 2026-11-05: "Why does the airport tab get selected
-      // momentarily when going from airport to setup to fpl?").
-    }, { replace: true, flushSync: true });
-  }, [setSearchParams, searchParams, tab, flight, past]);
+  const pickTab = useCallback(
+    (next: PanelTab) => {
+      const leaving = next !== tab;
+      if (leaving) {
+        keptCards.current[tab] = CARD_KEYS.flatMap((key) => {
+          const value = searchParams.get(key);
+          return value ? [[key, value] as [string, string]] : [];
+        });
+        const replay = usePastFlight.getState();
+        if (flight && past && replay.hex === flight && replay.id === past) {
+          keptReplay.current = { hex: flight, id: past, at: replay.at, playing: replay.playing };
+        }
+      } else delete keptCards.current[tab];
+      const back = leaving ? (keptCards.current[next] ?? []) : [];
+      setTabPick(next);
+      setSearchParams(
+        (prev) => {
+          const out = new URLSearchParams(prev);
+          for (const key of [...CARD_KEYS, "aircraft", "near"]) out.delete(key);
+          if (next === "aircraft") out.set("aircraft", "1");
+          for (const [key, value] of back) out.set(key, value);
+          return out;
+          // In the same commit as the pick and Setup put away (TabBar), not in
+          // the router's transition after them: in between, the tab bar drew
+          // the tab the address still had -- Airport for a card, a list or
+          // Nearest left open on it -- a frame on the way from Setup to FPL
+          // (the owner, 2026-11-05: "Why does the airport tab get selected
+          // momentarily when going from airport to setup to fpl?").
+        },
+        { replace: true, flushSync: true },
+      );
+    },
+    [setSearchParams, searchParams, tab, flight, past],
+  );
 
   // The tab up tapped again where the tab bar has no panel to size (the
   // panel's own does, TabBar), or over a list in full (TabBar's

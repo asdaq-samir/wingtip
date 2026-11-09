@@ -16,7 +16,9 @@ const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollectio
 
 /** The ring round the field whose card is open. */
 const RING: CircleLayerSpecification = {
-  id: "airport-selected", type: "circle", source: SELECTED,
+  id: "airport-selected",
+  type: "circle",
+  source: SELECTED,
   paint: { "circle-radius": 20, "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": "#ff3b00", "circle-stroke-width": 3 },
 };
 /** The open card's field's ident, larger and bolder than the chart's
@@ -25,11 +27,17 @@ const RING: CircleLayerSpecification = {
  *  2026-11-08); the tile layer leaves its own ident for it out
  *  (setSelectedAirport). Map words, not the page's: no Dynamic Type. */
 const SELECTED_IDENT: SymbolLayerSpecification = {
-  id: "airport-selected-ident", type: "symbol", source: SELECTED,
+  id: "airport-selected-ident",
+  type: "symbol",
+  source: SELECTED,
   layout: {
-    "text-field": ["get", "ident"], "text-font": GL_FONT_BOLD, "text-size": 17,
-    "text-anchor": "bottom", "text-offset": [0, -1.3],
-    "text-allow-overlap": true, "text-ignore-placement": true,
+    "text-field": ["get", "ident"],
+    "text-font": GL_FONT_BOLD,
+    "text-size": 17,
+    "text-anchor": "bottom",
+    "text-offset": [0, -1.3],
+    "text-allow-overlap": true,
+    "text-ignore-placement": true,
   },
   paint: { "text-color": "#ffffff", "text-halo-color": "#14181f", "text-halo-width": 2.25 },
 };
@@ -69,22 +77,41 @@ function useAlongRoute(route: Props["route"]) {
   return useQuery({
     queryKey: ["airportsReporting", routeKey],
     queryFn: () => api.airportsInView({ ...route!, limit: 1000, reporting: true }),
-    enabled: !!route, staleTime: WEATHER_EVERY_MS, refetchInterval: WEATHER_EVERY_MS, meta: { silent: true },
+    enabled: !!route,
+    staleTime: WEATHER_EVERY_MS,
+    refetchInterval: WEATHER_EVERY_MS,
+    meta: { silent: true },
   }).data;
 }
 
 /** The ring round the field whose card is open, a tap's card, a tap on
  *  the chart putting it away; and the specs' view of the marks drawn
  *  (data-airport-marks, useGlProbe). */
-function useAirportTaps({ selected, onSelect }: Pick<Props, "selected" | "onSelect">, fields: (f: MapGeoJSONFeature) => Record<string, unknown>) {
+function useAirportTaps(
+  { selected, onSelect }: Pick<Props, "selected" | "onSelect">,
+  fields: (f: MapGeoJSONFeature) => Record<string, unknown>,
+) {
   useGlLayer("marks", { [SELECTED]: empty() }, [RING, SELECTED_IDENT], "airports");
-  const ring = useMemo<GeoJSON.FeatureCollection | null>(() => (selected
-    ? { type: "FeatureCollection", features: [{ type: "Feature", properties: { ident: selected.ident }, geometry: { type: "Point", coordinates: [selected.lon, selected.lat] } }] }
-    : null), [selected]);
+  const ring = useMemo<GeoJSON.FeatureCollection | null>(
+    () =>
+      selected
+        ? {
+            type: "FeatureCollection",
+            features: [
+              {
+                type: "Feature",
+                properties: { ident: selected.ident },
+                geometry: { type: "Point", coordinates: [selected.lon, selected.lat] },
+              },
+            ],
+          }
+        : null,
+    [selected],
+  );
   useGlData(SELECTED, ring);
   useGlProbe("selected-airport", ["airport-selected"], () => ({ ring: true }));
   useGlProbe("airport-marks", ["airports"], fields);
-  useGlTap(["airports"], TAP.mark, TAP.rank.mark, feature => onSelect(String(feature.properties.ident)));
+  useGlTap(["airports"], TAP.mark, TAP.rank.mark, (feature) => onSelect(String(feature.properties.ident)));
   // The chart itself tapped: the airport's card put away.
   useGlMiss(() => onSelect(null));
 }
@@ -95,19 +122,22 @@ function useAirportTaps({ selected, onSelect }: Pick<Props, "selected" | "onSele
 function TileAirports(props: Props) {
   const { map } = useGlMap();
   const { others, route } = props;
-  const othersKey = others.map(a => a.ident).join();
-  useEffect(() => { setOverlayExclusion(map, "airports", othersKey ? othersKey.split(",") : []); }, [map, othersKey]);
+  const othersKey = others.map((a) => a.ident).join();
+  useEffect(() => {
+    setOverlayExclusion(map, "airports", othersKey ? othersKey.split(",") : []);
+  }, [map, othersKey]);
   useEffect(() => () => setOverlayExclusion(map, "airports", []), [map]);
   const selectedIdent = props.selected?.ident ?? null;
-  useEffect(() => { setSelectedAirport(map, selectedIdent); }, [map, selectedIdent]);
+  useEffect(() => {
+    setSelectedAirport(map, selectedIdent);
+  }, [map, selectedIdent]);
   const { box, level } = useGlView();
-  const { data: inView } = useQuery({
-    ...airportsQuery(box, level), refetchInterval: WEATHER_EVERY_MS, placeholderData: keepPreviousData,
-  });
+  const { data: inView } = useQuery({ ...airportsQuery(box, level), refetchInterval: WEATHER_EVERY_MS, placeholderData: keepPreviousData });
   const alongRoute = useAlongRoute(route);
   const colours = useMemo(() => {
     const out = new Map<string, string>();
-    for (const list of [alongRoute, inView]) for (const a of list ?? []) if (a.flight_category) out.set(a.ident, colourOf(a.flight_category));
+    for (const list of [alongRoute, inView])
+      for (const a of list ?? []) if (a.flight_category) out.set(a.ident, colourOf(a.flight_category));
     return out;
   }, [alongRoute, inView]);
   const known = useRef(colours);
@@ -115,7 +145,7 @@ function TileAirports(props: Props) {
     known.current = colours;
     setAirportWeather(map, colours);
   }, [map, colours]);
-  useAirportTaps(props, f => {
+  useAirportTaps(props, (f) => {
     const p = f.properties;
     const use = p.military === "military" ? "military" : p.use === "private" ? "private" : "";
     return { ident: p.ident, chip: true, space: "", use, weather: known.current.get(String(p.ident)) ?? colourOf(null) };

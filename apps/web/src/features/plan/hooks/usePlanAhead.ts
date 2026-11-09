@@ -28,7 +28,14 @@ const PLANNED_AHEAD = 3;
  * as the page will ask for it, with the picks the address keeps for the
  * altitude.
  */
-export function usePlanAhead({ planSettled, planned, aircraft, load, showWaypoints, flightRules }: {
+export function usePlanAhead({
+  planSettled,
+  planned,
+  aircraft,
+  load,
+  showWaypoints,
+  flightRules,
+}: {
   /** The route on screen is in (or there is none). */
   planSettled: boolean;
   planned: PlannedRoute;
@@ -37,12 +44,17 @@ export function usePlanAhead({ planSettled, planned, aircraft, load, showWaypoin
   showWaypoints: boolean;
   flightRules: PlanParams["rules"];
 }) {
-  const recentRoutes = usePreferences(p => p.recentRoutes);
+  const recentRoutes = usePreferences((p) => p.recentRoutes);
   const { data: savedFlights } = useQuery({ ...flightsQuery, enabled: false });
-  const aheadRoutes = useMemo(() => [...new Set([
-    ...recentRoutes.slice(0, PLANNED_AHEAD).map(recentHrefOf),
-    ...(savedFlights ?? []).slice(0, PLANNED_AHEAD).map(f => planHrefOf(f)),
-  ])], [recentRoutes, savedFlights]);
+  const aheadRoutes = useMemo(
+    () => [
+      ...new Set([
+        ...recentRoutes.slice(0, PLANNED_AHEAD).map(recentHrefOf),
+        ...(savedFlights ?? []).slice(0, PLANNED_AHEAD).map((f) => planHrefOf(f)),
+      ]),
+    ],
+    [recentRoutes, savedFlights],
+  );
   const plannedAhead = useRef(new Set<string>());
   useEffect(() => {
     if (!planSettled || aheadRoutes.length === 0) return;
@@ -54,7 +66,8 @@ export function usePlanAhead({ planSettled, planned, aircraft, load, showWaypoin
     const handle = idle(async () => {
       for (const href of aheadRoutes.slice(0, PLANNED_AHEAD * 2)) {
         const q = new URLSearchParams(href.split("?")[1]);
-        const dep = q.get("dep") ?? "", dest = q.get("dest") ?? "";
+        const dep = q.get("dep") ?? "",
+          dest = q.get("dest") ?? "";
         const via = stopsOf(q.get("stops"));
         const mark = [href, aircraftKey(aircraft), load, showWaypoints, flightRules].join("|");
         if (gone) return;
@@ -62,15 +75,26 @@ export function usePlanAhead({ planSettled, planned, aircraft, load, showWaypoin
         if (dep === planned.dep && dest === planned.dest && sameStops(via, planned.stops)) continue;
         plannedAhead.current.add(mark);
         const plan: PlanParams = {
-          dep, dest, stops: via, altitudeFt: q.get("altitude_ft") ?? "", altitudeNearest: q.get("altitude_nearest") === "1",
-          altitudeChoice: altitudeChoiceOf(q.get("altitude_choice")), depart: q.get("depart") ?? "", aircraft, load,
-          classBClearance: q.get("class_b") !== "0", altitudes: altitudesParam(altitudesOf(q.get("altitudes"))),
-          checkpoints: showWaypoints, rules: flightRules,
+          dep,
+          dest,
+          stops: via,
+          altitudeFt: q.get("altitude_ft") ?? "",
+          altitudeNearest: q.get("altitude_nearest") === "1",
+          altitudeChoice: altitudeChoiceOf(q.get("altitude_choice")),
+          depart: q.get("depart") ?? "",
+          aircraft,
+          load,
+          classBClearance: q.get("class_b") !== "0",
+          altitudes: altitudesParam(altitudesOf(q.get("altitudes"))),
+          checkpoints: showWaypoints,
+          rules: flightRules,
         };
         // Asked for and let go, the page's cache as it was.
         const ask = async (query: { queryKey: readonly unknown[]; queryFn?: unknown }) => {
           if (gone || queryClient.getQueryState(query.queryKey)) return;
-          await queryClient.fetchQuery({ ...query, meta: { silent: true } } as Parameters<typeof queryClient.fetchQuery>[0]).catch(() => {});
+          await queryClient
+            .fetchQuery({ ...query, meta: { silent: true } } as Parameters<typeof queryClient.fetchQuery>[0])
+            .catch(() => {});
           if (!queryClient.getQueryCache().find({ queryKey: query.queryKey, exact: true })?.getObserversCount()) {
             queryClient.removeQueries({ queryKey: query.queryKey, exact: true });
           }
@@ -81,11 +105,17 @@ export function usePlanAhead({ planSettled, planned, aircraft, load, showWaypoin
         // two took both its readers and a route just typed waited 3.85 s
         // for one (the planner's measurement, 2026-10-29).
         if (showWaypoints) {
-          await ask({ queryKey: ["checkpoints-ahead", dep, dest, via.join(",")], queryFn: () => api.checkpoints(dep, dest, via, undefined, true) });
+          await ask({
+            queryKey: ["checkpoints-ahead", dep, dest, via.join(",")],
+            queryFn: () => api.checkpoints(dep, dest, via, undefined, true),
+          });
         }
         await ask(navlogQuery(plan, showWaypoints, true));
       }
     });
-    return () => { gone = true; cancel(handle); };
+    return () => {
+      gone = true;
+      cancel(handle);
+    };
   }, [planSettled, aheadRoutes, aircraft, load, showWaypoints, flightRules, planned.dep, planned.dest, planned.stops]);
 }

@@ -30,7 +30,11 @@ const ENGINE_FAILURE = "Engine failure in flight";
 
 /** The fields ranked from own ship, in "glide" mode: the airplane's
  *  figures as the planner sent them (none: the glide is not guessed). */
-export function bestFields(data: EmergencyFields, fix: Pick<Fix, "lat" | "lon" | "altitudeFt" | "speedKt">, variationDeg: number | null): BestFields {
+export function bestFields(
+  data: EmergencyFields,
+  fix: Pick<Fix, "lat" | "lon" | "altitudeFt" | "speedKt">,
+  variationDeg: number | null,
+): BestFields {
   const input: EngineInput<"best_fields"> = {
     mode: "glide",
     at: { lat: fix.lat, lon: fix.lon },
@@ -39,11 +43,24 @@ export function bestFields(data: EmergencyFields, fix: Pick<Fix, "lat" | "lon" |
     wind: data.wind ?? null,
     variation_deg: variationDeg,
     airplane: data.airplane
-      ? { glide: data.airplane.glide ?? null, landing: data.airplane.landing ?? null, crosswind: data.airplane.crosswind ?? null, cruise_tas_kt: data.airplane.cruise_tas_kt ?? null }
+      ? {
+          glide: data.airplane.glide ?? null,
+          landing: data.airplane.landing ?? null,
+          crosswind: data.airplane.crosswind ?? null,
+          cruise_tas_kt: data.airplane.cruise_tas_kt ?? null,
+        }
       : null,
-    fields: data.fields.map(f => ({
-      ident: f.ident, name: f.name, lat: f.lat, lon: f.lon, elevation_ft: f.elevation_ft ?? null,
-      runways: f.runways, metar: f.metar ?? null, towered: f.towered, private: f.private, military: f.military,
+    fields: data.fields.map((f) => ({
+      ident: f.ident,
+      name: f.name,
+      lat: f.lat,
+      lon: f.lon,
+      elevation_ft: f.elevation_ft ?? null,
+      runways: f.runways,
+      metar: f.metar ?? null,
+      towered: f.towered,
+      private: f.private,
+      military: f.military,
     })),
   };
   return callEngine("best_fields", input);
@@ -53,8 +70,9 @@ export function bestFields(data: EmergencyFields, fix: Pick<Fix, "lat" | "lon" |
  *  for the pilot to say. `frequencies` are the fields' ATC ones, each with
  *  its field's distance. */
 export function maydayCall(facts: Omit<EngineInput<"mayday_call">, "frequencies">, data: EmergencyFields | undefined): Mayday {
-  const frequencies = (data?.fields ?? []).flatMap(f =>
-    f.frequencies.map(q => ({ ident: f.ident, kind: q.kind, mhz: q.mhz, distance_nm: f.distance_nm })));
+  const frequencies = (data?.fields ?? []).flatMap((f) =>
+    f.frequencies.map((q) => ({ ident: f.ident, kind: q.kind, mhz: q.mhz, distance_nm: f.distance_nm })),
+  );
   return callEngine("mayday_call", { ...facts, frequencies });
 }
 
@@ -62,7 +80,11 @@ export function maydayCall(facts: Omit<EngineInput<"mayday_call">, "frequencies"
  *  map ("BAE 238° 18 nm", AIM 5-1-6's fix/radial/distance, the engine's),
  *  else how far and which way from the nearest field ("3 nm SW of Grand
  *  Geneva Resort"); null with neither. */
-export function positionWords(at: LatLon, stations: readonly Station[], nearest: { name: string; distance_nm: number; bearing_deg: number } | undefined): string | null {
+export function positionWords(
+  at: LatLon,
+  stations: readonly Station[],
+  nearest: { name: string; distance_nm: number; bearing_deg: number } | undefined,
+): string | null {
   const frd = fixRadialDistance(at, stations);
   if (frd) return frd;
   if (!nearest) return null;

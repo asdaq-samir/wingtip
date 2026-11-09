@@ -34,12 +34,15 @@ export const NONE = "none";
  * the page having said why (locateOnOpen waits for the welcome). The last
  * page opens the sample flight, or hands over to the first flight's card.
  */
-export function useWelcome({ onPlan, onOpened }: {
+export function useWelcome({
+  onPlan,
+  onOpened,
+}: {
   onPlan: (parts: RouteParts) => void;
   /** The sample planned: its nav log over the map (FPL's). */
   onOpened: () => void;
 }) {
-  const see = useTips(s => s.see);
+  const see = useTips((s) => s.see);
   const [askLocation, setAskLocation] = useState(ownShipAvailable());
   const [index, setIndex] = useState(0);
   const steps = useMemo(() => welcomeSteps(askLocation), [askLocation]);
@@ -49,28 +52,37 @@ export function useWelcome({ onPlan, onOpened }: {
     useWelcomeOpen.setState({ open: true });
     let gone = false;
     // A question the browser has answered already is not asked again.
-    void permissionState("geolocation").then(state => {
+    void permissionState("geolocation").then((state) => {
       if (!gone && (state === "granted" || state === "denied")) setAskLocation(false);
     });
-    return () => { gone = true; useWelcomeOpen.setState({ open: false }); };
+    return () => {
+      gone = true;
+      useWelcomeOpen.setState({ open: false });
+    };
   }, []);
 
   const { aircraftValue, aircraftChoices, changeAircraft } = useAircraftPick();
-  const setAircraft = usePreferences(p => p.setAircraft);
-  const airplanes = useMemo(() => aircraftChoices.filter(c => c.value !== NONE && c.label), [aircraftChoices]);
-  const pickAirplane = useCallback((value: string) => {
-    if (value === NONE) setAircraft(NO_AIRPLANE);
-    else changeAircraft(value);
-  }, [changeAircraft, setAircraft]);
+  const setAircraft = usePreferences((p) => p.setAircraft);
+  const airplanes = useMemo(() => aircraftChoices.filter((c) => c.value !== NONE && c.label), [aircraftChoices]);
+  const pickAirplane = useCallback(
+    (value: string) => {
+      if (value === NONE) setAircraft(NO_AIRPLANE);
+      else changeAircraft(value);
+    },
+    [changeAircraft, setAircraft],
+  );
 
-  const home = usePreferences(p => p.homeAirport);
-  const setHome = usePreferences(p => p.setHomeAirport);
-  const rules = usePreferences(p => p.flightRules);
-  const setRules = usePreferences(p => p.setFlightRules);
+  const home = usePreferences((p) => p.homeAirport);
+  const setHome = usePreferences((p) => p.setHomeAirport);
+  const rules = usePreferences((p) => p.flightRules);
+  const setRules = usePreferences((p) => p.setFlightRules);
 
-  const go = useCallback((by: number) => {
-    withPageTransition(() => setIndex(i => Math.max(0, Math.min(steps.length - 1, i + by))));
-  }, [steps.length]);
+  const go = useCallback(
+    (by: number) => {
+      withPageTransition(() => setIndex((i) => Math.max(0, Math.min(steps.length - 1, i + by))));
+    },
+    [steps.length],
+  );
   const skip = useCallback(() => see(WELCOME), [see]);
   const allowLocation = useCallback(() => {
     void locateOnOpen();
@@ -84,10 +96,22 @@ export function useWelcome({ onPlan, onOpened }: {
   }, [see, onPlan, onOpened]);
 
   return {
-    step, index: steps.indexOf(step), count: steps.length,
-    airplane: aircraftValue === NONE || !airplanes.some(a => a.value === aircraftValue) ? NONE : aircraftValue,
-    airplanes, pickAirplane, home, setHome, rules, setRules,
-    next: () => go(1), back: () => go(-1), skip, allowLocation, openSample, planOwn: skip,
+    step,
+    index: steps.indexOf(step),
+    count: steps.length,
+    airplane: aircraftValue === NONE || !airplanes.some((a) => a.value === aircraftValue) ? NONE : aircraftValue,
+    airplanes,
+    pickAirplane,
+    home,
+    setHome,
+    rules,
+    setRules,
+    next: () => go(1),
+    back: () => go(-1),
+    skip,
+    allowLocation,
+    openSample,
+    planOwn: skip,
   };
 }
 

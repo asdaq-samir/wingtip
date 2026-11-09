@@ -11,10 +11,12 @@ describe("the airspace card's words", () => {
 
   test("91.155's minimums in a line", () => {
     expect(minimumsLine({ visibility_sm: 3, clear_of_clouds: true })).toBe("3 sm, clear of clouds");
-    expect(minimumsLine({ visibility_sm: 3, clear_of_clouds: false, below_ft: 500, above_ft: 1000, horizontal_ft: 2000 }))
-      .toBe("3 sm, 500 below, 1,000 above, 2,000 horizontal");
-    expect(minimumsLine({ visibility_sm: 5, clear_of_clouds: false, below_ft: 1000, above_ft: 1000, horizontal_ft: 5280 }))
-      .toBe("5 sm, 1,000 below, 1,000 above, 1 sm horizontal");
+    expect(minimumsLine({ visibility_sm: 3, clear_of_clouds: false, below_ft: 500, above_ft: 1000, horizontal_ft: 2000 })).toBe(
+      "3 sm, 500 below, 1,000 above, 2,000 horizontal",
+    );
+    expect(minimumsLine({ visibility_sm: 5, clear_of_clouds: false, below_ft: 1000, above_ft: 1000, horizontal_ft: 5280 })).toBe(
+      "5 sm, 1,000 below, 1,000 above, 1 sm horizontal",
+    );
   });
 
   test("an airspace's name without its class", () => {

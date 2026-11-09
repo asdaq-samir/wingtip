@@ -20,7 +20,11 @@ export const PRICE = { monthly: "$1 a month", yearly: "$10 a year" } as const;
 /** The pilot's subscription. Fresh for a minute, as the pilot is: each
  *  paid feature's place reads it. Asked only signed in. */
 export const subscriptionQuery = queryOptions({
-  queryKey: ["subscription"], queryFn: () => api.subscription.get(), staleTime: 60_000, retry: false, meta: { silent: true },
+  queryKey: ["subscription"],
+  queryFn: () => api.subscription.get(),
+  staleTime: 60_000,
+  retry: false,
+  meta: { silent: true },
 });
 
 /** What the page may say of the paid features now. */
@@ -39,8 +43,12 @@ type Entitlement =
   | { kind: "hidden" };
 
 /** The pilot's entitlement, from who is signed in and their subscription. */
-export function entitlementOf(access: string | undefined, signedIn: boolean | undefined,
-  subscription: Subscription | undefined, failed = false): Entitlement {
+export function entitlementOf(
+  access: string | undefined,
+  signedIn: boolean | undefined,
+  subscription: Subscription | undefined,
+  failed = false,
+): Entitlement {
   if (access === "OPEN") return { kind: "open" };
   if (signedIn === undefined) return { kind: "loading" };
   if (!signedIn) return { kind: "signed-out" };
@@ -56,8 +64,12 @@ export function entitlementOf(access: string | undefined, signedIn: boolean | un
  * every pilot signed in by default ("I can offer the AI features to users
  * with an account"), the developers, or nobody, the rest not told of it.
  */
-export function unsoldEntitlement(feature: PaidFeature, claude: ClaudeFeatures | undefined, signedIn: boolean | undefined,
-  developer: boolean): Entitlement {
+export function unsoldEntitlement(
+  feature: PaidFeature,
+  claude: ClaudeFeatures | undefined,
+  signedIn: boolean | undefined,
+  developer: boolean,
+): Entitlement {
   if (feature === "DEBRIEF") return { kind: "open" };
   if (claude === "OFF") return { kind: "hidden" };
   if (signedIn === undefined) return { kind: "loading" };
@@ -94,7 +106,7 @@ export const mayUse = (entitlement: Entitlement) =>
  *  it is not counted (a developer's, a machine of one's own). */
 export function usesLeft(entitlement: Entitlement, feature: PaidFeature): string | null {
   if (entitlement.kind !== "entitled" || entitlement.subscription.state === "COMPED") return null;
-  const use = entitlement.subscription.uses.find(u => u.feature === feature);
+  const use = entitlement.subscription.uses.find((u) => u.feature === feature);
   if (!use) return null;
   return `${Math.max(0, use.cap - use.used)} of ${use.cap} left this month`;
 }
@@ -105,14 +117,20 @@ export function standing(subscription: Subscription, now = new Date()): string {
   const day = (iso: string) => {
     const date = new Date(iso);
     return date.toLocaleDateString("en-GB", {
-      day: "numeric", month: "long", timeZone: "UTC",
+      day: "numeric",
+      month: "long",
+      timeZone: "UTC",
       ...(date.getUTCFullYear() !== now.getUTCFullYear() ? { year: "numeric" } : {}),
     });
   };
   switch (subscription.state) {
-    case "TRIAL": return subscription.until ? `Free until ${day(subscription.until)}` : "Free month";
-    case "SUBSCRIBED": return subscription.until ? `Paid until ${day(subscription.until)}` : "Subscribed";
-    case "COMPED": return "Included";
-    default: return subscription.trialAvailable ? "Not started" : "Ended";
+    case "TRIAL":
+      return subscription.until ? `Free until ${day(subscription.until)}` : "Free month";
+    case "SUBSCRIBED":
+      return subscription.until ? `Paid until ${day(subscription.until)}` : "Subscribed";
+    case "COMPED":
+      return "Included";
+    default:
+      return subscription.trialAvailable ? "Not started" : "Ended";
   }
 }

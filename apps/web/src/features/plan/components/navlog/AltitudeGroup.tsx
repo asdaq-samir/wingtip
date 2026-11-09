@@ -19,7 +19,10 @@ import { duration } from "../../../../lib/format";
 import AltitudeReasoning from "../AltitudeReasoning";
 import type { RouteEnds } from "./rows";
 
-const RULES = [{ value: "vfr", label: "VFR" }, { value: "ifr", label: "IFR" }];
+const RULES = [
+  { value: "vfr", label: "VFR" },
+  { value: "ifr", label: "IFR" },
+];
 /** The room over the highest ground, or how far under it. */
 const clearanceWords = (ft: number) => (ft >= 0 ? `${altFt(ft)} ft` : `${altFt(-ft)} ft under`);
 /** Where the route first meets ground at or over the altitude. */
@@ -45,9 +48,14 @@ const said = (ft: number) => callEngine("altitude_said", { ft }).replace(/ ft$/,
  *  is one. */
 function cruiseOf(nav: NavLogAltitude | null, legs: Leg[]): number | null {
   if (!nav || nav.flown === null) return null;
-  const plan = nav.options.find(o => o.kind === nav.flown);
-  const flown = legs.length ? legs.map(leg => leg.altitude_ft)
-    : plan ? plan.steps.map(st => st.altitude_ft) : nav.altitude_ft !== null ? [nav.altitude_ft] : [];
+  const plan = nav.options.find((o) => o.kind === nav.flown);
+  const flown = legs.length
+    ? legs.map((leg) => leg.altitude_ft)
+    : plan
+      ? plan.steps.map((st) => st.altitude_ft)
+      : nav.altitude_ft !== null
+        ? [nav.altitude_ft]
+        : [];
   return flown.length ? Math.max(...flown) : null;
 }
 
@@ -59,7 +67,7 @@ function planNames(nav: NavLogAltitude | null): Record<number, string> {
   const options = [...(nav?.options ?? [])].sort((a, b) => PREFERRED.indexOf(a.kind) - PREFERRED.indexOf(b.kind));
   for (const o of options) {
     if (!o.steps.length) continue;
-    const top = Math.max(...o.steps.map(s => s.altitude_ft));
+    const top = Math.max(...o.steps.map((s) => s.altitude_ft));
     (names[top] ??= []).push(PLAN_NAME[o.kind]);
   }
   return Object.fromEntries(Object.entries(names).map(([ft, kinds]) => [ft, kinds.join(" · ")]));
@@ -74,9 +82,11 @@ const PREFERRED: AltitudeChoice[] = ["fastest", "economical", "lowest", "highest
  *  steps and all. Lowest, listed first, was taken where it and Fastest
  *  shared one, and the default plan could not be had back from the wheel. */
 function planAt(nav: NavLogAltitude | null, altitude: number): AltitudeChoice | null {
-  const at = (nav?.options ?? []).filter(o => o.steps.length && Math.max(...o.steps.map(s => s.altitude_ft)) === altitude).map(o => o.kind);
+  const at = (nav?.options ?? [])
+    .filter((o) => o.steps.length && Math.max(...o.steps.map((s) => s.altitude_ft)) === altitude)
+    .map((o) => o.kind);
   if (nav?.flown && at.includes(nav.flown as AltitudeChoice)) return nav.flown as AltitudeChoice;
-  return PREFERRED.find(kind => at.includes(kind)) ?? null;
+  return PREFERRED.find((kind) => at.includes(kind)) ?? null;
 }
 
 /**
@@ -89,7 +99,17 @@ function planAt(nav: NavLogAltitude | null, altitude: number): AltitudeChoice | 
  * chip was: red with no legal altitude, IFR's flag, a tight altitude and a
  * pilot's own altitude's caution.
  */
-export default function AltitudeGroup({ nav, legs, commanded = null, asked = null, problem = false, tight = null, onFlyAltitude, disabled = false, rules = "vfr" }: {
+export default function AltitudeGroup({
+  nav,
+  legs,
+  commanded = null,
+  asked = null,
+  problem = false,
+  tight = null,
+  onFlyAltitude,
+  disabled = false,
+  rules = "vfr",
+}: {
   nav: NavLogAltitude | null;
   legs: Leg[];
   /** The altitude the pilot asked for, feet, while its log is planned: the
@@ -139,9 +159,14 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
     // its nearest legal one, so a figure typed equal to the highest of those
     // is still the pilot's own: the whole route at it, kept as they change
     // it (CI's C81-KDLH: 3,000 ft picked, flown at 3,500, then 035 typed).
-    const flownAlready = commanded !== null ? ft === commanded
-      : asked ? ft === asked.ft && !asked.nearest
-        : legs.length ? legs.every(leg => leg.altitude_ft === ft) : ft === flying;
+    const flownAlready =
+      commanded !== null
+        ? ft === commanded
+        : asked
+          ? ft === asked.ft && !asked.nearest
+          : legs.length
+            ? legs.every((leg) => leg.altitude_ft === ft)
+            : ft === flying;
     if (callEngine("altitude_allowed", { ft, ifr: rules === "ifr" }) && !flownAlready) onFlyAltitude(ft);
   };
   const profiled = !disabled && (problem || (!!nav && (flying !== null || nav.flown === null)));
@@ -149,8 +174,13 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
   // is in, at the owner's ask ("make the profile button appear right after
   // entry but just make it disabled").
   const entered = shown !== "";
-  const why = problem ? "no legal altitude" : flying !== null ? said(flying)
-    : nav?.flown === null ? "no altitude: no winds" : "not yet planned";
+  const why = problem
+    ? "no legal altitude"
+    : flying !== null
+      ? said(flying)
+      : nav?.flown === null
+        ? "no altitude: no winds"
+        : "not yet planned";
   return (
     // A field as the route box is, at the owner's ask ("make the altitude
     // input similar to route box style where profile button only shows
@@ -159,7 +189,13 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
     // owner's ask ("when altitude is entered ... a profile button shows
     // up"), or why there is none to show.
     <InlineField
-      label="Cruise altitude" testId="altitude-group" tip="altitude" widest="FL-000" tabular placeholder="" hint={HINT}
+      label="Cruise altitude"
+      testId="altitude-group"
+      tip="altitude"
+      widest="FL-000"
+      tabular
+      placeholder=""
+      hint={HINT}
       input={{
         // "FL-" in the field's own text, not a label beside it: iOS keeps
         // a few points inside an input's edge, which set the figures apart
@@ -167,22 +203,37 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
         // there while empty too, in the text's colour as the airplane's
         // "N-" is, the blanks after it grey (the owner, 2026-11-04: "FL
         // should be black like N").
-        inputMode: "numeric", value: `FL-${shown}`, "aria-label": "Cruise altitude, a flight level or feet",
-        onChange: e => setTyped(e.target.value.toUpperCase().replace(/^FL-?/, "").replace(/\D/g, "").slice(0, 5)),
-        onKeyDown: e => { if (e.key === "Enter") { e.preventDefault(); fly(); (e.target as HTMLInputElement).blur(); } if (e.key === "Escape") setTyped(null); },
+        inputMode: "numeric",
+        value: `FL-${shown}`,
+        "aria-label": "Cruise altitude, a flight level or feet",
+        onChange: (e) => setTyped(e.target.value.toUpperCase().replace(/^FL-?/, "").replace(/\D/g, "").slice(0, 5)),
+        onKeyDown: (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            fly();
+            (e.target as HTMLInputElement).blur();
+          }
+          if (e.key === "Escape") setTyped(null);
+        },
         // Its figures taken whole as it is tapped, as iOS selects a field
         // whose value is replaced: the caret fell between "FL" and "-",
         // and a new altitude took three deletes before three figures (the
         // FPL audit's A6, 2026-11-08). After the tap's own caret, a frame
         // on, which would put it back.
-        onFocus: e => {
+        onFocus: (e) => {
           const input = e.currentTarget;
           setEditing(true);
-          const pick = () => { if (document.activeElement === input) input.setSelectionRange(3, input.value.length); };
+          const pick = () => {
+            if (document.activeElement === input) input.setSelectionRange(3, input.value.length);
+          };
           pick();
           requestAnimationFrame(pick);
         },
-        onBlur: () => { setEditing(false); fly(); }, "data-testid": "altitude-input",
+        onBlur: () => {
+          setEditing(false);
+          fly();
+        },
+        "data-testid": "altitude-input",
       }}
       inputClassName={problem ? "text-destructive-ink" : "text-foreground"}
       endRoom="w-0"
@@ -193,10 +244,15 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
       // on profile (like brief) instead of the altitude"; PlanWorkspace's
       // altitudeMark). What the altitude is and why stays in its name for
       // VoiceOver.
-      button={(
+      button={
         <>
           {(profiled || entered) && (
-            <span role="img" aria-label={`Cruising altitude${rules === "ifr" ? " under IFR" : ""}, ${why}${!problem && tight ? ", tight" : ""}${!problem && cautions.length ? ", your altitude has a caution" : ""}`} data-testid="altitude-why" className="relative flex size-0 shrink-0" />
+            <span
+              role="img"
+              aria-label={`Cruising altitude${rules === "ifr" ? " under IFR" : ""}, ${why}${!problem && tight ? ", tight" : ""}${!problem && cautions.length ? ", your altitude has a caution" : ""}`}
+              data-testid="altitude-why"
+              className="relative flex size-0 shrink-0"
+            />
           )}
           {/* Done while it is typed in: the number pad iOS gives a numeric
               field has no Return, so the altitude went in only when the
@@ -206,13 +262,16 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
           {editing && (
             <span className="relative flex size-0 shrink-0">
               <button
-                type="button" onMouseDown={e => e.preventDefault()} onPointerDown={e => e.preventDefault()}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
                 // Its blur flies what was typed (the field's onBlur).
                 onClick={() => (document.activeElement as HTMLElement | null)?.blur()}
                 data-testid="altitude-done"
                 className={cn(
                   "absolute top-1/2 left-2 z-20 h-7 -translate-y-1/2 rounded-full bg-card px-3 font-semibold text-tint shadow-sm ring-1 ring-black/5 outline-none dark:ring-white/10",
-                  "after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring", TEXT.row,
+                  "after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+                  TEXT.row,
                 )}
               >
                 Done
@@ -220,7 +279,7 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
             </span>
           )}
         </>
-      )}
+      }
     />
   );
 }
@@ -240,7 +299,24 @@ export default function AltitudeGroup({ nav, legs, commanded = null, asked = nul
  * and flown once it rests a moment: its plan where it is one's, else as
  * the pilot's own.
  */
-export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corner, wheelHidden = false, problem, tight = null, classBAvoided = false, onAvoidClassB, onAllowClassB, onGoRound, onAltitudeChoiceChange, onFlyAltitude, rules = "vfr", onRulesChange }: {
+export function AltitudeProfile({
+  nav: navNow,
+  legs: legsNow,
+  ends,
+  chart,
+  corner,
+  wheelHidden = false,
+  problem,
+  tight = null,
+  classBAvoided = false,
+  onAvoidClassB,
+  onAllowClassB,
+  onGoRound,
+  onAltitudeChoiceChange,
+  onFlyAltitude,
+  rules = "vfr",
+  onRulesChange,
+}: {
   nav: NavLogAltitude | null;
   legs: Leg[];
   /** The route, for its Class B on the side view (routeProfileQuery). */
@@ -273,7 +349,7 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
   onRulesChange?: (rules: FlightRules) => void;
 }) {
   const airplane = useAirplaneChosen();
-  const route = ends ? [ends.departure.ident, ...(ends.stops ?? []).map(s => s.ident), ends.destination.ident].join(" ") : "";
+  const route = ends ? [ends.departure.ident, ...(ends.stops ?? []).map((s) => s.ident), ends.destination.ident].join(" ") : "";
   // The plan before a pick is planned anew, kept on the card till the new
   // one's altitude comes: the stream starts over, and the wheel and its
   // figures went blank for the second or two each pick took, as if they
@@ -281,7 +357,8 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
   // long time"). The wheel's own figures for the pick are the old plan's
   // already. Not over a route's problem, nor another route.
   const [held, setHeld] = useState<{ route: string; nav: NavLogAltitude; legs: Leg[] } | null>(null);
-  if (navNow && (!held || held.nav !== navNow || held.legs !== legsNow || held.route !== route)) setHeld({ route, nav: navNow, legs: legsNow });
+  if (navNow && (!held || held.nav !== navNow || held.legs !== legsNow || held.route !== route))
+    setHeld({ route, nav: navNow, legs: legsNow });
   const kept = !navNow && !problem && held?.route === route ? held : null;
   const nav = kept ? kept.nav : navNow;
   const legs = kept ? kept.legs : legsNow;
@@ -293,7 +370,7 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
   // The legal altitudes, and one typed off their list as its own row
   // ("Yours"): the wheel showed the lowest legal one in its place, and the
   // heading and the graph's line with it, for an altitude not flown.
-  const listed = figures.map(f => f.altitude_ft);
+  const listed = figures.map((f) => f.altitude_ft);
   // The altitude flown off the planner's list -- typed, picked off it, or
   // the planner's own where no altitude is legal (altitude_anyway, its
   // list then empty) -- as its own row.
@@ -308,7 +385,8 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
   // legal altitude too, the one it is most wanted on.
   // The wheel's rows are the engine's (altitude_wheel): these and every
   // 500 ft from 1,000 ft to 17,500 ft under Class A (14 CFR 71.33, 91.135).
-  const altitudes = nav ? callEngine("altitude_wheel", { legal_ft: listed, flown_ft: own })
+  const altitudes = nav
+    ? callEngine("altitude_wheel", { legal_ft: listed, flown_ft: own })
     : [...new Set([...listed, ...(own === null ? [] : [own])])].sort((a, b) => b - a);
   // The altitude on the wheel, the one flown when it was put there and the
   // route it was on: once another is flown (it, re-planned; a figure
@@ -319,9 +397,18 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
   // second more, for steps one after another. Not once the card is put
   // away.
   const timer = useRef<number | null>(null);
-  useEffect(() => () => { if (timer.current !== null) window.clearTimeout(timer.current); }, []);
-  const shownAt = picked && picked.against === cruise && picked.route === route ? picked.altitude
-    : cruise !== null && altitudes.includes(cruise) ? cruise : altitudes.at(-1) ?? null;
+  useEffect(
+    () => () => {
+      if (timer.current !== null) window.clearTimeout(timer.current);
+    },
+    [],
+  );
+  const shownAt =
+    picked && picked.against === cruise && picked.route === route
+      ? picked.altitude
+      : cruise !== null && altitudes.includes(cruise)
+        ? cruise
+        : (altitudes.at(-1) ?? null);
   const pick = (altitude: number) => {
     graph.current?.style.setProperty("--roll-on", "0");
     setPicked({ altitude, against: cruise, route });
@@ -340,19 +427,24 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
     }, 250);
   };
   const { data: profile } = useQuery({
-    ...routeProfileQuery(ends?.departure.ident ?? "", ends?.destination.ident ?? "", (ends?.stops ?? []).map(s => s.ident)),
+    ...routeProfileQuery(
+      ends?.departure.ident ?? "",
+      ends?.destination.ident ?? "",
+      (ends?.stops ?? []).map((s) => s.ident),
+    ),
     enabled: !!ends,
   });
   const names: Record<number, string> = {
-    ...Object.fromEntries(altitudes.filter(a => !legal.has(a)).map(a => [a, "Outside the limits"])),
-    ...planNames(nav), ...(own === null ? {} : { [own]: "Yours" }),
+    ...Object.fromEntries(altitudes.filter((a) => !legal.has(a)).map((a) => [a, "Outside the limits"])),
+    ...planNames(nav),
+    ...(own === null ? {} : { [own]: "Yours" }),
   };
   // The ground against an altitude: its highest point along the route, the
   // room over it, and how far along the route first meets it.
   const check = (altitude: number) => {
     if (!profile || profile.terrain.length === 0) return null;
-    const highest = Math.max(...profile.terrain.map(t => t.ground_ft));
-    const strike = profile.terrain.find(t => t.ground_ft >= altitude);
+    const highest = Math.max(...profile.terrain.map((t) => t.ground_ft));
+    const strike = profile.terrain.find((t) => t.ground_ft >= altitude);
     return { highest, clearance: altitude - highest, strikeNm: strike ? strike.along_nm : null };
   };
   // The graph's zoom once dragged, kept for its route: the chart drawn at
@@ -360,7 +452,9 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
   const graph = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState<{ top: number; route: string } | null>(null);
   const scaleTop = zoom?.route === route ? zoom.top : undefined;
-  useEffect(() => { if (scaleTop === undefined) graph.current?.style.removeProperty("--scale-top"); }, [scaleTop]);
+  useEffect(() => {
+    if (scaleTop === undefined) graph.current?.style.removeProperty("--scale-top");
+  }, [scaleTop]);
   const dragging = useRef<{ top: number; altitude: number } | null>(null);
   const plotOf = () => graph.current?.querySelector<HTMLElement>("[data-plot]") ?? null;
   const baseTop = () => Number(getComputedStyle(plotOf() ?? document.body).getPropertyValue("--base-top")) || 10_000;
@@ -376,7 +470,12 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
     el.querySelector("[data-roll-label]")?.setAttribute("data-label", flightLevel(altitude));
     const base = baseTop();
     const at = (ft: number) => String(Math.max(0, Math.min(1, 1 - ft / base)));
-    for (const [tint, ft] of [["red", altitude], ["red-end", altitude], ["amber", altitude - 500], ["amber-end", altitude - 500]] as const) {
+    for (const [tint, ft] of [
+      ["red", altitude],
+      ["red-end", altitude],
+      ["amber", altitude - 500],
+      ["amber-end", altitude - 500],
+    ] as const) {
       el.querySelector(`[data-tint="${tint}"]`)?.setAttribute("offset", at(ft));
     }
     const ground = check(altitude);
@@ -431,9 +530,11 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
     const i = Math.max(0, Math.min(altitudes.length - 1, altitudes.indexOf(shownAt) + by));
     pick(altitudes[i]!);
   };
-  const figure = figures.find(f => f.altitude_ft === shownAt) ?? null;
-  const bravo = profile && shownAt !== null
-    ? profile.airspace.find(a => a.class === "B" && a.floor_ft <= shownAt && (a.ceiling_ft ?? 10_000) >= shownAt) ?? null : null;
+  const figure = figures.find((f) => f.altitude_ft === shownAt) ?? null;
+  const bravo =
+    profile && shownAt !== null
+      ? (profile.airspace.find((a) => a.class === "B" && a.floor_ft <= shownAt && (a.ceiling_ft ?? 10_000) >= shownAt) ?? null)
+      : null;
   const detours = nav?.class_b_detours ?? [];
   const cautions = nav?.cautions ?? [];
   return (
@@ -459,10 +560,19 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
             own, not the sheet's (touch-action none). */}
         {!wheelHidden && shownAt !== null && altitudes.length > 0 && (
           <div
-            role="slider" tabIndex={0} aria-label="Cruise altitude" aria-orientation="vertical"
-            aria-valuemin={altitudes.at(-1)} aria-valuemax={altitudes[0]} aria-valuenow={shownAt}
+            role="slider"
+            tabIndex={0}
+            aria-label="Cruise altitude"
+            aria-orientation="vertical"
+            aria-valuemin={altitudes.at(-1)}
+            aria-valuemax={altitudes[0]}
+            aria-valuenow={shownAt}
             aria-valuetext={`${altFt(shownAt)} feet${names[shownAt] ? `, ${names[shownAt]}` : ""}`}
-            onPointerDown={grab} onPointerMove={move} onPointerUp={letGo} onPointerCancel={letGo} onKeyDown={stepKey}
+            onPointerDown={grab}
+            onPointerMove={move}
+            onPointerUp={letGo}
+            onPointerCancel={letGo}
+            onKeyDown={stepKey}
             className="absolute inset-0 cursor-ns-resize touch-none rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
             data-testid="altitude-wheel"
           />
@@ -478,22 +588,44 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
           altitudes keep the 14 CFR 91.119 and 91.177 margins over those. */}
       {shownAt !== null && check(shownAt) && (
         <div className={cn("grid grid-cols-3 gap-2 tabular-nums", TEXT.note)} data-testid="ground-strip">
-          <div><div className="text-muted-foreground">Highest ground</div><div className="font-semibold" data-live="highest">{altFt(check(shownAt)!.highest)} ft</div></div>
-          <div><div className="text-muted-foreground">Clearance</div><div className="font-semibold" data-live="clearance">{clearanceWords(check(shownAt)!.clearance)}</div></div>
-          <div><div className="text-muted-foreground">First strike</div><div className="font-semibold" data-live="strike">{strikeWords(check(shownAt)!.strikeNm)}</div></div>
+          <div>
+            <div className="text-muted-foreground">Highest ground</div>
+            <div className="font-semibold" data-live="highest">
+              {altFt(check(shownAt)!.highest)} ft
+            </div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Clearance</div>
+            <div className="font-semibold" data-live="clearance">
+              {clearanceWords(check(shownAt)!.clearance)}
+            </div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">First strike</div>
+            <div className="font-semibold" data-live="strike">
+              {strikeWords(check(shownAt)!.strikeNm)}
+            </div>
+          </div>
         </div>
       )}
       {shownAt !== null && altitudes.length > 0 && (
         <div className="space-y-0.5">
           <div className="flex items-baseline justify-between gap-2">
             <div className="flex min-w-0 items-baseline gap-2">
-              <span className={cn("font-bold tabular-nums", TEXT.heading)} data-testid="altitude-picked">{flightLevel(shownAt)}</span>
+              <span className={cn("font-bold tabular-nums", TEXT.heading)} data-testid="altitude-picked">
+                {flightLevel(shownAt)}
+              </span>
               {names[shownAt] && <span className={cn("truncate font-semibold text-muted-foreground", TEXT.detail)}>{names[shownAt]}</span>}
             </div>
             {/* No airplane picked: not its time and fuel at the altitude
                 (the owner, 2026-11-08: "don't assume"); the wind is the air's. */}
             <span className={cn("shrink-0 tabular-nums", TEXT.detail)} data-testid="altitude-figures">
-              {airplane && <>{figure?.ete_min != null ? duration(figure.ete_min) : "—"} · {figure?.fuel_gal != null ? `${one(figure.fuel_gal)} gal` : "—"}</>}
+              {airplane && (
+                <>
+                  {figure?.ete_min != null ? duration(figure.ete_min) : "—"} ·{" "}
+                  {figure?.fuel_gal != null ? `${one(figure.fuel_gal)} gal` : "—"}
+                </>
+              )}
               {figure?.tailwind_kt != null && ` · ${figure.tailwind_kt >= 0 ? "+" : "−"}${Math.abs(Math.round(figure.tailwind_kt))} kt`}
             </span>
           </div>
@@ -508,17 +640,30 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
       {classBAvoided ? (
         <div className="flex items-center justify-between gap-2 rounded-xl bg-card py-1.5 pr-1.5 pl-3" data-testid="class-b-avoided">
           <span className={TEXT.detail}>Avoiding Class B</span>
-          {onAllowClassB && <Button type="button" size="sm" variant="ghost" className="text-tint" onClick={onAllowClassB}>Allow Class B</Button>}
-        </div>
-      ) : bravo && (
-        <div className="flex items-center justify-between gap-2 rounded-xl bg-card py-1.5 pr-1.5 pl-3" data-testid="class-b-accepted">
-          <span className={TEXT.detail}>Through {faaWords(bravo.name)}: clearance needed</span>
-          {onAvoidClassB && (
-            <Button type="button" size="sm" variant="secondary" className="shrink-0 text-tint" onClick={() => onAvoidClassB(detours.find(d => !d.via?.length) ?? null)} data-testid="avoid-class-b">
-              Avoid Class B
+          {onAllowClassB && (
+            <Button type="button" size="sm" variant="ghost" className="text-tint" onClick={onAllowClassB}>
+              Allow Class B
             </Button>
           )}
         </div>
+      ) : (
+        bravo && (
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-card py-1.5 pr-1.5 pl-3" data-testid="class-b-accepted">
+            <span className={TEXT.detail}>Through {faaWords(bravo.name)}: clearance needed</span>
+            {onAvoidClassB && (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="shrink-0 text-tint"
+                onClick={() => onAvoidClassB(detours.find((d) => !d.via?.length) ?? null)}
+                data-testid="avoid-class-b"
+              >
+                Avoid Class B
+              </Button>
+            )}
+          </div>
+        )
       )}
       {/* The planner's four plans, one picked from a menu: the ruler's rows
           named them, and the graph's drag lands on an altitude. */}
@@ -529,52 +674,92 @@ export function AltitudeProfile({ nav: navNow, legs: legsNow, ends, chart, corne
         <div className="flex min-h-11 items-center justify-between gap-3">
           <span className={cn("font-semibold", TEXT.row)}>Plan</span>
           <PullDown<AltitudeChoice>
-            label="Altitude plan" value={PREFERRED.includes(nav.flown as AltitudeChoice) ? nav.flown as AltitudeChoice : ""}
-            placeholder="Your altitude" testId="altitude-plan" onChange={onAltitudeChoiceChange}
-            options={[...nav.options].filter(o => o.steps.length).sort((a, b) => PREFERRED.indexOf(a.kind) - PREFERRED.indexOf(b.kind)).map(o => ({
-              value: o.kind, testId: "altitude-plan-option",
-              label: `${PLAN_NAME[o.kind]} · ${altFt(Math.max(...o.steps.map(st => st.altitude_ft)))} ft`,
-            }))}
+            label="Altitude plan"
+            value={PREFERRED.includes(nav.flown as AltitudeChoice) ? (nav.flown as AltitudeChoice) : ""}
+            placeholder="Your altitude"
+            testId="altitude-plan"
+            onChange={onAltitudeChoiceChange}
+            options={[...nav.options]
+              .filter((o) => o.steps.length)
+              .sort((a, b) => PREFERRED.indexOf(a.kind) - PREFERRED.indexOf(b.kind))
+              .map((o) => ({
+                value: o.kind,
+                testId: "altitude-plan-option",
+                label: `${PLAN_NAME[o.kind]} · ${altFt(Math.max(...o.steps.map((st) => st.altitude_ft)))} ft`,
+              }))}
           />
         </div>
       )}
       {onRulesChange && (
         <div className="flex items-center justify-between gap-3">
           <span className={cn("font-semibold", TEXT.row)}>Flight rules</span>
-          <Segmented label="Flight rules" value={rules} onChange={v => onRulesChange(v as FlightRules)} options={RULES} testId="flight-rules" />
+          <Segmented
+            label="Flight rules"
+            value={rules}
+            onChange={(v) => onRulesChange(v as FlightRules)}
+            options={RULES}
+            testId="flight-rules"
+          />
         </div>
       )}
       {cautions.length > 0 && (
-        <div className={cn("space-y-1.5 rounded-lg bg-caution-wash p-2.5 text-caution-ink", TEXT.detail)} data-testid="own-altitude-cautions">
-          {cautions.map(c => (
+        <div
+          className={cn("space-y-1.5 rounded-lg bg-caution-wash p-2.5 text-caution-ink", TEXT.detail)}
+          data-testid="own-altitude-cautions"
+        >
+          {cautions.map((c) => (
             <div key={`${c.from_ident}-${c.to_ident}`}>
-              <p className="font-semibold">{altFt(c.altitude_ft)} ft {c.from_ident} → {c.to_ident}</p>
-              <ul className="list-disc pl-4">{c.reasons.map(r => <li key={r}>{r}</li>)}</ul>
+              <p className="font-semibold">
+                {altFt(c.altitude_ft)} ft {c.from_ident} → {c.to_ident}
+              </p>
+              <ul className="list-disc pl-4">
+                {c.reasons.map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ul>
             </div>
           ))}
           {/* Flown over the high ground anyway, at the owner's "no hard
               limits": the way round it the planner found, for the pilot
               to take or not. */}
-          {onGoRound && detours.filter(d => d.via?.length).map(d => (
-            <div key={d.via!.join(" ")} className="flex items-center justify-between gap-2 pt-1">
-              <span>By {d.via!.join(", ")} · +{Math.round(d.added_nm)} nm</span>
-              <Button type="button" size="sm" variant="secondary" className="shrink-0 text-tint" onClick={() => onGoRound(d.via!, d.stop_index)} data-testid="caution-go-round">
-                Go Round
-              </Button>
-            </div>
-          ))}
+          {onGoRound &&
+            detours
+              .filter((d) => d.via?.length)
+              .map((d) => (
+                <div key={d.via!.join(" ")} className="flex items-center justify-between gap-2 pt-1">
+                  <span>
+                    By {d.via!.join(", ")} · +{Math.round(d.added_nm)} nm
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="shrink-0 text-tint"
+                    onClick={() => onGoRound(d.via!, d.stop_index)}
+                    data-testid="caution-go-round"
+                  >
+                    Go Round
+                  </Button>
+                </div>
+              ))}
         </div>
       )}
       {tight && (
         <p className={cn("rounded-lg bg-caution-wash p-2.5 text-caution-ink", TEXT.detail)} data-testid="tight-altitude">
-          <span className="font-semibold">Tight altitude. </span>{tight}
+          <span className="font-semibold">Tight altitude. </span>
+          {tight}
         </p>
       )}
       {nav && (
         // The stock Collapsible, as the weather's raw reports fold, where a
         // native details element drew the browser's own triangle.
         <Collapsible>
-          <CollapsibleTrigger className={cn("group relative flex min-h-11 w-full items-center gap-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring", GROUP_HEADING)}>
+          <CollapsibleTrigger
+            className={cn(
+              "group relative flex min-h-11 w-full items-center gap-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              GROUP_HEADING,
+            )}
+          >
             <ChevronRight className="size-4 text-tint transition-transform group-data-[state=open]:rotate-90" aria-hidden />
             How the altitude was chosen
           </CollapsibleTrigger>

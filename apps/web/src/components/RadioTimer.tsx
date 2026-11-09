@@ -15,8 +15,12 @@ export function Timer({ from, onStop }: { from: number; onStop: () => void }) {
   }, []);
   return (
     <div className="flex items-center gap-2 pt-1 pr-2">
-      <span className={cn("font-semibold tabular-nums", TEXT.detail)} data-testid="radio-timer-time">Timer {stopwatch(Math.max(0, now - from))}</span>
-      <Button size="sm" variant="secondary" className={CHIP} onClick={onStop} data-testid="radio-timer-stop">Stop</Button>
+      <span className={cn("font-semibold tabular-nums", TEXT.detail)} data-testid="radio-timer-time">
+        Timer {stopwatch(Math.max(0, now - from))}
+      </span>
+      <Button size="sm" variant="secondary" className={CHIP} onClick={onStop} data-testid="radio-timer-stop">
+        Stop
+      </Button>
     </div>
   );
 }

@@ -21,7 +21,9 @@ test("the side panel is the wide one, with rows at a desktop's size", async ({ p
   // A row's words at 16 with a mouse (TEXT.row), not the 14 and less the
   // phone's card had.
   await page.getByTestId("tab-airport").click();
-  const size = await sideDrawer(page).locator('input[type="search"]').evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+  const size = await sideDrawer(page)
+    .locator('input[type="search"]')
+    .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
   expect(size).toBeGreaterThanOrEqual(16);
 });
 

@@ -28,7 +28,9 @@ export default function PilotCamera() {
   const { map } = useGlMap();
   useEffect(() => {
     const tint: ColorReliefLayerSpecification = {
-      id: SV_TINT, type: "color-relief", source: DEM,
+      id: SV_TINT,
+      type: "color-relief",
+      source: DEM,
       paint: { "color-relief-opacity": 0.55, "color-relief-color": svColours(0) },
     };
     if (!map.getLayer(SV_TINT)) map.addLayer(tint, slotId("imagery"));
@@ -40,7 +42,9 @@ export default function PilotCamera() {
     map.setMaxZoom(PILOT_MAX_ZOOM);
     const el = map.getContainer();
     el.dataset.pilotView = "";
-    let frame = 0, shownAt: number | null = null, tintFt: number | null = null;
+    let frame = 0,
+      shownAt: number | null = null,
+      tintFt: number | null = null;
     const step = () => {
       frame = requestAnimationFrame(step);
       const { at, points } = usePastFlight.getState();
@@ -51,7 +55,9 @@ export default function PilotCamera() {
       const altFt = here.alt_ft ?? 0;
       const ground = map.queryTerrainElevation([here.lon, here.lat]) ?? 0;
       const altM = Math.max(altFt * M_PER_FT, ground + OVER_GROUND_M);
-      map.jumpTo(map.calculateCameraOptionsFromCameraLngLatAltRotation([here.lon, here.lat], altM, here.track_deg ?? map.getBearing(), PILOT_PITCH));
+      map.jumpTo(
+        map.calculateCameraOptionsFromCameraLngLatAltRotation([here.lon, here.lat], altM, here.track_deg ?? map.getBearing(), PILOT_PITCH),
+      );
       // The colours again at each 50 ft of climb or descent, not each frame.
       const rounded = Math.round(altFt / 50) * 50;
       if (rounded !== tintFt && map.getLayer(SV_TINT)) {

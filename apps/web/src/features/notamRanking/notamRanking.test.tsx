@@ -8,8 +8,22 @@ import { runwaysOfPicks, splitRanking } from "./useNotamRanking";
 afterEach(cleanup);
 
 const notam = (id: string, top: boolean, why: string, over: Partial<RankedNotam> = {}): RankedNotam => ({
-  id, kind: "notam", label: `NOTAM ${id}`, why, worded: true, top, rank: 1, score: 1, tied: false, field: null, in_force: true,
-  reasons: [], raw: `!${id} RAW`, starts: null, ends: null, ...over,
+  id,
+  kind: "notam",
+  label: `NOTAM ${id}`,
+  why,
+  worded: true,
+  top,
+  rank: 1,
+  score: 1,
+  tied: false,
+  field: null,
+  in_force: true,
+  reasons: [],
+  raw: `!${id} RAW`,
+  starts: null,
+  ends: null,
+  ...over,
 });
 
 const ANSWER: RankedNotams = {
@@ -20,11 +34,15 @@ const ANSWER: RankedNotams = {
     notam("C81 11/004", false, "No 100LL at C81 before you leave."),
     notam("OSH 11/030", false, "Runway 09/27 closes tomorrow.", { in_force: false }),
   ],
-  top: 3, coverage_since: "2026-10-19", unchecked: [], model: "claude-haiku-5-5", unavailable: null,
+  top: 3,
+  coverage_since: "2026-10-19",
+  unchecked: [],
+  model: "claude-haiku-5-5",
+  unavailable: null,
 };
 
 const state = vi.hoisted(() => ({ value: {} as Record<string, unknown> }));
-vi.mock("./useNotamRanking", async importOriginal => ({
+vi.mock("./useNotamRanking", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./useNotamRanking")>()),
   useNotamRanking: () => state.value,
 }));
@@ -37,16 +55,20 @@ describe("the NOTAMs that matter", () => {
 
   test("the top ones are said first and the rest folded, none dropped", () => {
     const { top, rest } = splitRanking(ANSWER);
-    expect(top.map(n => n.id)).toEqual(["OSH 11/012", "OSH 11/015", "ZAU 11/301"]);
-    expect(rest.map(n => n.id)).toEqual(["C81 11/004", "OSH 11/030"]);
+    expect(top.map((n) => n.id)).toEqual(["OSH 11/012", "OSH 11/015", "ZAU 11/301"]);
+    expect(rest.map((n) => n.id)).toEqual(["C81 11/004", "OSH 11/030"]);
   });
 
   test("three lines with their chips, the rest behind N more, and the feed's coverage under them", () => {
     state.value = { shown: true, ...splitRanking(ANSWER), answer: ANSWER, error: null, pending: false };
     render(<NotamRankingSection />);
     const lines = screen.getAllByTestId("brief-notam");
-    expect(lines.map(l => l.querySelector("p")!.textContent)).toEqual(ANSWER.notams.slice(0, 3).map(n => n.why));
-    expect(screen.getAllByTestId("brief-notam-source").map(c => c.textContent)).toEqual(["NOTAM OSH 11/012", "NOTAM OSH 11/015", "NOTAM ZAU 11/301"]);
+    expect(lines.map((l) => l.querySelector("p")!.textContent)).toEqual(ANSWER.notams.slice(0, 3).map((n) => n.why));
+    expect(screen.getAllByTestId("brief-notam-source").map((c) => c.textContent)).toEqual([
+      "NOTAM OSH 11/012",
+      "NOTAM OSH 11/015",
+      "NOTAM ZAU 11/301",
+    ]);
     expect(screen.queryByTestId("brief-notams-rest")).toBeNull();
     fireEvent.click(screen.getByTestId("brief-notams-more"));
     expect(screen.getByTestId("brief-notams-more").textContent).toContain("2 more");

@@ -15,7 +15,7 @@ const DURATION_MS = 2000;
 let notes: DoneNote[] = [];
 let next = 1;
 const listeners = new Set<() => void>();
-const emit = () => listeners.forEach(l => l());
+const emit = () => listeners.forEach((l) => l());
 
 /** Where a note goes: over the control's middle, or with no control (one
  *  taken off the screen by the tap, a sheet closing) at the screen's. */
@@ -33,7 +33,7 @@ export function done(words: string, options: { detail?: string; near?: Element |
   notes = [...notes, note];
   emit();
   window.setTimeout(() => {
-    notes = notes.filter(n => n.id !== note.id);
+    notes = notes.filter((n) => n.id !== note.id);
     emit();
   }, DURATION_MS);
 }
@@ -41,7 +41,10 @@ export function done(words: string, options: { detail?: string; near?: Element |
 /** The notes showing now, for DoneNotes. */
 export function useDoneNotes(): DoneNote[] {
   return useSyncExternalStore(
-    l => { listeners.add(l); return () => listeners.delete(l); },
+    (l) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
     () => notes,
     () => notes,
   );

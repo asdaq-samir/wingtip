@@ -14,10 +14,14 @@ import { pageOf } from "./speed";
  * Not in a browser driven by tests, as lib/speed.
  */
 export function startLongTaskReports(win: Window = window) {
-  if (win.navigator.webdriver || typeof PerformanceObserver === "undefined"
-    || !PerformanceObserver.supportedEntryTypes?.includes("longtask")) return;
+  if (
+    win.navigator.webdriver ||
+    typeof PerformanceObserver === "undefined" ||
+    !PerformanceObserver.supportedEntryTypes?.includes("longtask")
+  )
+    return;
   const seen: number[] = [];
-  new PerformanceObserver(list => {
+  new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) seen.push(entry.duration);
   }).observe({ type: "longtask", buffered: true });
   win.document.addEventListener("visibilitychange", () => {
@@ -27,11 +31,15 @@ export function startLongTaskReports(win: Window = window) {
 }
 
 /** The report for a page's long tasks, in whole milliseconds. */
-export function longTaskReport(durations: number[], page: string,
-  origin: Pick<DiagnosticsReport, "platform" | "version" | "device">): DiagnosticsReport {
+export function longTaskReport(
+  durations: number[],
+  page: string,
+  origin: Pick<DiagnosticsReport, "platform" | "version" | "device">,
+): DiagnosticsReport {
   const total = durations.reduce((sum, d) => sum + d, 0);
   return {
-    ...origin, page,
+    ...origin,
+    page,
     metrics: { long_tasks: durations.length, long_task_ms: Math.round(total), longest_task_ms: Math.round(Math.max(...durations)) },
   };
 }

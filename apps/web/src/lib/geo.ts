@@ -10,7 +10,8 @@ export const deg = (r: number) => (r * 180) / Math.PI;
 export type LatLon = { lat: number; lon: number };
 
 export function distanceNm(a: LatLon, b: LatLon): number {
-  const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+  const dLat = rad(b.lat - a.lat),
+    dLon = rad(b.lon - a.lon);
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
   return 2 * EARTH_NM * Math.asin(Math.min(1, Math.sqrt(h)));
 }
@@ -20,7 +21,8 @@ export function distanceNm(a: LatLon, b: LatLon): number {
  *  the destination -- it bends the route least between. The index into
  *  the stops. */
 export function bestStopIndex(points: LatLon[], at: LatLon): number {
-  let best = 0, bestAdded = Infinity;
+  let best = 0,
+    bestAdded = Infinity;
   for (let i = 0; i < points.length - 1; i++) {
     const added = distanceNm(points[i]!, at) + distanceNm(at, points[i + 1]!) - distanceNm(points[i]!, points[i + 1]!);
     if (added < bestAdded) [best, bestAdded] = [i, added];
@@ -62,7 +64,10 @@ export const M_PER_NM = 1852;
 
 /** Where a great circle from `a` on a true bearing reaches `nm` out. */
 export function destination(a: LatLon, bearing: number, nm: number): LatLon {
-  const d = nm / EARTH_NM, b = rad(bearing), lat1 = rad(a.lat), lon1 = rad(a.lon);
+  const d = nm / EARTH_NM,
+    b = rad(bearing),
+    lat1 = rad(a.lat),
+    lon1 = rad(a.lon);
   const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(b));
   const lon2 = lon1 + Math.atan2(Math.sin(b) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
   return { lat: deg(lat2), lon: ((deg(lon2) + 540) % 360) - 180 };

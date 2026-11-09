@@ -18,14 +18,23 @@ const CLEAR = "rgba(0, 0, 0, 0)";
  */
 export function svColours(altFt: number): ExpressionSpecification {
   const bands = callEngine("terrain_view_bands", { altitude_ft: altFt });
-  const floor = bands.caution_from_ft * M_PER_FT, top = bands.warning_from_ft * M_PER_FT;
+  const floor = bands.caution_from_ft * M_PER_FT,
+    top = bands.warning_from_ft * M_PER_FT;
   return [
-    "interpolate", ["linear"], ["elevation"],
-    Math.min(-500, floor - 2), CLEAR,
-    floor - 1, CLEAR,
-    floor, SV_AMBER,
-    top - 1, SV_AMBER,
-    top, SV_RED,
-    Math.max(9000, top + 1), SV_RED,
+    "interpolate",
+    ["linear"],
+    ["elevation"],
+    Math.min(-500, floor - 2),
+    CLEAR,
+    floor - 1,
+    CLEAR,
+    floor,
+    SV_AMBER,
+    top - 1,
+    SV_AMBER,
+    top,
+    SV_RED,
+    Math.max(9000, top + 1),
+    SV_RED,
   ];
 }

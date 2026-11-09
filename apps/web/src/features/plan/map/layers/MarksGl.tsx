@@ -20,31 +20,52 @@ import { useGlLines, type GlRun } from "../../../../lib/map/gl/useGlLines";
  * the settings' Class B Weather: a tap the field's card; a hover shows the
  * terminal sheet over it while the pointer is there.
  */
-export function ClassBGl({ chart, route, onPreview, onSelectPlace }: {
+export function ClassBGl({
+  chart,
+  route,
+  onPreview,
+  onSelectPlace,
+}: {
   chart: ChartInfo;
   route: string[];
   onPreview: (on: boolean) => void;
   onSelectPlace?: (ident: string) => void;
 }) {
   const { map } = useGlMap();
-  const show = usePreferences(s => s.classB);
-  const base = usePreferences(s => s.base);
+  const show = usePreferences((s) => s.classB);
+  const base = usePreferences((s) => s.base);
   const { overlay } = chartPair(chart.chart_layers, base);
   const overlayFromZoom = overlay?.min_zoom ?? 10;
   const { data } = useQuery({ ...classBQuery, enabled: show });
-  const marks = useMemo<GlMark[]>(() => (show && data ? data.filter(a => !route.includes(a.ident)).map(a => {
-    const sheet = sheetAt(overlay, a.lat, a.lon);
-    return {
-      key: a.ident, lat: a.lat, lon: a.lon, icon: airportMarkIcon(a.ident, "B", colourOf(a.flight_category)),
-      title: `${a.ident} · ${a.name} · ${a.flight_category ?? "no report"}`,
-      onHover: on => onPreview(on && !!sheet),
-      onTap: () => {
-        onPreview(false);
-        if (onSelectPlace) onSelectPlace(a.ident);
-        else map.flyTo({ center: [a.lon, a.lat], zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)), duration: prefersReducedMotion() ? 0 : 600 });
-      },
-    };
-  }) : []), [show, data, route, overlay, overlayFromZoom, onPreview, onSelectPlace, map]);
+  const marks = useMemo<GlMark[]>(
+    () =>
+      show && data
+        ? data
+            .filter((a) => !route.includes(a.ident))
+            .map((a) => {
+              const sheet = sheetAt(overlay, a.lat, a.lon);
+              return {
+                key: a.ident,
+                lat: a.lat,
+                lon: a.lon,
+                icon: airportMarkIcon(a.ident, "B", colourOf(a.flight_category)),
+                title: `${a.ident} · ${a.name} · ${a.flight_category ?? "no report"}`,
+                onHover: (on) => onPreview(on && !!sheet),
+                onTap: () => {
+                  onPreview(false);
+                  if (onSelectPlace) onSelectPlace(a.ident);
+                  else
+                    map.flyTo({
+                      center: [a.lon, a.lat],
+                      zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)),
+                      duration: prefersReducedMotion() ? 0 : 600,
+                    });
+                },
+              };
+            })
+        : [],
+    [show, data, route, overlay, overlayFromZoom, onPreview, onSelectPlace, map],
+  );
   useGlMarks(marks);
   return null;
 }
@@ -59,14 +80,32 @@ const AHEAD_INK = { warning: "#dc2626", caution: "#d97706" } as const;
 
 export function AheadGl() {
   const ahead = useAhead();
-  const fix = useOwnShip(s => s.fix);
-  const runs = useMemo<GlRun[] | null>(() => (ahead && fix ? ahead.alerts.flatMap(a => [
-    ...(!a.inside ? [{ points: [[fix.lat, fix.lon], [a.lat, a.lon]] as [number, number][], colour: AHEAD_INK[a.level], width: 2 }] : []),
-  ]) : null), [ahead, fix]);
+  const fix = useOwnShip((s) => s.fix);
+  const runs = useMemo<GlRun[] | null>(
+    () =>
+      ahead && fix
+        ? ahead.alerts.flatMap((a) => [
+            ...(!a.inside
+              ? [
+                  {
+                    points: [
+                      [fix.lat, fix.lon],
+                      [a.lat, a.lon],
+                    ] as [number, number][],
+                    colour: AHEAD_INK[a.level],
+                    width: 2,
+                  },
+                ]
+              : []),
+          ])
+        : null,
+    [ahead, fix],
+  );
   useGlLines("ahead", "top", runs, null, [3, 3]);
-  const rings = useMemo<GlMark[]>(() => (ahead && fix ? ahead.alerts.map(a => ({
-    key: a.id, lat: a.lat, lon: a.lon, icon: aheadIcon(a.level),
-  })) : []), [ahead, fix]);
+  const rings = useMemo<GlMark[]>(
+    () => (ahead && fix ? ahead.alerts.map((a) => ({ key: a.id, lat: a.lat, lon: a.lon, icon: aheadIcon(a.level) })) : []),
+    [ahead, fix],
+  );
   useGlMarks(rings);
   return null;
 }
@@ -77,7 +116,14 @@ function aheadIcon(level: "warning" | "caution"): IconLike {
   let icon = aheadIcons.get(level);
   if (!icon) {
     const [line, fill] = level === "warning" ? ["#dc2626", "rgba(220,38,38,.25)"] : ["#d97706", "rgba(245,158,11,.25)"];
-    icon = { options: { className: `ahead-${level}`, iconSize: [22, 22], iconAnchor: [11, 11], html: `<span style="position:absolute;inset:0;border-radius:9999px;border:3px solid ${line};background:${fill}"></span>` } };
+    icon = {
+      options: {
+        className: `ahead-${level}`,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+        html: `<span style="position:absolute;inset:0;border-radius:9999px;border:3px solid ${line};background:${fill}"></span>`,
+      },
+    };
     aheadIcons.set(level, icon);
   }
   return icon;

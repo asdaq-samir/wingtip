@@ -11,18 +11,30 @@ const A_PILOT = { id: 1, email: "pilot@example.com", displayName: "A Pilot", dev
 const inDays = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 
 test("the logbook says where the pilot stands, and a flight logged is posted as typed", async ({ page }) => {
-  await page.route("**/api/me", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
-  await page.route("**/api/logbook/currency", route => route.fulfill({
-    status: 200, contentType: "application/json", body: JSON.stringify({
-      dayPassengersUntil: inDays(40), nightPassengersUntil: null, flightReviewOn: "2025-06-14", flightReviewUntil: "2027-06-30",
-      medicalExpiresOn: null, totalHours: 3.4, nightHours: 0, crossCountryHours: 3.4, landings: 3, flights: 1,
+  await page.route("**/api/me", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
+  await page.route("**/api/logbook/currency", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        dayPassengersUntil: inDays(40),
+        nightPassengersUntil: null,
+        flightReviewOn: "2025-06-14",
+        flightReviewUntil: "2027-06-30",
+        medicalExpiresOn: null,
+        totalHours: 3.4,
+        nightHours: 0,
+        crossCountryHours: 3.4,
+        landings: 3,
+        flights: 1,
+      }),
     }),
-  }));
+  );
   const posted: unknown[] = [];
   await page.route("**/api/logbook", async (route: Route) => {
     if (route.request().method() === "POST") {
       posted.push(route.request().postDataJSON());
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ id: 9, ...posted[0] as object }) });
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ id: 9, ...(posted[0] as object) }) });
     } else {
       await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
     }
@@ -47,11 +59,13 @@ test("the logbook says where the pilot stands, and a flight logged is posted as 
 
 test("a logbook that could not be fetched says so in place, and Try again fetches it", { tag: "@smoke" }, async ({ page }) => {
   // The commonality audit's N-12: a failure read "No flights logged yet".
-  await page.route("**/api/me", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
+  await page.route("**/api/me", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
   let failing = true;
-  await page.route("**/api/logbook", route => (failing
-    ? route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "down" }) })
-    : route.fulfill({ status: 200, contentType: "application/json", body: "[]" })));
+  await page.route("**/api/logbook", (route) =>
+    failing
+      ? route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "down" }) })
+      : route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
+  );
   await page.goto("/app/plan");
   await showTabs(page);
   await openConsole(page);

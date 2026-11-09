@@ -23,9 +23,10 @@ const PARTS: Record<OwnShipLook, string> = {
   // blocks, at the owner's ask ("redesign the ship to look modern") -- a
   // fuselage tapering to the tail, the wing's tips rounded and its trailing
   // edge swept in to the cabin, a rounded tailplane.
-  single: `<path d="M16 2 C17.3 2 18 3.6 18 5.6 L18 21.5 C18 24 17.3 27 16 29.5 C14.7 27 14 24 14 21.5 L14 5.6 C14 3.6 14.7 2 16 2 Z"/>`
-    + `<path d="M3.2 10 L28.8 10 Q30 10 30 11.2 L30 12.4 Q30 13.4 28.9 13.5 L18 14.8 L14 14.8 L3.1 13.5 Q2 13.4 2 12.4 L2 11.2 Q2 10 3.2 10 Z"/>`
-    + `<path d="M10.6 24 L21.4 24 Q22.2 24 22.2 24.8 L22.2 25.6 Q22.2 26.4 21.4 26.4 L10.6 26.4 Q9.8 26.4 9.8 25.6 L9.8 24.8 Q9.8 24 10.6 24 Z"/>`,
+  single:
+    `<path d="M16 2 C17.3 2 18 3.6 18 5.6 L18 21.5 C18 24 17.3 27 16 29.5 C14.7 27 14 24 14 21.5 L14 5.6 C14 3.6 14.7 2 16 2 Z"/>` +
+    `<path d="M3.2 10 L28.8 10 Q30 10 30 11.2 L30 12.4 Q30 13.4 28.9 13.5 L18 14.8 L14 14.8 L3.1 13.5 Q2 13.4 2 12.4 L2 11.2 Q2 10 3.2 10 Z"/>` +
+    `<path d="M10.6 24 L21.4 24 Q22.2 24 22.2 24.8 L22.2 25.6 Q22.2 26.4 21.4 26.4 L10.6 26.4 Q9.8 26.4 9.8 25.6 L9.8 24.8 Q9.8 24 10.6 24 Z"/>`,
   // An engine on each wing, ahead of it.
   twin: `<rect x="14.4" y="4" width="3.2" height="24" rx="1.6"/><rect x="1" y="12.5" width="30" height="3.2" rx="1.4"/><rect x="7.4" y="8.5" width="3.4" height="9.5" rx="1.6"/><rect x="21.2" y="8.5" width="3.4" height="9.5" rx="1.6"/><rect x="10.5" y="24" width="11" height="2.8" rx="1.2"/>`,
   // Wings and tail swept back.
@@ -42,12 +43,14 @@ export function ownShipSvg(look: OwnShipLook, fill: string, size = 32, attrs = "
   const parts = PARTS[look] ?? PARTS.arrow;
   const plane = `<g fill="#ffffff" stroke="#ffffff" stroke-width="2.6" stroke-linejoin="round">${parts}</g><g fill="${fill}">${parts}</g>`;
   if (beam && look !== "arrow") {
-    return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true" ${attrs}>`
-      + `<defs><radialGradient id="own-ship-beam" cx="32" cy="32" r="31" gradientUnits="userSpaceOnUse">`
-      + `<stop offset="0.25" stop-color="${fill}" stop-opacity="0.45"/><stop offset="1" stop-color="${fill}" stop-opacity="0"/></radialGradient></defs>`
-      + `<path d="M32 32 L17 3 A31 31 0 0 1 47 3 Z" fill="url(#own-ship-beam)"/>`
-      + `<circle cx="32" cy="32" r="14" fill="${fill}" fill-opacity="0.12"/>`
-      + `<g transform="translate(16 16)">${plane}</g></svg>`;
+    return (
+      `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true" ${attrs}>` +
+      `<defs><radialGradient id="own-ship-beam" cx="32" cy="32" r="31" gradientUnits="userSpaceOnUse">` +
+      `<stop offset="0.25" stop-color="${fill}" stop-opacity="0.45"/><stop offset="1" stop-color="${fill}" stop-opacity="0"/></radialGradient></defs>` +
+      `<path d="M32 32 L17 3 A31 31 0 0 1 47 3 Z" fill="url(#own-ship-beam)"/>` +
+      `<circle cx="32" cy="32" r="14" fill="${fill}" fill-opacity="0.12"/>` +
+      `<g transform="translate(16 16)">${plane}</g></svg>`
+    );
   }
   return `<svg viewBox="0 0 32 32" width="${size}" height="${size}" aria-hidden="true" ${attrs}>${plane}</svg>`;
 }

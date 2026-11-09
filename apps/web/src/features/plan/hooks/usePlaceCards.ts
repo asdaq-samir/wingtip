@@ -11,7 +11,12 @@ import { useAddressCards, type PanelTab } from "./useTabCards";
  * opened and closed, each close putting the sheet back at the height it
  * had before the card, as Apple Maps does.
  */
-export function usePlaceCards({ searchParams, setSearchParams, panel, setPanel }: {
+export function usePlaceCards({
+  searchParams,
+  setSearchParams,
+  panel,
+  setPanel,
+}: {
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
   panel: PanelState;
@@ -45,44 +50,58 @@ export function usePlaceCards({ searchParams, setSearchParams, panel, setPanel }
   // it doesn't go back to fpl").
   const airplaneFrom = useRef<PanelTab | null>(null);
   const backToTab = useRef<(tab: PanelTab) => void>(() => {});
-  const setBackToTab = useCallback((go: (tab: PanelTab) => void) => { backToTab.current = go; }, []);
-  const closeCard = useCallback((close: () => void) => {
-    close();
-    setPanel(panelBeforeCard.current);
-  }, [setPanel]);
+  const setBackToTab = useCallback((go: (tab: PanelTab) => void) => {
+    backToTab.current = go;
+  }, []);
+  const closeCard = useCallback(
+    (close: () => void) => {
+      close();
+      setPanel(panelBeforeCard.current);
+    },
+    [setPanel],
+  );
   // The airport's card under the route, the route flown to from it (Fly
   // Here): where the route's close goes back to, as Maps' layers are.
   const [under, setUnder] = useState<string | null>(null);
   // The route's Approaches: the destination's card, opened on them. Which
   // field's, until its card has opened on them (PlaceCard's onStarted).
   const [approachesOf, setApproachesOf] = useState<string | null>(null);
-  const selectPlace = useCallback((ident: string | null) => {
-    // The Approaches intent belongs to the card it was asked for: another
-    // card, or none, drops it, so a card that never answered (or was closed
-    // first) does not jump to its approaches when it is next opened.
-    setApproachesOf(of => (of === ident ? of : null));
-    if ((ident ?? null) === place && !heldPoint) return;
-    setSearchParams(prev => {
-      // Opened half way, from the map, a strip or a list all the way up
-      // alike, and dragged up from there, at the owner's ask ("should have
-      // the half layout ... that should expand to full, not the other way
-      // around"). Put away, the height it was.
-      return patched(prev, { place: ident ?? null, at: null, view: ident ? null : undefined });
-    }, { replace: true });
-    if (ident) setPanel("half");
-    // Put away over Nearest's list: the list again, all the way up where
-    // it is drawn.
-    else if (nearOpen) setPanel("full");
-  }, [place, heldPoint, nearOpen, setSearchParams, setPanel, setApproachesOf]);
+  const selectPlace = useCallback(
+    (ident: string | null) => {
+      // The Approaches intent belongs to the card it was asked for: another
+      // card, or none, drops it, so a card that never answered (or was closed
+      // first) does not jump to its approaches when it is next opened.
+      setApproachesOf((of) => (of === ident ? of : null));
+      if ((ident ?? null) === place && !heldPoint) return;
+      setSearchParams(
+        (prev) => {
+          // Opened half way, from the map, a strip or a list all the way up
+          // alike, and dragged up from there, at the owner's ask ("should have
+          // the half layout ... that should expand to full, not the other way
+          // around"). Put away, the height it was.
+          return patched(prev, { place: ident ?? null, at: null, view: ident ? null : undefined });
+        },
+        { replace: true },
+      );
+      if (ident) setPanel("half");
+      // Put away over Nearest's list: the list again, all the way up where
+      // it is drawn.
+      else if (nearOpen) setPanel("full");
+    },
+    [place, heldPoint, nearOpen, setSearchParams, setPanel, setApproachesOf],
+  );
   // An airplane's airport opened from its card (its airport's tile): the
   // airport's card over the airplane's, and its close back to the
   // airplane's at the height it was, as Maps puts one card back under
   // another -- not at the height before any card, which closeCard keeps.
   const panelUnderAirport = useRef<PanelState | null>(null);
-  const openAirportOverFlight = useCallback((ident: string) => {
-    panelUnderAirport.current = panelNow.current;
-    selectPlace(ident);
-  }, [selectPlace]);
+  const openAirportOverFlight = useCallback(
+    (ident: string) => {
+      panelUnderAirport.current = panelNow.current;
+      selectPlace(ident);
+    },
+    [selectPlace],
+  );
   useEffect(() => {
     if (!place) panelUnderAirport.current = null;
   }, [place]);
@@ -96,30 +115,56 @@ export function usePlaceCards({ searchParams, setSearchParams, panel, setPanel }
   }, [flight, selectPlace, setPanel, closeCard]);
   // An airplane's card closed: back to the tab it was opened over, where
   // that was another (airplaneFrom), at the height before it (closeCard).
-  const closeFlight = useCallback(() => closeCard(() => {
-    selectFlight(null);
-    const from = airplaneFrom.current;
-    airplaneFrom.current = null;
-    if (from) backToTab.current(from);
-  }), [closeCard, selectFlight]);
-  const selectPlaceOnChart = useCallback((ident: string | null) => {
-    // A tap on the chart past Nearest's list lowers it, the tab kept.
-    if (!ident && nearOpen && !place) {
-      setPanel("peek");
-      return;
-    }
-    selectPlace(ident);
-    if (!ident && (place || heldPoint)) setPanel("peek");
-  }, [selectPlace, nearOpen, place, heldPoint, setPanel]);
-  const holdPoint = useCallback((point: { lat: number; lon: number }) => {
-    setSearchParams(prev => {
-      return patched(prev, { at: `${point.lat.toFixed(4)},${point.lon.toFixed(4)}`, place: null, view: null });
-    }, { replace: true });
-    // A point held on the chart: its card half way.
-    setPanel("half");
-  }, [setSearchParams, setPanel]);
+  const closeFlight = useCallback(
+    () =>
+      closeCard(() => {
+        selectFlight(null);
+        const from = airplaneFrom.current;
+        airplaneFrom.current = null;
+        if (from) backToTab.current(from);
+      }),
+    [closeCard, selectFlight],
+  );
+  const selectPlaceOnChart = useCallback(
+    (ident: string | null) => {
+      // A tap on the chart past Nearest's list lowers it, the tab kept.
+      if (!ident && nearOpen && !place) {
+        setPanel("peek");
+        return;
+      }
+      selectPlace(ident);
+      if (!ident && (place || heldPoint)) setPanel("peek");
+    },
+    [selectPlace, nearOpen, place, heldPoint, setPanel],
+  );
+  const holdPoint = useCallback(
+    (point: { lat: number; lon: number }) => {
+      setSearchParams(
+        (prev) => {
+          return patched(prev, { at: `${point.lat.toFixed(4)},${point.lon.toFixed(4)}`, place: null, view: null });
+        },
+        { replace: true },
+      );
+      // A point held on the chart: its card half way.
+      setPanel("half");
+    },
+    [setSearchParams, setPanel],
+  );
   return {
-    cards, cardOpen, briefOpen, setBackToTab, closeCard, under, setUnder, approachesOf, setApproachesOf,
-    selectPlace, openAirportOverFlight, closePlace, closeFlight, selectPlaceOnChart, holdPoint,
+    cards,
+    cardOpen,
+    briefOpen,
+    setBackToTab,
+    closeCard,
+    under,
+    setUnder,
+    approachesOf,
+    setApproachesOf,
+    selectPlace,
+    openAirportOverFlight,
+    closePlace,
+    closeFlight,
+    selectPlaceOnChart,
+    holdPoint,
   };
 }

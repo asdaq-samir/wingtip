@@ -19,8 +19,25 @@ import { Spinner } from "./ui/spinner";
  *  points, its word in the reader's size: the glyph, padding and gap are
  *  fixed, but the word's line still grows with the text size (checked at
  *  a 19 px root, not at the largest sizes). */
-export function CardAction({ icon, label, spoken, filled, destructive, busy, disabled, onClick, href, testId, pressed, ...trigger }: {
-  icon: ReactNode; label: string; filled?: boolean; onClick?: () => void; testId: string;
+export function CardAction({
+  icon,
+  label,
+  spoken,
+  filled,
+  destructive,
+  busy,
+  disabled,
+  onClick,
+  href,
+  testId,
+  pressed,
+  ...trigger
+}: {
+  icon: ReactNode;
+  label: string;
+  filled?: boolean;
+  onClick?: () => void;
+  testId: string;
   /** An action that takes something away (the Route Leg sheet's Remove):
    *  its glyph and word in iOS's red, where the rest are the tint. */
   destructive?: boolean;
@@ -44,13 +61,21 @@ export function CardAction({ icon, label, spoken, filled, destructive, busy, dis
   // The others iOS's grey tiles with their glyph and word in the tint, as
   // Apple's Maps on the web draws a place's Call and Website (the owner's
   // screenshot, 2026-10-26).
-  const look = cn("h-auto min-w-0 flex-col gap-[2px] rounded-xl px-1 py-[6px] [&_svg:not([class*='size-'])]:size-[20px]", !filled && cn(GLASS_BUTTON,
-    // Its grey kept at 8% while its menu is open (GLASS_BUTTON's 12% there):
-    // on the darker grey the tint read 4.44 to 1, short of WCAG's 4.5 (the
-    // iOS audit's P15, an airplane's Alert menu, 2026-11-05); the menu
-    // under it says it is open.
-    destructive ? "text-destructive-ink hover:text-destructive-ink" : "text-tint hover:text-tint dark:text-[#8cc4ff] dark:hover:text-[#8cc4ff]",
-    "aria-expanded:bg-foreground/8"));
+  const look = cn(
+    "h-auto min-w-0 flex-col gap-[2px] rounded-xl px-1 py-[6px] [&_svg:not([class*='size-'])]:size-[20px]",
+    !filled &&
+      cn(
+        GLASS_BUTTON,
+        // Its grey kept at 8% while its menu is open (GLASS_BUTTON's 12% there):
+        // on the darker grey the tint read 4.44 to 1, short of WCAG's 4.5 (the
+        // iOS audit's P15, an airplane's Alert menu, 2026-11-05); the menu
+        // under it says it is open.
+        destructive
+          ? "text-destructive-ink hover:text-destructive-ink"
+          : "text-tint hover:text-tint dark:text-[#8cc4ff] dark:hover:text-[#8cc4ff]",
+        "aria-expanded:bg-foreground/8",
+      ),
+  );
   const face = (
     <>
       {busy ? <Spinner className="size-[20px]" aria-hidden="true" /> : icon}
@@ -66,7 +91,9 @@ export function CardAction({ icon, label, spoken, filled, destructive, busy, dis
   if (href && !disabled) {
     return (
       <Button asChild variant={filled ? "default" : "secondary"} className={look}>
-        <a href={href} target={href.startsWith("tel:") ? undefined : "_blank"} rel="noreferrer" data-testid={testId} aria-label={spoken}>{face}</a>
+        <a href={href} target={href.startsWith("tel:") ? undefined : "_blank"} rel="noreferrer" data-testid={testId} aria-label={spoken}>
+          {face}
+        </a>
       </Button>
     );
   }
@@ -75,8 +102,16 @@ export function CardAction({ icon, label, spoken, filled, destructive, busy, dis
     // its ref, its pointer and key handlers, aria-expanded) goes on it, so
     // a tile can open a menu, as the airplane card's Alert does.
     <Button
-      type="button" variant={filled ? "default" : "secondary"} {...trigger} onClick={onClick} disabled={disabled}
-      data-testid={testId} aria-label={spoken} aria-busy={busy || undefined} aria-pressed={pressed} className={look}
+      type="button"
+      variant={filled ? "default" : "secondary"}
+      {...trigger}
+      onClick={onClick}
+      disabled={disabled}
+      data-testid={testId}
+      aria-label={spoken}
+      aria-busy={busy || undefined}
+      aria-pressed={pressed}
+      className={look}
     >
       {face}
     </Button>

@@ -23,8 +23,12 @@ type Entry = {
  *  on top; and whether the panel's tab bar names the top one in the
  *  tabs' place (`barNamed`), its own head then leaving the name and the
  *  close to the bar. */
-export const useSheetCards = create<{ host: HTMLElement | null; stack: Entry[]; barNamed: boolean; barHead: HTMLElement | null }>(
-  () => ({ host: null, stack: [], barNamed: false, barHead: null }));
+export const useSheetCards = create<{ host: HTMLElement | null; stack: Entry[]; barNamed: boolean; barHead: HTMLElement | null }>(() => ({
+  host: null,
+  stack: [],
+  barNamed: false,
+  barHead: null,
+}));
 
 /** The bar's row, where the top card that names itself (a map card's,
  *  MapCard) draws its mark and name, beside the bar's close: in its own
@@ -34,12 +38,12 @@ export const useSheetCards = create<{ host: HTMLElement | null; stack: Entry[]; 
  *  of the bar's draws. */
 export function barHeadRef(node: HTMLDivElement | null) {
   useSheetCards.setState({ barHead: node });
-  return () => useSheetCards.setState(s => (s.barHead === node ? { barHead: null } : s));
+  return () => useSheetCards.setState((s) => (s.barHead === node ? { barHead: null } : s));
 }
 
 /** How far the panel is asked up for the cards open: null with none. */
 export const raisedFor = (stack: Entry[]): "half" | "full" | null =>
-  stack.length === 0 ? null : stack.some(entry => entry.raise === "full") ? "full" : "half";
+  stack.length === 0 ? null : stack.some((entry) => entry.raise === "full") ? "full" : "half";
 
 /** Every card put away, the top first: another tab picked (TabBar), whose
  *  page is not what they were opened over; a field tapped on the chart
@@ -52,8 +56,9 @@ export function closeSheetCards() {
  *  a map card's (MapCard), its mark beside its name -- the id that name
  *  takes, which names the card, and what the pill shows of it there. */
 export const SheetCardHead = createContext<{
-  slot: HTMLElement | null; headingId: string; setPill: (pill: PillHead | undefined) => void;
+  slot: HTMLElement | null;
+  headingId: string;
+  setPill: (pill: PillHead | undefined) => void;
   /** The slot is the bar's row (barHeadRef): the name at a row's size. */
   inBar?: boolean;
 } | null>(null);
-

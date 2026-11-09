@@ -5,11 +5,17 @@ import { renameKeys } from "./storageRename";
 function fakeStorage(entries: Record<string, string>): Storage {
   const map = new Map(Object.entries(entries));
   return {
-    get length() { return map.size; },
-    key: i => [...map.keys()][i] ?? null,
-    getItem: k => map.get(k) ?? null,
-    setItem: (k, v) => { map.set(k, String(v)); },
-    removeItem: k => { map.delete(k); },
+    get length() {
+      return map.size;
+    },
+    key: (i) => [...map.keys()][i] ?? null,
+    getItem: (k) => map.get(k) ?? null,
+    setItem: (k, v) => {
+      map.set(k, String(v));
+    },
+    removeItem: (k) => {
+      map.delete(k);
+    },
     clear: () => map.clear(),
   };
 }

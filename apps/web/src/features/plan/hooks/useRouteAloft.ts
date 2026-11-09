@@ -15,6 +15,6 @@ export function useRouteAloft(mode: TerrainMode, rows: NavLogRow[] | undefined, 
   return useMemo(() => {
     if (mode !== "3d" || !rows || !line) return null;
     const run = dryRunOf(rows, 0, line);
-    return run.points.length > 1 ? run.points.map(p => ({ lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? 0 })) : null;
+    return run.points.length > 1 ? run.points.map((p) => ({ lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? 0 })) : null;
   }, [mode, rows, line]);
 }

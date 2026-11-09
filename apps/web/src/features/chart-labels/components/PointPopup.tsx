@@ -31,7 +31,6 @@ interface Props {
   canRight?: boolean;
 }
 
-
 /**
  * Everything about the selected point, in one card in the map's panel
  * (ChartMap's SheetCard) -- the info that used to be a separate tooltip,
@@ -39,8 +38,17 @@ interface Props {
  * combined so there's one place on screen this happens.
  */
 export default function PointPopup({
-  point, place, bearingDeg, departureIdent, onRate, onCategoryChange, onRemove,
-  onLeft, onRight, canLeft = true, canRight = true,
+  point,
+  place,
+  bearingDeg,
+  departureIdent,
+  onRate,
+  onCategoryChange,
+  onRemove,
+  onLeft,
+  onRight,
+  canLeft = true,
+  canRight = true,
 }: Props) {
   // Same row either way -- an endpoint is the first or last stop in the
   // walk, and needs a way off itself just as much as any other point
@@ -53,16 +61,24 @@ export default function PointPopup({
    *  pass moves on a touchscreen, not corner chrome. */
   const stepLeft = (
     <IconButton
-      type="button" label="Step left" variant="outline"
-      onClick={onLeft} disabled={!onLeft || !canLeft} className="flex-shrink-0 rounded-full"
+      type="button"
+      label="Step left"
+      variant="outline"
+      onClick={onLeft}
+      disabled={!onLeft || !canLeft}
+      className="flex-shrink-0 rounded-full"
     >
       <ChevronLeft className="size-5" strokeWidth={3} />
     </IconButton>
   );
   const stepRight = (
     <IconButton
-      type="button" label="Step right" variant="outline"
-      onClick={onRight} disabled={!onRight || !canRight} className="flex-shrink-0 rounded-full"
+      type="button"
+      label="Step right"
+      variant="outline"
+      onClick={onRight}
+      disabled={!onRight || !canRight}
+      className="flex-shrink-0 rounded-full"
     >
       <ChevronRight className="size-5" strokeWidth={3} />
     </IconButton>
@@ -74,13 +90,18 @@ export default function PointPopup({
    *  thing it is, which the category control below already says. */
   const counter = place && <span className="rounded px-0.5">#{place}</span>;
 
-
   if (isEndpoint(point)) {
     return (
       <MapCard
         // Falls back to the ident when this point is not in the current
         // walk, so the card never opens with no title at all.
-        title={<>{stepLeft}{counter || point.ident}{stepRight}</>}
+        title={
+          <>
+            {stepLeft}
+            {counter || point.ident}
+            {stepRight}
+          </>
+        }
         subtitle={
           <span className="flex items-center gap-1.5">
             <Badge variant="secondary">{point.category === "departure" ? "DEP" : "DEST"}</Badge>
@@ -94,14 +115,17 @@ export default function PointPopup({
   const rating = (point as { rating: Rating | null }).rating;
   const category = (point as { category: string }).category;
   const cross = (point as { cross_track_nm: number }).cross_track_nm ?? 0;
-  const options = (CATEGORIES as readonly string[]).includes(category)
-    ? CATEGORIES
-    : [category, ...CATEGORIES];
+  const options = (CATEGORIES as readonly string[]).includes(category) ? CATEGORIES : [category, ...CATEGORIES];
 
   return (
     <MapCard
-
-      title={<>{stepLeft}{counter || category}{stepRight}</>}
+      title={
+        <>
+          {stepLeft}
+          {counter || category}
+          {stepRight}
+        </>
+      }
       subtitle={
         <>
           {point.along_track_nm.toFixed(1)} nm {compassPoint(bearingDeg)} of {departureIdent}
@@ -118,7 +142,7 @@ export default function PointPopup({
           rather than taking its taps -- four apart they overlapped. The
           row's padding keeps the select's area clear of theirs. */}
       <div className="flex gap-2 py-1.5">
-        {RATINGS.map(r => (
+        {RATINGS.map((r) => (
           <Button
             key={r}
             type="button"
@@ -142,7 +166,13 @@ export default function PointPopup({
       {/* Twelve clear of the button under it (pb-1.5 and the card's six),
           so their hit areas meet rather than overlap. */}
       <div className="flex items-center gap-2 pb-1.5">
-        <PullDown label="Category" value={category} align="start" options={options.map(c => ({ value: c, label: c }))} onChange={onCategoryChange} />
+        <PullDown
+          label="Category"
+          value={category}
+          align="start"
+          options={options.map((c) => ({ value: c, label: c }))}
+          onChange={onCategoryChange}
+        />
       </div>
 
       <Button type="button" size="sm" variant="destructive" onClick={onRemove} className="w-full">

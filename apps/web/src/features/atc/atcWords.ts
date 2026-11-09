@@ -17,7 +17,14 @@ const three = (deg: number) => String(deg).padStart(3, "0");
 
 /** The eight points a hold is said from, as a chart abbreviates them. */
 const POINTS: Record<string, string> = {
-  north: "N", northeast: "NE", east: "E", southeast: "SE", south: "S", southwest: "SW", west: "W", northwest: "NW",
+  north: "N",
+  northeast: "NE",
+  east: "E",
+  southeast: "SE",
+  south: "S",
+  southwest: "SW",
+  west: "W",
+  northwest: "NW",
 };
 
 /** One item in words, as the card's row and the line write it. */
@@ -57,7 +64,13 @@ export function itemWords(item: AtcItem): string {
     case "approach":
       return `${item.cleared ? "Cleared" : "Expect"} ${item.name}${item.runway ? ` ${item.runway}` : ""} approach`;
     case "runway": {
-      const what = { land: "cleared to land", takeoff: "cleared for takeoff", option: "cleared for the option", "hold short": "hold short", "line up and wait": "line up and wait" } as const;
+      const what = {
+        land: "cleared to land",
+        takeoff: "cleared for takeoff",
+        option: "cleared for the option",
+        "hold short": "hold short",
+        "line up and wait": "line up and wait",
+      } as const;
       if (item.what === "hold short") return `Hold short runway ${item.runway}`;
       return `Runway ${item.runway}${item.what ? `, ${what[item.what]}` : ""}`;
     }
@@ -94,5 +107,9 @@ export function actionOf(item: AtcItem): ItemAction | null {
 
 /** The action's button, in Title Case (the app's labels). */
 export const ACTION_LABEL: Record<ItemAction, string> = {
-  fly: "Set Altitude", direct: "Direct To", frequency: "Set Next", squawk: "Set Code", route: "Enter Route",
+  fly: "Set Altitude",
+  direct: "Direct To",
+  frequency: "Set Next",
+  squawk: "Set Code",
+  route: "Enter Route",
 };

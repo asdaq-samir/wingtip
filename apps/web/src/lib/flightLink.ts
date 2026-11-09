@@ -10,8 +10,20 @@ import type { FlightSummary } from "./api/types";
  *  one opened again is planned as it was: they kept the route alone, and
  *  its totals differed from the ones filed (the 20 Oct audit). */
 const PICK_KEYS = [
-  "altitude_ft", "altitude_nearest", "altitude_choice", "pattern", "takeoff", "auto", "procs", "cross", "ground", "holds",
-  "class_b", "class_b_via", "alternate", "local_min",
+  "altitude_ft",
+  "altitude_nearest",
+  "altitude_choice",
+  "pattern",
+  "takeoff",
+  "auto",
+  "procs",
+  "cross",
+  "ground",
+  "holds",
+  "class_b",
+  "class_b_via",
+  "alternate",
+  "local_min",
 ] as const;
 
 /** The picks of an address, as it writes them ("pattern=KMSN%3A18&…"), or
@@ -28,14 +40,15 @@ export function picksOf(params: URLSearchParams, also: readonly string[] = []): 
  *  ahead -- from its own pilot's Flights, or their instructor's review of
  *  it. One filed before its picks were kept flies its altitude, as before. */
 export function planHrefOf(
-  f: Pick<FlightSummary, "departureIdent" | "destinationIdent" | "stops" | "cruiseAltitudeFt" | "altitudes">
-    & Partial<Pick<FlightSummary, "picks" | "plannedFor">>,
+  f: Pick<FlightSummary, "departureIdent" | "destinationIdent" | "stops" | "cruiseAltitudeFt" | "altitudes"> &
+    Partial<Pick<FlightSummary, "picks" | "plannedFor">>,
   now = Date.now(),
 ): string {
   const picks = new URLSearchParams(f.picks ?? "");
   const planned = f.plannedFor ? Date.parse(f.plannedFor) : NaN;
   const params = new URLSearchParams({
-    dep: f.departureIdent, dest: f.destinationIdent,
+    dep: f.departureIdent,
+    dest: f.destinationIdent,
     ...(f.stops.length ? { stops: f.stops.join(",") } : {}),
     ...(!f.picks && f.cruiseAltitudeFt != null ? { altitude_ft: String(f.cruiseAltitudeFt) } : {}),
     ...(f.altitudes ? { altitudes: f.altitudes } : {}),
@@ -55,9 +68,13 @@ export function recentHrefOf(route: { dep: string; dest: string; stops: string[]
 }
 
 /** A kept airport as a link to send (its card's own Share's). */
-export const placeLink = (airport: { ident: string; name?: string | null }) =>
-  ({ title: airport.name || airport.ident, url: `${location.origin}/app/plan?place=${airport.ident}` });
+export const placeLink = (airport: { ident: string; name?: string | null }) => ({
+  title: airport.name || airport.ident,
+  url: `${location.origin}/app/plan?place=${airport.ident}`,
+});
 
 /** A kept airplane as a link to send (its card's own Share's). */
-export const planeLink = (aircraft: { hex: string; name: string }) =>
-  ({ title: aircraft.name, url: `${location.origin}/app/plan?flight=${aircraft.hex}` });
+export const planeLink = (aircraft: { hex: string; name: string }) => ({
+  title: aircraft.name,
+  url: `${location.origin}/app/plan?flight=${aircraft.hex}`,
+});

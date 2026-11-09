@@ -104,7 +104,7 @@ const DAY = new Intl.DateTimeFormat("en-US", { weekday: "short", day: "numeric",
 const CLOCK = new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 const clock = (d: Date) => CLOCK.format(d);
 function dayTime(d: Date): string {
-  const part = (type: Intl.DateTimeFormatPartTypes) => DAY.formatToParts(d).find(p => p.type === type)?.value ?? "";
+  const part = (type: Intl.DateTimeFormatPartTypes) => DAY.formatToParts(d).find((p) => p.type === type)?.value ?? "";
   return `${part("weekday")} ${part("day")} ${part("month")} ${clock(d)}`;
 }
 
@@ -118,7 +118,10 @@ export function suaAltitudes(
   { midSentence = false }: { midSentence?: boolean } = {},
 ): string {
   return callEngine("sua_altitudes", {
-    floor_ft: a.floor_ft ?? null, floor_ref: a.floor_ref ?? null, ceiling_ft: a.ceiling_ft ?? null, ceiling_ref: a.ceiling_ref ?? null,
+    floor_ft: a.floor_ft ?? null,
+    floor_ref: a.floor_ref ?? null,
+    ceiling_ft: a.ceiling_ft ?? null,
+    ceiling_ref: a.ceiling_ref ?? null,
     mid_sentence: midSentence,
   });
 }

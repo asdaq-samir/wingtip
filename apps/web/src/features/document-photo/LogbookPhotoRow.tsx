@@ -17,22 +17,42 @@ import { useDocumentPhoto } from "./useDocumentPhoto";
 export function LogbookPhotoRow() {
   const photo = useDocumentPhoto("logbook-page");
   const [open, setOpen] = useState(false);
-  const close = (next: boolean) => { setOpen(next); if (!next) photo.reset(); };
+  const close = (next: boolean) => {
+    setOpen(next);
+    if (!next) photo.reset();
+  };
   const n = photo.toLog;
   return (
     <>
       <ListRow
-        title={<span className="flex items-center gap-2 font-medium text-tint"><Camera className="size-4" aria-hidden="true" />Add from a Photo</span>}
+        title={
+          <span className="flex items-center gap-2 font-medium text-tint">
+            <Camera className="size-4" aria-hidden="true" />
+            Add from a Photo
+          </span>
+        }
         description="A page of your paper logbook"
-        onClick={() => setOpen(true)} data-testid="logbook-photo"
+        onClick={() => setOpen(true)}
+        data-testid="logbook-photo"
       />
       <PhotoSheet
-        photo={photo} open={open} onOpenChange={close} title="Add from a Photo" testId="logbook-photo-sheet"
-        action={{ label: n > 1 ? `Log ${n} Flights` : "Log", onClick: () => photo.log(), disabled: !n || photo.logging, testId: "logbook-photo-log" }}
+        photo={photo}
+        open={open}
+        onOpenChange={close}
+        title="Add from a Photo"
+        testId="logbook-photo-sheet"
+        action={{
+          label: n > 1 ? `Log ${n} Flights` : "Log",
+          onClick: () => photo.log(),
+          disabled: !n || photo.logging,
+          testId: "logbook-photo-log",
+        }}
       >
         <LogbookReview photo={photo} />
         {photo.logError && (
-          <p role="alert" className={cn(FINDING_TONE.stop, TEXT.prose)}>It could not be logged: {photo.logError.message}</p>
+          <p role="alert" className={cn(FINDING_TONE.stop, TEXT.prose)}>
+            It could not be logged: {photo.logError.message}
+          </p>
         )}
       </PhotoSheet>
     </>

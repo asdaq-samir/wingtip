@@ -4,7 +4,7 @@ import { Spinner } from "../../../components/ui/spinner";
 import { diagramPicture } from "../../../lib/diagram";
 
 const ChartViewer = lazy(() => import("./AirportDiagramViewer"));
-const FaaChartViewer = lazy(() => import("./AirportDiagramViewer").then(m => ({ default: m.FaaChartViewer })));
+const FaaChartViewer = lazy(() => import("./AirportDiagramViewer").then((m) => ({ default: m.FaaChartViewer })));
 
 /**
  * The airport diagram's row, as the Chart Supplement's (ChartRow), at the
@@ -14,7 +14,13 @@ const FaaChartViewer = lazy(() => import("./AirportDiagramViewer").then(m => ({ 
  * air keeps too (keepRoute) -- its size read as it loads; where the
  * picture cannot be had, the FAA's PDF drawn in the app (FaaChartViewer).
  */
-export function DiagramRow({ ident, cycle, url, media, testId }: {
+export function DiagramRow({
+  ident,
+  cycle,
+  url,
+  media,
+  testId,
+}: {
   ident: string;
   cycle: string;
   /** The diagram's PDF on aeronav.faa.gov, where the picture fails. */
@@ -32,14 +38,24 @@ export function DiagramRow({ ident, cycle, url, media, testId }: {
     if (loading) return;
     setLoading(true);
     const picture = new Image();
-    picture.onload = () => { setLoading(false); setShown({ width: picture.naturalWidth, height: picture.naturalHeight }); };
-    picture.onerror = () => { setLoading(false); setShown(url ? "pdf" : "missing"); };
+    picture.onload = () => {
+      setLoading(false);
+      setShown({ width: picture.naturalWidth, height: picture.naturalHeight });
+    };
+    picture.onerror = () => {
+      setLoading(false);
+      setShown(url ? "pdf" : "missing");
+    };
     picture.src = src;
   };
   return (
     <>
       <ListRow
-        media={media} title="Airport diagram" onClick={open} chevron data-testid={testId}
+        media={media}
+        title="Airport diagram"
+        onClick={open}
+        chevron
+        data-testid={testId}
         aria-busy={loading || undefined}
         description={shown === "missing" ? "The airport diagram could not be loaded" : undefined}
       >
@@ -47,9 +63,11 @@ export function DiagramRow({ ident, cycle, url, media, testId }: {
       </ListRow>
       {shown && shown !== "missing" && (
         <Suspense fallback={null}>
-          {shown === "pdf"
-            ? <FaaChartViewer title={title} url={url!} airport={ident} onClose={() => setShown(null)} />
-            : <ChartViewer title={title} pages={[{ src, ...shown }]} onClose={() => setShown(null)} />}
+          {shown === "pdf" ? (
+            <FaaChartViewer title={title} url={url!} airport={ident} onClose={() => setShown(null)} />
+          ) : (
+            <ChartViewer title={title} pages={[{ src, ...shown }]} onClose={() => setShown(null)} />
+          )}
         </Suspense>
       )}
     </>
@@ -62,7 +80,13 @@ export function DiagramRow({ ident, cycle, url, media, testId }: {
  * in on (FaaChartViewer), at the pilot's ask: it opened the FAA's PDF, on
  * the FAA's site, out of the app.
  */
-export function ChartRow({ title, url, airport, media, testId }: {
+export function ChartRow({
+  title,
+  url,
+  airport,
+  media,
+  testId,
+}: {
   title: string;
   /** Its address on aeronav.faa.gov, as the card lists it. */
   url: string;

@@ -10,8 +10,8 @@ export const useLegHighlight = create<{
   shown: { key: string; lines: LatLon[][] } | null;
   toggle: (key: string, lines: LatLon[][]) => void;
   clear: () => void;
-}>(set => ({
+}>((set) => ({
   shown: null,
-  toggle: (key, lines) => set(s => ({ shown: s.shown?.key === key || lines.length === 0 ? null : { key, lines } })),
+  toggle: (key, lines) => set((s) => ({ shown: s.shown?.key === key || lines.length === 0 ? null : { key, lines } })),
   clear: () => set({ shown: null }),
 }));

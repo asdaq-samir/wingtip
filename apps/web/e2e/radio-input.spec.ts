@@ -15,18 +15,22 @@ import { settle, slow } from "./helpers";
 async function stubs(page: Page) {
   await page.addInitScript(() => {
     const w = window as unknown as Record<string, unknown>;
-    const present = [{ id: "iphone", label: "iPhone Microphone" }, { id: "gma", label: "GMA 350c" }];
+    const present = [
+      { id: "iphone", label: "iPhone Microphone" },
+      { id: "gma", label: "GMA 350c" },
+    ];
     let granted = false;
     const tracks: MediaStreamTrack[] = [];
     const starts: (string | null)[] = [];
     const devices = new EventTarget() as EventTarget & Record<string, unknown>;
-    devices.enumerateDevices = async () => (granted
-      ? present.map(d => ({ kind: "audioinput", deviceId: d.id, label: d.label, groupId: "g" }))
-      : [{ kind: "audioinput", deviceId: "", label: "", groupId: "" }]);
+    devices.enumerateDevices = async () =>
+      granted
+        ? present.map((d) => ({ kind: "audioinput", deviceId: d.id, label: d.label, groupId: "g" }))
+        : [{ kind: "audioinput", deviceId: "", label: "", groupId: "" }];
     devices.getUserMedia = (constraints: { audio: { deviceId?: { exact: string } } }) => {
       // No device asked for: the route's own, the first.
       const id = constraints.audio.deviceId?.exact ?? present[0]!.id;
-      const device = present.find(d => d.id === id);
+      const device = present.find((d) => d.id === id);
       if (!device) return Promise.reject(Object.assign(new Error("gone"), { name: "OverconstrainedError" }));
       granted = true;
       // A tone whose loudness swings with a slow second oscillator.
@@ -56,21 +60,34 @@ async function stubs(page: Page) {
     w.__starts = starts;
     // The panel switched off: its capture ends and it is no longer listed.
     w.__panelGone = () => {
-      present.splice(present.findIndex(d => d.id === "gma"), 1);
-      for (const t of tracks.filter(t => t.label === "GMA 350c")) {
+      present.splice(
+        present.findIndex((d) => d.id === "gma"),
+        1,
+      );
+      for (const t of tracks.filter((t) => t.label === "GMA 350c")) {
         t.stop();
         t.dispatchEvent(new Event("ended"));
       }
       devices.dispatchEvent(new Event("devicechange"));
     };
     class Heard {
-      lang = ""; continuous = false; interimResults = false;
-      onresult = null; onerror = null;
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult = null;
+      onerror = null;
       onend: (() => void) | null = null;
-      start(track?: MediaStreamTrack) { starts.push(track ? track.label : null); }
-      stop() { setTimeout(() => this.onend?.(), 50); }
+      start(track?: MediaStreamTrack) {
+        starts.push(track ? track.label : null);
+      }
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
     }
-    Object.assign(window, { SpeechRecognition: Object.assign(Heard, { available: async () => "available" }), webkitSpeechRecognition: Heard });
+    Object.assign(window, {
+      SpeechRecognition: Object.assign(Heard, { available: async () => "available" }),
+      webkitSpeechRecognition: Heard,
+    });
   });
 }
 
@@ -101,10 +118,13 @@ test("the Radio card finds the inputs, listens through the one picked with its l
   await expect(find).toBeVisible();
   const row = (await card.getByTestId("clearance-row-hear").boundingBox())!;
   const findBox = (await find.boundingBox())!;
-  const atRowFoot = await page.evaluate(([x, y]) => {
-    const hit = document.elementFromPoint(x!, y!);
-    return !!hit?.closest("[data-testid=clearance-row-hear]") && !hit.closest("[data-testid=listen-find]");
-  }, [findBox.x + findBox.width / 2, row.y + row.height - 2]);
+  const atRowFoot = await page.evaluate(
+    ([x, y]) => {
+      const hit = document.elementFromPoint(x!, y!);
+      return !!hit?.closest("[data-testid=clearance-row-hear]") && !hit.closest("[data-testid=listen-find]");
+    },
+    [findBox.x + findBox.width / 2, row.y + row.height - 2],
+  );
   expect(atRowFoot).toBe(true);
   // Its name on one line, not broken over two in a column too narrow.
   const name = (await card.getByTestId("listen-through").getByText("Listen through", { exact: true }).boundingBox())!;
@@ -125,10 +145,15 @@ test("the Radio card finds the inputs, listens through the one picked with its l
   // The bars are the sound: their heights change as it swings.
   const middle = hearing.getByTestId("waveform").locator("span").nth(2);
   const heights = new Set<string>();
-  await expect.poll(async () => {
-    heights.add(await middle.evaluate(el => (el as HTMLElement).style.transform));
-    return [...heights].filter(h => h !== "scaleY(0.4)").length;
-  }, { timeout: slow(10_000), intervals: [250] }).toBeGreaterThan(2);
+  await expect
+    .poll(
+      async () => {
+        heights.add(await middle.evaluate((el) => (el as HTMLElement).style.transform));
+        return [...heights].filter((h) => h !== "scaleY(0.4)").length;
+      },
+      { timeout: slow(10_000), intervals: [250] },
+    )
+    .toBeGreaterThan(2);
 
   // Listen: the captions name the input, and the recognizer was handed it.
   await card.getByTestId("clearance-toggle").click();

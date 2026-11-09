@@ -14,13 +14,30 @@ test.use({ geolocation: { latitude: 42.3246, longitude: -88.0741 }, permissions:
 const FIELD = { kind: "small", longest_runway_ft: 3500, flight_category: "VFR", military: null };
 
 test("Nearest opens as a card half way up, a field over it as a layer, and its close back to the list", async ({ page }) => {
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/nearest"), route => route.fulfill({
-    status: 200, contentType: "application/json", body: JSON.stringify({ airports: [
-      { ...FIELD, ident: "C81", name: "Campbell", lat: 42.3246, lon: -88.0741, distance_nm: 0.1, bearing_deg: 0 },
-      { ...FIELD, ident: "KUGN", name: "Waukegan National", lat: 42.4222, lon: -87.8679, distance_nm: 11, bearing_deg: 55, radio: { kind: "TWR", mhz: 120.4 } },
-      { ...FIELD, ident: "KFHU", name: "Libby AAF", lat: 42.45, lon: -88.2, distance_nm: 9, bearing_deg: 320, military: "joint" },
-    ] }),
-  }));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airports/nearest"),
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          airports: [
+            { ...FIELD, ident: "C81", name: "Campbell", lat: 42.3246, lon: -88.0741, distance_nm: 0.1, bearing_deg: 0 },
+            {
+              ...FIELD,
+              ident: "KUGN",
+              name: "Waukegan National",
+              lat: 42.4222,
+              lon: -87.8679,
+              distance_nm: 11,
+              bearing_deg: 55,
+              radio: { kind: "TWR", mhz: 120.4 },
+            },
+            { ...FIELD, ident: "KFHU", name: "Libby AAF", lat: 42.45, lon: -88.2, distance_nm: 9, bearing_deg: 320, military: "joint" },
+          ],
+        }),
+      }),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // Airport's pill's NEAREST, its title the list in full: four tabs,
@@ -33,8 +50,13 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   await sideDrawer(page).getByTestId("airport-strip-shows").click();
   await page.getByTestId("airport-shows-nearest").click();
   // With no position yet, the strip offers to show it.
-  await sideDrawer(page).getByTestId("nearest-strip-position").or(sideDrawer(page).getByTestId("nearest-strip-field").first()).first().click({ trial: true });
-  if (await sideDrawer(page).getByTestId("nearest-strip-position").isVisible()) await sideDrawer(page).getByTestId("nearest-strip-position").click();
+  await sideDrawer(page)
+    .getByTestId("nearest-strip-position")
+    .or(sideDrawer(page).getByTestId("nearest-strip-field").first())
+    .first()
+    .click({ trial: true });
+  if (await sideDrawer(page).getByTestId("nearest-strip-position").isVisible())
+    await sideDrawer(page).getByTestId("nearest-strip-position").click();
   await expect(sideDrawer(page).getByTestId("nearest-strip-field").first()).toBeVisible({ timeout: slow(15000) });
   await sideDrawer(page).getByTestId("pill-section-nearest-more").click();
   const card = sideDrawer(page).getByTestId("nearest-card");
@@ -74,36 +96,54 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   await expect(sideDrawer(page).getByTestId("navlog-scroller")).toBeVisible();
 });
 
+test(
+  "Nearest is from a place typed -- a town, an address, an airport -- and back from the position at its clear",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    const asked: string[] = [];
+    await page.route(
+      (url) => url.pathname.endsWith("/api/planner/airports/nearest"),
+      (route) => {
+        const at = new URL(route.request().url()).searchParams;
+        asked.push(`${at.get("lat")},${at.get("lon")}`);
+        return route.fulfill({
+          json: {
+            airports: [
+              { ...FIELD, ident: "KMSN", name: "Dane County Regional", lat: 43.14, lon: -89.34, distance_nm: 4.1, bearing_deg: 40 },
+            ],
+          },
+        });
+      },
+    );
+    await page.route(
+      (url) => url.pathname.endsWith("/api/planner/places/search"),
+      (route) =>
+        route.fulfill({
+          json: {
+            places: [
+              { label: "Madison, WI", kind: "town", lat: 43.0849, lon: -89.3888 },
+              { label: "Madison, AL", kind: "town", lat: 34.7, lon: -86.74 },
+            ],
+          },
+        }),
+    );
+    await page.goto("/app/plan?near=1");
+    await settle(page);
+    const card = sideDrawer(page).getByTestId("nearest-card");
+    // NRST's field is the panel's head, as the airport search's is.
+    const field = sideDrawer(page).getByTestId("nearest-from");
+    await expect(field).toHaveAttribute("placeholder", "Current position");
 
-test("Nearest is from a place typed -- a town, an address, an airport -- and back from the position at its clear", { tag: "@smoke" }, async ({ page }) => {
-  const asked: string[] = [];
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/nearest"), route => {
-    const at = new URL(route.request().url()).searchParams;
-    asked.push(`${at.get("lat")},${at.get("lon")}`);
-    return route.fulfill({ json: { airports: [
-      { ...FIELD, ident: "KMSN", name: "Dane County Regional", lat: 43.14, lon: -89.34, distance_nm: 4.1, bearing_deg: 40 },
-    ] } });
-  });
-  await page.route(url => url.pathname.endsWith("/api/planner/places/search"), route => route.fulfill({ json: { places: [
-    { label: "Madison, WI", kind: "town", lat: 43.0849, lon: -89.3888 },
-    { label: "Madison, AL", kind: "town", lat: 34.7, lon: -86.74 },
-  ] } }));
-  await page.goto("/app/plan?near=1");
-  await settle(page);
-  const card = sideDrawer(page).getByTestId("nearest-card");
-  // NRST's field is the panel's head, as the airport search's is.
-  const field = sideDrawer(page).getByTestId("nearest-from");
-  await expect(field).toHaveAttribute("placeholder", "Current position");
+    await field.fill("madison");
+    await card.getByTestId("nearest-from-option").filter({ hasText: "Madison, WI" }).click();
+    await expect(card).toContainText("Near Madison, WI");
+    await expect(page).toHaveURL(/[?&]nearAt=43\.0849%2C-89\.3888/);
+    await expect(card.getByTestId("nearest-airport")).toContainText("KMSN");
+    expect(asked).toContain("43.1,-89.4");
 
-  await field.fill("madison");
-  await card.getByTestId("nearest-from-option").filter({ hasText: "Madison, WI" }).click();
-  await expect(card).toContainText("Near Madison, WI");
-  await expect(page).toHaveURL(/[?&]nearAt=43\.0849%2C-89\.3888/);
-  await expect(card.getByTestId("nearest-airport")).toContainText("KMSN");
-  expect(asked).toContain("43.1,-89.4");
-
-  // Its clear: from the position again.
-  await sideDrawer(page).getByTestId("search-clear").click();
-  await expect(page).not.toHaveURL(/nearAt=/);
-  await expect(field).toHaveValue("");
-});
+    // Its clear: from the position again.
+    await sideDrawer(page).getByTestId("search-clear").click();
+    await expect(page).not.toHaveURL(/nearAt=/);
+    await expect(field).toHaveValue("");
+  },
+);

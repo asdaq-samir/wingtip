@@ -15,17 +15,25 @@ test.afterEach(async ({ page }) => {
 
 test("on a TV, sign-in is a code to type in on a phone, and the TV signs in once it has been", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 768, "a TV's screen");
-  await page.route(url => url.pathname === "/api/me", route => route.fulfill({ status: 204, body: "" }));
+  await page.route(
+    (url) => url.pathname === "/api/me",
+    (route) => route.fulfill({ status: 204, body: "" }),
+  );
   let asks = 0;
-  await page.route(url => url.pathname === "/api/auth/device", route => route.fulfill({
-    json: { deviceCode: "device-1", userCode: "BCDF-GHJK", verificationPath: "/tv", expiresIn: 600, interval: 1 },
-  }));
-  await page.route(url => url.pathname === "/api/auth/device/token", route => {
-    asks += 1;
-    return asks < 2
-      ? route.fulfill({ status: 202, json: { status: "pending", interval: 1 } })
-      : route.fulfill({ json: { next: "/app/plan?signed-in=tv" } });
-  });
+  await page.route(
+    (url) => url.pathname === "/api/auth/device",
+    (route) =>
+      route.fulfill({ json: { deviceCode: "device-1", userCode: "BCDF-GHJK", verificationPath: "/tv", expiresIn: 600, interval: 1 } }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/auth/device/token",
+    (route) => {
+      asks += 1;
+      return asks < 2
+        ? route.fulfill({ status: 202, json: { status: "pending", interval: 1 } })
+        : route.fulfill({ json: { next: "/app/plan?signed-in=tv" } });
+    },
+  );
   await page.goto("/app/plan?tv=webos");
   await settle(page);
   await showTabs(page);
@@ -43,13 +51,16 @@ test("on a TV, sign-in is a code to type in on a phone, and the TV signs in once
 
 test("on the phone, the TV's address opens a box for its code, and the code signs the TV in", async ({ page }) => {
   const typed: string[] = [];
-  await page.route(url => url.pathname === "/api/auth/device/approve", route => {
-    const code = (route.request().postDataJSON() as { userCode: string }).userCode;
-    typed.push(code);
-    return code.replace(/[^a-z0-9]/gi, "").toUpperCase() === "BCDFGHJK"
-      ? route.fulfill({ status: 204, body: "" })
-      : route.fulfill({ status: 404, json: { error: "No TV is showing that code now. Check it, or ask the TV for a new one." } });
-  });
+  await page.route(
+    (url) => url.pathname === "/api/auth/device/approve",
+    (route) => {
+      const code = (route.request().postDataJSON() as { userCode: string }).userCode;
+      typed.push(code);
+      return code.replace(/[^a-z0-9]/gi, "").toUpperCase() === "BCDFGHJK"
+        ? route.fulfill({ status: 204, body: "" })
+        : route.fulfill({ status: 404, json: { error: "No TV is showing that code now. Check it, or ask the TV for a new one." } });
+    },
+  );
   await page.goto("/app/plan?tv-link=1");
   await settle(page);
   const box = page.getByTestId("tv-link");

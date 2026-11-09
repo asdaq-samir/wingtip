@@ -10,9 +10,12 @@ describe("the coach's plan", () => {
   it("is the engine's for the shared fixture pilots", () => {
     for (const pilot of coachFixture.pilots) {
       const plan = callEngine("proficiency_plan", pilot.ask as never);
-      const due = Object.fromEntries(plan.due.map(d => [d.key, [d.status, d.until]]));
+      const due = Object.fromEntries(plan.due.map((d) => [d.key, [d.status, d.until]]));
       expect(due, pilot.name).toEqual(pilot.expected.due);
-      expect(plan.sessions.map(s => [s.key, s.place?.ident ?? null]), pilot.name).toEqual(pilot.expected.sessions);
+      expect(
+        plan.sessions.map((s) => [s.key, s.place?.ident ?? null]),
+        pilot.name,
+      ).toEqual(pilot.expected.sessions);
     }
   });
 
@@ -36,12 +39,18 @@ describe("the coach's plan", () => {
 
   it("trims an approach's debrief to its profile, findings and the field's elevation", () => {
     const a = {
-      airport: "KMSN", findings: [{ tone: "stop", text: "Below the glide slope's full scale for 0.4 nm" }],
+      airport: "KMSN",
+      findings: [{ tone: "stop", text: "Below the glide slope's full scale for 0.4 nm" }],
       profile: { track: [{ toGoNm: 1, altFt: 1300, off: true }], fixes: [], glidepath: null },
     } as unknown as ApproachDebrief;
     expect(approachDebrief(a, 887, "2026-10-25")).toEqual({
-      kind: "approach", flown_on: "2026-10-25", place: "KMSN", elevation_ft: 887,
-      profile: [{ to_go_nm: 1, alt_ft: 1300, off: true }], legs: [], patterns: [],
+      kind: "approach",
+      flown_on: "2026-10-25",
+      place: "KMSN",
+      elevation_ft: 887,
+      profile: [{ to_go_nm: 1, alt_ft: 1300, off: true }],
+      legs: [],
+      patterns: [],
       findings: [{ tone: "stop", text: "Below the glide slope's full scale for 0.4 nm" }],
     });
   });

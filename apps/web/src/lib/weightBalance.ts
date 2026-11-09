@@ -39,9 +39,7 @@ export interface Balance {
 
 /** The loading's own sample (its POH's), and a pilot of 170 lb. */
 export function defaultLoad(loading: Loading, fuelGal: number): Load {
-  const d = callEngine("gonogo_default_load", {
-    loading, fuel_gal: fuelGal,
-  });
+  const d = callEngine("gonogo_default_load", { loading, fuel_gal: fuelGal });
   return { emptyWeightLb: d.empty_weight_lb, emptyArmIn: d.empty_arm_in, stationsLb: d.stations_lb, fuelGal: d.fuel_gal };
 }
 
@@ -52,12 +50,11 @@ export function defaultLoad(loading: Loading, fuelGal: number): Load {
  * each station's and the baggage's own most.
  */
 export function balance(loading: Loading, load: Load, tripFuelGal: number | null): Balance {
-  const b = callEngine(
-    "gonogo_balance", {
-      loading,
-      load: { empty_weight_lb: load.emptyWeightLb, empty_arm_in: load.emptyArmIn, stations_lb: load.stationsLb, fuel_gal: load.fuelGal },
-      trip_fuel_gal: tripFuelGal,
-    });
+  const b = callEngine("gonogo_balance", {
+    loading,
+    load: { empty_weight_lb: load.emptyWeightLb, empty_arm_in: load.emptyArmIn, stations_lb: load.stationsLb, fuel_gal: load.fuelGal },
+    trip_fuel_gal: tripFuelGal,
+  });
   // The engine's arm is null where the weight is zero (no centre of
   // gravity); it stays null for the pages to say so.
   const condition = (c: { weight_lb: number; arm_in: number | null }): Condition => ({ weightLb: c.weight_lb, armIn: c.arm_in });

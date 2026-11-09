@@ -46,8 +46,6 @@ interface WebRecognition {
 }
 type WebRecognitionClass = new () => WebRecognition;
 
-
-
 /**
  * Whether the browser's recognizer hears the track it is handed
  * (start(track)): Chrome and Edge 135+ on Windows, Mac and Linux, and
@@ -74,10 +72,14 @@ export function takesTrack(): boolean {
  *  26.x), and every browser on an iPhone or iPad is WebKit; elsewhere a
  *  reload asks again. */
 export function noMicrophone(): string {
-  const ua = typeof navigator !== "undefined" ? navigator.userAgent ?? "" : "";
+  const ua = typeof navigator !== "undefined" ? (navigator.userAgent ?? "") : "";
   // iPadOS's Safari says it is a Mac; a touch screen gives it away.
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints ?? 0) > 1);
-  const again = !ios ? "reload the page" : /CriOS|FxiOS|EdgiOS/.test(ua) ? "close the browser and open it again" : "close Safari and open it again";
+  const again = !ios
+    ? "reload the page"
+    : /CriOS|FxiOS|EdgiOS/.test(ua)
+      ? "close the browser and open it again"
+      : "close Safari and open it again";
   return `No microphone could be used. If a Bluetooth audio panel or headset was the input, check it is still connected; if it is, ${again}.`;
 }
 
@@ -90,7 +92,7 @@ const NOT_HERE = "Speech can't be recognised on this device; type the clearance 
  *  so sent pilots looking for one. */
 function errorWords(code: string): string {
   if (code === "not-allowed" || code === "service-not-allowed" || code === "refused") {
-    const ua = typeof navigator !== "undefined" ? navigator.userAgent ?? "" : "";
+    const ua = typeof navigator !== "undefined" ? (navigator.userAgent ?? "") : "";
     const safari = /Safari\//.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS|Edg\//.test(ua);
     return `Microphone or speech recognition access was refused; allow it in ${safari ? "Safari's" : "the browser's"} settings for this website.`;
   }
@@ -118,20 +120,26 @@ interface Listening {
  * this returns, with no await before it, straight from the tap.
  */
 export async function listen(
-  _words: string[], _callPattern: string | undefined, onHeard: OnHeard, onEnded: OnEnded,
+  _words: string[],
+  _callPattern: string | undefined,
+  onHeard: OnHeard,
+  onEnded: OnEnded,
   track?: () => MediaStreamTrack | null,
 ): Promise<Listening> {
   const Recognition = recognitionClass() as WebRecognitionClass | null;
   // Where the language pack is there, no await before the start; else it
   // is fetched first, from the pilot's tap; where the browser cannot keep
   // it on the device, its own recognizer (lib/speechLocal).
-  if (!Recognition || !(readyNow() || await readyLocally())) {
+  if (!Recognition || !(readyNow() || (await readyLocally()))) {
     onEnded(NOT_HERE);
     return { stop: () => {}, renew: () => {} };
   }
   // A browser's recognizer ends by itself after a while, quiet or not:
   // started again until the pilot stops it, its transmissions numbered on.
-  let stopped = false, failed: string | undefined, base = 0, seen = 0;
+  let stopped = false,
+    failed: string | undefined,
+    base = 0,
+    seen = 0;
   const begin = () => {
     const recognition = new Recognition();
     // Stopped by `renew` to start again on another input: what it says
@@ -141,14 +149,14 @@ export async function listen(
     recognition.lang = SPEECH_LANG;
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.onresult = event => {
+    recognition.onresult = (event) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]!;
         onHeard(base + i, (result[0]?.transcript ?? "").trim(), result.isFinal);
         seen = Math.max(seen, i + 1);
       }
     };
-    recognition.onerror = event => {
+    recognition.onerror = (event) => {
       // Quiet is no failure while listening to a radio.
       if (!retired && !["aborted", "no-speech"].includes(event.error)) failed = errorWords(event.error);
     };
@@ -162,12 +170,23 @@ export async function listen(
       current = begin();
     };
     startOn(recognition, track?.() ?? null);
-    return { recognition, retire: () => { retired = true; recognition.stop(); } };
+    return {
+      recognition,
+      retire: () => {
+        retired = true;
+        recognition.stop();
+      },
+    };
   };
   let current = begin();
   return {
-    stop: () => { stopped = true; current.recognition.stop(); },
-    renew: () => { if (!stopped) current.retire(); },
+    stop: () => {
+      stopped = true;
+      current.recognition.stop();
+    },
+    renew: () => {
+      if (!stopped) current.retire();
+    },
   };
 }
 

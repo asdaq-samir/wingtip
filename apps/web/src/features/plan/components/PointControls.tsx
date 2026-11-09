@@ -18,7 +18,13 @@ type AltitudeKind = "elev" | "cruise" | "pub" | "set";
  * depart/arrive and waypoints"): its time over its altitude, the
  * altitude's kind after it, small; the pilot's own in the tint.
  */
-export function PointFigures({ time, altitude, kind, spoken, testId = "point-figures" }: {
+export function PointFigures({
+  time,
+  altitude,
+  kind,
+  spoken,
+  testId = "point-figures",
+}: {
   /** Its time, or the picker for it where the airplane leaves. */
   time: ReactNode;
   /** The altitude, or the chart's crossing as it is drawn; none known, none. */
@@ -36,16 +42,23 @@ export function PointFigures({ time, altitude, kind, spoken, testId = "point-fig
     <span className={cn("flex shrink-0 flex-col items-end tabular-nums leading-tight", TEXT.detail)} data-testid={testId}>
       {typeof time === "string" ? <span className="font-semibold">{time}</span> : time}
       {altitude != null && (
-        <span className={kind === "set" ? "font-semibold text-tint" : "text-muted-foreground"} data-testid="point-altitude-figure" data-kind={kind}>
+        <span
+          className={kind === "set" ? "font-semibold text-tint" : "text-muted-foreground"}
+          data-testid="point-altitude-figure"
+          data-kind={kind}
+        >
           {/* "pub", "elev" and a line over or under a figure are for the
               eye; VoiceOver says them in words (the audit's finding). */}
           {/* The field's elevation with the mountain, an altitude flown or
               set with the arrow up, at the owner's ask ("Elevation can have
               an icon like wind does"). */}
           <span aria-hidden="true" className="inline-flex items-center gap-0.5">
-            {kind === "elev" ? <Mountain className="size-3.5 shrink-0" /> : <ArrowUp className="size-3.5 shrink-0" />}{altitude} ft
+            {kind === "elev" ? <Mountain className="size-3.5 shrink-0" /> : <ArrowUp className="size-3.5 shrink-0" />}
+            {altitude} ft
           </span>
-          <span className="sr-only">{spoken ?? (typeof altitude === "string" ? `${altitude} ft, ${KIND_WORDS[kind]}` : KIND_WORDS[kind])}</span>
+          <span className="sr-only">
+            {spoken ?? (typeof altitude === "string" ? `${altitude} ft, ${KIND_WORDS[kind]}` : KIND_WORDS[kind])}
+          </span>
         </span>
       )}
     </span>
@@ -53,9 +66,7 @@ export function PointFigures({ time, altitude, kind, spoken, testId = "point-fig
 }
 
 /** Each altitude's kind said in words. */
-const KIND_WORDS: Record<AltitudeKind, string> = {
-  elev: "field elevation", cruise: "planned cruise", pub: "published", set: "set by you",
-};
+const KIND_WORDS: Record<AltitudeKind, string> = { elev: "field elevation", cruise: "planned cruise", pub: "published", set: "set by you" };
 
 /** What can be done at a point of the route, each there only where the
  *  point has it: the same items in FPL's "⋯" (PointMenu) and the route
@@ -85,38 +96,72 @@ interface PointActions {
 }
 
 /** The point's items, in one order and one set of words, for either menu. */
-export function PointMenuItems({ actions: a, kit, later, testId }: {
-  actions: PointActions; kit: MenuKit; later: ReturnType<typeof useAfterMenu>["later"]; testId: string;
+export function PointMenuItems({
+  actions: a,
+  kit,
+  later,
+  testId,
+}: {
+  actions: PointActions;
+  kit: MenuKit;
+  later: ReturnType<typeof useAfterMenu>["later"];
+  testId: string;
 }) {
   const { Item, Label, Separator, Shortcut } = kit;
   return (
     <>
       <Label>{a.ident}</Label>
-      {a.onChange && <Item onSelect={later(a.onChange, true)} data-testid={`${testId}-change`}><Pencil aria-hidden="true" />Change</Item>}
+      {a.onChange && (
+        <Item onSelect={later(a.onChange, true)} data-testid={`${testId}-change`}>
+          <Pencil aria-hidden="true" />
+          Change
+        </Item>
+      )}
       {a.onDirect && (
         <Item onSelect={a.onDirect} data-testid={`${testId}-direct`}>
-          <MoveUpRight aria-hidden="true" />{a.direct ? "Fly as Planned" : "Direct To"}
+          <MoveUpRight aria-hidden="true" />
+          {a.direct ? "Fly as Planned" : "Direct To"}
         </Item>
       )}
       {a.onAltitude && (
         <Item onSelect={later(a.onAltitude)} data-testid={`${testId}-altitude`}>
-          <MoveVertical aria-hidden="true" />Set Altitude…
+          <MoveVertical aria-hidden="true" />
+          Set Altitude…
           {a.altitude != null && <Shortcut className="flex items-center gap-1 tracking-normal tabular-nums">{a.altitude}</Shortcut>}
         </Item>
       )}
-      {a.onFix && <Item onSelect={later(a.onFix)} data-testid={`${testId}-fix`}><Crosshair aria-hidden="true" />Create a Fix from Here…</Item>}
-      {a.onHold && (
-        <Item onSelect={later(a.onHold)} data-testid={`${testId}-hold`}>
-          <Repeat2 aria-hidden="true" />{a.held ? "Change Hold…" : "Hold Here…"}
+      {a.onFix && (
+        <Item onSelect={later(a.onFix)} data-testid={`${testId}-fix`}>
+          <Crosshair aria-hidden="true" />
+          Create a Fix from Here…
         </Item>
       )}
-      {a.onInfo && <Item onSelect={later(a.onInfo)} data-testid={`${testId}-info`}><Info aria-hidden="true" />More Info</Item>}
-      {a.onAddAfter && <Item onSelect={later(a.onAddAfter, true)} data-testid={`${testId}-add-after`}><Plus aria-hidden="true" />Add a Stop After</Item>}
+      {a.onHold && (
+        <Item onSelect={later(a.onHold)} data-testid={`${testId}-hold`}>
+          <Repeat2 aria-hidden="true" />
+          {a.held ? "Change Hold…" : "Hold Here…"}
+        </Item>
+      )}
+      {a.onInfo && (
+        <Item onSelect={later(a.onInfo)} data-testid={`${testId}-info`}>
+          <Info aria-hidden="true" />
+          More Info
+        </Item>
+      )}
+      {a.onAddAfter && (
+        <Item onSelect={later(a.onAddAfter, true)} data-testid={`${testId}-add-after`}>
+          <Plus aria-hidden="true" />
+          Add a Stop After
+        </Item>
+      )}
       {a.onRemove && (
         <>
           <Separator />
           {/* The one word, at the pilot's ask of the pill's menu. */}
-          <Item variant="destructive" onSelect={a.onRemove} data-testid={`${testId}-remove`}><Trash2 aria-hidden="true" />Remove</Item>
+          <Item variant="destructive" onSelect={a.onRemove} data-testid={`${testId}-remove`}>
+            <Trash2 aria-hidden="true" />
+            Remove
+          </Item>
         </>
       )}
     </>
@@ -140,7 +185,10 @@ export function PointMenu({ testId = "point-menu", face, ...actions }: PointActi
       <DropdownMenuTrigger asChild>
         {face ? (
           <button
-            type="button" aria-label={`${actions.ident}: more`} data-testid={testId} data-point-mark=""
+            type="button"
+            aria-label={`${actions.ident}: more`}
+            data-testid={testId}
+            data-point-mark=""
             // A round glass button round the symbol, as the app's other
             // buttons are, so it reads as one, at the owner's pick (option A,
             // 2026-10-22: "make the airport icons actually look like
@@ -150,7 +198,10 @@ export function PointMenu({ testId = "point-menu", face, ...actions }: PointActi
             // centred on the route's line as the bare symbol was, and on the
             // point's two lines, at the owner's ask ("Center it on the two
             // lines"): its column centres it (ProceduresRoute).
-            className={cn("relative -mx-1 grid size-9 shrink-0 place-items-center rounded-full outline-none after:absolute after:-inset-1 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring", GLASS_BUTTON)}
+            className={cn(
+              "relative -mx-1 grid size-9 shrink-0 place-items-center rounded-full outline-none after:absolute after:-inset-1 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+              GLASS_BUTTON,
+            )}
           >
             {face}
           </button>

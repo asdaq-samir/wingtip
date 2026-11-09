@@ -14,8 +14,8 @@ export const ALERT_MODES: { value: AlertMode; label: string }[] = [
 ];
 
 export function useAlertMode(): [AlertMode, (mode: AlertMode) => void] {
-  const alerts = usePreferences(s => s.alerts);
-  const spoken = usePreferences(s => s.speakAlerts);
+  const alerts = usePreferences((s) => s.alerts);
+  const spoken = usePreferences((s) => s.speakAlerts);
   const mode: AlertMode = !alerts ? "off" : spoken ? "spoken" : "on";
   const set = (next: AlertMode) => {
     const prefs = usePreferences.getState();

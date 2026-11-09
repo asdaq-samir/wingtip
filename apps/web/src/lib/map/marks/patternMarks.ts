@@ -24,8 +24,11 @@ export const PATTERN_WORDS_FROM_ZOOM = 11;
 /** An arrowhead the way a leg is flown, at its middle. */
 export function arrowIcon(bearing: number) {
   return divIcon({
-    className: "", iconSize: [16, 16], iconAnchor: [8, 8],
-    html: `<svg viewBox="-8 -8 16 16" width="16" height="16" style="transform:rotate(${Math.round(bearing)}deg)" aria-hidden="true">` +
+    className: "",
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+    html:
+      `<svg viewBox="-8 -8 16 16" width="16" height="16" style="transform:rotate(${Math.round(bearing)}deg)" aria-hidden="true">` +
       `<path d="M0 -6 L5 4 L0 1.5 L-5 4 Z" fill="${TEAL}" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
   });
 }
@@ -37,8 +40,9 @@ const labelWidth = (words: string) => Math.ceil(words.length * 6.6) + 12;
 export function labelIcon(words: string) {
   const width = labelWidth(words);
   return divIcon({
-    className: "", iconSize: [width, 18], iconAnchor: [width / 2, 9],
+    className: "",
+    iconSize: [width, 18],
+    iconAnchor: [width / 2, 9],
     html: `<span class="absolute inset-0 grid place-items-center whitespace-nowrap rounded-md text-[11px] leading-none font-bold text-white shadow-sm" style="background:${LABEL_TEAL}">${words.replace(/[<>&]/g, "")}</span>`,
   });
 }
-

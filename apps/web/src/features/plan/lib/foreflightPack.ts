@@ -52,5 +52,5 @@ export function packSent(route: string, names: string[]): boolean {
 /** That it has, kept for the next time the route goes to ForeFlight. */
 export function markPackSent(route: string, names: string[]): void {
   // A private window keeps none: the pack goes again next time.
-  sentPacks().setState(s => ({ value: { ...s.value, [route]: names.join(" ") } }));
+  sentPacks().setState((s) => ({ value: { ...s.value, [route]: names.join(" ") } }));
 }

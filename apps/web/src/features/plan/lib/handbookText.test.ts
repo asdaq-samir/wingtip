@@ -48,9 +48,7 @@ Fuel Consumption (gal per hr 75%) 8.4
 
 Fuel Consumption (gal per hr 50%) 5.6
 *WITH FENDERS INSTALLED`;
-    expect(values(page)).toEqual({
-      serviceCeilingFt: 14300, climbTasKt: 74, cruiseTasKt: 115, cruisePowerPct: 75, fuelBurnGph: 8.4,
-    });
+    expect(values(page)).toEqual({ serviceCeilingFt: 14300, climbTasKt: 74, cruiseTasKt: 115, cruisePowerPct: 75, fuelBurnGph: 8.4 });
     expect(figuresOfPage(page).serviceCeilingFt!.words).toBe("Service Ceiling (ft) 14,300");
   });
 

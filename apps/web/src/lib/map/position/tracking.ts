@@ -38,16 +38,24 @@ interface Tracking {
 }
 
 export const useTracking = create<Tracking>(() => ({
-  hex: null, listing: false, follow: true, latest: null, path: [], seen: [], pick: null,
+  hex: null,
+  listing: false,
+  follow: true,
+  latest: null,
+  path: [],
+  seen: [],
+  pick: null,
 }));
 
 /** A flight tracked from now, the map following it; its report where the
  *  one picking it has it (a row of the list, a search's answer), so its
  *  card and the map have it at once. */
 export function track(hex: string | null, plane?: TrafficAircraft) {
-  useTracking.setState(s => (s.hex === hex
-    ? {}
-    : { hex, follow: true, path: [], latest: hex && plane ? { plane, at: Date.now() - (plane.seen_s ?? 0) * 1000 } : null }));
+  useTracking.setState((s) =>
+    s.hex === hex
+      ? {}
+      : { hex, follow: true, path: [], latest: hex && plane ? { plane, at: Date.now() - (plane.seen_s ?? 0) * 1000 } : null },
+  );
 }
 
 /** At most this many points of a tracked flight's path since its trace. */
@@ -59,7 +67,7 @@ export function reported(report: Report) {
   // airplane in each answer, and a set of nothing still woke every
   // reader of the store, once an airplane.
   if (report.plane.hex !== useTracking.getState().hex) return;
-  useTracking.setState(s => {
+  useTracking.setState((s) => {
     if (report.plane.hex !== s.hex || (s.latest && report.at <= s.latest.at && s.latest.plane.hex === s.hex)) return {};
     const point = { t: report.at, lat: report.plane.lat, lon: report.plane.lon, altFt: report.plane.altitude_ft ?? null };
     return { latest: report, path: [...s.path, point].slice(-PATH_POINTS) };

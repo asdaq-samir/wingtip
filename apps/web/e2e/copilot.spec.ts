@@ -12,13 +12,19 @@ import { openMapSettings, openPanel, openProfile, settle, sideDrawer, slow } fro
  */
 
 type Field = { ident: string; metar: { raw: string | null; flight_category: string | null } | null; planned_category?: string };
-const FIELDS = (JSON.parse(readFileSync(new URL("../src/lib/fixtures/copilot.json", import.meta.url), "utf8")) as { base: { fields: Field[] } }).base.fields;
+const FIELDS = (
+  JSON.parse(readFileSync(new URL("../src/lib/fixtures/copilot.json", import.meta.url), "utf8")) as { base: { fields: Field[] } }
+).base.fields;
 const IFR = "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992";
 
 async function stubAround(page: Page) {
-  const fields = FIELDS.map(({ planned_category: _, ...f }) => (f.ident === "KOSH" ? { ...f, metar: { raw: IFR, flight_category: "IFR" } } : f));
-  await page.route(url => url.pathname.endsWith("/copilot/around"), route =>
-    route.fulfill({ json: { fields, areas: [], itws: [], unavailable: [], at: Date.now() / 1000 } }));
+  const fields = FIELDS.map(({ planned_category: _, ...f }) =>
+    f.ident === "KOSH" ? { ...f, metar: { raw: IFR, flight_category: "IFR" } } : f,
+  );
+  await page.route(
+    (url) => url.pathname.endsWith("/copilot/around"),
+    (route) => route.fulfill({ json: { fields, areas: [], itws: [], unavailable: [], at: Date.now() / 1000 } }),
+  );
 }
 
 async function startDryRun(page: Page) {

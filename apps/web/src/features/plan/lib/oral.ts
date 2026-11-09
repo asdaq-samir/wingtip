@@ -31,7 +31,7 @@ interface PlanFacts {
  *  cannot be told plainly. */
 export function planFacts(f: PlanFacts): string {
   const lines: string[] = [];
-  lines.push(`Route: ${f.route.map(a => a.ident + (a.name ? ` (${a.name})` : "")).join(" to ")}.`);
+  lines.push(`Route: ${f.route.map((a) => a.ident + (a.name ? ` (${a.name})` : "")).join(" to ")}.`);
   for (const a of f.route) {
     const bits = [
       a.airspaceClass && `Class ${a.airspaceClass} at the surface`,
@@ -73,13 +73,13 @@ export function nextFocus(table: AcsTable, testCodes: string[], asked: string[],
     const found = lookUp(table, code);
     return found ? `${found.task}${found.element ? `: ${found.element}` : ""}` : null;
   };
-  const fresh = (codes: string[]) => codes.filter(c => !asked.includes(c) && words(c));
+  const fresh = (codes: string[]) => codes.filter((c) => !asked.includes(c) && words(c));
   let pool = fresh(testCodes);
   if (pool.length === 0) {
-    pool = fresh(Object.keys(table.elements).filter(c => CROSS_COUNTRY.some(t => c.startsWith(`${t}.`)) && /\.[KR]\d+$/.test(c)));
+    pool = fresh(Object.keys(table.elements).filter((c) => CROSS_COUNTRY.some((t) => c.startsWith(`${t}.`)) && /\.[KR]\d+$/.test(c)));
   }
-  if (pool.length === 0) pool = fresh(Object.keys(table.elements).filter(c => c.startsWith("PA.")));
+  if (pool.length === 0) pool = fresh(Object.keys(table.elements).filter((c) => c.startsWith("PA.")));
   const chosen: string[] = [];
   while (chosen.length < 3 && pool.length) chosen.push(pool.splice(Math.floor(random() * pool.length), 1)[0]!);
-  return chosen.map(code => ({ code, text: words(code)!.slice(0, 400) }));
+  return chosen.map((code) => ({ code, text: words(code)!.slice(0, 400) }));
 }

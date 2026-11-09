@@ -15,7 +15,14 @@ type AddressCards = ReturnType<typeof useAddressCards>;
  * the page opens, an airport's card's pin, a departure typed alone, and
  * Nearest's fields with own ship; with where a card measures from.
  */
-export function useMapPins({ place, heldPoint, nearFrom, nearOpen, planned, course }: {
+export function useMapPins({
+  place,
+  heldPoint,
+  nearFrom,
+  nearOpen,
+  planned,
+  course,
+}: {
   place: string | null;
   heldPoint: AddressCards["heldPoint"];
   /** The place typed in Nearest's field, where there is one. */
@@ -59,7 +66,9 @@ export function useMapPins({ place, heldPoint, nearFrom, nearOpen, planned, cour
   // Not a present position, where the map is already.
   const depAlone = !!planned.dep && !planned.dest && !planned.dep.startsWith("@");
   const { data: depData } = useQuery({ ...airportQuery(`${planned.dep}`), enabled: depAlone });
-  const depIdent = depAlone ? depData?.ident ?? null : null, depLat = depData?.lat, depLon = depData?.lon;
+  const depIdent = depAlone ? (depData?.ident ?? null) : null,
+    depLat = depData?.lat,
+    depLon = depData?.lon;
   const startPin = useMemo(
     () => (depIdent && depLat != null && depLon != null ? { ident: depIdent, lat: depLat, lon: depLon } : null),
     [depIdent, depLat, depLon],
@@ -70,11 +79,15 @@ export function useMapPins({ place, heldPoint, nearFrom, nearOpen, planned, cour
   // (RouteMap's FitTo): the card's own question, shared.
   // From the place typed in it where there is one.
   const nearOrigin = nearFrom ?? fix;
-  const { data: nearestData } = useQuery({ ...nearestQuery(nearOrigin?.lat ?? 0, nearOrigin?.lon ?? 0), enabled: nearOpen && !!nearOrigin });
+  const { data: nearestData } = useQuery({
+    ...nearestQuery(nearOrigin?.lat ?? 0, nearOrigin?.lon ?? 0),
+    enabled: nearOpen && !!nearOrigin,
+  });
   const nearestPoints = useMemo(
-    () => (nearOrigin && nearestData
-      ? [{ ident: nearFrom ? nearFrom.label : "own ship", lat: nearOrigin.lat, lon: nearOrigin.lon }, ...nearestData]
-      : null),
+    () =>
+      nearOrigin && nearestData
+        ? [{ ident: nearFrom ? nearFrom.label : "own ship", lat: nearOrigin.lat, lon: nearOrigin.lon }, ...nearestData]
+        : null,
     [nearOrigin, nearFrom, nearestData],
   );
   // How far the card's airport is where own ship has no fix: from the

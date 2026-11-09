@@ -44,7 +44,10 @@ export function useProgressToast(progress: string | null) {
     return () => window.clearTimeout(later);
   }, [progress]);
 
-  useEffect(() => () => {
-    toast.dismiss(PROGRESS_ID);
-  }, []);
+  useEffect(
+    () => () => {
+      toast.dismiss(PROGRESS_ID);
+    },
+    [],
+  );
 }

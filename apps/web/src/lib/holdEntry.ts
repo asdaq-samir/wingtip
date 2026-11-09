@@ -18,7 +18,11 @@ import { callEngine } from "./engine/engine";
 export type Entry = "direct" | "teardrop" | "parallel";
 export type Turns = "right" | "left";
 
-interface Leg { heading: number; wca: number; gs: number }
+interface Leg {
+  heading: number;
+  wca: number;
+  gs: number;
+}
 
 /** The inbound leg's time at an altitude, minutes: "At or below 14,000
  *  feet MSL: 1 minute. Above 14,000 feet MSL: 1 1/2 minutes" (AIM 5-3-8
@@ -77,12 +81,29 @@ interface HoldingWind {
 /** The legs flown in a wind from `windFromDeg` at `windKt` at `tasKt`, the
  *  courses and the wind in the same reference (magnetic, as a clearance
  *  gives the course). Null where the wind is stronger than the airplane. */
-export function holdingWind(inboundDeg: number, tasKt: number, windFromDeg: number, windKt: number, altitudeFt: number): HoldingWind | null {
+export function holdingWind(
+  inboundDeg: number,
+  tasKt: number,
+  windFromDeg: number,
+  windKt: number,
+  altitudeFt: number,
+): HoldingWind | null {
   const { wind } = callEngine("holding", {
-    inbound: inboundDeg, heading: inboundDeg, tas_kt: tasKt, wind_from: windFromDeg, wind_kt: windKt, altitude_ft: altitudeFt,
+    inbound: inboundDeg,
+    heading: inboundDeg,
+    tas_kt: tasKt,
+    wind_from: windFromDeg,
+    wind_kt: windKt,
+    altitude_ft: altitudeFt,
   });
   if (!wind) return null;
   const leg = (l: Leg): Leg => ({ heading: l.heading, wca: l.wca, gs: l.gs });
-  return { legMin: wind.leg_min, inbound: leg(wind.inbound), outbound: leg(wind.outbound), outboundSec: wind.outbound_sec, ruleSec: wind.rule_sec,
-    words: { inbound: wind.inbound_words, outbound: wind.outbound_words, time: wind.time_words } };
+  return {
+    legMin: wind.leg_min,
+    inbound: leg(wind.inbound),
+    outbound: leg(wind.outbound),
+    outboundSec: wind.outbound_sec,
+    ruleSec: wind.rule_sec,
+    words: { inbound: wind.inbound_words, outbound: wind.outbound_words, time: wind.time_words },
+  };
 }

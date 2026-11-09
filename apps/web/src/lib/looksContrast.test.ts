@@ -39,7 +39,13 @@ const SURFACES = ["--background", "--card", "--popover", "--muted", "--sheet"];
  *  and at night it is 3.7:1 as words, so nothing sets text-primary), and
  *  each state's words (text-caution, text-destructive and their inks). */
 const WORDS = [
-  "--foreground", "--muted-foreground", "--tint", "--caution", "--caution-ink", "--go-ink", "--destructive",
+  "--foreground",
+  "--muted-foreground",
+  "--tint",
+  "--caution",
+  "--caution-ink",
+  "--go-ink",
+  "--destructive",
   "--destructive-ink",
 ];
 /** Words on their own fills: each pair as a component sets it. */
@@ -56,11 +62,11 @@ const ON_FILL: [string, string][] = [
  *  not held here (WCAG 1.4.11's "visual information required to identify"). */
 const NON_TEXT = ["--ring", "--caution", "--go", "--destructive"];
 
-describe.each(LOOKS)("$name", look => {
+describe.each(LOOKS)("$name", (look) => {
   const t = lookTokens(css, look);
   const c = (name: string) => colour(t[name], `${look.name} ${name}`);
 
-  it.each(WORDS.flatMap(w => SURFACES.map(s => [w, s] as const)))("%s reads 4.5:1 or more on %s", (word, surface) => {
+  it.each(WORDS.flatMap((w) => SURFACES.map((s) => [w, s] as const)))("%s reads 4.5:1 or more on %s", (word, surface) => {
     expect(contrast(c(word), c(surface))).toBeGreaterThanOrEqual(4.5);
   });
 
@@ -68,7 +74,7 @@ describe.each(LOOKS)("$name", look => {
     expect(contrast(c(word), c(fill))).toBeGreaterThanOrEqual(4.5);
   });
 
-  it.each(NON_TEXT.flatMap(u => SURFACES.map(s => [u, s] as const)))("%s marks 3:1 or more on %s", (mark, surface) => {
+  it.each(NON_TEXT.flatMap((u) => SURFACES.map((s) => [u, s] as const)))("%s marks 3:1 or more on %s", (mark, surface) => {
     expect(contrast(c(mark), c(surface))).toBeGreaterThanOrEqual(3);
   });
 
@@ -76,7 +82,9 @@ describe.each(LOOKS)("$name", look => {
     const wash = t["--caution-wash"] ?? "";
     const alpha = Number(/\/\s*([\d.]+)%/.exec(wash)?.[1] ?? 100) / 100;
     for (const surface of ["--card", "--background"]) {
-      expect(contrast(c("--caution-ink"), over(colour(wash.replace(/\s*\/\s*[\d.]+%\)/, ")"), "wash"), alpha, c(surface)))).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrast(c("--caution-ink"), over(colour(wash.replace(/\s*\/\s*[\d.]+%\)/, ")"), "wash"), alpha, c(surface))),
+      ).toBeGreaterThanOrEqual(4.5);
     }
   });
 });

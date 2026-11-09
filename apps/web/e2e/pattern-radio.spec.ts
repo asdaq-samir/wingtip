@@ -9,24 +9,45 @@ import { settle, sideDrawer, slow, openTab, openSection } from "./helpers";
  * card has one answer.
  */
 test("each field's pattern for the runway into the wind, and its calls in order", async ({ page }) => {
-  await page.route("**/api/planner/briefing?*", async route => {
+  await page.route("**/api/planner/briefing?*", async (route) => {
     const response = await route.fetch();
     const json = await response.json();
-    json.airports.KDLH.runways = [{
-      ends: "09/27", length_ft: 5718, width_ft: 150, surface: "ASP", lighted: true, closed: false,
-      wind: { end: "27", headwind_kt: 12, crosswind_kt: 3 },
-      runway_ends: [{ ident: "09", heading_true_deg: 92, traffic: "left" }, { ident: "27", heading_true_deg: 272, traffic: "right" }],
-    }];
+    json.airports.KDLH.runways = [
+      {
+        ends: "09/27",
+        length_ft: 5718,
+        width_ft: 150,
+        surface: "ASP",
+        lighted: true,
+        closed: false,
+        wind: { end: "27", headwind_kt: 12, crosswind_kt: 3 },
+        runway_ends: [
+          { ident: "09", heading_true_deg: 92, traffic: "left" },
+          { ident: "27", heading_true_deg: 272, traffic: "right" },
+        ],
+      },
+    ];
     await route.fulfill({ response, json });
   });
 
   // And the wind forecast at its arrival from the west, as the runways'
   // own: the runway picked into the wind follows the forecast's (the
   // planner's forecast-wind), which said 080° in CI on 2026-10-22.
-  await page.route(url => url.pathname.endsWith("/KDLH/forecast-wind"), route => route.fulfill({ json: {
-    ident: "KDLH", distance_nm: 0, dir_true_deg: 270, speed_kt: 12, gust_kt: null,
-    valid_from: Date.now() / 1000 - 3600, valid_to: Date.now() / 1000 + 6 * 3600,
-  } }));
+  await page.route(
+    (url) => url.pathname.endsWith("/KDLH/forecast-wind"),
+    (route) =>
+      route.fulfill({
+        json: {
+          ident: "KDLH",
+          distance_nm: 0,
+          dir_true_deg: 270,
+          speed_kt: 12,
+          gust_kt: null,
+          valid_from: Date.now() / 1000 - 3600,
+          valid_to: Date.now() / 1000 + 6 * 3600,
+        },
+      }),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });

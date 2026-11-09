@@ -24,7 +24,7 @@ import { useOwnShip, type Fix } from "./ownShip";
 const VS_WINDOW_MS = 15_000;
 const recent: Fix[] = [];
 
-useOwnShip.subscribe(s => {
+useOwnShip.subscribe((s) => {
   const fix = s.fix;
   if (!fix || fix.altitudeFt == null || recent.at(-1)?.at === fix.at) return;
   recent.push(fix);
@@ -34,7 +34,8 @@ useOwnShip.subscribe(s => {
 /** Feet a minute, from the oldest fix in the window to the newest; 0
  *  until a few seconds of them are in. */
 function verticalSpeed(): number {
-  const first = recent[0], last = recent.at(-1);
+  const first = recent[0],
+    last = recent.at(-1);
   if (!first || !last || last.at - first.at < 5000) return 0;
   return ((last.altitudeFt! - first.altitudeFt!) / (last.at - first.at)) * 60_000;
 }
@@ -61,8 +62,10 @@ export function askFor(fix: Fix | null, vs: number): AheadAsk | null {
   // structure, which are alerted against it.
   const down = (n: number, step: number) => Math.floor(n / step) * step;
   return {
-    lat: round(fix.lat, 0.005), lon: round(fix.lon, 0.005),
-    track: round(fix.headingDeg, 5) % 360, gs: round(fix.speedKt, 10),
+    lat: round(fix.lat, 0.005),
+    lon: round(fix.lon, 0.005),
+    track: round(fix.headingDeg, 5) % 360,
+    gs: round(fix.speedKt, 10),
     ...(fix.altitudeFt != null ? { alt: down(fix.altitudeFt, 100) } : {}),
     vs: round(vs, 200),
   };
@@ -93,7 +96,7 @@ const held = { key: null as string | null, at: -Infinity };
 const useAcknowledged = create<{ ids: string[] }>(() => ({ ids: [] }));
 
 export function acknowledge(ids: string[]) {
-  useAcknowledged.setState(s => ({ ids: [...new Set([...s.ids, ...ids])] }));
+  useAcknowledged.setState((s) => ({ ids: [...new Set([...s.ids, ...ids])] }));
 }
 
 export interface Ahead {
@@ -108,8 +111,8 @@ export interface Ahead {
 /** What is ahead of own ship now; null when nothing is being looked at
  *  (on the ground, own ship off, the alerts switched off). */
 export function useAhead(): Ahead | null {
-  const on = usePreferences(s => s.alerts);
-  const key = useOwnShip(s => {
+  const on = usePreferences((s) => s.alerts);
+  const key = useOwnShip((s) => {
     const ask = s.enabled ? askFor(s.fix, verticalSpeed()) : null;
     return heldAsk(held, ask ? JSON.stringify(ask) : null, Date.now());
   });
@@ -120,41 +123,45 @@ export function useAhead(): Ahead | null {
     enabled: !!ask,
     // The last answer kept while the next is asked, so the line does not
     // go and come back every third of a mile; TFRs change, so asked again.
-    placeholderData: keepPreviousData, staleTime: 10_000, refetchInterval: 20_000,
+    placeholderData: keepPreviousData,
+    staleTime: 10_000,
+    refetchInterval: 20_000,
     // Its failure is said in its own line (AlertsBanner), where it is.
     meta: { silent: true },
   });
-  const acknowledged = useAcknowledged(s => s.ids);
+  const acknowledged = useAcknowledged((s) => s.ids);
   // An acknowledged alert gone from what is ahead is forgotten: met again,
   // it is said again.
   useEffect(() => {
     if (!data) return;
-    const ahead = new Set(data.alerts.map(a => a.id));
-    if (acknowledged.some(id => !ahead.has(id))) useAcknowledged.setState({ ids: acknowledged.filter(id => ahead.has(id)) });
+    const ahead = new Set(data.alerts.map((a) => a.id));
+    if (acknowledged.some((id) => !ahead.has(id))) useAcknowledged.setState({ ids: acknowledged.filter((id) => ahead.has(id)) });
   }, [data, acknowledged]);
   if (!ask) return null;
   return {
-    alerts: (data?.alerts ?? []).filter(a => !acknowledged.includes(a.id)),
+    alerts: (data?.alerts ?? []).filter((a) => !acknowledged.includes(a.id)),
     unavailable: data?.unavailable ?? [],
     failed: isError,
   };
 }
 
-const SPECIAL_USE: Record<string, string> = {
-  P: "Prohibited area", R: "Restricted area", W: "Warning area", A: "Alert area",
-};
+const SPECIAL_USE: Record<string, string> = { P: "Prohibited area", R: "Restricted area", W: "Warning area", A: "Alert area" };
 
 /** An alert's name: "Rockford Class C", "Restricted area R-6901A", "Volk
  *  East MOA", "TFR 6/1111", "Tower 2,700 ft", "Terrain". */
 export function alertTitle(a: AheadAlert): string {
   switch (a.kind) {
-    case "airspace": return `${shortAirspaceName(a.name)} Class ${a.class}`;
+    case "airspace":
+      return `${shortAirspaceName(a.name)} Class ${a.class}`;
     case "special_use":
       if (a.class === "MOA") return faaWords(/\bMOA\b/.test(a.name) ? a.name : `${a.name} MOA`);
       return `${SPECIAL_USE[a.class ?? ""] ?? "Special use"} ${a.name}`;
-    case "tfr": return `TFR ${a.notam_id ?? ""}`.trim();
-    case "obstacle": return `${faaWords(a.name)} ${altFt(a.top_ft)} ft`;
-    default: return "Terrain";
+    case "tfr":
+      return `TFR ${a.notam_id ?? ""}`.trim();
+    case "obstacle":
+      return `${faaWords(a.name)} ${altFt(a.top_ft)} ft`;
+    default:
+      return "Terrain";
   }
 }
 

@@ -9,11 +9,11 @@ describe("distanceTicks", () => {
     const ticks = distanceTicks(0, 3);
     expect(ticks.length).toBeGreaterThan(0);
     expect(ticks.length).toBeLessThanOrEqual(5);
-    expect(ticks.every(t => t > 0 && t < 3)).toBe(true);
+    expect(ticks.every((t) => t > 0 && t < 3)).toBe(true);
   });
   test("a run that starts past 0 has marks only inside it", () => {
     const ticks = distanceTicks(200, 1270);
-    expect(ticks.every(t => t > 200 && t < 1270)).toBe(true);
+    expect(ticks.every((t) => t > 200 && t < 1270)).toBe(true);
     expect(ticks.length).toBeLessThanOrEqual(5);
   });
   test("a fractional step gathers no float error", () => {

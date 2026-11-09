@@ -1,5 +1,9 @@
 import type {
-  ExpressionSpecification, LayerSpecification, Map as MlMap, MapGeoJSONFeature, SourceSpecification,
+  ExpressionSpecification,
+  LayerSpecification,
+  Map as MlMap,
+  MapGeoJSONFeature,
+  SourceSpecification,
   SymbolLayerSpecification,
 } from "maplibre-gl";
 import type { OverlayTiles } from "../../api/types";
@@ -10,7 +14,17 @@ import { sectionalAirportSvg, TOWERED_BLUE, UNTOWERED_MAGENTA } from "../marks/a
 import { colourOf } from "../marks/flightCategory";
 import { overlaySource } from "../sources/overlayTiles";
 import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot, type Stretch } from "./glLayer";
-import { AIRSPACE_INK, OVERLAY_SOURCE, SUA_INK, SUA_LAYERS, airspaceLayers, airspaceTab, glZoom, specialUseLayers, suaHatch } from "./glStyle";
+import {
+  AIRSPACE_INK,
+  OVERLAY_SOURCE,
+  SUA_INK,
+  SUA_LAYERS,
+  airspaceLayers,
+  airspaceTab,
+  glZoom,
+  specialUseLayers,
+  suaHatch,
+} from "./glStyle";
 import { GL_FONT_BOLD, LABEL_HALO } from "./layers/common";
 import { CHART } from "../../tokens";
 
@@ -51,18 +65,35 @@ type Picture = [id: string, svg: () => string, stretch?: Stretch];
  *  waypoint's green triangle (the owner's pick, 2026-11-07), and the
  *  VOR's blue ident box, stretched to its ident. */
 const NAVAID_PICTURES: Picture[] = [
-  ["nav|vor", () => `<svg width="16" height="16" viewBox="0 0 16 16"><polygon points="15,8 11.5,14.06 4.5,14.06 1,8 4.5,1.94 11.5,1.94" fill="#fff" stroke="${BLUE}" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="${BLUE}"/></svg>`],
-  ["nav|fix", () => `<svg width="20" height="20" viewBox="-10 -10 20 20"><path d="M0 -9L2.2 -2.2L9 0L2.2 2.2L0 9L-2.2 2.2L-9 0L-2.2 -2.2Z" fill="${FIX_BLUE}" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>`],
-  ["nav|vfr", () => `<svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,1 11.2,10.4 0.8,10.4" fill="${VFR_GREEN}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>`],
-  ["nav|tag", () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12" rx="3" fill="${BLUE}"/></svg>`, { inset: 4 }],
+  [
+    "nav|vor",
+    () =>
+      `<svg width="16" height="16" viewBox="0 0 16 16"><polygon points="15,8 11.5,14.06 4.5,14.06 1,8 4.5,1.94 11.5,1.94" fill="#fff" stroke="${BLUE}" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="${BLUE}"/></svg>`,
+  ],
+  [
+    "nav|fix",
+    () =>
+      `<svg width="20" height="20" viewBox="-10 -10 20 20"><path d="M0 -9L2.2 -2.2L9 0L2.2 2.2L0 9L-2.2 2.2L-9 0L-2.2 -2.2Z" fill="${FIX_BLUE}" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>`,
+  ],
+  [
+    "nav|vfr",
+    () =>
+      `<svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,1 11.2,10.4 0.8,10.4" fill="${VFR_GREEN}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
+  ],
+  [
+    "nav|tag",
+    () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12" rx="3" fill="${BLUE}"/></svg>`,
+    { inset: 4 },
+  ],
 ];
 
 /** The dark tab an airspace's altitudes sit in, as ForeFlight's: a
  *  rounded box bordered in its class's ink, its corners kept as drawn,
  *  stretched to the text. */
-const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map(c => [
+const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map((c) => [
   airspaceTab(c),
-  () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.75" y="0.75" width="10.5" height="10.5" rx="3" fill="#14181f" fill-opacity="0.92" stroke="${AIRSPACE_INK[c].colour}" stroke-width="1.5"/></svg>`,
+  () =>
+    `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.75" y="0.75" width="10.5" height="10.5" rx="3" fill="#14181f" fill-opacity="0.92" stroke="${AIRSPACE_INK[c].colour}" stroke-width="1.5"/></svg>`,
   { inset: 4 },
 ]);
 
@@ -70,9 +101,10 @@ const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map(c => [
  *  in the area's ink on a faint wash of it, repeated along the band
  *  (specialUseLayers' line-pattern), as ForeFlight and the sectional
  *  hatch the inside of the boundary. */
-const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[]).map(ink => [
+const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[]).map((ink) => [
   suaHatch(ink),
-  () => `<svg width="7" height="10" viewBox="0 0 7 10"><rect width="7" height="10" fill="${SUA_INK[ink]}" fill-opacity="0.14"/><path d="M1.5 9.5L5.5 0.5" stroke="${SUA_INK[ink]}" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.9"/></svg>`,
+  () =>
+    `<svg width="7" height="10" viewBox="0 0 7 10"><rect width="7" height="10" fill="${SUA_INK[ink]}" fill-opacity="0.14"/><path d="M1.5 9.5L5.5 0.5" stroke="${SUA_INK[ink]}" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.9"/></svg>`,
 ]);
 
 type AirportSize = "large" | "medium" | "small" | "other";
@@ -86,15 +118,18 @@ const airportMarkId = (towered: boolean, size: string, weather: string | null, u
 const SIZES: AirportSize[] = ["large", "medium", "small", "other"];
 const USES: AirportUse[] = [null, "private", "military", "heliport"];
 /** Each flight category's pip, and none. */
-const PIPS: (string | null)[] = [null, ...["VFR", "MVFR", "IFR", "LIFR"].map(c => colourOf(c))];
+const PIPS: (string | null)[] = [null, ...["VFR", "MVFR", "IFR", "LIFR"].map((c) => colourOf(c))];
 
 /** Every airport symbol the tiles can ask for: 2 inks, 4 sizes, 5 pips
  *  and 4 uses, 160 small pictures. */
 function airportPictures(): Picture[] {
   const out: Picture[] = [];
-  for (const towered of [true, false]) for (const size of SIZES) for (const pip of PIPS) for (const use of USES) {
-    out.push([airportMarkId(towered, size, pip, use), () => sectionalAirportSvg(towered, size, use, pip)]);
-  }
+  for (const towered of [true, false])
+    for (const size of SIZES)
+      for (const pip of PIPS)
+        for (const use of USES) {
+          out.push([airportMarkId(towered, size, pip, use), () => sectionalAirportSvg(towered, size, use, pip)]);
+        }
   return out;
 }
 
@@ -104,9 +139,11 @@ let drawn: Promise<Map<string, DrawnImage>> | null = null;
  *  as a tile first asks for one (synchronously, so no symbol is laid out
  *  without its picture). */
 export function overlayPictures(): Promise<Map<string, DrawnImage>> {
-  drawn ??= Promise.all([...airportPictures(), ...NAVAID_PICTURES, ...AIRSPACE_TAB_PICTURES, ...SUA_PICTURES].map(([id, svg, stretch]) =>
-    drawSvg(svg(), stretch).then(d => [id, d] as const),
-  )).then(all => new Map(all.filter((e): e is readonly [string, DrawnImage] => !!e[1])));
+  drawn ??= Promise.all(
+    [...airportPictures(), ...NAVAID_PICTURES, ...AIRSPACE_TAB_PICTURES, ...SUA_PICTURES].map(([id, svg, stretch]) =>
+      drawSvg(svg(), stretch).then((d) => [id, d] as const),
+    ),
+  ).then((all) => new Map(all.filter((e): e is readonly [string, DrawnImage] => !!e[1])));
   return drawn;
 }
 
@@ -122,12 +159,27 @@ const AIRPORTS_FARTHEST_ZOOM = 4;
 /** A field's size from its longest runway (NASR APT_RWY RWY_LEN), the
  *  symbol's size: an airline airport's 8,000 ft and more, then 5,000 and
  *  2,000. Only how big the disc is drawn. */
-const TILE_SIZE: ExpressionSpecification = ["step", ["coalesce", ["get", "longest_ft"], 0], "other", 2000, "small", 5000, "medium", 8000, "large"];
-const TILE_USE: ExpressionSpecification = ["case",
-  ["==", ["get", "military"], "military"], "military",
-  ["==", ["get", "use"], "private"], "private",
-  ["==", ["get", "type"], "heliport"], "heliport",
-  ""];
+const TILE_SIZE: ExpressionSpecification = [
+  "step",
+  ["coalesce", ["get", "longest_ft"], 0],
+  "other",
+  2000,
+  "small",
+  5000,
+  "medium",
+  8000,
+  "large",
+];
+const TILE_USE: ExpressionSpecification = [
+  "case",
+  ["==", ["get", "military"], "military"],
+  "military",
+  ["==", ["get", "use"], "private"],
+  "private",
+  ["==", ["get", "type"], "heliport"],
+  "heliport",
+  "",
+];
 const TOWERED: ExpressionSpecification = ["==", ["get", "towered"], true];
 
 /** The pip's colour by ident: from the METARs, once they are in
@@ -136,7 +188,7 @@ function weatherExpression(colours: Map<string, string>): ExpressionSpecificatio
   const byColour = new Map<string, string[]>();
   for (const [ident, colour] of colours) {
     let idents = byColour.get(colour);
-    if (!idents) byColour.set(colour, idents = []);
+    if (!idents) byColour.set(colour, (idents = []));
     idents.push(ident);
   }
   if (!byColour.size) return "";
@@ -147,7 +199,17 @@ function weatherExpression(colours: Map<string, string>): ExpressionSpecificatio
 /** The airports' symbol from the tiles: its picture by its ink, size, use
  *  and weather (airportMarkId). */
 function tileAirportIcon(colours: Map<string, string>): ExpressionSpecification {
-  return ["concat", "apt|", ["case", TOWERED, "t", "u"], "|", TILE_SIZE, "|", weatherExpression(colours), "|", TILE_USE] as ExpressionSpecification;
+  return [
+    "concat",
+    "apt|",
+    ["case", TOWERED, "t", "u"],
+    "|",
+    TILE_SIZE,
+    "|",
+    weatherExpression(colours),
+    "|",
+    TILE_USE,
+  ] as ExpressionSpecification;
 }
 
 /** The airports' one symbol layer, from either source: the mark, its
@@ -156,7 +218,10 @@ function tileAirportIcon(colours: Map<string, string>): ExpressionSpecification 
  *  kept apart by MapLibre's collision in `rank` order. */
 function airportMarksLayer(from: { source: string; "source-layer"?: string }, icon: ExpressionSpecification): SymbolLayerSpecification {
   return {
-    id: "airports", type: "symbol", ...from, minzoom: glZoom(AIRPORTS_FARTHEST_ZOOM),
+    id: "airports",
+    type: "symbol",
+    ...from,
+    minzoom: glZoom(AIRPORTS_FARTHEST_ZOOM),
     layout: {
       "icon-image": icon,
       // Smaller out at a state's width, a field's own size closer in: the
@@ -188,22 +253,38 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }, ic
  *  or green on a white halo. `kind` is the feature's ("vor", "fix",
  *  "vfr"), or the one kind every feature of a tile layer is. */
 function navaidMarks(
-  id: string, from: { source: string; "source-layer"?: string }, kind: ExpressionSpecification | string = ["get", "kind"],
+  id: string,
+  from: { source: string; "source-layer"?: string },
+  kind: ExpressionSpecification | string = ["get", "kind"],
   extra: Partial<Pick<SymbolLayerSpecification, "filter" | "minzoom">> = {},
 ): SymbolLayerSpecification[] {
   return [
     {
-      id, type: "symbol", ...from, ...extra,
-      layout: { "icon-image": ["concat", "nav|", kind] as ExpressionSpecification, "icon-allow-overlap": true, "icon-ignore-placement": true },
+      id,
+      type: "symbol",
+      ...from,
+      ...extra,
+      layout: {
+        "icon-image": ["concat", "nav|", kind] as ExpressionSpecification,
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
     },
     {
-      id: `${id}-idents`, type: "symbol", ...from, ...extra,
+      id: `${id}-idents`,
+      type: "symbol",
+      ...from,
+      ...extra,
       layout: {
         "text-field": ["case", ["has", "freq"], ["concat", ["get", "ident"], " (", ["get", "freq"], ")"], ["get", "ident"]],
-        "text-font": GL_FONT_BOLD, "text-size": ["interpolate", ["linear"], ["zoom"], 6, 10, 10, 12],
-        "text-variable-anchor": ["left", "right"], "text-radial-offset": 1.1, "text-justify": "auto",
+        "text-font": GL_FONT_BOLD,
+        "text-size": ["interpolate", ["linear"], ["zoom"], 6, 10, 10, 12],
+        "text-variable-anchor": ["left", "right"],
+        "text-radial-offset": 1.1,
+        "text-justify": "auto",
         "icon-image": ["case", ["==", kind, "vor"], "nav|tag", ""] as ExpressionSpecification,
-        "icon-text-fit": "both", "icon-text-fit-padding": [1, 4, 1, 4],
+        "icon-text-fit": "both",
+        "icon-text-fit-padding": [1, 4, 1, 4],
       },
       paint: {
         "text-color": ["match", kind, "vor", "#ffffff", "vfr", VFR_GREEN, FIX_INK] as ExpressionSpecification,
@@ -236,17 +317,26 @@ function runwayLayers(): LayerSpecification[] {
   const from = { source: OVERLAY_SOURCE, "source-layer": "runways" };
   return [
     {
-      id: "runway-surface", type: "fill", ...from, minzoom: RUNWAYS_FROM,
+      id: "runway-surface",
+      type: "fill",
+      ...from,
+      minzoom: RUNWAYS_FROM,
       filter: ["==", ["get", "part"], "surface"],
       paint: { "fill-color": ["case", ["get", "hard"], "#4a4f57", "#7d8a6a"], "fill-outline-color": "#ffffff", "fill-opacity": 0.95 },
     },
     {
-      id: "runway-centreline", type: "line", ...from, minzoom: RUNWAYS_FROM + 1,
+      id: "runway-centreline",
+      type: "line",
+      ...from,
+      minzoom: RUNWAYS_FROM + 1,
       filter: ["==", ["get", "part"], "centreline"],
       paint: { "line-color": "#ffffff", "line-width": ["interpolate", ["linear"], ["zoom"], 13, 0.75, 16, 2], "line-dasharray": [4, 3] },
     },
     {
-      id: "runway-ends", type: "symbol", ...from, minzoom: RUNWAYS_FROM + 0.5,
+      id: "runway-ends",
+      type: "symbol",
+      ...from,
+      minzoom: RUNWAYS_FROM + 0.5,
       filter: ["==", ["get", "part"], "end"],
       layout: {
         "text-field": ["get", "end_id"],
@@ -265,7 +355,9 @@ function runwayLayers(): LayerSpecification[] {
 
 /** The ids of the layers each setting turns off (applyOverlayFilters). */
 export const AIRSPACE_TILE_LAYERS = [
-  ...["D", "C", "B"].flatMap(c => [`airspace-${c}-band`, `airspace-${c}`]), "airspace-labels", ...SUA_LAYERS,
+  ...["D", "C", "B"].flatMap((c) => [`airspace-${c}-band`, `airspace-${c}`]),
+  "airspace-labels",
+  ...SUA_LAYERS,
 ];
 const NAVAID_TILE_LAYERS = ["navaids", "navaids-idents", "fixes", "fixes-idents"];
 const WAYPOINT_TILE_LAYERS = ["vfr-waypoints", "vfr-waypoints-idents"];
@@ -273,8 +365,11 @@ const WAYPOINT_TILE_LAYERS = ["vfr-waypoints", "vfr-waypoints-idents"];
 /** The overlay tiles' source and layers, by the slot each is drawn under
  *  (glLayer's SLOTS), for the map's first style; the layers of a layer the
  *  archive has not got (an older build's) left out. */
-export function overlayStyle(tiles: OverlayTiles, origin?: string): { source: SourceSpecification; layers: Partial<Record<Slot, LayerSpecification[]>> } {
-  const has = new Set(tiles.layers.map(l => l.name));
+export function overlayStyle(
+  tiles: OverlayTiles,
+  origin?: string,
+): { source: SourceSpecification; layers: Partial<Record<Slot, LayerSpecification[]>> } {
+  const has = new Set(tiles.layers.map((l) => l.name));
   const from = (layer: string) => ({ source: OVERLAY_SOURCE, "source-layer": layer });
   const lines: LayerSpecification[] = [
     ...(has.has("runways") ? runwayLayers() : []),
@@ -282,11 +377,21 @@ export function overlayStyle(tiles: OverlayTiles, origin?: string): { source: So
     ...(has.has("airspace") ? airspaceLayers(GL_FONT_BOLD, has.has("airspace_labels")) : []),
   ];
   const marks: LayerSpecification[] = [
-    ...(has.has("navaids") ? navaidMarks("navaids", from("navaids"), "vor", { filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]], minzoom: glZoom(VOR_ZOOM) }) : []),
-    ...(has.has("fixes") ? [
-      ...navaidMarks("fixes", from("fixes"), "fix", { filter: ["all", ["==", ["get", "enroute_low"], true], ["!=", ["get", "vfr"], true]], minzoom: glZoom(FIX_ZOOM) }),
-      ...navaidMarks("vfr-waypoints", from("fixes"), "vfr", { filter: ["==", ["get", "vfr"], true], minzoom: glZoom(FIX_ZOOM) }),
-    ] : []),
+    ...(has.has("navaids")
+      ? navaidMarks("navaids", from("navaids"), "vor", {
+          filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]],
+          minzoom: glZoom(VOR_ZOOM),
+        })
+      : []),
+    ...(has.has("fixes")
+      ? [
+          ...navaidMarks("fixes", from("fixes"), "fix", {
+            filter: ["all", ["==", ["get", "enroute_low"], true], ["!=", ["get", "vfr"], true]],
+            minzoom: glZoom(FIX_ZOOM),
+          }),
+          ...navaidMarks("vfr-waypoints", from("fixes"), "vfr", { filter: ["==", ["get", "vfr"], true], minzoom: glZoom(FIX_ZOOM) }),
+        ]
+      : []),
     ...(has.has("airports") ? [airportMarksLayer(from("airports"), tileAirportIcon(new Map()))] : []),
   ];
   return { source: overlaySource(tiles, origin), layers: { lines, marks } };
@@ -301,7 +406,7 @@ export function addOverlays(map: MlMap, tiles: OverlayTiles, origin?: string) {
   const style = overlayStyle(tiles, origin);
   map.addSource(OVERLAY_SOURCE, style.source);
   SLOTS.forEach((slot, i) => {
-    const ids = map.getStyle().layers.map(l => l.id);
+    const ids = map.getStyle().layers.map((l) => l.id);
     const before = ids[i === 0 ? 0 : ids.indexOf(slotId(SLOTS[i - 1]!)) + 1]!;
     for (const layer of style.layers[slot] ?? []) map.addLayer(layer, before);
   });
@@ -309,15 +414,21 @@ export function addOverlays(map: MlMap, tiles: OverlayTiles, origin?: string) {
 
 // ---- What changes over them ----------------------------------------------
 
-interface Changes { airports: string[]; waypoints: string[]; weather: Map<string, string>; selected: string | null }
+interface Changes {
+  airports: string[];
+  waypoints: string[];
+  weather: Map<string, string>;
+  selected: string | null;
+}
 const changes = new WeakMap<MlMap, Changes>();
 const changesOf = (map: MlMap) => {
   let kept = changes.get(map);
-  if (!kept) changes.set(map, kept = { airports: [], waypoints: [], weather: new Map(), selected: null });
+  if (!kept) changes.set(map, (kept = { airports: [], waypoints: [], weather: new Map(), selected: null }));
   return kept;
 };
 
-const notIn = (idents: string[]): ExpressionSpecification[] => (idents.length ? [["!", ["in", ["get", "ident"], ["literal", idents]]]] : []);
+const notIn = (idents: string[]): ExpressionSpecification[] =>
+  idents.length ? [["!", ["in", ["get", "ident"], ["literal", idents]]]] : [];
 
 /** The settings on the tile layers: Airspace, VORs and Fixes on or off,
  *  the armed services' own fields and private ones hidden unless asked
@@ -333,7 +444,8 @@ export function applyOverlayFilters(map: MlMap) {
   visible(AIRSPACE_TILE_LAYERS, prefs.airspace);
   visible(NAVAID_TILE_LAYERS, prefs.navaids);
   if (map.getLayer("airports")) {
-    map.setFilter("airports", ["all",
+    map.setFilter("airports", [
+      "all",
       ...(prefs.military ? [] : [["!=", ["get", "military"], "military"] as ExpressionSpecification]),
       ...(prefs.privateFields ? [] : [["!=", ["get", "use"], "private"] as ExpressionSpecification]),
       ...notIn(own.airports),
@@ -401,7 +513,8 @@ export function volumeOfTile(f: Pick<MapGeoJSONFeature, "properties">, at: { lat
     ceiling_excluded: p.ceiling_excluded === true || p.ceiling_excluded === "true",
     hours_code: text(p.hours_code),
     hours_remark: text(p.hours_remark),
-    label_lat: at.lat, label_lon: at.lon,
+    label_lat: at.lat,
+    label_lon: at.lon,
   };
 }
 
@@ -410,11 +523,19 @@ export function volumeOfTile(f: Pick<MapGeoJSONFeature, "properties">, at: { lat
  *  (NAV_RMK, one a line) where the archive carries them. */
 export function vorOfTile(f: Pick<MapGeoJSONFeature, "properties" | "geometry">): VorPin {
   const p = f.properties;
-  const [lon, lat] = f.geometry.type === "Point" ? f.geometry.coordinates as [number, number] : [0, 0];
+  const [lon, lat] = f.geometry.type === "Point" ? (f.geometry.coordinates as [number, number]) : [0, 0];
   return {
-    ident: String(p.ident), name: text(p.name), kind: String(p.kind) as VorPin["kind"], lat, lon,
-    freq: text(p.freq), channel: text(p.channel), service_volume: text(p.service_volume),
-    mag_var: number(p.mag_var), elevation_ft: number(p.elevation_ft), hours: text(p.hours),
+    ident: String(p.ident),
+    name: text(p.name),
+    kind: String(p.kind) as VorPin["kind"],
+    lat,
+    lon,
+    freq: text(p.freq),
+    channel: text(p.channel),
+    service_volume: text(p.service_volume),
+    mag_var: number(p.mag_var),
+    elevation_ft: number(p.elevation_ft),
+    hours: text(p.hours),
     restricted: p.restricted === true || p.restricted === "true",
     remarks: text(p.remarks)?.split("\n") ?? [],
   };

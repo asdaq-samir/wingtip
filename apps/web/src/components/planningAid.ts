@@ -14,5 +14,4 @@ const LIMITS =
 /** The reminder a planning aid owes its pilot: the limits, then what to
  *  check before flight (14 CFR 91.103). About's, the printed briefing's
  *  foot and wherever else it is said. */
-export const PLANNING_AID =
-  `${LIMITS} Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).`;
+export const PLANNING_AID = `${LIMITS} Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).`;

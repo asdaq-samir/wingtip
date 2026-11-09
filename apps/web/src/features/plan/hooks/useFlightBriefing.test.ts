@@ -17,6 +17,6 @@ describe("windStretches", () => {
 
   test("another altitude, temperature or a leg with no wind starts a stretch", () => {
     const legs = [leg("A", "B", 4500, null), leg("B", "C", 4500, null), leg("C", "D", 6500, null), leg("D", "E", 6500, null, 10, 2)];
-    expect(windStretches(legs).map(s => `${s.from}-${s.to}`)).toEqual(["A-C", "C-D", "D-E"]);
+    expect(windStretches(legs).map((s) => `${s.from}-${s.to}`)).toEqual(["A-C", "C-D", "D-E"]);
   });
 });

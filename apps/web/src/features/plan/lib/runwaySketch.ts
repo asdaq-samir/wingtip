@@ -28,8 +28,9 @@ function turfOf(r: Runway, ends: [string, string]): [number, number][] {
   if (r.surface && TURF_SURFACE.test(r.surface)) return [[0, 1]];
   const length = r.length_ft;
   if (!length) return [];
-  return (r.turf ?? []).flatMap(part => {
-    const from = Math.min(1, part.from_ft / length), to = Math.min(1, (part.to_ft ?? length) / length);
+  return (r.turf ?? []).flatMap((part) => {
+    const from = Math.min(1, part.from_ft / length),
+      to = Math.min(1, (part.to_ft ?? length) / length);
     if (part.end === ends[0]) return [[from, to] as [number, number]];
     if (part.end === ends[1]) return [[1 - to, 1 - from] as [number, number]];
     return [];
@@ -57,15 +58,23 @@ export function stripsOf(runways: Runway[], lat: number, lon: number): Strip[] {
     const ends: [string, string] = [first.ident, second.ident];
     const width_ft = r.width_ft ?? 75;
     if (first.lat != null && first.lon != null && second.lat != null && second.lon != null) {
-      strips.push({ a: [east(first.lon), north(first.lat)], b: [east(second.lon), north(second.lat)], width_ft, ends, closed: r.closed, turf: turfOf(r, ends) });
+      strips.push({
+        a: [east(first.lon), north(first.lat)],
+        b: [east(second.lon), north(second.lat)],
+        width_ft,
+        ends,
+        closed: r.closed,
+        turf: turfOf(r, ends),
+      });
     } else if (first.heading_true_deg != null && r.length_ft) {
       const half = r.length_ft / FT_PER_NM / 2;
       const heading = rad(first.heading_true_deg);
       // The first end is where a landing on it starts: back along its heading.
-      const dx = Math.sin(heading) * half, dy = Math.cos(heading) * half;
+      const dx = Math.sin(heading) * half,
+        dy = Math.cos(heading) * half;
       // Within a degree of a heading already guessed, either way round.
       const line = ((first.heading_true_deg % 180) + 180) % 180;
-      if (guessed.some(h => Math.min(Math.abs(h - line), 180 - Math.abs(h - line)) < 1)) continue;
+      if (guessed.some((h) => Math.min(Math.abs(h - line), 180 - Math.abs(h - line)) < 1)) continue;
       guessed.push(line);
       guesses.push({ a: [-dx, -dy], b: [dx, dy], width_ft, ends, closed: r.closed, turf: turfOf(r, ends) });
     }
@@ -76,7 +85,7 @@ export function stripsOf(runways: Runway[], lat: number, lon: number): Strip[] {
 /** How many of the field's runways the sketch leaves out for want of their
  *  ends, so the card can say its picture is partial rather than whole. */
 export function runwaysLeftOut(runways: Runway[], drawn: Strip[]): number {
-  const real = runways.filter(r => (r.runway_ends ?? []).length >= 2).length;
+  const real = runways.filter((r) => (r.runway_ends ?? []).length >= 2).length;
   return Math.max(0, real - drawn.length);
 }
 
@@ -98,7 +107,10 @@ export function numberHalfWidth(characters: number, size: number): number {
  */
 export function numbersOf(
   strips: { ends: [string, string]; closed: boolean; ax: number; ay: number; bx: number; by: number; ux: number; uy: number }[],
-  size: number, gap: number, w: number, h: number,
+  size: number,
+  gap: number,
+  w: number,
+  h: number,
   blocked: (x: number, y: number, hw: number, hh: number) => boolean = () => false,
 ) {
   const taken: { x: number; y: number; hw: number; hh: number }[] = [];
@@ -109,11 +121,13 @@ export function numbersOf(
       // Outward from this end: back along the runway from its first end,
       // on from its second.
       const [ex, ey, dx, dy] = i === 0 ? [s.ax, s.ay, -s.ux, -s.uy] : [s.bx, s.by, s.ux, s.uy];
-      const hw = numberHalfWidth(end.length, size), hh = size / 2;
+      const hw = numberHalfWidth(end.length, size),
+        hh = size / 2;
       for (const out of [gap, gap + size * 1.2]) {
-        const x = ex + dx * out, y = ey + dy * out;
+        const x = ex + dx * out,
+          y = ey + dy * out;
         const inBox = x - hw >= 0 && x + hw <= w && y - hh >= 0 && y + hh <= h;
-        if (!inBox || blocked(x, y, hw, hh) || taken.some(t => Math.abs(t.x - x) < t.hw + hw && Math.abs(t.y - y) < t.hh + hh)) continue;
+        if (!inBox || blocked(x, y, hw, hh) || taken.some((t) => Math.abs(t.x - x) < t.hw + hw && Math.abs(t.y - y) < t.hh + hh)) continue;
         taken.push({ x, y, hw, hh });
         written.push({ end, key: `${s.ends.join("/")}-${end}`, x, y, closed: s.closed });
         return;

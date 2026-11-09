@@ -13,8 +13,17 @@ import { readPage, type DocumentKind } from "../../lib/documentPhoto";
 import { done } from "../../lib/doneNote";
 import { localDay } from "../../lib/format/time";
 import {
-  checkHandbook, checkLogbook, confirmedFigures, handbookOf, loggable, logbookOf, withFigure,
-  type HandbookCheck, type HandbookRead, type LogbookCheck, type LogbookRead,
+  checkHandbook,
+  checkLogbook,
+  confirmedFigures,
+  handbookOf,
+  loggable,
+  logbookOf,
+  withFigure,
+  type HandbookCheck,
+  type HandbookRead,
+  type LogbookCheck,
+  type LogbookRead,
 } from "./reads";
 
 export type Confirmed = ReturnType<typeof confirmedFigures>;
@@ -30,7 +39,7 @@ export function useDocumentPhoto(first: DocumentKind) {
 
   const reading = useMutation({
     mutationFn: (photo: Blob) => readPage(kind, photo),
-    onSuccess: read => {
+    onSuccess: (read) => {
       setAnswer(read);
       setConfirmed(new Set());
       setLogged(new Set());
@@ -41,25 +50,29 @@ export function useDocumentPhoto(first: DocumentKind) {
     },
   });
 
-  const toggle = (key: string) => setConfirmed(now => {
-    const next = new Set(now);
-    if (next.has(key)) next.delete(key); else next.add(key);
-    return next;
-  });
+  const toggle = (key: string) =>
+    setConfirmed((now) => {
+      const next = new Set(now);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   /** A handbook figure corrected at its path and the page checked again. */
-  const correct = (path: string, value: number) => setHandbook(now => {
-    if (!now) return now;
-    const read = withFigure(now.read, path, value);
-    return { read, check: checkHandbook(read) };
-  });
+  const correct = (path: string, value: number) =>
+    setHandbook((now) => {
+      if (!now) return now;
+      const read = withFigure(now.read, path, value);
+      return { read, check: checkHandbook(read) };
+    });
 
   /** A logbook row's member corrected and the page checked again. */
-  const correctRow = (row: number, member: string, value: number | string | null) => setLogbook(now => {
-    if (!now) return now;
-    const read = withFigure(now.read, `rows.${row}.${member}`, value);
-    return { read, check: checkLogbook(read, localDay()) };
-  });
+  const correctRow = (row: number, member: string, value: number | string | null) =>
+    setLogbook((now) => {
+      if (!now) return now;
+      const read = withFigure(now.read, `rows.${row}.${member}`, value);
+      return { read, check: checkLogbook(read, localDay()) };
+    });
 
   /** The confirmed handbook items' figures, the engine asked again with
    *  only those: for the airplane's form, which the pilot then saves. */
@@ -67,7 +80,7 @@ export function useDocumentPhoto(first: DocumentKind) {
 
   // The confirmed rows that can be logged, in the page's order.
   const rows = logbook?.check.rows ?? [];
-  const toLog = rows.map((r, i) => ({ ...r, i })).filter(r => confirmed.has(`row.${r.i}`) && loggable(r.entry) && !logged.has(r.i));
+  const toLog = rows.map((r, i) => ({ ...r, i })).filter((r) => confirmed.has(`row.${r.i}`) && loggable(r.entry) && !logged.has(r.i));
 
   /** The confirmed flights logged, one at a time, through the gateway's
    *  logbook (as a typed one is); each kept as it lands, so a failure
@@ -76,11 +89,11 @@ export function useDocumentPhoto(first: DocumentKind) {
     mutationFn: async () => {
       for (const r of toLog) {
         await api.logbook.add({ ...r.entry, flownOn: r.entry.flownOn as string });
-        setLogged(now => new Set(now).add(r.i));
+        setLogged((now) => new Set(now).add(r.i));
       }
       return toLog.length;
     },
-    onSuccess: n => {
+    onSuccess: (n) => {
       done(n === 1 ? "Flight Logged" : `${n} Flights Logged`);
       for (const key of ["logbook", "currency", "training", "paperwork"]) void queryClient.invalidateQueries({ queryKey: [key] });
     },
@@ -97,9 +110,25 @@ export function useDocumentPhoto(first: DocumentKind) {
   };
 
   return {
-    kind, setKind, answer, handbook, logbook, confirmed, logged, toggle, correct, correctRow,
-    read: reading.mutate, reading: reading.isPending, readError: reading.error,
-    confirmedHandbook, toLog: toLog.length, log: log.mutate, logging: log.isPending, logError: log.error, reset,
+    kind,
+    setKind,
+    answer,
+    handbook,
+    logbook,
+    confirmed,
+    logged,
+    toggle,
+    correct,
+    correctRow,
+    read: reading.mutate,
+    reading: reading.isPending,
+    readError: reading.error,
+    confirmedHandbook,
+    toLog: toLog.length,
+    log: log.mutate,
+    logging: log.isPending,
+    logError: log.error,
+    reset,
   };
 }
 

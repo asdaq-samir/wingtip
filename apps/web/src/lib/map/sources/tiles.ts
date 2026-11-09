@@ -10,24 +10,29 @@ import type { ChartInfo, ChartLayer, ChartSheet } from "../../api/types";
  * chart.
  */
 export function chartPair(layers: ChartLayer[], base: string): { base: ChartLayer | null; overlay: ChartLayer | null } {
-  const baseLayer = layers.find(l => l.kind === base) ?? layers.find(l => l.kind === "sec") ?? null;
-  const overlay = baseLayer ? layers.find(l => !l.base && l.over.includes(baseLayer.kind)) ?? null : null;
+  const baseLayer = layers.find((l) => l.kind === base) ?? layers.find((l) => l.kind === "sec") ?? null;
+  const overlay = baseLayer ? (layers.find((l) => !l.base && l.over.includes(baseLayer.kind)) ?? null) : null;
   return { base: baseLayer, overlay };
 }
 
 /** The overlay's sheet at a point -- what pinning the overlay there
  *  would draw -- or null where it has none. */
 export function sheetAt(overlay: ChartLayer | null, lat: number, lon: number): ChartSheet | null {
-  return overlay?.sheets.find(s => s.south <= lat && lat <= s.north && s.west <= lon && lon <= s.east) ?? null;
+  return overlay?.sheets.find((s) => s.south <= lat && lat <= s.north && s.west <= lon && lon <= s.east) ?? null;
 }
 
 /** The cycle and revision a kind's tiles are drawn from: its layer's own,
  *  each kind going over to a new cycle as its pyramid is finished
  *  (wingtip.charts.serving_cycle_of), else the chart's, the sectional's. */
-export function kindCycle(chart: Pick<ChartInfo, "chart_cycle" | "chart_revision" | "chart_layers">, kind: string): { cycle: string; revision: number } {
-  const layer = chart.chart_layers?.find(l => l.kind === kind);
+export function kindCycle(
+  chart: Pick<ChartInfo, "chart_cycle" | "chart_revision" | "chart_layers">,
+  kind: string,
+): { cycle: string; revision: number } {
+  const layer = chart.chart_layers?.find((l) => l.kind === kind);
   // A course cached offline from before the planner reported one has none.
-  return layer?.cycle ? { cycle: layer.cycle, revision: layer.revision ?? 0 } : { cycle: chart.chart_cycle, revision: chart.chart_revision ?? 0 };
+  return layer?.cycle
+    ? { cycle: layer.cycle, revision: layer.revision ?? 0 }
+    : { cycle: chart.chart_cycle, revision: chart.chart_revision ?? 0 };
 }
 
 /**
@@ -42,8 +47,12 @@ export function kindCycle(chart: Pick<ChartInfo, "chart_cycle" | "chart_revision
  * kind has only 256-pixel tiles, as a cycle drawn before there were any
  * has, and none on a 1x screen, which would only shrink them.
  */
-export function tileDensity(chart: Pick<ChartInfo, "chart_layers">, kind: string, pixelRatio = globalThis.devicePixelRatio ?? 1): "" | "@2x" {
-  const layer = chart.chart_layers?.find(l => l.kind === kind);
+export function tileDensity(
+  chart: Pick<ChartInfo, "chart_layers">,
+  kind: string,
+  pixelRatio = globalThis.devicePixelRatio ?? 1,
+): "" | "@2x" {
+  const layer = chart.chart_layers?.find((l) => l.kind === kind);
   return pixelRatio > 1 && layer?.scales?.includes(2) ? "@2x" : "";
 }
 

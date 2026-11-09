@@ -29,15 +29,18 @@ export function usePlanHistory(searchParams: URLSearchParams, setSearchParams: S
   const history = useRef<PlanHistory | null>(null);
   const state = useMemo(() => planStateOf(searchParams), [searchParams]);
 
-  const go = useCallback((step: typeof undone) => {
-    if (!history.current) return false;
-    const next = step(history.current, Date.now());
-    if (!next) return false;
-    history.current = next;
-    toast.dismiss(UNDO_TOAST);
-    setSearchParams(prev => restored(prev, next.now), { replace: true });
-    return true;
-  }, [setSearchParams]);
+  const go = useCallback(
+    (step: typeof undone) => {
+      if (!history.current) return false;
+      const next = step(history.current, Date.now());
+      if (!next) return false;
+      history.current = next;
+      toast.dismiss(UNDO_TOAST);
+      setSearchParams((prev) => restored(prev, next.now), { replace: true });
+      return true;
+    },
+    [setSearchParams],
+  );
   const undo = useCallback(() => go(undone), [go]);
   const redo = useCallback(() => go(redone), [go]);
 
@@ -53,7 +56,12 @@ export function usePlanHistory(searchParams: URLSearchParams, setSearchParams: S
     toast(note, {
       id: UNDO_TOAST,
       duration: UNDO_MS,
-      action: { label: "Undo", onClick: () => { undo(); } },
+      action: {
+        label: "Undo",
+        onClick: () => {
+          undo();
+        },
+      },
       classNames: {
         // The blue tint of what is tapped, and a 44-point hit area made
         // round the button rather than the button grown (CLAUDE.md).

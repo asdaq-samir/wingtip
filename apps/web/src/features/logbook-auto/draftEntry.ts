@@ -75,5 +75,5 @@ export function entryRequest(draft: Drafted, edits: Edits, byInstruments: boolea
 export function likelyFlight(flights: FlightSummary[], route: string): FlightSummary | null {
   const idents = route.split(" ").filter(Boolean);
   const [from, to] = [idents[0], idents.at(-1)];
-  return flights.find(f => f.departureIdent === from && f.destinationIdent === to) ?? null;
+  return flights.find((f) => f.departureIdent === from && f.destinationIdent === to) ?? null;
 }

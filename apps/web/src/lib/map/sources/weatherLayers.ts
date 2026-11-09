@@ -24,8 +24,8 @@ interface WeatherLayers {
 }
 
 export const useWeatherLayers = create<WeatherLayers>()(
-  persist(
-    set => ({ radar: false, satellite: false, areas: false, pireps: false, winds: "off", set: patch => set(patch) }),
-    { name: "wingtip.weatherLayers", partialize: ({ set: _set, ...kept }) => kept },
-  ),
+  persist((set) => ({ radar: false, satellite: false, areas: false, pireps: false, winds: "off", set: (patch) => set(patch) }), {
+    name: "wingtip.weatherLayers",
+    partialize: ({ set: _set, ...kept }) => kept,
+  }),
 );

@@ -57,7 +57,9 @@ describe("planHistory", () => {
   it("says what was taken away", () => {
     expect(describeEdit(route, { ...route, stops: "KJVL" })).toBe("KRFD Removed");
     expect(describeEdit(route, { dep: "KMSN", dest: "KDPA" })).toBe("Stops Removed");
-    expect(describeEdit(route, { dep: "@42.1,-88.2", stops: "KRFD", dest: "KDPA", direct: "KRFD", was: "KMSN|KJVL,KRFD|KDPA" })).toBe("Direct to KRFD");
+    expect(describeEdit(route, { dep: "@42.1,-88.2", stops: "KRFD", dest: "KDPA", direct: "KRFD", was: "KMSN|KJVL,KRFD|KDPA" })).toBe(
+      "Direct to KRFD",
+    );
     expect(describeEdit(route, { dep: "KMSN", dest: "KUGN" })).toBe("Route Replaced");
     expect(describeEdit({ ...route, procs: "KDPA:R02R,KMSN:ACKER4" }, { ...route, procs: "KMSN:ACKER4" })).toBe("Procedure Removed");
     expect(describeEdit({ ...route, holds: "KJVL:090:R:1M:2T" }, route)).toBe("Hold Removed");

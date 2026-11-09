@@ -25,9 +25,7 @@ const sentStation = (s: Station) => ({ ident: s.ident, lat: s.lat, lon: s.lon, m
  * reciprocal. Null where the station has no declination filed.
  */
 export function radialOf(station: Station, at: LatLon): { radial: number; toCourse: number; nm: number } | null {
-  const off = callEngine("radial_of", {
-    station: sentStation(station), at: { lat: at.lat, lon: at.lon },
-  });
+  const off = callEngine("radial_of", { station: sentStation(station), at: { lat: at.lat, lon: at.lon } });
   return off && { radial: off.radial, toCourse: off.to_course, nm: off.nm };
 }
 

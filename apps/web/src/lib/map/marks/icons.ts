@@ -2,7 +2,9 @@
  *  html, its box and the point in it that sits on the map's point, px. The
  *  shape of a div icon's options, so the marks read the same wherever
  *  they were written for. */
-export interface IconLike { options: { html: string; iconSize: [number, number]; iconAnchor: [number, number]; className?: string } }
+export interface IconLike {
+  options: { html: string; iconSize: [number, number]; iconAnchor: [number, number]; className?: string };
+}
 
 export function divIcon(options: IconLike["options"]): IconLike {
   return { options };
@@ -74,9 +76,7 @@ export const dotIcon = made(function dotIcon(fill: string, label?: string | numb
   // the number off-centre. 11px is Apple's floor for text meant to be
   // read; these were 8, and they are the numbers a pilot matches to
   // the nav log.
-  const size = withLabel
-    ? "grid h-[24px] w-[24px] place-items-center text-[11px] font-bold leading-none tracking-tight"
-    : "h-4 w-4";
+  const size = withLabel ? "grid h-[24px] w-[24px] place-items-center text-[11px] font-bold leading-none tracking-tight" : "h-4 w-4";
   return divIcon({
     className: "",
     iconSize: [tapSize, tapSize],
@@ -101,11 +101,16 @@ export function ownShipHtml(headingDeg: number | null, off: boolean, look: OwnSh
   const size = beam ? 68 : plane ? 34 : 28;
   return {
     size,
-    html: !plane && (headingDeg === null || off)
-      ? `<div data-own-ship="${off ? "off" : "on"}" class="absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-white shadow-[0_1px_4px_rgba(0,0,0,.45)]" style="background:${fill}"></div>`
-      : ownShipSvg(look, fill, size,
-        `data-own-ship="${off ? "off" : "on"}" data-look="${look}" data-moving="${beam}" class="absolute left-0 top-0 drop-shadow-[0_1.5px_3px_rgba(0,0,0,.4)]" style="transform:rotate(${Number(headingDeg ?? 0)}deg)"`,
-        beam),
+    html:
+      !plane && (headingDeg === null || off)
+        ? `<div data-own-ship="${off ? "off" : "on"}" class="absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-white shadow-[0_1px_4px_rgba(0,0,0,.45)]" style="background:${fill}"></div>`
+        : ownShipSvg(
+            look,
+            fill,
+            size,
+            `data-own-ship="${off ? "off" : "on"}" data-look="${look}" data-moving="${beam}" class="absolute left-0 top-0 drop-shadow-[0_1.5px_3px_rgba(0,0,0,.4)]" style="transform:rotate(${Number(headingDeg ?? 0)}deg)"`,
+            beam,
+          ),
   };
 }
 
@@ -121,7 +126,8 @@ export function ownShipHtml(headingDeg: number | null, off: boolean, look: OwnSh
 export const fixMarkIcon = made(function fixMarkIcon(label: string) {
   return divIcon({
     className: "",
-    iconSize: [TAP, TAP], iconAnchor: [TAP / 2, TAP / 2],
+    iconSize: [TAP, TAP],
+    iconAnchor: [TAP / 2, TAP / 2],
     html:
       `<span class="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-full border-2 bg-white py-0.5 pr-1.5 pl-1 text-[11px] leading-none font-bold text-[#1c1a17] shadow-sm"` +
       ` style="border-color:${WAYPOINT_MAGENTA}">` +
@@ -149,12 +155,16 @@ export const fixMarkIcon = made(function fixMarkIcon(label: string) {
  * alone is lost on chart of the same hue.
  */
 export const airportMarkIcon = made(function airportMarkIcon(
-  ident: string, space: AirspaceClass | null, weather: string, use: "military" | "private" | null = null,
+  ident: string,
+  space: AirspaceClass | null,
+  weather: string,
+  use: "military" | "private" | null = null,
 ) {
   const half = AIRPORT_MARK / 2;
   return divIcon({
     className: "",
-    iconSize: [AIRPORT_MARK, AIRPORT_MARK], iconAnchor: [half, half],
+    iconSize: [AIRPORT_MARK, AIRPORT_MARK],
+    iconAnchor: [half, half],
     html:
       airportMarkSvg(space, weather, use, "absolute inset-0 overflow-visible drop-shadow-[0_1px_1px_rgba(0,0,0,.35)]") +
       `<span class="absolute top-1/2 left-[calc(100%+1px)] -translate-y-1/2 whitespace-nowrap text-[11px] leading-none font-bold text-[#1c1a17] [text-shadow:0_0_2px_#fff,0_0_2px_#fff,0_0_3px_#fff,0_0_4px_#fff]">${text(ident)}</span>`,
@@ -176,38 +186,40 @@ const TRAFFIC_MARK = 16;
  *  under it. A tap anywhere in the 44 points round it picks it. Track to
  *  five degrees and the line to four points, so the icons made once are
  *  a few hundred. */
-export const trafficIcon = made((
-  trackDeg: number | null, colour: string, label: string, callsign: string | null, trendPx: number, tracked: boolean,
-) => {
-  const half = TRAFFIC_MARK / 2;
-  // The trend's screen points in the box's own units.
-  const trend = (Math.round(trendPx / 4) * 4 * 22) / TRAFFIC_MARK;
-  return divIcon({
-    className: "",
-    iconSize: [TRAFFIC_MARK, TRAFFIC_MARK],
-    iconAnchor: [half, half],
-    html:
-      // The hit area: 44 points round the mark, as every tap target's
-      // (index.css), the mark not grown for it.
-      `<span class="absolute rounded-full" style="inset:-${(44 - TRAFFIC_MARK) / 2}px" data-traffic-hit=""></span>` +
-      (tracked ? `<span class="pointer-events-none absolute -inset-[7px] rounded-full border-[2.5px] border-[var(--tint)] bg-white/70 shadow-[0_1px_4px_rgba(0,0,0,.4)]" data-traffic-tracked=""></span>` : "") +
-      `<svg viewBox="0 0 22 22" width="${TRAFFIC_MARK}" height="${TRAFFIC_MARK}" aria-hidden="true" data-traffic="" overflow="visible"` +
-      ` class="pointer-events-none absolute left-0 top-0 overflow-visible drop-shadow-[0_1px_2px_rgba(0,0,0,.5)]"` +
-      ` style="transform:rotate(${trackDeg == null ? 0 : Math.round(trackDeg / 5) * 5}deg)">` +
-      (trackDeg != null && trendPx > 0
-        ? `<line x1="11" y1="4" x2="11" y2="${Math.round((4 - trend) * 10) / 10}" stroke="${text(colour)}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" data-trend=""/>`
-        : "") +
-      (trackDeg == null
-        ? `<circle cx="11" cy="11" r="5" fill="${text(colour)}" stroke="#ffffff" stroke-width="2" vector-effect="non-scaling-stroke"/>`
-        : `<path d="M11 2 L18 19 L11 14.5 L4 19 Z" fill="${text(colour)}" stroke="#ffffff" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`) +
-      `</svg>` +
-      (label || callsign
-        ? `<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#1f2933]/80 px-1 text-center text-[11px] font-bold leading-[14px] text-white tabular-nums"` +
-          ` style="top:${tracked ? TRAFFIC_MARK + 6 : TRAFFIC_MARK}px;color:${text(colour === TRAFFIC_COLOURS.near ? CHART.trafficNearText : "#ffffff")}">` +
-          `${text(label)}${callsign ? `${label ? "<br>" : ""}<span class="font-semibold text-white/85">${text(callsign)}</span>` : ""}</span>`
-        : ""),
-  });
-});
+export const trafficIcon = made(
+  (trackDeg: number | null, colour: string, label: string, callsign: string | null, trendPx: number, tracked: boolean) => {
+    const half = TRAFFIC_MARK / 2;
+    // The trend's screen points in the box's own units.
+    const trend = (Math.round(trendPx / 4) * 4 * 22) / TRAFFIC_MARK;
+    return divIcon({
+      className: "",
+      iconSize: [TRAFFIC_MARK, TRAFFIC_MARK],
+      iconAnchor: [half, half],
+      html:
+        // The hit area: 44 points round the mark, as every tap target's
+        // (index.css), the mark not grown for it.
+        `<span class="absolute rounded-full" style="inset:-${(44 - TRAFFIC_MARK) / 2}px" data-traffic-hit=""></span>` +
+        (tracked
+          ? `<span class="pointer-events-none absolute -inset-[7px] rounded-full border-[2.5px] border-[var(--tint)] bg-white/70 shadow-[0_1px_4px_rgba(0,0,0,.4)]" data-traffic-tracked=""></span>`
+          : "") +
+        `<svg viewBox="0 0 22 22" width="${TRAFFIC_MARK}" height="${TRAFFIC_MARK}" aria-hidden="true" data-traffic="" overflow="visible"` +
+        ` class="pointer-events-none absolute left-0 top-0 overflow-visible drop-shadow-[0_1px_2px_rgba(0,0,0,.5)]"` +
+        ` style="transform:rotate(${trackDeg == null ? 0 : Math.round(trackDeg / 5) * 5}deg)">` +
+        (trackDeg != null && trendPx > 0
+          ? `<line x1="11" y1="4" x2="11" y2="${Math.round((4 - trend) * 10) / 10}" stroke="${text(colour)}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" data-trend=""/>`
+          : "") +
+        (trackDeg == null
+          ? `<circle cx="11" cy="11" r="5" fill="${text(colour)}" stroke="#ffffff" stroke-width="2" vector-effect="non-scaling-stroke"/>`
+          : `<path d="M11 2 L18 19 L11 14.5 L4 19 Z" fill="${text(colour)}" stroke="#ffffff" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`) +
+        `</svg>` +
+        (label || callsign
+          ? `<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#1f2933]/80 px-1 text-center text-[11px] font-bold leading-[14px] text-white tabular-nums"` +
+            ` style="top:${tracked ? TRAFFIC_MARK + 6 : TRAFFIC_MARK}px;color:${text(colour === TRAFFIC_COLOURS.near ? CHART.trafficNearText : "#ffffff")}">` +
+            `${text(label)}${callsign ? `${label ? "<br>" : ""}<span class="font-semibold text-white/85">${text(callsign)}</span>` : ""}</span>`
+          : ""),
+    });
+  },
+);
 
 /** Traffic's colours: within 1,000 ft of own ship's height amber, the
  *  rest the ADS-B displays' cyan. */

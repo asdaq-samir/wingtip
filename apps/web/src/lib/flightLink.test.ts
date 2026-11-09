@@ -5,7 +5,9 @@ const flight = { departureIdent: "C81", destinationIdent: "KDLH", stops: ["KMSN"
 
 describe("a flight's picks", () => {
   it("are the address's own keys alone", () => {
-    const address = new URLSearchParams("dep=C81&dest=KDLH&pattern=KMSN:18&holds=KMSN:180:L:1M:2T&class_b=0&view=briefing&altitudes=VPBNG:4500");
+    const address = new URLSearchParams(
+      "dep=C81&dest=KDLH&pattern=KMSN:18&holds=KMSN:180:L:1M:2T&class_b=0&view=briefing&altitudes=VPBNG:4500",
+    );
     expect(new URLSearchParams(picksOf(address)).toString()).toBe("pattern=KMSN%3A18&holds=KMSN%3A180%3AL%3A1M%3A2T&class_b=0");
     expect(picksOf(address, ["altitudes"])).toContain("altitudes=VPBNG%3A4500");
   });

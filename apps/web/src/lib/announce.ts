@@ -29,8 +29,15 @@ function region(politeness: Politeness): HTMLElement | null {
   el.dataset.announcer = politeness;
   // Tailwind's sr-only, written out: this lives outside React's tree.
   Object.assign(el.style, {
-    position: "absolute", width: "1px", height: "1px", padding: "0", margin: "-1px",
-    overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: "0",
+    position: "absolute",
+    width: "1px",
+    height: "1px",
+    padding: "0",
+    margin: "-1px",
+    overflow: "hidden",
+    clip: "rect(0, 0, 0, 0)",
+    whiteSpace: "nowrap",
+    border: "0",
   });
   document.body.appendChild(el);
   regions[politeness] = el;
@@ -50,12 +57,16 @@ export function announce(words: string, politeness: Politeness = "polite") {
   const el = region(politeness);
   if (!el || !words) return;
   el.textContent = "";
-  window.setTimeout(() => { el.textContent = words; }, 50);
+  window.setTimeout(() => {
+    el.textContent = words;
+  }, 50);
 }
 
 /** Says `words` whenever they change to a new line (not when they go). */
 export function useAnnounce(words: string | null | undefined, politeness: Politeness = "polite") {
-  useEffect(() => { prepareAnnouncer(); }, []);
+  useEffect(() => {
+    prepareAnnouncer();
+  }, []);
   useEffect(() => {
     if (words) announce(words, politeness);
   }, [words, politeness]);

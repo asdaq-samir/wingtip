@@ -10,8 +10,7 @@ import { capitalised } from "../../../lib/advisories";
 /** What the scale's ends and middle mean, under the buttons -- the
  *  Guide's scale (RatingGuide) in one line, each term kept whole where
  *  the line wraps. */
-const SCALE_KEY = ["0 not a feature", "3 workable", "5 unmistakable"]
-  .map(term => term.replaceAll(" ", "\u00a0")).join(" · ");
+const SCALE_KEY = ["0 not a feature", "3 workable", "5 unmistakable"].map((term) => term.replaceAll(" ", "\u00a0")).join(" · ");
 
 /** A rating's button as the stock Button drew it -- 40 tall in the
  *  card's grid, the figure bold at 17 to a finger, a clear border its
@@ -31,7 +30,12 @@ const RATING = cn(
  * route rates from here top to bottom. With nothing picked, a way to the
  * first point not yet rated.
  */
-export default function RatingCard({ point, number, onRate, onStart }: {
+export default function RatingCard({
+  point,
+  number,
+  onRate,
+  onStart,
+}: {
   /** The point picked, if it is one to rate (not an end of the route). */
   point: Point | null;
   /** Its place among the route's points, as the list numbers it. */
@@ -43,8 +47,14 @@ export default function RatingCard({ point, number, onRate, onStart }: {
   if (!point || isEndpoint(point)) {
     return (
       <div className="flex w-full items-center gap-3 rounded-xl bg-background/70 px-3 py-2.5" data-testid="rating-card">
-        <p className={cn("min-w-0 flex-1 truncate", TEXT.prose)}>{onStart ? "The next point not yet rated" : "Every point here is rated"}</p>
-        {onStart && <Button type="button" size="sm" onClick={onStart} data-testid="rating-start">Start</Button>}
+        <p className={cn("min-w-0 flex-1 truncate", TEXT.prose)}>
+          {onStart ? "The next point not yet rated" : "Every point here is rated"}
+        </p>
+        {onStart && (
+          <Button type="button" size="sm" onClick={onStart} data-testid="rating-start">
+            Start
+          </Button>
+        )}
       </div>
     );
   }
@@ -54,7 +64,10 @@ export default function RatingCard({ point, number, onRate, onStart }: {
   return (
     <div className="flex w-full flex-col gap-2 rounded-xl bg-background/70 px-3 py-2" data-testid="rating-card">
       <div className="flex min-w-0 items-baseline gap-2">
-        <span className={cn("shrink-0 font-semibold", TEXT.row)}>{number != null && `${number} · `}{capitalised(kind)}</span>
+        <span className={cn("shrink-0 font-semibold", TEXT.row)}>
+          {number != null && `${number} · `}
+          {capitalised(kind)}
+        </span>
         <span className={cn("min-w-0 truncate text-muted-foreground", TEXT.detail)}>{where}</span>
       </div>
       {/* Six across the card, eight apart: each 40 tall, its 44-point hit
@@ -64,17 +77,22 @@ export default function RatingCard({ point, number, onRate, onStart }: {
           the page's, walking the points). A tap on the one
           already given rates it again, as before, and moves on. */}
       <ToggleGroup
-        type="single" value={rating === null ? "" : `${rating}`} aria-label="Rate this waypoint" orientation="horizontal"
-        onValueChange={v => onRate(v ? (Number(v) as Rating) : rating!)}
+        type="single"
+        value={rating === null ? "" : `${rating}`}
+        aria-label="Rate this waypoint"
+        orientation="horizontal"
+        onValueChange={(v) => onRate(v ? (Number(v) as Rating) : rating!)}
         // The group's own 44 a pseudo-element behind it, as Segmented's
         // track has: Radix makes it a radio group, a control of its own
         // to the iOS audit, and its row is 40 (isolate keeps the area over
         // the card). The row does not grow.
         className="relative isolate grid w-full grid-cols-6 gap-2 rounded-none after:absolute after:inset-x-0 after:-inset-y-0.5 after:-z-10 after:content-['']"
       >
-        {RATINGS.map(r => (
+        {RATINGS.map((r) => (
           <ToggleGroupItem
-            key={r} value={`${r}`} aria-label={`Rate ${r}`}
+            key={r}
+            value={`${r}`}
+            aria-label={`Rate ${r}`}
             className={RATING}
             style={{ backgroundColor: COLORS[r], color: inkOn(COLORS[r]) }}
           >

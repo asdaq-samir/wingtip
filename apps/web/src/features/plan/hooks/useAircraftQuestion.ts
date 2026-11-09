@@ -65,39 +65,48 @@ export { useTrafficFocus } from "../../../lib/map/position/tracking";
  * owner's ask ("don't need the extra filters at the bottom").
  */
 export function useFilteredAircraft(seen: TrafficAircraft[], from: LatLon | null) {
-  const filter = asAsked({ ...keptFilter(usePreferences(s => s.aircraftFilter)), kind: "any", band: "any", operator: "" });
+  const filter = asAsked({ ...keptFilter(usePreferences((s) => s.aircraftFilter)), kind: "any", band: "any", operator: "" });
   const ident = filter.place === "airport" ? filter.airport.trim().toUpperCase() : "";
   const { data: field, isError: noField } = useQuery({ ...airportQuery(ident), enabled: ident.length >= 3 });
   // The traffic the place asks for: round the airport, or near the pilot;
   // the map's own where it is the map.
-  const center = filter.place === "airport" ? (field ? { lat: field.lat, lon: field.lon } : null)
-    : filter.place === "near" ? from : null;
+  const center = filter.place === "airport" ? (field ? { lat: field.lat, lon: field.lon } : null) : filter.place === "near" ? from : null;
   // Round an airport, the engine's reach for an airplane inbound or
   // departing (`traffic_reach`, the figure field_relation judges by).
   const radius = filter.place === "airport" ? callEngine("traffic_reach", {}).relation_nm : filter.nearNm;
   const { data: around } = useQuery({
     queryKey: ["trafficFilter", center ? Math.round(center.lat * 20) / 20 : null, center ? Math.round(center.lon * 20) / 20 : null, radius],
-    queryFn: () => api.traffic({ lat: center!.lat, lon: center!.lon, radius }), enabled: !!center,
-    refetchInterval: FILTER_REFRESH_MS, meta: { silent: true },
+    queryFn: () => api.traffic({ lat: center!.lat, lon: center!.lon, radius }),
+    enabled: !!center,
+    refetchInterval: FILTER_REFRESH_MS,
+    meta: { silent: true },
   });
   const aroundPlanes = around?.aircraft;
-  const pool = useMemo(() => (filter.place === "map" ? seen : aroundPlanes ?? NONE), [filter.place, seen, aroundPlanes]);
+  const pool = useMemo(() => (filter.place === "map" ? seen : (aroundPlanes ?? NONE)), [filter.place, seen, aroundPlanes]);
   const placed = useMemo(() => {
-    if (filter.place === "near" && from) return pool.filter(p => distanceNm(from, p) <= filter.nearNm);
+    if (filter.place === "near" && from) return pool.filter((p) => distanceNm(from, p) <= filter.nearNm);
     if (filter.place !== "airport" || !field) return filter.place === "airport" ? [] : pool;
     const at = { lat: field.lat, lon: field.lon, elevationFt: field.elevation_ft ?? 0 };
     if (filter.relation === "based") return pool;
-    return pool.filter(p => relationTo(p, at)[filter.relation as "around" | "inbound" | "departing"]);
+    return pool.filter((p) => relationTo(p, at)[filter.relation as "around" | "inbound" | "departing"]);
   }, [pool, filter.place, filter.nearNm, filter.relation, field, from]);
   // Based at the field: where each about it keeps to (wingtip.traffic.based),
   // asked again while some are still being looked up.
-  const basedAsk = filter.place === "airport" && filter.relation === "based" && field ? placed.map(p => p.hex).slice(0, 60) : [];
+  const basedAsk = filter.place === "airport" && filter.relation === "based" && field ? placed.map((p) => p.hex).slice(0, 60) : [];
   const { data: bases } = useQuery({
-    queryKey: ["trafficBased", basedAsk.join(",")], queryFn: () => api.trafficBased(basedAsk), enabled: basedAsk.length > 0,
-    refetchInterval: query => ((query.state.data?.pending.length ?? 0) > 0 ? 5_000 : false), meta: { silent: true },
+    queryKey: ["trafficBased", basedAsk.join(",")],
+    queryFn: () => api.trafficBased(basedAsk),
+    enabled: basedAsk.length > 0,
+    refetchInterval: (query) => ((query.state.data?.pending.length ?? 0) > 0 ? 5_000 : false),
+    meta: { silent: true },
   });
-  const kept = placed.filter(p => matches(p, filter)
-    && (filter.relation !== "based" || filter.place !== "airport" || (!!field && !!bases?.based[p.hex] && sameField(bases.based[p.hex]!.ident, field.ident))));
+  const kept = placed.filter(
+    (p) =>
+      matches(p, filter) &&
+      (filter.relation !== "based" ||
+        filter.place !== "airport" ||
+        (!!field && !!bases?.based[p.hex] && sameField(bases.based[p.hex]!.ident, field.ident))),
+  );
   const looking = filter.relation === "based" && filter.place === "airport" && (bases?.pending.length ?? 0) > 0;
   return { filter, field, noField, pool, kept, looking };
 }
@@ -115,11 +124,15 @@ type Field = LatLon & { elevation_ft?: number | null };
  * 6-3-4). Height above the field is the airplane's reported altitude less
  * the field's elevation: a band to look by, GNSS or pressure as sent.
  */
-export function strip(q: Question, planes: TrafficAircraft[], from: LatLon | null, field: Field | null | undefined):
-  { plane: TrafficAircraft; detail: string }[] {
+export function strip(
+  q: Question,
+  planes: TrafficAircraft[],
+  from: LatLon | null,
+  field: Field | null | undefined,
+): { plane: TrafficAircraft; detail: string }[] {
   const nm = (a: LatLon | null | undefined, p: TrafficAircraft) => (a ? distanceNm(a, p) : Infinity);
   const miles = (n: number) => (Number.isFinite(n) ? nmAway(n) : "");
-  const rows = planes.map(plane => {
+  const rows = planes.map((plane) => {
     if (q === "near") return { plane, key: nm(from, plane), detail: miles(nm(from, plane)) };
     if (q === "emergency") {
       const code = squawkMeaning(plane.squawk) ? plane.squawk! : inEmergency(plane) ? "Emergency" : "";
@@ -132,7 +145,7 @@ export function strip(q: Question, planes: TrafficAircraft[], from: LatLon | nul
     }
     if (q === "inbound") {
       const out = nm(field, plane);
-      const minutes = plane.speed_kt ? out / plane.speed_kt * 60 : null;
+      const minutes = plane.speed_kt ? (out / plane.speed_kt) * 60 : null;
       return { plane, key: minutes ?? out, detail: minutes == null ? miles(out) : `${Math.max(1, Math.round(minutes))} min` };
     }
     return { plane, key: nm(field, plane), detail: miles(nm(field, plane)) };

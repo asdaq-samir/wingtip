@@ -18,7 +18,8 @@ const BAR_PX = 56;
 /** The share and the close over a picture: a dark pane of glass with the
  *  glyph white, which reads on a photo whatever the theme, where the
  *  sheet's own grey glass was lost on a dark one. */
-const OVER_PICTURE = "bg-black/45 text-white backdrop-blur-md hover:bg-black/55 hover:text-white dark:bg-black/45 dark:hover:bg-black/55 solid:bg-black/75 solid:backdrop-blur-none dark:solid:bg-black/75";
+const OVER_PICTURE =
+  "bg-black/45 text-white backdrop-blur-md hover:bg-black/55 hover:text-white dark:bg-black/45 dark:hover:bg-black/55 solid:bg-black/75 solid:backdrop-blur-none dark:solid:bg-black/75";
 
 /**
  * A card's head as a picture across its top, as Apple's Maps opens a
@@ -51,7 +52,24 @@ export type HeadSlide = {
   openTestId?: string;
 };
 
-export function PhotoHead({ title, subtitle, line, slides, label, onClose, onShare, shareAtLeft, beside, pill, testId, titleTestId, subtitleTestId, closeTestId, shareTestId, children }: {
+export function PhotoHead({
+  title,
+  subtitle,
+  line,
+  slides,
+  label,
+  onClose,
+  onShare,
+  shareAtLeft,
+  beside,
+  pill,
+  testId,
+  titleTestId,
+  subtitleTestId,
+  closeTestId,
+  shareTestId,
+  children,
+}: {
   /** Set large over the picture's foot: an airport's ident, an airplane's callsign. */
   title: string;
   /** Under it: "Duluth International · Duluth, MN". */
@@ -145,15 +163,35 @@ export function PhotoHead({ title, subtitle, line, slides, label, onClose, onSha
           {beside?.(cn(!past && OVER_PICTURE))}
           {/* Back one: a page opened in the card first, else the card
               (lib/openCards), as the bar's close goes. */}
-          <CloseButton onClick={() => { if (!closeTopCard()) onClose(); }} className={cn(!past && OVER_PICTURE)} data-testid={closeTestId} />
+          <CloseButton
+            onClick={() => {
+              if (!closeTopCard()) onClose();
+            }}
+            className={cn(!past && OVER_PICTURE)}
+            data-testid={closeTestId}
+          />
         </div>
       </div>
-      <div ref={head} className="relative isolate -mx-4 shrink-0 overflow-hidden bg-muted" style={{ height: HEAD_PX }} data-testid={testId} data-picture-head="">
+      <div
+        ref={head}
+        className="relative isolate -mx-4 shrink-0 overflow-hidden bg-muted"
+        style={{ height: HEAD_PX }}
+        data-testid={testId}
+        data-picture-head=""
+      >
         <PictureSlides
-          flush label={label} className="size-full" testId={`${testId}-pictures`} dots={!bare} onPage={setPage}
-          slides={shown.map(slide => (
+          flush
+          label={label}
+          className="size-full"
+          testId={`${testId}-pictures`}
+          dots={!bare}
+          onPage={setPage}
+          slides={shown.map((slide) => (
             <button
-              key={slide.key} type="button" onClick={() => setBare(b => !b)} aria-pressed={bare}
+              key={slide.key}
+              type="button"
+              onClick={() => setBare((b) => !b)}
+              aria-pressed={bare}
               aria-label={bare ? `${title}: show its name and buttons` : `${title}: show the picture alone`}
               className="absolute inset-0 block size-full text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
               data-testid={`${testId}-picture`}
@@ -175,8 +213,14 @@ export function PhotoHead({ title, subtitle, line, slides, label, onClose, onSha
           )}
           aria-hidden={bare || undefined}
         >
-          <h2 tabIndex={-1} className={cn("truncate font-extrabold tracking-tight outline-none", TEXT.hero)} data-testid={titleTestId}>{title}</h2>
-          {subtitle != null && <p className={cn("line-clamp-2 text-white/90", TEXT.prose)} data-testid={subtitleTestId}>{subtitle}</p>}
+          <h2 tabIndex={-1} className={cn("truncate font-extrabold tracking-tight outline-none", TEXT.hero)} data-testid={titleTestId}>
+            {title}
+          </h2>
+          {subtitle != null && (
+            <p className={cn("line-clamp-2 text-white/90", TEXT.prose)} data-testid={subtitleTestId}>
+              {subtitle}
+            </p>
+          )}
           {line}
         </div>
         {/* The picture in sight full screen, where it has somewhere to
@@ -185,10 +229,17 @@ export function PhotoHead({ title, subtitle, line, slides, label, onClose, onSha
           <div className="absolute right-4 bottom-3 z-10">
             {inSight.href ? (
               <RoundButton asChild label={inSight.openLabel ?? "Full screen"} className={OVER_PICTURE}>
-                <a href={inSight.href} target="_blank" rel="noopener" data-testid={inSight.openTestId}><Maximize2 className="size-5" strokeWidth={2} /></a>
+                <a href={inSight.href} target="_blank" rel="noopener" data-testid={inSight.openTestId}>
+                  <Maximize2 className="size-5" strokeWidth={2} />
+                </a>
               </RoundButton>
             ) : (
-              <RoundButton label={inSight.openLabel ?? "Full screen"} onClick={inSight.open} className={OVER_PICTURE} data-testid={inSight.openTestId}>
+              <RoundButton
+                label={inSight.openLabel ?? "Full screen"}
+                onClick={inSight.open}
+                className={OVER_PICTURE}
+                data-testid={inSight.openTestId}
+              >
                 <Maximize2 className="size-5" strokeWidth={2} />
               </RoundButton>
             )}

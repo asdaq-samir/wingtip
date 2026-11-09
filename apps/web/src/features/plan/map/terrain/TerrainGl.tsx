@@ -17,7 +17,15 @@ import type { TerrainMode } from "./useTerrainView";
  * pilot's-eye view (PilotCamera). The 3D module's entry, loaded on its own
  * (GlRouteMap's lazy import): none of it is in the map's first script.
  */
-export default function TerrainGl({ mode, pilot, aloft }: { mode: Exclude<TerrainMode, "flat">; pilot: boolean; aloft: AloftPoint[] | null }) {
+export default function TerrainGl({
+  mode,
+  pilot,
+  aloft,
+}: {
+  mode: Exclude<TerrainMode, "flat">;
+  pilot: boolean;
+  aloft: AloftPoint[] | null;
+}) {
   const { map } = useGlMap();
   const [ready, setReady] = useState(false);
   // The terrain tiles and their relief, over the chart, under the areas.
@@ -27,7 +35,9 @@ export default function TerrainGl({ mode, pilot, aloft }: { mode: Exclude<Terrai
     // What stands on the tiles (the 3D ground, PilotCamera's colours) only
     // once they are there: the children's effects run before this one's.
     let live = true;
-    queueMicrotask(() => { if (live) setReady(true); });
+    queueMicrotask(() => {
+      if (live) setReady(true);
+    });
     return () => {
       live = false;
       setReady(false);

@@ -15,17 +15,27 @@ const seconds = (ms: number | null | undefined) => (ms == null ? "—" : `${(ms 
  * airports took, the slowest, opened for all of its milestones.
  */
 export default function LoadLogPanel() {
-  const loads = useLoadLog(s => s.value);
-  const fresh = loads.filter(l => l.fresh);
-  const cached = loads.filter(l => !l.fresh);
+  const loads = useLoadLog((s) => s.value);
+  const fresh = loads.filter((l) => l.fresh);
+  const cached = loads.filter((l) => !l.fresh);
   return (
     <div className="space-y-5 pb-1" data-testid="load-log">
-      {!loads.length && <ListGroup><ListRow muted title="No loads yet" description={<span className={TEXT.detail}>Each time the app opens on the map, when its layers show is kept here.</span>} /></ListGroup>}
+      {!loads.length && (
+        <ListGroup>
+          <ListRow
+            muted
+            title="No loads yet"
+            description={<span className={TEXT.detail}>Each time the app opens on the map, when its layers show is kept here.</span>}
+          />
+        </ListGroup>
+      )}
       {fresh.length > 0 && <Middle title={`Fresh loads, middle of ${fresh.length}`} loads={fresh} testId="load-log-fresh" />}
       {cached.length > 0 && <Middle title={`From the cache, middle of ${cached.length}`} loads={cached} testId="load-log-cached" />}
       {loads.length > 0 && (
         <ListGroup title="Each load">
-          {loads.map(l => <LoadRow key={l.at} load={l} />)}
+          {loads.map((l) => (
+            <LoadRow key={l.at} load={l} />
+          ))}
         </ListGroup>
       )}
     </div>
@@ -33,24 +43,34 @@ export default function LoadLogPanel() {
 }
 
 function Middle({ title, loads, testId }: { title: string; loads: LoadEntry[]; testId: string }) {
-  const rows = MILESTONES.map(m => ({ ...m, value: median(loads.map(l => l.ms[m.key])) }))
-    .sort((a, b) => (a.value ?? Infinity) - (b.value ?? Infinity));
+  const rows = MILESTONES.map((m) => ({ ...m, value: median(loads.map((l) => l.ms[m.key])) })).sort(
+    (a, b) => (a.value ?? Infinity) - (b.value ?? Infinity),
+  );
   return (
     <ListGroup title={title}>
-      {rows.map(r => <ListRow key={r.key} title={r.label} value={seconds(r.value)} data-testid={`${testId}-${r.key}`} />)}
+      {rows.map((r) => (
+        <ListRow key={r.key} title={r.label} value={seconds(r.value)} data-testid={`${testId}-${r.key}`} />
+      ))}
     </ListGroup>
   );
 }
 
 function LoadRow({ load }: { load: LoadEntry }) {
   const when = new Date(load.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  const steps = MILESTONES.filter(m => load.ms[m.key] !== undefined)
+  const steps = MILESTONES.filter((m) => load.ms[m.key] !== undefined)
     .sort((a, b) => load.ms[a.key]! - load.ms[b.key]!)
-    .map(m => `${m.label} ${seconds(load.ms[m.key])}`).join(" · ");
+    .map((m) => `${m.label} ${seconds(load.ms[m.key])}`)
+    .join(" · ");
   return (
     <ListRow
-      title={when} value={`Airports ${seconds(load.ms.airports)}`} data-testid="load-log-entry"
-      description={<span className={TEXT.detail}>{load.fresh ? "Fresh" : "From the cache"} · {steps}</span>}
+      title={when}
+      value={`Airports ${seconds(load.ms.airports)}`}
+      data-testid="load-log-entry"
+      description={
+        <span className={TEXT.detail}>
+          {load.fresh ? "Fresh" : "From the cache"} · {steps}
+        </span>
+      }
     />
   );
 }

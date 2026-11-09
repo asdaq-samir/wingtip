@@ -6,7 +6,16 @@ import Segmented from "./Segmented";
 import SwitchRow from "./SwitchRow";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { clearOwnTrail, useOwnTrail } from "../lib/map/position/ownTrail";
-import { BASE_CHARTS, usePreferences, type BaseChart, type ChartLight, type ChartNight, type MapOverlay, type OverlayStrength, type Terrain } from "../lib/preferences";
+import {
+  BASE_CHARTS,
+  usePreferences,
+  type BaseChart,
+  type ChartLight,
+  type ChartNight,
+  type MapOverlay,
+  type OverlayStrength,
+  type Terrain,
+} from "../lib/preferences";
 import { useShownOverlay } from "../lib/map/sources/useShownOverlay";
 import { USGS_URL } from "../lib/map/sources/imagery";
 import { useGoogleSession } from "../lib/map/sources/googleSession";
@@ -41,7 +50,7 @@ import { useCanListen } from "../lib/speechLocal";
  */
 export default function MapSettings() {
   const prefs = usePreferences();
-  const trailed = useOwnTrail(s => s.path.length > 1);
+  const trailed = useOwnTrail((s) => s.path.length > 1);
   // A Google choice without a key is none (useShownOverlay).
   const overlay = useShownOverlay();
   // Google's only where the deployment has a key for it.
@@ -57,12 +66,12 @@ export default function MapSettings() {
   const ages = useLayerAges();
   // The edition drawn past its 56-day cycle, said under the Charts row
   // (the engine's data_cycle; lib/dataCycles): still drawn, never hidden.
-  const chartsCycle = useDataCycles().find(c => c.key === "charts");
+  const chartsCycle = useDataCycles().find((c) => c.key === "charts");
   const chartsWarning = chartsCycle ? cycleWarning(chartsCycle) : null;
   const sec = prefs.base === "sec";
   const [alertMode, setAlertMode] = useAlertMode();
   const [copilotMode, setCopilotMode] = useCopilotMode();
-  const atcListen = useAtcListen(s => s.value);
+  const atcListen = useAtcListen((s) => s.value);
   const voice = useCanListen();
   // Why the microphone, before the browser asks (MicPrimer).
   const [micPrimer, primeMic] = useMicPrimer();
@@ -70,8 +79,15 @@ export default function MapSettings() {
     <div className="flex flex-col gap-5" data-testid="map-settings-groups">
       {micPrimer}
       <PictureChoices
-        title="Chart" value={prefs.base} onChange={v => prefs.setBase(v as BaseChart)} testId="base-chart-select"
-        options={BASE_CHARTS.map(b => ({ value: b.kind, label: b.label, src: chart ? tileUrl(chart, b.kind, ...PICTURE_TILE) : undefined }))}
+        title="Chart"
+        value={prefs.base}
+        onChange={(v) => prefs.setBase(v as BaseChart)}
+        testId="base-chart-select"
+        options={BASE_CHARTS.map((b) => ({
+          value: b.kind,
+          label: b.label,
+          src: chart ? tileUrl(chart, b.kind, ...PICTURE_TILE) : undefined,
+        }))}
       />
       {/* Over the chart, at the pilot's ask (OverlayTiles): the USGS's
           aerial imagery, or Google's map or its satellite imagery where
@@ -79,8 +95,10 @@ export default function MapSettings() {
           chart, the route and the marks over it either way. */}
       <div className="flex flex-col gap-2">
         <PictureChoices
-          title="Overlay" value={overlay.startsWith("google") ? "google" : overlay} testId="overlay-select"
-          onChange={v => prefs.setOverlay((v === "google" ? "google-map" : v) as MapOverlay)}
+          title="Overlay"
+          value={overlay.startsWith("google") ? "google" : overlay}
+          testId="overlay-select"
+          onChange={(v) => prefs.setOverlay((v === "google" ? "google-map" : v) as MapOverlay)}
           options={[
             { value: "none", label: "None", src: chart ? tileUrl(chart, prefs.base, ...PICTURE_TILE) : undefined, faded: true },
             { value: "usgs", label: "Imagery", src: USGS_PICTURE },
@@ -92,15 +110,28 @@ export default function MapSettings() {
             {overlay.startsWith("google") && google && (
               <ListRow title="Google">
                 <Segmented
-                  label="Google" value={overlay} onChange={v => prefs.setOverlay(v as MapOverlay)} testId="google-overlay-select"
-                  options={[{ value: "google-map", label: "Map" }, { value: "google-satellite", label: "Satellite" }]}
+                  label="Google"
+                  value={overlay}
+                  onChange={(v) => prefs.setOverlay(v as MapOverlay)}
+                  testId="google-overlay-select"
+                  options={[
+                    { value: "google-map", label: "Map" },
+                    { value: "google-satellite", label: "Satellite" },
+                  ]}
                 />
               </ListRow>
             )}
             <ListRow title="Strength">
               <Segmented
-                label="Strength" value={prefs.overlayStrength} onChange={v => prefs.setOverlayStrength(v as OverlayStrength)} testId="overlay-strength"
-                options={[{ value: "faint", label: "Faint" }, { value: "half", label: "Half" }, { value: "full", label: "Full" }]}
+                label="Strength"
+                value={prefs.overlayStrength}
+                onChange={(v) => prefs.setOverlayStrength(v as OverlayStrength)}
+                testId="overlay-strength"
+                options={[
+                  { value: "faint", label: "Faint" },
+                  { value: "half", label: "Half" },
+                  { value: "full", label: "Full" },
+                ]}
               />
             </ListRow>
           </ListGroup>
@@ -154,7 +185,10 @@ export default function MapSettings() {
       <ListGroup title="Alerts">
         <ListRow title="Alerts">
           <Segmented
-            label="Alerts" value={alertMode} onChange={v => setAlertMode(v as AlertMode)} testId="alerts-mode"
+            label="Alerts"
+            value={alertMode}
+            onChange={(v) => setAlertMode(v as AlertMode)}
+            testId="alerts-mode"
             options={ALERT_MODES}
           />
         </ListRow>
@@ -162,7 +196,10 @@ export default function MapSettings() {
             aloud, beside the alerts as the same kind of choice. */}
         <ListRow title="Copilot">
           <Segmented
-            label="Copilot" value={copilotMode} onChange={v => setCopilotMode(v as CopilotMode)} testId="copilot-mode"
+            label="Copilot"
+            value={copilotMode}
+            onChange={(v) => setCopilotMode(v as CopilotMode)}
+            testId="copilot-mode"
             options={COPILOT_MODES}
           />
         </ListRow>
@@ -170,28 +207,46 @@ export default function MapSettings() {
             flying, calls to us read into cards. Off until the pilot
             turns it on. Not offered where speech cannot be recognised
             on the device (lib/speechLocal). */}
-        {voice && <ListRow title="ATC">
-          <Segmented
-            label="ATC" value={atcListen} onChange={v => (v === "flying" ? primeMic(() => setAtcListen("flying")) : setAtcListen(v as AtcListen))} testId="atc-listen-mode"
-            options={ATC_LISTEN_MODES}
-          />
-        </ListRow>}
+        {voice && (
+          <ListRow title="ATC">
+            <Segmented
+              label="ATC"
+              value={atcListen}
+              onChange={(v) => (v === "flying" ? primeMic(() => setAtcListen("flying")) : setAtcListen(v as AtcListen))}
+              testId="atc-listen-mode"
+              options={ATC_LISTEN_MODES}
+            />
+          </ListRow>
+        )}
       </ListGroup>
       <ListGroup title="Appearance">
         {/* The white paper chart dimmed in the dark theme, so it does not
             take the pilot's night vision; only its tiles (index.css). */}
         <ListRow title="Chart at Night">
           <Segmented
-            label="Chart at night" value={prefs.chartNight} onChange={v => prefs.setChartNight(v as ChartNight)}
-            testId="chart-night-select" options={[{ value: "normal", label: "Normal" }, { value: "dimmed", label: "Dimmed" }]}
+            label="Chart at night"
+            value={prefs.chartNight}
+            onChange={(v) => prefs.setChartNight(v as ChartNight)}
+            testId="chart-night-select"
+            options={[
+              { value: "normal", label: "Normal" },
+              { value: "dimmed", label: "Dimmed" },
+            ]}
           />
         </ListRow>
         {/* The chart in bright sunlight (lib/sunlight): from the phone's
             light sensor where the browser has one, or by hand. */}
         <ListRow title="Sunlight">
           <Segmented
-            label="Sunlight" value={prefs.chartLight} onChange={v => prefs.setChartLight(v as ChartLight)}
-            testId="sunlight-select" options={[{ value: "auto", label: "Auto" }, { value: "on", label: "On" }, { value: "off", label: "Off" }]}
+            label="Sunlight"
+            value={prefs.chartLight}
+            onChange={(v) => prefs.setChartLight(v as ChartLight)}
+            testId="sunlight-select"
+            options={[
+              { value: "auto", label: "Auto" },
+              { value: "on", label: "On" },
+              { value: "off", label: "Off" },
+            ]}
           />
         </ListRow>
         {/* The ground under the chart (TerrainGl): flat as printed, its
@@ -201,17 +256,29 @@ export default function MapSettings() {
             the map is drawn is. */}
         <ListRow title="Terrain">
           <Segmented
-            label="Terrain" value={prefs.terrain} onChange={v => prefs.setTerrain(v as Terrain)}
-            testId="terrain-select" options={[{ value: "flat", label: "Flat" }, { value: "shaded", label: "Shaded" }, { value: "3d", label: "3D" }]}
+            label="Terrain"
+            value={prefs.terrain}
+            onChange={(v) => prefs.setTerrain(v as Terrain)}
+            testId="terrain-select"
+            options={[
+              { value: "flat", label: "Flat" },
+              { value: "shaded", label: "Shaded" },
+              { value: "3d", label: "3D" },
+            ]}
           />
         </ListRow>
         {/* Own ship on the chart, a plane or the arrow, at the owner's ask:
             a menu, each with its picture. */}
         <ListRow title="You on the Map">
           <PullDown<OwnShipLook>
-            label="You on the map" value={prefs.ownShipLook} onChange={prefs.setOwnShipLook} testId="own-ship-look"
-            options={OWN_SHIP_LOOKS.map(o => ({
-              value: o.value, text: o.label, testId: `own-ship-look-${o.value}`,
+            label="You on the map"
+            value={prefs.ownShipLook}
+            onChange={prefs.setOwnShipLook}
+            testId="own-ship-look"
+            options={OWN_SHIP_LOOKS.map((o) => ({
+              value: o.value,
+              text: o.label,
+              testId: `own-ship-look-${o.value}`,
               label: (
                 <>
                   <span className="size-5 shrink-0" dangerouslySetInnerHTML={{ __html: ownShipSvg(o.value, "#2563eb", 20) }} />
@@ -232,8 +299,11 @@ export default function MapSettings() {
           2026-10-27). */}
       <ListGroup title="Offline">
         <SwitchRow
-          title="Keep Charts Offline" on={prefs.keepOffline && keepingAvailable()} onChange={prefs.setKeepOffline}
-          disabled={!keepingAvailable()} testId="keep-offline-toggle"
+          title="Keep Charts Offline"
+          on={prefs.keepOffline && keepingAvailable()}
+          onChange={prefs.setKeepOffline}
+          disabled={!keepingAvailable()}
+          testId="keep-offline-toggle"
         />
       </ListGroup>
       {/* Where the map's data comes from, and when the weather layers' is
@@ -242,14 +312,34 @@ export default function MapSettings() {
           the map last heard it. */}
       <ListGroup title="Sources">
         <ListRow
-          title="Charts" value={<span className="text-foreground">{chart ? `FAA, ${editionOf(chart.chart_cycle)}` : "FAA"}</span>} data-testid="chart-edition"
-          description={chartsWarning ? <span className={cn("text-destructive-ink", TEXT.detail)} data-testid="chart-edition-out-of-date">{chartsWarning}</span> : undefined}
+          title="Charts"
+          value={<span className="text-foreground">{chart ? `FAA, ${editionOf(chart.chart_cycle)}` : "FAA"}</span>}
+          data-testid="chart-edition"
+          description={
+            chartsWarning ? (
+              <span className={cn("text-destructive-ink", TEXT.detail)} data-testid="chart-edition-out-of-date">
+                {chartsWarning}
+              </span>
+            ) : undefined
+          }
         />
-        <ListRow title="METARs" value={<span className="text-foreground">{ages.metars ? `aviationweather.gov · ${ages.metars}` : "aviationweather.gov"}</span>} data-testid="metars-age" />
-        <ListRow title="TFRs" value={<span className="text-foreground">{ages.tfrs ? `tfr.faa.gov · ${ages.tfrs}` : "tfr.faa.gov"}</span>} data-testid="tfrs-age" />
+        <ListRow
+          title="METARs"
+          value={<span className="text-foreground">{ages.metars ? `aviationweather.gov · ${ages.metars}` : "aviationweather.gov"}</span>}
+          data-testid="metars-age"
+        />
+        <ListRow
+          title="TFRs"
+          value={<span className="text-foreground">{ages.tfrs ? `tfr.faa.gov · ${ages.tfrs}` : "tfr.faa.gov"}</span>}
+          data-testid="tfrs-age"
+        />
         <ListRow
           title="Traffic"
-          value={<span className="text-foreground">{prefs.traffic && ages.traffic ? `adsb.lol · ODbL · ${ages.traffic}` : "adsb.lol · ODbL"}</span>}
+          value={
+            <span className="text-foreground">
+              {prefs.traffic && ages.traffic ? `adsb.lol · ODbL · ${ages.traffic}` : "adsb.lol · ODbL"}
+            </span>
+          }
           data-testid="traffic-age"
         />
       </ListGroup>
@@ -263,13 +353,21 @@ export default function MapSettings() {
  *  charts apart as Apple Maps' tell its maps apart. */
 const PICTURE_TILE = [9, 130, 190] as const;
 /** The USGS's imagery of the same tile (OverlayTiles' service). */
-const USGS_PICTURE = USGS_URL.replace("{z}", String(PICTURE_TILE[0])).replace("{x}", String(PICTURE_TILE[1])).replace("{y}", String(PICTURE_TILE[2]));
+const USGS_PICTURE = USGS_URL.replace("{z}", String(PICTURE_TILE[0]))
+  .replace("{x}", String(PICTURE_TILE[1]))
+  .replace("{y}", String(PICTURE_TILE[2]));
 
 /** A pick of one of a few, each a picture over its word, as Apple Maps'
  *  map types are: the stock ToggleGroup underneath, so each is a radio to
  *  a screen reader and the arrow keys move between them. A picture that
  *  does not load leaves its muted box. */
-function PictureChoices({ title, value, onChange, options, testId }: {
+function PictureChoices({
+  title,
+  value,
+  onChange,
+  options,
+  testId,
+}: {
   title: string;
   value: string;
   onChange: (value: string) => void;
@@ -280,12 +378,20 @@ function PictureChoices({ title, value, onChange, options, testId }: {
     <section className="flex flex-col">
       <SectionTitle className="px-1 pb-1.5">{title}</SectionTitle>
       <ToggleGroup
-        type="single" value={value} onValueChange={v => { if (v) onChange(v); }} aria-label={title} data-testid={testId}
+        type="single"
+        value={value}
+        onValueChange={(v) => {
+          if (v) onChange(v);
+        }}
+        aria-label={title}
+        data-testid={testId}
         className="grid w-full grid-cols-3 gap-2"
       >
-        {options.map(o => (
+        {options.map((o) => (
           <ToggleGroupItem
-            key={o.value} value={o.value} aria-label={o.label}
+            key={o.value}
+            value={o.value}
+            aria-label={o.label}
             className={cn(
               "group flex h-auto min-w-0 flex-col items-stretch gap-1 rounded-lg border-0 bg-transparent p-0 shadow-none",
               "hover:bg-transparent data-[state=on]:bg-transparent",
@@ -301,13 +407,24 @@ function PictureChoices({ title, value, onChange, options, testId }: {
             >
               {o.src && (
                 <img
-                  src={o.src} alt="" loading="lazy" decoding="async" draggable={false}
+                  src={o.src}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
                   className={cn("size-full object-cover", o.faded && "opacity-40")}
-                  onError={e => { e.currentTarget.style.visibility = "hidden"; }}
+                  onError={(e) => {
+                    e.currentTarget.style.visibility = "hidden";
+                  }}
                 />
               )}
             </span>
-            <span className={cn("truncate text-center text-foreground group-data-[state=on]:font-semibold group-data-[state=on]:text-tint", TEXT.note)}>
+            <span
+              className={cn(
+                "truncate text-center text-foreground group-data-[state=on]:font-semibold group-data-[state=on]:text-tint",
+                TEXT.note,
+              )}
+            >
               {o.label}
             </span>
           </ToggleGroupItem>
@@ -316,5 +433,3 @@ function PictureChoices({ title, value, onChange, options, testId }: {
     </section>
   );
 }
-
-

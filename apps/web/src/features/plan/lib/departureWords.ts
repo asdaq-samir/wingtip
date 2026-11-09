@@ -11,10 +11,9 @@ import { zulu } from "../../../lib/liveReports";
 export function departureLine(e: DepartureEvent | undefined): string | null {
   if (!e) return null;
   const cleared = e.times?.clearance_delivery;
-  const parts = [
-    cleared != null ? `Cleared ${zulu(cleared)}` : "Departure event",
-    e.departure ? `at ${e.departure}` : null,
-  ].filter(Boolean).join(" ");
+  const parts = [cleared != null ? `Cleared ${zulu(cleared)}` : "Departure event", e.departure ? `at ${e.departure}` : null]
+    .filter(Boolean)
+    .join(" ");
   const rest = [e.gate ? `gate ${e.gate}` : null, e.destination ? `to ${e.destination}` : null].filter(Boolean);
   return `${[parts, ...rest].join(", ")} (FAA TDES)`;
 }

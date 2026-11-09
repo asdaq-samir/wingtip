@@ -14,15 +14,22 @@ import { useFailedAction } from "../lib/problems";
  * nothing to say (2026-10-10).
  */
 export default function ErrorAlert() {
-  const failed = useFailedAction(s => s.failed);
+  const failed = useFailedAction((s) => s.failed);
   // Kept once it has been, so it closes as it opened.
   const [needed, setNeeded] = useState(false);
   if (failed && !needed) setNeeded(true);
   if (!needed && !failed) return null;
   return (
     <SheetDialog
-      open={!!failed} onOpenChange={open => { if (!open) useFailedAction.setState({ failed: null }); }}
-      alert title={failed?.title} description={failed?.description} action={{ label: "OK" }} testId="error-alert"
+      open={!!failed}
+      onOpenChange={(open) => {
+        if (!open) useFailedAction.setState({ failed: null });
+      }}
+      alert
+      title={failed?.title}
+      description={failed?.description}
+      action={{ label: "OK" }}
+      testId="error-alert"
     />
   );
 }

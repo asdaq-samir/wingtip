@@ -33,37 +33,48 @@ function RunwayGlyph({ headingDeg }: { headingDeg: number | null }) {
 export function RunwayRow({ runway }: { runway: Runway }) {
   // An end flown with right traffic is said, as the sectional's "RP 23"
   // says it: the rest are left, as every pattern is unless the FAA says.
-  const right = (runway.runway_ends ?? []).filter(e => e.traffic === "right").map(e => runwayNumber(e.ident));
+  const right = (runway.runway_ends ?? []).filter((e) => e.traffic === "right").map((e) => runwayNumber(e.ident));
   const detail = [
-    surfaceName(runway.surface), runway.lighted && "lighted", runway.closed && "closed",
+    surfaceName(runway.surface),
+    runway.lighted && "lighted",
+    runway.closed && "closed",
     right.length > 0 && `right traffic ${right.join(", ")}`,
-  ].filter(Boolean).join(" · ");
-  const most = usePreferences(s => s.minimums.crosswindKt);
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const most = usePreferences((s) => s.minimums.crosswindKt);
   const wind = runway.wind;
   const over = !!wind && most != null && runwayCrosswindKt(wind) > most;
-  const heading = (runway.runway_ends ?? []).find(e => e.heading_true_deg != null)?.heading_true_deg ?? null;
+  const heading = (runway.runway_ends ?? []).find((e) => e.heading_true_deg != null)?.heading_true_deg ?? null;
   return (
     <ListRow
       media={<RunwayGlyph headingDeg={heading} />}
       title={`Runway ${runway.ends ?? "—"}`}
-      description={(detail || runway.wind) && (
-        <>
-          {detail && <span className="block">{detail}</span>}
-          {wind && (
-            <span className={cn("block", over && "font-medium text-caution-ink")} data-testid="runway-wind">
-              {runwayWind(wind)}{over && `, over your ${most} kt`}
-            </span>
-          )}
-        </>
-      )}
+      description={
+        (detail || runway.wind) && (
+          <>
+            {detail && <span className="block">{detail}</span>}
+            {wind && (
+              <span className={cn("block", over && "font-medium text-caution-ink")} data-testid="runway-wind">
+                {runwayWind(wind)}
+                {over && `, over your ${most} kt`}
+              </span>
+            )}
+          </>
+        )
+      }
       // How long, the figure a pilot looks for, at the right in the text's
       // own colour, as Nearest has a field's distance; how wide under it.
-      value={runway.length_ft ? (
-        <span className="flex flex-col items-end">
-          <span className="font-semibold text-foreground">{grouped(runway.length_ft)} ft</span>
-          {runway.width_ft != null && <span className={cn("text-muted-foreground", TEXT.note)}>{runway.width_ft} ft wide</span>}
-        </span>
-      ) : "—"}
+      value={
+        runway.length_ft ? (
+          <span className="flex flex-col items-end">
+            <span className="font-semibold text-foreground">{grouped(runway.length_ft)} ft</span>
+            {runway.width_ft != null && <span className={cn("text-muted-foreground", TEXT.note)}>{runway.width_ft} ft wide</span>}
+          </span>
+        ) : (
+          "—"
+        )
+      }
     />
   );
 }

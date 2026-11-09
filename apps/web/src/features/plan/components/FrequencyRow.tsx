@@ -6,7 +6,12 @@ import { frequencyLine, mhzText, type FrequencyKind } from "../../../lib/frequen
 import { BADGE } from "../../../lib/rowBadges";
 
 const GLYPH: Record<FrequencyKind, ReactNode> = {
-  tower: <TowerControl />, ground: <Headset />, weather: <CloudSun />, approach: <Radar />, traffic: <RadioTower />, other: <Radio />,
+  tower: <TowerControl />,
+  ground: <Headset />,
+  weather: <CloudSun />,
+  approach: <Radar />,
+  traffic: <RadioTower />,
+  other: <Radio />,
 };
 
 /**
@@ -18,7 +23,12 @@ const GLYPH: Record<FrequencyKind, ReactNode> = {
  * rows, the FAA's type in words over its description and the figure in
  * grey.
  */
-export function FrequencyRow({ type, description, mhz, testId }: {
+export function FrequencyRow({
+  type,
+  description,
+  mhz,
+  testId,
+}: {
   type: string | null | undefined;
   description: string | null | undefined;
   mhz: number | null | undefined;
@@ -28,7 +38,8 @@ export function FrequencyRow({ type, description, mhz, testId }: {
   return (
     <ListRow
       media={<RowBadge colour={BADGE[line.kind]}>{GLYPH[line.kind]}</RowBadge>}
-      title={line.name} description={line.detail ?? undefined}
+      title={line.name}
+      description={line.detail ?? undefined}
       value={mhz != null ? <Mhz mhz={mhz} /> : "—"}
       data-testid={testId}
     />

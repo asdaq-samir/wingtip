@@ -36,25 +36,38 @@ export function resetReports() {
 const withoutQueries = (text: string) => text.replace(/[?#]\S*/g, "");
 
 /** The report for an error, as the page saw it. */
-export function reportOf(kind: ClientErrorReport["kind"], error: unknown, location: { pathname: string } = window.location,
-  userAgent: string = navigator.userAgent): ClientErrorReport {
+export function reportOf(
+  kind: ClientErrorReport["kind"],
+  error: unknown,
+  location: { pathname: string } = window.location,
+  userAgent: string = navigator.userAgent,
+): ClientErrorReport {
   const message = withoutQueries(error instanceof Error ? `${error.name}: ${error.message}` : String(error));
   const stack = error instanceof Error && error.stack ? withoutQueries(error.stack).slice(0, 4000) : undefined;
-  return { kind, message: message.slice(0, 500) || "(no message)", stack, page: location.pathname.slice(0, 300),
-    userAgent: userAgent.slice(0, 300) };
+  return {
+    kind,
+    message: message.slice(0, 500) || "(no message)",
+    stack,
+    page: location.pathname.slice(0, 300),
+    userAgent: userAgent.slice(0, 300),
+  };
 }
 
 /** A report as the diagnostics door takes it: one fault, its kind and
  *  message its signature, its stack, page and browser its detail. */
-export function diagnosticsOf(report: ClientErrorReport, now = new Date(),
-  origin: Pick<DiagnosticsReport, "platform" | "version" | "device"> = originOf()): DiagnosticsReport {
+export function diagnosticsOf(
+  report: ClientErrorReport,
+  now = new Date(),
+  origin: Pick<DiagnosticsReport, "platform" | "version" | "device"> = originOf(),
+): DiagnosticsReport {
   const detail = [report.stack, `page ${report.page}`, `browser ${report.userAgent}`].filter(Boolean).join("\n");
   return { ...origin, faults: [{ kind: "error", signature: `${report.kind}: ${report.message}`, detail, at: now.toISOString() }] };
 }
 
 function beacon(body: string): boolean {
-  return typeof navigator.sendBeacon === "function"
-    && navigator.sendBeacon("/api/diagnostics", new Blob([body], { type: "application/json" }));
+  return (
+    typeof navigator.sendBeacon === "function" && navigator.sendBeacon("/api/diagnostics", new Blob([body], { type: "application/json" }))
+  );
 }
 
 /** Sends a report unless the same error has gone already, or ten have. */
@@ -67,6 +80,6 @@ export function sendReport(report: ClientErrorReport, send: (body: string) => bo
 
 /** Listens for what nothing else caught. */
 export function installErrorReports(target: Window = window) {
-  target.addEventListener("error", event => sendReport(reportOf("error", event.error ?? event.message)));
-  target.addEventListener("unhandledrejection", event => sendReport(reportOf("rejection", event.reason)));
+  target.addEventListener("error", (event) => sendReport(reportOf("error", event.error ?? event.message)));
+  target.addEventListener("unhandledrejection", (event) => sendReport(reportOf("rejection", event.reason)));
 }

@@ -70,11 +70,11 @@ export function renamedFieldLists(lists: FieldLists, from: string, to: string): 
   return {
     pattern: renameMap(lists.pattern, rename),
     takeoff: renameMap(lists.takeoff, rename),
-    procs: lists.procs.map(p => ({ ...p, ident: rename(p.ident) })),
+    procs: lists.procs.map((p) => ({ ...p, ident: rename(p.ident) })),
     altitudes: renameRecord(lists.altitudes, rename),
     cross: lists.cross,
     ground: renameRecord(lists.ground, rename),
-    holds: lists.holds.map(h => ({ ...h, fix: rename(h.fix) })),
+    holds: lists.holds.map((h) => ({ ...h, fix: rename(h.fix) })),
   };
 }
 
@@ -90,13 +90,16 @@ type ProcedureKind = "approach" | "arrival" | "departure";
  * time on the ground only at a stop, and the crossing altitudes only while
  * a procedure is picked to cross them on.
  */
-export function prunedFieldLists(lists: FieldLists, route: { dep: string | null; stops: string[]; dest: string | null },
-  kindOf?: (p: PickedProcedure) => ProcedureKind | undefined): FieldLists {
+export function prunedFieldLists(
+  lists: FieldLists,
+  route: { dep: string | null; stops: string[]; dest: string | null },
+  kindOf?: (p: PickedProcedure) => ProcedureKind | undefined,
+): FieldLists {
   const fields = [route.dep, ...route.stops, route.dest].filter((i): i is string => !!i);
-  const on = (ident: string, among: string[] = fields) => among.some(f => sameField(f, ident));
+  const on = (ident: string, among: string[] = fields) => among.some((f) => sameField(f, ident));
   const landed = [...route.stops, ...(route.dest ? [route.dest] : [])];
   const leftFrom = [...(route.dep ? [route.dep] : []), ...route.stops];
-  const procs = lists.procs.filter(p => {
+  const procs = lists.procs.filter((p) => {
     if (!on(p.ident)) return false;
     const kind = kindOf?.(p);
     if (kind === "departure") return on(p.ident, leftFrom);
@@ -104,12 +107,15 @@ export function prunedFieldLists(lists: FieldLists, route: { dep: string | null;
     return true;
   });
   return {
-    pattern: keepMap(lists.pattern, ident => on(ident)),
-    takeoff: keepMap(lists.takeoff, ident => on(ident, route.stops) || (!!route.dep && route.dep === route.dest && on(ident, [route.dep]))),
+    pattern: keepMap(lists.pattern, (ident) => on(ident)),
+    takeoff: keepMap(
+      lists.takeoff,
+      (ident) => on(ident, route.stops) || (!!route.dep && route.dep === route.dest && on(ident, [route.dep])),
+    ),
     procs,
     altitudes: Object.fromEntries(Object.entries(lists.altitudes).filter(([ident]) => on(ident))),
     cross: procs.length ? lists.cross : {},
     ground: Object.fromEntries(Object.entries(lists.ground).filter(([ident]) => on(ident, route.stops))),
-    holds: lists.holds.filter(h => on(h.fix)),
+    holds: lists.holds.filter((h) => on(h.fix)),
   };
 }

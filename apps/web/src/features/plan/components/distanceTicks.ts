@@ -10,7 +10,7 @@ export function distanceTicks(from: number, to: number): number[] {
   const span = to - from;
   if (!(span > 0)) return [];
   const power = 10 ** Math.floor(Math.log10(span / 5));
-  const step = [1, 2, 2.5, 5, 10].map(m => m * power).find(s => Math.floor(span / s) <= 5) ?? 10 * power;
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * power).find((s) => Math.floor(span / s) <= 5) ?? 10 * power;
   const ticks: number[] = [];
   // Each mark a whole number of steps from zero, not a running sum, so a
   // step like 0.25 gathers no float error.

@@ -20,7 +20,7 @@ async function fingerDrag(page: Page, at: { x: number; y: number }, dy: number, 
     cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1 }] : [] });
   await touch("touchStart", at);
   for (let i = 1; i <= 20; i++) {
-    await touch("touchMove", { x: at.x, y: at.y + dy * i / 20 });
+    await touch("touchMove", { x: at.x, y: at.y + (dy * i) / 20 });
     await page.waitForTimeout(16);
   }
   // A finger held still sends no moves: what it was doing before it
@@ -61,13 +61,17 @@ test("the panel follows a finger from anywhere on its body: out to the top, and 
 
   // Scrolled down, a drag down scrolls it back rather than taking the
   // sheet down.
-  await expect.poll(() => tab.evaluate(el => el.scrollHeight > el.clientHeight + 300)).toBe(true);
-  await tab.evaluate(el => { el.scrollTop = 300; });
+  await expect.poll(() => tab.evaluate((el) => el.scrollHeight > el.clientHeight + 300)).toBe(true);
+  await tab.evaluate((el) => {
+    el.scrollTop = 300;
+  });
   await fingerDrag(page, await middle(), 120);
   await expect(panel).toHaveAttribute("data-panel", "full");
 
   // At its start, a drag down takes the sheet down, half way.
-  await tab.evaluate(el => { el.scrollTop = 0; });
+  await tab.evaluate((el) => {
+    el.scrollTop = 0;
+  });
   await fingerDrag(page, await middle(), 400);
   await expect(panel).toHaveAttribute("data-panel", "half");
 
@@ -96,7 +100,9 @@ test("a drag held still before it is let go sets the sheet down where it is, not
   await expect(panel).toHaveAttribute("data-panel", "half");
 });
 
-test("a throw takes the sheet one size: from the pill half way, not all the way up, and from all the way up half way, not to the pill", async ({ page }) => {
+test("a throw takes the sheet one size: from the pill half way, not all the way up, and from all the way up half way, not to the pill", async ({
+  page,
+}) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
   // The owner's notice: "The pill should not go straight to full".
   await page.goto("/app/plan");
@@ -140,7 +146,9 @@ async function onTabs(page: Page) {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
-test("a drag from half down past the pill lands on the pill: not closed, not back at half, and the pill its own height", async ({ page }) => {
+test("a drag from half down past the pill lands on the pill: not closed, not back at half, and the pill its own height", async ({
+  page,
+}) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
   await page.goto("/app/plan");
   await settle(page);

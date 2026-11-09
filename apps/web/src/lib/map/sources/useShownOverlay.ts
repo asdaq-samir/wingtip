@@ -9,7 +9,7 @@ import { usePreferences, type MapOverlay } from "../../preferences";
  * control is left with a value it has no option for.
  */
 export function useShownOverlay(): MapOverlay {
-  const overlay = usePreferences(s => s.overlay);
+  const overlay = usePreferences((s) => s.overlay);
   const { data: google, isPending } = useQuery(googleMapsQuery);
   return overlay.startsWith("google") && !google && !isPending ? "none" : overlay;
 }

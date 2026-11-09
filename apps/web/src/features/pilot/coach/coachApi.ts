@@ -19,7 +19,9 @@ export type CoachWords = AssistantComponents["schemas"]["CoachWordsAnswer"];
 
 async function post<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(path, {
-    method: "POST", signal, body: JSON.stringify(body),
+    method: "POST",
+    signal,
+    body: JSON.stringify(body),
     headers: { "Content-Type": "application/json", ...csrfHeaders("POST"), ...requestIdHeaders() },
   });
   if (res.status === 401) throw new ApiError("Sign in for your plan", 401);

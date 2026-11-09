@@ -4,7 +4,14 @@ type Word = EngineAnswer<"compass_word">;
 
 /** Each of the engine's eight points as the screen writes it short. */
 const SHORT: Record<Word, string> = {
-  north: "N", northeast: "NE", east: "E", southeast: "SE", south: "S", southwest: "SW", west: "W", northwest: "NW",
+  north: "N",
+  northeast: "NE",
+  east: "E",
+  southeast: "SE",
+  south: "S",
+  southwest: "SW",
+  west: "W",
+  northwest: "NW",
 };
 const SAID: Record<string, Word> = Object.fromEntries(Object.entries(SHORT).map(([word, short]) => [short, word as Word]));
 

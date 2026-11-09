@@ -23,7 +23,13 @@ import { airportQuery } from "../lib/queryClient";
  * (AirportPicker), which offer the same airports before anything is
  * typed. Without `onAddHome`, a Home not set yet is left out.
  */
-export function FavoriteTiles({ home, favorites, onOpen, onAddHome, trailing }: {
+export function FavoriteTiles({
+  home,
+  favorites,
+  onOpen,
+  onAddHome,
+  trailing,
+}: {
   home: RecentAirport | null;
   favorites: RecentAirport[];
   onOpen: (airport: RecentAirport) => void;
@@ -38,12 +44,18 @@ export function FavoriteTiles({ home, favorites, onOpen, onAddHome, trailing }: 
     <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" data-testid="favorites">
       {(home || onAddHome) && (
         <PlaceTile
-          icon={<House />} className="bg-teal-600 text-white" title="Home"
-          detail={home ? away(home) : "Add"} tinted={!home}
-          onClick={home ? () => onOpen(home) : onAddHome!} testId="favorite-home"
+          icon={<House />}
+          className="bg-teal-600 text-white"
+          title="Home"
+          detail={home ? away(home) : "Add"}
+          tinted={!home}
+          onClick={home ? () => onOpen(home) : onAddHome!}
+          testId="favorite-home"
         />
       )}
-      {favorites.map(a => <AirspaceTile key={a.ident} airport={a} detail={away(a)} onClick={() => onOpen(a)} />)}
+      {favorites.map((a) => (
+        <AirspaceTile key={a.ident} airport={a} detail={away(a)} onClick={() => onOpen(a)} />
+      ))}
       {trailing}
     </div>
   );
@@ -55,8 +67,12 @@ function AirspaceTile({ airport, detail, onClick }: { airport: RecentAirport; de
   // owner's ask, where it was a plane on the airspace's colour.
   return (
     <PlaceTile
-      icon={<KeptChartMark airport={airport} size={32} />} title={airport.ident} detail={detail} onClick={onClick}
-      label={`${airport.ident}, ${space.name}`} className="bg-foreground/8 [&_svg]:size-8"
+      icon={<KeptChartMark airport={airport} size={32} />}
+      title={airport.ident}
+      detail={detail}
+      onClick={onClick}
+      label={`${airport.ident}, ${space.name}`}
+      className="bg-foreground/8 [&_svg]:size-8"
     />
   );
 }
@@ -65,7 +81,18 @@ function AirspaceTile({ airport, detail, onClick }: { airport: RecentAirport; de
  *  airports' here, and the Aircraft card's own (AircraftCard). */
 /** A strip's tile: its round mark over its name, a detail under it --
  *  Favorites' places. */
-function PlaceTile({ icon, className, style, title, label, detail, tinted, onClick, disabled, testId }: {
+function PlaceTile({
+  icon,
+  className,
+  style,
+  title,
+  label,
+  detail,
+  tinted,
+  onClick,
+  disabled,
+  testId,
+}: {
   icon: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -80,19 +107,33 @@ function PlaceTile({ icon, className, style, title, label, detail, tinted, onCli
 }) {
   return (
     <button
-      type="button" onClick={onClick} data-testid={testId} aria-label={label} disabled={disabled}
+      type="button"
+      onClick={onClick}
+      data-testid={testId}
+      aria-label={label}
+      disabled={disabled}
       className="flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
     >
-      <span className={cn("grid size-14 place-items-center rounded-full [&_svg]:size-6", className)} style={style} aria-hidden="true">{icon}</span>
+      <span className={cn("grid size-14 place-items-center rounded-full [&_svg]:size-6", className)} style={style} aria-hidden="true">
+        {icon}
+      </span>
       <span className={cn("w-full truncate text-center font-medium text-foreground", TEXT.detail)}>{title}</span>
-      {detail && <span className={cn("-mt-1.5 w-full truncate text-center", TEXT.note, tinted ? "text-tint" : "text-muted-foreground")}>{detail}</span>}
+      {detail && (
+        <span className={cn("-mt-1.5 w-full truncate text-center", TEXT.note, tinted ? "text-tint" : "text-muted-foreground")}>
+          {detail}
+        </span>
+      )}
     </button>
   );
 }
 
 /** A row's small round mark, the tile's at a list row's size. */
 export function Mark({ icon, className, style }: { icon: ReactNode; className?: string; style?: CSSProperties }) {
-  return <span className={cn("grid size-8 place-items-center rounded-full [&_svg]:size-4", className)} style={style} aria-hidden="true">{icon}</span>;
+  return (
+    <span className={cn("grid size-8 place-items-center rounded-full [&_svg]:size-4", className)} style={style} aria-hidden="true">
+      {icon}
+    </span>
+  );
 }
 
 /** A kept airport's mark in a list's row: its chart symbol, as Favorites'
@@ -108,7 +149,12 @@ export function KeptMark({ airport }: { airport: RecentAirport }) {
  *  sky airplane and Recents and the found ones a bare grey airplane (the
  *  owner, 2026-10-28: "How come nearest airports and aircraft icons look
  *  different than favorites"). */
-export function PlaneMark({ trackDeg, emergency = false, small = false, kind }: {
+export function PlaneMark({
+  trackDeg,
+  emergency = false,
+  small = false,
+  kind,
+}: {
   trackDeg?: number | null;
   emergency?: boolean;
   small?: boolean;
@@ -122,9 +168,11 @@ export function PlaneMark({ trackDeg, emergency = false, small = false, kind }: 
     // The shapes fill their square, so drawn larger than a glyph: 34 in
     // the tile's 56, 22 in the row's 32.
     const icon = <KindGlyph kind={kind} />;
-    return small
-      ? <Mark icon={icon} className={cn(fill, "[&_svg]:size-[22px]")} />
-      : <SmallMark icon={icon} className={cn(fill, "[&_svg]:size-[34px]")} />;
+    return small ? (
+      <Mark icon={icon} className={cn(fill, "[&_svg]:size-[22px]")} />
+    ) : (
+      <SmallMark icon={icon} className={cn(fill, "[&_svg]:size-[34px]")} />
+    );
   }
   // lucide's airplane points north-east: turned to its track.
   const icon = <Plane fill="currentColor" style={trackDeg != null ? { transform: `rotate(${trackDeg - 45}deg)` } : undefined} />;
@@ -162,7 +210,10 @@ function KindShapes({ kind, strokeWidth }: { kind: AircraftKind; strokeWidth: nu
     case "low":
       return (
         <>
-          <mask id={cut}><rect width="64" height="64" fill="#fff" /><ellipse cx="32" cy="20.5" rx="1.9" ry="3.6" fill="#000" /></mask>
+          <mask id={cut}>
+            <rect width="64" height="64" fill="#fff" />
+            <ellipse cx="32" cy="20.5" rx="1.9" ry="3.6" fill="#000" />
+          </mask>
           <g {...paint} mask={`url(#${cut})`}>
             <path d="M32 12C34.2 12 35 14.5 35 18L34.2 44 33 51H31L29.8 44 29 18C29 14.5 29.8 12 32 12Z" />
             <path d="M30 26 9.5 28C8 28.2 7.5 29 7.5 30.2S8 32.2 9.5 32.2L30 34.5Z" />
@@ -174,7 +225,10 @@ function KindShapes({ kind, strokeWidth }: { kind: AircraftKind; strokeWidth: nu
     case "twin":
       return (
         <>
-          <mask id={cut}><rect width="64" height="64" fill="#fff" /><ellipse cx="32" cy="19" rx="1.9" ry="3.4" fill="#000" /></mask>
+          <mask id={cut}>
+            <rect width="64" height="64" fill="#fff" />
+            <ellipse cx="32" cy="19" rx="1.9" ry="3.4" fill="#000" />
+          </mask>
           <g {...paint} mask={`url(#${cut})`}>
             <path d="M32 11C34.2 11 35 13.5 35 17L34.2 45 33 52H31L29.8 45 29 17C29 13.5 29.8 11 32 11Z" />
             <path d="M30 25 7.5 27.5C6 27.7 5.5 28.5 5.5 29.7S6 31.7 7.5 31.7L30 34Z" />
@@ -224,7 +278,10 @@ function KindShapes({ kind, strokeWidth }: { kind: AircraftKind; strokeWidth: nu
             <path d="M32 8V46M24 10C21 20 23 36 28.5 46M40 10C43 20 41 36 35.5 46" fill="none" stroke="#000" strokeWidth={1.8} />
           </mask>
           <g {...paint}>
-            <path d="M32 7C44 7 50.5 15 50.5 24.5 50.5 34 42 40 37.5 46.5H26.5C22 40 13.5 34 13.5 24.5 13.5 15 20 7 32 7Z" mask={`url(#${cut})`} />
+            <path
+              d="M32 7C44 7 50.5 15 50.5 24.5 50.5 34 42 40 37.5 46.5H26.5C22 40 13.5 34 13.5 24.5 13.5 15 20 7 32 7Z"
+              mask={`url(#${cut})`}
+            />
             <path d="M27.5 47 29.5 51M36.5 47 34.5 51" fill="none" />
             <rect x="28.5" y="51" width="7" height="6" rx="1.2" />
           </g>
@@ -244,9 +301,12 @@ export function TileChartMark({ children }: { children: ReactNode }) {
 export function EditToggle({ editing, onToggle, testId }: { editing: boolean; onToggle: () => void; testId?: string }) {
   return (
     <Button
-      type="button" variant="ghost" size="sm"
+      type="button"
+      variant="ghost"
+      size="sm"
       className={cn("-mr-1 h-auto px-1 py-0.5 font-normal text-tint", TEXT.row, editing && "font-semibold")}
-      onClick={onToggle} data-testid={testId}
+      onClick={onToggle}
+      data-testid={testId}
     >
       {editing ? "Done" : "Edit"}
     </Button>
@@ -274,7 +334,15 @@ export function RemoveMinus({ label, onClick, testId }: { label: string; onClick
  * fields -- at the full card's Favorites' size (PlaceTile), at the owner's
  * ask ("make the fav icons the same size as the full card").
  */
-export function SmallTile({ mark, title, detail, label, onClick, testId, wide = false }: {
+export function SmallTile({
+  mark,
+  title,
+  detail,
+  label,
+  onClick,
+  testId,
+  wide = false,
+}: {
   mark: ReactNode;
   title: string;
   detail?: string;
@@ -286,8 +354,14 @@ export function SmallTile({ mark, title, detail, label, onClick, testId, wide = 
 }) {
   return (
     <button
-      type="button" onClick={onClick} data-testid={testId} aria-label={label}
-      className={cn(wide ? "w-24" : "w-[4.5rem]", "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ring")}
+      type="button"
+      onClick={onClick}
+      data-testid={testId}
+      aria-label={label}
+      className={cn(
+        wide ? "w-24" : "w-[4.5rem]",
+        "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ring",
+      )}
     >
       {mark}
       <span className={cn("w-full truncate text-center font-medium text-foreground", TEXT.detail)}>{title}</span>
@@ -304,7 +378,14 @@ export function SmallTile({ mark, title, detail, label, onClick, testId, wide = 
  * and anything that acts on the row at its right (`right`: what the strip
  * shows, Aircraft's Map switch).
  */
-export function PillSection({ title, onMore, beside, right, children, testId }: {
+export function PillSection({
+  title,
+  onMore,
+  beside,
+  right,
+  children,
+  testId,
+}: {
   title: string;
   /** The list in full, the title the way to it, in the tint with its
    *  chevron -- every section's alike, the tabs' Saved, Favorites and
@@ -331,13 +412,21 @@ export function PillSection({ title, onMore, beside, right, children, testId }: 
       <div className="flex min-h-7 items-center gap-2">
         {onMore ? (
           <button
-            type="button" onClick={onMore} data-testid={testId && `${testId}-more`}
-            className={cn("relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2", heading, "text-tint")}
+            type="button"
+            onClick={onMore}
+            data-testid={testId && `${testId}-more`}
+            className={cn(
+              "relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2",
+              heading,
+              "text-tint",
+            )}
           >
             {title}
             <ChevronRight className="size-5" aria-hidden="true" />
           </button>
-        ) : <h3 className={heading}>{title}</h3>}
+        ) : (
+          <h3 className={heading}>{title}</h3>
+        )}
         {beside}
         {right && <div className="ml-auto flex items-center gap-2">{right}</div>}
       </div>
@@ -353,7 +442,13 @@ export function PillSection({ title, onMore, beside, right, children, testId }: 
  *  back button", 2026-10-22). It is a device's Back too (lib/openCards,
  *  lib/backNavigation), as a card's close is: Android's Back put the sheet down and
  *  left the list open. */
-export function ListPageHead({ title, backLabel, onBack, action, testId }: {
+export function ListPageHead({
+  title,
+  backLabel,
+  onBack,
+  action,
+  testId,
+}: {
   title: string;
   /** The close's name to a screen reader: where it goes back to. */
   backLabel: string;
@@ -362,7 +457,9 @@ export function ListPageHead({ title, backLabel, onBack, action, testId }: {
   testId?: string;
 }) {
   const back = useRef(onBack);
-  useEffect(() => { back.current = onBack; });
+  useEffect(() => {
+    back.current = onBack;
+  });
   useEffect(() => holdOpenCard({ close: () => back.current(), inBar: false }), []);
   return (
     <div className="flex items-center gap-2" data-testid={testId}>
@@ -383,7 +480,17 @@ export function ListPageHead({ title, backLabel, onBack, action, testId }: {
  * and its questions. The title names the list shown and is the way to it
  * in full, as every section's is.
  */
-export function StripSection<V extends string>({ lists, shows, onShow, menuTestId, menuClassName, menuTop, beside, right, children }: {
+export function StripSection<V extends string>({
+  lists,
+  shows,
+  onShow,
+  menuTestId,
+  menuClassName,
+  menuTop,
+  beside,
+  right,
+  children,
+}: {
   /** What it can show, in the menu's order, the first the one at first. */
   lists: StripList<V>[];
   shows: V;
@@ -399,19 +506,27 @@ export function StripSection<V extends string>({ lists, shows, onShow, menuTestI
   right?: ReactNode;
   children: ReactNode;
 }) {
-  const list = lists.find(l => l.value === shows) ?? lists[0]!;
+  const list = lists.find((l) => l.value === shows) ?? lists[0]!;
   return (
     <PillSection
-      title={list.label} onMore={list.onMore} beside={beside} testId={list.section}
-      right={(
+      title={list.label}
+      onMore={list.onMore}
+      beside={beside}
+      testId={list.section}
+      right={
         <>
           <PillMenu
-            label={`Showing ${list.label}`} value={list.value} onChange={onShow} testId={menuTestId} className={menuClassName} top={menuTop}
-            options={lists.map(l => ({ value: l.value, label: l.item ?? l.label, testId: l.testId, apart: l.apart }))}
+            label={`Showing ${list.label}`}
+            value={list.value}
+            onChange={onShow}
+            testId={menuTestId}
+            className={menuClassName}
+            top={menuTop}
+            options={lists.map((l) => ({ value: l.value, label: l.item ?? l.label, testId: l.testId, apart: l.apart }))}
           />
           {right}
         </>
-      )}
+      }
     >
       {children}
     </PillSection>
@@ -438,7 +553,15 @@ interface StripList<V extends string> {
 /** What a strip shows, a menu behind iOS's filter glyph at its heading's
  *  right, as Mail's filter is, a line after any item `apart` says so
  *  (StripSection). */
-function PillMenu<V extends string>({ label, value, options, onChange, testId, className, top }: {
+function PillMenu<V extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  testId,
+  className,
+  top,
+}: {
   /** Its name, to a screen reader and a long press: what it shows now. */
   label: string;
   value: V;
@@ -451,15 +574,19 @@ function PillMenu<V extends string>({ label, value, options, onChange, testId, c
 }) {
   return (
     <PullDown
-      label={label} value={value} onChange={onChange} options={options} top={top}
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={options}
+      top={top}
       contentClassName={cn("min-w-44", className)}
-      trigger={(
+      trigger={
         // The app's one icon-only button, 36 with a 20 glyph (the iOS
         // audit's P18), the heading's height kept round it.
         <IconButton label={label} className="-my-2 text-tint" data-testid={testId}>
           <ListFilter className="size-5" />
         </IconButton>
-      )}
+      }
     />
   );
 }
@@ -468,20 +595,30 @@ function PillMenu<V extends string>({ label, value, options, onChange, testId, c
  *  airport -- where the tiles start, in their second line's grey: one
  *  look for every strip's, where each had its own (centred or not). */
 export function StripNote({ children, status = false }: { children: ReactNode; status?: boolean }) {
-  return <p className={cn("py-1 text-foreground/65", TEXT.note)} role={status ? "status" : undefined}>{children}</p>;
+  return (
+    <p className={cn("py-1 text-foreground/65", TEXT.note)} role={status ? "status" : undefined}>
+      {children}
+    </p>
+  );
 }
 
 /** A pill's row of small tiles, along it, sliding sideways where more
  *  than fit. */
 export function PillStrip({ children, testId }: { children: ReactNode; testId?: string }) {
   return (
-    <div className="-mx-1 flex gap-3 overflow-x-auto px-1 [scrollbar-width:none]" data-testid={testId}>{children}</div>
+    <div className="-mx-1 flex gap-3 overflow-x-auto px-1 [scrollbar-width:none]" data-testid={testId}>
+      {children}
+    </div>
   );
 }
 
 /** A strip's tile's round mark, the Favorites tile's size (PlaceTile). */
 export function SmallMark({ icon, className, style }: { icon: ReactNode; className?: string; style?: CSSProperties }) {
-  return <span className={cn("grid size-14 place-items-center rounded-full [&_svg]:size-6", className)} style={style} aria-hidden="true">{icon}</span>;
+  return (
+    <span className={cn("grid size-14 place-items-center rounded-full [&_svg]:size-6", className)} style={style} aria-hidden="true">
+      {icon}
+    </span>
+  );
 }
 
 /** An airport's own chart symbol, small, as the map draws it
@@ -489,7 +626,12 @@ export function SmallMark({ icon, className, style }: { icon: ReactNode; classNa
  *  dot, a military or private field's letter -- one mark for the pills'
  *  airports, Favorites' as Nearest's, at the owner's ask ("Airports should
  *  have the same symbols as nearest"). */
-export function ChartMark({ space, category, use, size = 22 }: {
+export function ChartMark({
+  space,
+  category,
+  use,
+  size = 22,
+}: {
   space: AirspaceClass | null;
   category: string | null | undefined;
   use: "military" | "private" | null;
@@ -498,7 +640,11 @@ export function ChartMark({ space, category, use, size = 22 }: {
 }) {
   return (
     <span aria-hidden="true" className="grid shrink-0 place-items-center" style={{ width: Math.max(28, size), height: Math.max(28, size) }}>
-      <span className="block" style={{ width: size, height: size }} dangerouslySetInnerHTML={{ __html: airportMarkSvg(space, colourOf(category), use, "block size-full overflow-visible") }} />
+      <span
+        className="block"
+        style={{ width: size, height: size }}
+        dangerouslySetInnerHTML={{ __html: airportMarkSvg(space, colourOf(category), use, "block size-full overflow-visible") }}
+      />
     </span>
   );
 }
@@ -511,14 +657,21 @@ function KeptChartMark({ airport, size }: { airport: RecentAirport; size?: numbe
   const use = data?.military === "military" ? "military" : data?.private ? "private" : null;
   // With no report of its own, the weather modelled at it, else a station's
   // within ten miles, as its card's chip and FPL's symbols have it.
-  const category = data?.metar?.flight_category ?? data?.modelled_weather?.flight_category
-    ?? (data?.nearby_metar?.near ? data.nearby_metar.metar.flight_category : null);
+  const category =
+    data?.metar?.flight_category ??
+    data?.modelled_weather?.flight_category ??
+    (data?.nearby_metar?.near ? data.nearby_metar.metar.flight_category : null);
   return <ChartMark space={data?.airspace_class ?? airport.airspace ?? null} category={category} use={use} size={size} />;
 }
 
 /** A kept airport -- a Favorite, a Recent -- as a pill's small tile: its
  *  chart symbol, its ident and `detail`, opening its card. */
-export function SmallAirportTile({ airport, detail, onClick, testId = "pill-favorite" }: {
+export function SmallAirportTile({
+  airport,
+  detail,
+  onClick,
+  testId = "pill-favorite",
+}: {
   airport: RecentAirport;
   detail: string;
   onClick: () => void;
@@ -533,14 +686,24 @@ export function SmallAirportTile({ airport, detail, onClick, testId = "pill-favo
       // past the tile and it stood larger than Home and Add beside it (the
       // owner's "Airport icons too big").
       mark={<SmallMark icon={<KeptChartMark airport={airport} size={44} />} className="[&_svg]:size-11" />}
-      title={airport.ident} detail={detail} label={`${airport.ident}, ${space.name}`} onClick={onClick} testId={testId}
+      title={airport.ident}
+      detail={detail}
+      label={`${airport.ident}, ${space.name}`}
+      onClick={onClick}
+      testId={testId}
     />
   );
 }
 
 /** The Airport tab's pill: Home and the Favorites, small, each opening
  *  its field's card, how far each is from own ship under it. */
-export function FavoriteStrip({ home, favorites, onOpen, onAddHome, onAddFavorite }: {
+export function FavoriteStrip({
+  home,
+  favorites,
+  onOpen,
+  onAddHome,
+  onAddFavorite,
+}: {
   home: RecentAirport | null;
   favorites: RecentAirport[];
   onOpen: (airport: RecentAirport) => void;
@@ -554,16 +717,24 @@ export function FavoriteStrip({ home, favorites, onOpen, onAddHome, onAddFavorit
   return (
     <PillStrip testId="pill-favorites">
       <SmallTile
-        mark={<SmallMark icon={<House />} className="bg-teal-600 text-white" />} title="Home"
-        detail={home ? away(home) : "Add"} label={home ? `Home, ${home.ident}` : "Add Home"}
-        onClick={home ? () => onOpen(home) : onAddHome} testId="pill-home"
+        mark={<SmallMark icon={<House />} className="bg-teal-600 text-white" />}
+        title="Home"
+        detail={home ? away(home) : "Add"}
+        label={home ? `Home, ${home.ident}` : "Add Home"}
+        onClick={home ? () => onOpen(home) : onAddHome}
+        testId="pill-home"
       />
-      {favorites.map(a => <SmallAirportTile key={a.ident} airport={a} detail={away(a)} onClick={() => onOpen(a)} />)}
+      {favorites.map((a) => (
+        <SmallAirportTile key={a.ident} airport={a} detail={away(a)} onClick={() => onOpen(a)} />
+      ))}
       {/* One Add at a time, as Airplane's strip (AircraftFavoriteStrip). */}
       {(home || favorites.length > 0) && (
         <SmallTile
-          mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />} title="Add" label="Add a Favorite"
-          onClick={onAddFavorite} testId="pill-favorite-add"
+          mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />}
+          title="Add"
+          label="Add a Favorite"
+          onClick={onAddFavorite}
+          testId="pill-favorite-add"
         />
       )}
     </PillStrip>
@@ -585,7 +756,16 @@ export function HomePlane({ kind = "high" }: { kind?: AircraftKind }) {
     <svg viewBox="6 6 52 52" aria-hidden="true">
       {/* Twelve dashes, as the icon's ring: 2 pi 22 is 138.2, eleven and
           a half a dash. */}
-      <circle cx="32" cy="32" r="22" fill="none" stroke="currentColor" strokeWidth={3.6} strokeDasharray="8 3.52" transform="rotate(-100.4 32 32)" />
+      <circle
+        cx="32"
+        cy="32"
+        r="22"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={3.6}
+        strokeDasharray="8 3.52"
+        transform="rotate(-100.4 32 32)"
+      />
       <g transform="translate(32 32) scale(0.6) translate(-32 -32)">
         <KindShapes kind={kind} strokeWidth={2} />
       </g>

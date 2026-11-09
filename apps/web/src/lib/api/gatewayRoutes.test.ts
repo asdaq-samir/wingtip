@@ -16,8 +16,13 @@ type Document = { paths: Record<string, Record<string, { "x-gateway"?: unknown }
 
 function marked(document: string): Set<string> {
   const { paths } = JSON.parse(read(document)) as Document;
-  return new Set(Object.entries(paths).flatMap(([path, operations]) =>
-    Object.entries(operations).filter(([, operation]) => operation["x-gateway"]).map(([method]) => `${method.toUpperCase()} ${path}`)));
+  return new Set(
+    Object.entries(paths).flatMap(([path, operations]) =>
+      Object.entries(operations)
+        .filter(([, operation]) => operation["x-gateway"])
+        .map(([method]) => `${method.toUpperCase()} ${path}`),
+    ),
+  );
 }
 
 describe("the gateway", () => {
@@ -26,8 +31,10 @@ describe("the gateway", () => {
       planner: marked("../../../../../services/planner/openapi.json"),
       assistant: marked("../../../../../services/assistant/openapi.json"),
     };
-    const asked = [...read("./client.ts").matchAll(/(planner|assistant)\.(GET|POST|DELETE)\("([^"]+)"/g)]
-      .map(m => ({ service: m[1] as "planner" | "assistant", call: `${m[2]} ${m[3]}` }));
+    const asked = [...read("./client.ts").matchAll(/(planner|assistant)\.(GET|POST|DELETE)\("([^"]+)"/g)].map((m) => ({
+      service: m[1] as "planner" | "assistant",
+      call: `${m[2]} ${m[3]}`,
+    }));
     expect(asked.length).toBeGreaterThan(30);
     expect(asked.filter(({ service, call }) => !forwarded[service].has(call))).toEqual([]);
   });

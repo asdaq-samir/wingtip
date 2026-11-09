@@ -17,10 +17,7 @@ import { corridorTiles, CORRIDOR_NM } from "./keepRoute";
 function referenceTile(lat: number, lon: number, zoom: number) {
   const n = 2 ** zoom;
   const r = (lat * Math.PI) / 180;
-  return {
-    x: Math.floor(((lon + 180) / 360) * n),
-    y: Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n),
-  };
+  return { x: Math.floor(((lon + 180) / 360) * n), y: Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n) };
 }
 
 describe("corridorTiles", () => {
@@ -50,7 +47,10 @@ describe("corridorTiles", () => {
     // Zoom 13, where a tile is a couple of miles across: at zoom 10 a
     // single tile is wider than the whole corridor either way, so both
     // reach exactly one tile and the counts are equal.
-    const line: [number, number][] = [[44.0, -89.0], [44.5, -88.0]];
+    const line: [number, number][] = [
+      [44.0, -89.0],
+      [44.5, -88.0],
+    ];
     const narrow = corridorTiles(line, [13], 1);
     const wide = corridorTiles(line, [13], CORRIDOR_NM);
     expect(wide.length).toBeGreaterThan(narrow.length);
@@ -65,9 +65,13 @@ describe("corridorTiles", () => {
   });
 
   it("returns each tile once", () => {
-    const line: [number, number][] = [[44.0, -89.0], [44.5, -88.0], [45.0, -87.5]];
+    const line: [number, number][] = [
+      [44.0, -89.0],
+      [44.5, -88.0],
+      [45.0, -87.5],
+    ];
     const tiles = corridorTiles(line, [9, 10]);
-    const keys = tiles.map(t => `${t.z}/${t.x}/${t.y}`);
+    const keys = tiles.map((t) => `${t.z}/${t.x}/${t.y}`);
     expect(new Set(keys).size).toBe(keys.length);
   });
 });

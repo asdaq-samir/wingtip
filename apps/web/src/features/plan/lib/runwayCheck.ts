@@ -18,8 +18,12 @@ import type { Distances } from "./takeoffLanding";
 /** Distances as the engine answers them, and whether over the runway. */
 type EngineDistances = EngineAnswer<"gonogo_end_distance">;
 
-const distances = (d: EngineDistances): Distances & { over: boolean } =>
-  ({ groundRollFt: d.ground_roll_ft, totalFt: d.total_ft, caveats: d.caveats, over: d.over });
+const distances = (d: EngineDistances): Distances & { over: boolean } => ({
+  groundRollFt: d.ground_roll_ft,
+  totalFt: d.total_ft,
+  caveats: d.caveats,
+  over: d.over,
+});
 
 /**
  * Density altitude: the height in the standard atmosphere whose air is
@@ -83,31 +87,56 @@ interface RunwayCheck {
  *  needs there: the takeoff from the departure, the landing at the
  *  destination, both at a stop. Empty without the POH's tables or the
  *  briefing's runways. */
-export function runwayChecks(aircraft: AircraftProfile | null | undefined, briefing: Briefing | null, course: Course | null,
-  takeoffLb: number | null, landingLb: number | null, picks?: RunwayPicks | null): RunwayCheck[] {
+export function runwayChecks(
+  aircraft: AircraftProfile | null | undefined,
+  briefing: Briefing | null,
+  course: Course | null,
+  takeoffLb: number | null,
+  landingLb: number | null,
+  picks?: RunwayPicks | null,
+): RunwayCheck[] {
   const takeoffTable = aircraft?.takeoff ?? null;
   const landingTable = aircraft?.landing ?? null;
   if (!briefing || !course || !takeoffTable || !landingTable) return [];
-  const fields: Airport[] = [course.departure, ...(course.stops ?? []).filter(s => s.kind !== "fix"), course.destination];
-  const idents = new Set(fields.map(f => f.ident));
+  const fields: Airport[] = [course.departure, ...(course.stops ?? []).filter((s) => s.kind !== "fix"), course.destination];
+  const idents = new Set(fields.map((f) => f.ident));
   const runwaysAt = (ident: string) => briefing.airports[ident]?.runways ?? [];
   const checks = callEngine("gonogo_runway_checks", {
     aircraft: { takeoff: takeoffTable, landing: landingTable, crosswind: aircraft?.crosswind ?? null },
-    fields: fields.map(f => ({ ident: f.ident, elevation_ft: f.elevation_ft ?? null })),
+    fields: fields.map((f) => ({ ident: f.ident, elevation_ft: f.elevation_ft ?? null })),
     metars: Object.fromEntries(Object.entries(briefing.metars).filter(([i]) => idents.has(i))),
     airports: Object.fromEntries(Object.entries(briefing.airports).filter(([i]) => idents.has(i))),
-    takeoff_lb: takeoffLb, landing_lb: landingLb,
+    takeoff_lb: takeoffLb,
+    landing_lb: landingLb,
     // The picks in the order they were made, as the Map holds them.
     picks: picks ? { pattern: [...picks.pattern], takeoff: [...picks.takeoff] } : null,
   });
-  return checks.map(c => {
+  return checks.map((c) => {
     const field = fields[c.field]!;
     const on = (i: number | null) => (i == null ? undefined : runwaysAt(field.ident)[i]);
     return {
-      field, role: c.role, runway: on(c.runway), end: c.end, picked: c.picked, pressureAltFt: c.pressure_alt_ft, densityAltFt: c.density_alt_ft,
-      tempC: c.temp_c, reported: c.reported, headwindKt: c.headwind_kt, crosswindKt: c.crosswind_kt, crosswindOver: c.crosswind_over,
-      grass: c.grass, unchecked: c.unchecked,
-      distances: c.distances.map(d => ({ kind: d.kind, ...distances(d), unknown: d.unknown, beyond: d.beyond, runway: on(d.runway), end: d.end })),
+      field,
+      role: c.role,
+      runway: on(c.runway),
+      end: c.end,
+      picked: c.picked,
+      pressureAltFt: c.pressure_alt_ft,
+      densityAltFt: c.density_alt_ft,
+      tempC: c.temp_c,
+      reported: c.reported,
+      headwindKt: c.headwind_kt,
+      crosswindKt: c.crosswind_kt,
+      crosswindOver: c.crosswind_over,
+      grass: c.grass,
+      unchecked: c.unchecked,
+      distances: c.distances.map((d) => ({
+        kind: d.kind,
+        ...distances(d),
+        unknown: d.unknown,
+        beyond: d.beyond,
+        runway: on(d.runway),
+        end: d.end,
+      })),
     };
   });
 }

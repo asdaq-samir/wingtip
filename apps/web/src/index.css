@@ -64,7 +64,9 @@ body {
   -webkit-touch-callout: none;
   user-select: none;
 }
-input, select, textarea {
+input,
+select,
+textarea {
   -webkit-touch-callout: default;
   user-select: text;
 }
@@ -112,8 +114,11 @@ body[data-map-sheet] .maplibregl-map .maplibregl-ctrl-bottom-right {
    whole page at every change of the attributes it named. */
 /* Their foot rides on the sheet's top (MapPanel's --sheet-cover), eased
    with the sheet's own curve as it settles (--sheet-cover-ease). */
-[data-map-controls], [data-map-food] {
-  transition: opacity var(--motion-fade), bottom var(--sheet-cover-ease, 0s);
+[data-map-controls],
+[data-map-food] {
+  transition:
+    opacity var(--motion-fade),
+    bottom var(--sheet-cover-ease, 0s);
 }
 body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-food]) {
   opacity: 0;
@@ -201,7 +206,7 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
 @theme inline {
   --font-heading: var(--font-sans);
   /* The look's own face (lib/brand, --brand-font below), Inter otherwise. */
-  --font-sans: var(--brand-font, 'Inter Variable'), sans-serif;
+  --font-sans: var(--brand-font, "Inter Variable"), sans-serif;
   /* The display face (--display below): the Chart ink look's Barlow
      Condensed for a figure's label, an ident and a word button
      (lib/text's label and word), the body's own face in the other looks. */
@@ -252,7 +257,6 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-
 /* The chart at night (Settings' "Chart at night", lib/preferences
    chartNight): its tiles alone are dimmed, by the map's own raster paint
    (lib/map/gl/glStyle chartPaint, the brightness and contrast these tiles
@@ -300,7 +304,8 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   /* One weight for emphasis: <b> and <strong> at 600, as every
      font-semibold heading, figure and name is, rather than the
      browser's 700 beside them. */
-  b, strong {
+  b,
+  strong {
     font-weight: var(--font-weight-semibold);
   }
 
@@ -308,7 +313,9 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
      over Favorites' tiles: Tailwind 4 leaves a button the arrow, and only
      the stock Button asked for the hand, so a plain button -- a tile, a
      heading's link, a list row -- showed the arrow. Not while disabled. */
-  button:not(:disabled), [role="button"]:not([aria-disabled="true"]), summary {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
     cursor: pointer;
   }
 
@@ -429,7 +436,8 @@ body[data-scroll-locked]::before {
    still wins. */
 @layer base {
   @media (pointer: coarse) {
-    button, a[data-slot="button"] {
+    button,
+    a[data-slot="button"] {
       position: relative;
     }
   }
@@ -482,20 +490,37 @@ html[data-tv] .maplibregl-canvas:focus {
    on and off, alternating is red then green. Still, with its words, where
    the reader has asked for less motion. */
 @keyframes light-flash {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0.12; }
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.12;
+  }
 }
 @keyframes light-alternate {
-  0%, 49% { background-color: var(--light-a); }
-  50%, 100% { background-color: var(--light-b); }
+  0%,
+  49% {
+    background-color: var(--light-a);
+  }
+  50%,
+  100% {
+    background-color: var(--light-b);
+  }
 }
 
 /* The microphone's pill while it listens (RadioLayer's Waveform): its
    bars rising and falling, as Siri's waveform does; still, low, where
    the reader has asked for less motion (motion-safe). */
 @keyframes wave {
-  0%, 100% { transform: scaleY(0.4); }
-  50% { transform: scaleY(1); }
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 
 /* The toasts in the app's typeface: sonner sets its own system stack,
@@ -573,7 +598,9 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
    The durations are near zero rather than none, so the events the
    stock components wait on to unmount still fire. */
 @media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after {
+  *,
+  ::before,
+  ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -585,15 +612,31 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
    named wingtip-page moves, a short shared-axis slide and fade over
    motion.page on the sheet's ease-out; the rest of the screen, the map
    under it, is not captured as the page's root would be. */
-:root { view-transition-name: none; }
+:root {
+  view-transition-name: none;
+}
 ::view-transition-group(wingtip-page) {
   animation-duration: var(--motion-page);
   animation-timing-function: var(--motion-sheet-ease);
 }
-::view-transition-old(wingtip-page) { animation: var(--motion-page) var(--motion-sheet-ease) both page-out; }
-::view-transition-new(wingtip-page) { animation: var(--motion-page) var(--motion-sheet-ease) both page-in; }
-@keyframes page-out { to { opacity: 0; transform: translateX(-1.5rem); } }
-@keyframes page-in { from { opacity: 0; transform: translateX(1.5rem); } }
+::view-transition-old(wingtip-page) {
+  animation: var(--motion-page) var(--motion-sheet-ease) both page-out;
+}
+::view-transition-new(wingtip-page) {
+  animation: var(--motion-page) var(--motion-sheet-ease) both page-in;
+}
+@keyframes page-out {
+  to {
+    opacity: 0;
+    transform: translateX(-1.5rem);
+  }
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+}
 
 /* iOS 26's Liquid Glass, for what floats over the chart at rest (GLASS
    in mapChrome): clearer than the sheets' material, the chart under it
@@ -640,8 +683,11 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
    it, while content is scrolled under it (MapPanel's data-under); a card's
    own head under it -- the Brief's title and pages (PanelTabs) -- frosted
    with it, the line under that one alone ("local"). Plain glass at rest. */
-[data-head-band], [data-under-band] {
-  transition: background-color var(--motion-quick), box-shadow var(--motion-quick);
+[data-head-band],
+[data-under-band] {
+  transition:
+    background-color var(--motion-quick),
+    box-shadow var(--motion-quick);
 }
 [data-head-band][data-under],
 [data-head-band][data-under] ~ [data-panel-body] [data-under-band] {
@@ -662,10 +708,14 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
   background-color: color-mix(in oklab, var(--background) var(--glass-fill, var(--glass-fill-light)), transparent);
   -webkit-backdrop-filter: blur(var(--glass-blur));
   backdrop-filter: blur(var(--glass-blur));
-  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 2px 12px rgb(0 0 0 / 0.12);
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.08),
+    0 2px 12px rgb(0 0 0 / 0.12);
   &:is(.dark *) {
     background-color: color-mix(in oklab, var(--popover) var(--glass-fill, var(--glass-fill-dark)), transparent);
-    box-shadow: 0 0 0 0.5px rgb(255 255 255 / 0.08), 0 2px 12px rgb(0 0 0 / 0.45);
+    box-shadow:
+      0 0 0 0.5px rgb(255 255 255 / 0.08),
+      0 2px 12px rgb(0 0 0 / 0.45);
   }
   /* Solid under Reduce Transparency or Increase Contrast (the solid
      variant above): the page's own ground, nothing of the chart through
@@ -674,10 +724,11 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
     background-color: var(--background) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
-    box-shadow: 0 0 0 1px var(--border), 0 2px 12px rgb(0 0 0 / 0.12);
+    box-shadow:
+      0 0 0 1px var(--border),
+      0 2px 12px rgb(0 0 0 / 0.12);
     &:is(.dark *) {
       background-color: var(--popover) !important;
     }
   }
 }
-

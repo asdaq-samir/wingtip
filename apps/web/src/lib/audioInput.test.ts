@@ -17,13 +17,28 @@ class FakeTrack extends EventTarget {
   kind = "audio";
   readyState: "live" | "ended" = "live";
   muted = false;
-  constructor(public label: string, public deviceId: string) { super(); }
-  getSettings() { return { deviceId: this.deviceId }; }
-  stop = vi.fn(() => { this.readyState = "ended"; });
+  constructor(
+    public label: string,
+    public deviceId: string,
+  ) {
+    super();
+  }
+  getSettings() {
+    return { deviceId: this.deviceId };
+  }
+  stop = vi.fn(() => {
+    this.readyState = "ended";
+  });
   /** The device gone: as the browser ends a capture. */
-  end() { this.readyState = "ended"; this.dispatchEvent(new Event("ended")); }
+  end() {
+    this.readyState = "ended";
+    this.dispatchEvent(new Event("ended"));
+  }
   /** Paused by the phone (a call, Siri) and going on again. */
-  mute(on: boolean) { this.muted = on; this.dispatchEvent(new Event(on ? "mute" : "unmute")); }
+  mute(on: boolean) {
+    this.muted = on;
+    this.dispatchEvent(new Event(on ? "mute" : "unmute"));
+  }
   /** iOS moved the route: Safari renames the capture and says so. */
   reroute(label: string, deviceId: string) {
     this.label = label;
@@ -44,25 +59,33 @@ let pending: (() => void)[];
 class FakeContext {
   state = "running";
   resume = vi.fn(async () => {});
-  close = vi.fn(async () => { this.state = "closed"; });
+  close = vi.fn(async () => {
+    this.state = "closed";
+  });
   createMediaStreamSource = vi.fn(() => ({ connect: vi.fn(), disconnect: vi.fn() }));
   createAnalyser = vi.fn(() => ({
     fftSize: 2048,
     // A full-scale sine, 32 samples a cycle.
-    getFloatTimeDomainData: (samples: Float32Array) => { for (let i = 0; i < samples.length; i++) samples[i] = Math.sin((2 * Math.PI * i) / 32); },
+    getFloatTimeDomainData: (samples: Float32Array) => {
+      for (let i = 0; i < samples.length; i++) samples[i] = Math.sin((2 * Math.PI * i) / 32);
+    },
   }));
-  constructor() { contexts.push(this); }
+  constructor() {
+    contexts.push(this);
+  }
 }
 
 function mediaDevices() {
   const devices = Object.assign(new EventTarget(), {
-    enumerateDevices: vi.fn(async () => (granted
-      ? present.map(d => ({ kind: "audioinput", deviceId: d.id, label: d.label, groupId: "" }))
-      : [{ kind: "audioinput", deviceId: "", label: "", groupId: "" }])),
+    enumerateDevices: vi.fn(async () =>
+      granted
+        ? present.map((d) => ({ kind: "audioinput", deviceId: d.id, label: d.label, groupId: "" }))
+        : [{ kind: "audioinput", deviceId: "", label: "", groupId: "" }],
+    ),
     getUserMedia: vi.fn((constraints: { audio: { deviceId?: { exact: string } } }) => {
       // No device asked for: the route's own, the first.
       const id = constraints.audio.deviceId?.exact ?? present[0]!.id;
-      const device = present.find(d => d.id === id);
+      const device = present.find((d) => d.id === id);
       if (!device) return Promise.reject(Object.assign(new Error("no such device"), { name: "OverconstrainedError" }));
       const answer = () => {
         granted = true;
@@ -71,7 +94,7 @@ function mediaDevices() {
         return { getAudioTracks: () => [track], getTracks: () => [track] };
       };
       if (!hold) return Promise.resolve(answer());
-      return new Promise(resolve => pending.push(() => resolve(answer())));
+      return new Promise((resolve) => pending.push(() => resolve(answer())));
     }),
   });
   return devices;
@@ -79,7 +102,14 @@ function mediaDevices() {
 
 function stubBrowser({ userAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_1 like Mac OS X) Safari/605.1.15", audioSession = true } = {}) {
   const devices = mediaDevices();
-  const session = { set type(type: string) { sessionLog.push(type); }, get type() { return sessionLog.at(-1) ?? "auto"; } };
+  const session = {
+    set type(type: string) {
+      sessionLog.push(type);
+    },
+    get type() {
+      return sessionLog.at(-1) ?? "auto";
+    },
+  };
   vi.stubGlobal("navigator", { userAgent, mediaDevices: devices, ...(audioSession ? { audioSession: session } : {}) });
   vi.stubGlobal("AudioContext", FakeContext);
   return devices;
@@ -93,7 +123,7 @@ async function load() {
   return { ...audio, useAtcRadio, inputLevel, lostWords, usePreferences };
 }
 
-const settle = () => new Promise(resolve => setTimeout(resolve, 0));
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 /** The held prompt answered, once the module has asked for it: taken at
  * once, it failed now and then in a full, loaded run ("pending.shift(...)
@@ -112,7 +142,11 @@ beforeEach(() => {
   sessionLog = [];
   hold = false;
   pending = [];
-  try { localStorage.clear(); } catch { /* a stub that throws */ }
+  try {
+    localStorage.clear();
+  } catch {
+    /* a stub that throws */
+  }
 });
 
 afterEach(() => {
@@ -131,15 +165,27 @@ describe("the inputs", () => {
     await settle();
     expect(m.useInputs.getState()).toMatchObject({
       found: true,
-      inputs: [{ id: "iphone", label: "iPhone Microphone", outside: false }, { id: "gma", label: "GMA 350c", outside: true }],
+      inputs: [
+        { id: "iphone", label: "iPhone Microphone", outside: false },
+        { id: "gma", label: "GMA 350c", outside: true },
+      ],
     });
     release();
   });
 
   test("the device's own microphone by its name in each browser, and outside inputs", async () => {
     const { isOutside } = await load();
-    for (const own of ["iPhone Microphone", "iPad Microphone", "MacBook Pro Microphone", "MacBook Air Microphone", "Default", "",
-      "Default - MacBook Pro Microphone (Built-in)", "MacBook Pro Microphone (Built-in)", "Microphone Array (Realtek Audio)"]) {
+    for (const own of [
+      "iPhone Microphone",
+      "iPad Microphone",
+      "MacBook Pro Microphone",
+      "MacBook Air Microphone",
+      "Default",
+      "",
+      "Default - MacBook Pro Microphone (Built-in)",
+      "MacBook Pro Microphone (Built-in)",
+      "Microphone Array (Realtek Audio)",
+    ]) {
       expect(isOutside(own), own).toBe(false);
     }
     for (const outside of ["GMA 350c", "PMA450B", "AirPods Pro", "USB Audio", "Default - GMA 350c (Bluetooth)"]) {
@@ -163,12 +209,26 @@ describe("opening an input", () => {
       audio: { deviceId: { exact: "gma" }, echoCancellation: false, noiseSuppression: false, autoGainControl: false },
     });
     expect(m.heldTrack()?.label).toBe("GMA 350c");
-    expect(m.useAtcRadio.getState().input).toEqual({ label: "GMA 350c", outside: true, lost: false, why: null, instead: null, paused: false });
+    expect(m.useAtcRadio.getState().input).toEqual({
+      label: "GMA 350c",
+      outside: true,
+      lost: false,
+      why: null,
+      instead: null,
+      paused: false,
+    });
     // The one before is stopped once the new one is live, and its end is no loss.
     expect(tracks[0]!.stop).toHaveBeenCalled();
     await m.pick("iphone");
     expect(devices.getUserMedia).toHaveBeenLastCalledWith({ audio: { deviceId: { exact: "iphone" }, echoCancellation: true } });
-    expect(m.useAtcRadio.getState().input).toEqual({ label: "iPhone Microphone", outside: false, lost: false, why: null, instead: null, paused: false });
+    expect(m.useAtcRadio.getState().input).toEqual({
+      label: "iPhone Microphone",
+      outside: false,
+      lost: false,
+      why: null,
+      instead: null,
+      paused: false,
+    });
     expect(m.usePreferences.getState().listenInput).toEqual(IPHONE);
     release();
   });
@@ -229,7 +289,10 @@ describe("opening an input", () => {
   });
 
   test("refused in another browser: its own settings for the website", async () => {
-    const devices = stubBrowser({ userAgent: "Mozilla/5.0 (Macintosh) AppleWebKit/537.36 Chrome/142.0 Safari/537.36", audioSession: false });
+    const devices = stubBrowser({
+      userAgent: "Mozilla/5.0 (Macintosh) AppleWebKit/537.36 Chrome/142.0 Safari/537.36",
+      audioSession: false,
+    });
     devices.getUserMedia.mockImplementationOnce(() => Promise.reject(Object.assign(new Error("denied"), { name: "NotAllowedError" })));
     const m = await load();
     const release = m.hold();
@@ -257,7 +320,9 @@ describe("opening an input", () => {
     // A website has no entry of its own in iOS's Settings.
     expect(m.useInputs.getState().problem).toBe("Microphone access was refused; allow it in Safari's settings for this website.");
     // iOS 26's lost microphone (WebKit bug 319706): relaunch Safari.
-    devices.getUserMedia.mockImplementationOnce(() => Promise.reject(Object.assign(new Error("No AVAudioSessionCaptureDevice"), { name: "NotAllowedError" })));
+    devices.getUserMedia.mockImplementationOnce(() =>
+      Promise.reject(Object.assign(new Error("No AVAudioSessionCaptureDevice"), { name: "NotAllowedError" })),
+    );
     await m.find();
     expect(m.useInputs.getState().problem).toMatch(/^No microphone could be used\..*close Safari and open it again\.$/);
     release();
@@ -279,7 +344,14 @@ describe("an input lost", () => {
   test("its track ended: no longer heard, not called disconnected while it is still listed", async () => {
     const { m, release, track } = await onThePanel();
     track.end();
-    expect(m.useAtcRadio.getState().input).toEqual({ label: "GMA 350c", outside: true, lost: true, why: "ended", instead: null, paused: false });
+    expect(m.useAtcRadio.getState().input).toEqual({
+      label: "GMA 350c",
+      outside: true,
+      lost: true,
+      why: "ended",
+      instead: null,
+      paused: false,
+    });
     expect(m.lostWords(m.useAtcRadio.getState().input!)).toBe("GMA 350c is no longer heard; hearing the default microphone");
     // The recognizer is handed no ended track: it hears the default.
     expect(m.heldTrack()).toBeNull();
@@ -306,7 +378,14 @@ describe("an input lost", () => {
     // Not shown as chosen, so it can be chosen again.
     expect(m.useInputs.getState().chosen).toBeNull();
     track.reroute("GMA 350c", "gma");
-    expect(m.useAtcRadio.getState().input).toEqual({ label: "GMA 350c", outside: true, lost: false, why: null, instead: null, paused: false });
+    expect(m.useAtcRadio.getState().input).toEqual({
+      label: "GMA 350c",
+      outside: true,
+      lost: false,
+      why: null,
+      instead: null,
+      paused: false,
+    });
     release();
   });
 
@@ -352,7 +431,7 @@ describe("the list a hint", () => {
     // The master on again, unheard: nothing listened for devices.
     present = [IPHONE, PANEL];
     const seen: (boolean | undefined)[] = [];
-    const off = m.useAtcRadio.subscribe(s => seen.push(s.input?.lost));
+    const off = m.useAtcRadio.subscribe((s) => seen.push(s.input?.lost));
     const listening = m.holdForListening();
     expect(devices.getUserMedia).toHaveBeenLastCalledWith({
       audio: { deviceId: { exact: "gma" }, echoCancellation: false, noiseSuppression: false, autoGainControl: false },
@@ -395,7 +474,7 @@ describe("the list a hint", () => {
     await answerPrompt();
     for (let i = 0; i < 5; i++) await settle();
     expect(devices.getUserMedia).toHaveBeenCalledTimes(2);
-    expect(tracks.every(t => t.readyState === "ended")).toBe(true);
+    expect(tracks.every((t) => t.readyState === "ended")).toBe(true);
     // Only the one context, shut with the release.
     expect(contexts).toHaveLength(1);
     expect(contexts[0]!.state).toBe("closed");
@@ -442,16 +521,16 @@ describe("the level", () => {
     expect(levelOf(new Float32Array(256))).toBe(0);
     const sine = Float32Array.from({ length: 256 }, (_, i) => Math.sin((2 * Math.PI * i) / 32));
     expect(levelOf(sine)).toBeCloseTo(0.95, 2);
-    expect(levelOf(sine.map(s => s * 4))).toBe(1);
+    expect(levelOf(sine.map((s) => s * 4))).toBe(1);
     // A tenth of full scale, -23 dBFS: well down the bars.
-    expect(levelOf(sine.map(s => s / 10))).toBeCloseTo(0.62, 2);
+    expect(levelOf(sine.map((s) => s / 10))).toBeCloseTo(0.62, 2);
   });
 
   test("measured ten times a second while held, and null once let go", async () => {
     stubBrowser();
     const m = await load();
     const levels: (number | null)[] = [];
-    m.inputLevel.listen(level => levels.push(level));
+    m.inputLevel.listen((level) => levels.push(level));
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
     const release = m.hold();
     await m.find();
@@ -459,7 +538,7 @@ describe("the level", () => {
     // A switch meters the new input in the old one's place, once.
     await m.pick("gma");
     vi.advanceTimersByTime(300);
-    expect(levels.filter(l => l !== null)).toHaveLength(3);
+    expect(levels.filter((l) => l !== null)).toHaveLength(3);
     expect(levels.at(-1)).toBeCloseTo(0.95, 2);
     release();
     expect(levels.at(-1)).toBeNull();
@@ -469,7 +548,10 @@ describe("the level", () => {
 describe("the input remembered", () => {
   test("matched by its id, then by its name", async () => {
     const { matchInput } = await load();
-    const inputs = [{ id: "a", label: "iPhone Microphone", outside: false }, { id: "b", label: "GMA 350c", outside: true }];
+    const inputs = [
+      { id: "a", label: "iPhone Microphone", outside: false },
+      { id: "b", label: "GMA 350c", outside: true },
+    ];
     expect(matchInput(inputs, { id: "b", label: "something else" })?.id).toBe("b");
     expect(matchInput(inputs, { id: "new-id", label: "GMA 350c" })?.id).toBe("b");
     expect(matchInput(inputs, { id: "x", label: "Default - GMA 350c" })?.id).toBe("b");
@@ -514,9 +596,15 @@ describe("the input remembered", () => {
 
   test("a localStorage that throws: the pick still opens the input", async () => {
     vi.stubGlobal("localStorage", {
-      getItem: () => { throw new Error("blocked"); },
-      setItem: () => { throw new Error("blocked"); },
-      removeItem: () => { throw new Error("blocked"); },
+      getItem: () => {
+        throw new Error("blocked");
+      },
+      setItem: () => {
+        throw new Error("blocked");
+      },
+      removeItem: () => {
+        throw new Error("blocked");
+      },
     });
     stubBrowser();
     const m = await load();

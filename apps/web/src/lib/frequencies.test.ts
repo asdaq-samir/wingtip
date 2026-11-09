@@ -12,7 +12,11 @@ describe("a field's frequencies as its card lists them", () => {
   test("are named in words, with what OurAirports says only where it adds to the name", () => {
     expect(frequencyLine("TWR", "TWR")).toEqual({ name: "Tower", kind: "tower", detail: null });
     expect(frequencyLine("UNIC", "UNICOM")).toEqual({ name: "UNICOM", kind: "traffic", detail: null });
-    expect(frequencyLine("A/D", "MINNEAPOLIS APP/DEP")).toEqual({ name: "Approach and departure", kind: "approach", detail: "Minneapolis APP/DEP" });
+    expect(frequencyLine("A/D", "MINNEAPOLIS APP/DEP")).toEqual({
+      name: "Approach and departure",
+      kind: "approach",
+      detail: "Minneapolis APP/DEP",
+    });
     expect(frequencyLine("ATIS", "ATIS")).toEqual({ name: "ATIS", kind: "weather", detail: null });
     expect(frequencyLine("GCCD", "GND/CLNC DEL")).toMatchObject({ name: "Ground and clearance", kind: "ground" });
   });
@@ -35,9 +39,15 @@ describe("which of a field's frequencies is the CTAF, and the kneeboard's list",
   });
 
   test("the kneeboard names MULTICOM's 122.9 where the radio calls do, never for a towered field", () => {
-    expect(kneeboardRadio([f("AWOS", 118.375)])).toEqual([["AWOS", 118.375], ["MULTICOM", 122.9]]);
+    expect(kneeboardRadio([f("AWOS", 118.375)])).toEqual([
+      ["AWOS", 118.375],
+      ["MULTICOM", 122.9],
+    ]);
     expect(kneeboardRadio([f("UNIC", 123.0, "CTAF/UNICOM")])).toEqual([["CTAF", 123]]);
-    expect(kneeboardRadio([f("ATIS", 135.4), f("TWR", 118.3), f("UNIC", 122.95)])).toEqual([["ATIS", 135.4], ["TWR", 118.3]]);
+    expect(kneeboardRadio([f("ATIS", 135.4), f("TWR", 118.3), f("UNIC", 122.95)])).toEqual([
+      ["ATIS", 135.4],
+      ["TWR", 118.3],
+    ]);
     expect(kneeboardRadio([f("TWR", 118.3)])).toEqual([["TWR", 118.3]]);
   });
 });

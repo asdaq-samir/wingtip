@@ -8,17 +8,32 @@ import { callEngine } from "../../../../lib/engine/engine";
 // runway check's and FPL's chips', asked by name through the .wasm.
 // The air a field's distances are worked out in: the pressure altitude off
 // the altimeter (a thousand feet an inch under 29.92) and the temperature.
-const fieldAir = (elevationFt: number, altimeterInHg: number, tempC: number) => ({ pressureAltFt: elevationFt + (29.92 - altimeterInHg) * 1000, tempC });
-const endDistance = (table: ShortField, runway: Runway | undefined, air: { pressureAltFt: number; tempC: number }, weightLb: number, headwindKt: number) => {
+const fieldAir = (elevationFt: number, altimeterInHg: number, tempC: number) => ({
+  pressureAltFt: elevationFt + (29.92 - altimeterInHg) * 1000,
+  tempC,
+});
+const endDistance = (
+  table: ShortField,
+  runway: Runway | undefined,
+  air: { pressureAltFt: number; tempC: number },
+  weightLb: number,
+  headwindKt: number,
+) => {
   const d = callEngine("gonogo_end_distance", {
-    table, runway: runway ?? null, pressure_alt_ft: air.pressureAltFt, temp_c: air.tempC, weight_lb: weightLb, headwind_kt: headwindKt,
+    table,
+    runway: runway ?? null,
+    pressure_alt_ft: air.pressureAltFt,
+    temp_c: air.tempC,
+    weight_lb: weightLb,
+    headwind_kt: headwindKt,
   });
   return { totalFt: d.total_ft, over: d.over };
 };
 import { endFit } from "./runwayFit";
 
 const c172 = { name: "c172", ...JSON.parse(c172Json) } as AircraftProfile;
-const runway = (length: number) => ({ ends: "09/27", length_ft: length, surface: "ASP", closed: false, runway_ends: [] }) as unknown as Runway;
+const runway = (length: number) =>
+  ({ ends: "09/27", length_ft: length, surface: "ASP", closed: false, runway_ends: [] }) as unknown as Runway;
 const end27 = { ident: "27", heading_true_deg: 270 } as unknown as RunwayEnd;
 const at = { aircraft: c172, end: end27, elevationFt: 900, altimeterInHg: 29.92, tempC: 15, weightLb: 2550, kind: "takeoff" as const };
 
@@ -50,6 +65,8 @@ describe("a runway end's fit", () => {
     expect(fit.neededFt).toBe(Math.round(checked.totalFt));
     // No weight known: the table's heaviest, the longest distance.
     const heaviest = endFit({ ...at, weightLb: null, runway: grass, wind: null });
-    expect(heaviest.neededFt).toBe(Math.round(endDistance(c172.takeoff!, grass, fieldAir(900, 29.92, 15), Math.max(...c172.takeoff!.weights_lb), 0).totalFt));
+    expect(heaviest.neededFt).toBe(
+      Math.round(endDistance(c172.takeoff!, grass, fieldAir(900, 29.92, 15), Math.max(...c172.takeoff!.weights_lb), 0).totalFt),
+    );
   });
 });

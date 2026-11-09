@@ -20,11 +20,11 @@ export const useStopsAlong = create<{
    *  card is put away. */
   picked: string | null;
   setPicked: (ident: string | null) => void;
-}>(set => ({
+}>((set) => ({
   open: false,
-  setOpen: open => set(open ? { open } : { open, picked: null }),
+  setOpen: (open) => set(open ? { open } : { open, picked: null }),
   scope: null,
-  setScope: scope => set({ scope }),
+  setScope: (scope) => set({ scope }),
   picked: null,
-  setPicked: picked => set({ picked }),
+  setPicked: (picked) => set({ picked }),
 }));

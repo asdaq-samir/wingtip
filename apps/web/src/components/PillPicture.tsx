@@ -5,7 +5,8 @@ import type { PillHead } from "../lib/openCards";
 /** The round buttons on the pill over a card's picture: a light pane of
  *  glass with the glyph white, which reads on the shade below whatever
  *  the picture, as the head's dark ones do on the picture itself. */
-export const ON_PILL_PICTURE = "bg-white/20 text-white backdrop-blur-md hover:bg-white/30 hover:text-white dark:bg-white/20 dark:hover:bg-white/30 solid:bg-black/75 solid:backdrop-blur-none dark:solid:bg-black/75";
+export const ON_PILL_PICTURE =
+  "bg-white/20 text-white backdrop-blur-md hover:bg-white/30 hover:text-white dark:bg-white/20 dark:hover:bg-white/30 solid:bg-black/75 solid:backdrop-blur-none dark:solid:bg-black/75";
 
 /**
  * Behind the pill while an airport's or an airplane's card is in it, at
@@ -28,12 +29,23 @@ export const ON_PILL_PICTURE = "bg-white/20 text-white backdrop-blur-md hover:bg
 export const PillPicture = memo(function PillPicture({ pill }: { pill: PillHead }) {
   return (
     <div
-      aria-hidden="true" className={cn("pointer-events-none absolute inset-0 -z-10 overflow-hidden", pill.tint && !pill.picture ? "bg-primary" : "bg-zinc-800")}
-      style={pill.colour && !pill.picture ? { backgroundColor: pill.colour } : undefined} data-testid="pill-picture"
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none absolute inset-0 -z-10 overflow-hidden",
+        pill.tint && !pill.picture ? "bg-primary" : "bg-zinc-800",
+      )}
+      style={pill.colour && !pill.picture ? { backgroundColor: pill.colour } : undefined}
+      data-testid="pill-picture"
     >
       {pill.picture && (
         // Larger than the pill, so the blur's soft edge is out of sight.
-        <img src={pill.picture} alt="" decoding="async" className="absolute inset-0 size-full scale-125 object-cover blur-xl" data-testid="pill-picture-img" />
+        <img
+          src={pill.picture}
+          alt=""
+          decoding="async"
+          className="absolute inset-0 size-full scale-125 object-cover blur-xl"
+          data-testid="pill-picture-img"
+        />
       )}
       <div className="absolute inset-0 bg-linear-to-r from-black/70 to-black/55" />
     </div>

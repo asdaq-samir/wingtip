@@ -53,7 +53,8 @@ test("on a phone the tabs move with the sheet from the pill to half way and back
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
   for (const key of ["ArrowUp", "ArrowDown"] as const) {
     const seen = await frames(page, () => step(page, key));
-    const first = seen[0]!, last = seen[seen.length - 1]!;
+    const first = seen[0]!,
+      last = seen[seen.length - 1]!;
     expect(first.bar).not.toBeNull();
     expect(last.bar).not.toBeNull();
     // Part of the way between the two sizes, part of the way between the

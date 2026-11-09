@@ -60,13 +60,20 @@ interface BriefPlan {
 }
 
 export const NO_PLAN: BriefPlan = {
-  dep: "", dest: "", stops: [], aircraft: null, altitudeFt: null, depart: "", eteMin: null, legs: null, routed: false, local: false, flight: null,
+  dep: "",
+  dest: "",
+  stops: [],
+  aircraft: null,
+  altitudeFt: null,
+  depart: "",
+  eteMin: null,
+  legs: null,
+  routed: false,
+  local: false,
+  flight: null,
 };
 
-export const useBriefPlan = create<BriefPlan & { set: (plan: BriefPlan) => void }>(set => ({
-  ...NO_PLAN,
-  set: plan => set(plan),
-}));
+export const useBriefPlan = create<BriefPlan & { set: (plan: BriefPlan) => void }>((set) => ({ ...NO_PLAN, set: (plan) => set(plan) }));
 
 /** The route as one string, for a query's key. */
 export const routeKeyOf = (plan: Pick<BriefPlan, "dep" | "dest" | "stops" | "depart">) =>

@@ -18,8 +18,8 @@ describe("guideFor", () => {
     expect(guide.line).toBe("Hears your voice, not the radio");
     const own = gearFor("Bose A20")!.steps;
     expect(guide.steps.slice(0, own.length)).toEqual(own);
-    const said = own.some(step => /last one to connect|takes the input/i.test(step));
-    expect(guide.steps.filter(step => step === ONE_AT_A_TIME)).toHaveLength(said ? 0 : 1);
+    const said = own.some((step) => /last one to connect|takes the input/i.test(step));
+    expect(guide.steps.filter((step) => step === ONE_AT_A_TIME)).toHaveLength(said ? 0 : 1);
   });
 
   it("says nothing for the phone's own microphone, an input it can't name, or one that may or may not send the radio", () => {

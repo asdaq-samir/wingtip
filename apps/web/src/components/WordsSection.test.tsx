@@ -13,7 +13,8 @@ const ANSWER: WordsAnswer = {
     { text: "The ceiling is 4,500 feet.", sources: ["metar:KDLH"] },
   ],
   sources: [{ id: "metar:KDLH", label: "METAR KDLH 1753Z", text: "KDLH 031753Z 27012G18KT 10SM BKN045 08/M02 A2992" }],
-  model: "claude-haiku-5-5", unavailable: null,
+  model: "claude-haiku-5-5",
+  unavailable: null,
 };
 
 describe("a section of words", () => {
@@ -33,13 +34,19 @@ describe("a section of words", () => {
   });
 
   test("a failed request reads the same way, with the error's own words", () => {
-    render(<WordsSection title="Risk picture" testId="w" state={wordsState({ data: undefined, error: new Error("The planner is not answering") })} />);
+    render(
+      <WordsSection
+        title="Risk picture"
+        testId="w"
+        state={wordsState({ data: undefined, error: new Error("The planner is not answering") })}
+      />,
+    );
     expect(screen.getByTestId("w-unavailable").textContent).toBe("The planner is not answering.");
   });
 
   test("the sentences read as one paragraph, each source one chip that opens the report as sent", () => {
     render(<WordsSection title="The weather, in words" testId="w" state={wordsState({ data: ANSWER, error: null })} />);
-    expect(screen.getByTestId("w-words").textContent).toBe(ANSWER.sentences.map(s => s.text).join(" "));
+    expect(screen.getByTestId("w-words").textContent).toBe(ANSWER.sentences.map((s) => s.text).join(" "));
     const chips = screen.getAllByTestId("w-source");
     expect(chips).toHaveLength(1);
     expect(chips[0]!.textContent).toBe("METAR KDLH 1753Z");

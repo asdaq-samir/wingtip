@@ -8,11 +8,30 @@ import { library, openConsole, showTabs } from "./helpers";
  * out as a CSV in ForeFlight's column names. The gateway's answers are
  * stubbed: what it leaves out as already logged is LogbookServiceTest's.
  */
-const LOGGED = [{
-  id: 3, flownOn: "2026-09-20", aircraft: "N12345", aircraftType: "C172", route: "C81 KDLH", totalHours: 3.4, nightHours: 0,
-  crossCountryHours: 3.4, dayLandings: 1, nightLandings: 0, remarks: null, dualHours: 0, soloHours: 3.4, instrumentHours: 0,
-  toweredLandings: 1, distanceNm: 230, longestLegNm: 230, approaches: 0, holding: false, tracking: false,
-}];
+const LOGGED = [
+  {
+    id: 3,
+    flownOn: "2026-09-20",
+    aircraft: "N12345",
+    aircraftType: "C172",
+    route: "C81 KDLH",
+    totalHours: 3.4,
+    nightHours: 0,
+    crossCountryHours: 3.4,
+    dayLandings: 1,
+    nightLandings: 0,
+    remarks: null,
+    dualHours: 0,
+    soloHours: 3.4,
+    instrumentHours: 0,
+    toweredLandings: 1,
+    distanceNm: 230,
+    longestLegNm: 230,
+    approaches: 0,
+    holding: false,
+    tracking: false,
+  },
+];
 
 const FOREFLIGHT = [
   "ForeFlight Logbook Import,This row is required for importing into ForeFlight. Do not delete or modify.",
@@ -30,18 +49,26 @@ const FOREFLIGHT = [
 
 test("a ForeFlight logbook is imported, and the logbook exported as CSV", async ({ page }) => {
   const sent: { entries: Record<string, unknown>[] }[] = [];
-  await page.route(url => url.pathname === "/api/logbook", route => route.fulfill({ json: LOGGED }));
-  await page.route(url => url.pathname === "/api/logbook/import", async route => {
-    sent.push(route.request().postDataJSON() as { entries: Record<string, unknown>[] });
-    await route.fulfill({ json: { added: 1, duplicates: 1 } });
-  });
+  await page.route(
+    (url) => url.pathname === "/api/logbook",
+    (route) => route.fulfill({ json: LOGGED }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/logbook/import",
+    async (route) => {
+      sent.push(route.request().postDataJSON() as { entries: Record<string, unknown>[] });
+      await route.fulfill({ json: { added: 1, duplicates: 1 } });
+    },
+  );
   await page.goto("/app/plan");
   await showTabs(page);
   await openConsole(page);
   const console = page.getByTestId("console-sheet");
   await library(console, "Logbook");
 
-  await console.getByTestId("logbook-import-file").setInputFiles({ name: "logbook.csv", mimeType: "text/csv", buffer: Buffer.from(FOREFLIGHT) });
+  await console
+    .getByTestId("logbook-import-file")
+    .setInputFiles({ name: "logbook.csv", mimeType: "text/csv", buffer: Buffer.from(FOREFLIGHT) });
   // Shown before it goes in: how many, the first flights, the row left out.
   await expect(console.getByTestId("logbook-preview-note")).toHaveText("logbook.csv: 2 flights read, 1 row left out.");
   await expect(console.getByTestId("logbook-preview-entry")).toHaveCount(2);
@@ -50,14 +77,20 @@ test("a ForeFlight logbook is imported, and the logbook exported as CSV", async 
   await console.getByTestId("logbook-preview-import").click();
   await expect.poll(() => sent.length).toBe(1);
   expect(sent[0]!.entries).toHaveLength(2);
-  expect(sent[0]!.entries[0]).toMatchObject({ flownOn: "2026-09-12", aircraftType: "C172", dayLandings: 3, nightLandings: 1, remarks: "Night cross-country" });
+  expect(sent[0]!.entries[0]).toMatchObject({
+    flownOn: "2026-09-12",
+    aircraftType: "C172",
+    dayLandings: 3,
+    nightLandings: 1,
+    remarks: "Night cross-country",
+  });
   await expect(console.getByTestId("logbook-imported")).toHaveText("1 flight added, 1 already in your logbook, 1 row left out.");
 
   const download = page.waitForEvent("download");
   await console.getByTestId("logbook-export").click();
   const file = await download;
   expect(file.suggestedFilename()).toMatch(/^logbook-\d{4}-\d{2}-\d{2}\.csv$/);
-  const text = await (await file.createReadStream()).toArray().then(chunks => Buffer.concat(chunks).toString());
+  const text = await (await file.createReadStream()).toArray().then((chunks) => Buffer.concat(chunks).toString());
   expect(text.split("\r\n")[1]).toBe("2026-09-20,N12345,C172,C81 KDLH,3.4,0,3.4,3.4,0,0,1,0,1,230,230,0,0,,");
 });
 
@@ -71,22 +104,32 @@ const MYFLIGHTBOOK = [
 
 test("a logbook in other columns is read by the columns the pilot says", async ({ page }) => {
   const sent: { entries: Record<string, unknown>[] }[] = [];
-  await page.route(url => url.pathname === "/api/logbook", route => route.fulfill({ json: LOGGED }));
-  await page.route(url => url.pathname === "/api/logbook/import", async route => {
-    sent.push(route.request().postDataJSON() as { entries: Record<string, unknown>[] });
-    await route.fulfill({ json: { added: 1, duplicates: 0 } });
-  });
+  await page.route(
+    (url) => url.pathname === "/api/logbook",
+    (route) => route.fulfill({ json: LOGGED }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/logbook/import",
+    async (route) => {
+      sent.push(route.request().postDataJSON() as { entries: Record<string, unknown>[] });
+      await route.fulfill({ json: { added: 1, duplicates: 0 } });
+    },
+  );
   await page.goto("/app/plan");
   await showTabs(page);
   await openConsole(page);
   const console = page.getByTestId("console-sheet");
   await library(console, "Logbook");
 
-  await console.getByTestId("logbook-import-file").setInputFiles({ name: "mfb.csv", mimeType: "text/csv", buffer: Buffer.from(MYFLIGHTBOOK) });
+  await console
+    .getByTestId("logbook-import-file")
+    .setInputFiles({ name: "mfb.csv", mimeType: "text/csv", buffer: Buffer.from(MYFLIGHTBOOK) });
   await expect(console.getByTestId("logbook-columns-note")).toHaveText("mfb.csv: say which column is which.");
   await expect(console.getByTestId("logbook-column-AircraftID")).toContainText("Tail Number");
   await console.getByTestId("logbook-columns-read").click();
   await expect(console.getByTestId("logbook-preview-note")).toHaveText("mfb.csv: 1 flight read.");
   await console.getByTestId("logbook-preview-import").click();
-  await expect.poll(() => sent[0]?.entries[0]).toMatchObject({ flownOn: "2026-10-04", aircraft: "N12345", aircraftType: "C172", totalHours: 1.2, dayLandings: 3 });
+  await expect
+    .poll(() => sent[0]?.entries[0])
+    .toMatchObject({ flownOn: "2026-10-04", aircraft: "N12345", aircraftType: "C172", totalHours: 1.2, dayLandings: 3 });
 });

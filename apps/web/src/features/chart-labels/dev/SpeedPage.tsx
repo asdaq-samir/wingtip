@@ -38,13 +38,9 @@ const dayLabel = (day: string) => DAY.format(new Date(`${day}T00:00:00Z`));
 export default function SpeedPage() {
   const [device, setDevice] = useState("phone");
   const [span, setSpan] = useState("90");
-  const { data, error } = useQuery({
-    queryKey: ["speedTrend", span],
-    queryFn: () => api.speedTrend(Number(span)),
-    staleTime: 5 * 60_000,
-  });
+  const { data, error } = useQuery({ queryKey: ["speedTrend", span], queryFn: () => api.speedTrend(Number(span)), staleTime: 5 * 60_000 });
   const shown = useMemo(
-    () => METRICS.map(m => ({ metric: m, points: data ? seriesOf(data, m, device) : [] })).filter(c => c.points.length > 0),
+    () => METRICS.map((m) => ({ metric: m, points: data ? seriesOf(data, m, device) : [] })).filter((c) => c.points.length > 0),
     [data, device],
   );
   return (
@@ -59,36 +55,58 @@ export default function SpeedPage() {
       </ListGroup>
       {error && (
         <ListGroup>
-          <ListRow title={<span role="status" className="text-destructive">{`The speed trend did not load: ${errorMessage(error, "the server gave no reason")}.`}</span>} />
+          <ListRow
+            title={
+              <span
+                role="status"
+                className="text-destructive"
+              >{`The speed trend did not load: ${errorMessage(error, "the server gave no reason")}.`}</span>
+            }
+          />
         </ListGroup>
       )}
       {!error && !data && (
-        <ListGroup><ListRow title={<span role="status" className="text-muted-foreground">Reading the speed trend…</span>} /></ListGroup>
+        <ListGroup>
+          <ListRow
+            title={
+              <span role="status" className="text-muted-foreground">
+                Reading the speed trend…
+              </span>
+            }
+          />
+        </ListGroup>
       )}
       {data && shown.length === 0 && (
         <ListGroup>
-          <ListRow title={<span role="status" className="text-muted-foreground">Nothing measured in this time on this device yet.</span>} />
+          <ListRow
+            title={
+              <span role="status" className="text-muted-foreground">
+                Nothing measured in this time on this device yet.
+              </span>
+            }
+          />
         </ListGroup>
       )}
-      {shown.map(({ metric, points }) => <MetricChart key={metric.title} metric={metric} points={points} />)}
+      {shown.map(({ metric, points }) => (
+        <MetricChart key={metric.title} metric={metric} points={points} />
+      ))}
     </div>
   );
 }
 
 /** One metric's chart, its latest figures said under it. Drawn again only
  *  when its points change (memo): recharts measures every line it draws. */
-const MetricChart = memo(function MetricChart({ metric, points }: {
-  metric: Metric;
-  points: ReturnType<typeof seriesOf>;
-}) {
-  const last = (key: "field" | "lab") => [...points].reverse().find(p => p[key] !== undefined)?.[key];
+const MetricChart = memo(function MetricChart({ metric, points }: { metric: Metric; points: ReturnType<typeof seriesOf> }) {
+  const last = (key: "field" | "lab") => [...points].reverse().find((p) => p[key] !== undefined)?.[key];
   const field = last("field");
   const lab = last("lab");
   const footer = [
     field !== undefined && `Pilots ${figure(field, metric.unit)}`,
     lab !== undefined && `lab ${figure(lab, metric.unit)}`,
     metric.good !== undefined && `good ${metric.higher ? "from" : "within"} ${figure(metric.good, metric.unit)}`,
-  ].filter(Boolean).join(" · ");
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <ListGroup title={metric.title} footer={footer}>
       <div className="px-1 py-3" data-testid={`speed-chart-${metric.field ?? metric.lab}`}>
@@ -97,14 +115,24 @@ const MetricChart = memo(function MetricChart({ metric, points }: {
             <CartesianGrid vertical={false} />
             <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={6} minTickGap={24} tickFormatter={dayLabel} />
             <YAxis tickLine={false} axisLine={false} width={44} tickFormatter={(v: number) => figure(v, metric.unit)} />
-            <ChartTooltip content={<ChartTooltipContent labelFormatter={day => dayLabel(String(day))}
-              formatter={(value, name) => `${chartConfig[name as "field" | "lab"].label}: ${figure(Number(value), metric.unit)}`} />} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  labelFormatter={(day) => dayLabel(String(day))}
+                  formatter={(value, name) => `${chartConfig[name as "field" | "lab"].label}: ${figure(Number(value), metric.unit)}`}
+                />
+              }
+            />
             {metric.good !== undefined && (
               <ReferenceLine y={metric.good} stroke="var(--muted-foreground)" strokeDasharray="4 4" ifOverflow="extendDomain" />
             )}
             {/* No entry animation: the figures are the point. */}
-            {metric.field && <Line dataKey="field" stroke="var(--color-field)" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />}
-            {metric.lab && <Line dataKey="lab" stroke="var(--color-lab)" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />}
+            {metric.field && (
+              <Line dataKey="field" stroke="var(--color-field)" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+            )}
+            {metric.lab && (
+              <Line dataKey="lab" stroke="var(--color-lab)" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+            )}
           </LineChart>
         </ChartContainer>
       </div>

@@ -14,5 +14,5 @@ const LIVE = {
  *  every answer is in (or has failed, which the card says itself). */
 export function refreshLive(card: keyof typeof LIVE): Promise<void> {
   const keys: readonly string[] = LIVE[card];
-  return queryClient.refetchQueries({ type: "active", predicate: q => keys.includes(String(q.queryKey[0])) });
+  return queryClient.refetchQueries({ type: "active", predicate: (q) => keys.includes(String(q.queryKey[0])) });
 }

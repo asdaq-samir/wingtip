@@ -62,9 +62,9 @@ export interface BriefGlance {
   raw: { metars: { ident: string; raw: string }[]; tafs: { ident: string; raw: string }[]; tfrs: string[] };
 }
 
-export const useGlance = create<{ glance: BriefGlance | null; set: (glance: BriefGlance | null) => void }>(set => ({
+export const useGlance = create<{ glance: BriefGlance | null; set: (glance: BriefGlance | null) => void }>((set) => ({
   glance: null,
-  set: glance => set({ glance }),
+  set: (glance) => set({ glance }),
 }));
 
 /** A line of the Brief as it opens: a finding with what to do about it,
@@ -140,7 +140,10 @@ const ACTION: Record<VerdictItem["key"], { stop: string; caution: string }> = {
  *  words -- "TFRs & special use", where it read "tfrs" (the FPL audit's
  *  A10; the FAA's codes are kept, CLAUDE.md "Writing"). */
 function inSentence(label: string): string {
-  return label.split(" ").map(word => (/^[A-Z]{2,}/.test(word) ? word : word.toLowerCase())).join(" ");
+  return label
+    .split(" ")
+    .map((word) => (/^[A-Z]{2,}/.test(word) ? word : word.toLowerCase()))
+    .join(" ");
 }
 
 function sentence(lead: string, action: string): string {
@@ -155,7 +158,7 @@ function sentence(lead: string, action: string): string {
 function crosswindLead(detail: string, glance: BriefGlance | null): string {
   const fields = [glance?.depart, glance?.arrive].filter((f): f is FieldGlance => !!f && f.finding === "caution" && f.crosswindKt != null);
   if (!fields.length) return detail;
-  const each = fields.map(f => `${f.runway ? `Runway ${f.runway} at ` : ""}${f.ident} has ${f.crosswindKt} kt across`);
+  const each = fields.map((f) => `${f.runway ? `Runway ${f.runway} at ` : ""}${f.ident} has ${f.crosswindKt} kt across`);
   return `${each.join(", ")}, past the POH's demonstrated`;
 }
 
@@ -170,8 +173,8 @@ function lead(item: VerdictItem, glance: BriefGlance | null): string {
 function sources(key: VerdictItem["key"], glance: BriefGlance | null): string[] {
   const raw = glance?.raw;
   if (!raw) return [];
-  if (key === "weather") return [...raw.metars.map(m => m.raw), ...raw.tafs.map(t => t.raw)];
-  if (key === "runways") return raw.metars.map(m => m.raw);
+  if (key === "weather") return [...raw.metars.map((m) => m.raw), ...raw.tafs.map((t) => t.raw)];
+  if (key === "runways") return raw.metars.map((m) => m.raw);
   if (key === "airspace") return raw.tfrs;
   return [];
 }
@@ -194,19 +197,38 @@ interface GlanceLines {
  * engine's (lib/verdict); only the words round them are made here.
  */
 export function glanceLines(items: VerdictItem[], glance: BriefGlance | null): GlanceLines {
-  const acted = [...items.filter(i => i.finding === "stop"), ...items.filter(i => i.finding === "caution")];
-  const act = acted.slice(0, LINES_MAX).map(i => ({
-    key: i.key, finding: i.finding, tab: i.tab, section: i.section,
-    line: sentence(lead(i, glance), ACTION[i.key][i.finding === "stop" ? "stop" : "caution"]),
-    why: WHY[i.key].why, cite: WHY[i.key].cite, raw: sources(i.key, glance),
-  }));
-  const rest = items.filter(i => !acted.slice(0, LINES_MAX).includes(i));
-  const more = rest.filter(i => i.finding !== "ok");
-  const pending = rest.filter(i => i.finding === "pending");
-  const line = !rest.length ? ""
-    : pending.length ? `Still checking ${pending.map(i => inSentence(i.label)).join(", ")}`
-    : more.length ? `${more.length} more to look at`
-    : sentence(`${rest.map(i => inSentence(i.label)).join(", ")}`.replace(/^./, c => c.toUpperCase()), "nothing to fix");
-  const finding: Finding = pending.length ? "pending" : more.some(i => i.finding === "stop" || i.finding === "caution") ? "caution" : more.length ? "unknown" : "ok";
+  const acted = [...items.filter((i) => i.finding === "stop"), ...items.filter((i) => i.finding === "caution")];
+  const act = acted
+    .slice(0, LINES_MAX)
+    .map((i) => ({
+      key: i.key,
+      finding: i.finding,
+      tab: i.tab,
+      section: i.section,
+      line: sentence(lead(i, glance), ACTION[i.key][i.finding === "stop" ? "stop" : "caution"]),
+      why: WHY[i.key].why,
+      cite: WHY[i.key].cite,
+      raw: sources(i.key, glance),
+    }));
+  const rest = items.filter((i) => !acted.slice(0, LINES_MAX).includes(i));
+  const more = rest.filter((i) => i.finding !== "ok");
+  const pending = rest.filter((i) => i.finding === "pending");
+  const line = !rest.length
+    ? ""
+    : pending.length
+      ? `Still checking ${pending.map((i) => inSentence(i.label)).join(", ")}`
+      : more.length
+        ? `${more.length} more to look at`
+        : sentence(
+            `${rest.map((i) => inSentence(i.label)).join(", ")}`.replace(/^./, (c) => c.toUpperCase()),
+            "nothing to fix",
+          );
+  const finding: Finding = pending.length
+    ? "pending"
+    : more.some((i) => i.finding === "stop" || i.finding === "caution")
+      ? "caution"
+      : more.length
+        ? "unknown"
+        : "ok";
   return { act, rest: { line, finding, items: rest } };
 }

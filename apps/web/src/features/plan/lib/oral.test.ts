@@ -21,10 +21,23 @@ const TABLE: AcsTable = {
 describe("the mock oral's material", () => {
   test("the flight in plain lines", () => {
     const text = planFacts({
-      route: [{ ident: "C81", name: "Campbell", airspaceClass: "G", patternFt: 1588 }, { ident: "KDLH", name: "Duluth", airspaceClass: "D", runway: "27" }],
-      aircraft: "Cessna 172", cruiseFt: 5500, distanceNm: 323.4, eteMin: 170, fuelGal: 29, reserveMin: 45, night: true, depart: "Mon 5 Oct, 18:00",
-      metars: [{ ident: "KDLH", raw: "KDLH 052253Z 27012G20KT 10SM BKN045" }], destinationForecast: "BKN030, 6 sm",
-      hazards: ["G-AIRMET Icing"], specialUse: ["VOLK EAST MOA, 8,000 ft to FL180"], tfrs: 0,
+      route: [
+        { ident: "C81", name: "Campbell", airspaceClass: "G", patternFt: 1588 },
+        { ident: "KDLH", name: "Duluth", airspaceClass: "D", runway: "27" },
+      ],
+      aircraft: "Cessna 172",
+      cruiseFt: 5500,
+      distanceNm: 323.4,
+      eteMin: 170,
+      fuelGal: 29,
+      reserveMin: 45,
+      night: true,
+      depart: "Mon 5 Oct, 18:00",
+      metars: [{ ident: "KDLH", raw: "KDLH 052253Z 27012G20KT 10SM BKN045" }],
+      destinationForecast: "BKN030, 6 sm",
+      hazards: ["G-AIRMET Icing"],
+      specialUse: ["VOLK EAST MOA, 8,000 ft to FL180"],
+      tfrs: 0,
     });
     expect(text).toContain("Route: C81 (Campbell) to KDLH (Duluth).");
     expect(text).toContain("C81: Class G at the surface, pattern altitude 1,588 ft.");
@@ -36,11 +49,13 @@ describe("the mock oral's material", () => {
 
   test("the knowledge test's codes first, then the cross-country's elements, none asked twice", () => {
     const first = () => 0;
-    expect(nextFocus(TABLE, ["PA.IX.A.K1", "PA.I.E.K1"], [], first).map(f => f.code)).toEqual(["PA.IX.A.K1", "PA.I.E.K1"]);
-    expect(nextFocus(TABLE, ["PA.IX.A.K1"], [], first)[0]!.text).toBe("Emergency Descent: Situations that would require an emergency descent.");
+    expect(nextFocus(TABLE, ["PA.IX.A.K1", "PA.I.E.K1"], [], first).map((f) => f.code)).toEqual(["PA.IX.A.K1", "PA.I.E.K1"]);
+    expect(nextFocus(TABLE, ["PA.IX.A.K1"], [], first)[0]!.text).toBe(
+      "Emergency Descent: Situations that would require an emergency descent.",
+    );
     // Its codes all asked: the cross-country's knowledge elements, not its skills.
-    const next = nextFocus(TABLE, ["PA.IX.A.K1"], ["PA.IX.A.K1"], first).map(f => f.code);
+    const next = nextFocus(TABLE, ["PA.IX.A.K1"], ["PA.IX.A.K1"], first).map((f) => f.code);
     expect(next.sort()).toEqual(["PA.I.C.K1", "PA.I.E.K1", "PA.I.E.K3"]);
-    expect(nextFocus(TABLE, [], ["PA.I.C.K1", "PA.I.E.K1", "PA.I.E.K3"], first).map(f => f.code)).toEqual(["PA.I.E.S1", "PA.IX.A.K1"]);
+    expect(nextFocus(TABLE, [], ["PA.I.C.K1", "PA.I.E.K1", "PA.I.E.K3"], first).map((f) => f.code)).toEqual(["PA.I.E.S1", "PA.IX.A.K1"]);
   });
 });

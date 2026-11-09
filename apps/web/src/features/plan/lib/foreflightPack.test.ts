@@ -4,7 +4,9 @@ import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "
 describe("the route's checkpoints for ForeFlight", () => {
   test("the pack's address is the route and the pack's name, short as ForeFlight needs it", () => {
     expect(packPath("C81", "KDLH", [])).toBe("/api/planner/foreflight-pack/C81-KDLH/C81-KDLH-checkpoints.zip");
-    expect(packPath("C81", "KDLH", ["KRYV", "KEAU"])).toBe("/api/planner/foreflight-pack/C81-KRYV-KEAU-KDLH/C81-KRYV-KEAU-KDLH-checkpoints.zip");
+    expect(packPath("C81", "KDLH", ["KRYV", "KEAU"])).toBe(
+      "/api/planner/foreflight-pack/C81-KRYV-KEAU-KDLH/C81-KRYV-KEAU-KDLH-checkpoints.zip",
+    );
   });
 
   test("ForeFlight fetches from this origin, but from the plain port beside the local stack's HTTPS one", () => {

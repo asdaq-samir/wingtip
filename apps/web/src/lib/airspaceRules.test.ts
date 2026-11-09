@@ -7,9 +7,9 @@ describe("airspaceRules", () => {
     expect(entryRules("C")[0]!.cite).toBe("14 CFR 91.130(c)(1)");
     expect(entryRules("D")[0]!.cite).toBe("14 CFR 91.129(c)(1)");
     // No transponder rule of D's own (91.215(b) names A, B and C).
-    expect(entryRules("D").some(r => /transponder/.test(r.rule))).toBe(false);
+    expect(entryRules("D").some((r) => /transponder/.test(r.rule))).toBe(false);
     // 91.117(b)'s 200 kt is C's and D's; B's is (c) under it.
-    expect(entryRules("B").find(r => /kt/.test(r.rule))!.cite).toBe("14 CFR 91.117(a), (c)");
+    expect(entryRules("B").find((r) => /kt/.test(r.rule))!.cite).toBe("14 CFR 91.117(a), (c)");
   });
 
   it("calls approach for B and C, the tower for D", () => {

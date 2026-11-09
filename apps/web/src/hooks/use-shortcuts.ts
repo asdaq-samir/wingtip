@@ -17,16 +17,23 @@ const SEARCH = '[data-slot="map-panel"] input[type="search"]';
  *  keys, a dialog over the page. */
 function typing(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
-  return target.isContentEditable || !!target.closest("input, textarea, select, [role='menu'], [role='listbox'], [role='dialog'], [role='alertdialog']");
+  return (
+    target.isContentEditable ||
+    !!target.closest("input, textarea, select, [role='menu'], [role='listbox'], [role='dialog'], [role='alertdialog']")
+  );
 }
 
-const visible = (el: Element | null): el is HTMLElement => el instanceof HTMLElement && (el.checkVisibility?.() ?? el.getClientRects().length > 0);
+const visible = (el: Element | null): el is HTMLElement =>
+  el instanceof HTMLElement && (el.checkVisibility?.() ?? el.getClientRects().length > 0);
 
 /** The search field asked for: the one in sight, else Airport's, its tab
  *  opened first. */
 function focusSearch(doc: Document): boolean {
   const here = [...doc.querySelectorAll(SEARCH)].find(visible);
-  if (here) { here.focus(); return true; }
+  if (here) {
+    here.focus();
+    return true;
+  }
   const airport = doc.querySelector('[data-testid="tab-airport"]');
   if (!visible(airport)) return false;
   airport.click();

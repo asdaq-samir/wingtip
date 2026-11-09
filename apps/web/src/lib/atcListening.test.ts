@@ -17,14 +17,22 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 const order: string[] = [];
 const sessions: { onEnded: (error?: string) => void; track?: () => MediaStreamTrack | null; renew: ReturnType<typeof vi.fn> }[] = [];
 
-vi.mock("./listen", async importOriginal => ({
+vi.mock("./listen", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./listen")>()),
-  listen: vi.fn(async (_words: string[], _pattern: unknown, _heard: unknown, onEnded: (error?: string) => void, track?: () => MediaStreamTrack | null) => {
-    order.push("recognizer");
-    const renew = vi.fn();
-    sessions.push({ onEnded, track, renew });
-    return { stop: () => onEnded(), renew };
-  }),
+  listen: vi.fn(
+    async (
+      _words: string[],
+      _pattern: unknown,
+      _heard: unknown,
+      onEnded: (error?: string) => void,
+      track?: () => MediaStreamTrack | null,
+    ) => {
+      order.push("recognizer");
+      const renew = vi.fn();
+      sessions.push({ onEnded, track, renew });
+      return { stop: () => onEnded(), renew };
+    },
+  ),
 }));
 
 const PANEL = { id: "gma", label: "GMA 350c" };
@@ -36,9 +44,15 @@ function stubBrowser() {
     getUserMedia: vi.fn((constraints: { audio: { deviceId?: { exact: string } } }) => {
       order.push("capture");
       const label = constraints.audio.deviceId ? "GMA 350c" : "iPhone Microphone";
-      const track = Object.assign(new EventTarget(), { kind: "audio", readyState: "live", label, getSettings: () => ({ deviceId: "gma" }), stop: vi.fn() });
+      const track = Object.assign(new EventTarget(), {
+        kind: "audio",
+        readyState: "live",
+        label,
+        getSettings: () => ({ deviceId: "gma" }),
+        stop: vi.fn(),
+      });
       const stream = { getAudioTracks: () => [track], getTracks: () => [track] };
-      return new Promise(resolve => pending.push(() => resolve(stream)));
+      return new Promise((resolve) => pending.push(() => resolve(stream)));
     }),
   });
   vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (iPhone) Safari/605.1.15", mediaDevices: devices });
@@ -138,8 +152,9 @@ describe("nothing heard", () => {
     await vi.waitFor(() => expect(m.useAtcRadio.getState().input).toMatchObject({ label: "GMA 350c" }), WAIT);
     expect(m.useAtcRadio.getState().pill?.listening).toBe(true);
     sessions[0]!.onEnded();
-    expect(m.useAtcRadio.getState().pill?.error)
-      .toBe("Nothing was heard through GMA 350c. Check it is sending the radio: an audio panel's recording mode, or the cable.");
+    expect(m.useAtcRadio.getState().pill?.error).toBe(
+      "Nothing was heard through GMA 350c. Check it is sending the radio: an audio panel's recording mode, or the cable.",
+    );
   });
 
   test("in Safari, whose recognizer is not known to hear the input held, the words as they were", async () => {

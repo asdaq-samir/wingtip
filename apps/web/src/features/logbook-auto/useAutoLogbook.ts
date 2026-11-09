@@ -29,18 +29,22 @@ const LOOK_EVERY_POINTS = 12;
 export function useAutoLogbook() {
   const queryClient = useQueryClient();
   const ready = useEngineReady();
-  const recording = useOwnShip(s => s.enabled && !s.simulated && s.fix !== null);
-  const points = recorded(s => s.value.points);
-  const askedTo = recorded(s => s.value.askedTo);
-  const aircraft = usePreferences(p => p.aircraft);
+  const recording = useOwnShip((s) => s.enabled && !s.simulated && s.fix !== null);
+  const points = recorded((s) => s.value.points);
+  const askedTo = recorded((s) => s.value.askedTo);
+  const aircraft = usePreferences((p) => p.aircraft);
   const { data: pilot } = useQuery(pilotQuery);
   const [problem, setProblem] = useState<string | null>(null);
 
   // Each fix into the track, as own ship gets it (its GPS, not a dry run).
-  useEffect(() => useOwnShip.subscribe((s, before) => {
-    if (!s.enabled || s.simulated || !s.fix || s.fix === before.fix) return;
-    if (!record(s.fix)) setProblem("This browser would not keep the flight's track, so it cannot be logged from it.");
-  }), []);
+  useEffect(
+    () =>
+      useOwnShip.subscribe((s, before) => {
+        if (!s.enabled || s.simulated || !s.fix || s.fix === before.fix) return;
+        if (!record(s.fix)) setProblem("This browser would not keep the flight's track, so it cannot be logged from it.");
+      }),
+    [],
+  );
 
   // The engine's own reading of the track, looked at once a minute of
   // points: has a flight landed and come to rest?
@@ -93,13 +97,13 @@ export function useAutoLogbook() {
       if (entry.flightId) {
         await api.flights.saveTrack(entry.flightId, {
           source: "Recorded by Wingtip",
-          points: points.map(p => ({ t: p.t, lat: p.lat, lon: p.lon, altFt: p.alt_ft })),
+          points: points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, altFt: p.alt_ft })),
         });
       }
       return entry;
     },
-    onSuccess: entry => {
-      const fields = [...new Set((draft.data?.approaches ?? []).map(a => a.airport))];
+    onSuccess: (entry) => {
+      const fields = [...new Set((draft.data?.approaches ?? []).map((a) => a.airport))];
       setLogged({ entry, points, fields });
       forget();
       setEdits({});
@@ -121,7 +125,7 @@ export function useAutoLogbook() {
     draftError: draft.error,
     retry: () => void draft.refetch(),
     edits,
-    edit: (patch: Edits) => setEdits(e => ({ ...e, ...patch })),
+    edit: (patch: Edits) => setEdits((e) => ({ ...e, ...patch })),
     byInstruments,
     setByInstruments,
     flights: flights.data ?? [],

@@ -6,7 +6,7 @@ import { Button } from "../../../../components/ui/button";
 /** The month grid is react-day-picker, which is not small and is only
  *  ever seen inside this popover -- so it arrives with the popover
  *  rather than with the page. */
-const Calendar = lazy(() => import("../../../../components/ui/calendar").then(m => ({ default: m.Calendar })));
+const Calendar = lazy(() => import("../../../../components/ui/calendar").then((m) => ({ default: m.Calendar })));
 import { Input } from "../../../../components/ui/input";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../../components/ResponsivePopover";
 import { cn } from "cn";
@@ -71,7 +71,14 @@ function shortWhen(date: Date): string {
  * whole hour), a new time keeps the day.
  */
 export default function DepartPicker({
-  value, onChange: change, look = "chip", label = "Departure", testId = "depart-date", leavesNow = true, earliest, latest,
+  value,
+  onChange: change,
+  look = "chip",
+  label = "Departure",
+  testId = "depart-date",
+  leavesNow = true,
+  earliest,
+  latest,
 }: Props) {
   const [open, setOpen] = useState(false);
   // A pick outside its range, brought inside: said under the time, where
@@ -92,8 +99,13 @@ export default function DepartPicker({
       <ResponsivePopoverTrigger asChild>
         {look === "time" ? (
           <button
-            type="button" aria-label={`${label}, ${date ? shortWhen(date) : "now"}: change`} data-testid={testId}
-            className={cn("relative flex shrink-0 items-center gap-0.5 font-semibold text-tint tabular-nums after:absolute after:-inset-2.5 after:content-['']", TEXT.detail)}
+            type="button"
+            aria-label={`${label}, ${date ? shortWhen(date) : "now"}: change`}
+            data-testid={testId}
+            className={cn(
+              "relative flex shrink-0 items-center gap-0.5 font-semibold text-tint tabular-nums after:absolute after:-inset-2.5 after:content-['']",
+              TEXT.detail,
+            )}
           >
             {date ? shortWhen(date) : "Now"}
             <ChevronDown className="size-4" aria-hidden />
@@ -103,8 +115,11 @@ export default function DepartPicker({
             // A chip of glass, as Maps' filter chips are: the time in the
             // text's colour, not a button's tint, at a note's 13 (TEXT), as
             // the airplane beside it (FlightInputs).
-            variant="outline" size="sm" className={cn("rounded-full px-2.5 font-normal pointer-coarse:px-1.5", GLASS_BUTTON, CHIP_TEXT)}
-            aria-label={`${label} date`} data-testid={testId}
+            variant="outline"
+            size="sm"
+            className={cn("rounded-full px-2.5 font-normal pointer-coarse:px-1.5", GLASS_BUTTON, CHIP_TEXT)}
+            aria-label={`${label} date`}
+            data-testid={testId}
           >
             {!date && <CalendarIcon className="text-muted-foreground" />}
             {date ? shortWhen(date) : "Now"}
@@ -119,12 +134,16 @@ export default function DepartPicker({
               not jump once it arrives. */}
           <Suspense fallback={<div className="h-[21rem] w-[17rem]" />}>
             <Calendar
-              mode="single" required selected={date} defaultMonth={date} captionLayout="dropdown"
+              mode="single"
+              required
+              selected={date}
+              defaultMonth={date}
+              captionLayout="dropdown"
               disabled={[
                 ...(earliest != null ? [{ before: new Date(new Date(earliest).setHours(0, 0, 0, 0)) }] : []),
                 ...(latest != null ? [{ after: new Date(latest) }] : []),
               ]}
-              onSelect={day => onChange(instantAt(day, time || nextHour()))}
+              onSelect={(day) => onChange(instantAt(day, time || nextHour()))}
             />
           </Suspense>
           {/* The time once a day is picked -- picking one gives it the
@@ -135,26 +154,38 @@ export default function DepartPicker({
               // Wrapped, so a finger 6 above or below the 32-point field is
               // still the field's: 44, as every control, without growing it.
               <label className="-my-1.5 flex py-1.5" htmlFor={timeId}>
-              <Input
-                id={timeId}
-                type="time"
-                value={time}
-                onChange={e => { if (e.target.value) onChange(instantAt(date, e.target.value)); }}
-                aria-label={`${label} time`}
-                className="h-8 w-28 appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                data-testid="depart-time"
-              />
+                <Input
+                  id={timeId}
+                  type="time"
+                  value={time}
+                  onChange={(e) => {
+                    if (e.target.value) onChange(instantAt(date, e.target.value));
+                  }}
+                  aria-label={`${label} time`}
+                  className="h-8 w-28 appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  data-testid="depart-time"
+                />
               </label>
             )}
             {leavesNow && (
               <Button
-                type="button" variant="ghost" size="sm" className="text-tint"
-                onClick={() => { onChange(""); setOpen(false); }} disabled={!date} data-testid="depart-clear"
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-tint"
+                onClick={() => {
+                  onChange("");
+                  setOpen(false);
+                }}
+                disabled={!date}
+                data-testid="depart-clear"
               >
                 Leave now
               </Button>
             )}
-            <Button type="button" size="sm" onClick={() => setOpen(false)} data-testid="depart-done">Done</Button>
+            <Button type="button" size="sm" onClick={() => setOpen(false)} data-testid="depart-done">
+              Done
+            </Button>
           </div>
           {held && earliest != null && latest != null && (
             <p className={cn("px-3 text-caution-ink", TEXT.note)} role="status" data-testid="depart-range">

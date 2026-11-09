@@ -31,24 +31,47 @@ const FOREFLIGHT = [
 
 describe("the logbook as CSV", () => {
   it("reads quoted fields, their doubled quotes and line breaks", () => {
-    expect(parseCsv('a,"b, c","d ""e""",\r\n"f\ng",h')).toEqual([["a", "b, c", 'd "e"', ""], ["f\ng", "h"]]);
+    expect(parseCsv('a,"b, c","d ""e""",\r\n"f\ng",h')).toEqual([
+      ["a", "b, c", 'd "e"', ""],
+      ["f\ng", "h"],
+    ]);
   });
 
   it("reads ForeFlight's export: its types from the Aircraft Table, its approaches, holds and landings ours", () => {
     const { entries, skipped } = importLogbook(FOREFLIGHT);
     expect(entries).toHaveLength(2);
     expect(entries[0]).toMatchObject({
-      flownOn: "2026-09-12", aircraft: "N201TH", aircraftType: "C172", route: "KBVU KCDC 67L KVGT",
-      totalHours: 3.6, nightHours: 1.2, crossCountryHours: 3.6, distanceNm: 135,
+      flownOn: "2026-09-12",
+      aircraft: "N201TH",
+      aircraftType: "C172",
+      route: "KBVU KCDC 67L KVGT",
+      totalHours: 3.6,
+      nightHours: 1.2,
+      crossCountryHours: 3.6,
+      distanceNm: 135,
       // Four landings, one a full stop at night: three by day for 61.57(a).
-      dayLandings: 3, nightLandings: 1,
+      dayLandings: 3,
+      nightLandings: 1,
       // Wheels off and on are not given: no air time known. Of the four,
       // one is a touch-and-go (two full stops by day, one at night).
-      airHours: 0, touchAndGoes: 1, fromTrack: false, flightId: null,
-      instrumentHours: 1.3, approaches: 3, holding: true, tracking: false,
+      airHours: 0,
+      touchAndGoes: 1,
+      fromTrack: false,
+      flightId: null,
+      instrumentHours: 1.3,
+      approaches: 3,
+      holding: true,
+      tracking: false,
       remarks: 'Night XC, "hood" back',
     });
-    expect(entries[1]).toMatchObject({ aircraftType: "PA28", route: "C81 C81", dualHours: 1.1, dayLandings: 3, approaches: 0, holding: false });
+    expect(entries[1]).toMatchObject({
+      aircraftType: "PA28",
+      route: "C81 C81",
+      dualHours: 1.1,
+      dayLandings: 3,
+      approaches: 0,
+      holding: false,
+    });
     expect(skipped).toEqual([
       { line: 15, reason: "1500 hours is more than a day: a summary entry, to log as its flights" },
       { line: 16, reason: 'No date ("not a date")' },
@@ -56,18 +79,45 @@ describe("the logbook as CSV", () => {
   });
 
   it("writes its own, oldest first, and reads it back as it was", () => {
-    const entry = (over: Partial<LogbookEntry>): LogbookEntry => ({
-      id: 1, flownOn: "2026-10-01", aircraft: "N12345", aircraftType: "C172", route: "C81 KDLH", totalHours: 3.4, nightHours: 0.5,
-      crossCountryHours: 3.4, dayLandings: 2, nightLandings: 1, remarks: "Smooth, then \"bumpy\"", dualHours: 0, soloHours: 3.4,
-      instrumentHours: 0.3, toweredLandings: 1, distanceNm: 230, longestLegNm: 230, approaches: 2, holding: true, tracking: true,
-      airHours: 3.1, touchAndGoes: 1, fromTrack: false, flightId: null,
-      createdAt: "2026-10-01T20:00:00Z", ...over,
-    } as LogbookEntry);
-    const written = logbookCsv([entry({}), entry({ id: 2, flownOn: "2026-09-01", route: null, remarks: null, holding: false, tracking: false })]);
-    expect(written.split("\r\n")[0]).toBe("Date,AircraftID,TypeCode,Route,TotalTime,AirTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,TouchAndGoes,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments");
+    const entry = (over: Partial<LogbookEntry>): LogbookEntry =>
+      ({
+        id: 1,
+        flownOn: "2026-10-01",
+        aircraft: "N12345",
+        aircraftType: "C172",
+        route: "C81 KDLH",
+        totalHours: 3.4,
+        nightHours: 0.5,
+        crossCountryHours: 3.4,
+        dayLandings: 2,
+        nightLandings: 1,
+        remarks: 'Smooth, then "bumpy"',
+        dualHours: 0,
+        soloHours: 3.4,
+        instrumentHours: 0.3,
+        toweredLandings: 1,
+        distanceNm: 230,
+        longestLegNm: 230,
+        approaches: 2,
+        holding: true,
+        tracking: true,
+        airHours: 3.1,
+        touchAndGoes: 1,
+        fromTrack: false,
+        flightId: null,
+        createdAt: "2026-10-01T20:00:00Z",
+        ...over,
+      }) as LogbookEntry;
+    const written = logbookCsv([
+      entry({}),
+      entry({ id: 2, flownOn: "2026-09-01", route: null, remarks: null, holding: false, tracking: false }),
+    ]);
+    expect(written.split("\r\n")[0]).toBe(
+      "Date,AircraftID,TypeCode,Route,TotalTime,AirTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,TouchAndGoes,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments",
+    );
     const { entries, skipped } = importLogbook(written);
     expect(skipped).toEqual([]);
-    expect(entries.map(e => e.flownOn)).toEqual(["2026-09-01", "2026-10-01"]);
+    expect(entries.map((e) => e.flownOn)).toEqual(["2026-09-01", "2026-10-01"]);
     const asLogged = Object.fromEntries(Object.entries(entry({})).filter(([k]) => k !== "id" && k !== "createdAt"));
     expect(entries[1]).toEqual(asLogged);
     expect(entries[0]).toMatchObject({ route: null, remarks: null, holding: false, tracking: false });

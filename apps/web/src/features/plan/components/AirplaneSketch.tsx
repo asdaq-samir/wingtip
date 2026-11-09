@@ -8,7 +8,13 @@ import TrailSketch, { type SketchField } from "./TrailSketch";
  * (FlightCard's PhotoHead), after its photo: drawn in the top of the box,
  * clear of its name set over the box's foot.
  */
-export default function AirplaneSketch({ points, now, trackDeg, from, to }: {
+export default function AirplaneSketch({
+  points,
+  now,
+  trackDeg,
+  from,
+  to,
+}: {
   points: { lat: number; lon: number; altFt: number | null }[];
   now: { lat: number; lon: number; altFt: number | null } | null;
   trackDeg: number | null;

@@ -45,7 +45,7 @@ export function approachCategory(vrefKt: number | null | undefined, vsoKt?: numb
  *  FAA-H-8083-16B, chapter 4): a DA, an MDA, or either on an RNAV (GPS). */
 /** The approach's own fixes in the order flown: its missed approach's left out. */
 export function approachFixes(drawing: ProcedureDrawing): ProcedureFix[] {
-  return drawing.fixes.filter(f => !f.missed);
+  return drawing.fixes.filter((f) => !f.missed);
 }
 
 type Place = { lat: number; lon: number };
@@ -90,7 +90,10 @@ type BriefItem = EngineAnswer<"approach_brief">[number];
  */
 export function approachBrief(input: LessonInput): BriefItem[] {
   return callEngine("approach_brief", {
-    drawing: input.drawing, frequencies: input.frequencies ?? [], vref_kt: input.vrefKt ?? null, vso_kt: input.vsoKt ?? null,
+    drawing: input.drawing,
+    frequencies: input.frequencies ?? [],
+    vref_kt: input.vrefKt ?? null,
+    vso_kt: input.vsoKt ?? null,
   });
 }
 

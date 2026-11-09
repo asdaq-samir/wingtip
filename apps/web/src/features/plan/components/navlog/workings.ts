@@ -56,8 +56,16 @@ export interface Workings {
 export function workingsOf(leg: Leg): Workings | null {
   if (leg.groundspeed_kt == null || leg.groundspeed_kt <= 0 || leg.ete_min == null || leg.fuel_gal == null) return null;
   // No airplane, no wind triangle to work: its figures are an airplane's.
-  if (leg.tas_kt == null || leg.wca_deg == null || leg.true_heading_deg == null || leg.magnetic_heading_deg == null
-    || leg.fuel_burn_gph == null || leg.power_pct == null || leg.density_altitude_ft == null) return null;
+  if (
+    leg.tas_kt == null ||
+    leg.wca_deg == null ||
+    leg.true_heading_deg == null ||
+    leg.magnetic_heading_deg == null ||
+    leg.fuel_burn_gph == null ||
+    leg.power_pct == null ||
+    leg.density_altitude_ft == null
+  )
+    return null;
   const tc = leg.true_course_deg;
   const windDir = leg.wind?.wind_dir_true_deg ?? 0;
   const windKt = leg.wind?.wind_speed_kt ?? 0;
@@ -89,7 +97,11 @@ export function workingsOf(leg: Leg): Workings | null {
       sum: leg.wind ? `forecast at ${grouped(leg.altitude_ft)} ft, from true north` : "no forecast near: calm",
       result: `${bearing(windDir)} at ${Math.round(windKt)} kt`,
     },
-    { name: "True airspeed", sum: `${Math.round(leg.power_pct)}% power at a density altitude of ${grouped(leg.density_altitude_ft)} ft`, result: `${Math.round(tas)} kt` },
+    {
+      name: "True airspeed",
+      sum: `${Math.round(leg.power_pct)}% power at a density altitude of ${grouped(leg.density_altitude_ft)} ft`,
+      result: `${Math.round(tas)} kt`,
+    },
     {
       name: "Wind correction",
       sum: `sin⁻¹(${Math.round(windKt)} × sin(${bearing(windDir)} − ${bearing(tc)}) ÷ ${Math.round(tas)})`,

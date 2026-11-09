@@ -5,7 +5,10 @@ import { showError } from "../../lib/problems";
 /** The file's name as the gateway gives it (ExportController), else one
  *  of today's; never a folder, whatever the header says. */
 export function exportFileName(disposition: string | null, today: Date = new Date()): string {
-  const named = /filename="?([^";]+)"?/.exec(disposition ?? "")?.[1]?.split(/[\\/]/).pop();
+  const named = /filename="?([^";]+)"?/
+    .exec(disposition ?? "")?.[1]
+    ?.split(/[\\/]/)
+    .pop();
   return named || `wingtip-maps-${today.toISOString().slice(0, 10)}.json`;
 }
 
@@ -20,7 +23,7 @@ export function useExportAccount() {
       if (!response.ok) throw new Error(response.status === 401 ? "You are signed out." : `The server answered ${response.status}.`);
       await shareFile(exportFileName(response.headers.get("Content-Disposition")), "application/json", await response.text());
     },
-    onError: err => {
+    onError: (err) => {
       if ((err as Error).name !== "AbortError") showError("Your data was not exported", (err as Error).message);
     },
   });

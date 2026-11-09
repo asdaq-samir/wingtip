@@ -40,7 +40,16 @@ export function heardInto(cards: AtcCard[], heard: { id: number; text: string; a
   const open = latest && !latest.readback && heard.at - latest.at <= READBACK_WINDOW_MS ? latest : null;
   const answer = atcCall(heard.text, tail, open ? { text: open.text, agoS: (heard.at - open.at) / 1000 } : null);
   if (answer.who === "to_us") {
-    const card: AtcCard = { id: heard.id, text: heard.text, at: heard.at, items: answer.items, readback: null, awaiting: false, dismissed: false, set: [] };
+    const card: AtcCard = {
+      id: heard.id,
+      text: heard.text,
+      at: heard.at,
+      items: answer.items,
+      readback: null,
+      awaiting: false,
+      dismissed: false,
+      set: [],
+    };
     return [card, ...cards].slice(0, KEPT_CARDS);
   }
   if (open && (answer.who === "from_us" || open.awaiting)) return [readBack(open, heard.text, tail), ...cards.slice(1)];

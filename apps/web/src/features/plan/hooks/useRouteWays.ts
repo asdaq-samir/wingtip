@@ -9,16 +9,26 @@ import type { PlannedRoute } from "./planAddress";
 
 /** The route with the fuel stops it needs put in (RouteOptions.own), for
  *  its card before anything is planned. */
-export interface FuelCard { stops: string[]; added: string[]; nm: number; air: number | null; ground: number; landings: number }
+export interface FuelCard {
+  stops: string[];
+  added: string[];
+  nm: number;
+  air: number | null;
+  ground: number;
+  landings: number;
+}
 
 /** The route as it was before the first Routes card was swiped into FPL,
  *  with its figures, kept for Your Route to put it back (useRouteWays). */
 export interface Browsing {
   /** The route's ends it was kept under (chosenKey). */
   key: string;
-  stops: string[]; fuel: string[];
+  stops: string[];
+  fuel: string[];
   withFuel: FuelCard | null;
-  ownMinutes: number | null; ownGround: number; ownNm: number | null;
+  ownMinutes: number | null;
+  ownGround: number;
+  ownNm: number | null;
   /** The typed route's fuel burnt, its nav log's (Totals.fuel_gal). */
   ownGal: number | null;
   /** The ways' stops, as they have been offered from it. */
@@ -33,7 +43,13 @@ export interface Browsing {
  * the pilot's to change. Before the plan, as nothing is planned till one
  * of them is picked; the chips made from them are useRouteLine's.
  */
-export function useRouteWays({ planned, aircraft, depart, local, flightRules }: {
+export function useRouteWays({
+  planned,
+  aircraft,
+  depart,
+  local,
+  flightRules,
+}: {
   planned: PlannedRoute;
   aircraft: AircraftChoice;
   depart: string;
@@ -41,8 +57,8 @@ export function useRouteWays({ planned, aircraft, depart, local, flightRules }: 
   local: boolean;
   flightRules: string;
 }) {
-  const minimums = usePreferences(p => p.minimums);
-  const routeWeather = usePreferences(p => p.routeWeather);
+  const minimums = usePreferences((p) => p.minimums);
+  const routeWeather = usePreferences((p) => p.routeWeather);
   const ceilingFt = routeWeather === "personal" ? minimums.ceilingFt : null;
   const visibilitySm = routeWeather === "personal" ? minimums.visibilitySm : null;
   // Swiping the Routes' cards puts each in FPL as it comes into sight --
@@ -62,12 +78,23 @@ export function useRouteWays({ planned, aircraft, depart, local, flightRules }: 
   // (the minimums or the time changed) while browsing, a way not among
   // those kept ended the browsing, and the way in sight became the route.
   const keptWays = browsingKept
-    ? queryClient.getQueryData<RouteOptions>(routeOptionsQuery(planned.dep, `${planned.dest ?? ""}`, browsingKept.stops.join(","), { ...aircraft },
-      depart || undefined, { ceilingFt, visibilitySm }).queryKey)?.options.map(o => o.stops) ?? []
+    ? (queryClient
+        .getQueryData<RouteOptions>(
+          routeOptionsQuery(planned.dep, `${planned.dest ?? ""}`, browsingKept.stops.join(","), { ...aircraft }, depart || undefined, {
+            ceilingFt,
+            visibilitySm,
+          }).queryKey,
+        )
+        ?.options.map((o) => o.stops) ?? [])
     : [];
-  const browsing = browsingKept && browsingKept.key === chosenKey && (sameStops(planned.stops, browsingKept.stops)
-    || (browsingKept.withFuel && sameStops(planned.stops, browsingKept.withFuel.stops))
-    || [...browsingKept.ways, ...keptWays].some(w => sameStops(w, planned.stops))) ? browsingKept : null;
+  const browsing =
+    browsingKept &&
+    browsingKept.key === chosenKey &&
+    (sameStops(planned.stops, browsingKept.stops) ||
+      (browsingKept.withFuel && sameStops(planned.stops, browsingKept.withFuel.stops)) ||
+      [...browsingKept.ways, ...keptWays].some((w) => sameStops(w, planned.stops)))
+      ? browsingKept
+      : null;
   const baseStops = browsing?.stops ?? planned.stops;
   const vfrRoute = routeOf(planned.dep, planned.dest, planned.stops) !== null && !local && flightRules === "vfr";
   // Asked for as soon as the route is known: nothing is planned till one
@@ -76,15 +103,22 @@ export function useRouteWays({ planned, aircraft, depart, local, flightRules }: 
   // the compiler takes it as changed there and skips every later memo
   // that reads it (lib/queryClient's queries are pure).
   const routeWaysQuery = useQuery({
-    ...routeOptionsQuery(planned.dep, `${planned.dest ?? ""}`, baseStops.join(","), { ...aircraft }, depart || undefined, { ceilingFt, visibilitySm }),
+    ...routeOptionsQuery(planned.dep, `${planned.dest ?? ""}`, baseStops.join(","), { ...aircraft }, depart || undefined, {
+      ceilingFt,
+      visibilitySm,
+    }),
     enabled: vfrRoute,
   });
   const routeWays = routeWaysQuery.data;
   // The route with the fuel stops it needs put in, the planner's grid's
   // (RouteOptions.own), for its card before anything is planned.
   const own = routeWays?.own;
-  const ownWithFuel = useMemo((): FuelCard | null => (own && own.landings > 0
-    ? { stops: own.stops, added: own.fuel, nm: own.distance_nm, air: own.air_min, ground: own.ground_min, landings: own.landings }
-    : null), [own]);
+  const ownWithFuel = useMemo(
+    (): FuelCard | null =>
+      own && own.landings > 0
+        ? { stops: own.stops, added: own.fuel, nm: own.distance_nm, air: own.air_min, ground: own.ground_min, landings: own.landings }
+        : null,
+    [own],
+  );
   return { browsing, setBrowsing, chosenKey, vfrRoute, routeWays, ownWithFuel };
 }

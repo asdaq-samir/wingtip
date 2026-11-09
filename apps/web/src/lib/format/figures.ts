@@ -91,7 +91,8 @@ export function pounds(lb: number): string {
 /** The altitudes flown, lowest to highest: "4,500 ft", or "3,500–5,500
  *  ft" where they differ. */
 export function feetRange(alts: number[]): string {
-  const low = Math.min(...alts), high = Math.max(...alts);
+  const low = Math.min(...alts),
+    high = Math.max(...alts);
   return low === high ? `${altFt(low)} ft` : `${altFt(low)}–${altFt(high)} ft`;
 }
 

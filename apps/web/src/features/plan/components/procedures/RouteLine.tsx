@@ -36,51 +36,82 @@ const figures = (c: RouteLineChoices["chips"][number]) =>
   [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? `${c.gal.toFixed(1)} gal` : null].filter(Boolean).join(" · ");
 
 export function RouteLine({ line: asked, grouped = false }: { line: RouteLineChoices; grouped?: boolean }) {
-  const open = useRouteLineOpen(s => s.open);
+  const open = useRouteLineOpen((s) => s.open);
   // No airplane picked: each way's miles, not its time or fuel, which are
   // an airplane's (the owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
-  const line = airplane ? asked : { ...asked, chips: asked.chips.map(c => ({ ...c, time: null, gal: null })) };
-  const picked = line.chips.find(c => c.key === line.picked) ?? line.chips[0]!;
+  const line = airplane ? asked : { ...asked, chips: asked.chips.map((c) => ({ ...c, time: null, gal: null })) };
+  const picked = line.chips.find((c) => c.key === line.picked) ?? line.chips[0]!;
   const words = (c: RouteLineChoices["chips"][number]) =>
     `${c.key === "none" ? "As typed, the route as typed" : c.label}${c.time ? `, ${c.time}` : ""}${figures(c) ? `, ${figures(c)}` : ""}${c.warning ? `, ${c.warning.toLowerCase()}` : ""}`;
   const others = line.chips.length - 1;
   return (
-    <Collapsible open={open} onOpenChange={next => useRouteLineOpen.setState({ open: next })} className={grouped ? undefined : "mt-2 mb-1 rounded-xl bg-card"} data-testid="route-line">
+    <Collapsible
+      open={open}
+      onOpenChange={(next) => useRouteLineOpen.setState({ open: next })}
+      className={grouped ? undefined : "mt-2 mb-1 rounded-xl bg-card"}
+      data-testid="route-line"
+    >
       <CollapsibleTrigger asChild>
         <button
-          type="button" data-testid="route-line-toggle" data-disclosure=""
+          type="button"
+          data-testid="route-line-toggle"
+          data-disclosure=""
           aria-label={open ? "Routes: fold" : `Routes: ${words(picked)}, ${others} more`}
-          className={cn("flex min-h-11 w-full items-center gap-2.5 px-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring", TEXT.row)}
+          className={cn(
+            "flex min-h-11 w-full items-center gap-2.5 px-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            TEXT.row,
+          )}
         >
           <Route className="size-5 shrink-0 text-tint" aria-hidden />
           {open ? (
             <span className="flex-1 font-semibold">Routes</span>
           ) : (
             <span className="min-w-0 flex-1 truncate" data-testid="route-line-picked" data-key={picked.key}>
-              {picked.label}{picked.time && <span className="font-semibold"> {picked.time}</span>}
+              {picked.label}
+              {picked.time && <span className="font-semibold"> {picked.time}</span>}
             </span>
           )}
           {!open && others > 0 && <span className={cn("shrink-0 text-muted-foreground", TEXT.detail)}>{others} more</span>}
-          <ChevronDown className={cn("size-4 shrink-0 text-tint transition-transform motion-reduce:transition-none", open && "rotate-180")} aria-hidden />
+          <ChevronDown
+            className={cn("size-4 shrink-0 text-tint transition-transform motion-reduce:transition-none", open && "rotate-180")}
+            aria-hidden
+          />
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <ToggleGroup
-          type="single" value={line.picked} onValueChange={v => { if (v) line.onPick(v); }} aria-label="Routes"
+          type="single"
+          value={line.picked}
+          onValueChange={(v) => {
+            if (v) line.onPick(v);
+          }}
+          aria-label="Routes"
           className="flex w-full justify-start gap-2 overflow-x-auto px-3 pb-3 [scrollbar-width:none]"
         >
-          {line.chips.map(c => (
+          {line.chips.map((c) => (
             <ToggleGroupItem
-              key={c.key} value={c.key} aria-label={words(c)} data-testid="route-line-chip" data-key={c.key}
+              key={c.key}
+              value={c.key}
+              aria-label={words(c)}
+              data-testid="route-line-chip"
+              data-key={c.key}
               className={cn(
                 "h-auto min-w-24 max-w-44 shrink-0 flex-col items-start gap-0.5 rounded-xl border border-border bg-background px-2.5 py-2 text-left",
                 "data-[state=on]:border-2 data-[state=on]:border-tint data-[state=on]:bg-tint/12",
               )}
             >
-              {(airplane || c.time) && <span className={cn("font-semibold", TEXT.row, c.key === line.picked && "text-tint")}>{c.time ?? "—"}</span>}
-              <span className={cn("whitespace-normal", TEXT.note, c.warning ? "text-amber-700 dark:text-amber-400" : "text-foreground")}>{c.label}</span>
-              {figures(c) && <span className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="route-line-figures">{figures(c)}</span>}
+              {(airplane || c.time) && (
+                <span className={cn("font-semibold", TEXT.row, c.key === line.picked && "text-tint")}>{c.time ?? "—"}</span>
+              )}
+              <span className={cn("whitespace-normal", TEXT.note, c.warning ? "text-amber-700 dark:text-amber-400" : "text-foreground")}>
+                {c.label}
+              </span>
+              {figures(c) && (
+                <span className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="route-line-figures">
+                  {figures(c)}
+                </span>
+              )}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>

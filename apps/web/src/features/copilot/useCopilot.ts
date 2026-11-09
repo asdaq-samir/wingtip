@@ -28,22 +28,24 @@ const ASK_MS = 60_000;
  * pilot: the engine warns, the pilot decides (the owner's rule).
  */
 export function useCopilot(): { message: CopilotMessage | null; dismiss: () => void } {
-  const mode = usePreferences(s => s.copilotMode);
-  const minimums = usePreferences(s => s.minimums);
-  const flying = useFlying(s => s.flying);
-  const flight = useCopilotFlight(s => s.flight);
+  const mode = usePreferences((s) => s.copilotMode);
+  const minimums = usePreferences((s) => s.minimums);
+  const flying = useFlying((s) => s.flying);
+  const flight = useCopilotFlight((s) => s.flight);
   const on = mode !== "off" && flying && !!flight;
   const ahead = useAhead();
   const { data: currency } = useQuery({ ...currencyQuery, enabled: on, retry: false, meta: { silent: true } });
 
   // Where to ask the planner from: rounded, so the question changes as
   // the airplane gets somewhere new, not at every fix.
-  const ask = useOwnShip(s => {
+  const ask = useOwnShip((s) => {
     const fix = s.enabled ? s.fix : null;
     if (!on || !fix || !flight) return null;
     const along = alongLine(fix, flight.line);
     return JSON.stringify({
-      lat: Math.round(fix.lat * 10) / 10, lon: Math.round(fix.lon * 10) / 10, dest: flight.dest,
+      lat: Math.round(fix.lat * 10) / 10,
+      lon: Math.round(fix.lon * 10) / 10,
+      dest: flight.dest,
       ...(flight.alternate ? { alternate: flight.alternate } : {}),
       path: restOfRoute(fix, flight.line, along?.leg ?? 0),
     });
@@ -51,7 +53,10 @@ export function useCopilot(): { message: CopilotMessage | null; dismiss: () => v
   const { data: around } = useQuery({
     queryKey: ["copilot-around", ask],
     queryFn: () => api.copilotAround(JSON.parse(ask!)),
-    enabled: !!ask, placeholderData: keepPreviousData, staleTime: ASK_MS / 2, refetchInterval: ASK_MS,
+    enabled: !!ask,
+    placeholderData: keepPreviousData,
+    staleTime: ASK_MS / 2,
+    refetchInterval: ASK_MS,
     // A copilot that cannot read says nothing; the alerts banner says
     // when the planner does not answer.
     meta: { silent: true },
@@ -77,13 +82,18 @@ export function useCopilot(): { message: CopilotMessage | null; dismiss: () => v
       const fix = useOwnShip.getState().fix;
       if (fix && startedAt.current == null) startedAt.current = fix.at;
       const input = copilotInput({
-        fix, flight, around, ahead: ahead?.alerts ?? [], minimums,
+        fix,
+        flight,
+        around,
+        ahead: ahead?.alerts ?? [],
+        minimums,
         nightCurrent: fix ? nightCurrent(currency, fix.at / 1000) : null,
-        startedAtMs: startedAt.current, firstSeen: firstSeen.current,
+        startedAtMs: startedAt.current,
+        firstSeen: firstSeen.current,
       });
       const answer = input ? watch(input) : null;
-      const first = answer?.messages.find(m => !dismissed.current.has(m.id)) ?? null;
-      setMessage(prev => (prev?.id === first?.id && prev?.title === first?.title ? prev : first));
+      const first = answer?.messages.find((m) => !dismissed.current.has(m.id)) ?? null;
+      setMessage((prev) => (prev?.id === first?.id && prev?.title === first?.title ? prev : first));
       // Said once a message, and only the copilot's own: the alerts
       // banner speaks what is ahead.
       if (first && !first.elsewhere && !said.current.has(first.id)) {

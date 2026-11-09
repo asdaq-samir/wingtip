@@ -7,5 +7,9 @@ import { SECTION_TITLE } from "../lib/text";
  *  small grey capitals over a list, 17-point words over a strip and a
  *  bold title over a card's part (the UI audit, 2026-11-09). */
 export default function SectionTitle({ id, className, children }: { id?: string; className?: string; children: ReactNode }) {
-  return <h3 id={id} className={cn(SECTION_TITLE, className)}>{children}</h3>;
+  return (
+    <h3 id={id} className={cn(SECTION_TITLE, className)}>
+      {children}
+    </h3>
+  );
 }

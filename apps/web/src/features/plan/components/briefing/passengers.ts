@@ -51,7 +51,11 @@ export function passengerMessage(f: {
     `${placeOfPoint(f.dep)} to ${f.destName ? `${f.destName} (${f.dest})` : f.dest}`,
     f.depart
       ? `Leaving ${clockTime(f.depart)} (${zuluTime(f.depart)})${flying ? `, about ${flying} in the air` : ""}${lands ? `, landing about ${clockTime(lands)}` : ""}.`
-      : flying ? `About ${flying} in the air.` : null,
+      : flying
+        ? `About ${flying} in the air.`
+        : null,
     f.weather ? `Weather at ${f.dest} now: ${f.weather}.` : null,
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }

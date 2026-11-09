@@ -12,9 +12,9 @@ import { useFlying } from "../lib/mapChrome";
 
 const RadioLayer = lazy(() => import("./RadioLayer"));
 // The in-flight copilot, fetched with its first flight.
-const CopilotBanner = lazy(() => import("../features/copilot").then(m => ({ default: m.CopilotBanner })));
+const CopilotBanner = lazy(() => import("../features/copilot").then((m) => ({ default: m.CopilotBanner })));
 // The ATC copilot (features/atc), fetched once the pilot turns it on.
-const AtcCopilot = lazy(() => import("../features/atc").then(m => ({ default: m.AtcCopilot })));
+const AtcCopilot = lazy(() => import("../features/atc").then((m) => ({ default: m.AtcCopilot })));
 
 /**
  * The map's lines: at the top, the screen's width, over a panel at the
@@ -42,12 +42,12 @@ export default function MapBanners({ map }: { map: GlMap | null }) {
   // The microphone's pill too, which stays with what it heard or why it
   // heard nothing until put away: with nothing heard it went with the
   // listening, a few seconds after the tap (the owner's report, 2026-11-02).
-  const radio = useAtcRadio(s => s.listening || !!s.error || s.heard.length > 0 || s.pill !== null);
+  const radio = useAtcRadio((s) => s.listening || !!s.error || s.heard.length > 0 || s.pill !== null);
   // In flight the buttons either side are 60 points (MapControls), so the
   // column stands between them, as the canvas's Flying screen has the
   // alert clear of the stack.
-  const flying = useFlying(s => s.flying);
-  const atc = useAtcListen(s => s.value !== "off");
+  const flying = useFlying((s) => s.flying);
+  const atc = useAtcListen((s) => s.value !== "off");
   return (
     <div
       className={cn(
@@ -63,10 +63,22 @@ export default function MapBanners({ map }: { map: GlMap | null }) {
       <SunlightBanner />
       <AlertsBanner />
       {/* The copilot's one message while flying, after what is ahead. */}
-      {flying && <Suspense fallback={null}><CopilotBanner /></Suspense>}
+      {flying && (
+        <Suspense fallback={null}>
+          <CopilotBanner />
+        </Suspense>
+      )}
       {/* A call to us as the ATC copilot read it, its items to set. */}
-      {atc && <Suspense fallback={null}><AtcCopilot /></Suspense>}
-      {radio && <Suspense fallback={null}><RadioLayer /></Suspense>}
+      {atc && (
+        <Suspense fallback={null}>
+          <AtcCopilot />
+        </Suspense>
+      )}
+      {radio && (
+        <Suspense fallback={null}>
+          <RadioLayer />
+        </Suspense>
+      )}
       <AircraftAlerts />
       <ProblemBanner />
     </div>

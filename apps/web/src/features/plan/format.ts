@@ -35,9 +35,7 @@ export function decimalHours(minutes: number): string {
  *  "3 legs without wind data", or null with every leg's. (Its totals'
  *  distance, time and fuel were made here too, and read nowhere.) */
 export function legsWithoutWind(t: Totals): string | null {
-  return t.legs_without_wind
-    ? `${t.legs_without_wind} leg${t.legs_without_wind === 1 ? "" : "s"} without wind data`
-    : null;
+  return t.legs_without_wind ? `${t.legs_without_wind} leg${t.legs_without_wind === 1 ? "" : "s"} without wind data` : null;
 }
 
 /** When a plan was made and the winds-aloft forecast it flies, as paper
@@ -70,21 +68,27 @@ export function windsOutOfDate(t: Totals | null, now: number, depart = ""): bool
   const at = Number.isFinite(planned) && planned > now ? planned : now;
   const secs = (ms: number) => Math.floor(ms / 1000);
   return !callEngine("weather_in_force", {
-    product: "winds", now: secs(at), valid_from: Number.isFinite(from) ? secs(from) : null, valid_to: Number.isFinite(to) ? secs(to) : Number.MAX_SAFE_INTEGER,
+    product: "winds",
+    now: secs(at),
+    valid_from: Number.isFinite(from) ? secs(from) : null,
+    valid_to: Number.isFinite(to) ? secs(to) : Number.MAX_SAFE_INTEGER,
   });
 }
 
 /** An altitude plan's name, as the Brief and the Go / No-Go say it
  *  ("Fastest plan"): the planner's four (wingtip.navlog.altitude_profiles). */
 export const PLAN_NAME: Record<AltitudeOption["kind"], string> = {
-  lowest: "Lowest", highest: "Highest", fastest: "Fastest", economical: "Economical",
+  lowest: "Lowest",
+  highest: "Highest",
+  fastest: "Fastest",
+  economical: "Economical",
 };
 
 /** One altitude plan's steps: "2,500 ft all the way", or "2,500 ft to
  *  Mill Pond, 6,500 ft to Big Falls Flowage, 2,500 ft to KDLH". */
 export function describeSteps(option: AltitudeOption): string {
   if (option.steps.length <= 1) return `${flightLevel(option.steps[0]?.altitude_ft)} all the way`;
-  return option.steps.map(s => `${flightLevel(s.altitude_ft)} to ${s.to}`).join(", ");
+  return option.steps.map((s) => `${flightLevel(s.altitude_ft)} to ${s.to}`).join(", ");
 }
 
 /** One altitude plan's time: the flying time plus what its climbs
@@ -101,7 +105,8 @@ export function describeFuel(option: AltitudeOption): string {
 
 /** A figure over several legs: "112", or its range, "111–113". */
 function range(values: number[], show: (n: number) => string, between = "–"): string {
-  const low = show(Math.min(...values)), high = show(Math.max(...values));
+  const low = show(Math.min(...values)),
+    high = show(Math.max(...values));
   return low === high ? low : `${low}${between}${high}`;
 }
 
@@ -114,17 +119,34 @@ function range(values: number[], show: (n: number) => string, between = "–"): 
 export function cruiseByAltitude(legs: Leg[], cruisePowerPct: number | null | undefined): string[] {
   const byAltitude = new Map<number, Leg[]>();
   for (const leg of legs) byAltitude.set(leg.altitude_ft, [...(byAltitude.get(leg.altitude_ft) ?? []), leg]);
-  return [...byAltitude.entries()].sort(([a], [b]) => a - b).map(([altitude, at]) => {
-    // Legs flown with no airplane have none of these: left out.
-    const known = (pick: (leg: Leg) => number | null | undefined) => at.flatMap(leg => { const v = pick(leg); return v == null ? [] : [v]; });
-    const temps = known(leg => leg.oat_c);
-    const power = Math.min(...known(leg => leg.power_pct));
-    return `${altFt(altitude)} ft: `
-      + (temps.length ? `${range(temps, t => String(Math.round(t)), " to ")} °C, ` : "")
-      + `density altitude ${range(known(leg => leg.density_altitude_ft), d => altFt(Math.round(d / 100) * 100))} ft, `
-      + `${range(known(leg => leg.tas_kt), t => String(Math.round(t)))} kt, ${range(known(leg => leg.fuel_burn_gph), b => b.toFixed(1))} gph`
-      + (cruisePowerPct != null && power < cruisePowerPct - 0.5 ? ` (full throttle, ${Math.round(power)}%)` : "");
-  });
+  return [...byAltitude.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([altitude, at]) => {
+      // Legs flown with no airplane have none of these: left out.
+      const known = (pick: (leg: Leg) => number | null | undefined) =>
+        at.flatMap((leg) => {
+          const v = pick(leg);
+          return v == null ? [] : [v];
+        });
+      const temps = known((leg) => leg.oat_c);
+      const power = Math.min(...known((leg) => leg.power_pct));
+      return (
+        `${altFt(altitude)} ft: ` +
+        (temps.length ? `${range(temps, (t) => String(Math.round(t)), " to ")} °C, ` : "") +
+        `density altitude ${range(
+          known((leg) => leg.density_altitude_ft),
+          (d) => altFt(Math.round(d / 100) * 100),
+        )} ft, ` +
+        `${range(
+          known((leg) => leg.tas_kt),
+          (t) => String(Math.round(t)),
+        )} kt, ${range(
+          known((leg) => leg.fuel_burn_gph),
+          (b) => b.toFixed(1),
+        )} gph` +
+        (cruisePowerPct != null && power < cruisePowerPct - 0.5 ? ` (full throttle, ${Math.round(power)}%)` : "")
+      );
+    });
 }
 
 /** A clock time, "09:05", 24-hour in the browser's own zone -- an ETA
@@ -140,10 +162,21 @@ export function etaAt(departIso: string, minutes: number | null): string {
 }
 
 const SURFACE_NAMES: Record<string, string> = {
-  ASP: "asphalt", ASPH: "asphalt", CON: "concrete", CONC: "concrete", TURF: "turf", GRS: "grass", GRASS: "grass",
-  GRVL: "gravel", GRAVEL: "gravel", DIRT: "dirt", WATER: "water", SNOW: "snow",
+  ASP: "asphalt",
+  ASPH: "asphalt",
+  CON: "concrete",
+  CONC: "concrete",
+  TURF: "turf",
+  GRS: "grass",
+  GRASS: "grass",
+  GRVL: "gravel",
+  GRAVEL: "gravel",
+  DIRT: "dirt",
+  WATER: "water",
+  SNOW: "snow",
   // Composite, as OurAirports codes it: "cop" on Campbell's 06/24 read as a word.
-  COP: "composite", COM: "composite",
+  COP: "composite",
+  COM: "composite",
 };
 
 /** A runway's surface in words: OurAirports' "ASPH-G" is asphalt. */
@@ -162,8 +195,11 @@ interface WindParts {
   gustCrosswindKt: number | null;
 }
 
-const partsOf = (wind: NonNullable<Runway["wind"]>): WindParts =>
-  ({ headwindKt: wind.headwind_kt, crosswindKt: wind.crosswind_kt, gustCrosswindKt: wind.gust_crosswind_kt ?? null });
+const partsOf = (wind: NonNullable<Runway["wind"]>): WindParts => ({
+  headwindKt: wind.headwind_kt,
+  crosswindKt: wind.crosswind_kt,
+  gustCrosswindKt: wind.gust_crosswind_kt ?? null,
+});
 
 /** The crosswind unsigned and the gust's where it says more than the
  *  steady one (a gust's crosswind rounded to the steady's adds nothing),
@@ -171,7 +207,11 @@ const partsOf = (wind: NonNullable<Runway["wind"]>): WindParts =>
 function across(wind: WindParts): { kt: number; gustKt: number | null; side: "right" | "left" | null } {
   const kt = Math.abs(wind.crosswindKt);
   const gust = wind.gustCrosswindKt == null ? null : Math.abs(wind.gustCrosswindKt);
-  return { kt, gustKt: gust != null && gust !== kt ? gust : null, side: wind.crosswindKt > 0 ? "right" : wind.crosswindKt < 0 ? "left" : null };
+  return {
+    kt,
+    gustKt: gust != null && gust !== kt ? gust : null,
+    side: wind.crosswindKt > 0 ? "right" : wind.crosswindKt < 0 ? "left" : null,
+  };
 }
 
 /** The reported wind on the end it favours, as a pilot says it:
@@ -197,7 +237,11 @@ export function windOnRunway(wind: NonNullable<Runway["wind"]>): string {
  *  "Calm" (00000KT, features/plan/lib/wind's isCalm), "Variable at 4 kt" (VRB) --
  *  FAA Order JO 7900.5's codes as the planner reads them; "Not reported"
  *  with no speed. The airport's card's and the Brief's. */
-export function windLine(metar: { wind_speed_kt?: number | null; wind_dir_true_deg?: number | null; wind_gust_kt?: number | null }): string {
+export function windLine(metar: {
+  wind_speed_kt?: number | null;
+  wind_dir_true_deg?: number | null;
+  wind_gust_kt?: number | null;
+}): string {
   if (metar.wind_speed_kt == null) return "Not reported";
   if (isCalm(metar.wind_speed_kt)) return "Calm";
   const from = metar.wind_dir_true_deg == null ? "Variable" : bearing(metar.wind_dir_true_deg);
@@ -211,12 +255,18 @@ export function windLine(metar: { wind_speed_kt?: number | null; wind_dir_true_d
  *  speed to go by. */
 export type ReportedWind = "calm" | { dir: string; speed: string; spoken: string };
 
-export function reportedWind(dirTrueDeg: number | null | undefined, speedKt: number | null | undefined, gustKt: number | null | undefined): ReportedWind | null {
+export function reportedWind(
+  dirTrueDeg: number | null | undefined,
+  speedKt: number | null | undefined,
+  gustKt: number | null | undefined,
+): ReportedWind | null {
   if (speedKt == null) return null;
   if (isCalm(speedKt)) return "calm";
-  const kt = Math.round(speedKt), gust = gustKt ? Math.round(gustKt) : null;
+  const kt = Math.round(speedKt),
+    gust = gustKt ? Math.round(gustKt) : null;
   return {
-    dir: dirTrueDeg == null ? "VRB" : `${bearing(dirTrueDeg)}T`, speed: gust ? `${kt}G${gust}` : `${kt}`,
+    dir: dirTrueDeg == null ? "VRB" : `${bearing(dirTrueDeg)}T`,
+    speed: gust ? `${kt}G${gust}` : `${kt}`,
     spoken: `${dirTrueDeg == null ? "variable" : `${Math.round(dirTrueDeg)} true`} at ${kt} knots${gust ? `, gusts ${gust}` : ""}`,
   };
 }

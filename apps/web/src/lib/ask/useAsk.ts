@@ -98,15 +98,24 @@ let nextId = 1;
 function currencyWords(c: Currency, today: string): string[] {
   const current = (until: string | null) => until !== null && until >= today;
   const out: string[] = [];
-  if (c.dayPassengersUntil !== null) out.push(current(c.dayPassengersUntil) ? `Day passengers current through ${c.dayPassengersUntil}` : "Day passengers not current");
-  if (c.nightPassengersUntil !== null) out.push(current(c.nightPassengersUntil) ? `Night passengers current through ${c.nightPassengersUntil}` : "Night passengers not current");
-  if (c.flightReviewUntil !== null) out.push(current(c.flightReviewUntil) ? `Flight review current through ${c.flightReviewUntil}` : "Flight review lapsed");
+  if (c.dayPassengersUntil !== null)
+    out.push(current(c.dayPassengersUntil) ? `Day passengers current through ${c.dayPassengersUntil}` : "Day passengers not current");
+  if (c.nightPassengersUntil !== null)
+    out.push(
+      current(c.nightPassengersUntil) ? `Night passengers current through ${c.nightPassengersUntil}` : "Night passengers not current",
+    );
+  if (c.flightReviewUntil !== null)
+    out.push(current(c.flightReviewUntil) ? `Flight review current through ${c.flightReviewUntil}` : "Flight review lapsed");
   // Approaches flown this month count from next month (61.57(c)(1)): not
   // current until `instrumentCurrentFrom`.
   if (c.instrumentCurrentUntil !== null) {
-    out.push(!current(c.instrumentCurrentUntil) ? "Instrument currency lapsed"
-      : c.instrumentCurrentFrom && c.instrumentCurrentFrom > today ? `Instrument not current until ${c.instrumentCurrentFrom}`
-      : `Instrument current through ${c.instrumentCurrentUntil}`);
+    out.push(
+      !current(c.instrumentCurrentUntil)
+        ? "Instrument currency lapsed"
+        : c.instrumentCurrentFrom && c.instrumentCurrentFrom > today
+          ? `Instrument not current until ${c.instrumentCurrentFrom}`
+          : `Instrument current through ${c.instrumentCurrentUntil}`,
+    );
   }
   if (c.medicalExpiresOn !== null) out.push(current(c.medicalExpiresOn) ? `Medical good through ${c.medicalExpiresOn}` : "Medical expired");
   return out;
@@ -130,19 +139,20 @@ export function isChange(c: AssistantChange | null | undefined): c is AssistantC
   const fields = [
     c.dep === undefined ? null : typeof c.dep === "string" && c.dep !== "",
     c.dest === undefined ? null : typeof c.dest === "string" && c.dest !== "",
-    c.stops === undefined ? null : Array.isArray(c.stops) && c.stops.every(s => typeof s === "string" && s !== ""),
+    c.stops === undefined ? null : Array.isArray(c.stops) && c.stops.every((s) => typeof s === "string" && s !== ""),
     c.altitude_ft === undefined ? null : Number.isFinite(c.altitude_ft),
     c.depart === undefined ? null : typeof c.depart === "string" && !Number.isNaN(Date.parse(c.depart)),
   ];
-  return fields.some(f => f !== null) && fields.every(f => f !== false);
+  return fields.some((f) => f !== null) && fields.every((f) => f !== false);
 }
 
-const upper = (idents: string[]) => idents.map(s => s.toUpperCase());
+const upper = (idents: string[]) => idents.map((s) => s.toUpperCase());
 
 /** The stops a change puts in over the plan's, and takes out of it. */
 function stopsChanged(stops: string[], now: RouteNow): { added: string[]; removed: string[] } {
-  const was = upper(now.stops), will = upper(stops);
-  return { added: will.filter(s => !was.includes(s)), removed: was.filter(s => !will.includes(s)) };
+  const was = upper(now.stops),
+    will = upper(stops);
+  return { added: will.filter((s) => !was.includes(s)), removed: was.filter((s) => !will.includes(s)) };
 }
 
 /**
@@ -154,7 +164,8 @@ function stopsChanged(stops: string[], now: RouteNow): { added: string[]; remove
 export function actionLabel(change: AssistantChange, now: RouteNow): string {
   const parts: string[] = [];
   if (change.dep !== undefined || change.dest !== undefined) {
-    const dep = change.dep ?? now.dep, dest = change.dest ?? now.dest;
+    const dep = change.dep ?? now.dep,
+      dest = change.dest ?? now.dest;
     parts.push(dep && dest ? [dep, ...(change.stops ?? []), dest].join(" → ") : dep ? `From ${dep}` : `To ${dest}`);
   } else if (change.stops !== undefined) {
     const { added, removed } = stopsChanged(change.stops, now);
@@ -186,15 +197,24 @@ export function contextNow(): AssistantContext {
   const plan = useBriefPlan.getState();
   const fix = useOwnShip.getState().fix;
   const m = usePreferences.getState().minimums;
-  const minimums = m.ceilingFt != null || m.visibilitySm != null || m.windKt != null || m.crosswindKt != null
-    ? { ceiling_ft: m.ceilingFt, visibility_sm: m.visibilitySm, wind_kt: m.windKt, crosswind_kt: m.crosswindKt } : null;
+  const minimums =
+    m.ceilingFt != null || m.visibilitySm != null || m.windKt != null || m.crosswindKt != null
+      ? { ceiling_ft: m.ceilingFt, visibility_sm: m.visibilitySm, wind_kt: m.windKt, crosswind_kt: m.crosswindKt }
+      : null;
   // The logbook's currency as the console last fetched it, where the
   // pilot keeps one here; not fetched for the question's sake.
   const currency = queryClient.getQueryData<Currency>(currencyQuery.queryKey) ?? null;
   const lines = currency ? currencyWords(currency, localDay()) : [];
   return {
-    dep: plan.dep, dest: plan.dest, stops: plan.stops, aircraft: plan.aircraft, altitude_ft: plan.altitudeFt, depart: plan.depart || null,
-    own_ship: fix ? { lat: fix.lat, lon: fix.lon, altitude_ft: fix.altitudeFt, track_deg: fix.headingDeg, groundspeed_kt: fix.speedKt } : null,
+    dep: plan.dep,
+    dest: plan.dest,
+    stops: plan.stops,
+    aircraft: plan.aircraft,
+    altitude_ft: plan.altitudeFt,
+    depart: plan.depart || null,
+    own_ship: fix
+      ? { lat: fix.lat, lon: fix.lon, altitude_ft: fix.altitudeFt, track_deg: fix.headingDeg, groundspeed_kt: fix.speedKt }
+      : null,
     pilot: minimums || lines.length ? { personal_minimums: minimums, currency: lines } : null,
   };
 }
@@ -218,11 +238,13 @@ export const useAsk = create<AskState>((set, get) => ({
   busy: false,
   listeningFor: null,
   applyChange: null,
-  apply: change => {
+  apply: (change) => {
     const applyChange = get().applyChange;
     if (!applyChange) return;
     applyChange(change);
-    set(s => ({ turns: s.turns.map(t => ({ ...t, actions: t.actions.map(a => (a.change === change ? { ...a, applied: true } : a)) })) }));
+    set((s) => ({
+      turns: s.turns.map((t) => ({ ...t, actions: t.actions.map((a) => (a.change === change ? { ...a, applied: true } : a)) })),
+    }));
   },
   // Aborted, and left to `ask`'s own tail to settle: it clears `busy`
   // once it sees its controller is still the one in flight.
@@ -240,26 +262,40 @@ export const useAsk = create<AskState>((set, get) => ({
     inFlight = controller;
     const id = nextId++;
     const spoken = !!options.speak;
-    const patch = (change: Partial<AskTurn>) => set(s => ({ turns: s.turns.map(t => (t.id === id ? { ...t, ...change } : t)) }));
+    const patch = (change: Partial<AskTurn>) => set((s) => ({ turns: s.turns.map((t) => (t.id === id ? { ...t, ...change } : t)) }));
     const messages = messagesOf(get().turns, question);
-    set(s => ({ busy: true, turns: [...s.turns, { id, question, answer: "", status: "Asking…", sources: [], actions: [], error: null, done: false, spoken }] }));
+    set((s) => ({
+      busy: true,
+      turns: [...s.turns, { id, question, answer: "", status: "Asking…", sources: [], actions: [], error: null, done: false, spoken }],
+    }));
     // A spoken answer in place of whatever was being read.
     if (spoken) speak("");
     try {
-      await askAssistant({ messages, context: contextNow() }, event => {
-        if (event.type === "tool") patch({ status: event.label });
-        else if (event.type === "text") set(s => ({ turns: s.turns.map(t => (t.id === id ? { ...t, status: null, answer: t.answer + event.text } : t)) }));
-        else if (event.type === "action") {
-          // Its words worked out against the plan as it is now, and kept:
-          // "Add stop KRHI" stays so once the stop is in.
-          if (!isChange(event.change)) return;
-          const now = useBriefPlan.getState();
-          const action: AskAction = { change: event.change, words: event.words, label: actionLabel(event.change, now), done: doneLabel(event.change, now), applied: false };
-          set(s => ({ turns: s.turns.map(t => (t.id === id ? { ...t, actions: [...t.actions, action] } : t)) }));
-        } else if (event.type === "sources") patch({ sources: event.sources });
-        else if (event.type === "error") patch({ status: null, error: event.words, done: true });
-        else patch({ status: null, done: true });
-      }, controller.signal);
+      await askAssistant(
+        { messages, context: contextNow() },
+        (event) => {
+          if (event.type === "tool") patch({ status: event.label });
+          else if (event.type === "text")
+            set((s) => ({ turns: s.turns.map((t) => (t.id === id ? { ...t, status: null, answer: t.answer + event.text } : t)) }));
+          else if (event.type === "action") {
+            // Its words worked out against the plan as it is now, and kept:
+            // "Add stop KRHI" stays so once the stop is in.
+            if (!isChange(event.change)) return;
+            const now = useBriefPlan.getState();
+            const action: AskAction = {
+              change: event.change,
+              words: event.words,
+              label: actionLabel(event.change, now),
+              done: doneLabel(event.change, now),
+              applied: false,
+            };
+            set((s) => ({ turns: s.turns.map((t) => (t.id === id ? { ...t, actions: [...t.actions, action] } : t)) }));
+          } else if (event.type === "sources") patch({ sources: event.sources });
+          else if (event.type === "error") patch({ status: null, error: event.words, done: true });
+          else patch({ status: null, done: true });
+        },
+        controller.signal,
+      );
     } catch (err) {
       // Given up by the pilot or by a newer question: no error to say.
       if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -270,7 +306,7 @@ export const useAsk = create<AskState>((set, get) => ({
       inFlight = null;
       set({ busy: false });
     }
-    const turn = get().turns.find(t => t.id === id);
+    const turn = get().turns.find((t) => t.id === id);
     if (turn) {
       if (!turn.done) patch({ status: null, done: true });
       if (spoken && turn.answer && !controller.signal.aborted) speak(turn.answer);

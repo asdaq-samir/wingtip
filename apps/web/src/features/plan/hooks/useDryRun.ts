@@ -20,7 +20,14 @@ import { legOf, navLogRows, type RouteEnds } from "../components/navlog/rows";
  * stop added or the legs come in again, it is flown again from the same
  * start, its clock where it was, gone missed still if it had.
  */
-export function useDryRun({ course, selected, legs, depart, routed, profileShown }: {
+export function useDryRun({
+  course,
+  selected,
+  legs,
+  depart,
+  routed,
+  profileShown,
+}: {
   course: (RouteEnds & { course_line?: [number, number][] }) | null;
   selected: Candidate[];
   legs: Leg[];
@@ -42,21 +49,25 @@ export function useDryRun({ course, selected, legs, depart, routed, profileShown
   // The rows it is flown along, the procedures picked flown as the legs are
   // planned by them: out by a departure, in by an arrival and an approach.
   const runRows = useMemo(() => (course ? navLogRows(course, selected, legs) : null), [course, selected, legs]);
-  const flownFrom = useMemo(() => (runFrom !== null && course && runRows ? dryRunOf(
-    runRows, runFrom, course.course_line, goMissed,
-  ) : null), [runFrom, course, runRows, goMissed]);
+  const flownFrom = useMemo(
+    () => (runFrom !== null && course && runRows ? dryRunOf(runRows, runFrom, course.course_line, goMissed) : null),
+    [runFrom, course, runRows, goMissed],
+  );
   // The last run long enough to fly, held while new legs stream in.
   const [lastRun, setLastRun] = useState<DryRun | null>(null);
   if (flownFrom && flownFrom.points.length >= 2 && flownFrom !== lastRun) setLastRun(flownFrom);
   const dryRun = runFrom === null ? null : lastRun;
-  const dryRunHeld = usePastFlight(p => p.hex === DRY_RUN);
+  const dryRunHeld = usePastFlight((p) => p.hex === DRY_RUN);
   const running = dryRun && dryRunHeld && routed ? dryRun : null;
   // The replay's points kept the run's as it changes, its clock where it
   // was (within the new run).
   useEffect(() => {
     if (!dryRun || !usePastFlight.getState().hex || usePastFlight.getState().hex !== DRY_RUN) return;
-    usePastFlight.setState(p => (p.points === dryRun.points ? p
-      : { points: dryRun.points, at: p.at === null ? dryRun.points[0]!.t : Math.min(p.at, dryRun.points.at(-1)!.t) }));
+    usePastFlight.setState((p) =>
+      p.points === dryRun.points
+        ? p
+        : { points: dryRun.points, at: p.at === null ? dryRun.points[0]!.t : Math.min(p.at, dryRun.points.at(-1)!.t) },
+    );
   }, [dryRun]);
   // Played in the Profile card it was started from, in the side view's
   // place, at the owner's ask ("profile should play the dry run within
@@ -78,7 +89,7 @@ export function useDryRun({ course, selected, legs, depart, routed, profileShown
   // streamed in, and a tap on its Dry run then did nothing (the run too
   // short to fly) -- seen as the dry-run spec's phone tapped it early. Its
   // button waits for them, dimmed.
-  const ready = !!runRows && runRows.slice(1).every(row => !!legOf(row));
+  const ready = !!runRows && runRows.slice(1).every((row) => !!legOf(row));
   // Stopped, the side view it was flown over, the route's list a swipe
   // back, at the owner's ask ("When stopping dry run it should become
   // profile view and then swiping should take it back").

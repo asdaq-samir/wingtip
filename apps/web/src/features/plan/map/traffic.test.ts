@@ -5,11 +5,26 @@ import type { Fix } from "../../../lib/map/position/ownShip";
 import trafficFixture from "../../../lib/fixtures/traffic.json";
 
 const plane = (over: Partial<TrafficAircraft> = {}): TrafficAircraft => ({
-  hex: "a128b9", callsign: "N174HA", lat: 42.3246, lon: -88.0741, altitude_ft: 3520, pressure_altitude: false,
-  track_deg: 92, speed_kt: 110, vertical_fpm: 0, ...over,
+  hex: "a128b9",
+  callsign: "N174HA",
+  lat: 42.3246,
+  lon: -88.0741,
+  altitude_ft: 3520,
+  pressure_altitude: false,
+  track_deg: 92,
+  speed_kt: 110,
+  vertical_fpm: 0,
+  ...over,
 });
 const fix = (over: Partial<Fix> = {}): Fix => ({
-  lat: 42.3246, lon: -88.0741, accuracyM: 5, headingDeg: 90, speedKt: 112, altitudeFt: 3000, at: 0, ...over,
+  lat: 42.3246,
+  lon: -88.0741,
+  accuracyM: 5,
+  headingDeg: 90,
+  speedKt: 112,
+  altitudeFt: 3000,
+  at: 0,
+  ...over,
 });
 
 describe("trafficLabel", () => {
@@ -109,9 +124,20 @@ describe("heightColour and colourRuns", () => {
 
   it("runs the path in one line a colour, each starting where the last ended", () => {
     const runs = colourRuns([
-      { lat: 1, lon: 1, altFt: 1000 }, { lat: 2, lon: 2, altFt: 1100 }, { lat: 3, lon: 3, altFt: 9000 },
+      { lat: 1, lon: 1, altFt: 1000 },
+      { lat: 2, lon: 2, altFt: 1100 },
+      { lat: 3, lon: 3, altFt: 9000 },
     ]);
-    expect(runs.map(r => r.points)).toEqual([[[1, 1], [2, 2]], [[2, 2], [3, 3]]]);
+    expect(runs.map((r) => r.points)).toEqual([
+      [
+        [1, 1],
+        [2, 2],
+      ],
+      [
+        [2, 2],
+        [3, 3],
+      ],
+    ]);
   });
 });
 
@@ -121,7 +147,17 @@ describe("closestApproach", () => {
   it("finds when and how near one coming head on passes", () => {
     // Ten miles east, coming west at 120 kt, 500 ft above: they meet in
     // 2.5 minutes, closing at 240 kt.
-    const cpa = closestApproach(own, plane({ lat: 42, lon: -88 + 10 / (60 * Math.cos((42 * Math.PI) / 180)), track_deg: 270, speed_kt: 120, altitude_ft: 3500, vertical_fpm: 0 }))!;
+    const cpa = closestApproach(
+      own,
+      plane({
+        lat: 42,
+        lon: -88 + 10 / (60 * Math.cos((42 * Math.PI) / 180)),
+        track_deg: 270,
+        speed_kt: 120,
+        altitude_ft: 3500,
+        vertical_fpm: 0,
+      }),
+    )!;
     expect(cpa.inMin).toBeCloseTo(2.5, 1);
     expect(cpa.nm).toBeCloseTo(0, 1);
     expect(cpa.aboveFt).toBeCloseTo(500, 0);

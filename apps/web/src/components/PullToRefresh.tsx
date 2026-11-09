@@ -14,7 +14,11 @@ import { SIZE } from "../lib/tokens";
  * the pull is the card's; below that the sheet takes the finger, as it
  * did, and the card lets it go.
  */
-export default function PullToRefresh({ onRefresh, children, testId }: {
+export default function PullToRefresh({
+  onRefresh,
+  children,
+  testId,
+}: {
   onRefresh: () => Promise<unknown>;
   children: ReactNode;
   testId?: string;
@@ -24,7 +28,9 @@ export default function PullToRefresh({ onRefresh, children, testId }: {
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const refresh = useRef(onRefresh);
-  useEffect(() => { refresh.current = onRefresh; });
+  useEffect(() => {
+    refresh.current = onRefresh;
+  });
 
   useEffect(() => {
     const el = ref.current;
@@ -86,10 +92,20 @@ export default function PullToRefresh({ onRefresh, children, testId }: {
   return (
     <div ref={ref} className="contents" data-pull-refresh="" data-testid={testId} aria-busy={busy || undefined}>
       {(pull > 0 || busy) && (
-        <div className="flex shrink-0 items-center justify-center overflow-hidden text-muted-foreground" style={{ height: busy ? 40 : pull }}>
-          {busy
-            ? <Spinner aria-label="Refreshing" />
-            : <RefreshCw className="size-5" style={{ opacity: Math.min(1, pull / (SIZE.refreshPull / 2)), transform: `rotate(${pull * 4}deg)` }} aria-hidden data-ready={ready || undefined} />}
+        <div
+          className="flex shrink-0 items-center justify-center overflow-hidden text-muted-foreground"
+          style={{ height: busy ? 40 : pull }}
+        >
+          {busy ? (
+            <Spinner aria-label="Refreshing" />
+          ) : (
+            <RefreshCw
+              className="size-5"
+              style={{ opacity: Math.min(1, pull / (SIZE.refreshPull / 2)), transform: `rotate(${pull * 4}deg)` }}
+              aria-hidden
+              data-ready={ready || undefined}
+            />
+          )}
         </div>
       )}
       {children}

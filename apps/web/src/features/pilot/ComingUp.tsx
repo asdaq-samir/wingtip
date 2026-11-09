@@ -22,16 +22,21 @@ export default function ComingUp() {
   const items = asked.data?.items;
   return (
     <ListGroup title="Coming up">
-      {!items ? <QueryState row query={asked} fetching="Fetching what falls due…" failed="What falls due could not be fetched." />
-        : !items.length ? <ListRow muted title="Nothing dated yet: your flight review, medical and airplanes' inspections show here once given." />
-          : items.map(d => (
-            <ListRow
-              key={`${d.what}-${d.aircraftId ?? ""}-${d.itemId ?? ""}`} data-testid="coming-up"
-              title={dueTitle(d)}
-              description={[d.rule, d.dueOn ? said(d.dueOn) : null].filter(Boolean).join(" · ")}
-              value={<span className={cn("tabular-nums", FINDING_TONE[dueTone(d)])}>{whenWords(d)}</span>}
-            />
-          ))}
+      {!items ? (
+        <QueryState row query={asked} fetching="Fetching what falls due…" failed="What falls due could not be fetched." />
+      ) : !items.length ? (
+        <ListRow muted title="Nothing dated yet: your flight review, medical and airplanes' inspections show here once given." />
+      ) : (
+        items.map((d) => (
+          <ListRow
+            key={`${d.what}-${d.aircraftId ?? ""}-${d.itemId ?? ""}`}
+            data-testid="coming-up"
+            title={dueTitle(d)}
+            description={[d.rule, d.dueOn ? said(d.dueOn) : null].filter(Boolean).join(" · ")}
+            value={<span className={cn("tabular-nums", FINDING_TONE[dueTone(d)])}>{whenWords(d)}</span>}
+          />
+        ))
+      )}
     </ListGroup>
   );
 }

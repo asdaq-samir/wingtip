@@ -48,10 +48,15 @@ type Because = "assigned" | "minimum" | "expected";
  *  the minimum for IFR operations, and the altitude ATC said to expect --
  *  and which it was. Null where none is known. A segment with no name is
  *  "Segment", as the planner names it. */
-export function segmentAltitudes(segments: Segment[], c: Clearance): { name: string; fly: number | null; because: Because | null; words: string }[] {
+export function segmentAltitudes(
+  segments: Segment[],
+  c: Clearance,
+): { name: string; fly: number | null; because: Because | null; words: string }[] {
   const answer = callEngine("lost_comms", {
-    segments: segments.map(s => ({ name: s.name, minimum_ft: s.minimumFt })),
-    assigned_ft: c.assignedFt, expected_ft: c.expectedFt, expected_from: c.expectedFrom,
+    segments: segments.map((s) => ({ name: s.name, minimum_ft: s.minimumFt })),
+    assigned_ft: c.assignedFt,
+    expected_ft: c.expectedFt,
+    expected_from: c.expectedFrom,
   });
   // `words` the page's line for it: "Fly 6,000 ft: expected".
   return answer.segments.map(({ name, fly, because, words }) => ({ name, fly, because, words }));

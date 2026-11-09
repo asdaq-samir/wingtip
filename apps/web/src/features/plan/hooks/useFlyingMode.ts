@@ -35,7 +35,12 @@ import { DRY_RUN, usePastFlight } from "../map/pastFlight";
 /** How long under flying speed before the airplane is on the ground. */
 const GROUND_MS = 60_000;
 
-export function useFlyingMode({ routed, setPanel, nearest, direct }: {
+export function useFlyingMode({
+  routed,
+  setPanel,
+  nearest,
+  direct,
+}: {
   /** There is a route to fly: nothing to show without one. */
   routed: boolean;
   setPanel: (state: PanelState) => void;
@@ -47,19 +52,19 @@ export function useFlyingMode({ routed, setPanel, nearest, direct }: {
 }): { flying: boolean; done: () => void } {
   // Whether, not the fix: drawn again once as the airplane leaves the
   // ground, not at every second's fix.
-  const airborne = useOwnShip(s => s.enabled && s.fix !== null && underway(s.fix));
-  const hasFix = useOwnShip(s => s.enabled && s.fix !== null);
+  const airborne = useOwnShip((s) => s.enabled && s.fix !== null && underway(s.fix));
+  const hasFix = useOwnShip((s) => s.enabled && s.fix !== null);
   // A dry run playing counts as underway from its first frame, before the
   // simulated fix has a speed.
-  const dryPlaying = usePastFlight(s => s.hex === DRY_RUN && s.playing);
+  const dryPlaying = usePastFlight((s) => s.hex === DRY_RUN && s.playing);
   const up = airborne || dryPlaying;
   // Held in the chrome's store (useFlying), which the map's buttons and
   // lines read too: an effect sets it as the airplane moves, as an effect
   // sets any outside store.
-  const flying = useFlying(s => s.flying);
-  const stopped = useFlying(s => s.stopped);
+  const flying = useFlying((s) => s.flying);
+  const stopped = useFlying((s) => s.stopped);
   useEffect(() => {
-    const set = (flying: boolean, stoppedNow?: boolean) => useFlying.setState(s => ({ flying, stopped: stoppedNow ?? s.stopped }));
+    const set = (flying: boolean, stoppedNow?: boolean) => useFlying.setState((s) => ({ flying, stopped: stoppedNow ?? s.stopped }));
     if (!routed) {
       set(false);
       return;
@@ -83,7 +88,7 @@ export function useFlyingMode({ routed, setPanel, nearest, direct }: {
   // not for a dry run, whose controls are in its card. Only as flying
   // starts: a run closed ends the run a render before flying, and the
   // sheet went to the pill then, the Profile card's close under it.
-  const dryRun = usePastFlight(s => s.hex === DRY_RUN);
+  const dryRun = usePastFlight((s) => s.hex === DRY_RUN);
   const wasFlying = useRef(false);
   useEffect(() => {
     const started = flying && !wasFlying.current;

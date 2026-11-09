@@ -30,8 +30,17 @@ const BACK = "transform var(--motion-sheet) var(--motion-sheet-back-ease)";
  * finger and, let go far or fast enough, puts it away. Sized to what it
  * holds, at most 85% of the screen. shadcn's SheetContent under it.
  */
-export function PhoneSheetContent({ edge, className, style, children, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, ...props }:
-  Omit<ComponentProps<typeof SheetContent>, "side" | "glass"> & { edge: NavEdge }) {
+export function PhoneSheetContent({
+  edge,
+  className,
+  style,
+  children,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  ...props
+}: Omit<ComponentProps<typeof SheetContent>, "side" | "glass"> & { edge: NavEdge }) {
   const close = useRef<HTMLButtonElement>(null);
   const press = useRef<{ id: number; y: number; t: number; height: number; moved: boolean } | null>(null);
   // How far it has been swiped toward its edge, while a finger has it or
@@ -46,9 +55,7 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
   // the keyboard leaves of the screen, at either edge.
   const keyboard = useKeyboardInset();
   const room = useVisualHeight();
-  const lifted = keyboard > 0
-    ? { ...(edge === "bottom" ? { bottom: keyboard + 8 } : {}), maxHeight: room - 16 }
-    : null;
+  const lifted = keyboard > 0 ? { ...(edge === "bottom" ? { bottom: keyboard + 8 } : {}), maxHeight: room - 16 } : null;
   // From its content too, as an iOS sheet's scrolling content hands a drag
   // to the sheet, at the owner's pick ("Ok 1-3"): a finger's first move
   // toward the sheet's edge, where everything that scrolls under it is
@@ -63,26 +70,40 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
     let g: { x: number; y: number; t: number; target: Element; taken: boolean | null; by: number; moving: boolean } | null = null;
     const atStart = (target: Element) => {
       for (let el: Element | null = target; el && el !== sheet; el = el.parentElement) {
-        if (el.matches("input, textarea, [role=slider], [contenteditable=true], [data-swipe-handle]") || getComputedStyle(el).touchAction === "none") return false;
+        if (
+          el.matches("input, textarea, [role=slider], [contenteditable=true], [data-swipe-handle]") ||
+          getComputedStyle(el).touchAction === "none"
+        )
+          return false;
         const style = getComputedStyle(el);
-        if (el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(style.overflowY)
-          && (toward > 0 ? el.scrollTop > 0 : el.scrollTop + el.clientHeight < el.scrollHeight - 1)) return false;
+        if (
+          el.scrollHeight > el.clientHeight + 1 &&
+          /auto|scroll/.test(style.overflowY) &&
+          (toward > 0 ? el.scrollTop > 0 : el.scrollTop + el.clientHeight < el.scrollHeight - 1)
+        )
+          return false;
       }
       return true;
     };
     const start = (event: TouchEvent) => {
       const touch = event.touches[0];
-      g = touch && event.touches.length === 1 && event.target instanceof Element
-        ? { x: touch.clientX, y: touch.clientY, t: event.timeStamp, target: event.target, taken: null, by: 0, moving: false } : null;
+      g =
+        touch && event.touches.length === 1 && event.target instanceof Element
+          ? { x: touch.clientX, y: touch.clientY, t: event.timeStamp, target: event.target, taken: null, by: 0, moving: false }
+          : null;
     };
     const move = (event: TouchEvent) => {
       const touch = event.touches[0];
       if (!g || !touch || event.touches.length !== 1) return;
-      const dx = touch.clientX - g.x, by = (touch.clientY - g.y) * toward;
+      const dx = touch.clientX - g.x,
+        by = (touch.clientY - g.y) * toward;
       if (g.taken === null) {
         if (dx === 0 && by === 0) return;
         g.taken = by > 0 && by > Math.abs(dx) && atStart(g.target);
-        if (!g.taken) { g = null; return; }
+        if (!g.taken) {
+          g = null;
+          return;
+        }
       }
       if (event.cancelable) event.preventDefault();
       if (by < SLOP && !g.moving) return;
@@ -118,10 +139,17 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
     // list scrolled under its foot stood square past them (the owner's
     // screenshot of an approach's runways).
     <SheetContent
-      ref={setSheet} side={edge} glass data-floating=""
+      ref={setSheet}
+      side={edge}
+      glass
+      data-floating=""
       className={cn("max-h-[calc(85dvh-1rem)] gap-0 overflow-hidden", SHEET_CORNERS, className)}
-      style={swiped === null ? { ...style, ...lifted } : { ...style, ...lifted, transform: `translateY(${toward * swiped}px)`, transition: held ? "none" : BACK }}
-      onPointerDown={event => {
+      style={
+        swiped === null
+          ? { ...style, ...lifted }
+          : { ...style, ...lifted, transform: `translateY(${toward * swiped}px)`, transition: held ? "none" : BACK }
+      }
+      onPointerDown={(event) => {
         onPointerDown?.(event);
         // Its own, not the map's sheet's: a sheet opened from inside the
         // map's sheet (the route's Procedures) is its child in React's tree
@@ -131,7 +159,13 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
         // behind it, at the owner's notice.
         event.stopPropagation();
         if (event.button !== 0 || !(event.target as Element).closest("[data-swipe-handle]")) return;
-        press.current = { id: event.pointerId, y: event.clientY, t: event.timeStamp, height: event.currentTarget.offsetHeight, moved: false };
+        press.current = {
+          id: event.pointerId,
+          y: event.clientY,
+          t: event.timeStamp,
+          height: event.currentTarget.offsetHeight,
+          moved: false,
+        };
       }}
       onPointerMove={(event: PointerEvent<HTMLDivElement>) => {
         onPointerMove?.(event);
@@ -148,7 +182,7 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
         // far, as it gives at its full height.
         setSwiped(by > 0 ? by : by / 4);
       }}
-      onPointerUp={event => {
+      onPointerUp={(event) => {
         onPointerUp?.(event);
         const p = press.current;
         press.current = null;
@@ -158,7 +192,7 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
         if (by > p.height * AWAY_SHARE || by / Math.max(1, event.timeStamp - p.t) > AWAY_SPEED) close.current?.click();
         else setSwiped(0);
       }}
-      onPointerCancel={event => {
+      onPointerCancel={(event) => {
         onPointerCancel?.(event);
         const p = press.current;
         press.current = null;
@@ -171,8 +205,12 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
       {/* iOS's grabber, 36 by 5, five points in from the sheet's far edge,
           in a strip the finger can take it by. */}
       <div
-        aria-hidden="true" data-swipe-handle=""
-        className={cn("absolute inset-x-0 z-10 flex h-4 touch-none justify-center", edge === "bottom" ? "top-0 items-start pt-[5px]" : "bottom-0 items-end pb-[5px]")}
+        aria-hidden="true"
+        data-swipe-handle=""
+        className={cn(
+          "absolute inset-x-0 z-10 flex h-4 touch-none justify-center",
+          edge === "bottom" ? "top-0 items-start pt-[5px]" : "bottom-0 items-end pb-[5px]",
+        )}
       >
         <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" />
       </div>
@@ -190,7 +228,13 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
  * and what the sheet is about under it. The row is what a swipe takes the
  * sheet away by, with the grabber, clear of which it starts.
  */
-export function PhoneSheetHeader({ edge, title, description, leading, end }: {
+export function PhoneSheetHeader({
+  edge,
+  title,
+  description,
+  leading,
+  end,
+}: {
   edge: NavEdge;
   title: ReactNode;
   description?: ReactNode;
@@ -218,7 +262,11 @@ export function PhoneSheetHeader({ edge, title, description, leading, end }: {
 export function PhoneSheetBody({ edge, className, ...props }: ComponentProps<"div"> & { edge: NavEdge }) {
   return (
     <div
-      className={cn("min-h-0 overflow-y-auto px-4", edge === "top" ? "pb-5" : "pb-[max(1rem,calc(env(safe-area-inset-bottom)-0.5rem))]", className)}
+      className={cn(
+        "min-h-0 overflow-y-auto px-4",
+        edge === "top" ? "pb-5" : "pb-[max(1rem,calc(env(safe-area-inset-bottom)-0.5rem))]",
+        className,
+      )}
       {...props}
     />
   );

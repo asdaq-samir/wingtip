@@ -50,7 +50,8 @@ const luminance = ([r, g, b]: Linear) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
 /** WCAG 2's contrast ratio, 1 to 21, the lighter over the darker. */
 export function contrast(a: Linear, b: Linear): number {
-  const la = luminance(a), lb = luminance(b);
+  const la = luminance(a),
+    lb = luminance(b);
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
@@ -92,12 +93,15 @@ export function lookTokens(css: string, look: Look): Record<string, string> {
   const winners: Record<string, { value: string; weight: number; order: number }> = {};
   let order = 0;
   for (const block of clean.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    const selectors = block[1]!.split(",").map(s => s.trim()).filter(Boolean);
+    const selectors = block[1]!
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     let weight = -1;
     for (const selector of selectors) {
       const parts = selector.match(/:not\([^)]*\)|:root|\.dark|\[[^\]]+\]/g) ?? [];
       if (parts.join("") !== selector.replace(/\s+/g, "")) throw new Error(`tokens.css selector not understood: ${selector}`);
-      if (parts.every(p => holds(p, look))) weight = Math.max(weight, parts.length);
+      if (parts.every((p) => holds(p, look))) weight = Math.max(weight, parts.length);
     }
     if (weight < 0) continue;
     for (const m of block[2]!.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {

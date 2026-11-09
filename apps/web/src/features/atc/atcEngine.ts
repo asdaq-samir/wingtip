@@ -12,7 +12,10 @@ export type ReadbackAnswer = EngineAnswer<"readback_check">;
 
 /** The call we last had, and how long ago, s: a readback with no call
  *  sign that follows it is ours (the engine's READBACK_WITHIN_S). */
-interface Prior { text: string; agoS: number }
+interface Prior {
+  text: string;
+  agoS: number;
+}
 
 /** Who said `text` (to us, from us, someone else) by our call sign
  *  `tail`, and its items in the order said. */

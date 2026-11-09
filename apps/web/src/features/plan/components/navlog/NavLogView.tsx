@@ -2,8 +2,13 @@ import { Fragment, useCallback, useEffect, useId, useMemo, useState, type ReactN
 import { cn } from "cn";
 import { WandSparkles } from "lucide-react";
 import {
-  type CellData, type ColumnDef, type RowData, type TableFeatures,
-  flexRender, tableFeatures, useTable,
+  type CellData,
+  type ColumnDef,
+  type RowData,
+  type TableFeatures,
+  flexRender,
+  tableFeatures,
+  useTable,
 } from "@tanstack/react-table";
 import { NoteRow, SelectableRow } from "../../../../components/SelectableRows";
 import PanelTabs from "./PanelTabs";
@@ -14,9 +19,7 @@ import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import IconButton from "../../../../components/IconButton";
 import { Popover, PopoverContent, PopoverTrigger } from "../../../../components/ui/popover";
 import { Textarea } from "../../../../components/ui/textarea";
-import {
-  Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow,
-} from "../../../../components/ui/table";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../../../components/ui/table";
 import type { Candidate, Leg, NavLogAltitude, Totals, TopOfClimb, TopOfDescent } from "../../../../lib/api/types";
 import { feet, magneticVariation, windCorrection } from "../../../../lib/format";
 import { routeName } from "../../../../lib/identSchema";
@@ -34,7 +37,6 @@ import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 import { PointMark } from "./PointMark";
 import { NavLogList } from "./NavLogList";
 import { Spinner } from "../../../../components/ui/spinner";
-
 
 // TanStack Table's own extension point for arbitrary per-column data --
 // used below to carry each numeric column's shared className (bordered,
@@ -159,7 +161,10 @@ interface Props {
  * itself happens on blur.
  */
 export function DescriptionCell({
-  description, onSave, selected, onFocus,
+  description,
+  onSave,
+  selected,
+  onFocus,
 }: {
   description: Description | undefined;
   onSave: (text: string) => Promise<unknown>;
@@ -192,43 +197,49 @@ export function DescriptionCell({
     // reaches into rather than under them. The box keeps a name of its
     // own: through the label it would be named with its own text.
     <label htmlFor={id} className="relative -my-[9px] block py-[9px]">
-    <Textarea
-      id={id}
-      aria-label="How to spot it"
-      value={draft ?? description?.text ?? ""}
-      onChange={e => setDraft(e.target.value)}
-      onFocus={onFocus}
-      onBlur={() => {
-        if (draft === null) return;
-        const trimmed = draft.trim();
-        // Nothing new, or emptied: back to the note as it stands.
-        if (!trimmed || trimmed === (description?.text ?? "")) { setDraft(null); return; }
-        const typed = draft;
-        // Cleared once saved -- unless the pilot is typing again by then.
-        // A failure keeps the text; the query client reports it.
-        onSave(trimmed).then(() => setDraft(d => (d === typed ? null : d)), () => {});
-      }}
-      rows={1}
-      placeholder={description?.source === "error" ? "Couldn't auto-generate — type one" : "How to spot it…"}
-      // shadcn's own Textarea, sized down to a table cell: one line in
-      // the row, at the row's own size -- 15 to a finger, where it was a
-      // field's 17 among figures of 15 (iOS Safari zooms in on a field
-      // under 16; the viewport no longer forbids it, #265).
-      className={cn(
-        "min-h-0 w-full resize-none rounded py-0.5 pr-1 pl-0.5 text-left align-top shadow-none",
-        // md:text-xs: the Textarea's own md:text-sm is another variant, which
-        // TEXT.detail's text-xs does not displace, so a mouse would see 14
-        // beside the row's 12.
-        TEXT.detail,
-        "md:text-xs",
-        // On a selected row, a field: the page's own background and the
-        // stock edge, on the selection's tint, so it reads as somewhere
-        // to type rather than one more line of the row.
-        selected
-          ? "border-input bg-background text-foreground"
-          : "border-transparent bg-transparent text-muted-foreground hover:border-border focus:border-ring focus:bg-background",
-      )}
-    />
+      <Textarea
+        id={id}
+        aria-label="How to spot it"
+        value={draft ?? description?.text ?? ""}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={onFocus}
+        onBlur={() => {
+          if (draft === null) return;
+          const trimmed = draft.trim();
+          // Nothing new, or emptied: back to the note as it stands.
+          if (!trimmed || trimmed === (description?.text ?? "")) {
+            setDraft(null);
+            return;
+          }
+          const typed = draft;
+          // Cleared once saved -- unless the pilot is typing again by then.
+          // A failure keeps the text; the query client reports it.
+          onSave(trimmed).then(
+            () => setDraft((d) => (d === typed ? null : d)),
+            () => {},
+          );
+        }}
+        rows={1}
+        placeholder={description?.source === "error" ? "Couldn't auto-generate — type one" : "How to spot it…"}
+        // shadcn's own Textarea, sized down to a table cell: one line in
+        // the row, at the row's own size -- 15 to a finger, where it was a
+        // field's 17 among figures of 15 (iOS Safari zooms in on a field
+        // under 16; the viewport no longer forbids it, #265).
+        className={cn(
+          "min-h-0 w-full resize-none rounded py-0.5 pr-1 pl-0.5 text-left align-top shadow-none",
+          // md:text-xs: the Textarea's own md:text-sm is another variant, which
+          // TEXT.detail's text-xs does not displace, so a mouse would see 14
+          // beside the row's 12.
+          TEXT.detail,
+          "md:text-xs",
+          // On a selected row, a field: the page's own background and the
+          // stock edge, on the selection's tint, so it reads as somewhere
+          // to type rather than one more line of the row.
+          selected
+            ? "border-input bg-background text-foreground"
+            : "border-transparent bg-transparent text-muted-foreground hover:border-border focus:border-ring focus:bg-background",
+        )}
+      />
     </label>
   );
 }
@@ -334,7 +345,6 @@ function Heading({ name, unit, spoken }: { name: string; unit?: string; spoken: 
   );
 }
 
-
 /** The leg's true airspeed, in its own air (the planner's
  *  wingtip.performance): it varies with the altitude and the forecast
  *  temperature, so each leg has its own. A dash from a planner that did
@@ -344,12 +354,35 @@ function tas(leg: Leg): string {
 }
 
 export default function NavLogView({
-  totals, nav, depart, descriptionError,
-  legs, dep, dest, ends,
-  selected, descriptions, onSaveDescription,
-  onGenerateDescriptions, descriptionsLoading, descriptionsPaywall, descriptionsHidden, tabContent, children, marks, notice, cardHead, local, metarColourOf,
-  selectedPoint, onSelectPoint, onDeselectPoint, drawerOpen,
-  aircraftLabel, dryRun, route,
+  totals,
+  nav,
+  depart,
+  descriptionError,
+  legs,
+  dep,
+  dest,
+  ends,
+  selected,
+  descriptions,
+  onSaveDescription,
+  onGenerateDescriptions,
+  descriptionsLoading,
+  descriptionsPaywall,
+  descriptionsHidden,
+  tabContent,
+  children,
+  marks,
+  notice,
+  cardHead,
+  local,
+  metarColourOf,
+  selectedPoint,
+  onSelectPoint,
+  onDeselectPoint,
+  drawerOpen,
+  aircraftLabel,
+  dryRun,
+  route,
 }: Props) {
   // Where the log's rows are in sight: FPL all the way up, and never where
   // the route's list is in their place.
@@ -388,7 +421,7 @@ export default function NavLogView({
   // they line up when there is one segment fewer than rows. When they do
   // not, the nav log's summary says so once.
   const segments = nav?.altitude_selection.segments ?? [];
-  const perLeg = segments.length > 0 && segments.length === data.filter(r => !isLegPoint(r)).length - 1;
+  const perLeg = segments.length > 0 && segments.length === data.filter((r) => !isLegPoint(r)).length - 1;
   // How the altitude was chosen -- the four plans, the pilot's own, and
   // why: a pilot should never have to take a cruise altitude on trust,
   // so the Alt column's own heading opens the planner's reasoning (floor,
@@ -412,15 +445,14 @@ export default function NavLogView({
       // so its glyph lines up with the names under it and the
       // column is no wider than it was with a 24-point button --
       // the phone's five columns still fit their drawer.
-      label="Generate descriptions" className="relative z-10 -ml-2 print:hidden"
+      label="Generate descriptions"
+      className="relative z-10 -ml-2 print:hidden"
       onClick={descriptionsPaywall ? undefined : onGenerateDescriptions}
       disabled={descriptionsLoading || selected.length === 0}
       data-testid="generate-descriptions-button"
     >
       {/* The icon buttons' one size, 20 in 36 (it was 20 in 24, crowded). */}
-      {descriptionsLoading
-        ? <Spinner className="size-5" aria-hidden />
-        : <WandSparkles className="size-5" />}
+      {descriptionsLoading ? <Spinner className="size-5" aria-hidden /> : <WandSparkles className="size-5" />}
     </IconButton>
   );
   // Without the subscription the wand says what it would do and how to
@@ -428,9 +460,13 @@ export default function NavLogView({
   const wandSlot = descriptionsHidden ? null : descriptionsPaywall ? (
     <Popover>
       <PopoverTrigger asChild>{wand}</PopoverTrigger>
-      <PopoverContent className="w-80 p-0" data-testid="descriptions-paywall">{descriptionsPaywall}</PopoverContent>
+      <PopoverContent className="w-80 p-0" data-testid="descriptions-paywall">
+        {descriptionsPaywall}
+      </PopoverContent>
     </Popover>
-  ) : wand;
+  ) : (
+    wand
+  );
   const columns: ColumnDef<typeof navLogTableFeatures, NavLogRow>[] = [
     {
       id: "waypoint",
@@ -454,7 +490,11 @@ export default function NavLogView({
       // one warning too many.
       cell: ({ row }) => (
         <span className="flex min-w-[5.5rem] items-center gap-2">
-          <PointMark row={row.original} number={row.original.kind === "checkpoint" ? numbers.get(row.original.key) : undefined} weather={metarColourOf} />
+          <PointMark
+            row={row.original}
+            number={row.original.kind === "checkpoint" ? numbers.get(row.original.key) : undefined}
+            weather={metarColourOf}
+          />
           <span className="min-w-0 [overflow-wrap:anywhere]">{rowPoint(row.original).name}</span>
         </span>
       ),
@@ -583,10 +623,12 @@ export default function NavLogView({
   // the actual time over each fix and the fuel left -- what makes the
   // printed page a nav log to fly with rather than a table to read.
   for (const [id, name, unit, spoken] of [
-    ["ata", "ATA", "local", "Actual arrival time"], ["fuel_rem", "Fuel rem.", "gal", "Fuel remaining, gallons"],
+    ["ata", "ATA", "local", "Actual arrival time"],
+    ["fuel_rem", "Fuel rem.", "gal", "Fuel remaining, gallons"],
   ] as const) {
     columns.push({
-      id, header: () => <Heading name={name} unit={unit} spoken={spoken} />,
+      id,
+      header: () => <Heading name={name} unit={unit} spoken={spoken} />,
       cell: () => "",
       meta: { className: "hidden w-14 border-l border-border print:table-cell" },
     });
@@ -596,7 +638,7 @@ export default function NavLogView({
   // and `navLogTableFeatures`'s own core model is the only row model
   // this needs; a sortable column here would let a pilot reorder the
   // log into something unflyable (e.g. by Fuel).
-  const table = useTable({ features: navLogTableFeatures, data, columns, getRowId: row => row.key });
+  const table = useTable({ features: navLogTableFeatures, data, columns, getRowId: (row) => row.key });
 
   // The selected row as it is put in the page: the rows are drawn a moment
   // after the panel (PanelTabs' deferred draw), and on a busy page after
@@ -610,7 +652,7 @@ export default function NavLogView({
   // on, where the pilot's own selection is brought, and left where it is
   // once in sight -- all the way up only: half way the sheet shows the
   // route and the run's chart, which a scroll to the log would move.
-  const flying = usePastFlight(p => (dryRun && p.hex === DRY_RUN && p.at !== null ? dryRunRow(dryRun, p.at) : null));
+  const flying = usePastFlight((p) => (dryRun && p.hex === DRY_RUN && p.at !== null ? dryRunRow(dryRun, p.at) : null));
   const [flyingRow, setFlyingRow] = useState<HTMLElement | null>(null);
   useEffect(() => (logInSight ? revealRow(flyingRow) : undefined), [flyingRow, flying, logInSight]);
   // Whether the table fits the drawer's width (see navLogTable): watched,
@@ -667,7 +709,7 @@ export default function NavLogView({
         ) : r.kind === "checkpoint" ? (
           <DescriptionCell
             description={descriptions[r.key]}
-            onSave={text => onSaveDescription(r.cp.lat, r.cp.lon, text)}
+            onSave={(text) => onSaveDescription(r.cp.lat, r.cp.lon, text)}
             selected={rowSelected}
             onFocus={() => onSelectPoint(r.cp.lat, r.cp.lon)}
           />
@@ -691,85 +733,90 @@ export default function NavLogView({
   // paginate.
   const navLogTable = (
     <div ref={watchFit}>
-    <Table
-      containerClassName={cn(fits ? "overflow-x-visible" : "overflow-x-auto", "print:overflow-visible")}
-      className={cn(
-        // The cells' padding halved and the waypoint's name free to wrap
-        // (see its column), so the five columns fit the drawer without a
-        // sideways scroll -- beside a desktop's map as on a phone, where
-        // every column of it scrolled sideways under the waypoint's. On
-        // paper, every column at the stock padding.
-        "text-right whitespace-nowrap [&_td]:px-1 [&_th]:px-1 print:[&_td]:px-2 print:[&_th]:px-2",
-        // To a finger, the figures at what is read (15) and the rows 44
-        // points to tap (lib/text.ts), as the pilot had them: 12 on a
-        // phone was too small to read. (What they had asked to have
-        // compact was the leg's figures under a row, LegLine.)
-        TEXT.detail, "pointer-coarse:[&_td]:py-3",
-      )}
-    >
-      <TableCaption className="sr-only">
-        Navigation log from {dep} to {dest}
-      </TableCaption>
-      {/* Over the rows as they scroll, the sheet's own frosted glass
-          rather than a band of white across it. */}
-      <TableHeader className="sticky top-[var(--section-tabs,0px)] z-10 bg-background/75 backdrop-blur-xl solid:bg-background solid:backdrop-blur-none dark:solid:bg-popover print:static print:bg-transparent print:backdrop-blur-none dark:bg-popover/75">
-        {table.getHeaderGroups().map(headerGroup => (
-          <TableRow key={headerGroup.id}>
-            {headerGroup.headers.map(header => (
-              // Each heading over its own figures: right-aligned, as they
-              // are (the stock heading is left-aligned, and every label
-              // sat off its column), the waypoint's left as its names
-              // are; set as every group's heading is in the app
-              // (GROUP_HEADING), at the pilot's ask.
-              <TableHead key={header.id} className={cn("text-right", GROUP_HEADING, header.column.columnDef.meta?.className)}>
-                {flexRender(header.column.columnDef.header, header.getContext())}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {data.length === 0 && (
-          <TableRow><TableCell className="text-left text-muted-foreground" colSpan={columns.length}>No route planned yet</TableCell></TableRow>
+      <Table
+        containerClassName={cn(fits ? "overflow-x-visible" : "overflow-x-auto", "print:overflow-visible")}
+        className={cn(
+          // The cells' padding halved and the waypoint's name free to wrap
+          // (see its column), so the five columns fit the drawer without a
+          // sideways scroll -- beside a desktop's map as on a phone, where
+          // every column of it scrolled sideways under the waypoint's. On
+          // paper, every column at the stock padding.
+          "text-right whitespace-nowrap [&_td]:px-1 [&_th]:px-1 print:[&_td]:px-2 print:[&_th]:px-2",
+          // To a finger, the figures at what is read (15) and the rows 44
+          // points to tap (lib/text.ts), as the pilot had them: 12 on a
+          // phone was too small to read. (What they had asked to have
+          // compact was the leg's figures under a row, LegLine.)
+          TEXT.detail,
+          "pointer-coarse:[&_td]:py-3",
         )}
-        {/* One row per waypoint the plan already knows about, not
+      >
+        <TableCaption className="sr-only">
+          Navigation log from {dep} to {dest}
+        </TableCaption>
+        {/* Over the rows as they scroll, the sheet's own frosted glass
+          rather than a band of white across it. */}
+        <TableHeader className="sticky top-[var(--section-tabs,0px)] z-10 bg-background/75 backdrop-blur-xl solid:bg-background solid:backdrop-blur-none dark:solid:bg-popover print:static print:bg-transparent print:backdrop-blur-none dark:bg-popover/75">
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                // Each heading over its own figures: right-aligned, as they
+                // are (the stock heading is left-aligned, and every label
+                // sat off its column), the waypoint's left as its names
+                // are; set as every group's heading is in the app
+                // (GROUP_HEADING), at the pilot's ask.
+                <TableHead key={header.id} className={cn("text-right", GROUP_HEADING, header.column.columnDef.meta?.className)}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {data.length === 0 && (
+            <TableRow>
+              <TableCell className="text-left text-muted-foreground" colSpan={columns.length}>
+                No route planned yet
+              </TableCell>
+            </TableRow>
+          )}
+          {/* One row per waypoint the plan already knows about, not
             one per leg that's actually arrived -- `leg` is
             undefined until its own line streams in, and every cell
             that depends on it shows a dash rather than waiting. The
             departure (when present) is `table`'s own first row,
             one kind of row among the three -- see rows.ts. */}
-        {table.getRowModel().rows.map(row => {
-          const r = row.original;
-          const { lat, lon } = rowPoint(r);
-          const rowSelected = isSelected(lat, lon);
-          const leg = legOf(r);
-          return (
-            <Fragment key={row.id}>
-              {/* A leg with no nearby winds-aloft station is a
+          {table.getRowModel().rows.map((row) => {
+            const r = row.original;
+            const { lat, lon } = rowPoint(r);
+            const rowSelected = isSelected(lat, lon);
+            const leg = legOf(r);
+            return (
+              <Fragment key={row.id}>
+                {/* A leg with no nearby winds-aloft station is a
                   no-wind estimate, not a calm one. Italics keep that
                   visible rather than letting it read as a confident
                   zero -- as for a leg that simply hasn't arrived yet,
                   for the same reason: both are "no data (yet)," not a
                   confident answer. They were the grey rows, before
                   every row's figures were grey. */}
-              <SelectableRow
-                selected={rowSelected}
-                flying={row.index === flying}
-                kind={r.kind}
-                estimated={r.kind !== "departure" && !leg?.wind}
-                expands
-                // The selected row tapped again is deselected, on the
-                // map too, which closes its note.
-                onSelect={() => (rowSelected ? onDeselectPoint() : onSelectPoint(lat, lon))}
-                scrollRef={rowSelected ? setSelectedRow : row.index === flying ? setFlyingRow : undefined}
-              >
-                {row.getAllCells().map(cell => (
-                  <TableCell key={cell.id} className={cell.column.columnDef.meta?.className}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </SelectableRow>
-              {/* The row's own note -- the leg's figures a phone has no
+                <SelectableRow
+                  selected={rowSelected}
+                  flying={row.index === flying}
+                  kind={r.kind}
+                  estimated={r.kind !== "departure" && !leg?.wind}
+                  expands
+                  // The selected row tapped again is deselected, on the
+                  // map too, which closes its note.
+                  onSelect={() => (rowSelected ? onDeselectPoint() : onSelectPoint(lat, lon))}
+                  scrollRef={rowSelected ? setSelectedRow : row.index === flying ? setFlyingRow : undefined}
+                >
+                  {row.getAllCells().map((cell) => (
+                    <TableCell key={cell.id} className={cell.column.columnDef.meta?.className}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </SelectableRow>
+                {/* The row's own note -- the leg's figures a phone has no
                   columns for, and the checkpoint's description or the
                   airport's name -- under the selected row only, the way
                   the training drawer's rating buttons are: every row
@@ -777,38 +824,56 @@ export default function NavLogView({
                   twenty scrolled for a screen and a half. A tap on a row
                   selects it, on the map too, and opens it. On paper
                   every row is open. */}
-              {(rowSelected || printing) && (
-                <NoteRow selected={rowSelected} colSpan={columns.length}>{noteOf(r, rowSelected)}</NoteRow>
-              )}
-            </Fragment>
-          );
-        })}
-      </TableBody>
-    </Table>
+                {(rowSelected || printing) && (
+                  <NoteRow selected={rowSelected} colSpan={columns.length}>
+                    {noteOf(r, rowSelected)}
+                  </NoteRow>
+                )}
+              </Fragment>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 
   // On screen the log a line a point (NavLogList), under a heading of its
   // own with the wand that writes the checkpoints' descriptions; the table
   // above is the printed page's.
-  const checkpointCount = data.filter(r => r.kind === "checkpoint").length;
-  const navLogList = data.length === 0 ? (
-    <p className={cn("py-3", TEXT.detail)}>No route planned yet</p>
-  ) : (
-    <>
-      <div className="flex items-center justify-between pt-2 pl-1.5" data-testid="navlog-head">
-        <span className={GROUP_HEADING}>{checkpointCount} checkpoint{checkpointCount === 1 ? "" : "s"}</span>
-        <span className="mr-0.5 flex items-center">{wandSlot}</span>
-      </div>
-      <NavLogList
-        rows={data} label={`Navigation log from ${dep} to ${dest}`}
-        numberOf={r => (r.kind === "checkpoint" ? numbers.get(r.key) : undefined)} weather={metarColourOf}
-        isSelected={r => { const { lat, lon } = rowPoint(r); return isSelected(lat, lon); }}
-        onSelect={r => { const { lat, lon } = rowPoint(r); onSelectPoint(lat, lon); }} onDeselect={onDeselectPoint}
-        flying={flying} selectedRef={setSelectedRow} flyingRef={setFlyingRow} depart={depart} note={noteOf}
-      />
-    </>
-  );
+  const checkpointCount = data.filter((r) => r.kind === "checkpoint").length;
+  const navLogList =
+    data.length === 0 ? (
+      <p className={cn("py-3", TEXT.detail)}>No route planned yet</p>
+    ) : (
+      <>
+        <div className="flex items-center justify-between pt-2 pl-1.5" data-testid="navlog-head">
+          <span className={GROUP_HEADING}>
+            {checkpointCount} checkpoint{checkpointCount === 1 ? "" : "s"}
+          </span>
+          <span className="mr-0.5 flex items-center">{wandSlot}</span>
+        </div>
+        <NavLogList
+          rows={data}
+          label={`Navigation log from ${dep} to ${dest}`}
+          numberOf={(r) => (r.kind === "checkpoint" ? numbers.get(r.key) : undefined)}
+          weather={metarColourOf}
+          isSelected={(r) => {
+            const { lat, lon } = rowPoint(r);
+            return isSelected(lat, lon);
+          }}
+          onSelect={(r) => {
+            const { lat, lon } = rowPoint(r);
+            onSelectPoint(lat, lon);
+          }}
+          onDeselect={onDeselectPoint}
+          flying={flying}
+          selectedRef={setSelectedRow}
+          flyingRef={setFlyingRow}
+          depart={depart}
+          note={noteOf}
+        />
+      </>
+    );
 
   // What has to be said over the table, as rows: legs flown without wind,
   // and clouds the legs cannot be told for, in red. Nothing at all when
@@ -823,7 +888,8 @@ export default function NavLogView({
         {descriptionError && (
           <ListRow
             title={<span className="text-destructive">The descriptions could not all be written</span>}
-            description={descriptionError} data-testid="navlog-descriptions-error"
+            description={descriptionError}
+            data-testid="navlog-descriptions-error"
           />
         )}
         {descriptionError && !descriptionsLoading && (
@@ -852,18 +918,25 @@ export default function NavLogView({
   const legsSection = (
     <SectionPane title={LEGS} heading={printing && !local}>
       {!local && summary}
-      {!local && (printing ? navLogTable : route ?? navLogList)}
+      {!local && (printing ? navLogTable : (route ?? navLogList))}
     </SectionPane>
   );
-  const title = routeName(dep, dest, ends?.stops?.map(s => s.ident));
+  const title = routeName(
+    dep,
+    dest,
+    ends?.stops?.map((s) => s.ident),
+  );
   return (
     <>
       {printing ? (
         // On paper the whole briefing, as it always printed: every page in
         // turn, the legs first in En route's, under the briefing's title.
         <PanelTabs
-          printing marks={marks} route={title} notice={notice}
-          before={(
+          printing
+          marks={marks}
+          route={title}
+          notice={notice}
+          before={
             <>
               {/* On paper only, at paper's own 14: no finger, no type scale.
                   The panel's own head (the route form, the airplane and the
@@ -876,12 +949,13 @@ export default function NavLogView({
                 </div>
                 <div className="text-muted-foreground">
                   {aircraftLabel}
-                  {depart && ` · departing ${new Date(depart).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })} ${clockTime(new Date(depart))}`}
+                  {depart &&
+                    ` · departing ${new Date(depart).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })} ${clockTime(new Date(depart))}`}
                   {plannedWords(totals) && ` · ${plannedWords(totals)}`}
                 </div>
               </div>
             </>
-          )}
+          }
           contents={{
             preflight: tabContent("preflight"),
             depart: tabContent("depart"),
@@ -906,7 +980,9 @@ export default function NavLogView({
         <div className="flex min-h-0 flex-1 flex-col">
           {/* The drawer's name for a screen reader: on screen it is the
               tab's, said once there. */}
-          <span className="sr-only" data-testid="drawer-title">Flight Planning</span>
+          <span className="sr-only" data-testid="drawer-title">
+            Flight Planning
+          </span>
           {/* The bottom inset clears the home indicator on an installed
               app, so the last row is not under it. */}
           <div
@@ -914,7 +990,13 @@ export default function NavLogView({
             data-testid="navlog-scroller"
           >
             {cardHead && <div className="pt-[var(--corner-inset,0.75rem)] pb-2">{cardHead}</div>}
-            <section aria-label={local ? "Local Flight" : route ? "Route" : "Nav Log"} className={TEXT.prose} data-testid={cardHead ? "navlog-sheet" : undefined}>{legsSection}</section>
+            <section
+              aria-label={local ? "Local Flight" : route ? "Route" : "Nav Log"}
+              className={TEXT.prose}
+              data-testid={cardHead ? "navlog-sheet" : undefined}
+            >
+              {legsSection}
+            </section>
           </div>
         </div>
       )}

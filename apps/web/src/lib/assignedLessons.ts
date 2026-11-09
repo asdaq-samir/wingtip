@@ -19,7 +19,7 @@ interface QuizScore {
 
 export function quizScore(lesson: Pick<ApproachLesson, "quizAnswers" | "quizOf">): QuizScore | null {
   if (lesson.quizOf == null) return null;
-  return { right: lesson.quizAnswers.filter(a => a.right).length, answered: lesson.quizAnswers.length, of: lesson.quizOf };
+  return { right: lesson.quizAnswers.filter((a) => a.right).length, answered: lesson.quizAnswers.length, of: lesson.quizOf };
 }
 
 /** Where the student is with it, in a word or a score: "Not started",
@@ -57,7 +57,7 @@ export function noteAt(notes: Record<string, string> | null | undefined, fix: st
 /** The fixes a note may be left at: the approach's own, in the order
  *  flown, each once (its missed approach's left out, as the brief's). */
 export function notableFixes(drawing: ProcedureDrawing): string[] {
-  return [...new Set(approachFixes(drawing).map(f => f.ident))];
+  return [...new Set(approachFixes(drawing).map((f) => f.ident))];
 }
 
 /** The notes as sent: each fix's words trimmed, the blank ones left out. */
@@ -67,5 +67,8 @@ export function notesToSend(typed: Record<string, string>): Record<string, strin
 
 /** The approach the lesson opens on: from vectors, as the instructor set
  *  it without a transition. */
-export const lessonPicked = (lesson: Pick<ApproachLesson, "airportIdent" | "procedureId">): PickedProcedure =>
-  ({ ident: lesson.airportIdent, id: lesson.procedureId, transition: null });
+export const lessonPicked = (lesson: Pick<ApproachLesson, "airportIdent" | "procedureId">): PickedProcedure => ({
+  ident: lesson.airportIdent,
+  id: lesson.procedureId,
+  transition: null,
+});

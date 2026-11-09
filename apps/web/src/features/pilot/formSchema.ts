@@ -17,17 +17,20 @@ export { z };
 /** A day from a date field, blank allowed, not after today: what the
  *  server's @PastOrPresent asks of a day already gone by. Compared as
  *  ISO strings, which sort as the days do. */
-export const pastDay = z.string().refine(value => value === "" || value <= localDay(), "Not after today");
+export const pastDay = z.string().refine((value) => value === "" || value <= localDay(), "Not after today");
 
 /** The same, a day that must be given. */
-export const requiredPastDay = (message: string) => z.string().min(1, message)
-  .refine(value => value <= localDay(), "Not after today");
+export const requiredPastDay = (message: string) =>
+  z
+    .string()
+    .min(1, message)
+    .refine((value) => value <= localDay(), "Not after today");
 
 /** Blank, or a number at or over nought: hours in service. */
-export const optionalHours = z.string().trim().refine(
-  value => value === "" || (Number.isFinite(Number(value)) && Number(value) >= 0),
-  "Hours cannot be negative",
-);
+export const optionalHours = z
+  .string()
+  .trim()
+  .refine((value) => value === "" || (Number.isFinite(Number(value)) && Number(value) >= 0), "Hours cannot be negative");
 
 /** A form's blank figure as the request carries it: null. */
 export const numberOrNull = (value: string) => (value.trim() ? Number(value) : null);

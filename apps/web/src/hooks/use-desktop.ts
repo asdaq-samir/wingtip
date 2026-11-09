@@ -16,5 +16,9 @@ const subscribe = (onChange: () => void) => {
  *  keyboard's shortcuts (useShortcuts). Read as the page renders, as
  *  useIsMobile is, so the first frame is already the right layout. */
 export function useIsDesktop(): boolean {
-  return useSyncExternalStore(subscribe, () => window.matchMedia(QUERY).matches, () => false);
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(QUERY).matches,
+    () => false,
+  );
 }

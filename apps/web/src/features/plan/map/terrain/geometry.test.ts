@@ -13,7 +13,7 @@ describe("the route aloft", () => {
     expect(line.at(-1)).toEqual(KMSN);
     for (let i = 1; i < line.length - 1; i++) expect(distanceNm(line[i - 1]!, line[i]!)).toBeCloseTo(0.5, 1);
     // Half way up the climb, half way to its top of climb.
-    const climb = line.filter(p => p.altFt < 4500);
+    const climb = line.filter((p) => p.altFt < 4500);
     const mid = climb[Math.floor(climb.length / 2)]!;
     expect(mid.altFt).toBeGreaterThan(2000);
     expect(mid.altFt).toBeLessThan(3400);
@@ -33,7 +33,13 @@ describe("the route aloft", () => {
   });
 
   it("is a band as wide as asked across the line", () => {
-    const [piece] = aloftPieces([{ lat: 42, lon: -88, altFt: 3000 }, { lat: 42.01, lon: -88, altFt: 3000 }], 150);
+    const [piece] = aloftPieces(
+      [
+        { lat: 42, lon: -88, altFt: 3000 },
+        { lat: 42.01, lon: -88, altFt: 3000 },
+      ],
+      150,
+    );
     const [a, , , d] = piece!.ring;
     // Due north: the band's ends 150 m apart east to west.
     expect(distanceNm({ lat: a![1], lon: a![0] }, { lat: d![1], lon: d![0] }) * 1852).toBeCloseTo(150, 0);

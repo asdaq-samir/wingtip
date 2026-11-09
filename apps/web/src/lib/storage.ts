@@ -19,8 +19,12 @@ const refused = new Set<string>();
 /** localStorage for persist's createJSONStorage: quiet where storage is
  *  refused or full, and a key written only when what it holds changes. */
 export const browserStorage: StateStorage = {
-  getItem: name => {
-    try { return localStorage.getItem(name); } catch { return null; }
+  getItem: (name) => {
+    try {
+      return localStorage.getItem(name);
+    } catch {
+      return null;
+    }
   },
   setItem: (name, value) => {
     if (written.get(name) === value) return;
@@ -31,13 +35,17 @@ export const browserStorage: StateStorage = {
       localStorage.setItem(name, value);
       refused.delete(name);
     } catch {
-      refused.add(name);   // not kept: private browsing, storage full
+      refused.add(name); // not kept: private browsing, storage full
     }
   },
-  removeItem: name => {
+  removeItem: (name) => {
     written.delete(name);
     refused.delete(name);
-    try { localStorage.removeItem(name); } catch { /* nothing kept to remove */ }
+    try {
+      localStorage.removeItem(name);
+    } catch {
+      /* nothing kept to remove */
+    }
   },
 };
 
@@ -47,20 +55,20 @@ export const browserStorage: StateStorage = {
  *  is lost, and a build before this one still reads it. A null forgets it. */
 function bareStorage<T>(): PersistStorage<{ value: T }> {
   return {
-    getItem: name => {
+    getItem: (name) => {
       const raw = browserStorage.getItem(name) as string | null;
       if (raw === null) return null;
       try {
         return { state: { value: JSON.parse(raw) as T }, version: 0 };
       } catch {
-        return null;   // not JSON: kept by something else, read as none
+        return null; // not JSON: kept by something else, read as none
       }
     },
     setItem: (name, kept) => {
       if (kept.state.value === null) browserStorage.removeItem(name);
       else void browserStorage.setItem(name, JSON.stringify(kept.state.value));
     },
-    removeItem: name => void browserStorage.removeItem(name),
+    removeItem: (name) => void browserStorage.removeItem(name),
   };
 }
 

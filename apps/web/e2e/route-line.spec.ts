@@ -16,17 +16,69 @@ import { openPanel, settle, sideDrawer, slow } from "./helpers";
 
 const WAYS = {
   options: [
-    { kind: "fastest", kinds: ["fastest", "stops"], title: "Fastest", stops: ["DLH/180/40.0"], fuel: [],
-      path: [[42.23, -88.0], [46.0, -92.2], [46.84, -92.19]], distance_nm: 352.4, air_min: 181, ground_min: 0,
-      fuel_gal: 25.6, landings: 0, crosses: [], marginal: [], bands: [{ kind: "vfr", min: 181 }], tail_kt: 12, floor_ft: 2200 },
-    { kind: "weather", kinds: ["weather"], title: "Best weather", stops: ["KEAU"], fuel: ["KEAU"],
-      path: [[42.23, -88.0], [44.87, -91.48], [46.84, -92.19]], distance_nm: 371.2, air_min: 190, ground_min: 30,
-      fuel_gal: 27.0, landings: 1, crosses: [], marginal: [1],
-      bands: [{ kind: "vfr", min: 90 }, { kind: "mvfr", min: 40 }, { kind: "vfr", min: 60 }], tail_kt: 4, floor_ft: 2400 },
+    {
+      kind: "fastest",
+      kinds: ["fastest", "stops"],
+      title: "Fastest",
+      stops: ["DLH/180/40.0"],
+      fuel: [],
+      path: [
+        [42.23, -88.0],
+        [46.0, -92.2],
+        [46.84, -92.19],
+      ],
+      distance_nm: 352.4,
+      air_min: 181,
+      ground_min: 0,
+      fuel_gal: 25.6,
+      landings: 0,
+      crosses: [],
+      marginal: [],
+      bands: [{ kind: "vfr", min: 181 }],
+      tail_kt: 12,
+      floor_ft: 2200,
+    },
+    {
+      kind: "weather",
+      kinds: ["weather"],
+      title: "Best weather",
+      stops: ["KEAU"],
+      fuel: ["KEAU"],
+      path: [
+        [42.23, -88.0],
+        [44.87, -91.48],
+        [46.84, -92.19],
+      ],
+      distance_nm: 371.2,
+      air_min: 190,
+      ground_min: 30,
+      fuel_gal: 27.0,
+      landings: 1,
+      crosses: [],
+      marginal: [1],
+      bands: [
+        { kind: "vfr", min: 90 },
+        { kind: "mvfr", min: 40 },
+        { kind: "vfr", min: 60 },
+      ],
+      tail_kt: 4,
+      floor_ft: 2400,
+    },
   ],
   own: null,
-  direct: [0], ends: [], current: [], current_marginal: [],
-  current_along: { bands: [{ kind: "vfr", min: 60 }, { kind: "storm", min: 30 }, { kind: "vfr", min: 82 }], tail_kt: 6, floor_ft: 2100 },
+  direct: [0],
+  ends: [],
+  current: [],
+  current_marginal: [],
+  current_along: {
+    bands: [
+      { kind: "vfr", min: 60 },
+      { kind: "storm", min: 30 },
+      { kind: "vfr", min: 82 },
+    ],
+    tail_kt: 6,
+    floor_ft: 2100,
+  },
   chips: [
     { key: "none", label: "As typed", stops: [], fuel: [], crosses: [0] },
     { key: "weather", label: "Avoid Weather", stops: ["KEAU"], fuel: ["KEAU"], crosses: [] },
@@ -40,7 +92,10 @@ const WAYS = {
 };
 
 async function ways(page: Page) {
-  await page.route(url => url.pathname.endsWith("/route-options"), route => route.fulfill({ json: WAYS }));
+  await page.route(
+    (url) => url.pathname.endsWith("/route-options"),
+    (route) => route.fulfill({ json: WAYS }),
+  );
 }
 
 test.afterEach(async ({ page }) => {
@@ -50,7 +105,7 @@ test.afterEach(async ({ page }) => {
 test("FPL's route line folds to the way picked, As typed at first, and a chip tapped is the route at once", async ({ page }) => {
   await ways(page);
   const planned: string[] = [];
-  page.on("request", request => {
+  page.on("request", (request) => {
     if (new URL(request.url()).pathname.endsWith("/navlog")) planned.push(new URL(request.url()).searchParams.get("stops") ?? "");
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -65,7 +120,8 @@ test("FPL's route line folds to the way picked, As typed at first, and a chip ta
   await expect(picked).toHaveText(/^As typed/, { timeout: slow(30_000) });
   await expect(line.getByTestId("route-line-toggle")).toHaveAccessibleName(/As typed, the route as typed, .*crosses storms, 2 more/);
   // Over the route's fields, not among them.
-  const lineBox = (await line.boundingBox())!, fields = (await sideDrawer(page).getByTestId("procedures").boundingBox())!;
+  const lineBox = (await line.boundingBox())!,
+    fields = (await sideDrawer(page).getByTestId("procedures").boundingBox())!;
   expect(lineBox.y + lineBox.height).toBeLessThanOrEqual(fields.y + 1);
   await expect.poll(() => planned.length, { timeout: slow(15_000) }).toBeGreaterThan(0);
 
@@ -84,7 +140,7 @@ test("FPL's route line folds to the way picked, As typed at first, and a chip ta
   await chips.filter({ hasText: "Avoid Weather" }).click();
   await expect(page).toHaveURL(/[?&]stops=KEAU(&|$)/);
   await expect(page).toHaveURL(/[?&]fuel=KEAU(&|$)/);
-  await expect.poll(() => planned.some(stops => stops.includes("KEAU")), { timeout: slow(15_000) }).toBe(true);
+  await expect.poll(() => planned.some((stops) => stops.includes("KEAU")), { timeout: slow(15_000) }).toBe(true);
   await expect(chips.filter({ hasText: "Avoid Weather" })).toHaveAttribute("data-state", "on");
 
   // As typed: the route as typed again.

@@ -68,7 +68,9 @@ interface RiskWordsRequest {
  *  fetch, as ./assistant's: the schema has no such path yet. */
 export async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(path, {
-    method: "POST", signal, body: JSON.stringify(body),
+    method: "POST",
+    signal,
+    body: JSON.stringify(body),
     headers: { "Content-Type": "application/json", ...csrfHeaders("POST"), ...requestIdHeaders() },
   });
   // A billed Claude call needs a session, and Spring's 401 carries no body.
@@ -104,7 +106,8 @@ export const flightWatch = {
   /** Started, or its departure moved: the same POST either way. */
   start: async (flightId: number, departAt: string): Promise<FlightWatch> => {
     const res = await fetch(`/api/flights/${flightId}/watch`, {
-      method: "POST", body: JSON.stringify({ departAt }),
+      method: "POST",
+      body: JSON.stringify({ departAt }),
       headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
     });
     await failIfNotOk(res);

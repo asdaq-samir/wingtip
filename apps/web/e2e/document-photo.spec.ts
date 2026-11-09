@@ -16,12 +16,15 @@ const A_PILOT = { id: 1, email: "pilot@example.com", displayName: "A Pilot", dev
 const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC", "base64");
 
 test("a logbook page's flights are logged only once ticked, each as the engine read it", async ({ page }) => {
-  await page.route("**/api/me", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
+  await page.route("**/api/me", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
   const asked: { kind: string; media_type: string }[] = [];
-  await page.route(url => url.pathname.endsWith("/api/read-document"), async (route: Route) => {
-    asked.push(route.request().postDataJSON());
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ANSWERS.logbook) });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/read-document"),
+    async (route: Route) => {
+      asked.push(route.request().postDataJSON());
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ANSWERS.logbook) });
+    },
+  );
   const posted: { flownOn: string; route: string }[] = [];
   await page.route("**/api/logbook", async (route: Route) => {
     if (route.request().method() === "POST") {

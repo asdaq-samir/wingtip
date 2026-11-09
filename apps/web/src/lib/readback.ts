@@ -22,12 +22,21 @@ type ReadbackItem = EngineAnswer<"readback_check">["items"][number];
 /** The parts of a clearance in the order they are read back, each with
  *  its name on the screen (the iPhone's ReadbackCheck.parts). */
 const READBACK_PARTS: { item: ReadbackItem["item"]; name: string }[] = [
-  { item: "limit", name: "limit" }, { item: "route", name: "route" }, { item: "altitude", name: "altitude" },
-  { item: "expect", name: "expected altitude" }, { item: "frequency", name: "frequency" }, { item: "squawk", name: "squawk" },
+  { item: "limit", name: "limit" },
+  { item: "route", name: "route" },
+  { item: "altitude", name: "altitude" },
+  { item: "expect", name: "expected altitude" },
+  { item: "frequency", name: "frequency" },
+  { item: "squawk", name: "squawk" },
   // An instruction's (the ATC copilot's, features/atc), and the readback's own.
-  { item: "heading", name: "heading" }, { item: "runway", name: "runway" }, { item: "approach", name: "approach" },
-  { item: "hold", name: "hold" }, { item: "direct", name: "direct" }, { item: "altimeter", name: "altimeter" },
-  { item: "call sign", name: "call sign" }, { item: "order", name: "order" },
+  { item: "heading", name: "heading" },
+  { item: "runway", name: "runway" },
+  { item: "approach", name: "approach" },
+  { item: "hold", name: "hold" },
+  { item: "direct", name: "direct" },
+  { item: "altimeter", name: "altimeter" },
+  { item: "call sign", name: "call sign" },
+  { item: "order", name: "order" },
 ];
 
 /** The parts a clearance has, for the tick to name and the count to go by. */
@@ -44,7 +53,10 @@ export function clearanceParts(c: Clearance): ReadbackItem["item"][] {
 
 /** One line under the read back: a tick for what was read back, a mark
  *  for each part missed or said differently. */
-interface ReadbackLine { ok: boolean; words: string }
+interface ReadbackLine {
+  ok: boolean;
+  words: string;
+}
 
 const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
 
@@ -55,16 +67,19 @@ const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1
  *  iPhone's ReadbackCheck.lines writes them. */
 export function readbackLines(clearance: Clearance, check: { items: ReadbackItem[] }): ReadbackLine[] {
   const has = clearanceParts(clearance);
-  const missed = new Set(check.items.map(i => i.item));
-  const read = READBACK_PARTS.filter(p => has.includes(p.item) && !missed.has(p.item)).map(p => p.name);
+  const missed = new Set(check.items.map((i) => i.item));
+  const read = READBACK_PARTS.filter((p) => has.includes(p.item) && !missed.has(p.item)).map((p) => p.name);
   const lines: ReadbackLine[] = [];
   if (read.length) {
     const list = read.length === 1 ? read[0]! : `${read.slice(0, -1).join(", ")} and ${read.at(-1)}`;
     lines.push({ ok: true, words: `${capital(list)} read back` });
   }
   for (const item of check.items) {
-    const name = capital(READBACK_PARTS.find(p => p.item === item.item)?.name ?? item.item);
-    lines.push({ ok: false, words: item.said !== null ? `${name}: ${item.said} said, ${item.cleared} cleared` : `${name} ${item.cleared} not read back` });
+    const name = capital(READBACK_PARTS.find((p) => p.item === item.item)?.name ?? item.item);
+    lines.push({
+      ok: false,
+      words: item.said !== null ? `${name}: ${item.said} said, ${item.cleared} cleared` : `${name} ${item.cleared} not read back`,
+    });
   }
   return lines;
 }

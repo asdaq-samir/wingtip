@@ -20,7 +20,7 @@ import { TEXT } from "../lib/text";
 import { useAsk } from "../lib/ask/useAsk";
 import { openEmergency } from "../lib/emergencyStore";
 
-const capital = (words: string) => words.replace(/\b[a-z]/g, ch => ch.toUpperCase());
+const capital = (words: string) => words.replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
 /** A place's words as a chip says them: spelled idents as they are. */
 const named = (words: string) => (/[a-z]/.test(words) ? capital(words) : words);
 
@@ -30,7 +30,7 @@ const CHIP = "rounded-full text-tint";
  *  chip's tap starts the readback at once: Safari lets a page listen only
  *  straight from the tap (RadioButton loads it the same way). */
 let listening: typeof import("../lib/atcListening") | null = null;
-const load = () => import("../lib/atcListening").then(m => (listening = m));
+const load = () => import("../lib/atcListening").then((m) => (listening = m));
 
 /**
  * What the app can do of something heard, a tap each -- Direct To the
@@ -43,7 +43,11 @@ const load = () => import("../lib/atcListening").then(m => (listening = m));
  * and checked (lib/readback). Nothing is done until a chip is tapped;
  * `done` puts what was heard away after one.
  */
-function CallActions({ text, done, own = false }: {
+function CallActions({
+  text,
+  done,
+  own = false,
+}: {
   text: string;
   done: () => void;
   /** The pilot's own words from the map's microphone (RadioPill), not a
@@ -52,8 +56,8 @@ function CallActions({ text, done, own = false }: {
   own?: boolean;
 }) {
   const { directTo, fly, enter, route, nearest, showProcedure, planTo } = useRadioActions();
-  const near = useAtcRadio(s => s.near);
-  const mode = useAtcRadio(s => s.mode);
+  const near = useAtcRadio((s) => s.near);
+  const mode = useAtcRadio((s) => s.mode);
   const [busy, setBusy] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   /** What a chip brought, kept in the pill: a field's report. */
@@ -61,7 +65,7 @@ function CallActions({ text, done, own = false }: {
   // The question the Ask chip sent, and its answer as it comes (useAsk):
   // read aloud as it ends, and shown here in the pill meanwhile.
   const [askedId, setAskedId] = useState<number | null>(null);
-  const asked = useAsk(s => (askedId === null ? null : s.turns.find(t => t.id === askedId) ?? null));
+  const asked = useAsk((s) => (askedId === null ? null : (s.turns.find((t) => t.id === askedId) ?? null)));
   const heard = callOf(text, null);
   const { clearance } = heard;
   const commands = useMemo(() => commandsOf(text), [text]);
@@ -71,15 +75,15 @@ function CallActions({ text, done, own = false }: {
     void useAsk.getState().ask(text, { speak: true });
     setAskedId(useAsk.getState().turns.at(-1)?.id ?? null);
   };
-  const altitude = commands.find(c => c.kind === "altitude");
-  const procedure = commands.find(c => c.kind === "procedure");
-  const weather = commands.find(c => c.kind === "weather");
-  const timer = commands.find(c => c.kind === "timer");
-  const destination = commands.find(c => c.kind === "destination");
+  const altitude = commands.find((c) => c.kind === "altitude");
+  const procedure = commands.find((c) => c.kind === "procedure");
+  const weather = commands.find((c) => c.kind === "weather");
+  const timer = commands.find((c) => c.kind === "timer");
+  const destination = commands.find((c) => c.kind === "destination");
   const routed = !!(clearance.limit || clearance.route.length || clearance.asFiled);
   // The pilot's own "mayday", "engine failure", "emergency": the emergency
   // assistant at once, no chip to find first; heard on the radio, a chip.
-  const emergency = commands.some(c => c.kind === "emergency");
+  const emergency = commands.some((c) => c.kind === "emergency");
   useEffect(() => {
     if (own && emergency) openEmergency("voice");
   }, [own, emergency]);
@@ -125,22 +129,48 @@ function CallActions({ text, done, own = false }: {
     }
     setBusy(null);
   };
-  const setTimer = (from: number | null) => useAtcRadio.setState(s => ({ pill: s.pill && { ...s.pill, timerFrom: from } }));
+  const setTimer = (from: number | null) => useAtcRadio.setState((s) => ({ pill: s.pill && { ...s.pill, timerFrom: from } }));
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 pt-1 pr-2">
         {heard.direct && directTo && (
-          <Button size="sm" variant="secondary" className={CHIP} disabled={!!busy} data-testid="radio-direct" onClick={() => void run("direct", () => directTo(heard.direct!))}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            disabled={!!busy}
+            data-testid="radio-direct"
+            onClick={() => void run("direct", () => directTo(heard.direct!))}
+          >
             Direct To {named(heard.direct)}
           </Button>
         )}
         {emergency && (
-          <Button size="sm" variant="secondary" className={cn(CHIP, "text-destructive")} data-testid="radio-emergency" onClick={() => { openEmergency("voice"); done(); }}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className={cn(CHIP, "text-destructive")}
+            data-testid="radio-emergency"
+            onClick={() => {
+              openEmergency("voice");
+              done();
+            }}
+          >
             Emergency
           </Button>
         )}
-        {commands.some(c => c.kind === "nearest") && nearest && (
-          <Button size="sm" variant="secondary" className={CHIP} disabled={!!busy} data-testid="radio-nearest" onClick={() => { nearest(); done(); }}>
+        {commands.some((c) => c.kind === "nearest") && nearest && (
+          <Button
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            disabled={!!busy}
+            data-testid="radio-nearest"
+            onClick={() => {
+              nearest();
+              done();
+            }}
+          >
             Nearest Airports
           </Button>
         )}
@@ -148,90 +178,175 @@ function CallActions({ text, done, own = false }: {
             where it would replace the route there is (the owner's
             screenshot, 2026-11-03, the pill offering nothing for it). */}
         {destination && planTo && (
-          <Button size="sm" variant="secondary" className={CHIP} disabled={!!busy} data-testid="radio-plan" onClick={() => void run("plan", () => planTo(destination.place))}>
-            {route.dest ? "Replace the route: plan to " : "Plan to "}{named(destination.place)}
+          <Button
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            disabled={!!busy}
+            data-testid="radio-plan"
+            onClick={() => void run("plan", () => planTo(destination.place))}
+          >
+            {route.dest ? "Replace the route: plan to " : "Plan to "}
+            {named(destination.place)}
           </Button>
         )}
         {altitude && clearance.maintainFt === null && fly && (
-          <Button size="sm" variant="secondary" className={CHIP} disabled={!!busy} data-testid="radio-fly" onClick={() => { fly(altitude.ft); done(); }}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            disabled={!!busy}
+            data-testid="radio-fly"
+            onClick={() => {
+              fly(altitude.ft);
+              done();
+            }}
+          >
             Fly {altitudeWords(altitude.ft)}
           </Button>
         )}
         {procedure && showProcedure && (
           <Button
-            size="sm" variant="secondary" className={CHIP} disabled={!!busy} data-testid="radio-procedure"
-            onClick={() => void run("procedure", async () => {
-              const at = await fieldOf(procedure.field);
-              return "why" in at ? at.why : showProcedure(at.ident, procedure.approach, procedure.runway);
-            })}
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            disabled={!!busy}
+            data-testid="radio-procedure"
+            onClick={() =>
+              void run("procedure", async () => {
+                const at = await fieldOf(procedure.field);
+                return "why" in at ? at.why : showProcedure(at.ident, procedure.approach, procedure.runway);
+              })
+            }
           >
-            {procedure.approach}{procedure.runway ? ` ${procedure.runway}` : ""}{procedure.field ? ` at ${named(procedure.field)}` : ""}
+            {procedure.approach}
+            {procedure.runway ? ` ${procedure.runway}` : ""}
+            {procedure.field ? ` at ${named(procedure.field)}` : ""}
           </Button>
         )}
         {weather && (
-          <Button size="sm" variant="secondary" className={CHIP} disabled={!!busy} data-testid="radio-weather" onClick={() => void tellWeather(weather.field)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            disabled={!!busy}
+            data-testid="radio-weather"
+            onClick={() => void tellWeather(weather.field)}
+          >
             Weather{weather.field ? ` at ${named(weather.field)}` : ""}
           </Button>
         )}
         {timer && (
-          <Button size="sm" variant="secondary" className={CHIP} data-testid="radio-timer" onClick={() => setTimer(timer.start ? Date.now() : null)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            data-testid="radio-timer"
+            onClick={() => setTimer(timer.start ? Date.now() : null)}
+          >
             {timer.start ? "Start Timer" : "Stop Timer"}
           </Button>
         )}
         {heardAny(clearance) && mode === "once" && (
           <Button
-            size="sm" variant="secondary" className={CHIP} disabled={!!busy} data-testid="radio-readback"
-            onClick={() => (listening ? void listening.listenOnce([], text) : void load().then(m => m.listenOnce([], text)))}
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            disabled={!!busy}
+            data-testid="radio-readback"
+            onClick={() => (listening ? void listening.listenOnce([], text) : void load().then((m) => m.listenOnce([], text)))}
           >
             Read Back
           </Button>
         )}
         {routed && enter && (
           <Button
-            size="sm" variant="secondary" className={CHIP} disabled={!!busy} data-testid="radio-route"
-            onClick={() => void run("route", async () => {
-              const asked = placesAsked(clearance);
-              try {
-                const wants = asked.limit || asked.route.length || asked.departure || asked.arrival;
-                const found = wants ? ((await api.clearancePlaces({ ...asked, near, dep: route.dep || null, dest: route.dest || null })) as Found) : {};
-                const unfound = [found.limit, ...(found.route ?? []).flat()].filter(p => p && !p.ident).map(p => `“${p!.said}”`);
-                if (unfound.length) return `${unfound.join(", ")} not found: open the log to check it.`;
-                const entered = clearedRoute(text, found, route);
-                enter(entered.route, entered.typed, clearance.vfr ? null : clearance.expectFt ?? clearance.maintainFt);
-                return null;
-              } catch {
-                return "The places in it could not be looked up; check the connection.";
-              }
-            })}
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            disabled={!!busy}
+            data-testid="radio-route"
+            onClick={() =>
+              void run("route", async () => {
+                const asked = placesAsked(clearance);
+                try {
+                  const wants = asked.limit || asked.route.length || asked.departure || asked.arrival;
+                  const found = wants
+                    ? ((await api.clearancePlaces({ ...asked, near, dep: route.dep || null, dest: route.dest || null })) as Found)
+                    : {};
+                  const unfound = [found.limit, ...(found.route ?? []).flat()].filter((p) => p && !p.ident).map((p) => `“${p!.said}”`);
+                  if (unfound.length) return `${unfound.join(", ")} not found: open the log to check it.`;
+                  const entered = clearedRoute(text, found, route);
+                  enter(entered.route, entered.typed, clearance.vfr ? null : (clearance.expectFt ?? clearance.maintainFt));
+                  return null;
+                } catch {
+                  return "The places in it could not be looked up; check the connection.";
+                }
+              })
+            }
           >
             Enter Route
           </Button>
         )}
         {clearance.maintainFt !== null && !clearance.vfr && fly && (
-          <Button size="sm" variant="secondary" className={CHIP} disabled={!!busy} data-testid="radio-fly" onClick={() => { fly(clearance.maintainFt!); done(); }}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            disabled={!!busy}
+            data-testid="radio-fly"
+            onClick={() => {
+              fly(clearance.maintainFt!);
+              done();
+            }}
+          >
             Fly {altitudeWords(clearance.maintainFt)}
           </Button>
         )}
         {clearance.frequency && (
-          <Button size="sm" variant="secondary" className={CHIP} data-testid="radio-frequency"
-            onClick={() => void navigator.clipboard?.writeText(clearance.frequency!).catch(() => {})}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className={CHIP}
+            data-testid="radio-frequency"
+            onClick={() => void navigator.clipboard?.writeText(clearance.frequency!).catch(() => {})}
+          >
             Copy {clearance.frequency}
           </Button>
         )}
         {clearance.squawk && <span className={cn("font-semibold", TEXT.detail)}>Squawk {clearance.squawk}</span>}
         {askable && !asked && (
-          <Button size="sm" variant="secondary" className={cn(CHIP, "max-w-full")} disabled={!!busy} data-testid="radio-ask" onClick={askIt}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className={cn(CHIP, "max-w-full")}
+            disabled={!!busy}
+            data-testid="radio-ask"
+            onClick={askIt}
+          >
             <span className="truncate">Ask: “{text}”</span>
           </Button>
         )}
       </div>
       {asked && (
-        <p className={cn("pt-1 pr-2 tabular-nums whitespace-pre-wrap", asked.error ? "text-destructive-ink" : "", TEXT.note)} role="status" data-testid="radio-ask-answer">
-          {asked.status ? `${asked.status}…` : asked.error ?? asked.answer}
+        <p
+          className={cn("pt-1 pr-2 tabular-nums whitespace-pre-wrap", asked.error ? "text-destructive-ink" : "", TEXT.note)}
+          role="status"
+          data-testid="radio-ask-answer"
+        >
+          {asked.status ? `${asked.status}…` : (asked.error ?? asked.answer)}
         </p>
       )}
-      {note && <p className={cn("pt-1 pr-2 font-mono", TEXT.note)} data-testid="radio-note">{note}</p>}
-      {problem && <p className={cn("pt-1 pr-2 text-destructive-ink", TEXT.note)} role="status">{problem}</p>}
+      {note && (
+        <p className={cn("pt-1 pr-2 font-mono", TEXT.note)} data-testid="radio-note">
+          {note}
+        </p>
+      )}
+      {problem && (
+        <p className={cn("pt-1 pr-2 text-destructive-ink", TEXT.note)} role="status">
+          {problem}
+        </p>
+      )}
     </>
   );
 }
@@ -241,7 +356,11 @@ function CallActions({ text, done, own = false }: {
 function ReadbackLine({ cleared, said }: { cleared: string; said: string }) {
   const { items, words } = useMemo(() => readbackCheck(cleared, said), [cleared, said]);
   return (
-    <p className={cn("pt-1 pr-2", items.length ? "text-caution-ink" : "text-muted-foreground", TEXT.note)} role="status" data-testid="radio-readback-check">
+    <p
+      className={cn("pt-1 pr-2", items.length ? "text-caution-ink" : "text-muted-foreground", TEXT.note)}
+      role="status"
+      data-testid="radio-readback-check"
+    >
       {words}
     </p>
   );
@@ -258,10 +377,12 @@ function ReadbackLine({ cleared, said }: { cleared: string; said: string }) {
  * once put away. The Radio card, the log, a tap on the words away.
  */
 export function RadioPill() {
-  const pill = useAtcRadio(s => s.pill)!;
-  const input = useAtcRadio(s => s.input);
+  const pill = useAtcRadio((s) => s.pill)!;
+  const input = useAtcRadio((s) => s.input);
   const away = () => useAtcRadio.setState({ pill: null });
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
   const readback = pill.readbackOf ?? null;
   // The input chosen gone while listening: said in the line, as an error is.
   const lost = pill.listening && input?.lost ? lostWords(input) : null;
@@ -272,24 +393,39 @@ export function RadioPill() {
   // as they were.
   const name = heardThrough(input);
   const chosen = chosenOutside(input);
-  const waiting = readback ? "Read it back…" : name ? `Listening through ${name}…` : chosen ? `Listening with ${chosen} chosen…` : "Listening…";
+  const waiting = readback
+    ? "Read it back…"
+    : name
+      ? `Listening through ${name}…`
+      : chosen
+        ? `Listening with ${chosen} chosen…`
+        : "Listening…";
   return (
     <div className="min-w-0 py-1 px-1" data-testid="radio-pill">
       <div className="flex items-center gap-2">
         <button
-          type="button" className={cn("min-w-0 flex-1 py-1 text-left outline-none focus-visible:underline", TEXT.detail)}
-          aria-label="Open the radio's log" data-testid="radio-pill-text"
+          type="button"
+          className={cn("min-w-0 flex-1 py-1 text-left outline-none focus-visible:underline", TEXT.detail)}
+          aria-label="Open the radio's log"
+          data-testid="radio-pill-text"
           onClick={() => useAtcRadio.setState({ cardOpen: true, cardText: pill.text || null })}
         >
-          <span aria-live="polite" className={cn(!pill.text && "text-muted-foreground", (pill.error || lost) && !pill.text && "text-caution-ink")}>
+          <span
+            aria-live="polite"
+            className={cn(!pill.text && "text-muted-foreground", (pill.error || lost) && !pill.text && "text-caution-ink")}
+          >
             {pill.text || pill.error || lost || waiting}
           </span>
         </button>
         {!pill.listening && <CloseButton label="Put away" onClick={away} data-testid="radio-pill-close" />}
       </div>
       {/* A readback heard: how it matched, in place of the chips. */}
-      {!pill.listening && pill.text && (readback ? <ReadbackLine cleared={readback} said={pill.text} /> : <CallActions text={pill.text} done={away} own />)}
-      {pill.timerFrom != null && <Timer from={pill.timerFrom} onStop={() => useAtcRadio.setState(s => ({ pill: s.pill && { ...s.pill, timerFrom: null } }))} />}
+      {!pill.listening &&
+        pill.text &&
+        (readback ? <ReadbackLine cleared={readback} said={pill.text} /> : <CallActions text={pill.text} done={away} own />)}
+      {pill.timerFrom != null && (
+        <Timer from={pill.timerFrom} onStop={() => useAtcRadio.setState((s) => ({ pill: s.pill && { ...s.pill, timerFrom: null } }))} />
+      )}
     </div>
   );
 }
@@ -303,19 +439,29 @@ function RadioCall({ call }: { call: Transmission }) {
   // With the radio listened to on and on, the pilot's readback is the
   // next transmission heard with a clearance's items in it, not to us:
   // checked against the call as it settles (lib/readback).
-  const heard = useAtcRadio(s => s.heard);
+  const heard = useAtcRadio((s) => s.heard);
   const readback = useMemo(
-    () => (heardAny(readClearance(call.text)) ? heard.find(t => t.id > call.id && t.final && !t.forUs && heardAny(readClearance(t.text))) ?? null : null),
+    () =>
+      heardAny(readClearance(call.text))
+        ? (heard.find((t) => t.id > call.id && t.final && !t.forUs && heardAny(readClearance(t.text))) ?? null)
+        : null,
     [heard, call],
   );
   // Said to a screen reader at once, once a call (lib/announce): a role="alert"
   // arriving whole is not read by every reader.
   useAnnounce(`ATC: ${call.text}`, "assertive");
   return (
-    <div className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-[22px] py-2 pr-1 pl-3")} role="region" aria-label="Call from ATC" data-testid="radio-call">
+    <div
+      className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-[22px] py-2 pr-1 pl-3")}
+      role="region"
+      aria-label="Call from ATC"
+      data-testid="radio-call"
+    >
       <div className="flex items-start gap-2">
         <Radio className="mt-1 size-5 shrink-0 text-tint" aria-hidden="true" />
-        <p className={cn("min-w-0 flex-1 font-semibold", TEXT.detail)} data-testid="radio-call-text">{call.text}</p>
+        <p className={cn("min-w-0 flex-1 font-semibold", TEXT.detail)} data-testid="radio-call-text">
+          {call.text}
+        </p>
         <CloseButton label="Put away" onClick={done} data-testid="radio-call-close" />
       </div>
       <CallActions text={call.text} done={done} />
@@ -338,26 +484,45 @@ function RadioCaptions() {
   const lost = input?.lost ? lostWords(input) : null;
   return (
     <button
-      type="button" data-testid="radio-captions"
+      type="button"
+      data-testid="radio-captions"
       aria-label={listening ? "What the radio is saying: open the log" : "Radio: open the log"}
-      onClick={() => useAtcRadio.setState(s => ({ cardOpen: true, cardText: [...s.heard].reverse().find(t => t.final)?.text ?? s.cardText }))}
-      className={cn(GLASS, "pointer-events-auto flex w-full max-w-md items-start gap-2 rounded-[22px] px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+      onClick={() =>
+        useAtcRadio.setState((s) => ({ cardOpen: true, cardText: [...s.heard].reverse().find((t) => t.final)?.text ?? s.cardText }))
+      }
+      className={cn(
+        GLASS,
+        "pointer-events-auto flex w-full max-w-md items-start gap-2 rounded-[22px] px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      )}
     >
       {/* While an input is metered its level, in the glyph's place and
           size; the bars narrowed to fit the glyph's 20 points. */}
-      {listening && input && !input.lost
-        ? <Waveform live className="mt-0.5 size-5 shrink-0 justify-center [&>span]:w-0.5" />
-        : <Mic className={cn("mt-0.5 size-5 shrink-0", listening ? "animate-pulse text-tint" : "text-muted-foreground")} aria-hidden="true" />}
+      {listening && input && !input.lost ? (
+        <Waveform live className="mt-0.5 size-5 shrink-0 justify-center [&>span]:w-0.5" />
+      ) : (
+        <Mic className={cn("mt-0.5 size-5 shrink-0", listening ? "animate-pulse text-tint" : "text-muted-foreground")} aria-hidden="true" />
+      )}
       <span className={cn("flex min-w-0 flex-1 flex-col", TEXT.detail)} aria-live="polite">
         {error && <span className="text-caution-ink">{error}</span>}
-        {!error && lost && <span className="text-caution-ink" data-testid="radio-captions-lost">{lost}</span>}
-        {!error && !lost && !lines.length && (
-          <span className="text-muted-foreground">
-            {name ? `Listening to the radio through ${name}…` : chosen ? `Listening to the radio with ${chosen} chosen…` : "Listening to the radio…"}
+        {!error && lost && (
+          <span className="text-caution-ink" data-testid="radio-captions-lost">
+            {lost}
           </span>
         )}
-        {lines.map(t => (
-          <span key={t.id} className={cn("line-clamp-2", t.forUs ? "font-semibold text-tint" : "text-foreground", !t.final && "opacity-80")}>
+        {!error && !lost && !lines.length && (
+          <span className="text-muted-foreground">
+            {name
+              ? `Listening to the radio through ${name}…`
+              : chosen
+                ? `Listening to the radio with ${chosen} chosen…`
+                : "Listening to the radio…"}
+          </span>
+        )}
+        {lines.map((t) => (
+          <span
+            key={t.id}
+            className={cn("line-clamp-2", t.forUs ? "font-semibold text-tint" : "text-foreground", !t.final && "opacity-80")}
+          >
             {t.text}
           </span>
         ))}
@@ -372,8 +537,8 @@ function RadioCaptions() {
 export default function RadioLayer() {
   const call = useAtcRadio(callToUs);
   // With the ATC copilot on, a call to us is its card (features/atc).
-  const atc = useAtcListen(s => s.value !== "off");
-  const captions = useAtcRadio(s => s.mode === "radio" || (!!s.error && s.mode !== "once" && s.pill === null));
+  const atc = useAtcListen((s) => s.value !== "off");
+  const captions = useAtcRadio((s) => s.mode === "radio" || (!!s.error && s.mode !== "once" && s.pill === null));
   // The microphone's pill is the mic's own circle grown (RadioPill, in
   // MapControls), not a line here.
   return (

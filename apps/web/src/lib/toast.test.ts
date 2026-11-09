@@ -2,11 +2,22 @@ import { describe, expect, it, vi } from "vitest";
 
 const calls: string[] = [];
 vi.mock("sonner", () => ({
-  toast: Object.assign((message: string) => { calls.push(`toast ${message}`); }, {
-    success: (message: string) => { calls.push(`success ${message}`); },
-    loading: (message: string) => { calls.push(`loading ${message}`); },
-    dismiss: (id?: string) => { calls.push(`dismiss ${id}`); },
-  }),
+  toast: Object.assign(
+    (message: string) => {
+      calls.push(`toast ${message}`);
+    },
+    {
+      success: (message: string) => {
+        calls.push(`success ${message}`);
+      },
+      loading: (message: string) => {
+        calls.push(`loading ${message}`);
+      },
+      dismiss: (id?: string) => {
+        calls.push(`dismiss ${id}`);
+      },
+    },
+  ),
 }));
 
 describe("lib/toast", () => {
@@ -22,7 +33,7 @@ describe("lib/toast", () => {
     toast.success("Link copied");
     toast("Route changed");
     await loadToasts();
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(calls).toEqual(["loading Drawing course", "dismiss progress", "success Link copied", "toast Route changed"]);
   });
 });

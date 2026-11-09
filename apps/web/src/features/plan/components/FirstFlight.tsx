@@ -20,7 +20,11 @@ import type { RouteParts } from "./RouteBox";
  * tip points at the Brief (lib/firstRunTips "brief"). Where the app has no
  * position and no last departure, a second field asks where from.
  */
-export default function FirstFlight({ routed, onPlan, onPlanned }: {
+export default function FirstFlight({
+  routed,
+  onPlan,
+  onPlanned,
+}: {
   routed: boolean;
   onPlan: (parts: RouteParts) => void;
   onPlanned: () => void;
@@ -32,7 +36,8 @@ export default function FirstFlight({ routed, onPlan, onPlanned }: {
   const ready = !!dest && (!needsFrom || !!from);
   return (
     <section
-      aria-labelledby="first-flight-title" data-testid="first-flight"
+      aria-labelledby="first-flight-title"
+      data-testid="first-flight"
       // Over the map, up from the sheet's pill (--map-inset-bottom, as the
       // map's buttons stand off it), in from the screen's sides as the
       // sheet is; one column on a phone, the sheet's width beside it.
@@ -42,7 +47,9 @@ export default function FirstFlight({ routed, onPlan, onPlanned }: {
     >
       <div className="flex items-center gap-2.5">
         <Plane className="size-6 shrink-0 text-tint" aria-hidden />
-        <h2 id="first-flight-title" className={cn("min-w-0 flex-1 font-semibold", TEXT.heading)}>Your first flight</h2>
+        <h2 id="first-flight-title" className={cn("min-w-0 flex-1 font-semibold", TEXT.heading)}>
+          Your first flight
+        </h2>
         <CloseButton label="Not now" className="-my-1 -mr-1" onClick={dismiss} data-testid="first-flight-close" />
       </div>
       <p className={cn("text-foreground/80", TEXT.prose)}>
@@ -50,17 +57,36 @@ export default function FirstFlight({ routed, onPlan, onPlanned }: {
       </p>
       <AirportField label="Destination" placeholder="Airport, town or ident" picked={dest} onPick={setDest} testId="first-flight-dest" />
       {needsFrom && (
-        <AirportField label="From" placeholder="Where you take off" icon={MapPin} picked={from} onPick={setFrom} testId="first-flight-from" />
+        <AirportField
+          label="From"
+          placeholder="Where you take off"
+          icon={MapPin}
+          picked={from}
+          onPick={setFrom}
+          testId="first-flight-from"
+        />
       )}
-      {problem && <p role="alert" className={cn("text-destructive", TEXT.detail)} data-testid="first-flight-problem">{problem}</p>}
+      {problem && (
+        <p role="alert" className={cn("text-destructive", TEXT.detail)} data-testid="first-flight-problem">
+          {problem}
+        </p>
+      )}
       <Button
-        type="button" size="lg" className="h-12 rounded-[14px] font-semibold" disabled={!ready || planning}
-        onClick={() => { if (dest) void planIt(dest.ident, from?.ident ?? null); }} data-testid="first-flight-plan"
+        type="button"
+        size="lg"
+        className="h-12 rounded-[14px] font-semibold"
+        disabled={!ready || planning}
+        onClick={() => {
+          if (dest) void planIt(dest.ident, from?.ident ?? null);
+        }}
+        data-testid="first-flight-plan"
       >
         {planning ? "Planning…" : "Plan it"}
       </Button>
       <ol className={cn("flex flex-wrap gap-x-2 text-muted-foreground", TEXT.note)} aria-label="The three steps">
-        <li><span className="font-semibold text-foreground">Step 1 of 3 · Route</span></li>
+        <li>
+          <span className="font-semibold text-foreground">Step 1 of 3 · Route</span>
+        </li>
         <li aria-hidden>·</li>
         <li>Nav log</li>
         <li aria-hidden>·</li>

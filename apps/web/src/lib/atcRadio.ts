@@ -82,7 +82,17 @@ export interface HeardInput {
 }
 
 export const useAtcRadio = create<AtcRadio>(() => ({
-  listening: false, error: null, heard: [], seen: null, cardOpen: false, cardText: null, tail: null, near: "", mode: null, pill: null, input: null,
+  listening: false,
+  error: null,
+  heard: [],
+  seen: null,
+  cardOpen: false,
+  cardText: null,
+  tail: null,
+  near: "",
+  mode: null,
+  pill: null,
+  input: null,
   atisStop: null,
 }));
 
@@ -137,7 +147,9 @@ export const inputLevel = {
   listen(fn: LevelListener): () => void {
     levelListeners.add(fn);
     if (lastLevel !== null) fn(lastLevel);
-    return () => { levelListeners.delete(fn); };
+    return () => {
+      levelListeners.delete(fn);
+    };
   },
   emit(level: number | null) {
     lastLevel = level;
@@ -147,12 +159,16 @@ export const inputLevel = {
 
 /** The newest call to us not yet put away, settled. */
 export function callToUs(s: Pick<AtcRadio, "heard" | "seen">): Transmission | null {
-  const last = [...s.heard].reverse().find(t => t.forUs && t.final);
+  const last = [...s.heard].reverse().find((t) => t.forUs && t.final);
   return last && last.id !== s.seen ? last : null;
 }
 
 /** A route as the plan has it: either end may be missing. */
-export interface PlannedRoute { dep: string; stops: string[]; dest: string }
+export interface PlannedRoute {
+  dep: string;
+  stops: string[];
+  dest: string;
+}
 
 /** What the radio can be acted on with, from the plan (PlanWorkspace): a
  *  direct to a place as said, which answers why not where it cannot; an
@@ -171,4 +187,12 @@ export const useRadioActions = create<{
    *  the route's departure or from where the airplane is; answers why it
    *  could not be. */
   planTo: ((place: string) => Promise<string | null>) | null;
-}>(() => ({ directTo: null, fly: null, route: { dep: "", stops: [], dest: "" }, enter: null, nearest: null, showProcedure: null, planTo: null }));
+}>(() => ({
+  directTo: null,
+  fly: null,
+  route: { dep: "", stops: [], dest: "" },
+  enter: null,
+  nearest: null,
+  showProcedure: null,
+  planTo: null,
+}));

@@ -20,31 +20,41 @@ async function changeDestination(page: Page) {
 }
 
 async function slowSearch(page: Page, heldFor: string) {
-  await page.route(url => url.pathname.endsWith("/airports/index"), route => route.fulfill({ status: 503, body: "" }));
-  await page.route("**/airports/search?**", async route => {
+  await page.route(
+    (url) => url.pathname.endsWith("/airports/index"),
+    (route) => route.fulfill({ status: 503, body: "" }),
+  );
+  await page.route("**/airports/search?**", async (route) => {
     const q = new URL(route.request().url()).searchParams.get("q") ?? "";
-    if (q.toUpperCase() === heldFor) await new Promise(resolve => setTimeout(resolve, 3000));
-    const airports = q.toUpperCase() === "KD"
-      ? [airport("KDAA", "First KD field"), airport("KDLH", "Duluth International")]
-      : q.toUpperCase().startsWith("KDLH") ? [airport("KDLH", "Duluth International")] : [];
+    if (q.toUpperCase() === heldFor) await new Promise((resolve) => setTimeout(resolve, 3000));
+    const airports =
+      q.toUpperCase() === "KD"
+        ? [airport("KDAA", "First KD field"), airport("KDLH", "Duluth International")]
+        : q.toUpperCase().startsWith("KDLH")
+          ? [airport("KDLH", "Duluth International")]
+          : [];
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ airports }) });
   });
 }
 
-test("Enter before the lookup has answered keeps what was typed, not the first row of an older answer", { tag: "@smoke" }, async ({ page }) => {
-  await slowSearch(page, "KDLH");
-  await page.goto("/app/plan?dep=C81&dest=KMSP");
-  await openPanel(page);
-  const destination = page.getByLabel("Destination", { exact: true });
-  await changeDestination(page);
-  const box = page.getByPlaceholder("Search for a destination");
-  await box.fill("KD");
-  await expect(page.getByRole("option", { name: /KDAA/ })).toBeVisible();
+test(
+  "Enter before the lookup has answered keeps what was typed, not the first row of an older answer",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    await slowSearch(page, "KDLH");
+    await page.goto("/app/plan?dep=C81&dest=KMSP");
+    await openPanel(page);
+    const destination = page.getByLabel("Destination", { exact: true });
+    await changeDestination(page);
+    const box = page.getByPlaceholder("Search for a destination");
+    await box.fill("KD");
+    await expect(page.getByRole("option", { name: /KDAA/ })).toBeVisible();
 
-  await box.pressSequentially("LH");
-  await box.press("Enter");
-  await expect(destination).toContainText("KDLH");
-});
+    await box.pressSequentially("LH");
+    await box.press("Enter");
+    await expect(destination).toContainText("KDLH");
+  },
+);
 
 test("once the rows answer the box, Enter takes the highlighted row", async ({ page }) => {
   await slowSearch(page, "");
@@ -63,19 +73,20 @@ test("once the rows answer the box, Enter takes the highlighted row", async ({ p
 
 /** How a search's row is drawn: its height, its ident's weight, its two
  *  lines' sizes and the town's grey. */
-const rowLook = (row: Locator) => row.evaluate(el => {
-  const lines = [...el.querySelectorAll<HTMLElement>("span.block")];
-  const ident = el.querySelector<HTMLElement>(".font-mono")!;
-  return {
-    height: Math.round(el.getBoundingClientRect().height),
-    ident: getComputedStyle(ident).fontWeight,
-    lines: lines.length,
-    name: getComputedStyle(lines[0]!).fontSize,
-    // In the grey of the surface it is on: the sheet's grey is a shade
-    // darker for its glass than a menu's over the map (index.css).
-    town: lines[1] ? [getComputedStyle(lines[1]).fontSize, lines[1].classList.contains("text-muted-foreground")] : null,
-  };
-});
+const rowLook = (row: Locator) =>
+  row.evaluate((el) => {
+    const lines = [...el.querySelectorAll<HTMLElement>("span.block")];
+    const ident = el.querySelector<HTMLElement>(".font-mono")!;
+    return {
+      height: Math.round(el.getBoundingClientRect().height),
+      ident: getComputedStyle(ident).fontWeight,
+      lines: lines.length,
+      name: getComputedStyle(lines[0]!).fontSize,
+      // In the grey of the surface it is on: the sheet's grey is a shade
+      // darker for its glass than a menu's over the map (index.css).
+      town: lines[1] ? [getComputedStyle(lines[1]).fontSize, lines[1].classList.contains("text-muted-foreground")] : null,
+    };
+  });
 
 test("the route box's suggestions are the airport search's own rows, the typing kept in the box", async ({ page }, info) => {
   // One list for both (AirportResults): the route box's was a short list

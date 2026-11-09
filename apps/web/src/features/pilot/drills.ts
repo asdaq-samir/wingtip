@@ -45,13 +45,21 @@ export type DeckKey = "light-gun" | "vfr-minimums";
 let decks: Record<DeckKey, Deck> | null = null;
 
 export function deckOf(key: DeckKey): Deck {
-  decks ??= Object.fromEntries(callEngine("drill_decks", {}).map(d => [d.key, {
-    ...d,
-    cards: d.cards.map(c => ({
-      id: c.id, prompt: c.prompt, answer: c.answer, detail: c.detail ?? undefined,
-      light: c.colours.length ? { colors: c.colours, flashing: c.flashing } : undefined,
-    })),
-  }])) as Record<DeckKey, Deck>;
+  decks ??= Object.fromEntries(
+    callEngine("drill_decks", {}).map((d) => [
+      d.key,
+      {
+        ...d,
+        cards: d.cards.map((c) => ({
+          id: c.id,
+          prompt: c.prompt,
+          answer: c.answer,
+          detail: c.detail ?? undefined,
+          light: c.colours.length ? { colors: c.colours, flashing: c.flashing } : undefined,
+        })),
+      },
+    ]),
+  ) as Record<DeckKey, Deck>;
   return decks[key];
 }
 
@@ -74,12 +82,12 @@ export function answered(progress: Progress, cardId: string, knew: boolean, now:
  *  lowest box first, in the deck's order within a box. */
 export function dueCards(deck: Deck, progress: Progress, now: number): Card[] {
   const at = (c: Card) => progress[c.id] ?? { box: 0, due: 0 };
-  return deck.cards.filter(c => at(c).due <= now).sort((a, b) => at(a).box - at(b).box);
+  return deck.cards.filter((c) => at(c).due <= now).sort((a, b) => at(a).box - at(b).box);
 }
 
 /** When the next card comes due, or null where none is waiting. */
 export function nextDue(deck: Deck, progress: Progress, now: number): number | null {
-  const later = deck.cards.map(c => progress[c.id]?.due ?? 0).filter(due => due > now);
+  const later = deck.cards.map((c) => progress[c.id]?.due ?? 0).filter((due) => due > now);
   return later.length ? Math.min(...later) : null;
 }
 

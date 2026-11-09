@@ -26,7 +26,14 @@ interface TabSearch {
 }
 
 export const useTabSearch = create<TabSearch>(() => ({
-  aircraft: "", near: "", submitAircraft: null, submitNear: null, clearNear: null, pickingMine: false, pickingFavorite: false, focusAircraft: null,
+  aircraft: "",
+  near: "",
+  submitAircraft: null,
+  submitNear: null,
+  clearNear: null,
+  pickingMine: false,
+  pickingFavorite: false,
+  focusAircraft: null,
 }));
 
 /** A kept airplane picked -- a Recent, a Favorite, one found -- kept as the
@@ -41,7 +48,7 @@ export function pickKeptAircraft(kept: KeptAircraft, open: (hex: string) => void
     useTabSearch.setState({ pickingMine: false, aircraft: "" });
   } else if (pickingFavorite) {
     const prefs = usePreferences.getState();
-    if (!prefs.favoriteAircraft.some(a => a.hex === kept.hex)) prefs.toggleFavoriteAircraft(kept);
+    if (!prefs.favoriteAircraft.some((a) => a.hex === kept.hex)) prefs.toggleFavoriteAircraft(kept);
     useTabSearch.setState({ pickingFavorite: false, aircraft: "" });
   } else open(kept.hex);
 }

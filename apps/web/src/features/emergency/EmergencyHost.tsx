@@ -9,7 +9,11 @@ const EmergencySheet = lazy(() => import("./EmergencySheet"));
  *  while it is open: its hook follows own ship and asks the planner, so
  *  shut it costs nothing. */
 export default function EmergencyHost() {
-  const open = useEmergencyOpen(s => s.open);
+  const open = useEmergencyOpen((s) => s.open);
   if (!open) return null;
-  return <Suspense fallback={null}><EmergencySheet /></Suspense>;
+  return (
+    <Suspense fallback={null}>
+      <EmergencySheet />
+    </Suspense>
+  );
 }

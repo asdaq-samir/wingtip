@@ -8,13 +8,16 @@ import { openTab, settle, sideDrawer, slow } from "./helpers";
  * an easterly at 14 kt, whatever the field reports now.
  */
 async function easterly(page: Page, asked: string[] = []) {
-  await page.route(url => /\/airport\/[^/]+\/forecast-wind$/.test(url.pathname), route => {
-    const ident = new URL(route.request().url()).pathname.split("/").at(-2)!;
-    asked.push(ident);
-    return route.fulfill({
-      json: { ident, distance_nm: 0, dir_true_deg: 90, speed_kt: 14, gust_kt: null, valid_from: 0, valid_to: 4_000_000_000 },
-    });
-  });
+  await page.route(
+    (url) => /\/airport\/[^/]+\/forecast-wind$/.test(url.pathname),
+    (route) => {
+      const ident = new URL(route.request().url()).pathname.split("/").at(-2)!;
+      asked.push(ident);
+      return route.fulfill({
+        json: { ident, distance_nm: 0, dir_true_deg: 90, speed_kt: 14, gust_kt: null, valid_from: 0, valid_to: 4_000_000_000 },
+      });
+    },
+  );
 }
 
 const depart = () => encodeURIComponent(new Date(Date.now() + 3 * 60 * 60_000).toISOString());

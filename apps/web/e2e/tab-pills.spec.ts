@@ -14,7 +14,7 @@ import { grabberTo, settle, settled, showTabs, sideDrawer, stripShows } from "./
 const KDLH = { ident: "KDLH", name: "Duluth International Airport", municipality: "Duluth", lat: 46.842, lon: -92.194 };
 
 async function keep(page: Page, state: Record<string, unknown>) {
-  await page.addInitScript(kept => {
+  await page.addInitScript((kept) => {
     if (sessionStorage.getItem("pills-seeded")) return;
     sessionStorage.setItem("pills-seeded", "1");
     localStorage.setItem("wingtip.preferences", JSON.stringify({ state: kept, version: 0 }));
@@ -30,12 +30,15 @@ async function swipeAcross(page: Page, by: number) {
   const row = (await panel.getByTestId("tab-bar").locator("xpath=..").boundingBox())!;
   const x0 = by > 0 ? row.x + 5 : row.x + row.width - 5;
   const y = row.y + row.height / 2;
-  await panel.evaluate((el, [from, to, at]) => {
-    const target = document.elementFromPoint(from, at) ?? el;
-    const opts = { bubbles: true, cancelable: true, composed: true, isPrimary: true, pointerId: 7, pointerType: "touch" };
-    target.dispatchEvent(new PointerEvent("pointerdown", { ...opts, clientX: from, clientY: at }));
-    target.dispatchEvent(new PointerEvent("pointerup", { ...opts, clientX: to, clientY: at + 4 }));
-  }, [x0, x0 + by, y]);
+  await panel.evaluate(
+    (el, [from, to, at]) => {
+      const target = document.elementFromPoint(from, at) ?? el;
+      const opts = { bubbles: true, cancelable: true, composed: true, isPrimary: true, pointerId: 7, pointerType: "touch" };
+      target.dispatchEvent(new PointerEvent("pointerdown", { ...opts, clientX: from, clientY: at }));
+      target.dispatchEvent(new PointerEvent("pointerup", { ...opts, clientX: to, clientY: at + 4 }));
+    },
+    [x0, x0 + by, y],
+  );
 }
 
 /** A tab picked half way. */
@@ -45,7 +48,9 @@ async function pickHalf(page: Page, tab: string) {
   await grabberTo(page, "half");
 }
 
-test("each tab's pill is the tabs, FPL's with a route its figures in their place at the same height, and half way is one height on every tab", async ({ page }) => {
+test("each tab's pill is the tabs, FPL's with a route its figures in their place at the same height, and half way is one height on every tab", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const panel = sideDrawer(page);
@@ -64,7 +69,7 @@ test("each tab's pill is the tabs, FPL's with a route its figures in their place
   await expect(panel.getByTestId("search-airports")).toBeHidden();
   await expect(panel.getByTestId("flight-line")).toHaveCount(0);
   // The same height as FPL's figures (the owner's "keeping it the same size").
-  expect(Math.abs(await height() - fpl)).toBeLessThan(1);
+  expect(Math.abs((await height()) - fpl)).toBeLessThan(1);
   // Half way one height on every tab, FPL's with its route too (the
   // owner's "Keep the half card consistent in size for all tabs including
   // fpl").
@@ -73,7 +78,7 @@ test("each tab's pill is the tabs, FPL's with a route its figures in their place
   for (const tab of ["tab-aircraft", "tab-fpl", "setup-button"]) {
     await page.getByTestId(tab).click();
     await expect(panel).toHaveAttribute("data-panel", "half");
-    expect(Math.abs(await height() - half)).toBeLessThan(1);
+    expect(Math.abs((await height()) - half)).toBeLessThan(1);
   }
   // Setup's account within it (the owner's "so email in setup fits at the
   // bottom"): its title, the address now the role menu's (AccountMenu).
@@ -144,7 +149,9 @@ test("each tab half way shows its own: Airport its Favorites and Nearest, Aircra
   await expect(page).toHaveURL(/[?&]place=KDLH/);
 });
 
-test("each tab's one strip picks its list from the filter at its heading's right, the title opening that list in full", async ({ page }) => {
+test("each tab's one strip picks its list from the filter at its heading's right, the title opening that list in full", async ({
+  page,
+}) => {
   // The owner's ask: "apply the filter to other cards too so for example
   // saved and recents in fpl can be filtered or favorites and recents in
   // airport/aircraft".
@@ -188,7 +195,9 @@ test("each tab's one strip picks its list from the filter at its heading's right
   await expect(panel.getByTestId("pill-aircraft-recents")).toBeVisible();
 });
 
-test("a list in full keeps its place as a card does: another tab and back, Setup and back, a link to it; the tab up tapped again puts it away", async ({ page }) => {
+test("a list in full keeps its place as a card does: another tab and back, Setup and back, a link to it; the tab up tapped again puts it away", async ({
+  page,
+}) => {
   // The owner's pick ("Yes to both"): lists keep their place as cards do.
   await keep(page, { favoriteAirports: [KDLH] });
   await page.goto("/app/plan");
@@ -238,13 +247,15 @@ test("a Favorite is taken off as a Recent is: a swipe to the left uncovers its D
   const list = sideDrawer(page).getByTestId("favorites-list");
   await expect(list).toBeVisible();
   const row = list.getByTestId("swipe-row").filter({ hasText: "KDLH" });
-  await row.evaluate(el => el.scrollTo({ left: el.scrollWidth }));
-  await expect.poll(() => row.evaluate(el => el.scrollLeft)).toBeGreaterThan(40);
+  await row.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+  await expect.poll(() => row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(40);
   await row.getByTestId("swipe-delete").click();
   await expect(list).toContainText("A star on an airport's card adds it here");
 });
 
-test("on a phone, an airport's card opened from another tab has Share at the top left of the pill's line and on its pictures, and its close goes back", async ({ page }) => {
+test("on a phone, an airport's card opened from another tab has Share at the top left of the pill's line and on its pictures, and its close goes back", async ({
+  page,
+}) => {
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "the tabs minimize on a phone only");
   // An airport's card over FPL (a route's field): the bar its kind, Share
   // where Back was and the close going back as Back did, at the owner's
@@ -273,7 +284,13 @@ test("on a phone, an airport's card opened from another tab has Share at the top
   expect((await close.boundingBox())!.x).toBeGreaterThan(title.x + title.width);
   // Shared: the field's card on the planner, by its address.
   await page.evaluate(() => {
-    Object.defineProperty(navigator, "share", { configurable: true, value: (item: { url: string }) => { (window as unknown as { shared: string }).shared = item.url; return Promise.resolve(); } });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: (item: { url: string }) => {
+        (window as unknown as { shared: string }).shared = item.url;
+        return Promise.resolve();
+      },
+    });
   });
   await share.click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { shared?: string }).shared)).toMatch(/\/app\/plan\?place=KDLH$/);
@@ -312,7 +329,9 @@ test("on a phone, a tap anywhere on the tabs' minimized line shows the tabs, but
   await expect(page).not.toHaveURL(/[?&]place=/);
 });
 
-test("Airplane, the pilot's own, is first among the Aircraft card's Favorites, with Add until one is kept, and kept from the search's pick", async ({ page }) => {
+test("Airplane, the pilot's own, is first among the Aircraft card's Favorites, with Add until one is kept, and kept from the search's pick", async ({
+  page,
+}) => {
   await keep(page, { recentAircraft: [{ hex: "a1c2d3", name: "N200XY", type: "C172" }] });
   await page.goto("/app/plan?aircraft=1");
   await settle(page);
@@ -339,7 +358,11 @@ test("Aircraft's Favorites' title opens the airplanes kept in full, Edit letting
   // the title the way in ("make saved, favorites and recents into links").
   await keep(page, {
     myAircraft: { hex: "a0b7d8", name: "N14511", type: "B39M" },
-    favoriteAircraft: [{ hex: "a1c2d3", name: "N200XY", type: "C172" }, { hex: "a2c2d3", name: "N300XY", type: "PA28" }, { hex: "a3c2d3", name: "N400XY", type: "SR22" }],
+    favoriteAircraft: [
+      { hex: "a1c2d3", name: "N200XY", type: "C172" },
+      { hex: "a2c2d3", name: "N300XY", type: "PA28" },
+      { hex: "a3c2d3", name: "N400XY", type: "SR22" },
+    ],
   });
   await page.goto("/app/plan?aircraft=1");
   await settle(page);
@@ -360,11 +383,16 @@ test("Aircraft's Favorites' title opens the airplanes kept in full, Edit letting
   // Each row's own box meets the next, no band between them a tap does
   // nothing on: the sortable rows are the swipe rows themselves (the
   // owner's screenshot, 2026-10-28, a dead band above and below each).
-  const boxes = await list.getByTestId("swipe-row").filter({ has: page.getByTestId("aircraft-favorites-row") }).evaluateAll(rows => rows.map(r => r.getBoundingClientRect()).map(b => [b.top, b.bottom]));
+  const boxes = await list
+    .getByTestId("swipe-row")
+    .filter({ has: page.getByTestId("aircraft-favorites-row") })
+    .evaluateAll((rows) => rows.map((r) => r.getBoundingClientRect()).map((b) => [b.top, b.bottom]));
   for (let i = 1; i < boxes.length; i++) expect(Math.abs(boxes[i]![0]! - boxes[i - 1]![1]!)).toBeLessThan(1.5);
   const second = (await list.getByTestId("aircraft-favorites-row").nth(1).boundingBox())!;
-  const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x!, y!)?.closest("[data-testid=aircraft-favorites-row]")?.textContent ?? null,
-    [second.x + 40, second.y - 3]);
+  const hit = await page.evaluate(
+    ([x, y]) => document.elementFromPoint(x!, y!)?.closest("[data-testid=aircraft-favorites-row]")?.textContent ?? null,
+    [second.x + 40, second.y - 3],
+  );
   expect(hit).toMatch(/N200XY|N300XY/);
   // Edit: one let go, another moved up a place with the keyboard.
   await list.getByTestId("aircraft-favorites-edit").click();
@@ -403,7 +431,10 @@ test("on a phone, all the way up, Setup's page starts where Airport's search bar
   await page.getByTestId("tab-airport").click();
   await grabberTo(page, "full");
   await settled(panel);
-  const search = (await panel.getByTestId("search-airports").locator("xpath=ancestor-or-self::*[contains(@class,'rounded')][1]").boundingBox())!.y;
+  const search = (await panel
+    .getByTestId("search-airports")
+    .locator("xpath=ancestor-or-self::*[contains(@class,'rounded')][1]")
+    .boundingBox())!.y;
   await showTabs(page);
   await page.getByTestId("setup-button").click();
   await grabberTo(page, "full");
@@ -434,7 +465,10 @@ test("a finger's swipe across the panel switches no tab, and on a Setup page to 
   // back to the Account, as its close takes it.
   await page.getByTestId("setup-button").click();
   await grabberTo(page, "full");
-  await panel.getByTestId("library-section").getByRole("button", { name: /^Minimums/ }).click();
+  await panel
+    .getByTestId("library-section")
+    .getByRole("button", { name: /^Minimums/ })
+    .click();
   const back = panel.getByRole("button", { name: "Back to Account", exact: true });
   await expect(back).toBeVisible();
   await swipeAcross(page, 130);

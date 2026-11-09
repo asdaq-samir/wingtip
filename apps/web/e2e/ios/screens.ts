@@ -1,5 +1,21 @@
 import { expect, type Page } from "@playwright/test";
-import { consolePage, controlsInSight, openNavLog, grabberTo, openConsole, openProfile, openPanel, openSection, openSetup, openTab, settle, showTabs, sideDrawer, slow, stripShows } from "../helpers";
+import {
+  consolePage,
+  controlsInSight,
+  openNavLog,
+  grabberTo,
+  openConsole,
+  openProfile,
+  openPanel,
+  openSection,
+  openSetup,
+  openTab,
+  settle,
+  showTabs,
+  sideDrawer,
+  slow,
+  stripShows,
+} from "../helpers";
 
 /** One state of the app as a pilot sees it, reached from a fresh page. */
 type Screen = { name: string; ready: (page: Page) => Promise<void> };
@@ -15,7 +31,7 @@ const ROUTE = "dep=C81&dest=KDLH";
 export const SCREENS: Screen[] = [
   {
     name: "map",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}`);
       await settle(page);
       await expect(page.locator(".maplibregl-marker").first()).toBeVisible({ timeout: slow(30000) });
@@ -30,7 +46,7 @@ export const SCREENS: Screen[] = [
     // sheet of its own), the side view and the figures (FPL's own, the
     // Brief a card of its own).
     name: "flight planning drawer",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=briefing`);
       await expect(sideDrawer(page).getByTestId("procedures")).toBeVisible({ timeout: slow(30000) });
       await expect(sideDrawer(page).getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
@@ -40,7 +56,7 @@ export const SCREENS: Screen[] = [
     // Half way: the route's box, the airplane, the time, the Nav log and
     // Share, the figures at the card's foot.
     name: "route panel, half way",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=briefing`);
       await expect(sideDrawer(page).getByTestId("route-brief")).toBeVisible({ timeout: slow(30000) });
       await controlsInSight(page);
@@ -51,7 +67,7 @@ export const SCREENS: Screen[] = [
   },
   {
     name: "nav log, a leg open",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=briefing`);
       // Not tapped when it is up already: a tap on the tab up takes the
       // panel back to half, and the map's tooltips came up under the
@@ -70,21 +86,30 @@ export const SCREENS: Screen[] = [
   },
   // The Brief's pages, each laid out once its briefing is in: the
   // narrative asked for only by a tap, not here.
-  ...([
-    ["Preflight", "verdict"], ["Depart", "takeoff-landing"], ["En route", "weather-places"], ["Arrive", "weather-places"],
-  ] as const).map(([tab, shown]): Screen => ({
+  ...(
+    [
+      ["Preflight", "verdict"],
+      ["Depart", "takeoff-landing"],
+      ["En route", "weather-places"],
+      ["Arrive", "weather-places"],
+    ] as const
+  ).map(([tab, shown]): Screen => ({
     name: `panel, ${tab} tab`,
-    ready: async page => {
+    ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=briefing`);
       await page.getByTestId("navlog-fuel").waitFor({ timeout: slow(120000) });
       await openTab(page, tab);
       if (tab === "En route") await openSection(page, "Along the Route");
-      await expect(sideDrawer(page).locator('[role="tabpanel"][data-state="active"]').getByTestId(shown).first()).toBeVisible({ timeout: slow(30000) });
+      await expect(sideDrawer(page).locator('[role="tabpanel"][data-state="active"]').getByTestId(shown).first()).toBeVisible({
+        timeout: slow(30000),
+      });
       // And the briefing in: the Brief's Go / No-Go says what it found, and
       // the mock oral's button is enabled once its question table loads --
       // measured as it faded in, it read 2:1 on CI's iPad.
       if (tab === "Preflight") {
-        await expect(sideDrawer(page).getByTestId("verdict-weather")).not.toHaveAttribute("data-finding", "pending", { timeout: slow(60000) });
+        await expect(sideDrawer(page).getByTestId("verdict-weather")).not.toHaveAttribute("data-finding", "pending", {
+          timeout: slow(60000),
+        });
         const ask = sideDrawer(page).getByTestId("oral-ask");
         if (await ask.count()) await expect(ask).toBeEnabled({ timeout: slow(30000) });
       }
@@ -93,7 +118,7 @@ export const SCREENS: Screen[] = [
   // An airport's card half way, its pictures across the top, its actions
   // and its tabs right under them (A2, the tabs back); all the way up on
   // Info; and on Weather, the hourly card over the reports.
-  ...["", ", all the way up", ", its Weather tab"].map(part => ({
+  ...["", ", all the way up", ", its Weather tab"].map((part) => ({
     name: `airport card${part}`,
     ready: async (page: Page) => {
       await page.goto(`/app/plan?${ROUTE}&place=KDLH`);
@@ -112,7 +137,7 @@ export const SCREENS: Screen[] = [
   })),
   {
     name: "training drawer, a waypoint open",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto(`/app/dev?${ROUTE}`);
       await settle(page);
       await grabberTo(page, "full");
@@ -124,7 +149,7 @@ export const SCREENS: Screen[] = [
   },
   {
     name: "developer console, System tab",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/dev");
       await showTabs(page);
       await openConsole(page);
@@ -134,7 +159,7 @@ export const SCREENS: Screen[] = [
   },
   {
     name: "pilot console, Guide tab",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/plan");
       await showTabs(page);
       await openConsole(page);
@@ -146,7 +171,7 @@ export const SCREENS: Screen[] = [
     // Aircraft, Flights, Logbook and Minimums, one tab: its list of the
     // four, each opening its page.
     name: "pilot console, Personal tab",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/plan");
       await showTabs(page);
       await openConsole(page);
@@ -157,12 +182,15 @@ export const SCREENS: Screen[] = [
   {
     // One of them open: its way back, its title and its rows.
     name: "pilot console, Personal's Aircraft page",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/plan");
       await showTabs(page);
       await openConsole(page);
       await consolePage(page, "Account");
-      await page.getByTestId("library-section").getByRole("button", { name: /^Airplanes/ }).click();
+      await page
+        .getByTestId("library-section")
+        .getByRole("button", { name: /^Airplanes/ })
+        .click();
       await expect(page.getByRole("heading", { name: "Airplanes", exact: true })).toBeVisible();
     },
   },
@@ -170,37 +198,56 @@ export const SCREENS: Screen[] = [
   // codes, the endorsements and the student's instructor) and the
   // Instructing page, where the developer, no instructor, has the form
   // for a flight instructor certificate.
-  ...([
-    ["Checkride", "Private pilot experience"],
-    ["Instructing", "Your flight instructor certificate"],
-  ] as const).map(([row, heading]): Screen => ({
+  ...(
+    [
+      ["Checkride", "Private pilot experience"],
+      ["Instructing", "Your flight instructor certificate"],
+    ] as const
+  ).map(([row, heading]): Screen => ({
     name: `pilot console, Logbook's ${row} page`,
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/plan");
       await showTabs(page);
       await openConsole(page);
       await consolePage(page, "Account");
-      await page.getByTestId("library-section").getByRole("button", { name: /^Logbook/ }).click();
+      await page
+        .getByTestId("library-section")
+        .getByRole("button", { name: /^Logbook/ })
+        .click();
       await page.getByRole("button", { name: new RegExp(`^${row}`) }).click();
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     },
   })),
   // The Guide's Practice pages: a drill's card with its answer shown, the
   // holding page's fields and drawing, the lost-comms page's segments.
-  ...([
-    ["practice, a drill card", "Light gun signals", async (page: Page) => {
-      await page.getByTestId("drill-reveal").click();
-      await expect(page.getByTestId("drill-knew")).toBeVisible();
-    }],
-    ["practice, holding entries", "Holding entries", async (page: Page) => {
-      await expect(page.getByTestId("hold-diagram")).toBeVisible();
-    }],
-    ["practice, lost communications", "Lost communications", async (page: Page) => {
-      await expect(page.getByTestId("lost-segment").first()).toBeVisible();
-    }],
-  ] as const).map(([name, row, open]): Screen => ({
+  ...(
+    [
+      [
+        "practice, a drill card",
+        "Light gun signals",
+        async (page: Page) => {
+          await page.getByTestId("drill-reveal").click();
+          await expect(page.getByTestId("drill-knew")).toBeVisible();
+        },
+      ],
+      [
+        "practice, holding entries",
+        "Holding entries",
+        async (page: Page) => {
+          await expect(page.getByTestId("hold-diagram")).toBeVisible();
+        },
+      ],
+      [
+        "practice, lost communications",
+        "Lost communications",
+        async (page: Page) => {
+          await expect(page.getByTestId("lost-segment").first()).toBeVisible();
+        },
+      ],
+    ] as const
+  ).map(([name, row, open]): Screen => ({
     name,
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/plan");
       await showTabs(page);
       await openConsole(page);
@@ -211,7 +258,7 @@ export const SCREENS: Screen[] = [
   })),
   {
     name: "developer console, Guide tab",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/dev");
       await showTabs(page);
       await openConsole(page);
@@ -221,7 +268,7 @@ export const SCREENS: Screen[] = [
   },
   {
     name: "setup controls",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/plan");
       await openSetup(page);
       await expect(page.getByTestId("quick-controls").first()).toBeVisible();
@@ -229,7 +276,7 @@ export const SCREENS: Screen[] = [
   },
   {
     name: "pilot console, About tab",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/plan");
       await openSetup(page);
       await consolePage(page.getByTestId("console-sheet"), "About");
@@ -240,7 +287,7 @@ export const SCREENS: Screen[] = [
   // and the airports nearest, half way up.
   {
     name: "Aircraft tab",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/plan?aircraft=1");
       await settle(page);
       await openPanel(page);
@@ -251,26 +298,86 @@ export const SCREENS: Screen[] = [
   // across the top (no photo: the stand-in), Follow, Alert, Debrief and
   // the star, the flight it is on (adsb.lol and Planespotters stubbed);
   // then its Alert's menu open; and all the way up, its one scroll.
-  ...["card", "Alert menu", "card all the way up"].map(part => ({
+  ...["card", "Alert menu", "card all the way up"].map((part) => ({
     name: `an airplane's ${part}`,
     ready: async (page: Page) => {
       const now = Date.now() / 1000;
-      const plane = { hex: "a89c1e", callsign: "N654FL", registration: "N654FL", type: "P28A", lat: 42.35, lon: -88.0,
-        altitude_ft: 4500, pressure_altitude: false, track_deg: 45, speed_kt: 112, vertical_fpm: 500, seen_s: 0.5, squawk: "1200" };
+      const plane = {
+        hex: "a89c1e",
+        callsign: "N654FL",
+        registration: "N654FL",
+        type: "P28A",
+        lat: 42.35,
+        lon: -88.0,
+        altitude_ft: 4500,
+        pressure_altitude: false,
+        track_deg: 45,
+        speed_kt: 112,
+        vertical_fpm: 500,
+        seen_s: 0.5,
+        squawk: "1200",
+      };
       const c81 = { ident: "C81", name: "Campbell Airport", city: "Grayslake", region: "US-IL" };
-      await page.route(url => url.pathname.endsWith("/api/planner/traffic"), route =>
-        route.fulfill({ json: { aircraft: [plane], age_s: 1, source: "adsb.lol", license: "ODbL 1.0" } }));
-      await page.route(url => /\/api\/planner\/traffic\/flight\/a89c1e\/history$/.test(url.pathname), route => route.fulfill({ json: {
-        hex: "a89c1e", registration: "N654FL", type: "P28A", flights: [
-          { id: Math.floor(now - 3600), origin: c81, destination: null, off: now - 3600, on: now - 5, landed: false, in_air: true, max_alt_ft: 4500 },
-          { id: Math.floor(now - 90000), origin: c81, destination: c81, off: now - 90000, on: now - 86100, landed: true, in_air: false, max_alt_ft: 3000 },
-        ] } }));
-      await page.route(url => /\/api\/planner\/traffic\/flight\/a89c1e$/.test(url.pathname), route => route.fulfill({ json: {
-        hex: "a89c1e", registration: "N654FL", type: "P28A", description: "PIPER PA-28-140/150/160/180", operator: "RYALIS LLC",
-        departed: { ident: "C81", name: "Campbell Airport", at: now - 3600 },
-        trail: [{ t: now - 3600, lat: 42.32, lon: -88.07, alt_ft: null }, { t: now - 1800, lat: 42.42, lon: -88.2, alt_ft: 3500 }, { t: now - 5, lat: 42.35, lon: -88.0, alt_ft: 4500 }],
-      } }));
-      await page.route(url => url.hostname === "api.planespotters.net", route => route.fulfill({ json: { photos: [] } }));
+      await page.route(
+        (url) => url.pathname.endsWith("/api/planner/traffic"),
+        (route) => route.fulfill({ json: { aircraft: [plane], age_s: 1, source: "adsb.lol", license: "ODbL 1.0" } }),
+      );
+      await page.route(
+        (url) => /\/api\/planner\/traffic\/flight\/a89c1e\/history$/.test(url.pathname),
+        (route) =>
+          route.fulfill({
+            json: {
+              hex: "a89c1e",
+              registration: "N654FL",
+              type: "P28A",
+              flights: [
+                {
+                  id: Math.floor(now - 3600),
+                  origin: c81,
+                  destination: null,
+                  off: now - 3600,
+                  on: now - 5,
+                  landed: false,
+                  in_air: true,
+                  max_alt_ft: 4500,
+                },
+                {
+                  id: Math.floor(now - 90000),
+                  origin: c81,
+                  destination: c81,
+                  off: now - 90000,
+                  on: now - 86100,
+                  landed: true,
+                  in_air: false,
+                  max_alt_ft: 3000,
+                },
+              ],
+            },
+          }),
+      );
+      await page.route(
+        (url) => /\/api\/planner\/traffic\/flight\/a89c1e$/.test(url.pathname),
+        (route) =>
+          route.fulfill({
+            json: {
+              hex: "a89c1e",
+              registration: "N654FL",
+              type: "P28A",
+              description: "PIPER PA-28-140/150/160/180",
+              operator: "RYALIS LLC",
+              departed: { ident: "C81", name: "Campbell Airport", at: now - 3600 },
+              trail: [
+                { t: now - 3600, lat: 42.32, lon: -88.07, alt_ft: null },
+                { t: now - 1800, lat: 42.42, lon: -88.2, alt_ft: 3500 },
+                { t: now - 5, lat: 42.35, lon: -88.0, alt_ft: 4500 },
+              ],
+            },
+          }),
+      );
+      await page.route(
+        (url) => url.hostname === "api.planespotters.net",
+        (route) => route.fulfill({ json: { photos: [] } }),
+      );
       await page.goto("/app/plan?flight=a89c1e");
       await settle(page);
       // Half way, as it opens.
@@ -290,7 +397,7 @@ export const SCREENS: Screen[] = [
   // nothing is written to the planner).
   {
     name: "FPL, Saved and Recents",
-    ready: async page => {
+    ready: async (page) => {
       await page.addInitScript(() => {
         const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":1}');
         kept.state.recentRoutes = [
@@ -312,9 +419,11 @@ export const SCREENS: Screen[] = [
   // and their words measured as the rows' are.
   {
     name: "FPL, the route in order",
-    ready: async page => {
-      await page.route(url => /\/airport\/[^/]+\/procedures/.test(url.pathname), route =>
-        route.fulfill({ json: { airport: "KDLH", cycle: "261001", procedures: [] } }));
+    ready: async (page) => {
+      await page.route(
+        (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
+        (route) => route.fulfill({ json: { airport: "KDLH", cycle: "261001", procedures: [] } }),
+      );
       await page.goto(`/app/plan?${ROUTE}`);
       await settle(page);
       await openTab(page, "Nav Log");
@@ -327,28 +436,60 @@ export const SCREENS: Screen[] = [
   // is not read on CI's runner.
   {
     name: "procedures, an approach's page",
-    ready: async page => {
-      await page.route(url => /\/airport\/[^/]+\/procedures/.test(url.pathname), route => {
-        const path = new URL(route.request().url()).pathname;
-        if (path.endsWith("/KDLH/procedures")) {
-          return route.fulfill({ json: { airport: "KDLH", cycle: "261001", procedures: [
-            { kind: "approach", id: "I09", name: "ILS RWY 09", runway: "09", transitions: ["DLH"], runway_transitions: [] },
-          ] } });
-        }
-        if (path.endsWith("/KDLH/procedures/I09")) {
-          return route.fulfill({ json: {
-            airport: "KDLH", kind: "approach", id: "I09", name: "ILS RWY 09", transition: null, cycle: "261001",
-            lines: [{ role: "final", name: null, points: [[46.84, -92.40], [46.84, -92.30], [46.842, -92.21]] }],
-            holds: [], fixes: [{ ident: "FAKER", lat: 46.84, lon: -92.30, roles: ["FAF"], min_ft: 2700, max_ft: 2700, speed_kt: null, missed: false }],
-          } });
-        }
-        return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
-      });
+    ready: async (page) => {
+      await page.route(
+        (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
+        (route) => {
+          const path = new URL(route.request().url()).pathname;
+          if (path.endsWith("/KDLH/procedures")) {
+            return route.fulfill({
+              json: {
+                airport: "KDLH",
+                cycle: "261001",
+                procedures: [
+                  { kind: "approach", id: "I09", name: "ILS RWY 09", runway: "09", transitions: ["DLH"], runway_transitions: [] },
+                ],
+              },
+            });
+          }
+          if (path.endsWith("/KDLH/procedures/I09")) {
+            return route.fulfill({
+              json: {
+                airport: "KDLH",
+                kind: "approach",
+                id: "I09",
+                name: "ILS RWY 09",
+                transition: null,
+                cycle: "261001",
+                lines: [
+                  {
+                    role: "final",
+                    name: null,
+                    points: [
+                      [46.84, -92.4],
+                      [46.84, -92.3],
+                      [46.842, -92.21],
+                    ],
+                  },
+                ],
+                holds: [],
+                fixes: [
+                  { ident: "FAKER", lat: 46.84, lon: -92.3, roles: ["FAF"], min_ft: 2700, max_ft: 2700, speed_kt: null, missed: false },
+                ],
+              },
+            });
+          }
+          return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
+        },
+      );
       await page.goto(`/app/plan?${ROUTE}`);
       await settle(page);
       await openTab(page, "Nav Log");
-      await page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" })
-        .locator('[data-testid=procedure-kind][data-kind=approach]').click({ timeout: slow(30000) });
+      await page
+        .getByTestId("procedures")
+        .getByRole("region", { name: "KDLH · Arrive" })
+        .locator("[data-testid=procedure-kind][data-kind=approach]")
+        .click({ timeout: slow(30000) });
       // The pull-down's foot opens the field's whole list (ProcedureMenu).
       await page.getByTestId("procedure-menu-all").click();
       await page.getByTestId("procedure-option").first().click();
@@ -357,7 +498,7 @@ export const SCREENS: Screen[] = [
   },
   {
     name: "Nearest list",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/plan?near=1");
       await settle(page);
       await openPanel(page);
@@ -366,7 +507,7 @@ export const SCREENS: Screen[] = [
   },
   {
     name: "developer page, Perf tab",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/dev");
       await settle(page);
       await showTabs(page);
@@ -380,9 +521,11 @@ export const SCREENS: Screen[] = [
     // The route's box of pills -- an airport landed at and a waypoint
     // flown through -- and the airplane, the time and the actions under it.
     name: "route box with stops",
-    ready: async page => {
-      await page.route(url => /\/(checkpoints|navlog|briefing)$/.test(url.pathname) && url.searchParams.get("stops") === "VPBNG,KMSN",
-        route => route.abort());
+    ready: async (page) => {
+      await page.route(
+        (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname) && url.searchParams.get("stops") === "VPBNG,KMSN",
+        (route) => route.abort(),
+      );
       await page.goto(`/app/plan?${ROUTE}&stops=VPBNG,KMSN&view=briefing`);
       await controlsInSight(page);
       await expect(page.getByTestId("route-box")).toBeVisible({ timeout: slow(30000) });
@@ -393,16 +536,23 @@ export const SCREENS: Screen[] = [
     // No legal altitude's mark beside the Nav Log, its sheet open: the
     // reasons and the ways round a Class B.
     name: "no legal altitude, opened",
-    ready: async page => {
-      await page.route("**/api/planner/navlog**", route => route.fulfill({
-        status: 200, contentType: "application/x-ndjson",
-        body: JSON.stringify({
-          type: "error", retry: false, detail: "No legal VFR cruising altitude 1-15 nm along the route",
-          reasons: ["The Chicago Class B reaches the ground there; going through it needs a clearance."],
-          advice: "Fly via BEPKE (6 nm further) to stay out of it, or plan it with a Class B clearance.",
-          class_b: true, detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0, description: "in Downers Grove" }],
-        }) + "\n",
-      }));
+    ready: async (page) => {
+      await page.route("**/api/planner/navlog**", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/x-ndjson",
+          body:
+            JSON.stringify({
+              type: "error",
+              retry: false,
+              detail: "No legal VFR cruising altitude 1-15 nm along the route",
+              reasons: ["The Chicago Class B reaches the ground there; going through it needs a clearance."],
+              advice: "Fly via BEPKE (6 nm further) to stay out of it, or plan it with a Class B clearance.",
+              class_b: true,
+              detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0, description: "in Downers Grove" }],
+            }) + "\n",
+        }),
+      );
       await page.goto(`/app/plan?${ROUTE}&view=briefing`);
       await controlsInSight(page);
       await openProfile(page);
@@ -414,7 +564,7 @@ export const SCREENS: Screen[] = [
     // wheel of legal altitudes beside the route from the side, its
     // figures, Class B and how it was chosen.
     name: "altitude on the profile",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}`);
       await settle(page);
       await controlsInSight(page);
@@ -426,7 +576,7 @@ export const SCREENS: Screen[] = [
   },
   {
     name: "departure picker",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=briefing`);
       await controlsInSight(page);
       await page.getByTestId("depart-date").click({ timeout: slow(30000) });
@@ -440,17 +590,17 @@ export const SCREENS: Screen[] = [
   {
     // The planner down: the one line by the map's buttons, Try again.
     name: "a service out",
-    ready: async page => {
-      await page.route("**/api/planner/**", route => route.fulfill({
-        status: 502, contentType: "application/json", body: JSON.stringify({ detail: "planner service unreachable" }),
-      }));
+    ready: async (page) => {
+      await page.route("**/api/planner/**", (route) =>
+        route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ detail: "planner service unreachable" }) }),
+      );
       await page.goto(`/app/plan?${ROUTE}`);
       await expect(page.locator("[data-problem-banner]").getByRole("button", { name: "Try again" })).toBeVisible({ timeout: slow(30000) });
     },
   },
   {
     name: "local flight",
-    ready: async page => {
+    ready: async (page) => {
       await page.goto("/app/plan?dep=C81&dest=C81&view=briefing");
       await expect(page.locator('[data-slot="section-summary"]').first()).toContainText("Aloft", { timeout: slow(30000) });
       // Its fuel required among the figures.
@@ -463,17 +613,36 @@ export const SCREENS: Screen[] = [
     // conversation, its source chip, the words sections and the watch's
     // switch -- the planner's AI routes answered here, so no billed call.
     name: "brief ask",
-    ready: async page => {
-      const words = { sentences: [{ text: "Nothing in the NOTAMs bears on this flight.", sources: ["notam:none"] }], sources: [{ id: "notam:none", label: "NOTAMs C81, KDLH", text: "No NOTAMs." }], model: "claude-haiku-5-5", unavailable: null };
-      await page.route(url => url.pathname.startsWith("/api/planner/words/"), route => route.fulfill({ json: words }));
-      await page.route(url => url.pathname === "/api/planner/assistant", route => route.fulfill({
-        status: 200, contentType: "application/x-ndjson",
-        body: [
-          { type: "text", text: "Yes: Duluth is reporting wind 270 at 12 gusting 18, and the ceiling is 4,500 feet." },
-          { type: "sources", sources: [{ id: "metar:KDLH", label: "METAR KDLH 1753Z", text: "KDLH 031753Z 27012G18KT 10SM BKN045" }] },
-          { type: "done" },
-        ].map(l => JSON.stringify(l)).join("\n") + "\n",
-      }));
+    ready: async (page) => {
+      const words = {
+        sentences: [{ text: "Nothing in the NOTAMs bears on this flight.", sources: ["notam:none"] }],
+        sources: [{ id: "notam:none", label: "NOTAMs C81, KDLH", text: "No NOTAMs." }],
+        model: "claude-haiku-5-5",
+        unavailable: null,
+      };
+      await page.route(
+        (url) => url.pathname.startsWith("/api/planner/words/"),
+        (route) => route.fulfill({ json: words }),
+      );
+      await page.route(
+        (url) => url.pathname === "/api/planner/assistant",
+        (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/x-ndjson",
+            body:
+              [
+                { type: "text", text: "Yes: Duluth is reporting wind 270 at 12 gusting 18, and the ceiling is 4,500 feet." },
+                {
+                  type: "sources",
+                  sources: [{ id: "metar:KDLH", label: "METAR KDLH 1753Z", text: "KDLH 031753Z 27012G18KT 10SM BKN045" }],
+                },
+                { type: "done" },
+              ]
+                .map((l) => JSON.stringify(l))
+                .join("\n") + "\n",
+          }),
+      );
       await page.goto(`/app/plan?${ROUTE}&brief=1`);
       await settle(page);
       await grabberTo(page, "full");

@@ -36,7 +36,7 @@ export function withChecklist(kept: Kept, airplane: string, kind: ChecklistKind,
 }
 
 export function saveChecklist(airplane: string, kind: ChecklistKind, text: string): void {
-  useChecklists.setState(s => ({ value: withChecklist(s.value, airplane, kind, text) }));
+  useChecklists.setState((s) => ({ value: withChecklist(s.value, airplane, kind, text) }));
 }
 
 /** Every airplane's lists forgotten, as signing out forgets what this
@@ -65,5 +65,7 @@ export function checklistPhases(kind: ChecklistKind): string[] {
 
 /** The headings as the text to write under, a blank line after each. */
 export function phasesText(kind: ChecklistKind): string {
-  return checklistPhases(kind).map(title => `# ${title}\n\n`).join("");
+  return checklistPhases(kind)
+    .map((title) => `# ${title}\n\n`)
+    .join("");
 }

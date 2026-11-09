@@ -5,8 +5,12 @@ import { engineLoaded, engineReady } from "./engine";
 // unloads.
 const subscribe = (changed: () => void) => {
   let live = true;
-  void engineReady.then(() => { if (live) changed(); });
-  return () => { live = false; };
+  void engineReady.then(() => {
+    if (live) changed();
+  });
+  return () => {
+    live = false;
+  };
 };
 
 /** Whether the shared engine (lib/engine) can answer now: false while its

@@ -18,7 +18,8 @@ export function passTime(legs: Leg[], departIso: string, alongNm: number): Date 
   const depart = new Date(departIso);
   if (!legs.length || Number.isNaN(depart.getTime())) return null;
   const minutes = callEngine("gonogo_pass_minutes", {
-    legs: legs.map(l => ({ distance_nm: l.distance_nm, ete_min: l.ete_min ?? null })), along_nm: alongNm,
+    legs: legs.map((l) => ({ distance_nm: l.distance_nm, ete_min: l.ete_min ?? null })),
+    along_nm: alongNm,
   });
   return minutes == null ? null : new Date(depart.getTime() + minutes * 60_000);
 }
@@ -58,7 +59,7 @@ function clockIn(pass: Date, zone: string): { day: number; minute: number } | nu
     clocks.set(zone, clock);
   }
   const parts = clock.formatToParts(pass);
-  const part = (type: string) => parts.find(p => p.type === type)?.value ?? "";
+  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   return { day: DAYS.indexOf(part("weekday").toUpperCase()), minute: Number(part("hour")) * 60 + Number(part("minute")) };
 }
 
@@ -86,7 +87,8 @@ function clockIn(pass: Date, zone: string): { day: number; minute: number } | nu
 export function suaWhen(timesOfUse: string | null | undefined, pass: Date, timeZone?: string | null): SuaWhen {
   const local = timeZone ? clockIn(pass, timeZone) : null;
   return callEngine("gonogo_sua_when", {
-    times_of_use: timesOfUse ?? null, utc: [pass.getUTCDay(), pass.getUTCHours() * 60 + pass.getUTCMinutes()],
+    times_of_use: timesOfUse ?? null,
+    utc: [pass.getUTCDay(), pass.getUTCHours() * 60 + pass.getUTCMinutes()],
     local: local && local.day >= 0 ? [local.day, local.minute] : null,
   });
 }

@@ -24,7 +24,20 @@ type RouteEdits = ReturnType<typeof useRouteEdits>;
  * setters.
  */
 export function useFlightToSave({
-  s, planned, routed, course, aircraft, depart, altitudes, localMin, searchParams, setSearchParams, setPanel, setRoute, flyAltitude, changeDepart,
+  s,
+  planned,
+  routed,
+  course,
+  aircraft,
+  depart,
+  altitudes,
+  localMin,
+  searchParams,
+  setSearchParams,
+  setPanel,
+  setRoute,
+  flyAltitude,
+  changeDepart,
 }: {
   s: PlanAnswer;
   planned: PlannedRoute;
@@ -49,7 +62,7 @@ export function useFlightToSave({
   // one: a route from an airport, its nav log in.
   const fileable = !!identOf(planned.dep) && !!s.totals;
   const fileFlightPlan = useCallback(() => {
-    setSearchParams(prev => patched(prev, { brief: "1" }), { replace: true });
+    setSearchParams((prev) => patched(prev, { brief: "1" }), { replace: true });
     setPanel("full");
     useTabAsk.getState().go("preflight", "Flight Plan");
   }, [setSearchParams, setPanel]);
@@ -67,11 +80,18 @@ export function useFlightToSave({
   // on screen is the one before a new runway or altitude, held there till
   // its own is in (usePlan's `replanning`): its stage is not said, and a
   // Save then filed the plan being replaced.
-  const windPending = useWindPicks(w => w.pending);
+  const windPending = useWindPicks((w) => w.pending);
   const settledPlan = s.stage === null && !s.replanning && !windPending;
   const flightToSave = {
-    course: routed && settledPlan ? course : null, totals: s.pointToPoint ? null : s.totals, nav: s.nav, legs: s.legs, selected: s.logSelected,
-    aircraftId: aircraft.aircraftId ?? null, depart, altitudes, picks: picksOf(searchParams),
+    course: routed && settledPlan ? course : null,
+    totals: s.pointToPoint ? null : s.totals,
+    nav: s.nav,
+    legs: s.legs,
+    selected: s.logSelected,
+    aircraftId: aircraft.aircraftId ?? null,
+    depart,
+    altitudes,
+    picks: picksOf(searchParams),
   };
   // The flight as the Brief reads it (lib/briefPlan), for its Ask, its
   // words and its watch, which draw outside the route's props: the
@@ -79,19 +99,57 @@ export function useFlightToSave({
   // route and legs (as the briefing is asked with them), and the plan as
   // Save files it. Cleared as the workspace goes.
   const briefLegs = useMemo(() => briefingLegs(course, s.logSelected, s.legs), [course, s.logSelected, s.legs]);
-  const eteMin = s.local ? localMin : s.totals?.ete_min ?? null;
+  const eteMin = s.local ? localMin : (s.totals?.ete_min ?? null);
   // The altitude flown, the nav log's (the address's `altitude_ft` is the
   // pilot's own as typed, a string).
   const flownFt = s.nav?.altitude_ft ?? null;
   const flightCourse = flightToSave.course;
   useEffect(() => {
-    useBriefPlan.getState().set({
-      dep: planned.dep, dest: planned.dest, stops: planned.stops, aircraft: aircraft.profile || null, altitudeFt: flownFt, depart,
-      eteMin, legs: briefLegs ? { fixes: briefLegs.fixes, legMin: briefLegs.legMin } : null, routed, local: !!s.local,
-      flight: { course: flightCourse, totals: flightToSave.totals, nav: s.nav, legs: s.legs, selected: s.logSelected, aircraftId: aircraft.aircraftId ?? null, depart, altitudes, picks: flightToSave.picks },
-    });
-  }, [planned.dep, planned.dest, planned.stops, aircraft.profile, aircraft.aircraftId, flownFt, depart, eteMin, briefLegs, routed, s.local,
-    flightCourse, flightToSave.totals, s.nav, s.legs, s.logSelected, altitudes, flightToSave.picks]);
+    useBriefPlan
+      .getState()
+      .set({
+        dep: planned.dep,
+        dest: planned.dest,
+        stops: planned.stops,
+        aircraft: aircraft.profile || null,
+        altitudeFt: flownFt,
+        depart,
+        eteMin,
+        legs: briefLegs ? { fixes: briefLegs.fixes, legMin: briefLegs.legMin } : null,
+        routed,
+        local: !!s.local,
+        flight: {
+          course: flightCourse,
+          totals: flightToSave.totals,
+          nav: s.nav,
+          legs: s.legs,
+          selected: s.logSelected,
+          aircraftId: aircraft.aircraftId ?? null,
+          depart,
+          altitudes,
+          picks: flightToSave.picks,
+        },
+      });
+  }, [
+    planned.dep,
+    planned.dest,
+    planned.stops,
+    aircraft.profile,
+    aircraft.aircraftId,
+    flownFt,
+    depart,
+    eteMin,
+    briefLegs,
+    routed,
+    s.local,
+    flightCourse,
+    flightToSave.totals,
+    s.nav,
+    s.legs,
+    s.logSelected,
+    altitudes,
+    flightToSave.picks,
+  ]);
   useEffect(() => () => useBriefPlan.getState().set(NO_PLAN), []);
   // A change the assistant proposes (useAsk's actions), applied at the
   // pilot's tap through the route box's own setters -- the route, the
@@ -100,7 +158,7 @@ export function useFlightToSave({
   // applies nothing otherwise.
   useEffect(() => {
     useAsk.setState({
-      applyChange: change => {
+      applyChange: (change) => {
         if (change.dep !== undefined || change.dest !== undefined || change.stops !== undefined) {
           setRoute({ dep: change.dep ?? planned.dep, stops: change.stops ?? planned.stops, dest: change.dest ?? planned.dest });
         }

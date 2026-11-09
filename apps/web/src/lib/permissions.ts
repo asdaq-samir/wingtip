@@ -22,7 +22,7 @@ export async function permissionState(name: "geolocation" | "microphone"): Promi
 export async function askMicrophone(): Promise<boolean> {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach(track => track.stop());
+    stream.getTracks().forEach((track) => track.stop());
     return true;
   } catch {
     return false;

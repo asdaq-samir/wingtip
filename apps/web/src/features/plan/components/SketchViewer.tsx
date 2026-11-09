@@ -12,7 +12,13 @@ import { RunwaySketch } from "./RunwaySketch";
  * charts (ChartViewer), its title and close where they are, and a line
  * saying what it is drawn from.
  */
-export default function SketchViewer({ ident, runways, lat, lon, onClose }: {
+export default function SketchViewer({
+  ident,
+  runways,
+  lat,
+  lon,
+  onClose,
+}: {
   ident: string;
   runways: Runway[];
   lat: number;

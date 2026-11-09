@@ -27,13 +27,11 @@ export function useRetrain() {
   const queryClient = useQueryClient();
   // Every five seconds while a run is going, so its badge turns from
   // Training to how it ended when it does, not up to half a minute on.
-  const { data: status } = useQuery({ ...statusQuery, refetchInterval: query => (underWay(query.state.data) ? 5_000 : 30_000) });
+  const { data: status } = useQuery({ ...statusQuery, refetchInterval: (query) => (underWay(query.state.data) ? 5_000 : 30_000) });
   const start = useMutation({
     mutationFn: api.retrain,
     onSuccess: () => {
-      done("Retrain Started", {
-        detail: "Follow it in Performance",
-      });
+      done("Retrain Started", { detail: "Follow it in Performance" });
       // Returned, so the mutation stays pending until the snapshot shows
       // the run: Retrain was enabled again in between, for a second press.
       return queryClient.invalidateQueries({ queryKey: ["status"] });

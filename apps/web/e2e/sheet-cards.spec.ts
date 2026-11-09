@@ -1,5 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { cardClose, closeCard, grabberTo, openMapSettings, openTab, panelTabs, settle, settled, sideDrawer, slow, tapTheChart } from "./helpers";
+import {
+  cardClose,
+  closeCard,
+  grabberTo,
+  openMapSettings,
+  openTab,
+  panelTabs,
+  settle,
+  settled,
+  sideDrawer,
+  slow,
+  tapTheChart,
+} from "./helpers";
 
 /**
  * On a phone, what a control opens (ResponsivePopover) and what a tap on
@@ -57,8 +69,10 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
 
 test("the approaches' pull-down is a card in the sheet, and the list it opens takes its place there", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's card; wider it is a popover");
-  await page.route(url => /\/airport\/[^/]+\/procedures/.test(url.pathname), route =>
-    route.fulfill({ json: { airport: "KDLH", cycle: "261001", procedures: [] } }));
+  await page.route(
+    (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
+    (route) => route.fulfill({ json: { airport: "KDLH", cycle: "261001", procedures: [] } }),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const panel = sideDrawer(page);
@@ -83,7 +97,9 @@ test("the approaches' pull-down is a card in the sheet, and the list it opens ta
   await expect(panel).toHaveAttribute("data-panel", "full");
 });
 
-test("a checkpoint tapped on the chart opens its card in the sheet, ringed on the map; one opened over it closes back to it", async ({ page }) => {
+test("a checkpoint tapped on the chart opens its card in the sheet, ringed on the map; one opened over it closes back to it", async ({
+  page,
+}) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's card; wider it is the chart's popup");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

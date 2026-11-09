@@ -24,11 +24,15 @@ const readback = fixture.readbacks[1]!;
 
 describe("the cards", () => {
   test("a call to us makes a card with its items; someone else's makes none", () => {
-    let cards: AtcCard[] = heardInto([], { id: 1, text: "Cessna six three alpha bravo descend and maintain four thousand", at: 0 }, fixture.tail);
+    let cards: AtcCard[] = heardInto(
+      [],
+      { id: 1, text: "Cessna six three alpha bravo descend and maintain four thousand", at: 0 },
+      fixture.tail,
+    );
     expect(cards).toEqual([]);
     cards = heardInto(cards, { id: 2, text: call, at: 1000 }, fixture.tail);
     expect(cards).toHaveLength(1);
-    expect(cards[0]!.items.map(i => i.kind)).toEqual(["heading", "altitude", "altimeter"]);
+    expect(cards[0]!.items.map((i) => i.kind)).toEqual(["heading", "altitude", "altimeter"]);
     expect(shownCard(cards)?.id).toBe(2);
   });
 
@@ -36,7 +40,7 @@ describe("the cards", () => {
     let cards = heardInto([], { id: 1, text: readback.cleared, at: 0 }, fixture.tail);
     cards = heardInto(cards, { id: 2, text: `${readback.said}, Cessna three alpha bravo`, at: 5000 }, fixture.tail);
     // With the call sign now said, only the altitude is wrong.
-    expect(cards[0]!.readback?.check.items.map(i => i.item)).toEqual(["altitude"]);
+    expect(cards[0]!.readback?.check.items.map((i) => i.item)).toEqual(["altitude"]);
   });
 
   test("Read Back tapped: the next transmission is it, whoever the words say said it", () => {

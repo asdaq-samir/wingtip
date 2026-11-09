@@ -2,8 +2,18 @@ import { describe, expect, it } from "vitest";
 import type { Leg, Totals } from "../../lib/api/types";
 import { inkOn, SCORE_STEPS, scoreColor } from "../../lib/scoreScale";
 import {
-  bearing, clockTime, cruiseByAltitude, decimalHours, legsWithoutWind, one, plannedWords, reportedWind, runwayWind,
-  windAloft, windLine, windsOutOfDate,
+  bearing,
+  clockTime,
+  cruiseByAltitude,
+  decimalHours,
+  legsWithoutWind,
+  one,
+  plannedWords,
+  reportedWind,
+  runwayWind,
+  windAloft,
+  windLine,
+  windsOutOfDate,
 } from "./format";
 
 describe("scoreColor", () => {
@@ -36,7 +46,7 @@ describe("bearing", () => {
   it("writes north as 360, never 000", () => {
     expect(bearing(0)).toBe("360°");
     expect(bearing(360)).toBe("360°");
-    expect(bearing(359.7)).toBe("360°");   // rounds to 360
+    expect(bearing(359.7)).toBe("360°"); // rounds to 360
     expect(bearing(0.4)).toBe("360°");
   });
   it("rounds rather than truncating", () => expect(bearing(89.6)).toBe("090°"));
@@ -61,22 +71,43 @@ describe("decimalHours", () => {
 
 describe("legsWithoutWind", () => {
   const base: Totals = {
-    distance_nm: 210, procedure_nm: 0, ete_min: 125, fuel_gal: 17.5, unflyable_legs: 0, legs_without_wind: 0,
-    reserve_min: null, reserve_gal: null, taxi_gal: null, fuel_required_gal: null, usable_fuel_gal: null, fuel_margin_gal: null, night: null, night_passengers: null, rules: "vfr", alternate: null, hops: [], fuel_stops: [],
-    planned_at: null, winds: null, ground_min: 0,
+    distance_nm: 210,
+    procedure_nm: 0,
+    ete_min: 125,
+    fuel_gal: 17.5,
+    unflyable_legs: 0,
+    legs_without_wind: 0,
+    reserve_min: null,
+    reserve_gal: null,
+    taxi_gal: null,
+    fuel_required_gal: null,
+    usable_fuel_gal: null,
+    fuel_margin_gal: null,
+    night: null,
+    night_passengers: null,
+    rules: "vfr",
+    alternate: null,
+    hops: [],
+    fuel_stops: [],
+    planned_at: null,
+    winds: null,
+    ground_min: 0,
   };
 
-  it("has no warning when every leg has wind", () =>
-    expect(legsWithoutWind(base)).toBeNull());
-  it("singularises one leg", () =>
-    expect(legsWithoutWind({ ...base, legs_without_wind: 1 })).toBe("1 leg without wind data"));
-  it("pluralises more", () =>
-    expect(legsWithoutWind({ ...base, legs_without_wind: 3 })).toBe("3 legs without wind data"));
+  it("has no warning when every leg has wind", () => expect(legsWithoutWind(base)).toBeNull());
+  it("singularises one leg", () => expect(legsWithoutWind({ ...base, legs_without_wind: 1 })).toBe("1 leg without wind data"));
+  it("pluralises more", () => expect(legsWithoutWind({ ...base, legs_without_wind: 3 })).toBe("3 legs without wind data"));
 });
 
 describe("cruiseByAltitude", () => {
-  const leg = (altitude_ft: number, tas_kt: number, oat_c: number | null, density_altitude_ft: number, power_pct = 65, fuel_burn_gph = 8.5) =>
-    ({ altitude_ft, tas_kt, oat_c, density_altitude_ft, power_pct, fuel_burn_gph }) as Leg;
+  const leg = (
+    altitude_ft: number,
+    tas_kt: number,
+    oat_c: number | null,
+    density_altitude_ft: number,
+    power_pct = 65,
+    fuel_burn_gph = 8.5,
+  ) => ({ altitude_ft, tas_kt, oat_c, density_altitude_ft, power_pct, fuel_burn_gph }) as Leg;
 
   it("says each altitude once, as a range where its legs met different air", () => {
     expect(cruiseByAltitude([leg(6500, 111.2, 2, 6880), leg(6500, 112.4, 4, 7160), leg(4500, 108.9, 9, 4960)], 65)).toEqual([
@@ -94,13 +125,17 @@ describe("cruiseByAltitude", () => {
 
 describe("runwayWind", () => {
   it("the favoured end, its headwind and the side its crosswind comes from, and the gusts'", () => {
-    expect(runwayWind({ end: "27", headwind_kt: 10, crosswind_kt: 6, gust_crosswind_kt: 9 }))
-      .toBe("Favors 27: 10 kt headwind, 6 kt crosswind from the right, 9 in the gusts");
-    expect(runwayWind({ end: "9", headwind_kt: -3, crosswind_kt: -12, gust_crosswind_kt: null }))
-      .toBe("Favors 9: 3 kt tailwind, 12 kt crosswind from the left");
+    expect(runwayWind({ end: "27", headwind_kt: 10, crosswind_kt: 6, gust_crosswind_kt: 9 })).toBe(
+      "Favors 27: 10 kt headwind, 6 kt crosswind from the right, 9 in the gusts",
+    );
+    expect(runwayWind({ end: "9", headwind_kt: -3, crosswind_kt: -12, gust_crosswind_kt: null })).toBe(
+      "Favors 9: 3 kt tailwind, 12 kt crosswind from the left",
+    );
     expect(runwayWind({ end: "18", headwind_kt: 0, crosswind_kt: 0, gust_crosswind_kt: null })).toBe("Calm on 18");
     // A gust's crosswind no more than the steady one's is not said.
-    expect(runwayWind({ end: "36", headwind_kt: 12, crosswind_kt: 2, gust_crosswind_kt: -2 })).toBe("Favors 36: 12 kt headwind, 2 kt crosswind from the right");
+    expect(runwayWind({ end: "36", headwind_kt: 12, crosswind_kt: 2, gust_crosswind_kt: -2 })).toBe(
+      "Favors 36: 12 kt headwind, 2 kt crosswind from the right",
+    );
   });
 });
 

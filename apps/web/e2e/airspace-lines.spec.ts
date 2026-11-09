@@ -12,14 +12,14 @@ import { airportMark, drawn, openMapSettings, slow } from "./helpers";
 
 /** How many of the volumes' lines are drawn in the view, as the map's probe
  *  says (AirspaceGl). */
-const lines = async (page: Page): Promise<number> => new Set((await drawn(page, "airspace-lines")).map(l => l.id)).size;
+const lines = async (page: Page): Promise<number> => new Set((await drawn(page, "airspace-lines")).map((l) => l.id)).size;
 /** The altitudes on the rings, each label's words and its turn along its
  *  ring (AirspaceGl's probe, the tiles' `angle`). */
 const labels = async (page: Page): Promise<{ id: string; text: string; angle: number }[]> =>
-  (await drawn(page, "airspace-edge-labels")).map(l => ({ id: String(l.id), text: String(l.text), angle: Number(l.angle ?? 0) }));
+  (await drawn(page, "airspace-edge-labels")).map((l) => ({ id: String(l.id), text: String(l.text), angle: Number(l.angle ?? 0) }));
 /** The VORs' idents drawn (NavaidsGl's probe). */
 const vors = async (page: Page): Promise<string[]> =>
-  (await drawn(page, "navaid-marks")).filter(m => m.kind === "vor").map(m => String(m.ident));
+  (await drawn(page, "navaid-marks")).filter((m) => m.kind === "vor").map((m) => String(m.ident));
 
 test("Chicago's airspace is drawn over the chart with its altitudes, and the switch takes it off", async ({ page }) => {
   // The planner's overlay tiles, through the gateway: the cycle's archive
@@ -27,7 +27,7 @@ test("Chicago's airspace is drawn over the chart with its altitudes, and the swi
   const answer = await page.request.get("/api/planner/overlay-tiles");
   expect(answer.ok()).toBe(true);
   const tiles: { name: string; layers: { name: string; features: number }[] } = await answer.json();
-  expect(tiles.layers.find(l => l.name === "airspace")!.features).toBeGreaterThan(10);
+  expect(tiles.layers.find((l) => l.name === "airspace")!.features).toBeGreaterThan(10);
   const header = await page.request.get(`/api/planner/overlay-tiles/${tiles.name}.pmtiles`, { headers: { Range: "bytes=0-6" } });
   expect(header.status()).toBe(206);
   expect((await header.body()).toString("latin1")).toBe("PMTiles");
@@ -41,15 +41,15 @@ test("Chicago's airspace is drawn over the chart with its altitudes, and the swi
   // surface ("D: SFC–<3000" under a Class B shelf). The surface area's
   // "B: SFC–10000" is a small ring round KORD's own mark, its label
   // skipped there.
-  await expect.poll(async () => (await labels(page)).some(l => /^B: (SFC|\d+)–10000$/.test(l.text)), { timeout: slow(15000) }).toBe(true);
+  await expect.poll(async () => (await labels(page)).some((l) => /^B: (SFC|\d+)–10000$/.test(l.text)), { timeout: slow(15000) }).toBe(true);
   const written = await labels(page);
-  expect(written.some(l => /^D: SFC–<?\d+$/.test(l.text))).toBe(true);
-  expect(written.some(l => /^[BC]: \d+–\d+$/.test(l.text))).toBe(true);
+  expect(written.some((l) => /^D: SFC–<?\d+$/.test(l.text))).toBe(true);
+  expect(written.some((l) => /^[BC]: \d+–\d+$/.test(l.text))).toBe(true);
   expect(written.length).toBeGreaterThan(3);
   // One a shelf, not one every few hundred pixels round its ring.
-  expect(new Set(written.map(l => l.id)).size).toBe(written.length);
+  expect(new Set(written.map((l) => l.id)).size).toBe(written.length);
   // Upright, along the ring.
-  expect(written.every(l => l.angle > -90 && l.angle <= 90)).toBe(true);
+  expect(written.every((l) => l.angle > -90 && l.angle <= 90)).toBe(true);
   // And the VORs about it: Northbrook's, north of the field.
   await expect.poll(() => vors(page), { timeout: slow(15000) }).toContain("OBK");
 
@@ -71,27 +71,29 @@ test("a tap on a Class D ring opens its card, with its ceiling and hours", async
   // ring it drew at rest (data-airspace-rings, in the map's own points),
   // clear of the airports' marks (which take a tap near them) and of the
   // sheet over the lower half of a phone's screen.
-  const ringPoint = async () => page.evaluate(() => {
-    const canvas = document.querySelector<HTMLElement>("[data-airspace-lines]");
-    const marks = [...document.querySelectorAll<HTMLElement>("[data-airport-marks]")];
-    if (!canvas) return null;
-    const box = document.querySelector(".maplibregl-map")!.getBoundingClientRect();
-    // Only the fields wearing a mark take a tap near them; the canvas
-    // writes every field it knows, mark or not.
-    const fields: { x: number; y: number; chip: boolean }[] = marks.flatMap(m => JSON.parse(m.dataset.airportMarks || "[]"));
-    // A point on each line drawn (AirspaceGl's probe: its middle vertex).
-    const rings: { class: string; x: number; y: number }[] = (JSON.parse(canvas.dataset.airspaceLines || "[]") as { cls: string; x: number; y: number }[])
-      .map(l => ({ class: l.cls, x: l.x, y: l.y }));
-    // A Class D ring is 35 px across its radius at the card's zoom on a
-    // phone, so the clearance is the mark's own reach (22 px) and a little;
-    // and clear of the map's buttons down the right edge (BUTTONS_CLEAR).
-    for (const ring of rings) {
-      if (ring.class !== "D" || ring.y < 80 || ring.y > box.height * 0.48 || ring.x < 20 || ring.x > box.width - 64) continue;
-      if (fields.some(f => f.chip && Math.hypot(f.x - ring.x, f.y - ring.y) < 26)) continue;
-      return { x: box.left + ring.x, y: box.top + ring.y };
-    }
-    return null;
-  });
+  const ringPoint = async () =>
+    page.evaluate(() => {
+      const canvas = document.querySelector<HTMLElement>("[data-airspace-lines]");
+      const marks = [...document.querySelectorAll<HTMLElement>("[data-airport-marks]")];
+      if (!canvas) return null;
+      const box = document.querySelector(".maplibregl-map")!.getBoundingClientRect();
+      // Only the fields wearing a mark take a tap near them; the canvas
+      // writes every field it knows, mark or not.
+      const fields: { x: number; y: number; chip: boolean }[] = marks.flatMap((m) => JSON.parse(m.dataset.airportMarks || "[]"));
+      // A point on each line drawn (AirspaceGl's probe: its middle vertex).
+      const rings: { class: string; x: number; y: number }[] = (
+        JSON.parse(canvas.dataset.airspaceLines || "[]") as { cls: string; x: number; y: number }[]
+      ).map((l) => ({ class: l.cls, x: l.x, y: l.y }));
+      // A Class D ring is 35 px across its radius at the card's zoom on a
+      // phone, so the clearance is the mark's own reach (22 px) and a little;
+      // and clear of the map's buttons down the right edge (BUTTONS_CLEAR).
+      for (const ring of rings) {
+        if (ring.class !== "D" || ring.y < 80 || ring.y > box.height * 0.48 || ring.x < 20 || ring.x > box.width - 64) continue;
+        if (fields.some((f) => f.chip && Math.hypot(f.x - ring.x, f.y - ring.y) < 26)) continue;
+        return { x: box.left + ring.x, y: box.top + ring.y };
+      }
+      return null;
+    });
   await expect.poll(ringPoint, { timeout: slow(30000) }).not.toBeNull();
   const at = (await ringPoint())!;
   await page.mouse.click(at.x, at.y);

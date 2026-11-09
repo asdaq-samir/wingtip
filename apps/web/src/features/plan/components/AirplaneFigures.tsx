@@ -36,7 +36,7 @@ async function smaller(file: File): Promise<Blob> {
   canvas.width = Math.round(bitmap.width * scale);
   canvas.height = Math.round(bitmap.height * scale);
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  return new Promise((resolve, reject) => canvas.toBlob(b => (b ? resolve(b) : reject(new Error("no image"))), "image/png"));
+  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("no image"))), "image/png"));
 }
 
 /**
@@ -49,9 +49,9 @@ async function smaller(file: File): Promise<Blob> {
  * filling what is not set. Only on the card of the N-number flown now.
  */
 export function AirplaneFigures({ tail }: { tail: string }) {
-  const aircraft = usePreferences(p => p.aircraft);
-  const setAircraft = usePreferences(p => p.setAircraft);
-  const setTailFigures = usePreferences(p => p.setTailFigures);
+  const aircraft = usePreferences((p) => p.aircraft);
+  const setAircraft = usePreferences((p) => p.setAircraft);
+  const setTailFigures = usePreferences((p) => p.setTailFigures);
   const { data: profiles } = useQuery(aircraftProfilesQuery);
   const [editing, setEditing] = useState<Record<string, string> | null>(null);
   // A photo of the handbook's page read for the figures, at the owner's ask
@@ -59,23 +59,32 @@ export function AirplaneFigures({ tail }: { tail: string }) {
   // read filled in for the pilot to check against the page, and the page's
   // own words for each, before anything is saved.
   const photo = useRef<HTMLInputElement>(null);
-  const [reading, setReading] = useState<{ busy: boolean; words: string[]; problem: string | null }>({ busy: false, words: [], problem: null });
+  const [reading, setReading] = useState<{ busy: boolean; words: string[]; problem: string | null }>({
+    busy: false,
+    words: [],
+    problem: null,
+  });
   const readPhoto = async (file: File) => {
     setReading({ busy: true, words: [], problem: null });
     try {
       const read = figuresOfPage(await readPage(await smaller(file)));
       const found = Object.entries(read).map(([key, f]) => ({ key, value: f.value, words: f.words }));
-      setEditing(e => ({ ...(e ?? {}), ...Object.fromEntries(found.map(f => [f.key, String(f.value)])) }));
+      setEditing((e) => ({ ...(e ?? {}), ...Object.fromEntries(found.map((f) => [f.key, String(f.value)])) }));
       setReading({
-        busy: false, words: [...new Set(found.map(f => f.words))],
+        busy: false,
+        words: [...new Set(found.map((f) => f.words))],
         problem: found.length ? null : "No figures were read off that page: take the specifications page, flat and in good light.",
       });
     } catch (err) {
-      setReading({ busy: false, words: [], problem: err instanceof Error ? `The page could not be read: ${err.message}` : "The page could not be read" });
+      setReading({
+        busy: false,
+        words: [],
+        problem: err instanceof Error ? `The page could not be read: ${err.message}` : "The page could not be read",
+      });
     }
   };
   if (shortName(aircraft.label) !== tail.toUpperCase()) return null;
-  const stock = profiles?.find(p => p.name === aircraft.profile);
+  const stock = profiles?.find((p) => p.name === aircraft.profile);
   const shown: Partial<Record<keyof TailFigures, number | undefined>> = {
     cruiseTasKt: aircraft.cruiseTasKt ?? stock?.cruise_tas_kt,
     cruisePowerPct: aircraft.cruisePowerPct,
@@ -100,29 +109,43 @@ export function AirplaneFigures({ tail }: { tail: string }) {
     setAircraft({ ...rest, ...figures });
     setEditing(null);
   };
-  const begin = () => setEditing(Object.fromEntries(FIELDS.map(f => [f.key, own(f.key) ? String(shown[f.key]) : ""])));
+  const begin = () => setEditing(Object.fromEntries(FIELDS.map((f) => [f.key, own(f.key) ? String(shown[f.key]) : ""])));
   return (
     <ListGroup
       title="Planning figures"
-      action={editing ? undefined : <Button type="button" variant="link" size="sm" className="h-auto p-0 text-tint" onClick={begin} data-testid="figures-edit">Edit</Button>}
+      action={
+        editing ? undefined : (
+          <Button type="button" variant="link" size="sm" className="h-auto p-0 text-tint" onClick={begin} data-testid="figures-edit">
+            Edit
+          </Button>
+        )
+      }
     >
-      {FIELDS.map(f => (
+      {FIELDS.map((f) => (
         <ListRow
-          key={f.key} title={f.label}
-          value={editing ? (
-            <span className="flex items-center gap-1.5">
-              <Input
-                type="text" inputMode="decimal" value={editing[f.key] ?? ""} placeholder={shown[f.key] != null ? String(shown[f.key]) : "—"}
-                onChange={e => setEditing({ ...editing, [f.key]: e.target.value.replace(/[^0-9.]/g, "") })}
-                aria-label={`${f.label}, ${f.unit}`} className={cn("h-8 w-24 text-right tabular-nums", TEXT.row)} data-testid={`figure-${f.key}`}
-              />
-              <span className="w-10 text-muted-foreground">{f.unit}</span>
-            </span>
-          ) : (
-            <span className={cn("tabular-nums", own(f.key) ? "font-semibold text-foreground" : "text-muted-foreground")}>
-              {shown[f.key] != null ? `${grouped(shown[f.key]!)} ${f.unit}` : "Its type's"}
-            </span>
-          )}
+          key={f.key}
+          title={f.label}
+          value={
+            editing ? (
+              <span className="flex items-center gap-1.5">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={editing[f.key] ?? ""}
+                  placeholder={shown[f.key] != null ? String(shown[f.key]) : "—"}
+                  onChange={(e) => setEditing({ ...editing, [f.key]: e.target.value.replace(/[^0-9.]/g, "") })}
+                  aria-label={`${f.label}, ${f.unit}`}
+                  className={cn("h-8 w-24 text-right tabular-nums", TEXT.row)}
+                  data-testid={`figure-${f.key}`}
+                />
+                <span className="w-10 text-muted-foreground">{f.unit}</span>
+              </span>
+            ) : (
+              <span className={cn("tabular-nums", own(f.key) ? "font-semibold text-foreground" : "text-muted-foreground")}>
+                {shown[f.key] != null ? `${grouped(shown[f.key]!)} ${f.unit}` : "Its type's"}
+              </span>
+            )
+          }
         />
       ))}
       {editing && (
@@ -131,22 +154,54 @@ export function AirplaneFigures({ tail }: { tail: string }) {
             <div className={cn("space-y-0.5", TEXT.detail)} role="status" data-testid="figures-read">
               {reading.problem && <p className="text-destructive">{reading.problem}</p>}
               {reading.words.length > 0 && <p className="font-semibold">Read from the page: check each against it before saving.</p>}
-              {reading.words.map(w => <p key={w} className="text-muted-foreground">{w}</p>)}
+              {reading.words.map((w) => (
+                <p key={w} className="text-muted-foreground">
+                  {w}
+                </p>
+              ))}
             </div>
           )}
           {/* Small buttons (32 px) a gap-3 apart, so their 44 pt hit
               areas meet and do not overlap. */}
           <div className="flex items-center gap-3">
             <input
-              ref={photo} type="file" accept="image/*" capture="environment" className="hidden" data-testid="figures-photo-input"
-              onChange={e => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void readPhoto(file); }}
+              ref={photo}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              data-testid="figures-photo-input"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) void readPhoto(file);
+              }}
             />
-            <Button type="button" variant="outline" size="sm" disabled={reading.busy} onClick={() => photo.current?.click()} data-testid="figures-photo">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={reading.busy}
+              onClick={() => photo.current?.click()}
+              data-testid="figures-photo"
+            >
               {reading.busy ? "Reading the page…" : "Read from a photo"}
             </Button>
             <span className="flex-1" />
-            <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(null); setReading({ busy: false, words: [], problem: null }); }}>Cancel</Button>
-            <Button type="button" size="sm" onClick={save} data-testid="figures-save">Save</Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEditing(null);
+                setReading({ busy: false, words: [], problem: null });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="button" size="sm" onClick={save} data-testid="figures-save">
+              Save
+            </Button>
           </div>
         </div>
       )}

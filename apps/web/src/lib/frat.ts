@@ -49,7 +49,7 @@ let selfChecksAsked: (RiskFactor & { group: string })[] | null = null;
  *  checklist and PAVE's pressures and unfamiliarity, as the engine lists
  *  them (gonogo_self_checks), asked once the engine is loaded. */
 export function selfChecks(): (RiskFactor & { group: string })[] {
-  selfChecksAsked ??= callEngine("gonogo_self_checks", {}).map(f => ({ ...riskFactor(f), group: f.group ?? "" }));
+  selfChecksAsked ??= callEngine("gonogo_self_checks", {}).map((f) => ({ ...riskFactor(f), group: f.group ?? "" }));
   return selfChecksAsked;
 }
 
@@ -98,10 +98,15 @@ export interface Assessment {
  *  case): the risk assessment here, and the departure window's ask. */
 export function currencyInput(c: Currency) {
   return {
-    flights: c.flights, total_hours: c.totalHours, day_passengers_until: c.dayPassengersUntil ?? null,
-    night_passengers_until: c.nightPassengersUntil ?? null, instrument_current_until: c.instrumentCurrentUntil ?? null,
+    flights: c.flights,
+    total_hours: c.totalHours,
+    day_passengers_until: c.dayPassengersUntil ?? null,
+    night_passengers_until: c.nightPassengersUntil ?? null,
+    instrument_current_until: c.instrumentCurrentUntil ?? null,
     instrument_current_from: c.instrumentCurrentFrom ?? null,
-    ipc_needed_after: c.ipcNeededAfter ?? null, flight_review_until: c.flightReviewUntil ?? null, medical_expires_on: c.medicalExpiresOn ?? null,
+    ipc_needed_after: c.ipcNeededAfter ?? null,
+    flight_review_until: c.flightReviewUntil ?? null,
+    medical_expires_on: c.medicalExpiresOn ?? null,
   };
 }
 
@@ -110,25 +115,29 @@ export function currencyInput(c: Currency) {
 export function assess(input: FratInput): Assessment {
   const c = input.currency;
   const a = callEngine("gonogo_risk", {
-    vfr_not_recommended: input.vfrNotRecommended, under_minimums: input.underMinimums, tfr_on_route: input.tfrOnRoute,
-    hazards: input.hazards, night: input.night, night_passengers: input.nightPassengers ?? null, fuel_margin_gal: input.fuelMarginGal, ifr: input.ifr ?? false,
+    vfr_not_recommended: input.vfrNotRecommended,
+    under_minimums: input.underMinimums,
+    tfr_on_route: input.tfrOnRoute,
+    hazards: input.hazards,
+    night: input.night,
+    night_passengers: input.nightPassengers ?? null,
+    fuel_margin_gal: input.fuelMarginGal,
+    ifr: input.ifr ?? false,
     // Left out for a stock profile, which has none; null for the pilot's
     // own airplane with none recorded.
     ...(input.vorCheck !== undefined
-      ? { vor_check: input.vorCheck && { good_through: input.vorCheck.goodThrough, within_limit: input.vorCheck.withinLimit } } : {}),
+      ? { vor_check: input.vorCheck && { good_through: input.vorCheck.goodThrough, within_limit: input.vorCheck.withinLimit } }
+      : {}),
     inspections: input.inspections ? inspectionsInput(input.inspections) : null,
     squawks: input.squawks ? squawksInput(input.squawks) : null,
     currency: c && currencyInput(c),
-    day: input.day, ticked: input.ticked,
+    day: input.day,
+    ticked: input.ticked,
   });
   return { score: a.score, level: a.level, words: a.words, factors: a.factors.map(riskFactor) };
 }
 
-export const LEVEL_TONE: Record<RiskLevel, string> = {
-  low: "text-go-ink",
-  caution: "text-caution-ink",
-  high: "text-destructive-ink",
-};
+export const LEVEL_TONE: Record<RiskLevel, string> = { low: "text-go-ink", caution: "text-caution-ink", high: "text-destructive-ink" };
 
 /** An assessment in a few words, for the section's title and a saved
  *  flight's row: "Raised · 8 points". */
@@ -147,9 +156,9 @@ export const useRisk = create<{
   assessment: Assessment | null;
   tick: (key: string, on: boolean) => void;
   setAssessment: (assessment: Assessment | null) => void;
-}>(set => ({
+}>((set) => ({
   ticked: {},
   assessment: null,
-  tick: (key, on) => set(s => ({ ticked: { ...s.ticked, [key]: on } })),
-  setAssessment: assessment => set({ assessment }),
+  tick: (key, on) => set((s) => ({ ticked: { ...s.ticked, [key]: on } })),
+  setAssessment: (assessment) => set({ assessment }),
 }));

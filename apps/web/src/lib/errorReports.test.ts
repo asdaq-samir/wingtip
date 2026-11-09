@@ -21,7 +21,10 @@ describe("error reports", () => {
 
   it("send each different error once, and ten at most a load", () => {
     const sent: string[] = [];
-    const send = (body: string) => { sent.push(body); return true; };
+    const send = (body: string) => {
+      sent.push(body);
+      return true;
+    };
     const report = (message: string) => reportOf("rejection", message, { pathname: "/app/plan" }, "iPhone");
     expect(sendReport(report("same"), send)).toBe(true);
     expect(sendReport(report("same"), send)).toBe(false);
@@ -33,10 +36,14 @@ describe("error reports", () => {
     const report = reportOf("render", new TypeError("x is undefined"), { pathname: "/app/plan" }, "iPhone");
     const sent = diagnosticsOf(report, new Date("2026-11-09T10:00:00Z"), { platform: "web", version: "abc123", device: "phone" });
     expect(sent).toMatchObject({ platform: "web", version: "abc123", device: "phone" });
-    expect(sent.faults).toEqual([{
-      kind: "error", signature: "render: TypeError: x is undefined", at: "2026-11-09T10:00:00.000Z",
-      detail: expect.stringContaining("page /app/plan\nbrowser iPhone") as unknown as string,
-    }]);
+    expect(sent.faults).toEqual([
+      {
+        kind: "error",
+        signature: "render: TypeError: x is undefined",
+        at: "2026-11-09T10:00:00.000Z",
+        detail: expect.stringContaining("page /app/plan\nbrowser iPhone") as unknown as string,
+      },
+    ]);
   });
 
   it("cut a long message short", () => {

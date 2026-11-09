@@ -26,7 +26,7 @@ export function RulerGl() {
     let held: XY[] = [];
     let ruling: { ids: [number, number]; at: XY[]; box: DOMRect } | null = null;
     const pointOf = (t: Touch, box?: DOMRect): XY => ({ x: t.clientX - (box?.left ?? 0), y: t.clientY - (box?.top ?? 0) });
-    const find = (list: TouchList, id: number) => Array.from(list).find(t => t.identifier === id);
+    const find = (list: TouchList, id: number) => Array.from(list).find((t) => t.identifier === id);
     const cancelHold = () => {
       if (hold) window.clearTimeout(hold.timer);
       hold = null;
@@ -38,7 +38,7 @@ export function RulerGl() {
       const { ids } = hold;
       hold = null;
       const box = el.getBoundingClientRect();
-      const from = held.map(p => ({ x: p.x - box.left, y: p.y - box.top }));
+      const from = held.map((p) => ({ x: p.x - box.left, y: p.y - box.top }));
       ruling = { ids, at: from, box };
       map.touchZoomRotate.disable();
       map.dragPan.disable();
@@ -57,16 +57,24 @@ export function RulerGl() {
       if (ruling) return;
       cancelHold();
       if (e.touches.length !== 2) return;
-      loadDeclination().then(at => setDeclination(() => at), () => {});
+      loadDeclination().then(
+        (at) => setDeclination(() => at),
+        () => {},
+      );
       const [a, b] = [e.touches[0]!, e.touches[1]!];
-      hold = { ids: [a.identifier, b.identifier], from: [pointOf(a), pointOf(b)], zoom: map.getZoom(), timer: window.setTimeout(begin, HOLD_MS) };
+      hold = {
+        ids: [a.identifier, b.identifier],
+        from: [pointOf(a), pointOf(b)],
+        zoom: map.getZoom(),
+        timer: window.setTimeout(begin, HOLD_MS),
+      };
       held = hold.from;
     };
     const move = (e: TouchEvent) => {
       if (hold) {
-        const now = hold.ids.map(id => find(e.touches, id));
-        if (now.some(t => !t)) return cancelHold();
-        held = now.map(t => pointOf(t!));
+        const now = hold.ids.map((id) => find(e.touches, id));
+        if (now.some((t) => !t)) return cancelHold();
+        held = now.map((t) => pointOf(t!));
         if (!heldStill(hold.from, held) || Math.abs(map.getZoom() - hold.zoom) > PINCHED_LEVELS) cancelHold();
         return;
       }
@@ -77,7 +85,7 @@ export function RulerGl() {
         return t ? pointOf(t, r.box) : r.at[i]!;
       });
       r.at = at;
-      setEnds(was => was && { first: was.first, now: [at[0]!, at[1]!] });
+      setEnds((was) => was && { first: was.first, now: [at[0]!, at[1]!] });
     };
     const lift = (e: TouchEvent) => {
       if (hold && e.touches.length < 2) cancelHold();
@@ -97,12 +105,18 @@ export function RulerGl() {
       end();
     };
   }, [map]);
-  const toLatLon = useMemo(() => (p: XY) => {
-    const ll = map.unproject([p.x, p.y]);
-    return { lat: ll.lat, lon: ll.lng };
-  }, [map]);
+  const toLatLon = useMemo(
+    () => (p: XY) => {
+      const ll = map.unproject([p.x, p.y]);
+      return { lat: ll.lat, lon: ll.lng };
+    },
+    [map],
+  );
   const drawn = useMemo(() => ends && placed(toLatLon, ends.now, declination, tasKt), [ends, toLatLon, declination, tasKt]);
   const first = ends?.first;
-  const spoken = useMemo(() => (first ? placed(toLatLon, first, declination, tasKt).words.spoken : ""), [first, toLatLon, declination, tasKt]);
+  const spoken = useMemo(
+    () => (first ? placed(toLatLon, first, declination, tasKt).words.spoken : ""),
+    [first, toLatLon, declination, tasKt],
+  );
   return <RulerDrawing drawn={drawn} spoken={spoken} />;
 }

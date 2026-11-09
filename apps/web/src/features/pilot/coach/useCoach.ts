@@ -29,7 +29,7 @@ const KEY = "wingtip.coach.certificate";
 function stored(): Certificate | null {
   try {
     const v = window.localStorage.getItem(KEY);
-    return CERTIFICATES.some(c => c.value === v) ? (v as Certificate) : null;
+    return CERTIFICATES.some((c) => c.value === v) ? (v as Certificate) : null;
   } catch {
     return null;
   }
@@ -40,20 +40,32 @@ function stored(): Certificate | null {
  *  logged, else private. */
 export function guessed(entries: LogbookEntry[] | undefined, currency: Currency | undefined, training: Training | undefined): Certificate {
   if (training?.endorsements.length) return "student";
-  if (currency?.ipcOn || entries?.some(e => (e.approaches ?? 0) > 0)) return "instrument";
+  if (currency?.ipcOn || entries?.some((e) => (e.approaches ?? 0) > 0)) return "instrument";
   return "private";
 }
 
 /** The plan's ask from what the app holds. */
 export function askOf(
-  entries: LogbookEntry[], currency: Currency | undefined, training: Training | undefined, certificate: Certificate,
-  home: string | null, debriefs: CoachAsk["debriefs"], today: string,
+  entries: LogbookEntry[],
+  currency: Currency | undefined,
+  training: Training | undefined,
+  certificate: Certificate,
+  home: string | null,
+  debriefs: CoachAsk["debriefs"],
+  today: string,
 ): CoachAsk {
-  const ratings: CoachAsk["ratings"] = certificate === "student" ? ["student"] : certificate === "instrument" ? ["private", "instrument"] : ["private"];
+  const ratings: CoachAsk["ratings"] =
+    certificate === "student" ? ["student"] : certificate === "instrument" ? ["private", "instrument"] : ["private"];
   return {
-    today, entries, ratings, home, debriefs,
-    flightReviewOn: currency?.flightReviewOn ?? null, medicalExpiresOn: currency?.medicalExpiresOn ?? null, ipcOn: currency?.ipcOn ?? null,
-    held: certificate === "student" ? (training?.endorsements ?? []).map(e => ({ code: e.code, on: e.endorsedOn })) : [],
+    today,
+    entries,
+    ratings,
+    home,
+    debriefs,
+    flightReviewOn: currency?.flightReviewOn ?? null,
+    medicalExpiresOn: currency?.medicalExpiresOn ?? null,
+    ipcOn: currency?.ipcOn ?? null,
+    held: certificate === "student" ? (training?.endorsements ?? []).map((e) => ({ code: e.code, on: e.endorsedOn })) : [],
   };
 }
 
@@ -66,7 +78,11 @@ export function useCoach() {
   const certificate = chosen ?? guessed(entries.data, currency, training);
   const choose = (c: Certificate) => {
     setChosen(c);
-    try { window.localStorage.setItem(KEY, c); } catch { /* kept for this visit only */ }
+    try {
+      window.localStorage.setItem(KEY, c);
+    } catch {
+      /* kept for this visit only */
+    }
   };
 
   const plan = useMutation({
@@ -87,7 +103,8 @@ export function useCoach() {
 
   return {
     ready: !!entries.data,
-    certificate, choose,
+    certificate,
+    choose,
     home: pilot?.homeBase ?? null,
     make: () => plan.mutate(),
     making: plan.isPending,

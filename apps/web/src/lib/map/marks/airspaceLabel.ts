@@ -26,8 +26,8 @@ const NOTAM_ONLY = /^legal description references notam\.?$/i;
 export function airspaceFacts(
   volume: Pick<AirspaceVolume, "name" | "floor_ft" | "floor_sfc" | "ceiling_ft" | "ceiling_excluded" | "hours_code" | "hours_remark">,
 ): AirspaceFacts {
-  const ceiling = volume.ceiling_ft == null ? "—"
-    : `${volume.ceiling_excluded ? "Up to but not including " : ""}${altFt(volume.ceiling_ft)} ft MSL`;
+  const ceiling =
+    volume.ceiling_ft == null ? "—" : `${volume.ceiling_excluded ? "Up to but not including " : ""}${altFt(volume.ceiling_ft)} ft MSL`;
   return {
     name: placeWords(volume.name),
     floor: volume.floor_sfc ? "SFC" : `${altFt(volume.floor_ft)} ft MSL`,

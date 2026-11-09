@@ -24,7 +24,9 @@ async function startDryRun(page: Page) {
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
 }
 
-test("in flight the next checkpoint is over the map, the buttons are 60 points and the route box and tabs are away; closed, they return", async ({ page }) => {
+test("in flight the next checkpoint is over the map, the buttons are 60 points and the route box and tabs are away; closed, they return", async ({
+  page,
+}) => {
   await startDryRun(page);
   // The next checkpoint's card at the top; a dry run keeps the sheet where
   // it was, its card's controls in sight (a real flight's goes to the pill).
@@ -40,7 +42,9 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   // The map's buttons: NRST, D→ and the location arrow at the right, the
   // microphone at the left, each 60 points.
   const buttons = [
-    page.getByTestId("flying-nearest"), page.getByTestId("flying-direct"), page.locator("[data-map-controls]").getByTestId("my-position-button"),
+    page.getByTestId("flying-nearest"),
+    page.getByTestId("flying-direct"),
+    page.locator("[data-map-controls]").getByTestId("my-position-button"),
     page.locator("[data-map-food]").getByTestId("radio-button"),
   ];
   for (const button of buttons) {

@@ -45,7 +45,9 @@ export default function DepartureWindowStrip() {
         </p>
       ) : m.pending ? (
         <div className="flex gap-2" aria-busy="true" data-testid="departure-window-pending">
-          {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-14 w-12 shrink-0 rounded-xl" />)}
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} className="h-14 w-12 shrink-0 rounded-xl" />
+          ))}
         </div>
       ) : m.hours.length === 0 ? (
         <p className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-none">
@@ -61,19 +63,30 @@ export default function DepartureWindowStrip() {
           {/* Across, as far as the forecasts reach: the strip scrolls,
               the page does not. Each tile's hit area is 44 points by its
               pseudo-element, the tiles gap-2 apart so the areas meet. */}
-          <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label="Departure hours" data-testid="departure-window-hours">
-            {m.hours.map(h => {
+          <div
+            className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1"
+            role="group"
+            aria-label="Departure hours"
+            data-testid="departure-window-hours"
+          >
+            {m.hours.map((h) => {
               const finding = HOUR_FINDING[h.verdict];
               const on = m.selected?.depart === h.depart;
               const day = dayOf(h.depart, now);
               return (
                 <button
-                  key={h.depart} type="button" onClick={() => m.pick(h.depart)}
-                  aria-pressed={on} aria-label={hourLabel(h)} data-testid="departure-window-hour" data-verdict={h.verdict}
+                  key={h.depart}
+                  type="button"
+                  onClick={() => m.pick(h.depart)}
+                  aria-pressed={on}
+                  aria-label={hourLabel(h)}
+                  data-testid="departure-window-hour"
+                  data-verdict={h.verdict}
                   className={cn(
                     "relative flex w-12 shrink-0 snap-start flex-col items-center gap-0.5 rounded-xl py-1.5 outline-none",
                     "after:absolute after:-inset-1 focus-visible:ring-2 focus-visible:ring-ring",
-                    TILE_TINT[finding], on && "ring-2 ring-tint",
+                    TILE_TINT[finding],
+                    on && "ring-2 ring-tint",
                   )}
                 >
                   <span className={cn(TEXT.detail, "tabular-nums text-foreground")}>{clock(h.depart).slice(0, 2)}</span>
@@ -92,16 +105,22 @@ export default function DepartureWindowStrip() {
                   {HOUR_WORD[m.selected.verdict]} leaving {clock(m.selected.depart)}
                 </span>
               </div>
-              {m.selected.reasons.map(r => (
-                <p key={r.key} className={TEXT.detail}><span className="font-medium">{r.label}</span> · {r.detail}</p>
+              {m.selected.reasons.map((r) => (
+                <p key={r.key} className={TEXT.detail}>
+                  <span className="font-medium">{r.label}</span> · {r.detail}
+                </p>
               ))}
               {m.selected.night && (
                 <p className={TEXT.detail}>
-                  At night (14 CFR 1.1){m.selected.night_passengers
-                    ? "; with passengers, three full-stop landings in the last 90 days in 61.57(b)'s night period" : ""}
+                  At night (14 CFR 1.1)
+                  {m.selected.night_passengers
+                    ? "; with passengers, three full-stop landings in the last 90 days in 61.57(b)'s night period"
+                    : ""}
                 </p>
               )}
-              <p className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-figures">{hourFigures(m.selected, m.airplane)}</p>
+              <p className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-figures">
+                {hourFigures(m.selected, m.airplane)}
+              </p>
             </div>
           )}
         </>

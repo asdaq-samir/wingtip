@@ -25,7 +25,11 @@ const KINDS = [
  *
  * `kind` is where it opens, the normal list by default.
  */
-export default function ChecklistPage({ airplane, name, kind: opening = "normal" }: {
+export default function ChecklistPage({
+  airplane,
+  name,
+  kind: opening = "normal",
+}: {
   /** The airplane's aircraftKey (lib/aircraftChoice). */
   airplane: string;
   /** Its name, as the editor's label says it ("N12345", "C172"). */
@@ -33,7 +37,7 @@ export default function ChecklistPage({ airplane, name, kind: opening = "normal"
   kind?: ChecklistKind;
 }) {
   const [kind, setKind] = useState<ChecklistKind>(opening);
-  const text = useChecklists(s => checklistText(s.value, airplane, kind));
+  const text = useChecklists((s) => checklistText(s.value, airplane, kind));
   // Read by the shared engine, as the iPhone and Android read it.
   const checklist = useMemo(() => checklistOf(text), [text]);
   const [writing, setWriting] = useState<string | null>(null);
@@ -43,7 +47,9 @@ export default function ChecklistPage({ airplane, name, kind: opening = "normal"
     setWriting(null);
     setTicked({});
   };
-  const kinds = <Segmented label="Checklist" value={kind} onChange={switchTo} options={KINDS} className="w-full [&>*]:flex-1" testId="checklist-kind" />;
+  const kinds = (
+    <Segmented label="Checklist" value={kind} onChange={switchTo} options={KINDS} className="w-full [&>*]:flex-1" testId="checklist-kind" />
+  );
 
   if (writing !== null) {
     return (
@@ -54,8 +60,12 @@ export default function ChecklistPage({ airplane, name, kind: opening = "normal"
         <ListGroup>
           <div className="p-2">
             <Textarea
-              value={writing} onChange={e => setWriting(e.target.value)} rows={14} className="font-mono"
-              aria-label={`${name} ${kind} checklist`} data-testid="checklist-text"
+              value={writing}
+              onChange={(e) => setWriting(e.target.value)}
+              rows={14}
+              className="font-mono"
+              aria-label={`${name} ${kind} checklist`}
+              data-testid="checklist-text"
               placeholder={"# Before takeoff\nFuel selector -- Both\nMixture -- Rich"}
             />
           </div>
@@ -63,12 +73,21 @@ export default function ChecklistPage({ airplane, name, kind: opening = "normal"
         <ListGroup>
           <ListRow
             title={<span className="font-medium text-tint">Save checklist</span>}
-            onClick={() => { saveChecklist(airplane, kind, writing); setWriting(null); setTicked({}); }}
+            onClick={() => {
+              saveChecklist(airplane, kind, writing);
+              setWriting(null);
+              setTicked({});
+            }}
             data-testid="checklist-save"
           />
           {/* Only into an empty editor: it never writes over the pilot's. */}
           {!writing.trim() && (
-            <ListRow title="Start from the phases" description="Their headings only, to write your airplane's items under" onClick={() => setWriting(phasesText(kind))} data-testid="checklist-phases" />
+            <ListRow
+              title="Start from the phases"
+              description="Their headings only, to write your airplane's items under"
+              onClick={() => setWriting(phasesText(kind))}
+              data-testid="checklist-phases"
+            />
           )}
           <ListRow title="Cancel" onClick={() => setWriting(null)} />
         </ListGroup>
@@ -82,21 +101,30 @@ export default function ChecklistPage({ airplane, name, kind: opening = "normal"
       {kinds}
       {empty && (
         <ListGroup>
-          <ListRow title={kind === "emergency" ? "No emergency checklist yet" : "No checklist yet"} description="Write it from your airplane's handbook" />
+          <ListRow
+            title={kind === "emergency" ? "No emergency checklist yet" : "No checklist yet"}
+            description="Write it from your airplane's handbook"
+          />
         </ListGroup>
       )}
       {checklist.sections.map((section, s) => {
         const done = section.items.filter((_, i) => ticked[`${s}:${i}`]).length;
         return (
           <ListGroup
-            key={`${s}:${section.title}`} title={section.title}
-            badge={<span className={cn("tabular-nums text-muted-foreground", TEXT.note)}>{done} of {section.items.length}</span>}
+            key={`${s}:${section.title}`}
+            title={section.title}
+            badge={
+              <span className={cn("tabular-nums text-muted-foreground", TEXT.note)}>
+                {done} of {section.items.length}
+              </span>
+            }
           >
             {section.items.map((item, i) => {
               const on = !!ticked[`${s}:${i}`];
               return (
                 <ListRow
-                  key={i} checkbox={{ checked: on, onChange: next => setTicked(t => ({ ...t, [`${s}:${i}`]: next })) }}
+                  key={i}
+                  checkbox={{ checked: on, onChange: (next) => setTicked((t) => ({ ...t, [`${s}:${i}`]: next })) }}
                   title={<span className={cn(on && "text-muted-foreground")}>{item.challenge}</span>}
                   value={item.response ?? undefined}
                   data-testid="checklist-item"
@@ -110,12 +138,28 @@ export default function ChecklistPage({ airplane, name, kind: opening = "normal"
           glide, this list opened at the emergency, the MAYDAY. */}
       {kind === "emergency" && (
         <ListGroup>
-          <ListRow title={<span className="font-medium text-tint">Emergency assistant</span>} description="Best fields within a glide, the checklist and the MAYDAY" onClick={() => openEmergency("checklist")} data-testid="checklist-emergency" />
+          <ListRow
+            title={<span className="font-medium text-tint">Emergency assistant</span>}
+            description="Best fields within a glide, the checklist and the MAYDAY"
+            onClick={() => openEmergency("checklist")}
+            data-testid="checklist-emergency"
+          />
         </ListGroup>
       )}
       <ListGroup>
-        {!empty && <ListRow title="Start over" onClick={() => setTicked({})} disabled={!Object.values(ticked).some(Boolean)} data-testid="checklist-reset" />}
-        <ListRow title={empty ? "Write the checklist" : "Edit the checklist"} onClick={() => setWriting(text)} data-testid="checklist-edit" />
+        {!empty && (
+          <ListRow
+            title="Start over"
+            onClick={() => setTicked({})}
+            disabled={!Object.values(ticked).some(Boolean)}
+            data-testid="checklist-reset"
+          />
+        )}
+        <ListRow
+          title={empty ? "Write the checklist" : "Edit the checklist"}
+          onClick={() => setWriting(text)}
+          data-testid="checklist-edit"
+        />
       </ListGroup>
     </div>
   );

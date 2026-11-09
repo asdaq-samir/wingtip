@@ -14,7 +14,11 @@ import { showError } from "../../lib/problems";
 
 /** A file read and its columns as the pilot gave them, kept so the
  *  preview can go back to them. */
-interface Mapping { rows: string[][]; headerAt: number; columns: Columns }
+interface Mapping {
+  rows: string[][];
+  headerAt: number;
+  columns: Columns;
+}
 
 /** Where an import stands: a file's columns being said, its flights
  *  shown before they go in, or nothing in hand. */
@@ -62,15 +66,19 @@ export default function LogbookFile({ entries, onImported }: { entries: LogbookE
   const bringIn = useMutation({
     mutationFn: (read: Imported) => api.logbook.importAll(read.entries),
     onSuccess: (result, read) => {
-      setDone([
-        `${plural(result.added, "flight")} added`,
-        result.duplicates ? `${result.duplicates} already in your logbook` : "",
-        read.skipped.length ? `${plural(read.skipped.length, "row")} left out` : "",
-      ].filter(Boolean).join(", ") + ".");
+      setDone(
+        [
+          `${plural(result.added, "flight")} added`,
+          result.duplicates ? `${result.duplicates} already in your logbook` : "",
+          read.skipped.length ? `${plural(read.skipped.length, "row")} left out` : "",
+        ]
+          .filter(Boolean)
+          .join(", ") + ".",
+      );
       setStep({ kind: "idle" });
       onImported();
     },
-    onError: err => showError("Could not import the logbook", describeError(err)),
+    onError: (err) => showError("Could not import the logbook", describeError(err)),
   });
 
   const exportFile = async () => {
@@ -87,8 +95,12 @@ export default function LogbookFile({ entries, onImported }: { entries: LogbookE
     // brought in, said in a row.
     <ListGroup title="File">
       <input
-        ref={fileInput} type="file" accept=".csv,text/csv" className="hidden" data-testid="logbook-import-file"
-        onChange={e => {
+        ref={fileInput}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        data-testid="logbook-import-file"
+        onChange={(e) => {
           const file = e.target.files?.[0];
           e.target.value = "";
           if (file) void open(file);
@@ -98,7 +110,8 @@ export default function LogbookFile({ entries, onImported }: { entries: LogbookE
       {step.kind === "columns" && <ColumnRows step={step} onStep={setStep} />}
       {step.kind === "preview" && (
         <PreviewRows
-          step={step} importing={bringIn.isPending}
+          step={step}
+          importing={bringIn.isPending}
           onImport={() => bringIn.mutate(step.read)}
           onColumns={step.mapping ? () => setStep({ kind: "columns", name: step.name, mapping: step.mapping! }) : undefined}
           onCancel={() => setStep({ kind: "idle" })}
@@ -107,12 +120,18 @@ export default function LogbookFile({ entries, onImported }: { entries: LogbookE
       {step.kind === "idle" && (
         <>
           <ListRow
-            title="Import a logbook" description="ForeFlight, MyFlightbook or any CSV" media={<FileUp className="size-5" />}
-            onClick={() => fileInput.current?.click()} data-testid="logbook-import"
+            title="Import a logbook"
+            description="ForeFlight, MyFlightbook or any CSV"
+            media={<FileUp className="size-5" />}
+            onClick={() => fileInput.current?.click()}
+            data-testid="logbook-import"
           />
           <ListRow
-            title="Export as CSV" media={<FileDown className="size-5" />}
-            onClick={() => void exportFile()} disabled={!entries?.length} data-testid="logbook-export"
+            title="Export as CSV"
+            media={<FileDown className="size-5" />}
+            onClick={() => void exportFile()}
+            disabled={!entries?.length}
+            data-testid="logbook-export"
           />
         </>
       )}
@@ -131,29 +150,38 @@ function ColumnRows({ step, onStep }: { step: Extract<Step, { kind: "columns" }>
     { value: "none", label: "None" },
     ...header.map((name, i) => ({ value: String(i), label: name.trim() || `Column ${i + 1}` })),
   ];
-  const set = (field: string, value: string) => onStep({
-    ...step, mapping: { ...step.mapping, columns: { ...columns, [field]: value === "none" ? null : Number(value) } },
-  });
-  const read = () => onStep({
-    kind: "preview", name: step.name, mapping: step.mapping, read: importLogbook(remapped(rows, headerAt, columns)),
-  });
+  const set = (field: string, value: string) =>
+    onStep({ ...step, mapping: { ...step.mapping, columns: { ...columns, [field]: value === "none" ? null : Number(value) } } });
+  const read = () =>
+    onStep({ kind: "preview", name: step.name, mapping: step.mapping, read: importLogbook(remapped(rows, headerAt, columns)) });
   return (
     <>
       <ListRow
-        muted data-testid="logbook-columns-note"
-        title={<>{step.name}: say which column is which{missing.length ? `. Needed: ${missing.map(t => t.label.toLowerCase()).join(", ")}` : ""}.</>}
+        muted
+        data-testid="logbook-columns-note"
+        title={
+          <>
+            {step.name}: say which column is which
+            {missing.length ? `. Needed: ${missing.map((t) => t.label.toLowerCase()).join(", ")}` : ""}.
+          </>
+        }
       />
-      {COLUMN_TARGETS.map(t => (
+      {COLUMN_TARGETS.map((t) => (
         <ListRow key={t.field} title={t.label}>
           <PullDown
-            label={`The column for ${t.label.toLowerCase()}`} value={columns[t.field] == null ? "none" : String(columns[t.field])}
-            options={options} onChange={v => set(t.field, v)} testId={`logbook-column-${t.field}`}
+            label={`The column for ${t.label.toLowerCase()}`}
+            value={columns[t.field] == null ? "none" : String(columns[t.field])}
+            options={options}
+            onChange={(v) => set(t.field, v)}
+            testId={`logbook-column-${t.field}`}
           />
         </ListRow>
       ))}
       <ListRow
         title={<span className="font-medium text-tint">Read the flights</span>}
-        onClick={read} disabled={missing.length > 0} data-testid="logbook-columns-read"
+        onClick={read}
+        disabled={missing.length > 0}
+        data-testid="logbook-columns-read"
       />
       <ListRow title={<span className="text-tint">Cancel</span>} onClick={() => onStep({ kind: "idle" })} />
     </>
@@ -162,32 +190,59 @@ function ColumnRows({ step, onStep }: { step: Extract<Step, { kind: "columns" }>
 
 /** The flights read, before they go in: how many, the first few, and the
  *  rows left out with their lines and why. */
-function PreviewRows({ step, importing, onImport, onColumns, onCancel }: {
-  step: Extract<Step, { kind: "preview" }>; importing: boolean; onImport: () => void; onColumns?: () => void; onCancel: () => void;
+function PreviewRows({
+  step,
+  importing,
+  onImport,
+  onColumns,
+  onCancel,
+}: {
+  step: Extract<Step, { kind: "preview" }>;
+  importing: boolean;
+  onImport: () => void;
+  onColumns?: () => void;
+  onCancel: () => void;
 }) {
   const { entries, skipped } = step.read;
   return (
     <>
       <ListRow
-        muted data-testid="logbook-preview-note"
-        title={<>{step.name}: {plural(entries.length, "flight")} read{skipped.length ? `, ${plural(skipped.length, "row")} left out` : ""}.</>}
+        muted
+        data-testid="logbook-preview-note"
+        title={
+          <>
+            {step.name}: {plural(entries.length, "flight")} read{skipped.length ? `, ${plural(skipped.length, "row")} left out` : ""}.
+          </>
+        }
       />
       {entries.slice(0, PREVIEW_ROWS).map((e, i) => (
         <ListRow
-          key={i} data-testid="logbook-preview-entry"
+          key={i}
+          data-testid="logbook-preview-entry"
           title={`${said(e.flownOn)}${e.route ? ` · ${e.route}` : ""}`}
           description={[e.aircraft, e.aircraftType, plural(e.dayLandings + e.nightLandings, "landing")].filter(Boolean).join(" · ")}
           value={`${e.totalHours.toFixed(1)} h`}
         />
       ))}
       {entries.length > PREVIEW_ROWS && <ListRow muted title={<>And {entries.length - PREVIEW_ROWS} more</>} />}
-      {skipped.slice(0, 3).map(s => (
-        <ListRow key={s.line} muted title={<>Line {s.line}: {s.reason}</>} data-testid="logbook-preview-skipped" />
+      {skipped.slice(0, 3).map((s) => (
+        <ListRow
+          key={s.line}
+          muted
+          title={
+            <>
+              Line {s.line}: {s.reason}
+            </>
+          }
+          data-testid="logbook-preview-skipped"
+        />
       ))}
       {skipped.length > 3 && <ListRow muted title={<>And {skipped.length - 3} more left out</>} />}
       <ListRow
         title={<span className="font-medium text-tint">Import {plural(entries.length, "flight")}</span>}
-        onClick={onImport} disabled={importing || !entries.length} data-testid="logbook-preview-import"
+        onClick={onImport}
+        disabled={importing || !entries.length}
+        data-testid="logbook-preview-import"
       />
       {onColumns && <ListRow title={<span className="text-tint">Change columns</span>} onClick={onColumns} />}
       <ListRow title={<span className="text-tint">Cancel</span>} onClick={onCancel} data-testid="logbook-preview-cancel" />

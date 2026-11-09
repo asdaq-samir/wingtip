@@ -20,10 +20,20 @@ export default function InputGuide({ label }: { label: string | null | undefined
   const guide = guideFor(label);
   if (!guide) return null;
   if (!guide.how) {
-    return <p className={cn("font-semibold text-go-ink", TEXT.detail)} data-testid="input-guide" data-hears={guide.hears}>{guide.line}</p>;
+    return (
+      <p className={cn("font-semibold text-go-ink", TEXT.detail)} data-testid="input-guide" data-hears={guide.hears}>
+        {guide.line}
+      </p>
+    );
   }
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className={cn("flex flex-col gap-1", TEXT.detail)} data-testid="input-guide" data-hears={guide.hears}>
+    <Collapsible
+      open={open}
+      onOpenChange={setOpen}
+      className={cn("flex flex-col gap-1", TEXT.detail)}
+      data-testid="input-guide"
+      data-hears={guide.hears}
+    >
       <p className="font-semibold text-caution-ink">{guide.line}</p>
       {/* Its 44-point area a pseudo-element round the words. */}
       <CollapsibleTrigger
@@ -35,7 +45,9 @@ export default function InputGuide({ label }: { label: string | null | undefined
       </CollapsibleTrigger>
       <CollapsibleContent asChild>
         <ol className={cn("list-decimal pl-5 text-foreground/80", TEXT.note)} data-testid="input-guide-steps">
-          {guide.steps.map(step => <li key={step}>{step}</li>)}
+          {guide.steps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
         </ol>
       </CollapsibleContent>
     </Collapsible>

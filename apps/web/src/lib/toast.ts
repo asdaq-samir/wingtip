@@ -22,7 +22,7 @@ const listeners = new Set<() => void>();
 export function loadToasts(): Promise<Sonner> {
   if (!sonner) {
     sonner = import("sonner");
-    listeners.forEach(listener => listener());
+    listeners.forEach((listener) => listener());
   }
   return sonner;
 }
@@ -30,22 +30,31 @@ export function loadToasts(): Promise<Sonner> {
 /** Whether sonner has been asked for, for AppToaster. */
 export function useToastsWanted(): boolean {
   return useSyncExternalStore(
-    listener => { listeners.add(listener); return () => listeners.delete(listener); },
+    (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
     () => sonner != null,
   );
 }
 
 const later = (call: (t: Sonner["toast"]) => void) => {
-  void loadToasts().then(m => call(m.toast));
+  void loadToasts().then((m) => call(m.toast));
 };
 
 function show(message: Message, data?: ExternalToast) {
-  later(t => t(message, data));
+  later((t) => t(message, data));
 }
 
 export const toast = Object.assign(show, {
-  success(message: Message, data?: ExternalToast) { later(t => t.success(message, data)); },
-  loading(message: Message, data?: ExternalToast) { later(t => t.loading(message, data)); },
+  success(message: Message, data?: ExternalToast) {
+    later((t) => t.success(message, data));
+  },
+  loading(message: Message, data?: ExternalToast) {
+    later((t) => t.loading(message, data));
+  },
   /** Nothing to take down before sonner was ever asked for. */
-  dismiss(id?: string | number) { if (sonner) later(t => t.dismiss(id)); },
+  dismiss(id?: string | number) {
+    if (sonner) later((t) => t.dismiss(id));
+  },
 });

@@ -43,9 +43,26 @@ export const MAGENTA = CHART.untowered;
 const AIRSPACE: Record<Space, { name: string; style: CSSProperties }> = {
   B: { name: "Class B", style: { backgroundColor: BLUE, color: "#ffffff" } },
   C: { name: "Class C", style: { backgroundColor: MAGENTA, color: "#ffffff" } },
-  D: { name: "Class D", style: { outline: `2.5px dashed ${BLUE}`, outlineOffset: -2.5, backgroundColor: `${BLUE}1f`, color: "var(--airspace-blue-ink)" } },
-  E: { name: "Class E", style: { outline: `2.5px dashed ${MAGENTA}`, outlineOffset: -2.5, backgroundColor: `${MAGENTA}1f`, color: "var(--airspace-magenta-ink)" } },
-  G: { name: "Class G", style: { background: `radial-gradient(circle closest-side, ${MAGENTA}00 58%, ${MAGENTA}70 82%, ${MAGENTA}10 100%)`, color: "var(--airspace-magenta-ink)" } },
+  D: {
+    name: "Class D",
+    style: { outline: `2.5px dashed ${BLUE}`, outlineOffset: -2.5, backgroundColor: `${BLUE}1f`, color: "var(--airspace-blue-ink)" },
+  },
+  E: {
+    name: "Class E",
+    style: {
+      outline: `2.5px dashed ${MAGENTA}`,
+      outlineOffset: -2.5,
+      backgroundColor: `${MAGENTA}1f`,
+      color: "var(--airspace-magenta-ink)",
+    },
+  },
+  G: {
+    name: "Class G",
+    style: {
+      background: `radial-gradient(circle closest-side, ${MAGENTA}00 58%, ${MAGENTA}70 82%, ${MAGENTA}10 100%)`,
+      color: "var(--airspace-magenta-ink)",
+    },
+  },
 };
 
 /** A kept airport's airspace class: the one remembered with it, so the
@@ -63,4 +80,3 @@ export function useAirspace(airport: RecentAirport, enabled = true): { name: str
   const known = answered ?? airport.airspace;
   return known ? AIRSPACE[known] : { name: "Airport", className: "bg-foreground/8 text-muted-foreground" };
 }
-

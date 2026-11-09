@@ -30,7 +30,7 @@ export class TrackError extends Error {}
 export function readTrack(text: string): TrackPoint[] {
   const read = callEngine("read_track", { text });
   if ("error" in read) throw new TrackError(read.error);
-  return read.points.map(p => ({ t: p.t, lat: p.lat, lon: p.lon, altFt: p.alt_ft }));
+  return read.points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, altFt: p.alt_ft }));
 }
 
 /** A track thinned to at most `most` points, the first and the last

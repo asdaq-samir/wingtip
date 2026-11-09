@@ -24,7 +24,12 @@ interface LatestAtcCall {
 }
 
 export const useLatestAtcCall = create<LatestAtcCall>(() => ({
-  line: null, at: null, cardShown: false, frequency: null, facility: null, squawk: null,
+  line: null,
+  at: null,
+  cardShown: false,
+  frequency: null,
+  facility: null,
+  squawk: null,
 }));
 
 /** How long after it was heard the banner keeps the line, ms: past the

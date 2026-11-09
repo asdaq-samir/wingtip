@@ -14,7 +14,10 @@ tester.run("boundaries/layers", boundaries.rules.layers, {
   valid: [
     { filename: src("features/plan/PlanWorkspace.tsx"), code: `import { cn } from "cn"; import { TEXT } from "../../lib/text";` },
     { filename: src("features/plan/PlanWorkspace.tsx"), code: `import x from "./components/RouteMap";` },
-    { filename: src("features/shell/MapPage.tsx"), code: `import { PlanWorkspace } from "../plan"; import { LinkSignIn } from "../pilot/index";` },
+    {
+      filename: src("features/shell/MapPage.tsx"),
+      code: `import { PlanWorkspace } from "../plan"; import { LinkSignIn } from "../pilot/index";`,
+    },
     { filename: src("features/plan/routePanelParts.tsx"), code: `const p = () => import("../pilot");` },
     { filename: src("components/MapBanners.tsx"), code: `import("../features/atc");` },
     { filename: src("components/RouteForm.tsx"), code: `import { TEXT } from "../lib/text";` },

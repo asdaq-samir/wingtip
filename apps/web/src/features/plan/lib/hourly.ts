@@ -64,17 +64,37 @@ export interface Hour {
 /** The categories from best to worst, for the sentence's "lowering" and
  *  "improving" (the hour's own reading ranks them in the engine). */
 const RANK: Record<string, number> = { VFR: 0, MVFR: 1, IFR: 2, LIFR: 3 };
-const rank = (category: string | null) => (category ? RANK[category] ?? -1 : -1);
+const rank = (category: string | null) => (category ? (RANK[category] ?? -1) : -1);
 
 /** Now and the hours after it, the engine's (`field_hours`): Now the
  *  METAR's, or with none the TAF's for this moment; then each whole hour
  *  the TAF (as sent) covers, up to `count`. */
-export function hoursOf({ metar, taf, now, count = HOURS }: { metar: Metar | null; taf: string | null; now: number; count?: number }): Hour[] {
-  return callEngine("field_hours", { metar: metar ?? null, taf: taf || null, now, count }).map(h => ({
-    at: h.at, now: h.now, category: h.category, ceilingFt: h.ceiling_ft, visibilitySm: h.visibility_sm,
-    sky: h.sky, precip: h.precip,
-    windDirTrueDeg: h.wind_dir_true_deg, windSpeedKt: h.wind_speed_kt, windGustKt: h.wind_gust_kt,
-    atTimes: h.at_times, atTimesGustKt: h.at_times_gust_kt, atTimesThunder: h.at_times_thunder, atTimesChance: h.at_times_chance,
+export function hoursOf({
+  metar,
+  taf,
+  now,
+  count = HOURS,
+}: {
+  metar: Metar | null;
+  taf: string | null;
+  now: number;
+  count?: number;
+}): Hour[] {
+  return callEngine("field_hours", { metar: metar ?? null, taf: taf || null, now, count }).map((h) => ({
+    at: h.at,
+    now: h.now,
+    category: h.category,
+    ceilingFt: h.ceiling_ft,
+    visibilitySm: h.visibility_sm,
+    sky: h.sky,
+    precip: h.precip,
+    windDirTrueDeg: h.wind_dir_true_deg,
+    windSpeedKt: h.wind_speed_kt,
+    windGustKt: h.wind_gust_kt,
+    atTimes: h.at_times,
+    atTimesGustKt: h.at_times_gust_kt,
+    atTimesThunder: h.at_times_thunder,
+    atTimesChance: h.at_times_chance,
   }));
 }
 
@@ -91,28 +111,32 @@ const clock = (ms: number) => clockTime(new Date(ms));
  */
 export function sentenceOf(hours: Hour[], time: (ms: number) => string = clock): string | null {
   if (!hours.length) return null;
-  const forecast = hours.filter(h => !h.now);
+  const forecast = hours.filter((h) => !h.now);
   const first = hours[0]!;
   if (!forecast.length) return first.category ? `${first.category} now, no forecast for this field.` : "No forecast for this field.";
-  const within = hours.filter(h => h.at <= first.at + SENTENCE_HOURS * HOUR_MS);
+  const within = hours.filter((h) => h.at <= first.at + SENTENCE_HOURS * HOUR_MS);
   const last = hours.at(-1)!;
   const said: string[] = [];
 
-  const from = within.findIndex(h => h.category != null);
+  const from = within.findIndex((h) => h.category != null);
   const was = from >= 0 ? within[from]!.category! : null;
   const change = was ? within.findIndex((h, i) => i > from && h.category != null && h.category !== was) : -1;
   if (was && change >= 0) {
     const turn = within[change]!;
     const to = turn.category!;
-    const after = hours.findIndex(h => h.at > turn.at && h.category != null && h.category !== to);
+    const after = hours.findIndex((h) => h.at > turn.at && h.category != null && h.category !== to);
     const lasting = after >= 0 ? `until ${time(hours[after]!.at)}` : `through ${time(last.at)}`;
     if (rank(to) > rank(was)) {
       // Led by what brings it down: the ceiling where it alone would make
       // the category, else the visibility.
       const byCeiling = turn.ceilingFt != null && rank(categoryOf(turn.ceilingFt, Infinity)) >= rank(to);
-      said.push(byCeiling ? `Ceilings lowering to ${altFt(turn.ceilingFt)} ft around ${time(turn.at)}, ${to} ${lasting}.`
-        : turn.visibilitySm != null ? `Visibility down to ${turn.visibilitySm} sm around ${time(turn.at)}, ${to} ${lasting}.`
-          : `${to} from around ${time(turn.at)} ${lasting}.`);
+      said.push(
+        byCeiling
+          ? `Ceilings lowering to ${altFt(turn.ceilingFt)} ft around ${time(turn.at)}, ${to} ${lasting}.`
+          : turn.visibilitySm != null
+            ? `Visibility down to ${turn.visibilitySm} sm around ${time(turn.at)}, ${to} ${lasting}.`
+            : `${to} from around ${time(turn.at)} ${lasting}.`,
+      );
     } else {
       said.push(`${was} ${within[from]!.now ? "now" : "at first"}, ${to} from around ${time(turn.at)}${after >= 0 ? ` ${lasting}` : ""}.`);
     }
@@ -122,20 +146,20 @@ export function sentenceOf(hours: Hour[], time: (ms: number) => string = clock):
 
   // The first stretch of worse weather at times, from its first hour to
   // the end of its last.
-  const start = within.findIndex(h => h.atTimes != null);
+  const start = within.findIndex((h) => h.atTimes != null);
   if (start >= 0) {
     const worst = within[start]!.atTimes!;
     let end = start;
     while (end + 1 < within.length && within[end + 1]!.atTimes != null) end++;
     // "Chance of" where only a PROB group says so, as the TAF means it.
-    const chance = within.slice(start, end + 1).every(h => h.atTimesChance);
+    const chance = within.slice(start, end + 1).every((h) => h.atTimesChance);
     said.push(`${chance ? "Chance of" : "At times"} ${worst} between ${time(within[start]!.at)} and ${time(within[end]!.at + HOUR_MS)}.`);
   }
 
-  const storm = within.find(h => h.precip === "thunder" || h.atTimesThunder);
+  const storm = within.find((h) => h.precip === "thunder" || h.atTimesThunder);
   if (storm) said.push(storm.now ? "Thunderstorms now." : `Thunderstorms around ${time(storm.at)}.`);
 
-  const gusts = within.flatMap(h => [h.windGustKt, h.atTimesGustKt]).filter((g): g is number => g != null && g > 0);
+  const gusts = within.flatMap((h) => [h.windGustKt, h.atTimesGustKt]).filter((g): g is number => g != null && g > 0);
   if (gusts.length) said.push(`Gusts up to ${Math.round(Math.max(...gusts))} kt.`);
 
   return said.length ? said.join(" ") : null;
@@ -148,6 +172,8 @@ export function arrivalHour(hours: Hour[], arrivalMs: number | null): number | n
   const first = hours[0]!;
   if (arrivalMs < Math.floor(first.at / HOUR_MS) * HOUR_MS || arrivalMs >= hours.at(-1)!.at + HOUR_MS) return null;
   let found = 0;
-  hours.forEach((h, i) => { if (!h.now && h.at <= arrivalMs) found = i; });
+  hours.forEach((h, i) => {
+    if (!h.now && h.at <= arrivalMs) found = i;
+  });
   return found;
 }

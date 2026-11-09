@@ -14,9 +14,7 @@ export function aircraftKey(a: AircraftChoice): string {
  *  the first figure 1 to 9 and never the letters I or O. The shared
  *  engine's test (engine/crates/pilot/src/aircraft), the iPhone's too, asked as
  *  a pattern's `test` was. */
-export const N_NUMBER = {
-  test: (text: string): boolean => callEngine("n_number", { text }),
-};
+export const N_NUMBER = { test: (text: string): boolean => callEngine("n_number", { text }) };
 
 /** The stock profile an airplane the FAA's registry names flies on, by its
  *  maker, model and year, each from its type's handbook (data/aircraft):
@@ -24,9 +22,15 @@ export const N_NUMBER = {
  *  Airplanes) rather than a guess. The shared engine's list
  *  (engine/crates/pilot/src/aircraft/registry.rs), which the iPhone's
  *  Registered asks too. */
-export function profileOfRegistered(registered: { manufacturer?: string | null; model?: string | null; year?: number | null }): string | null {
+export function profileOfRegistered(registered: {
+  manufacturer?: string | null;
+  model?: string | null;
+  year?: number | null;
+}): string | null {
   return callEngine("registered_profile", {
-    manufacturer: registered.manufacturer ?? null, model: registered.model ?? null, year: registered.year ?? null,
+    manufacturer: registered.manufacturer ?? null,
+    model: registered.model ?? null,
+    year: registered.year ?? null,
   });
 }
 
@@ -35,7 +39,7 @@ export function profileOfRegistered(registered: { manufacturer?: string | null; 
  *  the altitude selection needs; anything else rides on the default. */
 function baseProfile(typeDesignator: string, profiles: AircraftProfileSummary[]): string {
   const wanted = typeDesignator.toLowerCase().replace(/[^a-z0-9]/g, "");
-  return profiles.find(p => p.name === wanted)?.name ?? DEFAULT_AIRCRAFT.profile;
+  return profiles.find((p) => p.name === wanted)?.name ?? DEFAULT_AIRCRAFT.profile;
 }
 
 /** A pilot's own airplane as the nav log flies it: its figures, on the
@@ -43,10 +47,14 @@ function baseProfile(typeDesignator: string, profiles: AircraftProfileSummary[])
  *  and the Library's Aircraft, which both choose it. */
 export function choiceOf(a: Aircraft, profiles: AircraftProfileSummary[]): AircraftChoice {
   return {
-    profile: baseProfile(a.typeDesignator, profiles), label: `${a.tailNumber} · ${a.typeDesignator}`,
-    cruiseTasKt: a.cruiseTasKt, fuelBurnGph: a.fuelBurnGph, usableFuelGal: a.usableFuelGal ?? undefined,
+    profile: baseProfile(a.typeDesignator, profiles),
+    label: `${a.tailNumber} · ${a.typeDesignator}`,
+    cruiseTasKt: a.cruiseTasKt,
+    fuelBurnGph: a.fuelBurnGph,
+    usableFuelGal: a.usableFuelGal ?? undefined,
     cruisePowerPct: a.cruisePowerPct ?? undefined,
-    climbTasKt: a.climbTasKt ?? undefined, climbFuelBurnGph: a.climbFuelBurnGph ?? undefined,
+    climbTasKt: a.climbTasKt ?? undefined,
+    climbFuelBurnGph: a.climbFuelBurnGph ?? undefined,
     aircraftId: a.id,
   };
 }
@@ -62,5 +70,5 @@ export function shortName(label: string): string {
  *  pilot gave none. The planner's figures before its nav log comes, and
  *  the map's ruler, which times a line at it. */
 export function cruiseTasOf(a: AircraftChoice, profiles: AircraftProfileSummary[] | undefined): number | null {
-  return a.cruiseTasKt ?? profiles?.find(p => p.name === a.profile)?.cruise_tas_kt ?? null;
+  return a.cruiseTasKt ?? profiles?.find((p) => p.name === a.profile)?.cruise_tas_kt ?? null;
 }

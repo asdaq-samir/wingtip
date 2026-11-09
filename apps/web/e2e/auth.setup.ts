@@ -35,7 +35,10 @@ setup("the developer signs in from the pilot console, and lands in dev mode", as
   // 2026-11-08: "don't assume"; no-airplane.spec takes it away).
   await page.evaluate(() => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":6}');
-    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, version: 6, state: { ...kept.state, aircraft: { profile: "c172", label: "C172 · Cessna 172" } } }));
+    localStorage.setItem(
+      "wingtip.preferences",
+      JSON.stringify({ ...kept, version: 6, state: { ...kept.state, aircraft: { profile: "c172", label: "C172 · Cessna 172" } } }),
+    );
   });
   await page.context().storageState({ path: DEVELOPER_STATE });
 });

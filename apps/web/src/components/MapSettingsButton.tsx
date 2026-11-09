@@ -21,7 +21,13 @@ export default function MapSettingsButton() {
           <MapIcon strokeWidth={1.5} className="size-5" />
         </IconButton>
       </ResponsivePopoverTrigger>
-      <ResponsivePopoverContent title="Map" className="w-96 max-w-[calc(100vw-2rem)] p-3" align="end" side="left" data-testid="map-settings">
+      <ResponsivePopoverContent
+        title="Map"
+        className="w-96 max-w-[calc(100vw-2rem)] p-3"
+        align="end"
+        side="left"
+        data-testid="map-settings"
+      >
         {/* The weather first, at the owner's pick: the map's own button is
             its layers button (the canvas's map weather, A). */}
         <div className="flex flex-col gap-4">

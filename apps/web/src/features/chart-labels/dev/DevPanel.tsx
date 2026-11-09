@@ -39,7 +39,11 @@ function agoOrDate(iso: string | null | undefined): string {
 }
 
 const CHART_KIND_LABELS: Record<string, string> = {
-  sec: "Sectional", tac: "TAC", ifr_low: "IFR low", ifr_high: "IFR high", ifr_area: "IFR area",
+  sec: "Sectional",
+  tac: "TAC",
+  ifr_low: "IFR low",
+  ifr_high: "IFR high",
+  ifr_area: "IFR area",
 };
 /**
  * The developer's Setup, the training page's last tab: the pilot's own
@@ -65,9 +69,8 @@ export function DevPanel({ pilotPanel: PilotPanel }: { pilotPanel: PilotPanelPar
   // Everything Status shows, asked for again now rather than at the next
   // 30-second tick: the snapshot, the model comparison, the two health
   // probes it runs itself and which services the sidecar can start.
-  const refreshAll = () => void queryClient.invalidateQueries({
-    predicate: q => ["status", "modelComparison", "devServices"].includes(String(q.queryKey[0])),
-  });
+  const refreshAll = () =>
+    void queryClient.invalidateQueries({ predicate: (q) => ["status", "modelComparison", "devServices"].includes(String(q.queryKey[0])) });
   return (
     <PilotPanel
       dev={{
@@ -80,9 +83,7 @@ export function DevPanel({ pilotPanel: PilotPanel }: { pilotPanel: PilotPanelPar
 
 /** The scikit-learn models retrain() grid-searched for the one
  *  serving, each by its 5-fold CV error, sorted best-first. */
-const modelComparisonChartConfig = {
-  score: { label: "MAE", color: "var(--chart-1)" },
-} satisfies ChartConfig;
+const modelComparisonChartConfig = { score: { label: "MAE", color: "var(--chart-1)" } } satisfies ChartConfig;
 
 // Emerald, the dot of the promoted model's own Promoted badge
 // (StatusBadge's "up") -- the promoted one's bar reads as such at a
@@ -97,57 +98,80 @@ function ModelComparison() {
   // A group of its own, the chart its one row and what it shows in the
   // note under it, as the tab's other groups are.
   return (
-    <ListGroup title="Model comparison" footer={`Error on the ${data?.n_labeled ?? "—"} ratings, lower is better; green is the model serving.`}>
+    <ListGroup
+      title="Model comparison"
+      footer={`Error on the ${data?.n_labeled ?? "—"} ratings, lower is better; green is the model serving.`}
+    >
       {/* Status, not reading text: grey, as a placeholder is, and said to a
           screen reader when it changes. */}
-      {!error && !rows && <ListRow title={<span role="status" className="text-muted-foreground">Reading each model's metrics…</span>} />}
-      {rows?.length === 0 && <ListRow title={<span role="status" className="text-muted-foreground">No trained models are available.</span>} />}
+      {!error && !rows && (
+        <ListRow
+          title={
+            <span role="status" className="text-muted-foreground">
+              Reading each model's metrics…
+            </span>
+          }
+        />
+      )}
+      {rows?.length === 0 && (
+        <ListRow
+          title={
+            <span role="status" className="text-muted-foreground">
+              No trained models are available.
+            </span>
+          }
+        />
+      )}
       {rows && rows.length > 0 && (
         <div className="px-1 py-3">
-        <ChartContainer
-          config={modelComparisonChartConfig}
-          // The models' names read in the text's colour: recharts' own
-          // #666 (the stock tick rule no longer reaches recharts 3's
-          // ticks) was 3.1:1 on the panel in the dark.
-          className="aspect-auto w-full [&_.recharts-cartesian-axis-tick-value]:fill-foreground"
-          style={{ height: Math.max(rows.length * 36, 120) }}
-        >
-          {/* right margin: room for each bar's own MAE label past its
+          <ChartContainer
+            config={modelComparisonChartConfig}
+            // The models' names read in the text's colour: recharts' own
+            // #666 (the stock tick rule no longer reaches recharts 3's
+            // ticks) was 3.1:1 on the panel in the dark.
+            className="aspect-auto w-full [&_.recharts-cartesian-axis-tick-value]:fill-foreground"
+            style={{ height: Math.max(rows.length * 36, 120) }}
+          >
+            {/* right margin: room for each bar's own MAE label past its
               end -- the number is the point of the chart, and a hover
               tooltip alone leaves a phone reader with unlabeled bars. */}
-          <BarChart accessibilityLayer data={rows} layout="vertical" margin={{ left: 12, right: 48 }}>
-            <XAxis type="number" dataKey="score" hide />
-            <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={110} />
-            <ChartTooltip
-              cursor={false}
-              content={(
-                <ChartTooltipContent
-                  formatter={(value, _name, item) => (
-                    <div className="flex w-full items-center gap-2">
-                      <div className="h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ backgroundColor: item.color }} />
-                      <span className="text-muted-foreground">MAE</span>
-                      <div className="ml-auto flex items-baseline gap-1 font-mono font-medium text-foreground tabular-nums">
-                        {mae(Number(value))}
-                        <span className="font-sans font-normal text-muted-foreground">CV</span>
+            <BarChart accessibilityLayer data={rows} layout="vertical" margin={{ left: 12, right: 48 }}>
+              <XAxis type="number" dataKey="score" hide />
+              <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={110} />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    formatter={(value, _name, item) => (
+                      <div className="flex w-full items-center gap-2">
+                        <div className="h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ backgroundColor: item.color }} />
+                        <span className="text-muted-foreground">MAE</span>
+                        <div className="ml-auto flex items-baseline gap-1 font-mono font-medium text-foreground tabular-nums">
+                          {mae(Number(value))}
+                          <span className="font-sans font-normal text-muted-foreground">CV</span>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                />
-              )}
-            />
-            {/* No entry animation: the bars grew in for 400 ms after the
-                data had arrived, and the numbers are the point. */}
-            <Bar dataKey="score" radius={4} isAnimationActive={false}>
-              {rows.map(m => (
-                <Cell key={m.name} fill={m.promoted ? PROMOTED_BAR_COLOR : "var(--color-score)"} />
-              ))}
-              <LabelList
-                dataKey="score" position="right" offset={8} fontSize={12} className="fill-foreground"
-                formatter={value => (typeof value === "number" ? mae(value) : "")}
+                    )}
+                  />
+                }
               />
-            </Bar>
-          </BarChart>
-        </ChartContainer>
+              {/* No entry animation: the bars grew in for 400 ms after the
+                data had arrived, and the numbers are the point. */}
+              <Bar dataKey="score" radius={4} isAnimationActive={false}>
+                {rows.map((m) => (
+                  <Cell key={m.name} fill={m.promoted ? PROMOTED_BAR_COLOR : "var(--color-score)"} />
+                ))}
+                <LabelList
+                  dataKey="score"
+                  position="right"
+                  offset={8}
+                  fontSize={12}
+                  className="fill-foreground"
+                  formatter={(value) => (typeof value === "number" ? mae(value) : "")}
+                />
+              </Bar>
+            </BarChart>
+          </ChartContainer>
         </div>
       )}
     </ListGroup>
@@ -161,11 +185,13 @@ const waiting = (failed: boolean) => (failed ? "The planner did not answer." : "
 
 /** How a training run went, in the one status badge. */
 function RunBadge({ state, running }: { state: string | null | undefined; running: boolean }) {
-  const [tone, text]: [Tone, string] =
-    running ? ["running", "Training…"]
-    : state === "success" ? ["up", "Succeeded"]
-    : state === "failed" ? ["down", "Failed"]
-    : ["checking", state ?? "Unknown"];
+  const [tone, text]: [Tone, string] = running
+    ? ["running", "Training…"]
+    : state === "success"
+      ? ["up", "Succeeded"]
+      : state === "failed"
+        ? ["down", "Failed"]
+        : ["checking", state ?? "Unknown"];
   return <StatusBadge tone={tone}>{text}</StatusBadge>;
 }
 
@@ -181,34 +207,34 @@ function RoutesGroup({ status, failed }: { status: Status | undefined; failed: b
   const onMap = useOnMap(corridors);
   return (
     <ListGroup title="Routes" footer="A route's row brings it onto the map to rate.">
-        {corridors.length === 0 && (
-          <ListRow muted title={<>{status ? "No route has been collected yet." : waiting(failed)}</>} />
-        )}
-        {corridors.map(c => {
-          const route = new URLSearchParams({ dep: c.departure_ident, dest: c.destination_ident }).toString();
-          const name = `${c.departure_ident} → ${c.destination_ident}`;
-          const pct = c.candidates ? Math.round((c.labels.total / c.candidates) * 100) : null;
-          const here = c === onMap;
-          return (
-            // The route's row brings it onto the map to rate, unless it is
-            // there already; at the end, how far its rating has got. The
-            // whole row is the link, as an iOS list's row is: the name
-            // alone, 19 tall, had its 44 taken by the row's own lines (the
-            // iOS audit's P1, 2026-11-05).
-            <ListRow
-              key={`${c.departure_ident}-${c.destination_ident}`}
-              to={here ? undefined : `/dev?${route}`}
-              title={<span className="font-mono">{name}</span>}
-              description={`${here ? "On the map · " : ""}${c.labels.total} of ${c.candidates ?? "—"} rated${pct !== null ? ` (${pct}%)` : ""} · ${
-                c.labels.added} added by hand · ${c.notes} notes · collected ${agoOrDate(c.features_built_at)}`}
-            >
-              <Progress
-                value={pct ?? 0} className="h-1.5 w-12"
-                aria-label={`${c.departure_ident} to ${c.destination_ident}: ${c.labels.total} of ${c.candidates ?? "an unknown number of"} candidates rated`}
-              />
-            </ListRow>
-          );
-        })}
+      {corridors.length === 0 && <ListRow muted title={<>{status ? "No route has been collected yet." : waiting(failed)}</>} />}
+      {corridors.map((c) => {
+        const route = new URLSearchParams({ dep: c.departure_ident, dest: c.destination_ident }).toString();
+        const name = `${c.departure_ident} → ${c.destination_ident}`;
+        const pct = c.candidates ? Math.round((c.labels.total / c.candidates) * 100) : null;
+        const here = c === onMap;
+        return (
+          // The route's row brings it onto the map to rate, unless it is
+          // there already; at the end, how far its rating has got. The
+          // whole row is the link, as an iOS list's row is: the name
+          // alone, 19 tall, had its 44 taken by the row's own lines (the
+          // iOS audit's P1, 2026-11-05).
+          <ListRow
+            key={`${c.departure_ident}-${c.destination_ident}`}
+            to={here ? undefined : `/dev?${route}`}
+            title={<span className="font-mono">{name}</span>}
+            description={`${here ? "On the map · " : ""}${c.labels.total} of ${c.candidates ?? "—"} rated${pct !== null ? ` (${pct}%)` : ""} · ${
+              c.labels.added
+            } added by hand · ${c.notes} notes · collected ${agoOrDate(c.features_built_at)}`}
+          >
+            <Progress
+              value={pct ?? 0}
+              className="h-1.5 w-12"
+              aria-label={`${c.departure_ident} to ${c.destination_ident}: ${c.labels.total} of ${c.candidates ?? "an unknown number of"} candidates rated`}
+            />
+          </ListRow>
+        );
+      })}
     </ListGroup>
   );
 }
@@ -232,13 +258,21 @@ function ModelGroup({ status, failed }: { status: Status | undefined; failed: bo
           <ListRow title="CV MAE" value={current.cv_mae == null ? "—" : mae(current.cv_mae)} />
           <ListRow title="Held-out MAE" value={current.held_out_mae == null ? "—" : mae(current.held_out_mae)} />
           <ListRow title="Ratings it trained on" value={current.n_labeled ?? "—"} />
-          {model && model.versions.length > 0
-            ? <PageRow page="versions" title="Versions promoted" value={model.versions.length} />
-            : <ListRow title="Versions promoted" value={0} />}
+          {model && model.versions.length > 0 ? (
+            <PageRow page="versions" title="Versions promoted" value={model.versions.length} />
+          ) : (
+            <ListRow title="Versions promoted" value={0} />
+          )}
         </ListGroup>
       ) : (
         <ListGroup title="Model">
-          <ListRow title={<span role="status" className="text-muted-foreground">{status ? "No model has been promoted yet." : waiting(failed)}</span>} />
+          <ListRow
+            title={
+              <span role="status" className="text-muted-foreground">
+                {status ? "No model has been promoted yet." : waiting(failed)}
+              </span>
+            }
+          />
         </ListGroup>
       )}
       {status && <ChartModelGroup chart={model?.chart ?? null} />}
@@ -250,7 +284,13 @@ function ChartModelGroup({ chart }: { chart: NonNullable<Status["model"]>["chart
   if (!chart) {
     return (
       <ListGroup title="Chart model" footer="It scores the chart reader's points from your ratings, a 0 for one that is no feature at all.">
-        <ListRow title={<span role="status" className="text-muted-foreground">None yet: Retrain trains one.</span>} />
+        <ListRow
+          title={
+            <span role="status" className="text-muted-foreground">
+              None yet: Retrain trains one.
+            </span>
+          }
+        />
       </ListGroup>
     );
   }
@@ -261,7 +301,10 @@ function ChartModelGroup({ chart }: { chart: NonNullable<Status["model"]>["chart
       badge={<StatusBadge tone={beats ? "up" : "checking"}>{beats ? "Beats the palette" : "Palette still better"}</StatusBadge>}
       footer={`Error on the ${chart.n_test ?? "—"} ratings it held out, lower is better. It scores the training page's points; the checkpoints move onto the chart once it beats the palette's constants.`}
     >
-      <ListRow title={chart.model_type ?? "Unknown model"} description={`Trained ${agoOrDate(chart.trained_at)} · ${chart.n_labeled ?? "—"} ratings`} />
+      <ListRow
+        title={chart.model_type ?? "Unknown model"}
+        description={`Trained ${agoOrDate(chart.trained_at)} · ${chart.n_labeled ?? "—"} ratings`}
+      />
       <ListRow title="Held-out MAE" value={chart.held_out_mae == null ? "—" : mae(chart.held_out_mae)} />
       <ListRow title="Palette constants" value={chart.palette_held_out_mae == null ? "—" : mae(chart.palette_held_out_mae)} />
       <ListRow title="Predicting the mean" value={chart.dummy_held_out_mae == null ? "—" : mae(chart.dummy_held_out_mae)} />
@@ -283,7 +326,11 @@ const STAGE_NAMES: Record<string, string> = {
 };
 
 const STAGE_STATES: Record<string, string> = {
-  pending: "Waiting", running: "Running", success: "Done", skipped: "Skipped", failed: "Failed",
+  pending: "Waiting",
+  running: "Running",
+  success: "Done",
+  skipped: "Skipped",
+  failed: "Failed",
 };
 
 /**
@@ -300,17 +347,18 @@ function TrainingGroup() {
     <ListGroup
       title="Training"
       badge={(lastRun || running) && <RunBadge state={lastRun?.state} running={running} />}
-      footer={!pipeline?.startable
-        ? <>{pipeline?.detail ?? "The planner cannot start a run from here."} Retrain by hand with <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">docker compose up retrain</code>.</>
-        : undefined}
+      footer={
+        !pipeline?.startable ? (
+          <>
+            {pipeline?.detail ?? "The planner cannot start a run from here."} Retrain by hand with{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">docker compose up retrain</code>.
+          </>
+        ) : undefined
+      }
     >
-      {!lastRun && (
-        <ListRow muted title={running ? "Starting the run…" : "No run yet"} data-testid="run-row" />
-      )}
-      {lastRun?.error && (
-        <ListRow title={<span className="text-destructive-ink">{lastRun.error}</span>} data-testid="run-error" />
-      )}
-      {stages.map(s => (
+      {!lastRun && <ListRow muted title={running ? "Starting the run…" : "No run yet"} data-testid="run-row" />}
+      {lastRun?.error && <ListRow title={<span className="text-destructive-ink">{lastRun.error}</span>} data-testid="run-error" />}
+      {stages.map((s) => (
         <ListRow
           key={s.name}
           title={STAGE_NAMES[s.name] ?? s.name}
@@ -322,7 +370,6 @@ function TrainingGroup() {
     </ListGroup>
   );
 }
-
 
 /** The versions promoted before the model serving, newest first, with
  *  how each moved the error: a page of its own (ConsolePages), opened
@@ -341,14 +388,20 @@ function Versions({ model }: { model: NonNullable<Status["model"]> }) {
           <ListRow
             key={v.name}
             title={<span className="tabular-nums">{v.trained_at ? WHEN.format(new Date(v.trained_at)) : v.name}</span>}
-            description={<>
-              {v.model_type ?? "—"}
-              {delta !== null && (
-                <> · <span className={cn(delta < -0.00005 ? "text-go-ink" : delta > 0.00005 && "text-destructive-ink")}>
-                  {Math.abs(delta) <= 0.00005 ? "no change" : `${mae(Math.abs(delta))} ${delta < 0 ? "lower" : "higher"}`}
-                </span></>
-              )}
-            </>}
+            description={
+              <>
+                {v.model_type ?? "—"}
+                {delta !== null && (
+                  <>
+                    {" "}
+                    ·{" "}
+                    <span className={cn(delta < -0.00005 ? "text-go-ink" : delta > 0.00005 && "text-destructive-ink")}>
+                      {Math.abs(delta) <= 0.00005 ? "no change" : `${mae(Math.abs(delta))} ${delta < 0 ? "lower" : "higher"}`}
+                    </span>
+                  </>
+                )}
+              </>
+            }
             value={v.cv_mae == null ? "—" : mae(v.cv_mae)}
           />
         );
@@ -421,7 +474,15 @@ export function PerfHead() {
     <div className="w-full" data-testid="perf-head">
       <ListGroup>
         <ListRow
-          title={current ? current.model_type ?? "Unknown model" : <span role="status" className="text-muted-foreground">{status ? "No model has been promoted yet." : waiting(isError)}</span>}
+          title={
+            current ? (
+              (current.model_type ?? "Unknown model")
+            ) : (
+              <span role="status" className="text-muted-foreground">
+                {status ? "No model has been promoted yet." : waiting(isError)}
+              </span>
+            )
+          }
           description={current ? `Trained ${agoOrDate(current.trained_at)} · ${current.n_features} features` : undefined}
         >
           {current && <StatusBadge tone="up">Serving</StatusBadge>}
@@ -429,8 +490,12 @@ export function PerfHead() {
         <ListRow
           media={<BrainCircuit className="size-5" />}
           title={running ? "Retraining…" : "Retrain the model"}
-          description={running ? "The new model serves only if it does better" : blocked ?? "From every rating; it serves only if it does better"}
-          onClick={retrain.start} disabled={!retrain.canStart} data-testid="retrain-row"
+          description={
+            running ? "The new model serves only if it does better" : (blocked ?? "From every rating; it serves only if it does better")
+          }
+          onClick={retrain.start}
+          disabled={!retrain.canStart}
+          data-testid="retrain-row"
         />
       </ListGroup>
       {retrain.confirmDialog}
@@ -465,11 +530,15 @@ export function PerfHead() {
 function StackLink({ link }: { link: { label: string; href: string; service?: string; note?: string } }) {
   const queryClient = useQueryClient();
   const { data: dev } = useQuery({
-    queryKey: ["devServices"], queryFn: api.devServices, retry: false, staleTime: 30_000, meta: { silent: true },
+    queryKey: ["devServices"],
+    queryFn: api.devServices,
+    retry: false,
+    staleTime: 30_000,
+    meta: { silent: true },
   });
   const start = useMutation({ mutationFn: api.startDevService, meta: { silent: true } });
 
-  const state = dev?.services.find(s => s.name === link.service)?.state;
+  const state = dev?.services.find((s) => s.name === link.service)?.state;
   const startable = !!link.service && dev?.available === true && state !== undefined && state !== "running" && state !== "absent";
 
   if (!startable) return <ListRow title={link.label} description={link.note} href={link.href} />;
@@ -484,16 +553,21 @@ function StackLink({ link }: { link: { label: string; href: string; service?: st
         if (tab) tab.opener = null;
         start.mutate(link.service!, {
           onSuccess: () => {
-            done(`${(link.service ?? "").replace(/^./, c => c.toUpperCase())} Started`);
+            done(`${(link.service ?? "").replace(/^./, (c) => c.toUpperCase())} Started`);
             // So the control goes back to being a plain link rather
             // than still offering to start what is now running.
             void queryClient.invalidateQueries({ queryKey: ["devServices"] });
             // A container that has just started is not yet listening,
             // so the tab waits a moment rather than landing on a
             // connection refused.
-            window.setTimeout(() => { if (tab) tab.location.href = link.href; }, 2500);
+            window.setTimeout(() => {
+              if (tab) tab.location.href = link.href;
+            }, 2500);
           },
-          onError: err => { tab?.close(); showError(`Could not start ${link.service}`, errorMessage(err, "the sidecar gave no reason")); },
+          onError: (err) => {
+            tab?.close();
+            showError(`Could not start ${link.service}`, errorMessage(err, "the sidecar gave no reason"));
+          },
         });
       }}
     >
@@ -508,7 +582,7 @@ function StackLink({ link }: { link: { label: string; href: string; service?: st
 function useOnMap(corridors: Status["corridors"]) {
   const params = new URLSearchParams(useLocation().search);
   const onMapKey = `${params.get("dep") ?? ""}-${params.get("dest") ?? ""}`.toUpperCase();
-  return corridors.find(c => `${c.departure_ident}-${c.destination_ident}`.toUpperCase() === onMapKey);
+  return corridors.find((c) => `${c.departure_ident}-${c.destination_ident}`.toUpperCase() === onMapKey);
 }
 
 /** The one action that changes the model, laid out as the three steps
@@ -528,8 +602,16 @@ function TrainingTab() {
     <div className="space-y-6">
       <ListGroup title="Train the model">
         <StepRow n={1} title="Load a route" description="At the top of the panel; the chart reader finds its points along it." />
-        <StepRow n={2} title="Rate its points" description="In the Model Training panel, every one in flight order; a 0 for one that is no feature at all." />
-        <StepRow n={3} title="Retrain" description="From More beside the route, or Performance; the new model serves only if it does better." />
+        <StepRow
+          n={2}
+          title="Rate its points"
+          description="In the Model Training panel, every one in flight order; a 0 for one that is no feature at all."
+        />
+        <StepRow
+          n={3}
+          title="Retrain"
+          description="From More beside the route, or Performance; the new model serves only if it does better."
+        />
       </ListGroup>
       <RatingGuide />
     </div>
@@ -551,7 +633,6 @@ const HEALTH: Record<Health, { tone: Tone; label: string }> = {
   "no answer": { tone: "down", label: "no answer" },
   "not configured": { tone: "checking", label: "not configured" },
 };
-
 
 /** A service the planner's snapshot probed: null there means this
  *  deployment does not run it. */
@@ -586,9 +667,7 @@ const DATASET_NAMES: Record<string, string> = {
 
 /** How the next chart cycle's staging reads at a glance: done green, a
  *  failure red, the rest neither. */
-const NEXT_TONE: Record<string, Tone> = {
-  staged: "up", swapped: "up", failed: "down",
-};
+const NEXT_TONE: Record<string, Tone> = { staged: "up", swapped: "up", failed: "down" };
 
 /** The FAA charts on disk and the tile pyramid rendered from them, the
  *  System tab's Charts page:
@@ -598,30 +677,43 @@ const NEXT_TONE: Record<string, Tone> = {
  *  fetched and rendered in the background. Used to be one run-on line
  *  naming every count, which read as nothing at all, and then a grid
  *  of figures over a five-column table. */
-function ChartsSection({ charts, onRefresh, refreshing }: {
-  charts: NonNullable<Status["charts"]>; onRefresh: () => void; refreshing: boolean;
+function ChartsSection({
+  charts,
+  onRefresh,
+  refreshing,
+}: {
+  charts: NonNullable<Status["charts"]>;
+  onRefresh: () => void;
+  refreshing: boolean;
 }) {
   const sheets = charts.prepared;
-  const kinds = Object.keys(CHART_KIND_LABELS).filter(k => sheets[k] || charts.pyramid?.[k] || charts.building?.[k]);
+  const kinds = Object.keys(CHART_KIND_LABELS).filter((k) => sheets[k] || charts.pyramid?.[k] || charts.building?.[k]);
   const newer = charts.current_cycle !== charts.cycle;
   type Pyramid = NonNullable<Status["charts"]>["pyramid"][string];
   const progress = (p: Pyramid | undefined) =>
-    !p ? "—"
-      : p.current_pass ? `${p.current_pass.done}/${p.current_pass.total} sheets${p.current_pass.current ? `, on ${p.current_pass.current}` : ""}`
-      : p.complete ? "complete"
-      : `missing ${p.missing.length} sheet${p.missing.length === 1 ? "" : "s"}: ${p.missing.slice(0, 3).join(", ")}${p.missing.length > 3 ? "…" : ""}`;
+    !p
+      ? "—"
+      : p.current_pass
+        ? `${p.current_pass.done}/${p.current_pass.total} sheets${p.current_pass.current ? `, on ${p.current_pass.current}` : ""}`
+        : p.complete
+          ? "complete"
+          : `missing ${p.missing.length} sheet${p.missing.length === 1 ? "" : "s"}: ${p.missing.slice(0, 3).join(", ")}${p.missing.length > 3 ? "…" : ""}`;
   const workers = `${charts.refresh_workers} worker${charts.refresh_workers === 1 ? "" : "s"}`;
   return (
     <div className="space-y-6" data-testid="charts-status">
       <ListGroup footer="The FAA charts on disk and the map tiles rendered from them.">
         <ListRow title="Serving cycle" value={charts.cycle} />
-        <ListRow title="FAA cycle" value={newer ? `${charts.current_cycle} · ${charts.refresh_running ? "rendering" : "not yet"}` : "the same"} />
+        <ListRow
+          title="FAA cycle"
+          value={newer ? `${charts.current_cycle} · ${charts.refresh_running ? "rendering" : "not yet"}` : "the same"}
+        />
         <ListRow title="Tiles" value={grouped(charts.tiles_cached)} />
         <ListRow title="Next render" value={charts.refresh_window ? `${charts.refresh_window}, ${workers}` : `any time, ${workers}`} />
         <ListRow
           title={charts.refresh_running ? "Fetching and rendering…" : "Render now"}
           description="The FAA's current cycle, now rather than at the next daily check"
-          onClick={onRefresh} disabled={refreshing || charts.refresh_running}
+          onClick={onRefresh}
+          disabled={refreshing || charts.refresh_running}
         />
       </ListGroup>
       {/* The FAA's next cycle, drawn before its date by the charts job's
@@ -632,7 +724,8 @@ function ChartsSection({ charts, onRefresh, refreshing }: {
         <ListGroup title="Next cycle">
           <ListRow title={`Cycle ${charts.next.cycle}`} value={`takes effect ${charts.next.effective}`} />
           <ListRow
-            title="Staging" data-testid="charts-next-state"
+            title="Staging"
+            data-testid="charts-next-state"
             description={`${charts.next.detail ?? ""}${charts.next.updated_at ? ` · ${agoOrDate(charts.next.updated_at)}` : ""}`}
             value={<StatusBadge tone={NEXT_TONE[charts.next.state] ?? "checking"}>{charts.next.state.replace("_", " ")}</StatusBadge>}
           />
@@ -640,17 +733,18 @@ function ChartsSection({ charts, onRefresh, refreshing }: {
             title="Starts"
             value={charts.next.auto ? `${charts.next.stage_from}, ${charts.next.lead_days} days ahead` : "off (CHARTS_CYCLE_AUTO=0)"}
           />
-          {Object.keys(charts.next.progress ?? {}).length > 0 && kinds.map(k => (
-            <ListRow key={k} title={CHART_KIND_LABELS[k]} description={progress(charts.next?.progress?.[k])} />
-          ))}
+          {Object.keys(charts.next.progress ?? {}).length > 0 &&
+            kinds.map((k) => <ListRow key={k} title={CHART_KIND_LABELS[k]} description={progress(charts.next?.progress?.[k])} />)}
         </ListGroup>
       )}
       <ListGroup title="Chart kinds">
-        {kinds.map(k => (
+        {kinds.map((k) => (
           <ListRow
-            key={k} title={CHART_KIND_LABELS[k]}
+            key={k}
+            title={CHART_KIND_LABELS[k]}
             description={`${sheets[k] ?? 0} sheets · ${grouped(charts.pyramid?.[k]?.tiles ?? 0)} tiles · ${progress(charts.pyramid?.[k])}${
-              newer ? ` · cycle ${charts.current_cycle}: ${progress(charts.building?.[k])}` : ""}`}
+              newer ? ` · cycle ${charts.current_cycle}: ${progress(charts.building?.[k])}` : ""
+            }`}
           />
         ))}
         {kinds.length === 0 && <ListRow muted title="No chart prepared yet." />}
@@ -663,10 +757,14 @@ function ChartsSection({ charts, onRefresh, refreshing }: {
  *  with the planner out of reach: its own clock says when it was taken,
  *  and one taken more than five minutes ago cannot be this half-minute's
  *  -- however fresh the response that carried it looked. */
-const isStale = (status: Status | undefined) =>
-  !!status && Date.now() - new Date(status.checked_at).getTime() > 5 * 60_000;
+const isStale = (status: Status | undefined) => !!status && Date.now() - new Date(status.checked_at).getTime() > 5 * 60_000;
 
-function SystemTab({ status, failed, onRefresh, refreshing }: {
+function SystemTab({
+  status,
+  failed,
+  onRefresh,
+  refreshing,
+}: {
   status: Status | undefined;
   failed: boolean;
   /** Everything the console shows, asked for again now (DevPanel). */
@@ -680,7 +778,7 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
   // subprocess either way, with its progress on the row below.
   const refreshCharts = useMutation({
     mutationFn: api.refreshCharts,
-    onSuccess: r => {
+    onSuccess: (r) => {
       done(r.started ? `Fetching Charts ${r.current_cycle}` : "Charts Already Fetching");
       void queryClient.invalidateQueries({ queryKey: ["status"] });
     },
@@ -696,7 +794,11 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
   const rows: { name: string; health: Health; detail: string }[] = [
     { name: "gateway (Spring Boot)", health: reported(services?.gateway, failed), detail: "sign-in, sessions, aircraft and flights" },
     { name: "db (Postgres)", health: reported(services?.db, failed), detail: "application data" },
-    { name: "planner", health: reported(status ? { up: true } : null, failed), detail: "course, checkpoints and the chart model's scores, nav log, briefing, chart reading" },
+    {
+      name: "planner",
+      health: reported(status ? { up: true } : null, failed),
+      detail: "course, checkpoints and the chart model's scores, nav log, briefing, chart reading",
+    },
   ];
   const host = window.location.hostname;
   const links: { label: string; href: string; localOnly?: boolean; service?: string; note?: string }[] = [
@@ -718,27 +820,35 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
   const shown: typeof links = [{ label: "This snapshot as JSON", href: "/api/planner/status" }, ...links];
 
   const datasets: { name: string; file: string; source: string; updated: string | null | undefined }[] = [
-    ...(status?.faa_files ?? []).map(f => ({
-      name: DATASET_NAMES[f.name] ?? f.name, file: f.name.split("/").pop() ?? f.name, source: "FAA", updated: f.downloaded_at,
+    ...(status?.faa_files ?? []).map((f) => ({
+      name: DATASET_NAMES[f.name] ?? f.name,
+      file: f.name.split("/").pop() ?? f.name,
+      source: "FAA",
+      updated: f.downloaded_at,
     })),
-    ...(status?.weather ?? []).map(w => ({
-      name: DATASET_NAMES[w.name] ?? w.name, file: w.name, source: "aviationweather.gov", updated: w.fetched_at,
+    ...(status?.weather ?? []).map((w) => ({
+      name: DATASET_NAMES[w.name] ?? w.name,
+      file: w.name,
+      source: "aviationweather.gov",
+      updated: w.fetched_at,
     })),
   ];
 
   // The FAA data sets past their cycle, said at the Reference data row's
   // end for the owner (wingtip.data_cycles).
-  const staleData = (status?.data_cycles ?? []).filter(c => c.state === "expired").length;
+  const staleData = (status?.data_cycles ?? []).filter((c) => c.state === "expired").length;
   // The live feeds stale now (app.feed_health), at the Live feeds row's end.
-  const staleFeeds = (status?.feeds?.feeds ?? []).filter(f => f.state === "stale").length;
+  const staleFeeds = (status?.feeds?.feeds ?? []).filter((f) => f.state === "stale").length;
 
   // At the services row's end, what is wrong if anything is: how many
   // are down or did not answer, in red, else how many are up; one the
   // deployment does not run is neither.
-  const down = rows.filter(r => r.health === "down" || r.health === "no answer").length;
-  const summary = rows.some(r => r.health === "checking") ? HEALTH.checking
-    : down ? { tone: HEALTH.down.tone, label: `${down} down` }
-    : { tone: HEALTH.up.tone, label: `${rows.filter(r => r.health === "up").length} up` };
+  const down = rows.filter((r) => r.health === "down" || r.health === "no answer").length;
+  const summary = rows.some((r) => r.health === "checking")
+    ? HEALTH.checking
+    : down
+      ? { tone: HEALTH.down.tone, label: `${down} down` }
+      : { tone: HEALTH.up.tone, label: `${rows.filter((r) => r.health === "up").length} up` };
 
   // A row each that opens a page of its own (ConsolePages), as iOS's
   // Settings goes deeper: the services too, at the owner's ask
@@ -758,9 +868,16 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
             // status at its end; when the snapshot was taken under them.
             <ListGroup
               className={cn(stale && "opacity-60")}
-              footer={status && <>Checked {agoOrDate(status.checked_at)}{stale && " — the planner has not answered since"}.</>}
+              footer={
+                status && (
+                  <>
+                    Checked {agoOrDate(status.checked_at)}
+                    {stale && " — the planner has not answered since"}.
+                  </>
+                )
+              }
             >
-              {rows.map(r => (
+              {rows.map((r) => (
                 <ListRow key={r.name} title={r.name} description={r.detail}>
                   <StatusBadge tone={HEALTH[r.health].tone}>{HEALTH[r.health].label}</StatusBadge>
                 </ListRow>
@@ -775,16 +892,19 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
             // row's end, and the file and its source under its name.
             <div className="flex flex-col gap-5">
               <ListGroup footer="The files the planner reads and how old each copy is.">
-                {datasets.map(d => (
+                {datasets.map((d) => (
                   <ListRow
-                    key={d.file} title={d.name}
-                    description={<><span className="font-mono">{d.file}</span> · {d.source}</>}
+                    key={d.file}
+                    title={d.name}
+                    description={
+                      <>
+                        <span className="font-mono">{d.file}</span> · {d.source}
+                      </>
+                    }
                     value={d.updated ? agoOrDate(d.updated) : "not fetched yet"}
                   />
                 ))}
-                {datasets.length === 0 && (
-                  <ListRow muted title={<>{status ? "Nothing on disk yet." : waiting(failed)}</>} />
-                )}
+                {datasets.length === 0 && <ListRow muted title={<>{status ? "Nothing on disk yet." : waiting(failed)}</>} />}
               </ListGroup>
               {/* Each FAA data set's edition against its cycle (the
                   engine's data_cycle): with the refreshes off in
@@ -792,15 +912,17 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
                   fetch, and the planner logs it as well. */}
               {!!status?.data_cycles?.length && (
                 <ListGroup title="FAA cycles">
-                  {status.data_cycles.map(c => (
+                  {status.data_cycles.map((c) => (
                     <ListRow
-                      key={c.key} title={c.name} data-testid="dev-data-cycle"
+                      key={c.key}
+                      title={c.name}
+                      data-testid="dev-data-cycle"
                       description={`${c.kind.toUpperCase()} · edition ${c.edition ?? "unknown"} · current ${c.current}`}
-                      value={(
+                      value={
                         <StatusBadge tone={c.state === "in_force" ? "up" : c.state === "expired" ? "down" : "checking"}>
                           {c.state === "expired" ? `${c.behind} behind` : c.state.replace("_", " ")}
                         </StatusBadge>
-                      )}
+                      }
                     />
                   ))}
                 </ListGroup>
@@ -810,9 +932,13 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
         },
         charts: {
           title: "Charts",
-          content: status?.charts
-            ? <ChartsSection charts={status.charts} onRefresh={() => refreshCharts.mutate()} refreshing={refreshCharts.isPending} />
-            : <ListGroup><ListRow muted title={<>{waiting(failed)}</>} /></ListGroup>,
+          content: status?.charts ? (
+            <ChartsSection charts={status.charts} onRefresh={() => refreshCharts.mutate()} refreshing={refreshCharts.isPending} />
+          ) : (
+            <ListGroup>
+              <ListRow muted title={<>{waiting(failed)}</>} />
+            </ListGroup>
+          ),
         },
         feeds: {
           title: "Live feeds",
@@ -822,25 +948,31 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
             // weather product through the weather service. A feed stale
             // for the alert's minutes reads "alert" and is logged.
             <div className="flex flex-col gap-5">
-              {(["swim", "weather"] as const).map(kind => {
-                const feeds = (status?.feeds?.feeds ?? []).filter(f => f.kind === kind);
+              {(["swim", "weather"] as const).map((kind) => {
+                const feeds = (status?.feeds?.feeds ?? []).filter((f) => f.kind === kind);
                 return (
                   <ListGroup
-                    key={kind} title={kind === "swim" ? "FAA SWIM" : "Weather"}
-                    footer={kind === "weather" && status?.feeds
-                      ? `Checked each minute; a feed stale ${status.feeds.alert_after_min} minutes is an alert${status.feeds.webhook ? ", posted to the webhook" : ""}.`
-                      : undefined}
+                    key={kind}
+                    title={kind === "swim" ? "FAA SWIM" : "Weather"}
+                    footer={
+                      kind === "weather" && status?.feeds
+                        ? `Checked each minute; a feed stale ${status.feeds.alert_after_min} minutes is an alert${status.feeds.webhook ? ", posted to the webhook" : ""}.`
+                        : undefined
+                    }
                   >
-                    {feeds.map(f => (
+                    {feeds.map((f) => (
                       <ListRow
-                        key={f.name} title={DATASET_NAMES[f.name] ?? f.name} data-testid="dev-feed"
+                        key={f.name}
+                        title={DATASET_NAMES[f.name] ?? f.name}
+                        data-testid="dev-feed"
                         description={`${f.kind === "swim" ? `${f.what} · ` : ""}${f.detail ?? ""}${
-                          f.stale_since ? ` · stale since ${agoOrDate(f.stale_since)}` : ""}`}
-                        value={(
+                          f.stale_since ? ` · stale since ${agoOrDate(f.stale_since)}` : ""
+                        }`}
+                        value={
                           <StatusBadge tone={f.state === "ok" ? "up" : f.state === "stale" ? "down" : "checking"}>
                             {f.alerting ? "alert" : f.state}
                           </StatusBadge>
-                        )}
+                        }
                       />
                     ))}
                     {feeds.length === 0 && <ListRow muted title={<>{status ? "None reported." : waiting(failed)}</>} />}
@@ -859,9 +991,17 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
               {(status?.recent_errors ?? []).map((e, i) => (
                 <ListRow
                   key={`${e.at}-${i}`}
-                  title={<span className="font-mono break-all">{e.method} {e.path}</span>}
+                  title={
+                    <span className="font-mono break-all">
+                      {e.method} {e.path}
+                    </span>
+                  }
                   description={e.detail}
-                  value={<span className="whitespace-nowrap">{e.status} · {agoOrDate(new Date(e.at * 1000).toISOString())}</span>}
+                  value={
+                    <span className="whitespace-nowrap">
+                      {e.status} · {agoOrDate(new Date(e.at * 1000).toISOString())}
+                    </span>
+                  }
                   data-testid="recent-error"
                 />
               ))}
@@ -881,9 +1021,16 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
             // DEV_PUBLISH_ADDRESS publishes them to the network, Jupyter
             // with no password, which is why the file is to be read first.
             <ListGroup
-              footer={<>Each in a new tab. Those on this machine's ports open only where the stack runs; <span className="font-mono">DEV_PUBLISH_ADDRESS</span> in docker-compose.yml publishes them (read it first).</>}
+              footer={
+                <>
+                  Each in a new tab. Those on this machine's ports open only where the stack runs;{" "}
+                  <span className="font-mono">DEV_PUBLISH_ADDRESS</span> in docker-compose.yml publishes them (read it first).
+                </>
+              }
             >
-              {shown.map(l => <StackLink key={l.href} link={l} />)}
+              {shown.map((l) => (
+                <StackLink key={l.href} link={l} />
+              ))}
             </ListGroup>
           ),
         },
@@ -905,15 +1052,27 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
           {/* The count alone at the row's end: with the oldest's date as
               well the name wrapped on a phone. The page has the dates. */}
           <PageRow
-            page="data" title="Reference data"
-            value={!status ? undefined : staleData ? <StatusBadge tone="down">{`${staleData} out of date`}</StatusBadge> : `${datasets.length} files`}
+            page="data"
+            title="Reference data"
+            value={
+              !status ? undefined : staleData ? (
+                <StatusBadge tone="down">{`${staleData} out of date`}</StatusBadge>
+              ) : (
+                `${datasets.length} files`
+              )
+            }
           />
           <PageRow page="charts" title="Charts" value={status?.charts ? `cycle ${status.charts.cycle}` : undefined} />
           <PageRow
-            page="feeds" title="Live feeds"
-            value={!status?.feeds ? undefined : staleFeeds
-              ? <StatusBadge tone="down">{`${staleFeeds} stale`}</StatusBadge>
-              : <StatusBadge tone="up">all fresh</StatusBadge>}
+            page="feeds"
+            title="Live feeds"
+            value={
+              !status?.feeds ? undefined : staleFeeds ? (
+                <StatusBadge tone="down">{`${staleFeeds} stale`}</StatusBadge>
+              ) : (
+                <StatusBadge tone="up">all fresh</StatusBadge>
+              )
+            }
           />
           <PageRow page="errors" title="Recent errors" value={status ? (status.recent_errors ?? []).length : undefined} />
           <PageRow page="speed" title="Speed" />
@@ -925,8 +1084,11 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
         <ListGroup>
           <ListRow
             media={<RefreshCw className={cn("size-5", refreshing && "animate-spin")} />}
-            title="Check again" description="It checks by itself every 30 seconds"
-            onClick={onRefresh} disabled={refreshing} data-testid="dev-refresh"
+            title="Check again"
+            description="It checks by itself every 30 seconds"
+            onClick={onRefresh}
+            disabled={refreshing}
+            data-testid="dev-refresh"
           />
         </ListGroup>
       </div>

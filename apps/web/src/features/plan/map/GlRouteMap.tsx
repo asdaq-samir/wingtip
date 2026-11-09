@@ -15,7 +15,16 @@ import { AheadGl, ClassBGl } from "./layers/MarksGl";
 import { NavaidsGl, WaypointsGl } from "../../../components/map/layers/NavaidsGl";
 import { OwnShipGl } from "../../../lib/map/gl/layers/OwnShipGl";
 import {
-  FuelStopsGl, HoldTracksGl, LegPointsGl, LessonGl, PatternsGl, PickedGl, PlatesGl, ProceduresGl, StopFieldsGl, WaysGl,
+  FuelStopsGl,
+  HoldTracksGl,
+  LegPointsGl,
+  LessonGl,
+  PatternsGl,
+  PickedGl,
+  PlatesGl,
+  ProceduresGl,
+  StopFieldsGl,
+  WaysGl,
 } from "../../../lib/map/gl/layers/RouteExtrasGl";
 import { RouteGl, type GlCandidate, type GlCheckpoint, type GlEndpoint } from "../../../lib/map/gl/layers/RouteGl";
 import type { GlLeg } from "../../../lib/map/gl/legTap";
@@ -121,16 +130,16 @@ export function GlBootMap() {
 
 function Layers(p: GlRouteMapProps) {
   const { course } = p;
-  const dryRunning = usePastFlight(s => s.hex === DRY_RUN);
+  const dryRunning = usePastFlight((s) => s.hex === DRY_RUN);
   const [previewing, setPreviewing] = useState(false);
   // The map fitted to what was just picked: a lone departure,
   // Nearest's fields, the Stops, a procedure or a pattern just picked.
-  useGlFit(p.start ? [p.start] : NONE, !p.place ? p.start?.ident ?? null : null, 9);
-  useGlFit(p.nearest ?? NONE, !p.place && p.nearest?.length ? p.nearest.map(a => a.ident).join(",") : null);
-  useGlFit(p.stopFields, p.stopFields.length ? `stops:${p.stopFields.map(f => f.ident).join(",")}` : null);
+  useGlFit(p.start ? [p.start] : NONE, !p.place ? (p.start?.ident ?? null) : null, 9);
+  useGlFit(p.nearest ?? NONE, !p.place && p.nearest?.length ? p.nearest.map((a) => a.ident).join(",") : null);
+  useGlFit(p.stopFields, p.stopFields.length ? `stops:${p.stopFields.map((f) => f.ident).join(",")}` : null);
   useGlFit(p.focusedProcedure, p.focusedProcedure.length ? p.procedureFocus : null, 12, p.procedureCover);
   useGlFit(p.focusedPattern, p.focusedPattern.length ? p.patternFocus : null, 13);
-  const route = course ? [course.departure.ident, ...(course.stops ?? []).map(s => s.ident), course.destination.ident] : [];
+  const route = course ? [course.departure.ident, ...(course.stops ?? []).map((s) => s.ident), course.destination.ident] : [];
   const terrain = useTerrainView();
   return (
     <>
@@ -138,7 +147,7 @@ function Layers(p: GlRouteMapProps) {
       <ChartGl course={course} previewing={previewing} />
       {terrain.mode !== "flat" && (
         <Suspense fallback={null}>
-          <TerrainGl mode={terrain.mode} pilot={terrain.pilot} aloft={course ? p.aloft ?? null : null} />
+          <TerrainGl mode={terrain.mode} pilot={terrain.pilot} aloft={course ? (p.aloft ?? null) : null} />
         </Suspense>
       )}
       <OverlayGl />
@@ -155,7 +164,15 @@ function Layers(p: GlRouteMapProps) {
           {p.onPickWay && p.ways && <WaysGl ways={p.ways} shown={p.wayShown} onPick={p.onPickWay} />}
           <LegHighlightGl course={course} />
           <PlatesGl drawings={p.procedures} />
-          <RouteGl course={course} checkpoints={p.checkpoints} candidates={p.candidates} endpoints={p.endpoints} legs={p.routeLegs} onSelectLeg={p.onSelectLeg} selectedLeg={p.selectedLeg} />
+          <RouteGl
+            course={course}
+            checkpoints={p.checkpoints}
+            candidates={p.candidates}
+            endpoints={p.endpoints}
+            legs={p.routeLegs}
+            onSelectLeg={p.onSelectLeg}
+            selectedLeg={p.selectedLeg}
+          />
           <FuelStopsGl stops={p.fuelStops} onSelect={p.onSelectPlace} />
           <FlownTrackGl course={course} />
           {dryRunning && <ReplayGl asOwnShip />}

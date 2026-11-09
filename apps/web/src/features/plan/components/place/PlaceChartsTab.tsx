@@ -18,7 +18,7 @@ const CHART_GROUPS: { title: string; kinds: string[] }[] = [
   { title: "Minimums", kinds: ["MIN"] },
 ];
 const AIRPORT_CHARTS = ["HOT", "LAH"];
-const GROUPED = new Set(["APD", ...AIRPORT_CHARTS, ...CHART_GROUPS.flatMap(g => g.kinds)]);
+const GROUPED = new Set(["APD", ...AIRPORT_CHARTS, ...CHART_GROUPS.flatMap((g) => g.kinds)]);
 
 /** A chart's row: its title as the FAA prints it -- "LEGOZ FOUR (RNAV)",
  *  "ILS OR LOC RWY 24" -- not in sentence case as the FAA's other words
@@ -29,10 +29,22 @@ function TerminalChartRow({ chart, airport }: { chart: TerminalChart; airport: s
   // A procedure's badge says which kind it is, as its group's title does:
   // an approach's a landing airplane, a departure's one taking off, an
   // arrival's a route; the rest a chart's.
-  const badge = chart.kind === "IAP" ? <RowBadge colour={BADGE.approach}><PlaneLanding /></RowBadge>
-    : chart.kind === "DP" || chart.kind === "ODP" ? <RowBadge colour={BADGE.approach}><PlaneTakeoff /></RowBadge>
-      : chart.kind === "STR" ? <RowBadge colour={BADGE.approach}><Route /></RowBadge>
-        : <ChartBadge />;
+  const badge =
+    chart.kind === "IAP" ? (
+      <RowBadge colour={BADGE.approach}>
+        <PlaneLanding />
+      </RowBadge>
+    ) : chart.kind === "DP" || chart.kind === "ODP" ? (
+      <RowBadge colour={BADGE.approach}>
+        <PlaneTakeoff />
+      </RowBadge>
+    ) : chart.kind === "STR" ? (
+      <RowBadge colour={BADGE.approach}>
+        <Route />
+      </RowBadge>
+    ) : (
+      <ChartBadge />
+    );
   return <ChartRow media={badge} title={chart.name} url={chart.url} airport={airport} testId="terminal-chart" />;
 }
 
@@ -41,7 +53,11 @@ function TerminalChartRow({ chart, airport }: { chart: TerminalChart; airport: s
  * or the card's sketch, its Chart Supplement page, its hot spots -- then
  * the approaches, departures, arrivals and minimums in this cycle's d-TPP.
  */
-export function PlaceChartsTab({ place, sketched, startOn }: {
+export function PlaceChartsTab({
+  place,
+  sketched,
+  startOn,
+}: {
   place: AirportPlace;
   /** Its runways can be sketched (features/plan/lib/runwaySketch). */
   sketched: boolean;
@@ -61,27 +77,38 @@ export function PlaceChartsTab({ place, sketched, startOn }: {
             <ListRow muted title="The FAA publishes no airport diagram for this field" />
           )}
           <PublicationRows
-            ident={place.ident} diagram={place.airport_diagram_url} diagramCycle={place.airport_diagram_cycle}
+            ident={place.ident}
+            diagram={place.airport_diagram_url}
+            diagramCycle={place.airport_diagram_cycle}
             supplement={place.chart_supplement_url}
             sketch={sketched ? { runways: place.runways, lat: place.lat, lon: place.lon } : null}
           />
-          {procedures.filter(c => AIRPORT_CHARTS.includes(c.kind)).map(c => <TerminalChartRow key={c.url} chart={c} airport={place.ident} />)}
+          {procedures
+            .filter((c) => AIRPORT_CHARTS.includes(c.kind))
+            .map((c) => (
+              <TerminalChartRow key={c.url} chart={c} airport={place.ident} />
+            ))}
         </ListGroup>
       </PillSection>
       {/* The approaches, departures, arrivals and minimums in this
           cycle's d-TPP, at the pilot's ask, as the FAA's PDFs. */}
-      {[...CHART_GROUPS, { title: "Other", kinds: procedures.map(c => c.kind).filter(k => !GROUPED.has(k)) }].map(g => {
-        const charts = procedures.filter(c => g.kinds.includes(c.kind));
-        return charts.length > 0 && (
-          <div key={`${place.ident}-${g.title}`} data-chart-group={g.title} className="scroll-mt-16 pt-5">
-            {/* The first three, the title the rest (FirstFew); all
+      {[...CHART_GROUPS, { title: "Other", kinds: procedures.map((c) => c.kind).filter((k) => !GROUPED.has(k)) }].map((g) => {
+        const charts = procedures.filter((c) => g.kinds.includes(c.kind));
+        return (
+          charts.length > 0 && (
+            <div key={`${place.ident}-${g.title}`} data-chart-group={g.title} className="scroll-mt-16 pt-5">
+              {/* The first three, the title the rest (FirstFew); all
                 the approaches where the route's Approaches opened
                 the card on them. */}
-            <FirstFew
-              title={g.title} open={startOn === "approaches" && g.title === "Approaches"}
-              rows={charts.map(c => <TerminalChartRow key={c.url} chart={c} airport={place.ident} />)}
-            />
-          </div>
+              <FirstFew
+                title={g.title}
+                open={startOn === "approaches" && g.title === "Approaches"}
+                rows={charts.map((c) => (
+                  <TerminalChartRow key={c.url} chart={c} airport={place.ident} />
+                ))}
+              />
+            </div>
+          )
         );
       })}
     </div>

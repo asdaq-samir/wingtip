@@ -10,7 +10,9 @@ import { closeConsole, library, noTips, openConsole, openAccount, roleMenu, show
  * is mocked -- the link is read from the local inbox (emailSignIn.ts).
  */
 test.use({ storageState: { cookies: [], origins: [] } });
-test.beforeEach(async ({ page }) => { await page.addInitScript(noTips); });
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(noTips);
+});
 
 const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 
@@ -32,7 +34,7 @@ test("signed out, the planner opens on the map, and the sign-in is in the pilot 
   await page.goto("/app/plan");
   await showTabs(page);
   await expect(page.getByTestId("setup-button")).toBeVisible();
-  await page.waitForTimeout(500);   // a moment for a console that was coming down by itself
+  await page.waitForTimeout(500); // a moment for a console that was coming down by itself
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
   await closeConsole(page);
@@ -42,42 +44,46 @@ test("signed out, the planner opens on the map, and the sign-in is in the pilot 
   await expect(consoleSheet(page).getByRole("button", { name: "Sign in" })).toBeVisible();
 });
 
-test("signed out, Personal says once what signing in keeps, its minimums need none, and the dialog offers only the providers registered", { tag: "@smoke" }, async ({ page }) => {
-  await page.goto("/app/plan");
-  await showTabs(page);
-  await openConsole(page);
-  const sheet = consoleSheet(page);
-  await consolePage(sheet, "Account");
-  // Signed out: Sign in at the Account's heading, no line saying so (the
-  // owner's "no need to show Not Signed in").
-  await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in" })).toBeVisible();
-  // The minimums are kept on the device: no sign-in for them; the
-  // account's three wait for one.
-  await expect(sheet.getByTestId("library-section").getByRole("button", { name: "Airplanes" })).toBeDisabled();
-  await library(sheet, "Minimums");
-  await expect(sheet.getByTestId("minimum-ceilingFt")).toBeVisible();
-  await sheet.getByRole("button", { name: "Back to Account", exact: true }).click();
-  // Signed out: Sign in at the Account's heading, no line saying so (the
-  // owner's "no need to show Not Signed in").
-  await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in" })).toBeVisible();
-  // This stack registers neither Google nor Apple: their buttons opened a blank 401.
-  await sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in" }).click();
-  const dialog = page.getByRole("dialog", { name: "Sign in to Wingtip Maps" });
-  await expect(dialog.getByLabel("Email address")).toBeVisible();
-  await expect(dialog.getByRole("link", { name: /Continue with/ })).toHaveCount(0);
-  await page.keyboard.press("Escape");
+test(
+  "signed out, Personal says once what signing in keeps, its minimums need none, and the dialog offers only the providers registered",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    await page.goto("/app/plan");
+    await showTabs(page);
+    await openConsole(page);
+    const sheet = consoleSheet(page);
+    await consolePage(sheet, "Account");
+    // Signed out: Sign in at the Account's heading, no line saying so (the
+    // owner's "no need to show Not Signed in").
+    await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in" })).toBeVisible();
+    // The minimums are kept on the device: no sign-in for them; the
+    // account's three wait for one.
+    await expect(sheet.getByTestId("library-section").getByRole("button", { name: "Airplanes" })).toBeDisabled();
+    await library(sheet, "Minimums");
+    await expect(sheet.getByTestId("minimum-ceilingFt")).toBeVisible();
+    await sheet.getByRole("button", { name: "Back to Account", exact: true }).click();
+    // Signed out: Sign in at the Account's heading, no line saying so (the
+    // owner's "no need to show Not Signed in").
+    await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in" })).toBeVisible();
+    // This stack registers neither Google nor Apple: their buttons opened a blank 401.
+    await sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in" }).click();
+    const dialog = page.getByRole("dialog", { name: "Sign in to Wingtip Maps" });
+    await expect(dialog.getByLabel("Email address")).toBeVisible();
+    await expect(dialog.getByRole("link", { name: /Continue with/ })).toHaveCount(0);
+    await page.keyboard.press("Escape");
 
-  // Where Google is registered, Google alone.
-  await page.route("**/api/auth/capabilities", route => route.fulfill({
-    status: 200, contentType: "application/json", body: JSON.stringify({ access: "SIGN_IN", providers: ["google"] }),
-  }));
-  await page.reload();
-  await showTabs(page);
-  await openConsole(page);
-  await consoleSheet(page).getByTestId("setup-page").getByRole("button", { name: "Sign in" }).click();
-  await expect(dialog.getByRole("link", { name: "Continue with Google" })).toBeVisible();
-  await expect(dialog.getByRole("link", { name: "Continue with Apple" })).toHaveCount(0);
-});
+    // Where Google is registered, Google alone.
+    await page.route("**/api/auth/capabilities", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ access: "SIGN_IN", providers: ["google"] }) }),
+    );
+    await page.reload();
+    await showTabs(page);
+    await openConsole(page);
+    await consoleSheet(page).getByTestId("setup-page").getByRole("button", { name: "Sign in" }).click();
+    await expect(dialog.getByRole("link", { name: "Continue with Google" })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: "Continue with Apple" })).toHaveCount(0);
+  },
+);
 
 test("signed out, the dev page sends you to the planner", async ({ page }) => {
   await page.goto("/app/dev");
@@ -107,7 +113,7 @@ test("the emailed link opens the app's own sign-in dialog, over the planner, and
   expect(new URL(page.url()).search).not.toContain("signin");
 
   await page.getByRole("dialog").getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL(url => url.pathname === "/app/plan" && url.hash === "");
+  await page.waitForURL((url) => url.pathname === "/app/plan" && url.hash === "");
   await showTabs(page);
   await openConsole(page);
   await openAccount(page);
@@ -130,7 +136,7 @@ test("a pilot's link lands on the planner, with no dev switch, and the pilot con
   await page.waitForURL("**/app/plan**");
   // The planner as a fresh load opens, the tabs alone.
   await expect(sideDrawer(page).getByTestId("tab-bar")).toBeVisible();
-  await page.waitForTimeout(500);   // a moment for a console that was coming down by itself
+  await page.waitForTimeout(500); // a moment for a console that was coming down by itself
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
   await closeConsole(page);

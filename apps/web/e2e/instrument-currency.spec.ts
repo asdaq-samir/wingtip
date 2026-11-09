@@ -10,33 +10,55 @@ import { library, openConsole, showTabs } from "./helpers";
  */
 
 const CURRENCY = {
-  dayPassengersUntil: null, nightPassengersUntil: null, flightReviewOn: null, flightReviewUntil: null, medicalExpiresOn: null,
-  totalHours: 12, nightHours: 0, crossCountryHours: 4, landings: 6, flights: 3,
-  instrumentCurrentUntil: "2099-07-31", instrumentCurrentFrom: null, ipcOn: null, ipcNeededAfter: "2100-01-31",
-  approachesInWindow: 4, holdingInWindow: true, trackingInWindow: false,
+  dayPassengersUntil: null,
+  nightPassengersUntil: null,
+  flightReviewOn: null,
+  flightReviewUntil: null,
+  medicalExpiresOn: null,
+  totalHours: 12,
+  nightHours: 0,
+  crossCountryHours: 4,
+  landings: 6,
+  flights: 3,
+  instrumentCurrentUntil: "2099-07-31",
+  instrumentCurrentFrom: null,
+  ipcOn: null,
+  ipcNeededAfter: "2100-01-31",
+  approachesInWindow: 4,
+  holdingInWindow: true,
+  trackingInWindow: false,
 };
 
 test("the Logbook says how far instrument currency runs, logs approaches with a flight, and keeps the IPC's date", async ({ page }) => {
   let currency = CURRENCY;
   const logged: Record<string, unknown>[] = [];
   const datesSent: Record<string, unknown>[] = [];
-  await page.route(url => url.pathname === "/api/logbook/currency", async route => {
-    if (route.request().method() === "PUT") {
-      const body = route.request().postDataJSON() as Record<string, unknown>;
-      datesSent.push(body);
-      currency = { ...currency, ipcOn: body.ipcOn as null };
-    }
-    await route.fulfill({ json: currency });
-  });
-  await page.route(url => url.pathname === "/api/logbook", async route => {
-    if (route.request().method() === "POST") {
-      logged.push(route.request().postDataJSON() as Record<string, unknown>);
-      await route.fulfill({ status: 201, json: { id: 9, ...logged.at(-1) } });
-    } else {
-      await route.fulfill({ json: [] });
-    }
-  });
-  await page.route(url => url.pathname === "/api/training", route => route.fulfill({ json: { experience: [], knowledgeTestCodes: [], endorsements: [], lessons: [] } }));
+  await page.route(
+    (url) => url.pathname === "/api/logbook/currency",
+    async (route) => {
+      if (route.request().method() === "PUT") {
+        const body = route.request().postDataJSON() as Record<string, unknown>;
+        datesSent.push(body);
+        currency = { ...currency, ipcOn: body.ipcOn as null };
+      }
+      await route.fulfill({ json: currency });
+    },
+  );
+  await page.route(
+    (url) => url.pathname === "/api/logbook",
+    async (route) => {
+      if (route.request().method() === "POST") {
+        logged.push(route.request().postDataJSON() as Record<string, unknown>);
+        await route.fulfill({ status: 201, json: { id: 9, ...logged.at(-1) } });
+      } else {
+        await route.fulfill({ json: [] });
+      }
+    },
+  );
+  await page.route(
+    (url) => url.pathname === "/api/training",
+    (route) => route.fulfill({ json: { experience: [], knowledgeTestCodes: [], endorsements: [], lessons: [] } }),
+  );
 
   await page.goto("/app/plan");
   await showTabs(page);
@@ -62,16 +84,38 @@ test("the Logbook says how far instrument currency runs, logs approaches with a 
 
 test("an airplane's VOR check is recorded with its kind and error, and says how long it is good for", async ({ page }) => {
   const plane = {
-    id: 5, tailNumber: "N12345", typeDesignator: "C172", cruiseTasKt: 110, fuelBurnGph: 8.5, cruisePowerPct: null,
-    climbTasKt: null, climbFuelBurnGph: null, usableFuelGal: 40, createdAt: "2026-01-01T00:00:00Z",
-    vorCheck: { checkedOn: "2099-10-01", kind: "VOT", place: "KDLH VOT", errorDeg: 2, limitDeg: 4, withinLimit: true, goodThrough: "2099-10-31" },
+    id: 5,
+    tailNumber: "N12345",
+    typeDesignator: "C172",
+    cruiseTasKt: 110,
+    fuelBurnGph: 8.5,
+    cruisePowerPct: null,
+    climbTasKt: null,
+    climbFuelBurnGph: null,
+    usableFuelGal: 40,
+    createdAt: "2026-01-01T00:00:00Z",
+    vorCheck: {
+      checkedOn: "2099-10-01",
+      kind: "VOT",
+      place: "KDLH VOT",
+      errorDeg: 2,
+      limitDeg: 4,
+      withinLimit: true,
+      goodThrough: "2099-10-31",
+    },
   };
   const recorded: Record<string, unknown>[] = [];
-  await page.route(url => url.pathname === "/api/aircraft", route => route.fulfill({ json: [plane] }));
-  await page.route(url => url.pathname === "/api/aircraft/5/vor-check", async route => {
-    recorded.push(route.request().postDataJSON() as Record<string, unknown>);
-    await route.fulfill({ json: plane });
-  });
+  await page.route(
+    (url) => url.pathname === "/api/aircraft",
+    (route) => route.fulfill({ json: [plane] }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/aircraft/5/vor-check",
+    async (route) => {
+      recorded.push(route.request().postDataJSON() as Record<string, unknown>);
+      await route.fulfill({ json: plane });
+    },
+  );
   await page.goto("/app/plan");
   await showTabs(page);
   await openConsole(page);
@@ -87,16 +131,28 @@ test("an airplane's VOR check is recorded with its kind and error, and says how 
 test("the Logbook's reminders are turned on, and kept", async ({ page }) => {
   let on = false;
   const sent: boolean[] = [];
-  await page.route(url => url.pathname === "/api/logbook/reminders", async route => {
-    if (route.request().method() === "PUT") {
-      on = (route.request().postDataJSON() as { on: boolean }).on;
-      sent.push(on);
-    }
-    await route.fulfill({ json: { on } });
-  });
-  await page.route(url => url.pathname === "/api/logbook/currency", route => route.fulfill({ json: CURRENCY }));
-  await page.route(url => url.pathname === "/api/logbook", route => route.fulfill({ json: [] }));
-  await page.route(url => url.pathname === "/api/training", route => route.fulfill({ json: { experience: [], knowledgeTestCodes: [], endorsements: [], lessons: [] } }));
+  await page.route(
+    (url) => url.pathname === "/api/logbook/reminders",
+    async (route) => {
+      if (route.request().method() === "PUT") {
+        on = (route.request().postDataJSON() as { on: boolean }).on;
+        sent.push(on);
+      }
+      await route.fulfill({ json: { on } });
+    },
+  );
+  await page.route(
+    (url) => url.pathname === "/api/logbook/currency",
+    (route) => route.fulfill({ json: CURRENCY }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/logbook",
+    (route) => route.fulfill({ json: [] }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/training",
+    (route) => route.fulfill({ json: { experience: [], knowledgeTestCodes: [], endorsements: [], lessons: [] } }),
+  );
   await page.goto("/app/plan");
   await showTabs(page);
   await openConsole(page);

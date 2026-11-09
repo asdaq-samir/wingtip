@@ -63,10 +63,14 @@ export interface FormInput {
   depart: Date | null;
   now: Date;
   aircraft: {
-    ident: string | null; type: string | null; maxTakeoffLb: number | null;
+    ident: string | null;
+    type: string | null;
+    maxTakeoffLb: number | null;
     /** Item 10a's equipment and 10b's surveillance, and item 19's colour
      *  and markings, where the pilot's own airplane says them. */
-    equipment?: string | null; surveillance?: string | null; colour?: string | null;
+    equipment?: string | null;
+    surveillance?: string | null;
+    colour?: string | null;
   };
   /** The pilot in command, item 19 C/: their name as their certificate
    *  gives it, their telephone number and home base, where they said. */
@@ -103,8 +107,12 @@ export const hhmmForm = (minutes: number): string => callEngine("filed_duration"
  *  transition joins it at (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4",
  *  "FLACK DCT IRW"); DCT alone for a flight direct from one to the
  *  other. The engine's `filed_route`. */
-export function routeItem(stops: string[], isAirway: (stop: string) => boolean,
-  departure: FiledProcedure | null = null, arrival: FiledProcedure | null = null): string {
+export function routeItem(
+  stops: string[],
+  isAirway: (stop: string) => boolean,
+  departure: FiledProcedure | null = null,
+  arrival: FiledProcedure | null = null,
+): string {
   return callEngine("filed_route", { stops, airways: stops.filter(isAirway), departure, arrival });
 }
 
@@ -143,7 +151,7 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
   const ifr = input.rules === "ifr";
   const hops = flights(input);
   return hops.map((hop, i) => {
-    const totals = hops.length > 1 ? input.totals?.hops?.[i]?.totals ?? null : input.totals;
+    const totals = hops.length > 1 ? (input.totals?.hops?.[i]?.totals ?? null) : input.totals;
     const first = hop.legs[0];
     const last = i === hops.length - 1;
     const items: FormItem[] = [];
@@ -169,28 +177,46 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     // Item 13's time is UTC, four figures; a later flight's is when the
     // airplane leaves the stop, which the plan does not know.
     const depart = i === 0 ? input.depart : null;
-    add("13", "time", "Departure time (UTC)", depart ? utcFigures(depart) : null,
-      i > 0 ? `When you leave ${hop.departure}.` : depart ? undefined : "No departure time picked.");
+    add(
+      "13",
+      "time",
+      "Departure time (UTC)",
+      depart ? utcFigures(depart) : null,
+      i > 0 ? `When you leave ${hop.departure}.` : depart ? undefined : "No departure time picked.",
+    );
 
     add("15", "speed", "Cruising speed", first?.tas_kt != null ? cruisingSpeed(first.tas_kt) : null);
     // The level of the flight's first leg; a plan that steps says where.
     // Under IFR the next is asked of ATC on the way: the FAA's systems
     // neither process nor show a change filed in item 15 (AIM Appendix 4).
-    const step = first ? hop.legs.find(leg => leg.altitude_ft !== first.altitude_ft) : undefined;
-    add("15", "level", "Cruising level", first ? cruisingLevel(first.altitude_ft) : null,
-      step ? `Then ${feet(step.altitude_ft)} from ${step.from}${ifr ? ", asked of ATC on the way" : ""}.` : undefined);
+    const step = first ? hop.legs.find((leg) => leg.altitude_ft !== first.altitude_ft) : undefined;
+    add(
+      "15",
+      "level",
+      "Cruising level",
+      first ? cruisingLevel(first.altitude_ft) : null,
+      step ? `Then ${feet(step.altitude_ft)} from ${step.from}${ifr ? ", asked of ATC on the way" : ""}.` : undefined,
+    );
 
     // A T route, or a Q route, asks for GNSS and RNAV 2 (the engine's
     // `filed_rnav`, AIM Appendix 4 TBL 4-13): filed only where the airplane
     // is equipped and approved.
     const rnav = callEngine("filed_rnav", { airways: hop.via.filter(input.isAirway) });
-    const departure = ifr && i === 0 ? input.departureProcedure ?? null : null;
-    const arrival = ifr && last ? input.arrivalProcedure ?? null : null;
+    const departure = ifr && i === 0 ? (input.departureProcedure ?? null) : null;
+    const arrival = ifr && last ? (input.arrivalProcedure ?? null) : null;
     const procedures = [departure?.id, arrival?.id].filter(Boolean);
-    add("15", "route", "Route", routeItem(hop.via, input.isAirway, departure, arrival), [
-      procedures.length ? `${procedures.join(" and ")} as picked in the route's Procedures.` : "",
-      rnav ? "A T or Q route asks for G and R in item 10a and PBN/C2 in item 18, where the airplane has them (AIM Appendix 4)." : "",
-    ].filter(Boolean).join(" ") || undefined);
+    add(
+      "15",
+      "route",
+      "Route",
+      routeItem(hop.via, input.isAirway, departure, arrival),
+      [
+        procedures.length ? `${procedures.join(" and ")} as picked in the route's Procedures.` : "",
+        rnav ? "A T or Q route asks for G and R in item 10a and PBN/C2 in item 18, where the airplane has them (AIM Appendix 4)." : "",
+      ]
+        .filter(Boolean)
+        .join(" ") || undefined,
+    );
 
     add("16", "destination", "Destination", hop.destination, zzzz(hop.destination, "DEST"));
     add("16", "eet", "Total EET", totals?.ete_min != null ? hhmmForm(Math.ceil(totals.ete_min)) : null);
@@ -204,11 +230,16 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
 
     // Item 19's endurance: the fuel aboard at the cruise burn, to the
     // minute below (the engine's `filed_endurance`).
-    const fuel = i === 0 ? input.fuelGal ?? totals?.usable_fuel_gal ?? null : totals?.usable_fuel_gal ?? null;
+    const fuel = i === 0 ? (input.fuelGal ?? totals?.usable_fuel_gal ?? null) : (totals?.usable_fuel_gal ?? null);
     const burn = first?.fuel_burn_gph;
     const enduranceMinutes = fuel != null && burn ? callEngine("filed_endurance", { fuel_gal: fuel, burn_gph: burn }) : null;
-    add("19", "endurance", "Endurance", enduranceMinutes != null ? hhmmForm(enduranceMinutes) : null,
-      fuel != null && burn ? `${Math.round(fuel * 10) / 10} gal at ${Math.round(burn * 10) / 10} gph.` : undefined);
+    add(
+      "19",
+      "endurance",
+      "Endurance",
+      enduranceMinutes != null ? hhmmForm(enduranceMinutes) : null,
+      fuel != null && burn ? `${Math.round(fuel * 10) / 10} gal at ${Math.round(burn * 10) / 10} gph.` : undefined,
+    );
 
     // Item 19's persons on board (P/), the pilot's to type in the Brief
     // (withPersonsOnBoard); the airplane's colour and markings (A/); and
@@ -217,23 +248,39 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     // Appendix 4), and the home base the domestic form asks beside them
     // (FAA Form 7233-1, block 14).
     add("19", "persons", "Persons on board", null);
-    add("19", "colour", "Color and markings", input.aircraft.colour || null,
-      input.aircraft.colour ? undefined : where);
+    add("19", "colour", "Color and markings", input.aircraft.colour || null, input.aircraft.colour ? undefined : where);
     const pic = input.pilot;
     const contact = [pic?.name, pic?.phone, pic?.homeBase ? `home base ${pic.homeBase}` : null].filter(Boolean).join(", ");
-    add("19", "pilot", "Pilot in command", contact || null,
-      pic?.name && pic.phone ? undefined : "Your name and a phone number good at your ETA, from Pilot details in Setup.");
+    add(
+      "19",
+      "pilot",
+      "Pilot in command",
+      contact || null,
+      pic?.name && pic.phone ? undefined : "Your name and a phone number good at your ETA, from Pilot details in Setup.",
+    );
 
-    const value = (key: string) => items.find(f => f.key === key)?.value ?? null;
+    const value = (key: string) => items.find((f) => f.key === key)?.value ?? null;
     const needed = ["ident", "type", "speed", "level", "route"].map(value);
     const eetMinutes = totals?.ete_min != null ? Math.ceil(totals.ete_min) : null;
-    const filing: FlightPlanFilingRequest | null = depart && eetMinutes && enduranceMinutes && needed.every(Boolean) ? {
-      rules: ifr ? "IFR" : "VFR", aircraftId: value("ident")!, aircraftType: value("type")!,
-      departure: hop.departure, departureTime: depart.toISOString(),
-      cruisingSpeed: value("speed")!, cruisingLevel: value("level")!, route: value("route")!,
-      destination: hop.destination, eetMinutes, alternate: value("alternate"), otherInformation: value("other"),
-      enduranceMinutes, personsOnBoard: null,
-    } : null;
+    const filing: FlightPlanFilingRequest | null =
+      depart && eetMinutes && enduranceMinutes && needed.every(Boolean)
+        ? {
+            rules: ifr ? "IFR" : "VFR",
+            aircraftId: value("ident")!,
+            aircraftType: value("type")!,
+            departure: hop.departure,
+            departureTime: depart.toISOString(),
+            cruisingSpeed: value("speed")!,
+            cruisingLevel: value("level")!,
+            route: value("route")!,
+            destination: hop.destination,
+            eetMinutes,
+            alternate: value("alternate"),
+            otherInformation: value("other"),
+            enduranceMinutes,
+            personsOnBoard: null,
+          }
+        : null;
     return { departure: hop.departure, destination: hop.destination, items, filing };
   });
 }
@@ -251,7 +298,7 @@ export function personsOnBoard(typed: string): number | null {
 export function withPersonsOnBoard(form: FlightPlanForm, persons: number | null): FlightPlanForm {
   return {
     ...form,
-    items: form.items.map(f => (f.key === "persons" ? { ...f, value: persons != null ? String(persons) : null } : f)),
+    items: form.items.map((f) => (f.key === "persons" ? { ...f, value: persons != null ? String(persons) : null } : f)),
     filing: form.filing ? { ...form.filing, personsOnBoard: persons } : null,
   };
 }
@@ -259,8 +306,5 @@ export function withPersonsOnBoard(form: FlightPlanForm, persons: number | null)
 /** A form as text, an item to a line ("Item 15  Route: BAE V191 OSH"),
  *  to paste into a filing service or read out. */
 export function formText(form: FlightPlanForm): string {
-  return [
-    `${form.departure} to ${form.destination}`,
-    ...form.items.map(f => `Item ${f.item}  ${f.label}: ${f.value ?? "—"}`),
-  ].join("\n");
+  return [`${form.departure} to ${form.destination}`, ...form.items.map((f) => `Item ${f.item}  ${f.label}: ${f.value ?? "—"}`)].join("\n");
 }

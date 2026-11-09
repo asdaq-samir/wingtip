@@ -22,7 +22,16 @@ type RouteEdits = ReturnType<typeof useRouteEdits>;
  * radio's calls to us and a clearance read back (lib/atcRadio).
  */
 export function useMapActions({
-  course, planned, aircraft, classBAvoided, setStops, setRoute, directToChartPoint, acceptClassB, flyAltitude, typeProcedures,
+  course,
+  planned,
+  aircraft,
+  classBAvoided,
+  setStops,
+  setRoute,
+  directToChartPoint,
+  acceptClassB,
+  flyAltitude,
+  typeProcedures,
 }: {
   course: PlanCourse | null;
   planned: PlannedRoute;
@@ -39,22 +48,26 @@ export function useMapActions({
   // A field's card or a waypoint's diamond on the chart, put in the
   // stops where it bends the route least (bestStopIndex): landed at, or
   // flown through.
-  const addStopAt = useCallback((at: { ident: string; lat: number; lon: number }) => {
-    // The planner's limit, as the airport card's Add Stop keeps it.
-    if (!course || planned.stops.length >= MAX_STOPS) return;
-    const points = [course.departure, ...(course.stops ?? []), course.destination];
-    if (points.some(p => p.ident === at.ident)) return;
-    const stops = [...planned.stops];
-    stops.splice(bestStopIndex(points, at), 0, at.ident);
-    setStops(stops);
-  }, [course, planned.stops, setStops]);
+  const addStopAt = useCallback(
+    (at: { ident: string; lat: number; lon: number }) => {
+      // The planner's limit, as the airport card's Add Stop keeps it.
+      if (!course || planned.stops.length >= MAX_STOPS) return;
+      const points = [course.departure, ...(course.stops ?? []), course.destination];
+      if (points.some((p) => p.ident === at.ident)) return;
+      const stops = [...planned.stops];
+      stops.splice(bestStopIndex(points, at), 0, at.ident);
+      setStops(stops);
+    },
+    [course, planned.stops, setStops],
+  );
   // The map's VOR and fix cards' Add to Route and Direct To, while there
   // is a route (lib/map/cards/pointActions).
-  const hasFix = useOwnShip(st => st.enabled && st.fix !== null);
+  const hasFix = useOwnShip((st) => st.enabled && st.fix !== null);
   useEffect(() => {
     const routed = !!course && planned.stops.length < MAX_STOPS;
     usePointActions.setState({
-      addToRoute: routed ? addStopAt : null, directTo: routed && hasFix ? directToChartPoint : null,
+      addToRoute: routed ? addStopAt : null,
+      directTo: routed && hasFix ? directToChartPoint : null,
       avoidClassB: course && !classBAvoided ? () => acceptClassB(false) : null,
       courseLine: course?.course_line ?? null,
     });
@@ -66,18 +79,18 @@ export function useMapActions({
   // and the altitude it gave flown.
   const callSign = aircraft.tail ?? (N_NUMBER.test(shortName(aircraft.label)) ? shortName(aircraft.label) : null);
   const nearNow = course
-    ? [course.departure, course.destination].map(end => `${end.lat.toFixed(3)},${end.lon.toFixed(3)}`).join(";")
+    ? [course.departure, course.destination].map((end) => `${end.lat.toFixed(3)},${end.lon.toFixed(3)}`).join(";")
     : "";
   useEffect(() => useAtcRadio.setState({ tail: callSign, near: nearNow }), [callSign, nearNow]);
   useEffect(() => {
     useRadioActions.setState({
-      directTo: async said => {
+      directTo: async (said) => {
         const ship = useOwnShip.getState();
         if (!ship.enabled || !ship.fix) return "Direct To flies from where the airplane is: turn on Show my position.";
         const near = [nearNow, `${ship.fix.lat.toFixed(3)},${ship.fix.lon.toFixed(3)}`].filter(Boolean).join(";");
         try {
           const found = await api.clearancePlaces({ route: [said], near });
-          const ident = found.route?.[0]?.find(p => p.ident)?.ident;
+          const ident = found.route?.[0]?.find((p) => p.ident)?.ident;
           if (!ident) return `“${said}” was not found near the route.`;
           directToChartPoint({ ident });
           return null;
@@ -85,16 +98,17 @@ export function useMapActions({
           return "The place could not be looked up; check the connection.";
         }
       },
-      fly: ft => flyAltitude(ft),
+      fly: (ft) => flyAltitude(ft),
       // "Plan a trip to Las Vegas": the place as the search finds it (a
       // field, a town, an address), and the biggest field by it; from the
       // route's departure, else from the field nearest the airplane.
-      planTo: async place => {
+      planTo: async (place) => {
         try {
           const found = (await api.placesSearch(place))[0];
           if (!found) return `“${place}” was not found.`;
           const fields = await api.nearestAirports(found.lat, found.lon);
-          const dest = (found.kind === "airport" ? fields[0] : fields.find(f => f.kind === "large" || f.kind === "medium") ?? fields[0])?.ident;
+          const dest = (found.kind === "airport" ? fields[0] : (fields.find((f) => f.kind === "large" || f.kind === "medium") ?? fields[0]))
+            ?.ident;
           if (!dest) return `No field was found near ${found.label}.`;
           let dep = planned.dep;
           if (!dep) {
@@ -115,11 +129,14 @@ export function useMapActions({
   }, [nearNow, directToChartPoint, flyAltitude, planned.dep, setRoute]);
   // A clearance heard and read by the pilot (ClearanceCard): its route,
   // its SID and STAR picked as typed ones are, and the altitude it gives.
-  const enterClearance = useCallback((parts: RouteParts, typed: TypedProcedure[], altitudeFt: number | null) => {
-    setRoute(parts);
-    if (typed.length) void typeProcedures(typed, { dep: parts.dep, dest: parts.dest });
-    if (altitudeFt) flyAltitude(altitudeFt);
-  }, [setRoute, typeProcedures, flyAltitude]);
+  const enterClearance = useCallback(
+    (parts: RouteParts, typed: TypedProcedure[], altitudeFt: number | null) => {
+      setRoute(parts);
+      if (typed.length) void typeProcedures(typed, { dep: parts.dep, dest: parts.dest });
+      if (altitudeFt) flyAltitude(altitudeFt);
+    },
+    [setRoute, typeProcedures, flyAltitude],
+  );
   const plannedStops = planned.stops;
   useEffect(() => {
     useRadioActions.setState({ route: { dep: planned.dep, stops: plannedStops, dest: planned.dest }, enter: enterClearance });

@@ -40,10 +40,14 @@ export const METRICS: Metric[] = [
 /** A figure as a reader takes it in: seconds past one, a third decimal for CLS. */
 export function figure(value: number, unit: Unit): string {
   switch (unit) {
-    case "ms": return value >= 1000 ? `${(value / 1000).toFixed(1)} s` : `${Math.round(value)} ms`;
-    case "cls": return value.toFixed(3);
-    case "kb": return `${Math.round(value)} KB`;
-    case "score": return String(Math.round(value));
+    case "ms":
+      return value >= 1000 ? `${(value / 1000).toFixed(1)} s` : `${Math.round(value)} ms`;
+    case "cls":
+      return value.toFixed(3);
+    case "kb":
+      return `${Math.round(value)} KB`;
+    case "score":
+      return String(Math.round(value));
   }
 }
 
@@ -62,4 +66,3 @@ export function seriesOf(days: SpeedDay[], metric: Metric, device: string) {
   }
   return [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
 }
-

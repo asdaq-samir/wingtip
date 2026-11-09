@@ -1,26 +1,61 @@
 import { describe, expect, test } from "vitest";
 import type { Detection, Endpoint, LoosePick, Point } from "../../lib/api/types";
 import {
-  DEFAULT_FILTERS, filterCounts, forwardIsLeft, hasRating,
-  isVisible, modelNote, orderedPoints, ratedOf, roleOf, sourceOf, type Filters,
+  DEFAULT_FILTERS,
+  filterCounts,
+  forwardIsLeft,
+  hasRating,
+  isVisible,
+  modelNote,
+  orderedPoints,
+  ratedOf,
+  roleOf,
+  sourceOf,
+  type Filters,
 } from "./logic";
 
 const filters = (over: Partial<Filters> = {}): Filters => ({ ...DEFAULT_FILTERS, ...over });
 
 const det = (over: Partial<Detection> = {}): Detection => ({
-  lat: 44, lon: -89, category: "water", area_m2: 1000, score: 4, predicted_score: null,
-  along_track_nm: 10, cross_track_nm: 0, rating: null, role: null, rated: false, ...over,
+  lat: 44,
+  lon: -89,
+  category: "water",
+  area_m2: 1000,
+  score: 4,
+  predicted_score: null,
+  along_track_nm: 10,
+  cross_track_nm: 0,
+  rating: null,
+  role: null,
+  rated: false,
+  ...over,
 });
 
 const loose = (over: Partial<LoosePick> = {}): LoosePick => ({
-  lat: 44, lon: -89, category: "river", role: "dr", source: "added",
-  rating: 5, rated: true, along_track_nm: 20, cross_track_nm: 0, area_m2: 0,
-  route: "c81_kdlh", note: null, created_at: null, ...over,
+  lat: 44,
+  lon: -89,
+  category: "river",
+  role: "dr",
+  source: "added",
+  rating: 5,
+  rated: true,
+  along_track_nm: 20,
+  cross_track_nm: 0,
+  area_m2: 0,
+  route: "c81_kdlh",
+  note: null,
+  created_at: null,
+  ...over,
 });
 
 const end = (ident: string, nm: number): Endpoint => ({
-  endpoint: true, ident, name: ident, lat: 44, lon: -89,
-  along_track_nm: nm, category: nm === 0 ? "departure" : "destination",
+  endpoint: true,
+  ident,
+  name: ident,
+  lat: 44,
+  lon: -89,
+  along_track_nm: nm,
+  category: nm === 0 ? "departure" : "destination",
 });
 
 describe("role", () => {
@@ -84,8 +119,7 @@ describe("ordering", () => {
     added: [loose({ along_track_nm: 100 })] as Point[],
   };
   test("points come back in the order you fly them", () => {
-    expect(orderedPoints(parts, filters()).map(e => e.point.along_track_nm))
-      .toEqual([0, 50, 100, 150, 300]);
+    expect(orderedPoints(parts, filters()).map((e) => e.point.along_track_nm)).toEqual([0, 50, 100, 150, 300]);
   });
   test("endpoints survive a filter that would exclude them", () => {
     // They are the ends of the leg, not entries in it, so no combination
@@ -120,9 +154,7 @@ describe("filter counts", () => {
       loose({ role: "visual" }), // visual, added, rated
       det({ rating: null }), // dr, detected, unrated
     ];
-    expect(filterCounts(candidates)).toEqual({
-      dr: 2, visual: 1, detected: 2, added: 1, rated: 2, unrated: 1,
-    });
+    expect(filterCounts(candidates)).toEqual({ dr: 2, visual: 1, detected: 2, added: 1, rated: 2, unrated: 1 });
   });
 });
 
@@ -130,6 +162,8 @@ describe("modelNote", () => {
   test("says what the chart model makes of a detection, and nothing where it has no score", () => {
     expect(modelNote(det({ predicted_score: 0.36 }))).toBe("model 0.4");
     expect(modelNote(det())).toBeNull();
-    expect(modelNote({ endpoint: true, ident: "C81", name: "Campbell", lat: 42, lon: -88, along_track_nm: 0, category: "departure" })).toBeNull();
+    expect(
+      modelNote({ endpoint: true, ident: "C81", name: "Campbell", lat: 42, lon: -88, along_track_nm: 0, category: "departure" }),
+    ).toBeNull();
   });
 });

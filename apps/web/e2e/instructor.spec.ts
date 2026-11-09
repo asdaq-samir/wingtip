@@ -57,11 +57,19 @@ test("a student asks an instructor in, and the instructor endorses their solo cr
   await expect(console.getByTestId("instructor-link")).toContainText("Asked, not answered yet");
 
   // A saved flight of theirs, filed through the app's own endpoint.
-  const xsrf = async (p: Page) => decodeURIComponent((await p.context().cookies()).find(c => c.name === "XSRF-TOKEN")?.value ?? "");
+  const xsrf = async (p: Page) => decodeURIComponent((await p.context().cookies()).find((c) => c.name === "XSRF-TOKEN")?.value ?? "");
   const filed = await page.request.post("/api/flights", {
     headers: { "X-XSRF-TOKEN": await xsrf(page) },
-    data: { departureIdent: "KUGN", destinationIdent: "KUGN", stops: ["KRFD"], cruiseAltitudeFt: 4500, totalDistanceNm: 120,
-      totalEteMin: 70, totalFuelGal: 9, checkpoints: [] },
+    data: {
+      departureIdent: "KUGN",
+      destinationIdent: "KUGN",
+      stops: ["KRFD"],
+      cruiseAltitudeFt: 4500,
+      totalDistanceNm: 120,
+      totalEteMin: 70,
+      totalFuelGal: 9,
+      checkpoints: [],
+    },
   });
   expect(filed.ok()).toBe(true);
 
@@ -125,8 +133,8 @@ test("a student asks an instructor in, and the instructor endorses their solo cr
   const form = desk.getByTestId("sign-form");
   await expect(form.getByTestId("sign-field-landings")).toHaveValue("KRFD, KUGN");
   await expect(form.getByTestId("signed-words")).toContainText(
-    "I have reviewed the cross-country planning of Avery B. Student. I find the planning and preparation to be correct to make the"
-    + " solo flight from KUGN to KUGN via KRFD with landings at KRFD, KUGN in a Cessna 172 aircraft on",
+    "I have reviewed the cross-country planning of Avery B. Student. I find the planning and preparation to be correct to make the" +
+      " solo flight from KUGN to KUGN via KRFD with landings at KRFD, KUGN in a Cessna 172 aircraft on",
   );
   await expect(form.getByTestId("signed-words")).toContainText("J. J. Jones 987654321CFI RE 12-31-2025");
   await expect(form.getByTestId("sign-lapsed")).toContainText("Your recent experience ran out on 31 Dec 2025: 14 CFR 61.197(a)");
@@ -137,8 +145,9 @@ test("a student asks an instructor in, and the instructor endorses their solo cr
   await expect(desk.getByTestId("review")).toHaveCount(0);
 
   // The student holds it, its words and signature as signed.
-  const record = await (await page.request.get("/api/training")).json() as {
-    signed: { code: string; text: string; signature: string }[]; reviews: { endorsement: unknown }[];
+  const record = (await (await page.request.get("/api/training")).json()) as {
+    signed: { code: string; text: string; signature: string }[];
+    reviews: { endorsement: unknown }[];
   };
   expect(record.signed).toHaveLength(1);
   expect(record.signed[0]!.code).toBe("solo-xc-flight");
@@ -159,7 +168,9 @@ test("a student asks an instructor in, and the instructor endorses their solo cr
   await sheet.getByTestId("review-make-model").fill("Cessna 172");
   await sheet.getByTestId("review-ask").click();
   await expect(sheet).toBeHidden();
-  const after = await (await page.request.get("/api/training")).json() as { reviews: { flight: { destinationIdent: string }; answeredAt: string | null }[] };
+  const after = (await (await page.request.get("/api/training")).json()) as {
+    reviews: { flight: { destinationIdent: string }; answeredAt: string | null }[];
+  };
   expect(after.reviews).toHaveLength(2);
   expect(after.reviews[0]!.flight.destinationIdent).toBe("KRFD");
   expect(after.reviews[0]!.answeredAt).toBeNull();

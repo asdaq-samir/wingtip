@@ -10,8 +10,14 @@ import { cn } from "cn";
 export default function CommsGlyph({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"
-      className={cn("size-5", className)} aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn("size-5", className)}
+      aria-hidden="true"
     >
       {/* The headband over the top. */}
       <path d="M5 11.5v-0.75a7 7 0 0 1 14 0v0.75" />

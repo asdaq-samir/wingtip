@@ -53,7 +53,12 @@ export function VorCard({ vor }: { vor: VorPin }) {
   return (
     <MapCard
       media={HEXAGON}
-      title={<>{vor.ident}<span className="font-normal text-muted-foreground">{vor.kind}</span></>}
+      title={
+        <>
+          {vor.ident}
+          <span className="font-normal text-muted-foreground">{vor.kind}</span>
+        </>
+      }
       subtitle={[vor.name, vor.freq].filter(Boolean).join(" · ") || undefined}
       pill={{ name: `${vor.ident} ${vor.kind}`, line: [vor.freq, away ?? vor.name].filter(Boolean).join(" · "), colour: VOR_BLUE }}
     >
@@ -67,11 +72,23 @@ export function VorCard({ vor }: { vor: VorPin }) {
       <ListGroup>
         {/* Its identifier as it sends it: the only sure way to know the
             station tuned is the one meant (AIM 1-1-3). */}
-        <ListRow title="Identifier" value={<span className="font-semibold text-foreground" aria-label={[...vor.ident].join(" ")}>{morseOf(vor.ident)}</span>} data-testid="vor-morse" />
+        <ListRow
+          title="Identifier"
+          value={
+            <span className="font-semibold text-foreground" aria-label={[...vor.ident].join(" ")}>
+              {morseOf(vor.ident)}
+            </span>
+          }
+          data-testid="vor-morse"
+        />
         {vor.channel && <ListRow title="DME channel" value={<span className="text-foreground">{vor.channel}</span>} />}
         {volume && <ListRow title="Service volume" description={volume} data-testid="vor-service-volume" />}
-        {vor.elevation_ft != null && <ListRow title="Elevation" value={<span className="text-foreground">{feet(vor.elevation_ft)}</span>} />}
-        {vor.mag_var != null && <ListRow title="Declination" value={<span className="text-foreground">{declinationOf(vor.mag_var)}</span>} />}
+        {vor.elevation_ft != null && (
+          <ListRow title="Elevation" value={<span className="text-foreground">{feet(vor.elevation_ft)}</span>} />
+        )}
+        {vor.mag_var != null && (
+          <ListRow title="Declination" value={<span className="text-foreground">{declinationOf(vor.mag_var)}</span>} />
+        )}
         {hours && <ListRow title="Hours" value={<span className="text-foreground">{hours}</span>} />}
       </ListGroup>
       {/* Where its signal is not to be used, as the Chart Supplement lists
@@ -84,13 +101,22 @@ export function VorCard({ vor }: { vor: VorPin }) {
           <Collapsible>
             <CollapsibleTrigger asChild>
               <ListRow
-                title={<span className={cn(vor.restricted && "text-amber-700 dark:text-amber-400")}>{vor.restricted ? "Restrictions" : "Remarks"}</span>}
-                chevron data-testid="vor-remarks"
+                title={
+                  <span className={cn(vor.restricted && "text-amber-700 dark:text-amber-400")}>
+                    {vor.restricted ? "Restrictions" : "Remarks"}
+                  </span>
+                }
+                chevron
+                data-testid="vor-remarks"
               />
             </CollapsibleTrigger>
             <CollapsibleContent>
-              {(vor.remarks ?? []).map(remark => (
-                <ListRow key={remark} title={<span className={cn("text-muted-foreground", TEXT.detail)}>{remark}</span>} data-testid="vor-remark" />
+              {(vor.remarks ?? []).map((remark) => (
+                <ListRow
+                  key={remark}
+                  title={<span className={cn("text-muted-foreground", TEXT.detail)}>{remark}</span>}
+                  data-testid="vor-remark"
+                />
               ))}
             </CollapsibleContent>
           </Collapsible>
@@ -107,7 +133,13 @@ export function FixCard({ fix, vors }: { fix: FixPin; vors: readonly VorPin[] })
   const frd = fixRadialDistance(fix, vors);
   return (
     <MapCard
-      media={TRIANGLE} title={<>{fix.ident}<span className="font-normal text-muted-foreground">Fix</span></>}
+      media={TRIANGLE}
+      title={
+        <>
+          {fix.ident}
+          <span className="font-normal text-muted-foreground">Fix</span>
+        </>
+      }
       subtitle={frd ?? undefined}
       pill={{ name: `${fix.ident} fix`, line: frd ?? away ?? degreesMinutes(fix), colour: FIX_INK }}
     >
@@ -116,4 +148,3 @@ export function FixCard({ fix, vors }: { fix: FixPin; vors: readonly VorPin[] })
     </MapCard>
   );
 }
-

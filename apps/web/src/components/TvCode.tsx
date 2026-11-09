@@ -55,14 +55,17 @@ export default function TvCode() {
     <div className="flex flex-col items-center gap-2 py-2 text-center" data-testid="tv-sign-in">
       <p className={TEXT.prose}>On your phone, signed in to Wingtip Maps, open</p>
       <p className={`font-semibold text-tint ${TEXT.row}`} data-testid="tv-address">
-        {window.location.host}{code?.verificationPath ?? "/tv"}
+        {window.location.host}
+        {code?.verificationPath ?? "/tv"}
       </p>
       <p className={TEXT.prose}>and enter</p>
       <p className="font-mono text-4xl font-bold tracking-widest tabular-nums" data-testid="tv-code" aria-live="polite">
         {code?.userCode ?? "····-····"}
       </p>
       {failed && (
-        <p role="alert" className={`text-destructive ${TEXT.prose}`}>Couldn't get a code. Check the TV's connection.</p>
+        <p role="alert" className={`text-destructive ${TEXT.prose}`}>
+          Couldn't get a code. Check the TV's connection.
+        </p>
       )}
     </div>
   );

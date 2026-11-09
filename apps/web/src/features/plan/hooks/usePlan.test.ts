@@ -15,9 +15,11 @@ import { useSystemProblems } from "../../../lib/problems";
 import { queryClient } from "../../../lib/queryClient";
 import { usePlan, type PlanParams } from "./usePlan";
 
-vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn(), warning: vi.fn(), custom: vi.fn(), dismiss: vi.fn() }) }));
+vi.mock("sonner", () => ({
+  toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn(), warning: vi.fn(), custom: vi.fn(), dismiss: vi.fn() }),
+}));
 
-vi.mock("../../../lib/api/client", async importOriginal => ({
+vi.mock("../../../lib/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../lib/api/client")>()),
   api: {
     course: vi.fn(),
@@ -38,24 +40,38 @@ function courseFixture(): Course {
     departure: { ident: "C81", name: "Campbell", lat: 42.1, lon: -88.1, elevation_ft: 890, kind: "airport" },
     destination: { ident: "KDLH", name: "Duluth", lat: 46.8, lon: -92.2, elevation_ft: 1428, kind: "airport" },
     stops: [],
-    distance_nm: 323.4, bearing_deg: 328,
-    course_line: [[42.1, -88.1], [46.8, -92.2]], checkpoints_ready: false,
-    max_zoom: 12, min_zoom: 4, chart_cycle: "09-03-2026", chart_revision: 0, chart_tiles_base: null,
+    distance_nm: 323.4,
+    bearing_deg: 328,
+    course_line: [
+      [42.1, -88.1],
+      [46.8, -92.2],
+    ],
+    checkpoints_ready: false,
+    max_zoom: 12,
+    min_zoom: 4,
+    chart_cycle: "09-03-2026",
+    chart_revision: 0,
+    chart_tiles_base: null,
     chart_layers: [],
   };
 }
 
 const params: PlanParams = {
-  dep: "C81", dest: "KDLH", stops: [], altitudeFt: "", altitudeChoice: "lowest", depart: "",
-  aircraft: { profile: "c172", label: "Cessna 172" }, load: 0,
+  dep: "C81",
+  dest: "KDLH",
+  stops: [],
+  altitudeFt: "",
+  altitudeChoice: "lowest",
+  depart: "",
+  aircraft: { profile: "c172", label: "Cessna 172" },
+  load: 0,
 };
 
-const wrapper = ({ children }: { children: ReactNode }) =>
-  createElement(QueryClientProvider, { client: queryClient }, children);
+const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: queryClient }, children);
 
 beforeEach(() => {
   vi.mocked(api.course).mockResolvedValue(courseFixture());
-  vi.mocked(api.briefing).mockReturnValue(new Promise(() => {}));   // never answers; not what these tests are about
+  vi.mocked(api.briefing).mockReturnValue(new Promise(() => {})); // never answers; not what these tests are about
   vi.mocked(api.checkpoints).mockReturnValue(new Promise(() => {}));
   vi.mocked(api.me).mockResolvedValue(null);
 });
@@ -118,14 +134,24 @@ describe("checkpoint notes", () => {
   test("an earlier save that fails does not undo a later one that saved", async () => {
     let failFirst!: (e: Error) => void;
     vi.mocked(api.saveCheckpointNote)
-      .mockImplementationOnce(() => new Promise((_, reject) => { failFirst = reject; }))
+      .mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            failFirst = reject;
+          }),
+      )
       .mockResolvedValueOnce(undefined as never);
     const { result } = renderHook(() => usePlan(params), { wrapper });
 
     let first!: Promise<unknown>;
-    act(() => { first = result.current.saveDescription(43, -89, "A").catch(() => {}); });
+    act(() => {
+      first = result.current.saveDescription(43, -89, "A").catch(() => {});
+    });
     await act(() => result.current.saveDescription(43, -89, "B"));
-    await act(async () => { failFirst(new ApiError("timed out", 504)); await first; });
+    await act(async () => {
+      failFirst(new ApiError("timed out", 504));
+      await first;
+    });
 
     expect(result.current.descriptions[key]).toEqual({ text: "B", source: "saved" });
   });
@@ -144,7 +170,13 @@ describe("checkpoint notes", () => {
 
   test("after Log out the last pilot's notes are gone, and Generate asks again", async () => {
     vi.mocked(api.me).mockResolvedValue({
-      id: 7, displayName: "A. Pilot", email: "a@example.com", developer: false, fullName: null, phone: null, homeBase: null,
+      id: 7,
+      displayName: "A. Pilot",
+      email: "a@example.com",
+      developer: false,
+      fullName: null,
+      phone: null,
+      homeBase: null,
     });
     vi.mocked(api.saveCheckpointNote).mockResolvedValue(undefined as never);
     vi.mocked(api.describeCheckpoints).mockImplementation(() => notesStream([]));
@@ -154,7 +186,7 @@ describe("checkpoint notes", () => {
     act(() => result.current.generateDescriptions());
     await waitFor(() => expect(api.describeCheckpoints).toHaveBeenCalledTimes(1));
 
-    act(() => queryClient.setQueryData(["pilot"], null));   // what Log out does
+    act(() => queryClient.setQueryData(["pilot"], null)); // what Log out does
 
     await waitFor(() => expect(result.current.descriptions[key]).toBeUndefined());
     act(() => result.current.generateDescriptions());
@@ -170,7 +202,9 @@ describe("the briefing", () => {
     const { result } = renderHook(() => usePlan(params), { wrapper });
 
     // Said as a system problem, the line by the map's buttons.
-    await waitFor(() => expect(useSystemProblems.getState().problems).toContainEqual(expect.objectContaining({ title: "planner service unreachable" })));
+    await waitFor(() =>
+      expect(useSystemProblems.getState().problems).toContainEqual(expect.objectContaining({ title: "planner service unreachable" })),
+    );
     expect(result.current.briefing).toEqual({ state: "waiting" });
     expect(api.briefing).not.toHaveBeenCalled();
   });
@@ -181,7 +215,7 @@ describe("the briefing", () => {
     const { result } = renderHook(() => usePlan(params), { wrapper });
 
     await waitFor(() => expect(result.current.unknownPlace).toEqual({ ident: "KZZZ" }));
-    expect(useSystemProblems.getState().problems.filter(p => p.title.includes("KZZZ"))).toEqual([]);
+    expect(useSystemProblems.getState().problems.filter((p) => p.title.includes("KZZZ"))).toEqual([]);
     expect(result.current.briefing).toEqual({ state: "waiting" });
   });
 
@@ -195,9 +229,13 @@ describe("the briefing", () => {
 
     await act(() => queryClient.refetchQueries({ queryKey: ["briefing"] }));
 
-    await waitFor(() => expect(result.current.briefing).toMatchObject({
-      state: "ready", data: briefingFixture, refreshError: "aviationweather.gov did not answer",
-    }));
+    await waitFor(() =>
+      expect(result.current.briefing).toMatchObject({
+        state: "ready",
+        data: briefingFixture,
+        refreshError: "aviationweather.gov did not answer",
+      }),
+    );
   });
 
   test("a first fetch that fails is failed, with the planner's reason", async () => {
@@ -213,9 +251,9 @@ describe("the route as entered", () => {
   // A nav log that never answers: the checkpoints' one still waiting on
   // the chart, as a new route's does.
   async function* waiting(): AsyncGenerator<never> {
-    yield* (await new Promise<never[]>(() => {}));
+    yield* await new Promise<never[]>(() => {});
   }
-  const asEntered = () => vi.mocked(api.navlog).mock.calls.filter(call => call[10] === false);
+  const asEntered = () => vi.mocked(api.navlog).mock.calls.filter((call) => call[10] === false);
 
   test("is asked for at once where the course says the chart is still to be read", async () => {
     vi.mocked(api.navlog).mockImplementation(waiting);
@@ -228,7 +266,7 @@ describe("the route as entered", () => {
     // A leg of the route as entered, and the checkpoints' log still on the chart.
     async function* oneLeg(): AsyncGenerator<NavLogMessage> {
       yield { type: "leg", to: "KDLH" } as NavLogMessage;
-      yield* (await new Promise<never[]>(() => {}));
+      yield* await new Promise<never[]>(() => {});
     }
     vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[10] === false ? oneLeg() : waiting()));
     const { result } = renderHook(() => usePlan(params), { wrapper });
@@ -241,7 +279,7 @@ describe("the route as entered", () => {
     vi.mocked(api.navlog).mockImplementation(waiting);
     renderHook(() => usePlan(params), { wrapper });
     await waitFor(() => expect(api.navlog).toHaveBeenCalled());
-    await new Promise(done => setTimeout(done, 800));
+    await new Promise((done) => setTimeout(done, 800));
     expect(asEntered()).toHaveLength(0);
   });
 });
@@ -249,23 +287,32 @@ describe("the route as entered", () => {
 describe("an altitude asked for", () => {
   // The planner's whole log at an altitude, and one that never answers.
   async function* whole(feet: number): AsyncGenerator<NavLogMessage> {
-    yield { type: "altitude", flown: "custom", altitude_ft: feet, options: [], aircraft: { name: "Cessna 172" } } as unknown as NavLogMessage;
+    yield {
+      type: "altitude",
+      flown: "custom",
+      altitude_ft: feet,
+      options: [],
+      aircraft: { name: "Cessna 172" },
+    } as unknown as NavLogMessage;
     yield { type: "leg", to: "KDLH", altitude_ft: feet } as NavLogMessage;
     yield { type: "done", totals: { distance_nm: 323.4 } } as NavLogMessage;
   }
   async function* waiting(): AsyncGenerator<never> {
-    yield* (await new Promise<never[]>(() => {}));
+    yield* await new Promise<never[]>(() => {});
   }
 
   test("keeps the log before it on the page, with nothing said to wait on, till its own is in", async () => {
     vi.mocked(api.course).mockResolvedValue({ ...courseFixture(), checkpoints_ready: true });
     vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[2] === "6500" ? waiting() : whole(4500)));
-    const { result, rerender } = renderHook((plan: PlanParams) => usePlan(plan), { wrapper, initialProps: { ...params, altitudeFt: "4500" } });
+    const { result, rerender } = renderHook((plan: PlanParams) => usePlan(plan), {
+      wrapper,
+      initialProps: { ...params, altitudeFt: "4500" },
+    });
     await waitFor(() => expect(result.current.totals).not.toBeNull());
     rerender({ ...params, altitudeFt: "6500" });
-    await waitFor(() => expect(vi.mocked(api.navlog).mock.calls.some(call => call[2] === "6500")).toBe(true));
+    await waitFor(() => expect(vi.mocked(api.navlog).mock.calls.some((call) => call[2] === "6500")).toBe(true));
     expect(result.current.replanning).toBe(true);
-    expect(result.current.legs.map(leg => leg.altitude_ft)).toEqual([4500]);
+    expect(result.current.legs.map((leg) => leg.altitude_ft)).toEqual([4500]);
     // No "Planning altitudes…" over it (the checkpoints never answer here).
     expect(result.current.navStage).toBeNull();
     expect(result.current.stage).not.toBe("navlog");
@@ -279,7 +326,7 @@ describe("an altitude asked for", () => {
     const { result, rerender } = renderHook((plan: PlanParams) => usePlan(plan), { wrapper, initialProps: params });
     await waitFor(() => expect(result.current.totals).not.toBeNull());
     rerender({ ...params, runways: "C81:9", patterns: "KDLH:27" });
-    await waitFor(() => expect(vi.mocked(api.navlog).mock.calls.some(call => call[18] === "C81:9")).toBe(true));
+    await waitFor(() => expect(vi.mocked(api.navlog).mock.calls.some((call) => call[18] === "C81:9")).toBe(true));
     expect(result.current.totals).not.toBeNull();
     expect(result.current.legs).toHaveLength(1);
     expect(result.current.replanning).toBe(true);

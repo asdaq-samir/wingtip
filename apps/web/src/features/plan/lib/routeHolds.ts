@@ -25,13 +25,17 @@ import { bearing } from "../../../lib/format";
 // and the length each one of two, the other null.
 
 const fromEngine = (h: EngineHold): Hold => ({
-  fix: h.fix, inbound: h.inbound, right: h.right,
+  fix: h.fix,
+  inbound: h.inbound,
+  right: h.right,
   leg: h.leg_min != null ? { min: h.leg_min } : { nm: h.leg_nm! },
   length: h.turns != null ? { turns: h.turns } : { minutes: h.minutes! },
 });
 
 const toEngine = (h: Hold): RouteHoldIn => ({
-  fix: h.fix, inbound: h.inbound, right: h.right,
+  fix: h.fix,
+  inbound: h.inbound,
+  right: h.right,
   ...("min" in h.leg ? { leg_min: h.leg.min } : { leg_nm: h.leg.nm }),
   ...("turns" in h.length ? { turns: h.length.turns } : { minutes: h.length.minutes }),
 });

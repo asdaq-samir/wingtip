@@ -1,5 +1,5 @@
-import * as React from "react"
-import { cn } from "cn"
+import * as React from "react";
+import { cn } from "cn";
 
 // The app's one skeleton, shadcn's: the shape of what is coming in the
 // theme's accent, breathing once a motion.skeleton-pulse (design/tokens.json),
@@ -11,7 +11,7 @@ function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("bg-accent motion-safe:animate-pulse [animation-duration:var(--motion-skeleton-pulse)] rounded-md", className)}
       {...props}
     />
-  )
+  );
 }
 
-export { Skeleton }
+export { Skeleton };

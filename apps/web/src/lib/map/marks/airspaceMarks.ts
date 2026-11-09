@@ -1,5 +1,9 @@
 /** A line's look: its ink, width and dash (the card's swatch). */
-interface LineLook { color: string; weight: number; dashArray?: string }
+interface LineLook {
+  color: string;
+  weight: number;
+  dashArray?: string;
+}
 import type { AirspaceVolume } from "../sources/overlayTypes";
 import { CHART } from "../../tokens";
 

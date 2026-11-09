@@ -9,7 +9,17 @@ import tseslint from "typescript-eslint";
 import boundaries from "./eslint/boundaries.js";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "playwright-report", "test-results", "src/lib/api/schema.d.ts", "src/lib/api/assistant-schema.d.ts", "src/lib/engine/contract.ts"] },
+  {
+    ignores: [
+      "dist",
+      "node_modules",
+      "playwright-report",
+      "test-results",
+      "src/lib/api/schema.d.ts",
+      "src/lib/api/assistant-schema.d.ts",
+      "src/lib/engine/contract.ts",
+    ],
+  },
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -18,13 +28,8 @@ export default tseslint.config(
       reactHooks.configs.flat["recommended-latest"],
       jsxA11y.flatConfigs.recommended,
     ],
-    languageOptions: {
-      ecmaVersion: 2022,
-      globals: globals.browser,
-    },
-    plugins: {
-      "react-refresh": reactRefresh,
-    },
+    languageOptions: { ecmaVersion: 2022, globals: globals.browser },
+    plugins: { "react-refresh": reactRefresh },
     rules: {
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       // Test/setup files intentionally export non-component helpers
@@ -40,17 +45,8 @@ export default tseslint.config(
   // The layers: lib/ and hooks/ under components/, under the features, and
   // a feature reached by another only through its index.ts
   // (eslint/boundaries.js, apps/web/README.md's "Project layout").
-  {
-    files: ["src/**/*.{ts,tsx}"],
-    plugins: { boundaries },
-    rules: { "boundaries/layers": "error" },
-  },
-  {
-    files: ["e2e/**/*.ts", "**/*.test.ts", "**/*.test.tsx"],
-    languageOptions: {
-      globals: globals.node,
-    },
-  },
+  { files: ["src/**/*.{ts,tsx}"], plugins: { boundaries }, rules: { "boundaries/layers": "error" } },
+  { files: ["e2e/**/*.ts", "**/*.test.ts", "**/*.test.tsx"], languageOptions: { globals: globals.node } },
   // The usual causes of a flaky test, caught as it is written (docs/CI.md,
   // "Flaky tests"). Vitest's own plugin (@vitest/eslint-plugin, which
   // replaced eslint-plugin-vitest) on the unit tests: its recommended
@@ -96,11 +92,17 @@ export default tseslint.config(
   {
     files: ["e2e/**/*.ts"],
     rules: {
-      "no-restricted-properties": ["error",
-        { object: "test", property: "only", message: "A focused test runs alone: remove .only before committing." }],
-      "no-restricted-syntax": ["error",
-        { selector: "MemberExpression[object.object.name='test'][object.property.name='describe'][property.name='only']",
-          message: "A focused test runs alone: remove .only before committing." }],
+      "no-restricted-properties": [
+        "error",
+        { object: "test", property: "only", message: "A focused test runs alone: remove .only before committing." },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[object.object.name='test'][object.property.name='describe'][property.name='only']",
+          message: "A focused test runs alone: remove .only before committing.",
+        },
+      ],
     },
   },
   {
@@ -109,8 +111,6 @@ export default tseslint.config(
     // how the registry ships them and how other components compose
     // them -- kept stock rather than split to please Fast Refresh.
     files: ["src/components/ui/**"],
-    rules: {
-      "react-refresh/only-export-components": "off",
-    },
+    rules: { "react-refresh/only-export-components": "off" },
   },
 );

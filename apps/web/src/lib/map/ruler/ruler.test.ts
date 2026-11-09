@@ -5,10 +5,23 @@ const WEST_3 = () => -3;
 
 describe("two fingers held still", () => {
   it("is still while each finger stays within 10 points of where it came down", () => {
-    const from = [{ x: 100, y: 100 }, { x: 200, y: 300 }];
-    expect(heldStill(from, [{ x: 104, y: 97 }, { x: 200, y: 305 }])).toBe(true);
+    const from = [
+      { x: 100, y: 100 },
+      { x: 200, y: 300 },
+    ];
+    expect(
+      heldStill(from, [
+        { x: 104, y: 97 },
+        { x: 200, y: 305 },
+      ]),
+    ).toBe(true);
     // A pinch: the fingers spread.
-    expect(heldStill(from, [{ x: 90, y: 90 }, { x: 212, y: 310 }])).toBe(false);
+    expect(
+      heldStill(from, [
+        { x: 90, y: 90 },
+        { x: 212, y: 310 },
+      ]),
+    ).toBe(false);
     expect(heldStill(from, [{ x: 100, y: 100 }])).toBe(false);
   });
 });
@@ -24,7 +37,8 @@ describe("the ruler's course", () => {
 
 describe("what the ruler says", () => {
   // A degree of latitude due north: 60.0 nm on the earth's mean radius.
-  const south = { lat: 40, lon: -90 }, north = { lat: 41, lon: -90 };
+  const south = { lat: 40, lon: -90 },
+    north = { lat: 41, lon: -90 };
 
   it("gives the course each way magnetic, the distance to a tenth and the time at cruise", () => {
     const words = rulerWords(south, north, WEST_3, 100);

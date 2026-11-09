@@ -34,7 +34,7 @@ function kept(): PathPoint[] {
 export const useOwnTrail = create<{ path: PathPoint[] }>(() => ({ path: kept() }));
 
 let saved = 0;
-useOwnShip.subscribe(s => {
+useOwnShip.subscribe((s) => {
   const fix = s.fix;
   // A dry run's flying is not where the pilot has been. A fix before the
   // engine is there (the map now draws first, and this module comes with
@@ -50,7 +50,7 @@ useOwnShip.subscribe(s => {
   // Written down at most every half minute: a phone's storage is slow.
   if (fix.at - saved > 30_000) {
     saved = fix.at;
-    keptPath.setState({ value: next });   // a private window: this page's alone
+    keptPath.setState({ value: next }); // a private window: this page's alone
   }
 });
 

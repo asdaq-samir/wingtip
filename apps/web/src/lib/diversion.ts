@@ -56,8 +56,12 @@ export function divert(leg: Leg, tcDeg: number, distanceNm: number): Diversion |
   // No airplane, no diversion to fly: its heading, time and fuel are an airplane's.
   if (leg.tas_kt == null || leg.fuel_burn_gph == null) return null;
   const { solved } = callEngine("diversion", {
-    true_course_deg: tcDeg, distance_nm: distanceNm, tas_kt: leg.tas_kt, fuel_burn_gph: leg.fuel_burn_gph,
-    magnetic_variation_deg: leg.magnetic_variation_deg, wind: leg.wind ?? null,
+    true_course_deg: tcDeg,
+    distance_nm: distanceNm,
+    tas_kt: leg.tas_kt,
+    fuel_burn_gph: leg.fuel_burn_gph,
+    magnetic_variation_deg: leg.magnetic_variation_deg,
+    wind: leg.wind ?? null,
   });
   if (!solved) return null;
   const { distance_nm, ...figures } = solved;

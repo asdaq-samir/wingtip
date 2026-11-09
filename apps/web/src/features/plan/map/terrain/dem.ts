@@ -28,7 +28,11 @@ export const FLAT_MAX_PITCH = 60;
 export const OPEN_PITCH = 50;
 
 export const demSource = (origin: string): RasterDEMSourceSpecification => ({
-  type: "raster-dem", encoding: "terrarium", tileSize: 256, minzoom: 3, maxzoom: DEM_MAX_ZOOM,
+  type: "raster-dem",
+  encoding: "terrarium",
+  tileSize: 256,
+  minzoom: 3,
+  maxzoom: DEM_MAX_ZOOM,
   tiles: [absoluteTiles("/api/planner/terrain-tile/{z}/{x}/{y}.png", origin)],
 });
 
@@ -36,7 +40,9 @@ export const demSource = (origin: string): RasterDEMSourceSpecification => ({
  *  colours and words stay as printed in the light; lit from the
  *  north-west, as a sectional's own relief is. */
 export const HILLSHADE_LAYER: HillshadeLayerSpecification = {
-  id: HILLSHADE, type: "hillshade", source: DEM,
+  id: HILLSHADE,
+  type: "hillshade",
+  source: DEM,
   paint: {
     "hillshade-exaggeration": 0.35,
     "hillshade-shadow-color": "rgba(40, 32, 20, 0.55)",
@@ -48,6 +54,11 @@ export const HILLSHADE_LAYER: HillshadeLayerSpecification = {
 
 /** The sky over a tilted map's horizon, the chart's pale blue. */
 export const SKY = {
-  "sky-color": "#a9cbe8", "horizon-color": "#e6eef6", "fog-color": "#e6eef6",
-  "sky-horizon-blend": 0.6, "horizon-fog-blend": 0.6, "fog-ground-blend": 0.7, "atmosphere-blend": 0,
+  "sky-color": "#a9cbe8",
+  "horizon-color": "#e6eef6",
+  "fog-color": "#e6eef6",
+  "sky-horizon-blend": 0.6,
+  "horizon-fog-blend": 0.6,
+  "fog-ground-blend": 0.7,
+  "atmosphere-blend": 0,
 } as const;

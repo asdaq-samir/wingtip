@@ -28,7 +28,8 @@ import { Skeleton } from "../../../components/ui/skeleton";
  *  route's chips do (GLASS_PICKED), and the focus ring sits on its edge. */
 const PILL = cn(
   "relative inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full font-semibold whitespace-nowrap outline-none",
-  "after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0", TEXT.detail,
+  "after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+  TEXT.detail,
   "bg-foreground/8 text-foreground hover:bg-foreground/8 hover:text-foreground",
   "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground hover:data-[state=on]:bg-primary hover:data-[state=on]:text-primary-foreground",
 );
@@ -54,20 +55,34 @@ const NONE_OF: Record<StopPick, string> = {
  * owner, 2026-10-28). Picked -- its pin tapped on the chart -- in the
  * grey of iOS's selected row.
  */
-function StopFieldCard({ field, along, picked, onOpenField, onAddStop }: {
-  field: StopField; along: boolean; picked: boolean;
-  onOpenField: (ident: string) => void; onAddStop: (field: StopField) => void;
+function StopFieldCard({
+  field,
+  along,
+  picked,
+  onOpenField,
+  onAddStop,
+}: {
+  field: StopField;
+  along: boolean;
+  picked: boolean;
+  onOpenField: (ident: string) => void;
+  onAddStop: (field: StopField) => void;
 }) {
   const { data: photos } = useQuery(photosQuery(field.ident));
   return (
     <Card
-      role="listitem" data-testid="stops-field" aria-current={picked || undefined}
+      role="listitem"
+      data-testid="stops-field"
+      aria-current={picked || undefined}
       className={cn("gap-2.5 rounded-2xl border-0 py-4 shadow-none", picked && "bg-muted")}
     >
       <CardHeader className="gap-1 px-4">
         <CardTitle className={cn("leading-snug font-normal", TEXT.row)}>
           <button
-            type="button" onClick={() => onOpenField(field.ident)} data-testid="stops-field-open" data-ident={field.ident}
+            type="button"
+            onClick={() => onOpenField(field.ident)}
+            data-testid="stops-field-open"
+            data-ident={field.ident}
             className="relative text-left outline-none after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className="font-bold text-tint">{field.ident}</span>
@@ -77,7 +92,13 @@ function StopFieldCard({ field, along, picked, onOpenField, onAddStop }: {
         <CardDescription className={cn("tabular-nums", TEXT.detail)}>{whereWords(field, along)}</CardDescription>
         {along && (
           <CardAction>
-            <button type="button" onClick={() => onAddStop(field)} data-testid="stops-add-stop" aria-label={`Add ${field.ident} as a stop`} className={cn(ADD_CAPSULE, "whitespace-nowrap")}>
+            <button
+              type="button"
+              onClick={() => onAddStop(field)}
+              data-testid="stops-add-stop"
+              aria-label={`Add ${field.ident} as a stop`}
+              className={cn(ADD_CAPSULE, "whitespace-nowrap")}
+            >
               Add Stop
             </button>
           </CardAction>
@@ -88,7 +109,9 @@ function StopFieldCard({ field, along, picked, onOpenField, onAddStop }: {
           <span key={kind} className="flex items-start gap-2" data-testid={`stops-line-${kind}`}>
             {/* On the first line's middle, however many lines the names take. */}
             <StopKindGlyph kind={kind} className="mt-px" />
-            <span className="min-w-0"><span className="font-semibold">{STOP_KINDS[kind].name}:</span> {words}</span>
+            <span className="min-w-0">
+              <span className="font-semibold">{STOP_KINDS[kind].name}:</span> {words}
+            </span>
           </span>
         ))}
       </CardContent>
@@ -100,7 +123,10 @@ function StopFieldCard({ field, along, picked, onOpenField, onAddStop }: {
           {photos.photo && (
             <div className="relative aspect-square">
               <PhotoSlide
-                src={photos.photo.url} alt="" onOpen={() => onOpenField(field.ident)} label={`${field.ident} from the ground`}
+                src={photos.photo.url}
+                alt=""
+                onOpen={() => onOpenField(field.ident)}
+                label={`${field.ident} from the ground`}
                 // Its photographer and licence, as Commons' licences ask.
                 credit={`${photos.photo.credit}${photos.photo.license ? ` · ${photos.photo.license}` : ""}`}
               />
@@ -121,7 +147,15 @@ function StopFieldCard({ field, along, picked, onOpenField, onAddStop }: {
  * picked kept (preferences), and a row for each field with what it has
  * (the planner's /api/stops/near and /api/stops/along).
  */
-export default function StopsCard({ at, route, scope, onScope, onClose, onOpenField, onAddStop }: {
+export default function StopsCard({
+  at,
+  route,
+  scope,
+  onScope,
+  onClose,
+  onOpenField,
+  onAddStop,
+}: {
   /** Own ship, for Within; null where it is not known. */
   at: { lat: number; lon: number } | null;
   /** The course drawn, for Along Route: its ends and stops. */
@@ -133,22 +167,22 @@ export default function StopsCard({ at, route, scope, onScope, onClose, onOpenFi
   /** Along a route: the field put in it as a stop, where it falls. */
   onAddStop: (field: StopField) => void;
 }) {
-  const radius = usePreferences(p => p.stopsRadiusNm);
-  const setRadius = usePreferences(p => p.setStopsRadiusNm);
-  const pick = usePreferences(p => p.stopKind);
-  const setPick = usePreferences(p => p.setStopKind);
+  const radius = usePreferences((p) => p.stopsRadiusNm);
+  const setRadius = usePreferences((p) => p.setStopsRadiusNm);
+  const pick = usePreferences((p) => p.stopKind);
+  const setPick = usePreferences((p) => p.setStopKind);
   const along = scope === "route" && !!route;
   const near = useQuery({ ...stopsNearQuery(at?.lat ?? 0, at?.lon ?? 0, radius), enabled: !along && !!at });
   const onRoute = useQuery({ ...stopsAlongQuery(route?.dep ?? "", route?.dest ?? "", route?.stops ?? ""), enabled: along });
   const asked = along ? onRoute : near;
   const { data } = asked;
   const pending = data?.pending ?? 0;
-  const fields = (data?.fields ?? []).filter(f => pick === "all" || kindsOf(f).includes(pick));
-  const placesShown = fields.some(f => f.food?.length || f.training?.length);
+  const fields = (data?.fields ?? []).filter((f) => pick === "all" || kindsOf(f).includes(pick));
+  const placesShown = fields.some((f) => f.food?.length || f.training?.length);
   // A pin tapped on the chart: its row brought into sight in the list.
-  const picked = useStopsAlong(st => st.picked);
+  const picked = useStopsAlong((st) => st.picked);
   const list = useRef<HTMLDivElement>(null);
-  const pickedShown = fields.some(f => f.ident === picked);
+  const pickedShown = fields.some((f) => f.ident === picked);
   useEffect(() => {
     if (!picked || !pickedShown) return;
     const row = list.current?.querySelector(`[data-ident="${picked}"]`)?.closest('[data-testid="stops-field"]');
@@ -169,10 +203,15 @@ export default function StopsCard({ at, route, scope, onScope, onClose, onOpenFi
       <CardClose onClose={onClose} testId="stops-close" />
       <div className="flex items-center gap-3">
         {/* Wider than a phone there is no bar over the card: the title here. */}
-        <h2 className={cn("sr-only font-bold tracking-tight md:not-sr-only", TEXT.card)} data-testid="stops-name">Stops</h2>
+        <h2 className={cn("sr-only font-bold tracking-tight md:not-sr-only", TEXT.card)} data-testid="stops-name">
+          Stops
+        </h2>
         <PullDown
-          label="Where to look" value={along ? "route" : `${radius}`} align="start" testId="stops-distance"
-          onChange={value => {
+          label="Where to look"
+          value={along ? "route" : `${radius}`}
+          align="start"
+          testId="stops-distance"
+          onChange={(value) => {
             if (value === "route") {
               onScope("route");
               return;
@@ -182,7 +221,7 @@ export default function StopsCard({ at, route, scope, onScope, onClose, onOpenFi
           }}
           options={[
             ...(route ? [{ value: "route", label: "Along Route", testId: "stops-distance-option" }] : []),
-            ...STOP_RADII.map(nm => ({ value: `${nm}`, label: `Within ${nm} nm`, testId: "stops-distance-option" })),
+            ...STOP_RADII.map((nm) => ({ value: `${nm}`, label: `Within ${nm} nm`, testId: "stops-distance-option" })),
           ]}
         />
       </div>
@@ -192,12 +231,19 @@ export default function StopsCard({ at, route, scope, onScope, onClose, onOpenFi
           one picked keeping it. As wide as the card, not its pills
           (w-auto), or it would not scroll. */}
       <ToggleGroup
-        type="single" value={pick} onValueChange={v => { if (v) setPick(v as StopPick); }} aria-label="Kind of stop"
+        type="single"
+        value={pick}
+        onValueChange={(v) => {
+          if (v) setPick(v as StopPick);
+        }}
+        aria-label="Kind of stop"
         className="-mx-4 mt-3 w-auto items-stretch overflow-x-auto rounded-none px-4 py-1.5 [scrollbar-width:none]"
       >
-        {PICK_ORDER.map(kind => (
+        {PICK_ORDER.map((kind) => (
           <ToggleGroupItem
-            key={kind} value={kind} data-testid={`stops-kind-${kind}`}
+            key={kind}
+            value={kind}
+            data-testid={`stops-kind-${kind}`}
             className={cn(PILL, kind === "all" ? "px-3.5" : "px-0 pr-3.5 pl-1")}
           >
             {kind !== "all" && <StopKindGlyph kind={kind} className="size-6" />}
@@ -208,26 +254,48 @@ export default function StopsCard({ at, route, scope, onScope, onClose, onOpenFi
       <div ref={list} className="mt-1.5 min-h-0 flex-1 overflow-y-auto pb-3">
         {!along && !at && (
           <ListGroup>
-            <ListRow muted title={route ? "Turn on your location to look round you" : "Turn on your location, or enter a route, to find stops at the airports"} />
+            <ListRow
+              muted
+              title={
+                route ? "Turn on your location to look round you" : "Turn on your location, or enter a route, to find stops at the airports"
+              }
+            />
           </ListGroup>
         )}
-        {(along || at) && !data && <QueryState query={asked} fetching="Fetching the airports…" failed="The airports could not be fetched." />}
+        {(along || at) && !data && (
+          <QueryState query={asked} fetching="Fetching the airports…" failed="The airports could not be fetched." />
+        )}
         {data && fields.length > 0 && (
           <div role="list" aria-label="Airports" className="flex flex-col gap-3">
-            {fields.map(field => (
-              <StopFieldCard key={field.ident} field={field} along={along} picked={field.ident === picked} onOpenField={onOpenField} onAddStop={onAddStop} />
+            {fields.map((field) => (
+              <StopFieldCard
+                key={field.ident}
+                field={field}
+                along={along}
+                picked={field.ident === picked}
+                onOpenField={onOpenField}
+                onAddStop={onAddStop}
+              />
             ))}
           </div>
         )}
         {data && (fields.length === 0 || pending > 0) && (
           <ListGroup className={cn(fields.length > 0 && "mt-3")}>
             {fields.length === 0 && pending === 0 && (
-              <ListRow muted title={along ? `No airport along the route has ${NONE_OF[pick]}` : `No airport within ${radius} nm has ${NONE_OF[pick]}`} />
+              <ListRow
+                muted
+                title={along ? `No airport along the route has ${NONE_OF[pick]}` : `No airport within ${radius} nm has ${NONE_OF[pick]}`}
+              />
             )}
             {pending > 0 && (
               <ListRow
                 media={<Skeleton className="size-5 rounded-full" aria-hidden />}
-                muted title={<>Looking at {pending} more {pending === 1 ? "airport" : "airports"}…</>}
+                muted
+                title={
+                  <>
+                    Looking at {pending} more {pending === 1 ? "airport" : "airports"}…
+                  </>
+                }
                 data-testid="stops-pending"
               />
             )}

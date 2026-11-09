@@ -25,7 +25,7 @@ function radioOf(place: AirportPlace): string {
   // the first alone read as the field's one tower, against the other in
   // Frequencies just above it (the owner's screenshot, 2026-10-29).
   const towers = place.towered
-    ? [...new Set(place.frequencies.filter(f => f.type === "TWR" && f.frequency_mhz != null).map(f => mhzText(f.frequency_mhz!)))]
+    ? [...new Set(place.frequencies.filter((f) => f.type === "TWR" && f.frequency_mhz != null).map((f) => mhzText(f.frequency_mhz!)))]
     : [];
   if (towers.length) return `Tower ${towers.join(", ")}`;
   const tower = place.towered ? frequencyOf(place.frequencies, "TWR") : null;
@@ -36,12 +36,24 @@ function radioOf(place: AirportPlace): string {
 
 /** A section of the Info tab, which has several: its title over its rows
  *  (PillSection), the title the way to its list in full where it has more. */
-function CardSection({ title, onMore, right, children, testId }: {
-  title: string; onMore?: () => void; right?: ReactNode; children: ReactNode; testId?: string;
+function CardSection({
+  title,
+  onMore,
+  right,
+  children,
+  testId,
+}: {
+  title: string;
+  onMore?: () => void;
+  right?: ReactNode;
+  children: ReactNode;
+  testId?: string;
 }) {
   return (
     <div className="pt-5 first:pt-0">
-      <PillSection title={title} onMore={onMore} right={right} testId={testId}>{children}</PillSection>
+      <PillSection title={title} onMore={onMore} right={right} testId={testId}>
+        {children}
+      </PillSection>
     </div>
   );
 }
@@ -52,7 +64,11 @@ function CardSection({ title, onMore, right, children, testId }: {
  * and its remarks, the address -- its lights, and what it offers on the
  * ground.
  */
-export function PlaceInfoTab({ place, where, services }: {
+export function PlaceInfoTab({
+  place,
+  where,
+  services,
+}: {
   place: AirportPlace;
   /** Its town and state, for the address where the FAA lists none. */
   where: string | null;
@@ -61,7 +77,7 @@ export function PlaceInfoTab({ place, where, services }: {
   services: AirportServices | undefined;
 }) {
   // The longest runway open, for the details: what a pilot sizes a field by.
-  const longest = place.runways.filter(r => !r.closed && r.length_ft != null).sort((a, b) => b.length_ft! - a.length_ft!)[0] ?? null;
+  const longest = place.runways.filter((r) => !r.closed && r.length_ft != null).sort((a, b) => b.length_ft! - a.length_ft!)[0] ?? null;
   return (
     <>
       {/* Before the Details, at the owner's ask (2026-10-29: "move
@@ -71,14 +87,34 @@ export function PlaceInfoTab({ place, where, services }: {
           how many of how many at its right. */}
       <div className="pt-5 first:pt-0">
         <FirstFew
-          key={place.ident} title="Frequencies" testId="place-frequencies"
-          rows={place.frequencies.length ? place.frequencies.map((f, i) => (
-            <FrequencyRow key={`${f.type}-${f.frequency_mhz}-${i}`} type={f.type} description={f.description} mhz={f.frequency_mhz} testId="place-frequency" />
-          )) : [<ListRow key="none" title="None listed" />]}
+          key={place.ident}
+          title="Frequencies"
+          testId="place-frequencies"
+          rows={
+            place.frequencies.length
+              ? place.frequencies.map((f, i) => (
+                  <FrequencyRow
+                    key={`${f.type}-${f.frequency_mhz}-${i}`}
+                    type={f.type}
+                    description={f.description}
+                    mhz={f.frequency_mhz}
+                    testId="place-frequency"
+                  />
+                ))
+              : [<ListRow key="none" title="None listed" />]
+          }
           // What some fields read out on so many clicks of the mic on
           // the CTAF: the weather, a radio check (wingtip.remarks).
-          after={place.radio_notes.map(note => (
-            <ListRow key={note} media={<RowBadge colour={BADGE.traffic}><Radio /></RowBadge>} title={note} />
+          after={place.radio_notes.map((note) => (
+            <ListRow
+              key={note}
+              media={
+                <RowBadge colour={BADGE.traffic}>
+                  <Radio />
+                </RowBadge>
+              }
+              title={note}
+            />
           ))}
         />
       </div>
@@ -86,18 +122,25 @@ export function PlaceInfoTab({ place, where, services }: {
       <CardSection title="Details" testId="place-details">
         <ListGroup>
           <ListRow
-            title="Elevation" data-testid="place-elevation"
+            title="Elevation"
+            data-testid="place-elevation"
             value={<span className="font-semibold text-foreground">{feet(place.elevation_ft)}</span>}
           />
           {/* The class of the airspace it sits in (its airspace_class,
               from the FAA's NASR) and the radio a pilot calls it on. */}
           <ListRow
-            title="Airspace" data-testid="place-airspace"
-            value={<span className="font-semibold text-foreground">{[place.airspace_class && `Class ${place.airspace_class}`, radioOf(place)].filter(Boolean).join(" · ")}</span>}
+            title="Airspace"
+            data-testid="place-airspace"
+            value={
+              <span className="font-semibold text-foreground">
+                {[place.airspace_class && `Class ${place.airspace_class}`, radioOf(place)].filter(Boolean).join(" · ")}
+              </span>
+            }
           />
           {longest && (
             <ListRow
-              title="Longest runway" data-testid="place-longest-runway"
+              title="Longest runway"
+              data-testid="place-longest-runway"
               value={<span className="font-semibold text-foreground">{`${longest.ends ?? "—"} · ${feet(longest.length_ft)}`}</span>}
             />
           )}
@@ -105,8 +148,13 @@ export function PlaceInfoTab({ place, where, services }: {
               in plain English as the planner gives them, a row each
               (wingtip.remarks.service_notes): self-serve, its hours, the FBO's. */}
           <ListRow
-            title="Fuel" data-testid="services-fuel"
-            value={<span className="font-semibold text-foreground">{services ? (services.fuel_types.length ? fuelNames(services.fuel_types) : "None listed") : "…"}</span>}
+            title="Fuel"
+            data-testid="services-fuel"
+            value={
+              <span className="font-semibold text-foreground">
+                {services ? (services.fuel_types.length ? fuelNames(services.fuel_types) : "None listed") : "…"}
+              </span>
+            }
           />
           {/* Its remarks folded under their own row, so a field's
               paragraph of them (Duluth's) does not stand between the
@@ -117,7 +165,9 @@ export function PlaceInfoTab({ place, where, services }: {
                 <ListRow title="Fuel remarks" chevron data-testid="services-fuel-remarks" />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                {services.fuel_notes.map(note => <ListRow key={note} title={<span className={cn("text-muted-foreground", TEXT.detail)}>{note}</span>} />)}
+                {services.fuel_notes.map((note) => (
+                  <ListRow key={note} title={<span className={cn("text-muted-foreground", TEXT.detail)}>{note}</span>} />
+                ))}
               </CollapsibleContent>
             </Collapsible>
           )}
@@ -136,16 +186,32 @@ export function PlaceInfoTab({ place, where, services }: {
         // after the radio, as it is the mic that turns them on.
         <div className="pt-5">
           <FirstFew
-            key={place.ident} title="Lights"
-            rows={place.lighting.map(note => (
-              <ListRow key={note} media={<RowBadge colour={BADGE.lights}><Lightbulb /></RowBadge>} title={note} data-testid="place-lighting" />
+            key={place.ident}
+            title="Lights"
+            rows={place.lighting.map((note) => (
+              <ListRow
+                key={note}
+                media={
+                  <RowBadge colour={BADGE.lights}>
+                    <Lightbulb />
+                  </RowBadge>
+                }
+                title={note}
+                data-testid="place-lighting"
+              />
             ))}
-            after={place.standard_keying && (
-              // The standard keying (AIM 2-1-9): the mic keyed 7 times
-              // within 5 seconds for high intensity, 5 for medium, 3 for
-              // low -- a row, where it was a footnote.
-              <ListRow title="Keying" value={<span className="text-foreground">7 high · 5 medium · 3 low</span>} data-testid="place-keying" />
-            )}
+            after={
+              place.standard_keying && (
+                // The standard keying (AIM 2-1-9): the mic keyed 7 times
+                // within 5 seconds for high intensity, 5 for medium, 3 for
+                // low -- a row, where it was a footnote.
+                <ListRow
+                  title="Keying"
+                  value={<span className="text-foreground">7 high · 5 medium · 3 low</span>}
+                  data-testid="place-keying"
+                />
+              )
+            }
           />
         </div>
       )}

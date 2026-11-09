@@ -15,10 +15,15 @@ import { wordsState } from "../../lib/wordsState";
  *  and the profile, thousands of points that say nothing a sentence can
  *  use and would be sent with every ask. */
 const forWords = (d: Debrief) => ({
-  takeoff: d.takeoff, landing: d.landing, flown_min: d.flownMin, planned_min: d.plannedMin,
+  takeoff: d.takeoff,
+  landing: d.landing,
+  flown_min: d.flownMin,
+  planned_min: d.plannedMin,
   legs: d.legs.map(({ ok: _ok, ...leg }) => leg),
   passes: d.passes.map(({ landed: _landed, lateMin: _late, ok: _ok, ...pass }) => pass),
-  patterns: d.patterns.map(({ offFt: _off, ok: _ok, ...pattern }) => pattern), has_altitude: d.hasAltitude, notes: d.notes,
+  patterns: d.patterns.map(({ offFt: _off, ok: _ok, ...pattern }) => pattern),
+  has_altitude: d.hasAltitude,
+  notes: d.notes,
 });
 
 /**
@@ -34,23 +39,36 @@ export default function DebriefWords({ flightId, debrief }: { flightId: number; 
   const query = useQuery({
     queryKey: ["words", "debrief", flightId, body],
     queryFn: ({ signal }) => words.debrief(body, signal),
-    staleTime: 10 * 60_000, meta: { silent: true },
+    staleTime: 10 * 60_000,
+    meta: { silent: true },
   });
   const { data: pilot } = useQuery(pilotQuery);
   const { data: training } = useQuery({ ...trainingQuery, enabled: !!pilot });
-  const hasInstructor = !!training?.instructors.some(l => l.accepted);
+  const hasInstructor = !!training?.instructors.some((l) => l.accepted);
   const [copied, setCopied] = useCopied();
   const note = query.data?.instructor_note ?? null;
   return (
     <WordsSection title="What to practise next" testId="debrief-words" state={wordsState(query)}>
       {note && hasInstructor && (
         <div className="flex flex-col gap-2 pt-2" data-testid="debrief-instructor-note">
-          <p className={cn("tabular-nums", TEXT.prose)}><span className="font-semibold">For your instructor: </span>{note}</p>
+          <p className={cn("tabular-nums", TEXT.prose)}>
+            <span className="font-semibold">For your instructor: </span>
+            {note}
+          </p>
           <Button
-            variant="outline" size="sm" className="self-start" data-testid="debrief-copy-note"
-            onClick={() => void navigator.clipboard?.writeText(note).then(() => setCopied("note")).catch(() => {})}
+            variant="outline"
+            size="sm"
+            className="self-start"
+            data-testid="debrief-copy-note"
+            onClick={() =>
+              void navigator.clipboard
+                ?.writeText(note)
+                .then(() => setCopied("note"))
+                .catch(() => {})
+            }
           >
-            {copied === "note" ? <Check /> : <Copy />}{copied === "note" ? "Copied" : "Copy for your instructor"}
+            {copied === "note" ? <Check /> : <Copy />}
+            {copied === "note" ? "Copied" : "Copy for your instructor"}
           </Button>
         </div>
       )}

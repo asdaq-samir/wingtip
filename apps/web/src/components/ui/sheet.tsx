@@ -1,35 +1,26 @@
-import * as React from "react"
-import { cn } from "cn"
-import { Dialog as SheetPrimitive } from "radix-ui"
+import * as React from "react";
+import { cn } from "cn";
+import { Dialog as SheetPrimitive } from "radix-ui";
 
-import { DIM, GLASS_SHEET } from "../../lib/mapChrome"
+import { DIM, GLASS_SHEET } from "../../lib/mapChrome";
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />
+  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }
 
-function SheetTrigger({
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
-  return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
+function SheetTrigger({ ...props }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
+  return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
 }
 
-function SheetClose({
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Close>) {
-  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
+function SheetClose({ ...props }: React.ComponentProps<typeof SheetPrimitive.Close>) {
+  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
 
-function SheetPortal({
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Portal>) {
-  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
+function SheetPortal({ ...props }: React.ComponentProps<typeof SheetPrimitive.Portal>) {
+  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
-function SheetOverlay({
-  className,
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
+function SheetOverlay({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
   return (
     // Closing, it lets a tap through to what is under it as it fades, as
     // iOS's sheets do, rather than taking it; and it fades as long as the
@@ -40,12 +31,15 @@ function SheetOverlay({
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        cn("fixed inset-0 z-50 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:pointer-events-none data-closed:animate-out data-closed:fade-out-0 data-closed:duration-200", DIM),
-        className
+        cn(
+          "fixed inset-0 z-50 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:pointer-events-none data-closed:animate-out data-closed:fade-out-0 data-closed:duration-200",
+          DIM,
+        ),
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function SheetContent({
@@ -59,14 +53,14 @@ function SheetContent({
   onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
-  side?: "top" | "right" | "bottom" | "left"
+  side?: "top" | "right" | "bottom" | "left";
   /** The overlay's own classes: clear, where what is under the sheet is
    *  what the sheet is for (the route's Procedures over the map). */
-  overlayClassName?: string
+  overlayClassName?: string;
   /** A phone's sheet floating as the map's own does (PhoneSheetContent):
    *  its glass, eight points in from the screen's sides and its edge,
    *  where the stock one is opaque and edge to edge. */
-  glass?: boolean
+  glass?: boolean;
 }) {
   return (
     <SheetPortal>
@@ -88,11 +82,11 @@ function SheetContent({
         // always meant for it. A caller's own handler runs after the
         // guard: it is taken out of `props` above, which are spread
         // below and would otherwise replace the guard outright.
-        onInteractOutside={event => {
+        onInteractOutside={(event) => {
           if ((event.target as Element | null)?.closest?.("[data-sonner-toaster]")) {
-            event.preventDefault()
+            event.preventDefault();
           }
-          onInteractOutside?.(event)
+          onInteractOutside?.(event);
         }}
         // Nor is a tap on a sheet's own button. Over an open sheet it
         // cannot come; but the sheet just put away hears taps outside it
@@ -101,90 +95,54 @@ function SheetContent({
         // sheet again, which it then shut, ten milliseconds after it
         // opened: the map's button tapped just after its sheet was put
         // away did nothing (nearest:68 and procedures:57 on a phone).
-        onPointerDownOutside={event => {
+        onPointerDownOutside={(event) => {
           if ((event.target as Element | null)?.closest?.('[aria-haspopup="dialog"]')) {
-            event.preventDefault()
+            event.preventDefault();
           }
-          onPointerDownOutside?.(event)
+          onPointerDownOutside?.(event);
         }}
         // Gone, it gives the focus back to its button -- unless the focus is
         // somewhere already: the route's box, which the route's problem's
         // Fly via put it in as it closed the sheet, lost it to the problem's
         // mark a fifth of a second later, and the ways round under the box
         // shut with it (plans:268 on a phone).
-        onCloseAutoFocus={event => {
-          const active = document.activeElement
-          if (active && active !== document.body) event.preventDefault()
-          onCloseAutoFocus?.(event)
+        onCloseAutoFocus={(event) => {
+          const active = document.activeElement;
+          if (active && active !== document.body) event.preventDefault();
+          onCloseAutoFocus?.(event);
         }}
         className={cn(
           "fixed z-50 flex flex-col gap-4 bg-clip-padding text-sm transition duration-200 ease-in-out data-[side=bottom]:h-auto data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l data-[side=top]:h-auto data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-closed:pointer-events-none data-[side=bottom]:data-open:slide-in-from-bottom-10 data-[side=left]:data-open:slide-in-from-left-10 data-[side=right]:data-open:slide-in-from-right-10 data-[side=top]:data-open:slide-in-from-top-10 data-closed:animate-out data-closed:fade-out-0 data-[side=bottom]:data-closed:slide-out-to-bottom-10 data-[side=left]:data-closed:slide-out-to-left-10 data-[side=right]:data-closed:slide-out-to-right-10 data-[side=top]:data-closed:slide-out-to-top-10",
           glass
-            ? cn(GLASS_SHEET, "text-foreground data-[side=bottom]:inset-x-2 data-[side=bottom]:bottom-2 data-[side=top]:inset-x-2 data-[side=top]:top-[max(0.5rem,env(safe-area-inset-top))]")
+            ? cn(
+                GLASS_SHEET,
+                "text-foreground data-[side=bottom]:inset-x-2 data-[side=bottom]:bottom-2 data-[side=top]:inset-x-2 data-[side=top]:top-[max(0.5rem,env(safe-area-inset-top))]",
+              )
             : "bg-card text-card-foreground shadow-lg data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:border-t data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:border-b",
-          className
+          className,
         )}
         {...props}
       >
         {children}
       </SheetPrimitive.Content>
     </SheetPortal>
-  )
+  );
 }
 
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="sheet-header"
-      className={cn("flex flex-col gap-1.5 p-4", className)}
-      {...props}
-    />
-  )
+  return <div data-slot="sheet-header" className={cn("flex flex-col gap-1.5 p-4", className)} {...props} />;
 }
 
 function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="sheet-footer"
-      className={cn("mt-auto flex flex-col gap-2 p-4", className)}
-      {...props}
-    />
-  )
+  return <div data-slot="sheet-footer" className={cn("mt-auto flex flex-col gap-2 p-4", className)} {...props} />;
 }
 
-function SheetTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Title>) {
-  return (
-    <SheetPrimitive.Title
-      data-slot="sheet-title"
-      className={cn("font-heading font-medium text-foreground", className)}
-      {...props}
-    />
-  )
+function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Title>) {
+  return <SheetPrimitive.Title data-slot="sheet-title" className={cn("font-heading font-medium text-foreground", className)} {...props} />;
 }
 
-function SheetDescription({
-  className,
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Description>) {
-  return (
-    <SheetPrimitive.Description
-      data-slot="sheet-description"
-      className={cn("text-sm text-muted-foreground", className)}
-      {...props}
-    />
-  )
+function SheetDescription({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Description>) {
+  return <SheetPrimitive.Description data-slot="sheet-description" className={cn("text-sm text-muted-foreground", className)} {...props} />;
 }
 
-export {
-  Sheet,
-  SheetTrigger,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetFooter,
-  SheetTitle,
-  SheetDescription,
-}
+export { Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription };

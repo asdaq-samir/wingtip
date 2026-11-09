@@ -21,22 +21,34 @@ interface IcingAtAltitude {
   reports: number;
 }
 
-export function icingAtAltitude(
-  selection: AltitudeBreakdown, flownFt: number[], pireps: Briefing["pireps"],
-): IcingAtAltitude | null {
+export function icingAtAltitude(selection: AltitudeBreakdown, flownFt: number[], pireps: Briefing["pireps"]): IcingAtAltitude | null {
   const found = callEngine("gonogo_icing", {
     selection: {
-      freezing_level_ft: selection.freezing_level_ft ?? null, icing_possible: selection.icing_possible ?? null,
+      freezing_level_ft: selection.freezing_level_ft ?? null,
+      icing_possible: selection.icing_possible ?? null,
       freezing_level_at_or_below: selection.freezing_level_at_or_below ?? null,
     },
-    flown_ft: flownFt, pireps: pireps.map(p => ({ icing: p.icing ?? null })),
+    flown_ft: flownFt,
+    pireps: pireps.map((p) => ({ icing: p.icing ?? null })),
   });
-  return found && { altitudeFt: found.altitude_ft, freezingLevelFt: found.freezing_level_ft, atOrBelow: found.at_or_below, reports: found.reports };
+  return (
+    found && {
+      altitudeFt: found.altitude_ft,
+      freezingLevelFt: found.freezing_level_ft,
+      atOrBelow: found.at_or_below,
+      reports: found.reports,
+    }
+  );
 }
 
 /** In a line, for the Go / No-Go. */
 export function icingLine(icing: IcingAtAltitude): string {
   return callEngine("gonogo_icing_line", {
-    icing: { altitude_ft: icing.altitudeFt, freezing_level_ft: icing.freezingLevelFt, at_or_below: icing.atOrBelow, reports: icing.reports },
+    icing: {
+      altitude_ft: icing.altitudeFt,
+      freezing_level_ft: icing.freezingLevelFt,
+      at_or_below: icing.atOrBelow,
+      reports: icing.reports,
+    },
   });
 }

@@ -15,14 +15,23 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
       <ListGroup>
         {place.pattern?.altitude_ft != null && (
           <ListRow
-            media={<RowBadge colour={BADGE.runway}><Repeat /></RowBadge>}
+            media={
+              <RowBadge colour={BADGE.runway}>
+                <Repeat />
+              </RowBadge>
+            }
             title="Pattern altitude"
             // 1,000 ft above the field where none is published (AIM 4-3-3).
             description={place.pattern.published ? "As the FAA publishes it" : "1,000 ft above the field: none published"}
-            value={<span className="font-semibold text-foreground">{feet(place.pattern.altitude_ft)}</span>} data-testid="place-pattern"
+            value={<span className="font-semibold text-foreground">{feet(place.pattern.altitude_ft)}</span>}
+            data-testid="place-pattern"
           />
         )}
-        {place.runways.length ? place.runways.map((r, i) => <RunwayRow key={`${r.ends}-${i}`} runway={r} />) : <ListRow title="None listed" />}
+        {place.runways.length ? (
+          place.runways.map((r, i) => <RunwayRow key={`${r.ends}-${i}`} runway={r} />)
+        ) : (
+          <ListRow title="None listed" />
+        )}
       </ListGroup>
       {/* Each runway's RVR now, where the field reports it. */}
       <RvrRows ident={place.ident} />

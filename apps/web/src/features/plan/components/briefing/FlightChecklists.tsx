@@ -10,7 +10,7 @@ import ChecklistPage from "../../../../components/ChecklistPage";
  * (whose page in Setup's Airplanes opens the same lists).
  */
 export default function FlightChecklists() {
-  const aircraft = usePreferences(s => s.aircraft);
+  const aircraft = usePreferences((s) => s.aircraft);
   return (
     <AccordionSection title="Checklists">
       <ChecklistPage key={aircraftKey(aircraft)} airplane={aircraftKey(aircraft)} name={shortName(aircraft.label)} />

@@ -12,7 +12,7 @@ import { isLegPoint, legOf, navLogRows, rowPoint } from "./navlog/rows";
 
 /** The altitudes the legs fly: "4,500 ft", or "2,500-3,000 ft" where it steps. */
 function altitudes(legs: Leg[], fallback: number | null | undefined): string | null {
-  const alts = legs.map(l => l.altitude_ft);
+  const alts = legs.map((l) => l.altitude_ft);
   if (!alts.length) return fallback == null ? null : `${altFt(fallback)} ft`;
   return feetRange(alts);
 }
@@ -36,7 +36,17 @@ function Blank({ label, wide = false }: { label: string; wide?: boolean }) {
  * Black on white whatever the theme. Never on screen: printKneeboard puts
  * it on paper in the briefing's place.
  */
-export default function Kneeboard({ course, selected, legs, totals, nav, briefing, depart, aircraftLabel, landings }: {
+export default function Kneeboard({
+  course,
+  selected,
+  legs,
+  totals,
+  nav,
+  briefing,
+  depart,
+  aircraftLabel,
+  landings,
+}: {
   course: Course | null;
   selected: Candidate[];
   legs: Leg[];
@@ -52,10 +62,14 @@ export default function Kneeboard({ course, selected, legs, totals, nav, briefin
   if (!course) return null;
   const rows = navLogRows(course, selected, legs);
   const special = nav?.altitude_selection.special_use ?? [];
-  const tfrs = briefing?.tfrs.filter(t => t.crosses) ?? [];
+  const tfrs = briefing?.tfrs.filter((t) => t.crosses) ?? [];
   // As the route's box and a saved flight name it (routeName): a present
   // position by its coordinates, a local flight "KDLH local".
-  const route = routeName(course.departure.ident, course.destination.ident, (course.stops ?? []).map(s => s.ident));
+  const route = routeName(
+    course.departure.ident,
+    course.destination.ident,
+    (course.stops ?? []).map((s) => s.ident),
+  );
   return createPortal(
     <section className="kneeboard bg-white font-sans text-[8.5pt] leading-[1.25] text-black" aria-hidden data-testid="kneeboard">
       {/* A div, not a header: the page has one header, the panel's,
@@ -70,7 +84,8 @@ export default function Kneeboard({ course, selected, legs, totals, nav, briefin
         {totals && ` · ${nm(totals.distance_nm)}`}
         {totals?.ete_min != null && ` · ${hm(totals.ete_min)}`}
         {totals?.fuel_gal != null && ` · ${gal(totals.fuel_gal)}`}
-        {totals?.fuel_required_gal != null && ` (${one(totals.fuel_required_gal)} with reserve${totals.usable_fuel_gal != null ? `, ${one(totals.usable_fuel_gal)} usable` : ""})`}
+        {totals?.fuel_required_gal != null &&
+          ` (${one(totals.fuel_required_gal)} with reserve${totals.usable_fuel_gal != null ? `, ${one(totals.usable_fuel_gal)} usable` : ""})`}
         {/* Which winds the headings, times and fuel are from: a plan
             printed in the morning flown in the afternoon is not. */}
         {plannedWords(totals) && ` · ${plannedWords(totals)}`}
@@ -78,13 +93,27 @@ export default function Kneeboard({ course, selected, legs, totals, nav, briefin
 
       <table className="mb-2 w-full border-collapse tabular-nums [&_td]:border [&_td]:border-black/60 [&_td]:px-1 [&_td]:py-[1.5pt] [&_th]:border [&_th]:border-black [&_th]:px-1 [&_th]:py-[1pt] [&_th]:text-left [&_th]:text-[7.5pt]">
         <thead>
-          <tr><th>Checkpoint</th><th>Alt</th><th>MH</th><th>Dist</th><th>GS</th><th>ETE</th><th>ETA</th><th className="w-9">ATA</th><th>Fuel</th><th className="w-9">Rem</th></tr>
+          <tr>
+            <th>Checkpoint</th>
+            <th>Alt</th>
+            <th>MH</th>
+            <th>Dist</th>
+            <th>GS</th>
+            <th>ETE</th>
+            <th>ETA</th>
+            <th className="w-9">ATA</th>
+            <th>Fuel</th>
+            <th className="w-9">Rem</th>
+          </tr>
         </thead>
         <tbody>
-          {rows.map(r => {
+          {rows.map((r) => {
             const leg = legOf(r);
-            const alt = isLegPoint(r) ? r.point.altitude_ft
-              : r.kind === "checkpoint" || (r.kind === "stop" && r.airport.kind === "fix") ? (r.leg?.altitude_ft ?? nav?.altitude_ft) : r.airport.elevation_ft;
+            const alt = isLegPoint(r)
+              ? r.point.altitude_ft
+              : r.kind === "checkpoint" || (r.kind === "stop" && r.airport.kind === "fix")
+                ? (r.leg?.altitude_ft ?? nav?.altitude_ft)
+                : r.airport.elevation_ft;
             return (
               <tr key={r.key} className={isLegPoint(r) ? "italic" : undefined}>
                 <td className="max-w-[1.6in] truncate">{rowPoint(r).name}</td>
@@ -111,8 +140,17 @@ export default function Kneeboard({ course, selected, legs, totals, nav, briefin
           const inUse = info ? runwayFlown(info.runways, pickedEnd(picks, ident, i === 0 ? "takeoff" : "landing", i === 0)) : null;
           return (
             <div key={`${ident}${i}`} className="border border-black p-1">
-              <p className="font-bold">{ident}{info?.name ? ` · ${info.name}` : ""}</p>
-              <p>{info ? kneeboardRadio(info.frequencies).map(([name, mhz]) => `${name} ${mhzText(mhz)}`).join(" · ") || "No published radio" : ""}</p>
+              <p className="font-bold">
+                {ident}
+                {info?.name ? ` · ${info.name}` : ""}
+              </p>
+              <p>
+                {info
+                  ? kneeboardRadio(info.frequencies)
+                      .map(([name, mhz]) => `${name} ${mhzText(mhz)}`)
+                      .join(" · ") || "No published radio"
+                  : ""}
+              </p>
               {info?.pattern?.altitude_ft != null && (
                 <p>
                   TPA {altFt(info.pattern.altitude_ft)}
@@ -121,7 +159,10 @@ export default function Kneeboard({ course, selected, legs, totals, nav, briefin
                 </p>
               )}
               <p className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
-                <Blank label="Info" /><Blank label="Wind" /><Blank label="Alt" /><Blank label="Rwy" />
+                <Blank label="Info" />
+                <Blank label="Wind" />
+                <Blank label="Alt" />
+                <Blank label="Rwy" />
               </p>
             </div>
           );
@@ -131,11 +172,14 @@ export default function Kneeboard({ course, selected, legs, totals, nav, briefin
       {(special.length > 0 || tfrs.length > 0) && (
         <p className="mb-1.5">
           <span className="font-bold">On the route: </span>
-          {[...special.map(a => `${a.name} (${a.kind})`), ...tfrs.map(t => `TFR ${t.notam_id}`)].join(" · ")}
+          {[...special.map((a) => `${a.name} (${a.kind})`), ...tfrs.map((t) => `TFR ${t.notam_id}`)].join(" · ")}
         </p>
       )}
       <p className="flex flex-wrap gap-x-3 gap-y-1">
-        <Blank label="Squawk" /><Blank label="Clearance" wide /><Blank label="Hobbs out" /><Blank label="in" />
+        <Blank label="Squawk" />
+        <Blank label="Clearance" wide />
+        <Blank label="Hobbs out" />
+        <Blank label="in" />
       </p>
       <p className="mt-2 text-[6.5pt]">Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.</p>
     </section>,

@@ -11,6 +11,8 @@ export interface WordsState {
 }
 
 /** A query's result as the section reads it. */
-export const wordsState = (q: { data?: WordsAnswer | null; error: unknown }): WordsState =>
-  ({ answer: q.data, error: q.error, pending: !q.data && !q.error });
-
+export const wordsState = (q: { data?: WordsAnswer | null; error: unknown }): WordsState => ({
+  answer: q.data,
+  error: q.error,
+  pending: !q.data && !q.error,
+});

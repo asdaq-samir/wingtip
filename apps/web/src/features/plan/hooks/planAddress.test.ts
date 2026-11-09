@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { FuelStopSuggestion } from "../../../lib/api/types";
 import {
-  altitudeChoiceOf, approximateOf, autoOf, departureRunways, directToPatch, landingRunways, renamed, routeBeforeDirect, suggestedStopAt,
+  altitudeChoiceOf,
+  approximateOf,
+  autoOf,
+  departureRunways,
+  directToPatch,
+  landingRunways,
+  renamed,
+  routeBeforeDirect,
+  suggestedStopAt,
 } from "./planAddress";
 
 const address = (text: string) => new URLSearchParams(text);
@@ -82,14 +90,16 @@ describe("a field's modelled category", () => {
 
 describe("a suggested stop at a field", () => {
   const suggestion = {
-    departure: "C81", reason: "fuel",
+    departure: "C81",
+    reason: "fuel",
     stops: [{ ident: "KJVL", minutes: 40, lands_with_gal: 12, added_nm: 3 }],
     choices: [{ ident: "KEFT", minutes: 45, lands_with_gal: 11, added_nm: 8 }],
   } as unknown as FuelStopSuggestion;
 
   it("is found among the stops and the choices, with the flight it leaves on", () => {
     expect(suggestedStopAt("KEFT", [suggestion])).toEqual({
-      after: "C81", stop: { reason: "fuel", from: "C81", minutes: 45, landsWithGal: 11, addedNm: 8 },
+      after: "C81",
+      stop: { reason: "fuel", from: "C81", minutes: 45, landsWithGal: 11, addedNm: 8 },
     });
     expect(suggestedStopAt("KDLH", [suggestion])).toBeNull();
     expect(suggestedStopAt(null, [suggestion])).toBeNull();

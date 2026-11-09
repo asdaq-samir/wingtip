@@ -36,15 +36,18 @@ async function noDevSwitch(page: Page) {
 }
 
 async function withAuth(page: Page, opts: { access: "SIGN_IN" | "OPEN" | "CLOSED"; pilot: object | null }) {
-  await page.route("**/api/auth/capabilities", route =>
+  await page.route("**/api/auth/capabilities", (route) =>
     route.fulfill({
-      status: 200, contentType: "application/json",
+      status: 200,
+      contentType: "application/json",
       body: JSON.stringify({ access: opts.access, providers: opts.access === "SIGN_IN" ? ["google"] : [] }),
-    }));
-  await page.route("**/api/me", route =>
+    }),
+  );
+  await page.route("**/api/me", (route) =>
     opts.pilot
       ? route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(opts.pilot) })
-      : route.fulfill({ status: 401, body: "" }));
+      : route.fulfill({ status: 401, body: "" }),
+  );
 }
 
 const A_PILOT = { id: 1, email: "pilot@example.com", displayName: "A Pilot", developer: false };
@@ -101,7 +104,6 @@ test("the header holds together without it", async ({ page }) => {
   await expect(page.getByTestId("tab-airport")).toBeVisible();
   await expect(page.getByTestId("sidebar-trigger-button")).toBeVisible();
 
-  const overflowing = await page.evaluate(
-    () => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  const overflowing = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflowing).toBe(false);
 });

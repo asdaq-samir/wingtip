@@ -14,7 +14,11 @@ import { distanceNm, rad } from "../../../../lib/geo";
  */
 
 /** A point of the planned flight: where, and the plan's altitude there, ft MSL. */
-export interface AloftPoint { lat: number; lon: number; altFt: number }
+export interface AloftPoint {
+  lat: number;
+  lon: number;
+  altFt: number;
+}
 
 /** International feet in a metre's place: 0.3048 m a foot. */
 export const M_PER_FT = 0.3048;
@@ -31,7 +35,8 @@ export function resampleAloft(points: AloftPoint[], stepNm = ALOFT_STEP_NM): Alo
   const out: AloftPoint[] = [points[0]!];
   let carried = 0;
   for (let i = 1; i < points.length; i++) {
-    const a = points[i - 1]!, b = points[i]!;
+    const a = points[i - 1]!,
+      b = points[i]!;
     const leg = distanceNm(a, b);
     if (leg <= 0) continue;
     let along = stepNm - carried;
@@ -52,24 +57,31 @@ export function resampleAloft(points: AloftPoint[], stepNm = ALOFT_STEP_NM): Alo
 function band(a: AloftPoint, b: AloftPoint, widthM: number): [number, number][] {
   const mPerDegLat = 60 * M_PER_NM;
   const mPerDegLon = mPerDegLat * Math.cos(rad((a.lat + b.lat) / 2));
-  const dx = (b.lon - a.lon) * mPerDegLon, dy = (b.lat - a.lat) * mPerDegLat;
+  const dx = (b.lon - a.lon) * mPerDegLon,
+    dy = (b.lat - a.lat) * mPerDegLat;
   const len = Math.hypot(dx, dy) || 1;
   // Half the width, across the line.
-  const ox = (-dy / len) * (widthM / 2), oy = (dx / len) * (widthM / 2);
+  const ox = (-dy / len) * (widthM / 2),
+    oy = (dx / len) * (widthM / 2);
   const off = (p: AloftPoint, s: number): [number, number] => [p.lon + (s * ox) / mPerDegLon, p.lat + (s * oy) / mPerDegLat];
   return [off(a, 1), off(b, 1), off(b, -1), off(a, -1), off(a, 1)];
 }
 
 /** One piece of the route aloft: its altitude at its middle, metres MSL,
  *  and its middle, where its ground is read. */
-interface AloftPiece { altM: number; mid: [lon: number, lat: number]; ring: [number, number][] }
+interface AloftPiece {
+  altM: number;
+  mid: [lon: number, lat: number];
+  ring: [number, number][];
+}
 
 /** The route aloft cut into pieces `widthM` wide (resampleAloft's steps). */
 export function aloftPieces(points: AloftPoint[], widthM: number): AloftPiece[] {
   const line = resampleAloft(points);
   const pieces: AloftPiece[] = [];
   for (let i = 1; i < line.length; i++) {
-    const a = line[i - 1]!, b = line[i]!;
+    const a = line[i - 1]!,
+      b = line[i]!;
     if (a.lat === b.lat && a.lon === b.lon) continue;
     pieces.push({ altM: ((a.altFt + b.altFt) / 2) * M_PER_FT, mid: [(a.lon + b.lon) / 2, (a.lat + b.lat) / 2], ring: band(a, b, widthM) });
   }
@@ -83,13 +95,18 @@ export function aloftPieces(points: AloftPoint[], widthM: number): AloftPiece[] 
  * `bottom`, `thickM` under it -- or the ground itself, 0, for the curtain
  * down to the ground track.
  */
-export function aloftFeatures(pieces: AloftPiece[], groundM: (mid: [number, number]) => number | null, thickM: number | null): GeoJSON.FeatureCollection {
+export function aloftFeatures(
+  pieces: AloftPiece[],
+  groundM: (mid: [number, number]) => number | null,
+  thickM: number | null,
+): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
-    features: pieces.map(p => {
+    features: pieces.map((p) => {
       const top = Math.max(0, p.altM - (groundM(p.mid) ?? 0));
       return {
-        type: "Feature", geometry: { type: "Polygon", coordinates: [p.ring] },
+        type: "Feature",
+        geometry: { type: "Polygon", coordinates: [p.ring] },
         properties: { top, bottom: thickM === null ? 0 : Math.max(0, top - thickM) },
       };
     }),
@@ -98,15 +115,30 @@ export function aloftFeatures(pieces: AloftPiece[], groundM: (mid: [number, numb
 
 /** The FAA's obstacles as squares `sideM` across, as tall as the Digital
  *  Obstacle File says (agl_ft, above the ground they stand on). */
-export function obstacleFeatures(obstacles: { lat: number; lon: number; agl_ft: number; amsl_ft: number; type: string; lit: boolean }[], sideM: number): GeoJSON.FeatureCollection {
+export function obstacleFeatures(
+  obstacles: { lat: number; lon: number; agl_ft: number; amsl_ft: number; type: string; lit: boolean }[],
+  sideM: number,
+): GeoJSON.FeatureCollection {
   const half = sideM / 2;
   return {
     type: "FeatureCollection",
-    features: obstacles.map(o => {
-      const dLat = half / (60 * M_PER_NM), dLon = half / (60 * M_PER_NM * Math.cos(rad(o.lat)));
+    features: obstacles.map((o) => {
+      const dLat = half / (60 * M_PER_NM),
+        dLon = half / (60 * M_PER_NM * Math.cos(rad(o.lat)));
       return {
         type: "Feature",
-        geometry: { type: "Polygon", coordinates: [[[o.lon - dLon, o.lat - dLat], [o.lon + dLon, o.lat - dLat], [o.lon + dLon, o.lat + dLat], [o.lon - dLon, o.lat + dLat], [o.lon - dLon, o.lat - dLat]]] },
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [o.lon - dLon, o.lat - dLat],
+              [o.lon + dLon, o.lat - dLat],
+              [o.lon + dLon, o.lat + dLat],
+              [o.lon - dLon, o.lat + dLat],
+              [o.lon - dLon, o.lat - dLat],
+            ],
+          ],
+        },
         properties: { height: o.agl_ft * M_PER_FT, agl: o.agl_ft, amsl: o.amsl_ft, type: o.type, lit: o.lit },
       };
     }),

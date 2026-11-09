@@ -17,28 +17,52 @@ import { useSystemProblems } from "../../../lib/problems";
 vi.mock("../../../lib/toast", () => ({ toast: { loading: vi.fn(), success: vi.fn(), dismiss: vi.fn() } }));
 
 const layer = (kind: string): ChartLayer =>
-  ({ kind, label: kind === "sec" ? "Sectional" : "IFR low", min_zoom: 3, max_zoom: 9, base: true, over: [], sheets: [], revision: 0, scales: [1] }) as ChartLayer;
+  ({
+    kind,
+    label: kind === "sec" ? "Sectional" : "IFR low",
+    min_zoom: 3,
+    max_zoom: 9,
+    base: true,
+    over: [],
+    sheets: [],
+    revision: 0,
+    scales: [1],
+  }) as ChartLayer;
 const SEC = layer("sec");
 const IFR_LOW = layer("ifr_low");
 const COURSE = {
-  departure: { ident: "C81" }, destination: { ident: "KDLH" },
-  course_line: [[42.3, -88.1], [42.4, -88.2]],
-  chart_cycle: "09-03-2026", chart_revision: 1, chart_tiles_base: null, chart_layers: [SEC, IFR_LOW],
+  departure: { ident: "C81" },
+  destination: { ident: "KDLH" },
+  course_line: [
+    [42.3, -88.1],
+    [42.4, -88.2],
+  ],
+  chart_cycle: "09-03-2026",
+  chart_revision: 1,
+  chart_tiles_base: null,
+  chart_layers: [SEC, IFR_LOW],
 } as unknown as Course;
 
 /** fetch, answering each call when `release` is called (or at once). */
 function network(answer: (url: string) => Response, held = false) {
   const waiting: (() => void)[] = [];
-  const fetch = vi.fn((url: string, init?: RequestInit) => new Promise<Response>((resolve, reject) => {
-    const go = () => (init?.signal?.aborted ? reject(new DOMException("aborted", "AbortError")) : resolve(answer(url)));
-    if (held) waiting.push(go); else go();
-  }));
+  const fetch = vi.fn(
+    (url: string, init?: RequestInit) =>
+      new Promise<Response>((resolve, reject) => {
+        const go = () => (init?.signal?.aborted ? reject(new DOMException("aborted", "AbortError")) : resolve(answer(url)));
+        if (held) waiting.push(go);
+        else go();
+      }),
+  );
   vi.stubGlobal("fetch", fetch);
-  return { fetch, release: () => waiting.splice(0).forEach(go => go()) };
+  return { fetch, release: () => waiting.splice(0).forEach((go) => go()) };
 }
 
 const ok = () => new Response("", { status: 200 });
-const flush = () => act(async () => { for (let i = 0; i < 50; i++) await Promise.resolve(); });
+const flush = () =>
+  act(async () => {
+    for (let i = 0; i < 50; i++) await Promise.resolve();
+  });
 
 beforeEach(() => {
   useKeepJob.setState({ status: "idle" }, true);
@@ -68,19 +92,22 @@ describe("keeping a route's charts", () => {
   test("keeps the route's airports' diagrams with its tiles", async () => {
     const { fetch } = network(ok);
     // The cards, through the planner's client (which holds its own fetch).
-    vi.spyOn(api, "airport").mockImplementation(ident =>
-      Promise.resolve({ ident, airport_diagram_cycle: ident === "KDLH" ? "2610" : null } as AirportPlace));
+    vi.spyOn(api, "airport").mockImplementation((ident) =>
+      Promise.resolve({ ident, airport_diagram_cycle: ident === "KDLH" ? "2610" : null } as AirportPlace),
+    );
     await keep(COURSE, SEC);
     const asked = fetch.mock.calls.map(([url]) => url);
-    expect(asked.filter(url => url.includes("/airport-diagram/"))).toEqual([
-      "/api/planner/airport-diagram/2610/KDLH.png", "/api/planner/airport-diagram/2610/runways/KDLH.png",
+    expect(asked.filter((url) => url.includes("/airport-diagram/"))).toEqual([
+      "/api/planner/airport-diagram/2610/KDLH.png",
+      "/api/planner/airport-diagram/2610/runways/KDLH.png",
     ]);
   });
 
   test("a field with a diagram and no runway crop is kept, not failed", async () => {
-    network(url => new Response("", { status: url.includes("/runways/") ? 404 : 200 }));
-    vi.spyOn(api, "airport").mockImplementation(ident =>
-      Promise.resolve({ ident, airport_diagram_cycle: ident === "KDLH" ? "2610" : null } as AirportPlace));
+    network((url) => new Response("", { status: url.includes("/runways/") ? 404 : 200 }));
+    vi.spyOn(api, "airport").mockImplementation((ident) =>
+      Promise.resolve({ ident, airport_diagram_cycle: ident === "KDLH" ? "2610" : null } as AirportPlace),
+    );
     await keep(COURSE, SEC);
     const job = useKeepJob.getState();
     expect(job.status === "kept" && job.progress.failed).toBe(0);
@@ -151,7 +178,9 @@ describe("the keep's toast", () => {
     const done = keep(COURSE, SEC);
     await flush();
     expect(toast.loading).toHaveBeenCalled();
-    await act(async () => { await done; });
+    await act(async () => {
+      await done;
+    });
     expect(toast.success).toHaveBeenCalledWith("Charts Saved Offline", expect.objectContaining({ id: "keep-route" }));
   });
 
@@ -164,7 +193,9 @@ describe("the keep's toast", () => {
     renderHook(() => useKeepRouteToast());
     const done = keep(COURSE, SEC);
     await flush();
-    await act(async () => { await done; });
+    await act(async () => {
+      await done;
+    });
     const job = useKeepJob.getState();
     expect(job.status === "kept" && job.progress.failed).toBeGreaterThan(0);
     const [, options] = vi.mocked(toast.success).mock.calls.at(-1)!;

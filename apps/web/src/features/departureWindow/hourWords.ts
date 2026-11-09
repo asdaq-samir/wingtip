@@ -11,20 +11,10 @@ import type { DepartureWindowRun, WindowHour } from "../../lib/api/types";
 
 /** An hour's verdict as the finding its mark and colour are drawn with
  *  (components/FindingIcon: a shape for each, not colour alone). */
-export const HOUR_FINDING: Record<WindowHour["verdict"], Finding> = {
-  go: "ok",
-  caution: "caution",
-  "no-go": "stop",
-  unknown: "unknown",
-};
+export const HOUR_FINDING: Record<WindowHour["verdict"], Finding> = { go: "ok", caution: "caution", "no-go": "stop", unknown: "unknown" };
 
 /** What each verdict is called, for the hour's own line and its label. */
-export const HOUR_WORD: Record<WindowHour["verdict"], string> = {
-  go: "Go",
-  caution: "Caution",
-  "no-go": "No-go",
-  unknown: "Not known",
-};
+export const HOUR_WORD: Record<WindowHour["verdict"], string> = { go: "Go", caution: "Caution", "no-go": "No-go", unknown: "Not known" };
 
 const clockFormat = (timeZone?: string) =>
   new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone });
@@ -37,7 +27,7 @@ export function clock(iso: string, timeZone?: string): string {
 /** The zone a time is written in, "CST", as the device names it. */
 function zoneName(iso: string, timeZone?: string): string {
   const parts = new Intl.DateTimeFormat("en-US", { timeZoneName: "short", timeZone }).formatToParts(new Date(iso));
-  return parts.find(p => p.type === "timeZoneName")?.value ?? "";
+  return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
 }
 
 /** The weekday an hour falls on where it is not today's, "Tue": a strip
