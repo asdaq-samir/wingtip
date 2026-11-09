@@ -241,7 +241,7 @@ final class ClearanceListener {
         let once = Once<String?>()
         let text: String? = await withCheckedContinuation { done in
             once.hold(done)
-            task = recognizer.recognitionTask(with: request) { [weak self] result, error in
+            task = recognizer.recognitionTask(with: request) { [weak self, weak request] result, error in
                 let text = result?.bestTranscription.formattedString
                 let final = result?.isFinal == true || error != nil
                 Task { @MainActor in

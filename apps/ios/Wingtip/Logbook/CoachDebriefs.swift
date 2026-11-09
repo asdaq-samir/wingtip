@@ -45,7 +45,7 @@ enum CoachDebriefs {
 
     /// The debriefs of the pilot's newest flights with a track, newest
     /// first; a flight whose track or plan cannot be had is left out.
-    static func fetch() async -> [CoachDebrief] {
+    @Sendable static func fetch() async -> [CoachDebrief] {
         guard let flights = try? await Gateway.flights() else { return [] }
         var out: [CoachDebrief] = []
         for summary in recent(flights) {

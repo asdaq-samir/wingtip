@@ -5,6 +5,7 @@ import Testing
 /// What VoiceOver says for the figures and rows the accessibility pass
 /// labelled: the words, not the written forms, so "FL-045" and "1h 5m"
 /// are never read out as letters.
+@MainActor
 struct AccessibilityTests {
     /// A nav log row is one element read as the leg's line: its number,
     /// its ends, then the heading and figures in words.

@@ -60,7 +60,7 @@ struct LoadingView: View {
                     Section(title: "Balance") {
                         LabeledContent("Takeoff", value: balance.takeoff.words)
                         LabeledContent("Landing", value: balance.landing.words)
-                        let problems = balance.problems ?? []
+                        let problems = balance.problems
                         if problems.isEmpty {
                             Label("Within the weight and the envelope", systemImage: FindingStyle.symbol("ok"))
                                 .foregroundStyle(FindingStyle.colour("ok"))

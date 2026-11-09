@@ -81,10 +81,15 @@ final class WatchLink: NSObject, WCSessionDelegate {
             replyHandler([:])
             return
         }
+        // WatchConnectivity's reply handler may be called once from any
+        // thread (Apple's documentation of session(_:didReceiveMessage:
+        // replyHandler:)); the task below is its only caller, so handing
+        // it over is safe though the SDK does not mark it Sendable.
+        nonisolated(unsafe) let reply = replyHandler
         Task.detached {
-            let reply = await WatchLink.nearest(request)
-            let answer = (try? WatchCoding.encoder.encode(reply)) ?? Data()
-            replyHandler([WatchMessageKey.nearest: answer])
+            let nearest = await WatchLink.nearest(request)
+            let answer = (try? WatchCoding.encoder.encode(nearest)) ?? Data()
+            reply([WatchMessageKey.nearest: answer])
         }
     }
 

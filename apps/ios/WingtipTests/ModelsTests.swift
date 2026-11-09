@@ -163,6 +163,7 @@ struct HandbookTests {
     }
 }
 
+@MainActor
 struct TrainingTests {
     /// The gateway's TrainingDto, with the fields the page does not show.
     @Test func theTrainingReadsAsTheGatewaySendsIt() throws {
