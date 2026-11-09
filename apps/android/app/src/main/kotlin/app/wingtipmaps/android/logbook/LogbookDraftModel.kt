@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.generated.LogbookDraft
 import app.wingtipmaps.android.api.generated.LogbookDraftAsk
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
-import java.util.TimeZone
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.TimeZone
 
 /**
  * "Flight Logged"'s view model, the flight logged with no typing (the

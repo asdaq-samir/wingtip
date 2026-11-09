@@ -8,8 +8,6 @@ import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
 import app.wingtipmaps.android.flight.OwnShip
-import java.io.File
-import java.nio.file.Files
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
@@ -19,6 +17,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
+import java.nio.file.Files
 
 /** The flight logged from its track over fakes of the recording, the
  *  engine and the servers: offered once the engine finds a landing and

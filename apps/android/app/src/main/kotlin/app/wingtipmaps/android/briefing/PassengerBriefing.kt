@@ -4,13 +4,13 @@ import app.wingtipmaps.android.checklist.TextStore
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.passengerBriefing
+import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.strip.StripData
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import app.wingtipmaps.android.format.Format
 
 /** An item of the briefing: its key, its title and where it comes from
  *  (`rule`), the engine's. */

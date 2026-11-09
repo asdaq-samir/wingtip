@@ -11,7 +11,13 @@ import app.wingtipmaps.android.api.NavLogMessage
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.engine.CyclePacks
-import java.io.IOException
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.holdingLegMinutes
+import app.wingtipmaps.android.flight.Geo
+import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.route.RouteEdits
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,13 +30,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import app.wingtipmaps.android.flight.Geo
-import app.wingtipmaps.android.flight.OwnShip
-import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.engine.generated.holdingLegMinutes
-import app.wingtipmaps.android.route.RouteEdits
-import app.wingtipmaps.android.plan.FlightChoices
+import java.io.IOException
 
 /**
  * The route being planned and what the planner has said of it so far: the
@@ -285,7 +285,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
         } ?: return
         _state.update {
             it.copy(dep = kept.dep, dest = kept.dest, stops = kept.stops, aircraft = kept.aircraft,
-                    course = kept.course, legs = kept.legs, totals = kept.totals)
+                course = kept.course, legs = kept.legs, totals = kept.totals)
         }
         plan()
     }

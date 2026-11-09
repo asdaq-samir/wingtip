@@ -4,12 +4,12 @@ import app.wingtipmaps.android.api.generated.CoachLeg
 import app.wingtipmaps.android.api.generated.CoachPattern
 import app.wingtipmaps.android.api.generated.DebriefAnswer
 import app.wingtipmaps.android.api.generated.gateway.FlightSummaryDto
-import java.time.Instant
-import java.time.ZoneOffset
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.Instant
+import java.time.ZoneOffset
 
 /** The coach's debriefs from the saved flights: the planner's debrief
  *  trimmed to what the engine's proficiency_plan reads, and only the last

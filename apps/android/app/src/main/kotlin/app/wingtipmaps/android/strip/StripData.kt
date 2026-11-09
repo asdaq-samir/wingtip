@@ -7,9 +7,9 @@ import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.routePosition
 import app.wingtipmaps.android.format.Format
-import java.time.ZoneId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.ZoneId
 
 /**
  * The strip's figures and words apart from its screens: the flight as

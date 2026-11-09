@@ -6,8 +6,6 @@ import app.wingtipmaps.android.api.generated.EmergencyFields
 import app.wingtipmaps.android.checklist.ChecklistSection
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
-import kotlin.math.roundToInt
-import kotlin.math.roundToLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 /**
  * The emergency assistant's one view model (the web's useEmergency): the

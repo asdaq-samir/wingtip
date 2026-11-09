@@ -1,7 +1,7 @@
 package app.wingtipmaps.android
 
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions

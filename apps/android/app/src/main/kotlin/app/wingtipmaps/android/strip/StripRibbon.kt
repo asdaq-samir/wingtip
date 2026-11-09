@@ -25,16 +25,16 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.Plan
-import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.InkColors
+import app.wingtipmaps.android.ui.LocalInk
 
 /** The verdict's tag, as the ribbon wears it. */
 private fun tagWords(finding: Finding): Int? = when (finding) {

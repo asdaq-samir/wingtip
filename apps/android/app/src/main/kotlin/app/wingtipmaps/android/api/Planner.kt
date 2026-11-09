@@ -1,24 +1,24 @@
 package app.wingtipmaps.android.api
 
 import app.wingtipmaps.android.Config
-import java.util.concurrent.TimeUnit
+import app.wingtipmaps.android.api.generated.AircraftProfiles
+import app.wingtipmaps.android.api.generated.AirportSearch
+import app.wingtipmaps.android.api.generated.GoNoGo
+import app.wingtipmaps.android.api.generated.GoNoGoAsk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapNotNull
-import app.wingtipmaps.android.api.generated.AircraftProfiles
-import app.wingtipmaps.android.api.generated.AirportSearch
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Request
-import app.wingtipmaps.android.api.generated.GoNoGo
-import app.wingtipmaps.android.api.generated.GoNoGoAsk
-import kotlinx.serialization.encodeToString
+import java.util.concurrent.TimeUnit
 
 /**
  * The planner, through the gateway's proxy (`/api/planner/…`,

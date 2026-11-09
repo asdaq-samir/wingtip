@@ -23,14 +23,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import app.wingtipmaps.android.api.Pilot
-import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.WingtipIcons
 
 /**
  * The round profile button beside the field (the strip layout has no

@@ -22,7 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import app.wingtipmaps.android.emergency.EmergencyOpen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -39,15 +39,23 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.nearest
+import app.wingtipmaps.android.design.generated.WingtipHaptic
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.rememberHaptics
+import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.glideReaches
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.Spoken
+import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -56,14 +64,6 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
-import app.wingtipmaps.android.format.Format
-import app.wingtipmaps.android.format.Spoken
-import app.wingtipmaps.android.R
-import androidx.compose.ui.res.stringResource
-import app.wingtipmaps.android.ui.sheet.WingtipSheet
-import app.wingtipmaps.android.design.generated.WingtipHaptic
-import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.design.rememberHaptics
 
 /**
  * The top of the map in the air (#218), under the status bar and left of

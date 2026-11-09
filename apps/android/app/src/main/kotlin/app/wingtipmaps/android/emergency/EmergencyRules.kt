@@ -13,11 +13,11 @@ import app.wingtipmaps.android.engine.generated.compassWord
 import app.wingtipmaps.android.engine.generated.magneticVariation
 import app.wingtipmaps.android.engine.generated.maydayCall
 import app.wingtipmaps.android.flight.OwnShip
-import java.time.LocalDate
-import java.time.ZoneOffset
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 /** What the MAYDAY is filled from: each part not known left for the
  *  pilot to say (AIM 6-3-2(a)(3)'s order is the engine's). */

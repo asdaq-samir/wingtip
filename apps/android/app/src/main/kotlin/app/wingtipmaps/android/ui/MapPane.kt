@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,16 +23,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.wingtipmaps.android.R
-import app.wingtipmaps.android.api.AirportPin
-import app.wingtipmaps.android.map.MapMarks
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.api.AirportPin
 import app.wingtipmaps.android.atc.AtcCopilotHost
 import app.wingtipmaps.android.copilot.CopilotBanner
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -47,6 +44,7 @@ import app.wingtipmaps.android.map.ChartMap
 import app.wingtipmaps.android.map.EmergencyLine
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.MapLoading
+import app.wingtipmaps.android.map.MapMarks
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapRest
 import app.wingtipmaps.android.map.MapStyle
@@ -56,6 +54,8 @@ import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.receiver.ReceiverChip
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RoutePoints
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 /**
  * The map and what is over it, the same under either layout: the chart

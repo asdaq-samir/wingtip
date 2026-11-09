@@ -12,7 +12,6 @@ import app.wingtipmaps.android.api.generated.assistant.CoachWordsAnswer
 import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.TrainingDto
-import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /** What the pilot holds, as the plan reads it: a student is held to the
  *  solo endorsement (14 CFR 61.56(g), 61.87(n), (p)); an instrument

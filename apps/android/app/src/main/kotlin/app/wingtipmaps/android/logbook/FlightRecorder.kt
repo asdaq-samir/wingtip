@@ -4,13 +4,13 @@ import android.content.Context
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.generated.DraftTrackPoint
 import app.wingtipmaps.android.flight.OwnShip
-import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import java.io.File
 
 /** The track recorded and the end of the flight last offered (the web's
  *  recorder's Recorded). `askedTo` is the engine's block end, ms. */

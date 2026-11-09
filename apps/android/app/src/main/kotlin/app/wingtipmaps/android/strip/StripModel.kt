@@ -1,8 +1,5 @@
 package app.wingtipmaps.android.strip
 
-import app.wingtipmaps.android.emergency.EmergencyOpen
-
-import app.wingtipmaps.android.format.Format
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,11 +10,13 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.NearestAirports
+import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.ctafOf
 import app.wingtipmaps.android.engine.generated.frequencyOf
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.plan.FlightChoices
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow

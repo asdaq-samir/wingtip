@@ -6,10 +6,6 @@ import app.wingtipmaps.android.api.generated.gateway.MagicLinkRequest
 import app.wingtipmaps.android.map.CloseMap
 import app.wingtipmaps.android.map.OverlayCache
 import app.wingtipmaps.android.map.OverlayStore
-import java.io.File
-import java.io.IOException
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -26,6 +22,10 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import java.io.File
+import java.io.IOException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * The gateway's calls, by hand, as the iOS app's Gateway.swift has them:
@@ -141,7 +141,6 @@ object Gateway {
 
     /** The pilot signed in, or null (the gateway's 204) when no one is. */
     suspend fun me(): Pilot? = read("/api/me", none = setOf(204, 401))
-
 
     /** A sign-in link emailed to the pilot; the gateway answers 202
      *  whether or not the address is known. */

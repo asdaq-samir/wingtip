@@ -22,9 +22,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.coach.CoachScreen
+import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.documents.AddFromPhotoRow
 import app.wingtipmaps.android.documents.LogbookPhotoSheet

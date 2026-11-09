@@ -2,6 +2,7 @@ package app.wingtipmaps.android.flight
 
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.compassWord
+import app.wingtipmaps.android.format.Format
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.acos
@@ -9,7 +10,6 @@ import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
-import app.wingtipmaps.android.format.Format
 
 /**
  * The two figures of the sphere the flight pieces need between fixes,

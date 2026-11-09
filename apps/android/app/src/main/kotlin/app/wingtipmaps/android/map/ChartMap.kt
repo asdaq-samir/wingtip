@@ -19,6 +19,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
+import app.wingtipmaps.android.design.generated.WingtipSize
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.route.RouteLegs
 import app.wingtipmaps.android.route.RoutePoint
@@ -44,8 +46,6 @@ import org.maplibre.android.style.sources.TileSet
 import org.maplibre.android.style.sources.VectorSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.Point
-import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.design.generated.WingtipSize
 
 /** The map's view where it came to rest: its box and its zoom, MapLibre's. */
 data class MapRest(val south: Double, val west: Double, val north: Double, val east: Double, val zoom: Double)

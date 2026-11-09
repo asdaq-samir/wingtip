@@ -12,11 +12,11 @@ import app.wingtipmaps.android.api.generated.DebriefPoint
 import app.wingtipmaps.android.api.generated.gateway.FlightDto
 import app.wingtipmaps.android.api.generated.gateway.FlightSummaryDto
 import app.wingtipmaps.android.api.track
-import java.time.Instant
-import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import java.time.Instant
+import java.time.ZoneId
 
 /**
  * The debriefs the coach reads, from the pilot's own saved flights, as the

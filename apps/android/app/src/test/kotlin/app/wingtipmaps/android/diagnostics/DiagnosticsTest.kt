@@ -1,12 +1,12 @@
 package app.wingtipmaps.android.diagnostics
 
 import android.app.ApplicationExitInfo
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 /** The diagnostics' pure parts: the body cut to what the gateway takes
  *  (DiagnosticsController's limits), the exits that are faults, the

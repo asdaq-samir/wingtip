@@ -17,6 +17,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.edit
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipPalette
 import app.wingtipmaps.android.design.generated.WingtipPalettes
@@ -25,7 +26,6 @@ import app.wingtipmaps.android.design.generated.WingtipTypography
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import androidx.core.content.edit
 
 /**
  * The app's looks, as Setup's Theme offers them on every app: Wingtip,

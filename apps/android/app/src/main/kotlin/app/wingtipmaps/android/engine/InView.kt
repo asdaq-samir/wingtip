@@ -1,12 +1,11 @@
 package app.wingtipmaps.android.engine
 
-import app.wingtipmaps.android.engine.generated.regionOf
-
 import app.wingtipmaps.android.api.AirportPin
-import app.wingtipmaps.android.api.generated.AirportsInView
 import app.wingtipmaps.android.api.Gateway
-import java.nio.ByteBuffer
+import app.wingtipmaps.android.api.generated.AirportsInView
+import app.wingtipmaps.android.engine.generated.regionOf
 import kotlinx.serialization.decodeFromString
+import java.nio.ByteBuffer
 
 // What the map draws, from the packs kept on the phone (the engine's view
 // module through Packs.airspaceInView, airportsInView and navaidsInView):

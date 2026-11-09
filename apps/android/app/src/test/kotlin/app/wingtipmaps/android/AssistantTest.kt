@@ -8,13 +8,13 @@ import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
-import java.io.IOException
 import kotlinx.serialization.encodeToString
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.IOException
 
 /** The assistant's stream decoded line by line and folded into the
  *  conversation, as AskScreen shows it (api/Assistant.kt); the same

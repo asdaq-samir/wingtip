@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -42,18 +43,17 @@ import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
-import app.wingtipmaps.android.R
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipMotion
-import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.math.roundToInt
+import app.wingtipmaps.android.design.rememberHaptics
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
-import androidx.compose.material3.ExperimentalMaterial3Api
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.math.roundToInt
 
 /** Where the docked sheet rests: the pill (the figures and the tabs'
  *  names), half the screen, or the whole of it (decision 0018). */

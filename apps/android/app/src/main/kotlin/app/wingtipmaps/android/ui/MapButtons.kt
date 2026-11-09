@@ -22,8 +22,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.generated.WingtipSize
+import app.wingtipmaps.android.design.generated.WingtipSpace
 
 /**
  * How the position button reads: off, reading but the map let go of it,

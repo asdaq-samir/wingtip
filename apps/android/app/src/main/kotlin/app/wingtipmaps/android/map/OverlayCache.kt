@@ -1,7 +1,5 @@
 package app.wingtipmaps.android.map
 
-import java.io.File
-import java.io.RandomAccessFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.CacheControl
@@ -13,6 +11,8 @@ import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
+import java.io.File
+import java.io.RandomAccessFile
 
 /**
  * The overlay tiles' archive kept on the phone, so the airspace, the

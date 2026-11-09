@@ -1,9 +1,6 @@
 package app.wingtipmaps.android.offline
 
 import app.wingtipmaps.android.api.generated.OfflineRegion
-import java.io.File
-import java.nio.file.Files
-import java.time.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -13,6 +10,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import java.nio.file.Files
+import java.time.Instant
 
 /** Downloads: the store of kept regions, the map's archives at either
  *  density, a cycle's expiry and sweep, the style the archives go into,

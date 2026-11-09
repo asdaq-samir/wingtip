@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.documents
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,7 +27,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.annotation.StringRes
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.assistant.DocumentFlag
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead

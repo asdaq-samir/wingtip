@@ -3,10 +3,10 @@ package app.wingtipmaps.android.copilot
 import android.content.Context
 import android.speech.tts.TextToSpeech
 import androidx.core.content.edit
-import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.Locale
 
 /** The in-flight copilot as one choice (the web's lib/copilot/mode):
  *  off, its message shown, or shown and said aloud. On by default, as

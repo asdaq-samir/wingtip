@@ -1,17 +1,15 @@
 package app.wingtipmaps.android.documents
 
 import app.wingtipmaps.android.MainRule
+import app.wingtipmaps.android.api.generated.LogbookDraft
+import app.wingtipmaps.android.api.generated.LogbookDraftAsk
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
 import app.wingtipmaps.android.api.generated.assistant.HandbookFigure
 import app.wingtipmaps.android.api.generated.assistant.HandbookRead
 import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
-import app.wingtipmaps.android.api.generated.LogbookDraft
-import app.wingtipmaps.android.api.generated.LogbookDraftAsk
 import app.wingtipmaps.android.logbook.LogbookSource
-import java.time.LocalDate
-import java.util.Base64
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -23,6 +21,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.time.LocalDate
+import java.util.Base64
 
 /**
  * Add from a Photo against the server's own answers

@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.strip
 
-import app.wingtipmaps.android.format.Format
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,10 +32,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.api.Leg
+import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.route.LegWords
-import app.wingtipmaps.android.ui.largeType
-import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.InkColors
+import app.wingtipmaps.android.ui.LocalInk
+import app.wingtipmaps.android.ui.largeType
 
 /** More checkpoints than this fold in the middle, the first and the last
  *  kept (the canvas's "N more checkpoints"). */

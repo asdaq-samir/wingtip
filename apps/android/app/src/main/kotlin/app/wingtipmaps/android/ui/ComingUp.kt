@@ -14,10 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.gateway.PaperworkDto
 import app.wingtipmaps.android.records.Paperwork
-import app.wingtipmaps.android.R
-import androidx.compose.ui.res.stringResource
 
 /**
  * Setup's Coming Up, for a pilot signed in: what falls due for them and

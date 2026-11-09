@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.checklist
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -34,12 +36,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import app.wingtipmaps.android.ui.ProblemLine
-import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.R
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.emergency.EmergencyOpen
+import app.wingtipmaps.android.ui.ProblemLine
 
 /**
  * An airplane's checklists (ChecklistModel): normal or emergency picked

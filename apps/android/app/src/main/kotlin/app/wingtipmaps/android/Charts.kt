@@ -13,8 +13,6 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.map.CloseMap
 import app.wingtipmaps.android.tiles.TileTemplate
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -25,6 +23,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import java.io.File
 
 /**
  * Which chart the map draws (/api/chart): its cycle, its layers and where

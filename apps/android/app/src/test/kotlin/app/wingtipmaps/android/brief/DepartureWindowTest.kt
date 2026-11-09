@@ -7,12 +7,12 @@ import app.wingtipmaps.android.api.generated.DepartureWindowAsk
 import app.wingtipmaps.android.api.generated.VerdictItem
 import app.wingtipmaps.android.api.generated.Window
 import app.wingtipmaps.android.api.generated.WindowHour
-import java.time.Instant
-import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
+import java.time.Instant
+import java.time.ZoneId
 
 /** "When should I go?": asked as the web asks it, kept for a route, and
  *  its hours written as the web's hourWords write them. */

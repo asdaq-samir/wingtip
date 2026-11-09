@@ -1,5 +1,5 @@
-import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 // The native Android app (docs/NATIVE-ANDROID.md): Jetpack Compose and
 // Material 3 over the same planner and gateway the website uses, with the
@@ -15,29 +15,29 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-/// The site's host: the gateway's address and the app's App Links domain,
-/// from the WINGTIP_HOST the workflow passes (the repo's WINGTIP_URL's
-/// host), else the site itself.
+// / The site's host: the gateway's address and the app's App Links domain,
+// / from the WINGTIP_HOST the workflow passes (the repo's WINGTIP_URL's
+// / host), else the site itself.
 val wingtipHost: String =
     (System.getenv("WINGTIP_HOST") ?: providers.gradleProperty("wingtipHost").orNull ?: "")
         .trim().ifEmpty { "wingtipmaps.app" }
 
-/// Google's Map Tiles key for this app, restricted in Google Cloud to
-/// Android apps by this package name and signing certificate (which
-/// CloseMap.signer sends as X-Android-Package and X-Android-Cert): from the
-/// GOOGLE_MAPS_ANDROID_KEY the workflow passes, a `googleMapsAndroidKey`
-/// gradle property, or local.properties' google.maps.android.key. Empty
-/// until the owner adds one: the app then uses the planner's key
-/// (/api/map/google), and without either the chart stays, enlarged.
+// / Google's Map Tiles key for this app, restricted in Google Cloud to
+// / Android apps by this package name and signing certificate (which
+// / CloseMap.signer sends as X-Android-Package and X-Android-Cert): from the
+// / GOOGLE_MAPS_ANDROID_KEY the workflow passes, a `googleMapsAndroidKey`
+// / gradle property, or local.properties' google.maps.android.key. Empty
+// / until the owner adds one: the app then uses the planner's key
+// / (/api/map/google), and without either the chart stays, enlarged.
 val googleMapsAndroidKey: String =
     (System.getenv("GOOGLE_MAPS_ANDROID_KEY") ?: providers.gradleProperty("googleMapsAndroidKey").orNull
         ?: rootProject.file("local.properties").takeIf { it.exists() }?.let { f ->
             Properties().apply { f.inputStream().use { load(it) } }.getProperty("google.maps.android.key")
         } ?: "").trim()
 
-/// The app's package name on the phone and on Google Play. Not the
-/// shell's (app.wingtipmaps.android), so a tester can have both installed
-/// while this one is judged against the plan's gates.
+// / The app's package name on the phone and on Google Play. Not the
+// / shell's (app.wingtipmaps.android), so a tester can have both installed
+// / while this one is judged against the plan's gates.
 val appId: String =
     (System.getenv("ANDROID_NATIVE_APP_ID") ?: providers.gradleProperty("androidNativeAppId").orNull ?: "")
         .trim().ifEmpty { "app.wingtipmaps.android.native" }

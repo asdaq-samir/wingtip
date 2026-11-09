@@ -10,15 +10,15 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.route.RoutePoint
 import app.wingtipmaps.android.route.RoutePoints
 import app.wingtipmaps.android.strip.Finding
-import java.time.Instant
-import java.util.Locale
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * The Brief's forecast icing, a row a leg (the web's ForecastIcingRows and

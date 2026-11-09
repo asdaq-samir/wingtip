@@ -35,7 +35,6 @@ private val READING = Json.parseToJsonElement(
 class LiveTest {
     @get:Rule val main = MainRule()
 
-
     private class Fake : LiveSource {
         var saaAsked: List<String>? = null
         override suspend fun atis(airport: String) = AirportAtis(airport, listOf(DigitalAtis(airport, 0.0, null, "K", READING, "ORD ATIS INFO K", "arrival")))
