@@ -420,6 +420,34 @@ def _terrain_tile(z: int, x: int, y: int) -> np.ndarray:
     return heights
 
 
+def terrarium_rgb(heights_m: np.ndarray) -> np.ndarray:
+    """Heights in metres written back in the terrarium encoding
+    (terrarium_m's: height = R * 256 + G + B / 256 - 32768), as 8-bit RGB:
+    what a map's raster-dem source decodes (MapLibre's `terrarium`). A
+    height none could be read for is the sea's surface, 0."""
+    v = np.clip(np.nan_to_num(heights_m, nan=0.0), -32767.0, 32767.0) + 32768.0
+    whole = np.floor(v)
+    r = np.floor(whole / 256)
+    g = whole - r * 256
+    b = np.floor((v - whole) * 256)
+    return np.stack([r, g, b], axis=-1).astype(np.uint8)
+
+
+def terrain_tile_png(z: int, x: int, y: int) -> bytes:
+    """A terrain tile as the map draws its relief and 3D ground from: the
+    tile _terrain_tile reads and cleans -- its voids filled, its spikes
+    gone, the sea floor the sea's surface (terrarium_m) -- written again as
+    a terrarium PNG. The tiles as AWS publishes them put a pit 32 km deep
+    under every void (the Everglades', the Navajo Nation's, 2026-11-02),
+    which a 3D map would draw as such. Raises requests.RequestException
+    where the tile cannot be fetched."""
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.fromarray(terrarium_rgb(_terrain_tile(z, x, y)), "RGB").save(out, "PNG")
+    return out.getvalue()
+
+
 def ground_m(lat: float, lon: float, zoom: int = TERRAIN_TILE_ZOOM) -> float:
     """The ground's height at a point, in metres, from the terrain tiles.
     Raises requests.RequestException where they cannot be fetched."""

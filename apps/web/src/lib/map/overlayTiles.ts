@@ -12,7 +12,7 @@ import type { OverlayTiles } from "../api/types";
  * asks `api.overlayTiles()` for the cycle's archive, and adds
  * `overlaySource(tiles)` as a vector source in its first style
  * (lib/map/gl/glOverlays); its layers then draw from the source layers in
- * OVERLAY_LAYERS, by the fields docs/README.md lists.
+ * OVERLAY_LAYERS, by the fields services/jobs/README.md lists.
  */
 
 /** The archive's source layers (wingtip.vector_tiles.LAYERS). */

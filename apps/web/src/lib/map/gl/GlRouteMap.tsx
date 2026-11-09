@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import type { ChartInfo, Course, Leg, ProcedureDrawing } from "../../api/types";
 import type { StopKind } from "../../stopKinds";
 import type { TrafficPattern } from "../../trafficPattern";
@@ -23,6 +23,13 @@ import { FlownTrackGl, LegHighlightGl, OwnTrailGl, ReplayGl } from "./layers/Tra
 import { TrafficGl } from "./layers/TrafficGl";
 import { WeatherGl } from "./layers/WeatherGl";
 import { useGlFit } from "./useGlFit";
+import type { AloftPoint } from "./terrain/geometry";
+import { useTerrainView } from "./terrain/useTerrainView";
+
+/** The relief, the 3D ground and the pilot's-eye view (lib/map/gl/terrain):
+ *  a chunk of its own, loaded only once the Map menu's Terrain or the dry
+ *  run asks for it. */
+const TerrainGl = lazy(() => import("./terrain/TerrainGl"));
 
 export type { GlCandidate, GlCheckpoint, GlEndpoint, GlLeg };
 
@@ -77,6 +84,8 @@ export interface GlRouteMapProps {
   onSelectLeg?: (key: string) => void;
   /** The leg whose sheet is open, cased in green. */
   selectedLeg?: string | null;
+  /** The route at the plan's altitudes, drawn in the air in 3D. */
+  aloft?: AloftPoint[] | null;
 }
 
 /**
@@ -121,10 +130,16 @@ function Layers(p: GlRouteMapProps) {
   useGlFit(p.focusedProcedure, p.focusedProcedure.length ? p.procedureFocus : null, 12, p.procedureCover);
   useGlFit(p.focusedPattern, p.focusedPattern.length ? p.patternFocus : null, 13);
   const route = course ? [course.departure.ident, ...(course.stops ?? []).map(s => s.ident), course.destination.ident] : [];
+  const terrain = useTerrainView();
   return (
     <>
       <LandWaterGl />
       <ChartGl course={course} previewing={previewing} />
+      {terrain.mode !== "flat" && (
+        <Suspense fallback={null}>
+          <TerrainGl mode={terrain.mode} pilot={terrain.pilot} aloft={course ? p.aloft ?? null : null} />
+        </Suspense>
+      )}
       <OverlayGl />
       <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />
       <TfrGl />

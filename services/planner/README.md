@@ -129,6 +129,10 @@ once in ten.
 | `GET /api/detect/stream` | Chart-vision detections, streamed as NDJSON. |
 | `GET /api/classify` | What the chart draws at one point. |
 | `GET /api/chart-tile/{kind}/{z}/{x}/{y}.png` | The map's tiles, rendered from the FAA's own GeoTIFF of each sheet (`wingtip.charts`), collar clipped away so sheets butt together; 404 where no sheet of that kind covers the tile. Any chart kind by key -- `sec`, `tac`, `ifr_low`, `ifr_high` (the IFR enroute charts, base layers the map's info popover can switch to), `ifr_area` (the enroute charts' terminal-area sheets, an overlay over the IFR bases the way the TAC is over the sectional). `chart_layers` on the course lists the kinds, their zooms and which base each overlay belongs over. A finished kind's tiles come out of its archive (`wingtip.tile_archive`, one PMTiles file per kind and density, `@2x` its own), where a tile it lacks is none; on AWS the published archive, read by range requests through CloudFront, which caches this endpoint's answers (docs/README-AWS.md). `chart_tiles_base` on the course is always null now. |
+| `GET /api/overlay-tiles`, `GET /api/overlay-tiles/{name}.pmtiles` | The map's FAA overlays (airspace, special use, airports, navaids, fixes) as one vector-tile PMTiles archive a cycle, read by MapLibre in byte ranges. The charts job builds it from the cycle pack; its layers are in [services/jobs/README.md](../jobs/README.md#the-overlay-tiles). |
+| `GET /api/traffic`, `/api/traffic/find`, `/api/traffic/flight/{hex_id}` (and its `status`, `history`), `/api/traffic/route`, `/api/traffic/based` | The map's traffic (adsb.lol by region, ADS-B Exchange where it refuses), an airplane's card, its filed route and past flights from the live store. |
+| `GET /api/live/rvr`, `/api/live/atis`, `/api/live/flow`, `/api/live/departures`, `/api/live/itws`, `/api/live/saa` | What SWIM says, from the live store ingest fills: each runway's RVR, the D-ATIS read into figures by the engine, ground stops and delay programs, a flight's tower departure, ITWS's wind shear and microburst alerts, and a special activity airspace's status. |
+| `GET /api/status/feeds` | Whether each live feed and weather product is still coming in (`wingtip.feed_health`); a feed stale past `FEED_ALERT_AFTER_MIN` raises one alert ([ARCHITECTURE.md](../../docs/ARCHITECTURE.md#feed-health)). |
 | `GET /api/class-b` | Every Class B airport: where it is, and what its METAR/TAF are doing now and forecast. One call for all thirty rather than one per marker -- the airspace shapefile is parsed once and pickled (`wingtip.classb`, `data/raw/faa_nasr/Shape_Files/Class_Airspace.controlled.v5.pkl`), and the METAR/TAF national caches are already held in memory by `wingtip.weather`, so assembling all thirty costs about as much as assembling one. |
 | `POST/DELETE /api/picks` | Hand-marked checkpoints. |
 | `POST /api/checkpoint-notes`, `POST /api/checkpoint-notes/pending`, `POST /api/checkpoint-notes/seed` | A pilot's own "how to spot it" note for a checkpoint, kept as theirs; and, for the assistant service that writes the notes (its `/api/checkpoint-notes/generate`), the checkpoints still without one and each note it writes kept as the shared one. |
@@ -180,7 +184,11 @@ once an hour it asks the FAA's products page which cycle is current
 and, if that cycle's pyramid is not complete on disk, starts the charts
 job's `charts` container through the dev-services sidecar (prepare,
 render, pack, then delete the previous cycle; `docker compose create
-retrain charts charts-overlays` once makes the containers it starts). It
+retrain charts charts-overlays charts-next` once makes the containers it starts).
+Where `CHARTS_CYCLE_AUTO` is on (the default), it also starts
+`charts-next` hourly inside the window from `CHARTS_CYCLE_LEAD_DAYS` (7)
+before the next cycle, so that cycle is drawn ahead and swapped in at
+0901Z on its date (services/jobs/README.md). It
 starts `charts-overlays` the same way, at any hour, when its cycle pack
 has no overlay tiles. The map switches to the new cycle only once every
 tile of it is there, so a refresh in progress changes nothing on
@@ -234,8 +242,7 @@ rewrites it — no restart. A joblib artifact is a pickle of sklearn's own
 objects, so the version that loads it must match the version that wrote
 it: `requirements.txt` pins scikit-learn and joblib exactly as
 `services/jobs/retrain/requirements.txt` does, and `services/planner/tests_wingtip/test_requirements.py`
-fails if they differ. Bump both together. (This was a `model-service`
-container of its own until 2026-11-06.)
+fails if they differ. Bump both together.
 
 **Collection runs in-process, not as a container.** `/api/build` starts a
 thread rather than launching a pipeline container, because handing this

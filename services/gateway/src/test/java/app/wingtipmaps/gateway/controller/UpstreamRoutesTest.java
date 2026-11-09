@@ -40,11 +40,13 @@ class UpstreamRoutesTest {
             "POST /api/words/{kind}", "the assistant answers notams, weather, risk, debrief and changes alone");
 
     /**
-     * Routes added since the hand list was recorded: no old behaviour to
-     * hold them to, their rules being their own x-gateway marks alone.
+     * Routes added since the hand list was replaced, each with its rules:
+     * no old entry to hold it to, so held to what its decorator says.
      */
     static final Map<String, String> ADDED = Map.of(
-            "GET /api/copilot/around", "the in-flight copilot's reads round the airplane, public as /api/live/* is");
+            "POST /api/departure-window", "planner signed-in csrf",
+            // The in-flight copilot's reads round the airplane, public as /api/live/* is.
+            "GET /api/copilot/around", "planner public csrf");
 
     @Test
     void everyRouteTheDocumentsMarkIsOneTheHandListForwardedWithTheSameRules() {
@@ -55,6 +57,10 @@ class UpstreamRoutesTest {
             RoutesBefore old = before.stream().filter(b -> b.matches(route.method(), sample)).findFirst().orElse(null);
             String name = route.method() + " " + route.pattern().getPatternString();
             if (ADDED.containsKey(name)) {
+                String rules = route.upstream().name().toLowerCase(Locale.ROOT) + " "
+                        + route.access().name().toLowerCase(Locale.ROOT).replace('_', '-') + " "
+                        + (route.csrf() ? "csrf" : "no-csrf");
+                compare(differences, name, "rules", ADDED.get(name), rules);
                 continue;
             }
             if (old == null) {

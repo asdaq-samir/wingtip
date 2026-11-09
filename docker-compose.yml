@@ -120,7 +120,7 @@ services:
   # project mounted at /workspace, as the planner's is). The developer
   # console starts them through dev-services, which can start a container
   # but never create one: `docker compose create retrain charts
-  # charts-overlays` makes them once. services/jobs/README.md has the rest.
+  # charts-overlays charts-next` makes them once. services/jobs/README.md has the rest.
   #
   # The training run (`python -m wingtip.pipeline run`: both models'
   # stages in order, each promoted only if it beats the one serving), the
@@ -163,6 +163,27 @@ services:
   charts-overlays:
     <<: *charts-job
     command: ["overlays"]
+
+  # The FAA's next chart cycle, staged before its date (`python -m charts
+  # next`, wingtip.chart_next): from CHARTS_CYCLE_LEAD_DAYS (7) before it,
+  # its sheets fetched, rendered with as many workers as the memory left
+  # holds, and packed into its own folder, which the map takes at 0901Z
+  # on its date; after that, the cycles before it deleted. The planner
+  # starts it hourly inside CHARTS_REFRESH_WINDOW where CHARTS_CYCLE_AUTO
+  # is on (app.chart_refresh). It takes a turn among the Mac's heavy work
+  # as scripts/dev/one-at-a-time.sh gives them out, through that script's
+  # lock directories in the Mac's /tmp (charts/turn.py): it waits for a
+  # turn rather than render beside a test suite or an image build.
+  charts-next:
+    <<: *charts-job
+    command: ["next"]
+    environment:
+      CHARTS_CYCLE_LEAD_DAYS: ${CHARTS_CYCLE_LEAD_DAYS:-7}
+      ONE_AT_A_TIME_LOCK: /host-tmp/flight-plan-heavy.lock
+      ONE_AT_A_TIME_SLOTS: ${ONE_AT_A_TIME_SLOTS:-2}
+    volumes:
+      - .:/workspace
+      - /tmp:/host-tmp
 
   db:
     restart: unless-stopped
@@ -211,7 +232,7 @@ services:
       context: .
       dockerfile: infra/dev-services/Dockerfile
     environment:
-      DEV_SERVICES: ml,retrain,charts,charts-overlays
+      DEV_SERVICES: ml,retrain,charts,charts-overlays,charts-next
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks: [docker-control]
@@ -264,6 +285,17 @@ services:
       # How many render processes the charts job is given (its command
       # above), for the console to show.
       CHARTS_REFRESH_WORKERS: ${CHARTS_REFRESH_WORKERS:-1}
+      # The next chart cycle staged before its date by charts-next
+      # (app.chart_refresh, wingtip.chart_next): on here, 0 to stop it;
+      # how many days ahead it starts.
+      CHARTS_CYCLE_AUTO: ${CHARTS_CYCLE_AUTO:-1}
+      CHARTS_CYCLE_LEAD_DAYS: ${CHARTS_CYCLE_LEAD_DAYS:-7}
+      # The live feeds watched (app.feed_health): a feed stale this many
+      # minutes is an alert in the log and the console, and POSTed to
+      # FEED_ALERT_WEBHOOK where one is set. The weather service's
+      # freshness is asked at WEATHER_URL (http://weather:8000 by default).
+      FEED_ALERT_AFTER_MIN: ${FEED_ALERT_AFTER_MIN:-15}
+      FEED_ALERT_WEBHOOK: ${FEED_ALERT_WEBHOOK:-}
       # The map's Google overlay (routers/basemaps): a browser key for
       # Google's Map Tiles API, none by default.
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}

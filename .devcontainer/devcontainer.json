@@ -1,0 +1,59 @@
+// A VS Code dev container for the editor's side of the work: Node (the web
+// app's version, apps/web/.nvmrc), Python 3.14 (services/Dockerfile.base's),
+// Rust stable (the engine) and the Docker CLI, so language servers, the
+// formatter and `make` work inside it.
+//
+// The stack and the checks still run in Docker, as everywhere in this repo
+// (docs/LOCAL-DEV.md): the host's Docker is shared with the container
+// (docker-outside-of-docker), so `make dev` and `make check` start real
+// containers beside this one, not inside it. That is why the folder is
+// mounted at its own host path below: Compose and scripts/dev/check.sh pass
+// paths to the host's daemon, which would not find "/workspaces/...".
+//
+// Not in here, because they need the host: Xcode and the iPhone simulator
+// (apps/ios), and the Android SDK with its emulator (apps/android). Work on
+// those on the Mac, as docs/NATIVE.md and docs/NATIVE-ANDROID.md say.
+{
+  "name": "Wingtip Maps",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
+  "workspaceFolder": "${localWorkspaceFolder}",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" },
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.14" },
+    "ghcr.io/devcontainers/features/rust:1": { "version": "stable", "profile": "minimal" },
+    "ghcr.io/devcontainers/features/common-utils:2": {}
+  },
+  // The Compose stack's front door, the inbox and the planner's docs.
+  "forwardPorts": [8080, 8025, 8084],
+  "portsAttributes": {
+    "8080": { "label": "App (gateway)", "onAutoForward": "notify" },
+    "8025": { "label": "Mailpit (sign-in inbox)" },
+    "8084": { "label": "Planner API docs" }
+  },
+  // The web app's packages, so the editor's TypeScript server and ESLint
+  // resolve imports. The checks themselves run in Docker (make check).
+  "postCreateCommand": "cp -n .env.example .env; (cd apps/web && npm ci --no-audit --no-fund)",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "vscjava.vscode-java-pack",
+        "ms-azuretools.vscode-docker",
+        "editorconfig.editorconfig",
+        "tamasfe.even-better-toml",
+        "hediet.vscode-drawio"
+      ],
+      "settings": {
+        "editor.formatOnSave": false,
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "rust-analyzer.linkedProjects": ["engine/Cargo.toml"]
+      }
+    }
+  }
+}

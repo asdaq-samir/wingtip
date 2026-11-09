@@ -124,6 +124,11 @@ export type OralQuestion = Assistant["OralQuestion"];
 export type OralQuestionRequest = Assistant["OralQuestionRequest"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];
 export type ClearancePlaces = Schemas["ClearancePlaces"];
+/** "When should I go?": the hours and the windows (app.window). */
+export type DepartureWindowAsk = Schemas["DepartureWindowAsk"];
+export type DepartureWindow = Schemas["DepartureWindow"];
+export type WindowHour = Schemas["WindowHour"];
+export type DepartureWindowRun = Schemas["Window"];
 export type ClearanceWords = Schemas["ClearanceWords"];
 export type OralGrade = Assistant["OralGrade"];
 export type OralGradeRequest = Assistant["OralGradeRequest"];
@@ -196,6 +201,9 @@ export type AircraftRegistration = Schemas["AircraftRegistration"];
 export type FlightRoute = Schemas["FlightRoute"];
 /** The deployment's browser key for Google's map tiles (routers/basemaps). */
 export type GoogleMaps = Schemas["GoogleMaps"];
+/** The FAA's Digital Obstacle File in a box, tallest first (routers/terrain). */
+export type Obstacles = Schemas["Obstacles"];
+export type Obstacle = Schemas["Obstacle"];
 export type AirspaceBand = Schemas["AirspaceBand"];
 export type VfrMinimums = Schemas["VfrMinimums"];
 /** `available` is false where the planner has no Docker API to talk

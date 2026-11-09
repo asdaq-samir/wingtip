@@ -47,10 +47,13 @@ from wingtip import cycle_pack
 from wingtip import airports as airport_table
 
 from . import chart_model, chart_refresh, errors, tracing
+from .chart_cycle import check as chart_cycle
+from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
 from .planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan
-from .routers import clearance, copilot, figures, gonogo, live, packs, pilot, route_options, system, traffic, weather_map, words
+from .routers import clearance, copilot, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, traffic
+from .routers import weather_map, window, words
 from .schemas import STREAM_MESSAGES, Index
 from .settings import get_settings
 
@@ -272,6 +275,7 @@ def _warm_reference_data() -> None:
 
     if chart_refresh.AUTO_REFRESH:
         chart_refresh.maybe_refresh()
+    chart_cycle.maybe_stage_next()
 
     # And the chart's lakes and towns, read once a cycle under the
     # sectionals on disk (app.landmarks), so a new route's corridor read
@@ -324,9 +328,12 @@ def _warm_reference_data() -> None:
             except Exception:  # noqa: BLE001 -- the next check tries again; the held copy is served
                 log.warning("aircraft registry not refreshed", exc_info=True)
         time.sleep(LOOP_EVERY_S)
-        if chart_refresh.AUTO_REFRESH and time.time() - last_cycle_check >= chart_refresh.CHECK_EVERY_S:
+        if time.time() - last_cycle_check >= chart_refresh.CHECK_EVERY_S:
             last_cycle_check = time.time()
-            chart_refresh.maybe_refresh()
+            if chart_refresh.AUTO_REFRESH:
+                chart_refresh.maybe_refresh()
+            # The next cycle, staged ahead of its date (CHARTS_CYCLE_AUTO).
+            chart_cycle.maybe_stage_next()
 
 
 @asynccontextmanager
@@ -334,7 +341,10 @@ async def _lifespan(app: FastAPI):
     threading.Thread(target=_warm_reference_data, name="reference-data-warm-up", daemon=True).start()
     # The live feeds (the FAA's SWIM radar, NOTAMs and flight plans, and
     # the followed airplanes' adsb.fi rounds) are read by ingest
-    # (services/ingest) into the stores the planner reads: none here.
+    # (services/ingest) into the stores the planner reads: none here. What
+    # is watched here is whether they, and the weather service's
+    # products, are still coming in (app.feeds): a check a minute.
+    threading.Thread(target=feeds_watch.watch_forever, name="feed-watch", daemon=True).start()
     yield
 
 
@@ -375,7 +385,7 @@ def index() -> Index:
 
 
 for module in (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, traffic, basemaps,
-               route_options, gonogo, figures, clearance, packs, words, weather_map, pilot, live, copilot):
+               route_options, gonogo, figures, clearance, packs, words, weather_map, pilot, live, feeds, terrain, window, copilot):
     app.include_router(module.router)
 
 
