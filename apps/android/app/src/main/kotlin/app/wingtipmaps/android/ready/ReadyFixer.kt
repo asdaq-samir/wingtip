@@ -1,0 +1,171 @@
+package app.wingtipmaps.android.ready
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.engine.CyclePacks
+import app.wingtipmaps.android.offline.DownloadsModel
+import app.wingtipmaps.android.receiver.Receiver
+import app.wingtipmaps.android.receiver.ReceiverMode
+import app.wingtipmaps.android.ui.AirplaneModel
+import app.wingtipmaps.android.ui.AirplanePicker
+import app.wingtipmaps.android.ui.BriefModel
+import app.wingtipmaps.android.ui.OwnShipControl
+import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/**
+ * Each of ready_to_fly's fixes done in place, by the feature the app
+ * already has for it: the airplane picked in the Airplane tab's own
+ * picker, the route's charts kept as Setup → Downloads keeps a box, the
+ * cycle packs kept along the route as the plan keeps them, the Brief and
+ * the fields' weather asked again, the NOTAMs fetched, the plan kept, the
+ * system asked for location, the receiver listened for. A fix the phone
+ * has no feature for (an altitude, which the planner picks; a route,
+ * where no route field is at hand) is not offered, and its row is plain
+ * text.
+ */
+@Stable
+class ReadyFixer internal constructor(
+    private val plan: Plan,
+    private val model: ReadyToFlyModel,
+    private val brief: BriefModel,
+    private val downloads: DownloadsModel,
+    private val packs: CyclePacks,
+    private val receiver: Receiver,
+    private val scope: CoroutineScope,
+    private val askLocation: () -> Unit,
+    private val onSetRoute: (() -> Unit)?,
+    private val doneState: MutableIntState,
+) {
+    /** The airplane picker's sheet, open. */
+    var picking by mutableStateOf(false)
+
+    /** Bumped when a fix that changes nothing the screen watches is done
+     *  (or the system has answered for location), so the facts are
+     *  gathered again. */
+    val done: Int get() = doneState.intValue
+
+    fun can(fix: String?): Boolean = when (fix) {
+        null, "set_altitude" -> false
+        "set_route" -> onSetRoute != null
+        else -> true
+    }
+
+    fun run(fix: String) {
+        val state = plan.state.value
+        val line = state.course?.courseLine.orEmpty().filter { it.size == 2 }
+        when (fix) {
+            "set_route" -> onSetRoute?.invoke()
+            "pick_airplane" -> picking = true
+            "download_charts" -> keepCharts(line)
+            "update_packs" -> keepPacks(line)
+            "refresh_weather" -> {
+                brief.refresh(state)
+                model.fetchFields()
+            }
+            "fetch_notams" -> model.fetchNotams()
+            "save_plan" -> {
+                plan.save()
+                doneState.intValue++
+            }
+            "allow_location" -> askLocation()
+            "connect_receiver" -> {
+                receiver.setMode(ReceiverMode.AUTO)
+                receiver.start()
+                doneState.intValue++
+            }
+        }
+    }
+
+    /** The route's box, a tenth of a degree (6 nm) round its line as the
+     *  packs are kept, as one region of Setup → Downloads: the catalog
+     *  read first, for the cycle to keep it of. */
+    private fun keepCharts(line: List<List<Double>>) {
+        if (line.isEmpty()) return
+        model.busy("download_charts", true)
+        scope.launch {
+            downloads.load().join()
+            val lats = line.map { it[0] }
+            val lons = line.map { it[1] }
+            downloads.downloadBox(lons.min() - PAD_DEG, lats.min() - PAD_DEG, lons.max() + PAD_DEG, lats.max() + PAD_DEG).join()
+            model.busy("download_charts", false)
+            doneState.intValue++
+        }
+    }
+
+    /** The packs of the regions the route crosses (Plan.keepForTheAir's). */
+    private fun keepPacks(line: List<List<Double>>) {
+        model.busy("update_packs", true)
+        scope.launch {
+            val regions = withContext(Dispatchers.Default) { runCatching { CyclePacks.regions(line) }.getOrDefault(emptySet()) }
+            if (regions.isEmpty()) packs.refresh() else packs.keep(regions)
+            model.busy("update_packs", false)
+            doneState.intValue++
+        }
+    }
+
+    /** The Airplane tab's picker in a sheet of its own, so the screen
+     *  under it stays where it was; asked, never assumed. */
+    @Composable
+    fun Sheets(airplanes: AirplaneModel = viewModel()) {
+        if (!picking) return
+        val types by airplanes.profiles.collectAsStateWithLifecycle()
+        val state by plan.state.collectAsStateWithLifecycle()
+        WingtipSheet(title = stringResource(R.string.pick_an_airplane), onClose = { picking = false }) {
+            Column(Modifier.padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl)) {
+                Text(stringResource(R.string.ready_airplane_line), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                AirplanePicker(types, selected = state.aircraft) { name ->
+                    plan.setAircraft(name)
+                    picking = false
+                }
+            }
+        }
+    }
+
+    private companion object {
+        const val PAD_DEG = 0.1
+    }
+}
+
+/** The fixes for this screen; `onSetRoute` where a route can be typed
+ *  from it, null where it cannot. */
+@Composable
+fun rememberReadyFixer(plan: Plan, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel = viewModel()): ReadyFixer {
+    val context = LocalContext.current
+    val brief: BriefModel = viewModel()
+    val downloads: DownloadsModel = viewModel()
+    val scope = rememberCoroutineScope()
+    val done = remember { mutableIntStateOf(0) }
+    // Whatever the system answers, the location is read again.
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { done.intValue++ }
+    return remember(plan, model, onSetRoute != null) {
+        ReadyFixer(
+            plan, model, brief, downloads, CyclePacks.of(context), Receiver.of(context), scope,
+            askLocation = { ask.launch(OwnShipControl.LOCATION) }, onSetRoute = onSetRoute, doneState = done,
+        )
+    }
+}

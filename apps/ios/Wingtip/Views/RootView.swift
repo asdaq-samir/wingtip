@@ -104,6 +104,8 @@ struct RootView: View {
                         // The welcome, once per install, over the planner's sheet;
                         // its flight shown half way up on FPL (WelcomeHost).
                         .modifier(WelcomeHost(opened: { tab = .fpl; detent = .medium }))
+                        // Ready to fly over a dry run's or a flight's start (ReadyToFlyHost).
+                        .modifier(ReadyToFlyHost())
                         // The sheet settling at a size, felt (WingtipHaptic.detent).
                         .sensoryFeedback(WingtipHaptic.detent, trigger: detent) { _, _ in !reduceMotion }
                     }
@@ -111,6 +113,7 @@ struct RootView: View {
                 SplitLayout(map: map, tab: $tab, airports: $airports, card: $sideCard)
                     .sheet(isPresented: $asking) { AskView() }
                     .modifier(WelcomeHost(opened: { tab = .fpl }))
+                    .modifier(ReadyToFlyHost())
             }
         }
         // The scene's tab kept and brought back (SceneStorage); a launch

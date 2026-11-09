@@ -10,7 +10,10 @@ enum FlightSwitch {
     @MainActor
     static func set(_ on: Bool, activity: FlightActivity = .shared) async -> String? {
         if on {
-            return activity.startByPilot() ? nil : activity.problem ?? "The flight could not be started."
+            guard activity.startByPilot() else { return activity.problem ?? "The flight could not be started." }
+            // Started: Ready to fly shown once where something is missing.
+            await ReadyToFly.shared.flightStarted()
+            return nil
         }
         activity.stopByPilot()
         return nil

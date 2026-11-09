@@ -251,7 +251,7 @@ export function keepKey(course: Course, kind: string): string {
 }
 
 /** The zooms kept: from a whole-route view (8) down to the chart's own detail. */
-function keptZooms(layer: ChartLayer): number[] {
+export function keptZooms(layer: ChartLayer): number[] {
   return Array.from({ length: layer.max_zoom - 8 + 1 }, (_, i) => 8 + i).filter((z) => z >= layer.min_zoom);
 }
 

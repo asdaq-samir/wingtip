@@ -260,6 +260,18 @@ class Plan(app: Application) : AndroidViewModel(app) {
         prefs.edit().putString(KEY, Gateway.json.encodeToString(kept)).apply()
     }
 
+    /** The plan on the page kept now, whole, for the next launch with no
+     *  signal (Ready to fly's Save). */
+    fun save() = keep()
+
+    /** Whether the plan on the page is the one kept, nav log and all, so
+     *  it opens with no signal (ready_to_fly's plan_saved). */
+    fun saved(): Boolean {
+        val s = _state.value
+        val kept = prefs.getString(KEY, null)?.let { runCatching { Gateway.json.decodeFromString<Kept>(it) }.getOrNull() } ?: return false
+        return kept.dep == s.dep && kept.dest == s.dest && kept.stops == s.stops && kept.aircraft == s.aircraft && kept.totals != null
+    }
+
     /** The cycle packs of the regions the route crosses (CyclePacks),
      *  fetched once the route is planned, so the airspace there, what is
      *  ahead in the air and a clearance's places are answered with no
