@@ -274,6 +274,10 @@
 
     <!-- No airplane chosen (decision 0011). -->
     <string name="no_airplane">No Airplane</string>
+    <string name="taxi_not_in_profile">Start and taxi fuel is not in this airplane\'s profile, so it is left out of the fuel required: allow for it from the airplane\'s handbook.</string>
+    <string name="pick_an_airplane">Pick an Airplane</string>
+    <string name="pick_an_airplane_line">For its glide, checklist and figures; until then, general guidance only</string>
+    <string name="emergency_guidance">What to Do</string>
     <string name="no_airplane_line">Distances and courses only: choose an airplane for times, fuel and headings.</string>
 
     <!-- "When should I go?" in the Brief (brief/). -->
