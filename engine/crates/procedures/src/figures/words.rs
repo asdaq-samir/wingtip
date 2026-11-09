@@ -165,7 +165,13 @@ pub fn bearing(deg: f64) -> String {
 /// "0°" (lib/format windCorrection).
 pub fn wind_correction(deg: f64) -> String {
     let shown = js_round(deg.abs());
-    let sign = if shown == 0 { "" } else if deg > 0.0 { "+" } else { "−" };
+    let sign = if shown == 0 {
+        ""
+    } else if deg > 0.0 {
+        "+"
+    } else {
+        "−"
+    };
     format!("{sign}{shown}°")
 }
 

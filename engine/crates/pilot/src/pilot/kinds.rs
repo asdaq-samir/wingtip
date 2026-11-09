@@ -43,7 +43,8 @@ const DATE: Field = Field { key: "date", label: "Date of the flight", example: "
 // "[List any applicable conditions or limitations.]": nothing where there
 // are none, except where the sample's own words lead into them ("subject
 // to the following conditions:"), where they must be given.
-const CONDITIONS: Field = Field { key: "conditions", label: "Conditions or limitations", example: "Winds 10 knots or less", required: false };
+const CONDITIONS: Field =
+    Field { key: "conditions", label: "Conditions or limitations", example: "Winds 10 knots or less", required: false };
 const CONDITIONS_LISTED: Field = Field { key: "conditions", label: "Conditions", example: "Winds 10 knots or less", required: true };
 
 /// One of the endorsements: its code (the gateway's records keep it), AC
@@ -211,7 +212,9 @@ fn tidy(text: &str) -> String {
 /// field the endorsement takes, tidied ("" where not given), in its own
 /// order, any it does not take left out; the labels of the required ones
 /// still empty; and the words with the student and the fields in.
-pub fn fill(kind: &Kind, student: &str, given: &dyn Fn(&str) -> Option<String>) -> (Vec<(&'static str, String)>, Vec<&'static str>, String) {
+pub fn fill(
+    kind: &Kind, student: &str, given: &dyn Fn(&str) -> Option<String>,
+) -> (Vec<(&'static str, String)>, Vec<&'static str>, String) {
     let mut fields: Vec<(&'static str, String)> = Vec::new();
     for f in kind.fields {
         if !fields.iter().any(|(k, _)| *k == f.key) {
@@ -292,7 +295,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
                 Some(_) => return Err(format!("{name}: \"fields\" is not an object of names to words")),
             };
             let Some(k) = kind(code) else { return Ok("null".to_owned()) };
-            let (fields, missing, text) = fill(k, student, &|key| given.and_then(|g| g.get(key)).and_then(Value::as_str).map(str::to_owned));
+            let (fields, missing, text) =
+                fill(k, student, &|key| given.and_then(|g| g.get(key)).and_then(Value::as_str).map(str::to_owned));
             let mut out = String::from("{\"fields\":{");
             for (i, (key, value)) in fields.iter().enumerate() {
                 if i > 0 {
@@ -368,10 +372,18 @@ mod tests {
     #[test]
     fn a_solo_cross_country_reads_as_the_acs_sample() {
         let given = |k: &str| {
-            [("from", "KUGN"), ("to", "KUGN"), ("via", "KRFD,  KJVL"), ("landings", "KRFD, KJVL and KUGN"), ("mm", "Cessna 172"), ("date", "10-14-2026"), ("extra", "x")]
-                .iter()
-                .find(|(n, _)| *n == k)
-                .map(|(_, v)| (*v).to_owned())
+            [
+                ("from", "KUGN"),
+                ("to", "KUGN"),
+                ("via", "KRFD,  KJVL"),
+                ("landings", "KRFD, KJVL and KUGN"),
+                ("mm", "Cessna 172"),
+                ("date", "10-14-2026"),
+                ("extra", "x"),
+            ]
+            .iter()
+            .find(|(n, _)| *n == k)
+            .map(|(_, v)| (*v).to_owned())
         };
         let (fields, missing, text) = fill(kind("solo-xc-flight").unwrap(), "Avery B. Student", &given);
         assert!(!fields.iter().any(|(k, _)| *k == "extra"));
@@ -395,8 +407,8 @@ mod tests {
     #[test]
     fn the_codes_a_students_own_record_kept_since_v13_are_still_here() {
         for code in [
-            "pre-solo-knowledge", "pre-solo-flight", "solo-90", "solo-night", "solo-xc-training", "solo-xc-flight", "solo-xc-50nm", "class-b",
-            "class-b-airport", "knowledge-test", "knowledge-test-review", "practical-test",
+            "pre-solo-knowledge", "pre-solo-flight", "solo-90", "solo-night", "solo-xc-training", "solo-xc-flight", "solo-xc-50nm",
+            "class-b", "class-b-airport", "knowledge-test", "knowledge-test-review", "practical-test",
         ] {
             assert!(kind(code).is_some(), "{code}");
         }

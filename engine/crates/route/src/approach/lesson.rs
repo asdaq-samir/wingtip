@@ -231,9 +231,8 @@ fn spaced(parts: &[Option<String>]) -> String {
 fn leg_words(leg: &MissedLeg) -> Option<String> {
     let turn = turn_word(leg.turn.as_deref());
     let climb = climb_words(leg);
-    let dir = leg
-        .course_deg
-        .map(|c| format!("{} {}", if HEADING_LEGS.contains(&leg.path.as_str()) { "heading" } else { "course" }, bearing(c)));
+    let dir =
+        leg.course_deg.map(|c| format!("{} {}", if HEADING_LEGS.contains(&leg.path.as_str()) { "heading" } else { "course" }, bearing(c)));
     let fix = leg_fix(leg).map(fix_name);
     match leg.path.as_str() {
         "CA" | "VA" | "FA" => {
@@ -685,7 +684,10 @@ pub fn coaching_steps(d: &Drawing, gs_kt: f64) -> Vec<CoachStep> {
             say: missed.clone(),
             // The standard missed approach climb gradient (FAA Order 8260.3),
             // as the dry run climbs it (motion::dry_run MISSED_CLIMB_FT_PER_NM).
-            why: Some("Climb at once: a missed approach is built for a climb of 200 ft a mile unless the plate asks for more (FAA Order 8260.3).".to_owned()),
+            why: Some(
+                "Climb at once: a missed approach is built for a climb of 200 ft a mile unless the plate asks for more (FAA Order 8260.3)."
+                    .to_owned(),
+            ),
             at: Some(end),
             focus: focus(missed_hold_fix(d), Some("missed")),
             altitude_ft: None,
@@ -731,10 +733,7 @@ pub fn lesson_profile(d: &Drawing) -> (Vec<ProfileMark>, Option<ProfilePath>) {
     let path = match (faf, map, d.glidepath_deg) {
         (Some(faf), Some(map), Some(angle)) if faf.ft.is_some() && map.along_nm > faf.along_nm => {
             let from_ft = faf.ft.unwrap_or_default();
-            Some((
-                (faf.along_nm, from_ft),
-                (map.along_nm, from_ft - (map.along_nm - faf.along_nm) * FT_PER_NM * rad(angle).tan()),
-            ))
+            Some(((faf.along_nm, from_ft), (map.along_nm, from_ft - (map.along_nm - faf.along_nm) * FT_PER_NM * rad(angle).tan())))
         }
         _ => None,
     };
@@ -866,7 +865,10 @@ pub fn approach_quiz(d: &Drawing, gs_kt: f64) -> Vec<QuizQuestion> {
             format!("What do you do at {where_} without the runway in sight?"),
             parts.missed.as_ref().map_or_else(|| "Go missed, as the plate shows".to_owned(), |m| format!("Go missed: {}", lower_first(m))),
             // The two a student most often gets wrong (14 CFR 91.175(c), (e)).
-            vec!["Keep descending until the runway is in sight".to_owned(), "Circle over the field until the runway is in sight".to_owned()],
+            vec![
+                "Keep descending until the runway is in sight".to_owned(),
+                "Circle over the field until the runway is in sight".to_owned(),
+            ],
             "The missed approach at once (14 CFR 91.175(e)), as the plate's briefing strip and profile say it; drawn dashed on the map."
                 .to_owned(),
             focus(Some(&map.ident), Some("missed")),

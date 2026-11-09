@@ -242,7 +242,8 @@ fn check_instruction(items: &[Said], cleared: &Clearance, said: &str) -> Vec<Mis
             }
             Said::Approach { name, runway, .. } => {
                 let kind = name.split([' ', '(']).next().unwrap_or("").to_lowercase();
-                let ok = runway.as_deref().is_none_or(|r| runway_back(&back, r)) && (kind.is_empty() || back.word(&kind) || (kind == "loc" && back.word("localizer")));
+                let ok = runway.as_deref().is_none_or(|r| runway_back(&back, r))
+                    && (kind.is_empty() || back.word(&kind) || (kind == "loc" && back.word("localizer")));
                 if !ok {
                     let cleared = match runway {
                         Some(r) => format!("{name} runway {r}"),

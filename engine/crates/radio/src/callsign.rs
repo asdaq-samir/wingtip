@@ -22,9 +22,9 @@ use crate::clearance::{digit, is_ascii_digits, letter, phrases};
 /// for an air taxi.
 pub(crate) const TYPE_WORDS: &[&str] = &[
     "cessna", "skyhawk", "skylane", "skylark", "centurion", "cardinal", "caravan", "citation", "piper", "cherokee", "warrior", "archer",
-    "arrow", "dakota", "lance", "saratoga", "seneca", "seminole", "aztec", "navajo", "malibu", "cub", "cirrus", "mooney", "bonanza", "baron",
-    "beech", "beechcraft", "king", "diamond", "katana", "grumman", "tiger", "cheetah", "yankee", "experimental", "lancair", "glasair", "vans",
-    "rv", "sport", "helicopter", "robinson", "tango", "november",
+    "arrow", "dakota", "lance", "saratoga", "seneca", "seminole", "aztec", "navajo", "malibu", "cub", "cirrus", "mooney", "bonanza",
+    "baron", "beech", "beechcraft", "king", "diamond", "katana", "grumman", "tiger", "cheetah", "yankee", "experimental", "lancair",
+    "glasair", "vans", "rv", "sport", "helicopter", "robinson", "tango", "november",
 ];
 
 /// How far into a transmission our call sign may begin: a controller says
@@ -171,8 +171,8 @@ pub fn who(text: &str, tail: &str) -> Who {
         return Who::Other;
     }
     let words = words_of(text);
-    let acknowledging = words.iter().any(|w| ACKNOWLEDGING.contains(&w.as_str()))
-        || words.windows(2).any(|p| p[0] == "with" && p[1] == "you");
+    let acknowledging =
+        words.iter().any(|w| ACKNOWLEDGING.contains(&w.as_str())) || words.windows(2).any(|p| p[0] == "with" && p[1] == "you");
     let first = our_call(text, tail);
     let last = said.iter().any(|s| s.last() && !s.first());
     if last || (first && acknowledging) {

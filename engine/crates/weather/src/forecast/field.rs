@@ -62,10 +62,7 @@ mod tests {
 
     #[test]
     fn its_own_else_the_nearest_within_reach() {
-        let s = [
-            Station { icao_id: "KRFD", at: Some((42.195, -89.097)) },
-            Station { icao_id: "KUGN", at: Some((42.422, -87.868)) },
-        ];
+        let s = [Station { icao_id: "KRFD", at: Some((42.195, -89.097)) }, Station { icao_id: "KUGN", at: Some((42.422, -87.868)) }];
         assert_eq!(field_taf("UGN", None, &s), Some((1, None)));
         assert_eq!(field_taf("KRFD", None, &s), Some((0, None)));
         // C81, Campbell, about 11 nm from Waukegan and 45 from Rockford.

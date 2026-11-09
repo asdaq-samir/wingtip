@@ -116,7 +116,12 @@ pub fn flight(name: &str, v: &Value) -> R<Flight> {
     let ahead = input::list(name, v, "ahead")?
         .iter()
         .map(|a| {
-            Ok(Ahead { id: str_of(name, a, "id")?, kind: str_of(name, a, "kind")?, level: str_of(name, a, "level")?, name: str_of(name, a, "name")? })
+            Ok(Ahead {
+                id: str_of(name, a, "id")?,
+                kind: str_of(name, a, "kind")?,
+                level: str_of(name, a, "level")?,
+                name: str_of(name, a, "name")?,
+            })
         })
         .collect::<R<_>>()?;
     Ok(Flight {

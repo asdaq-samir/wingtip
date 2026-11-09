@@ -110,7 +110,10 @@ pub fn read(text: &str) -> Option<Hold> {
     let s = normal(text);
     let mut parts = s.split(':');
     let (fix, inbound, turns, leg, length) = (parts.next()?, parts.next()?, parts.next()?, parts.next()?, parts.next()?);
-    if parts.next().is_some() || fix.is_empty() || !fix.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == b'/' || c == b'.') {
+    if parts.next().is_some()
+        || fix.is_empty()
+        || !fix.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == b'/' || c == b'.')
+    {
         return None;
     }
     if !digits(inbound, 1, 3) {

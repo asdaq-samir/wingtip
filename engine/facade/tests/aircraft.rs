@@ -39,9 +39,7 @@ fn an_emergency_squawked_or_sent() {
 #[test]
 fn a_filter_keeps_by_kind_band_operator_and_emergency_together() {
     let united = json!({"callsign": "UAL2088", "category": "A3", "altitude_ft": 7000});
-    let filter = |kind: &str, band: &str, operator: &str, emergency: bool| {
-        json!({"kind": kind, "band": band, "operator": operator, "emergency": emergency})
-    };
+    let filter = |kind: &str, band: &str, operator: &str, emergency: bool| json!({"kind": kind, "band": band, "operator": operator, "emergency": emergency});
     assert_eq!(ask("traffic_matches", json!({"plane": united, "filter": filter("large", "mid", "UAL", false)})), true);
     assert_eq!(ask("traffic_matches", json!({"plane": united, "filter": filter("light", "any", "", false)})), false);
     assert_eq!(ask("traffic_matches", json!({"plane": united, "filter": filter("any", "any", "", true)})), false);
@@ -143,7 +141,16 @@ fn an_emitter_category_by_its_do_260b_name() {
         ["A1", "A3", "A6", "A7", "B1", "B2", "B5", ""].iter().map(|c| ask("emitter_category", json!({"category": c}))).collect();
     assert_eq!(
         named,
-        [json!("light"), json!("large"), json!("high_performance"), json!("rotorcraft"), json!("glider"), json!("lighter_than_air"), Value::Null, Value::Null]
+        [
+            json!("light"),
+            json!("large"),
+            json!("high_performance"),
+            json!("rotorcraft"),
+            json!("glider"),
+            json!("lighter_than_air"),
+            Value::Null,
+            Value::Null
+        ]
     );
     assert_eq!(ask("emitter_category", json!({})), Value::Null);
 }

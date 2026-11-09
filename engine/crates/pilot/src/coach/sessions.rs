@@ -137,7 +137,14 @@ fn session(t: Template, why: Vec<String>, places: &[Place]) -> Session {
 /// The session that restores or renews a currency due, None for those
 /// a session does not answer (the medical).
 fn for_due(d: &Due, missing: &str) -> Option<Template> {
-    let t = |key, practise: &str, needs, minutes, instructor, wings| Template { key, practise: practise.to_owned(), needs, minutes, instructor, wings };
+    let t = |key, practise: &str, needs, minutes, instructor, wings| Template {
+        key,
+        practise: practise.to_owned(),
+        needs,
+        minutes,
+        instructor,
+        wings,
+    };
     Some(match d.key {
         "flight_review" => t("flight_review", "Flight review with an instructor: at least an hour of ground and an hour of flight training (61.56(a)); a WINGS phase completed instead meets it (61.56(e))", None, 120, true, None),
         "solo" => t("solo", "Fly with your instructor for a new 90-day solo endorsement (61.87(p))", None, 60, true, None),
@@ -165,7 +172,14 @@ fn for_due(d: &Due, missing: &str) -> Option<Template> {
 
 /// The session that practises a weak area.
 fn for_weak(w: Weak) -> Template {
-    let t = |practise: &str, needs, minutes, area, acs| Template { key: w.key(), practise: practise.to_owned(), needs: Some(needs), minutes, instructor: true, wings: Some(Wings { area, acs }) };
+    let t = |practise: &str, needs, minutes, area, acs| Template {
+        key: w.key(),
+        practise: practise.to_owned(),
+        needs: Some(needs),
+        minutes,
+        instructor: true,
+        wings: Some(Wings { area, acs }),
+    };
     match w {
         Weak::Unstable => t("Stabilized approaches: on speed, on the glidepath and on the centreline by 500 ft above the field, and a go-around where not (AC 61-98D 2.1.4)", Needs::Glidepath, 60, "Takeoffs and landings", "PA.IV.B"),
         Weak::ApproachDeviation => t("Approaches flown within full scale and at each step-down's altitude", Needs::Approach, 90, "Basic flying skills", "IR.VI.A"),

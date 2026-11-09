@@ -58,7 +58,9 @@ fn pictures(f: &Value) -> Vec<Value> {
 fn holds(have: &Value, want: &Value) {
     for (k, v) in want.as_object().unwrap() {
         match (&have[k], v) {
-            (Value::Number(a), Value::Number(b)) => assert!((a.as_f64().unwrap() - b.as_f64().unwrap()).abs() < 1e-6, "{k}: {a} against {b}"),
+            (Value::Number(a), Value::Number(b)) => {
+                assert!((a.as_f64().unwrap() - b.as_f64().unwrap()).abs() < 1e-6, "{k}: {a} against {b}")
+            }
             (a, b) => assert_eq!(a, b, "{k}"),
         }
     }

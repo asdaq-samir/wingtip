@@ -31,15 +31,23 @@ fn leg_with_wind(wind_dir: f64, wind_kt: f64, oat_c: Option<f64>) -> Value {
     let b = json!({"name": "B", "category": "destination", "lat": 45.0, "lon": -89.0});
     let air = json!([{"variation_deg": 0.0, "at": [{"altitude_ft": 6000.0,
         "wind": {"wind_dir_true_deg": wind_dir, "wind_speed_kt": wind_kt}, "oat_c": oat_c}]}]);
-    ask("navlog_legs", json!({"fixes": [a, b], "altitude_ft": 6000.0, "profile": {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.5}, "air": air}))[0].clone()
+    ask(
+        "navlog_legs",
+        json!({"fixes": [a, b], "altitude_ft": 6000.0, "profile": {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.5}, "air": air}),
+    )[0]
+    .clone()
 }
 
 /// One leg between two points with the variation given, still air.
 fn leg_with_variation(a: (f64, f64), b: (f64, f64), variation_deg: f64) -> Value {
     let fix = |name: &str, (lat, lon): (f64, f64)| json!({"name": name, "category": "waypoint", "lat": lat, "lon": lon});
     let air = json!([{"variation_deg": variation_deg, "at": [{"altitude_ft": 6000.0, "wind": null, "oat_c": null}]}]);
-    ask("navlog_legs", json!({"fixes": [fix("A", a), fix("B", b)], "altitude_ft": 6000.0,
-        "profile": {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.5}, "air": air}))[0].clone()
+    ask(
+        "navlog_legs",
+        json!({"fixes": [fix("A", a), fix("B", b)], "altitude_ft": 6000.0,
+        "profile": {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.5}, "air": air}),
+    )[0]
+    .clone()
 }
 
 #[test]
@@ -96,12 +104,14 @@ fn a_leg_flies_the_airplanes_figures_in_its_own_air() {
 
 #[test]
 fn the_fuel_required_includes_start_taxi_and_takeoff() {
-    let plan = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": {"fuel_burn_gph": 8.0, "usable_fuel_gal": 40}, "night": false}));
+    let plan =
+        ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": {"fuel_burn_gph": 8.0, "usable_fuel_gal": 40}, "night": false}));
     // The C172S POH's 1.4 gal, and 30 minutes at 8 gph by day (91.151(a)(1)).
     assert_eq!(f(&plan["taxi_gal"]), 1.4);
     assert_eq!(f(&plan["fuel_required_gal"]), 25.4);
     assert_eq!(f(&plan["fuel_margin_gal"]), 14.6);
-    let own = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": {"fuel_burn_gph": 8.0, "taxi_fuel_gal": 2.0}, "night": false}));
+    let own =
+        ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": {"fuel_burn_gph": 8.0, "taxi_fuel_gal": 2.0}, "night": false}));
     assert_eq!(f(&own["fuel_required_gal"]), 26.0);
     assert!(own["fuel_margin_gal"].is_null());
 }
@@ -115,7 +125,10 @@ fn under_ifr_the_reserve_is_45_minutes_by_day_and_by_night() {
     assert_eq!(f(&ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": true}))["reserve_min"]), 45.0);
     let day = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": false, "rules": "ifr"}));
     assert_eq!((f(&day["reserve_min"]), f(&day["reserve_gal"]), day["rules"].as_str()), (45.0, 6.0, Some("ifr")));
-    assert_eq!(f(&ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": null, "rules": "ifr"}))["reserve_min"]), 45.0);
+    assert_eq!(
+        f(&ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": null, "rules": "ifr"}))["reserve_min"]),
+        45.0
+    );
     // The alternate's fuel is flown before the reserve (91.167(a)(2)).
     let alt = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "rules": "ifr", "alternate_gal": 3.0}));
     assert_eq!(f(&alt["fuel_required_gal"]), 30.4);
@@ -139,13 +152,17 @@ fn the_alternate_leg_falls_back_to_still_air() {
     let dest = json!({"ident": "KDLH", "lat": 46.8421, "lon": -92.1936});
     let alternate = json!({"ident": "KHIB", "lat": 47.3866, "lon": -92.8390});
     let p = json!({"cruise_tas_kt": 110.0, "fuel_burn_gph": 8.5});
-    let still = ask("navlog_alternate_leg", json!({"dest": dest, "alternate": alternate, "altitude_ft": 6500.0, "profile": p, "air": null}));
+    let still =
+        ask("navlog_alternate_leg", json!({"dest": dest, "alternate": alternate, "altitude_ft": 6500.0, "profile": p, "air": null}));
     assert_eq!(still["still_air"], json!(true));
     assert_eq!(still["ident"], "KHIB");
     let minutes = f(&still["distance_nm"]) / 110.0 * 60.0;
     assert!(close(f(&still["ete_min"]), minutes, 0.1));
-    let flown = ask("navlog_alternate_leg", json!({"dest": dest, "alternate": alternate, "altitude_ft": 6500.0, "profile": p,
-        "air": {"variation_deg": -1.0, "wind": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 20.0}, "oat_c": null}}));
+    let flown = ask(
+        "navlog_alternate_leg",
+        json!({"dest": dest, "alternate": alternate, "altitude_ft": 6500.0, "profile": p,
+        "air": {"variation_deg": -1.0, "wind": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 20.0}, "oat_c": null}}),
+    );
     assert_eq!(flown["still_air"], json!(false));
     assert!(f(&flown["ete_min"]) != f(&still["ete_min"]));
 }
@@ -187,7 +204,8 @@ fn air(fixes: &[Value], per_leg: &[&[f64]], winds: &[(f64, f64)], warm_c: Option
                 let at: Vec<Value> = c
                     .iter()
                     .map(|a| {
-                        let wind = winds.iter().find(|(ft, _)| ft == a).map(|(_, kt)| json!({"wind_dir_true_deg": 225.0, "wind_speed_kt": kt}));
+                        let wind =
+                            winds.iter().find(|(ft, _)| ft == a).map(|(_, kt)| json!({"wind_dir_true_deg": 225.0, "wind_speed_kt": kt}));
                         json!({"altitude_ft": a, "wind": wind, "oat_c": warm_c.map(|d| isa_temp_c(*a) + d)})
                     })
                     .collect();
@@ -199,7 +217,10 @@ fn air(fixes: &[Value], per_leg: &[&[f64]], winds: &[(f64, f64)], warm_c: Option
 
 fn plans(per_leg: &[&[f64]], winds: &[(f64, f64)], p: Value, elevation: Option<f64>) -> Value {
     let fx = fixes();
-    ask("navlog_plans", json!({"fixes": fx, "segments": segments(per_leg), "profile": p, "departure_elevation_ft": elevation, "air": air(&fx, per_leg, winds, None)}))
+    ask(
+        "navlog_plans",
+        json!({"fixes": fx, "segments": segments(per_leg), "profile": p, "departure_elevation_ft": elevation, "air": air(&fx, per_leg, winds, None)}),
+    )
 }
 
 fn steps(plans: &Value, kind: &str) -> Vec<f64> {
@@ -309,7 +330,11 @@ fn a_climb_into_warm_air_costs_more() {
     let fx = fixes();
     let one: &[f64] = &[7500.0];
     let leg = |warm: Option<f64>| {
-        ask("navlog_legs", json!({"fixes": [fx[0], fx[1]], "altitude_ft": 7500.0, "profile": profile(), "air": air(&fx[..2], &[one], &[], warm)}))[0].clone()
+        ask(
+            "navlog_legs",
+            json!({"fixes": [fx[0], fx[1]], "altitude_ft": 7500.0, "profile": profile(), "air": air(&fx[..2], &[one], &[], warm)}),
+        )[0]
+        .clone()
     };
     let (cool, warm) = (leg(None), leg(Some(15.0)));
     assert!(f(&warm["density_altitude_ft"]) > f(&cool["density_altitude_ft"]) + 1500.0);
@@ -322,8 +347,14 @@ fn a_shelf_over_the_first_leg_makes_the_plans_step() {
     let p = plans(&[&[3500.0], &[3500.0, 5500.0]], &[(3500.0, 0.0), (5500.0, 25.0)], profile(), None);
     assert_eq!(steps(&p, "lowest"), [3500.0]);
     let highest = &p["plans"]["highest"]["steps"];
-    assert_eq!((highest[0]["from"].as_str(), highest[0]["to"].as_str(), f(&highest[0]["altitude_ft"])), (Some("AAA"), Some("Lake"), 3500.0));
-    assert_eq!((highest[1]["from"].as_str(), highest[1]["to"].as_str(), f(&highest[1]["altitude_ft"])), (Some("Lake"), Some("BBB"), 5500.0));
+    assert_eq!(
+        (highest[0]["from"].as_str(), highest[0]["to"].as_str(), f(&highest[0]["altitude_ft"])),
+        (Some("AAA"), Some("Lake"), 3500.0)
+    );
+    assert_eq!(
+        (highest[1]["from"].as_str(), highest[1]["to"].as_str(), f(&highest[1]["altitude_ft"])),
+        (Some("Lake"), Some("BBB"), 5500.0)
+    );
     assert_eq!(steps(&p, "fastest"), [3500.0, 5500.0]);
     assert_eq!(f(&p["plans"]["fastest"]["legs"][1]["altitude_ft"]), 5500.0);
     assert!(f(&p["plans"]["fastest"]["climb_penalty_min"]) > f(&p["plans"]["lowest"]["climb_penalty_min"]));
@@ -339,7 +370,10 @@ fn a_plan_says_whether_it_needs_oxygen() {
     let p = plans(&[low, low], &[], profile(), None);
     assert!(["lowest", "highest", "fastest", "economical"].iter().all(|k| p["plans"][k]["needs_oxygen"] == json!(false)));
     // The candidates the planner looks the air up at are those.
-    let c = ask("navlog_candidates", json!({"segments": segments(&[&[3500.0, 13500.0], &[13500.0, 15500.0]]), "legs": 2, "profile": profile()}));
+    let c = ask(
+        "navlog_candidates",
+        json!({"segments": segments(&[&[3500.0, 13500.0], &[13500.0, 15500.0]]), "legs": 2, "profile": profile()}),
+    );
     assert_eq!(c, json!([[3500.0], [13500.0, 15500.0]]));
 }
 
@@ -356,7 +390,10 @@ fn a_plan_whose_legs_with_a_wind_have_no_length_has_no_tailwind() {
     let fx = fixes();
     let same = vec![fx[0].clone(), fx[0].clone()];
     let one: &[f64] = &[3500.0];
-    let p = ask("navlog_plans", json!({"fixes": same, "segments": segments(&[one]), "profile": profile(), "air": air(&same, &[one], &[(3500.0, 10.0)], None)}));
+    let p = ask(
+        "navlog_plans",
+        json!({"fixes": same, "segments": segments(&[one]), "profile": profile(), "air": air(&same, &[one], &[(3500.0, 10.0)], None)}),
+    );
     assert!(p["plans"]["lowest"]["tailwind_kt"].is_null());
 }
 
@@ -372,14 +409,20 @@ fn the_route_flown_at_each_altitude_any_leg_may_fly_is_given_for_the_wheel() {
     // And the legs of an altitude picked on the wheel, every leg legal.
     let fx = fixes();
     let per_leg: &[&[f64]] = &[&[3500.0, 5500.0], &[3500.0]];
-    let legs = ask("navlog_legs_at", json!({"fixes": fx, "segments": segments(per_leg), "profile": profile(), "air": air(&fx, per_leg, &[(3500.0, 0.0), (5500.0, 30.0)], None), "target_ft": 5500.0}));
+    let legs = ask(
+        "navlog_legs_at",
+        json!({"fixes": fx, "segments": segments(per_leg), "profile": profile(), "air": air(&fx, per_leg, &[(3500.0, 0.0), (5500.0, 30.0)], None), "target_ft": 5500.0}),
+    );
     assert_eq!((f(&legs[0]["altitude_ft"]), f(&legs[1]["altitude_ft"])), (5500.0, 3500.0));
 }
 
 // --- Descents (test_altitude_plans.py) ----------------------------------
 
 fn descents(legs: Value, fixes: &[Value], end_ft: Option<f64>, before_nm: f64, fix: Option<&str>) -> Value {
-    ask("navlog_with_descents", json!({"legs": legs, "fixes": fixes, "end_altitude_ft": end_ft, "end_before_nm": before_nm, "end_fix": fix}))
+    ask(
+        "navlog_with_descents",
+        json!({"legs": legs, "fixes": fixes, "end_altitude_ft": end_ft, "end_before_nm": before_nm, "end_fix": fix}),
+    )
 }
 
 #[test]
@@ -465,7 +508,10 @@ fn a_hold_adds_its_minutes_and_fuel_to_the_leg() {
     let mut leg = course_leg(60.0, 5500.0);
     leg["magnetic_variation_deg"] = json!(0.0);
     let hold = json!({"fix": "KMSN", "inbound": 270, "right": true, "leg_min": 1, "leg_nm": null, "turns": 2, "minutes": null});
-    let held = ask("navlog_hold", json!({"leg": leg, "before": leg, "hold": hold, "fix": {"lat": 43.0, "lon": -89.0}, "variation_deg": 0.0, "at_end": false}));
+    let held = ask(
+        "navlog_hold",
+        json!({"leg": leg, "before": leg, "hold": hold, "fix": {"lat": 43.0, "lon": -89.0}, "variation_deg": 0.0, "at_end": false}),
+    );
     // Two laps of a timed hold: 2 x (two 1-minute legs and two minutes
     // of standard-rate turns), FAA-H-8083-15B ch. 7.
     assert_eq!(f(&held["hold"]["minutes"]), 8.0);
@@ -508,7 +554,8 @@ fn a_recorded_route_plans_as_it_did() {
         let given = &recorded["given"];
         let lookups = &recorded["lookups"];
         let fx = given["fixes"].as_array().unwrap();
-        let candidates = ask("navlog_candidates", json!({"segments": given["segments"], "legs": fx.len() - 1, "profile": given["profile"]}));
+        let candidates =
+            ask("navlog_candidates", json!({"segments": given["segments"], "legs": fx.len() - 1, "profile": given["profile"]}));
         // The air the planner looked up for it, at each leg's midpoint.
         let air: Vec<Value> = fx
             .windows(2)
@@ -527,8 +574,11 @@ fn a_recorded_route_plans_as_it_did() {
                 json!({"variation_deg": lookups["variations"][key(&[lat, lon])], "at": at})
             })
             .collect();
-        let made = ask("navlog_plans", json!({"fixes": fx, "segments": given["segments"], "profile": given["profile"],
-            "departure_elevation_ft": given["departure_elevation_ft"], "air": air}));
+        let made = ask(
+            "navlog_plans",
+            json!({"fixes": fx, "segments": given["segments"], "profile": given["profile"],
+            "departure_elevation_ft": given["departure_elevation_ft"], "air": air}),
+        );
         let expected = &recorded["expected"];
         let name = path.file_stem().unwrap().to_string_lossy().to_string();
         for (kind, want) in expected["plans"].as_object().unwrap() {
@@ -561,24 +611,31 @@ fn a_recorded_route_plans_as_it_did() {
     assert!(seen >= 2, "the recorded routes were not found");
 }
 
-
 // --- No airplane (the owner, 2026-11-09: "don't assume") ----------------
 
 #[test]
 fn with_no_airplane_a_leg_is_its_course_miles_and_air_and_nothing_an_airplane_makes() {
     let fx = fixes();
     let one: &[f64] = &[5500.0];
-    let legs = ask("navlog_legs", json!({"fixes": [fx[0], fx[1]], "altitude_ft": 5500.0, "profile": null,
-        "air": air(&fx[..2], &[one], &[(5500.0, 20.0)], None)}));
+    let legs = ask(
+        "navlog_legs",
+        json!({"fixes": [fx[0], fx[1]], "altitude_ft": 5500.0, "profile": null,
+        "air": air(&fx[..2], &[one], &[(5500.0, 20.0)], None)}),
+    );
     let leg = &legs[0];
     // The same course and miles an airplane's leg has.
-    let flown = &ask("navlog_legs", json!({"fixes": [fx[0], fx[1]], "altitude_ft": 5500.0, "profile": profile(),
-        "air": air(&fx[..2], &[one], &[(5500.0, 20.0)], None)}))[0];
+    let flown = &ask(
+        "navlog_legs",
+        json!({"fixes": [fx[0], fx[1]], "altitude_ft": 5500.0, "profile": profile(),
+        "air": air(&fx[..2], &[one], &[(5500.0, 20.0)], None)}),
+    )[0];
     for kept in ["true_course_deg", "distance_nm", "altitude_ft", "magnetic_course_deg", "magnetic_variation_deg", "wind", "oat_c"] {
         assert_eq!(leg[kept], flown[kept], "{kept}");
     }
-    for none in ["wca_deg", "true_heading_deg", "magnetic_heading_deg", "groundspeed_kt", "ete_min", "fuel_gal", "tas_kt",
-                 "fuel_burn_gph", "power_pct", "density_altitude_ft"] {
+    for none in [
+        "wca_deg", "true_heading_deg", "magnetic_heading_deg", "groundspeed_kt", "ete_min", "fuel_gal", "tas_kt", "fuel_burn_gph",
+        "power_pct", "density_altitude_ft",
+    ] {
         assert!(leg[none].is_null(), "{none}: {leg}");
     }
     // Not unflyable: its time is not known, as the totals' are not.
@@ -608,11 +665,14 @@ fn with_no_airplane_the_plans_are_the_lowest_and_highest_alone() {
     assert_eq!(wheel.len(), 3);
     assert!(wheel.iter().all(|w| w["ete_min"].is_null() && w["fuel_gal"].is_null() && w["everywhere"] == json!(true)));
     // Two hops' plans joined as the two kinds there are.
-    let options: Vec<Value> = ["lowest", "highest"].iter().map(|k| {
-        let mut o = made["plans"][*k].clone();
-        o["kind"] = json!(k);
-        o
-    }).collect();
+    let options: Vec<Value> = ["lowest", "highest"]
+        .iter()
+        .map(|k| {
+            let mut o = made["plans"][*k].clone();
+            o["kind"] = json!(k);
+            o
+        })
+        .collect();
     let joined = ask("navlog_join_plans", json!({"by_hop": [options, options], "lengths": [60.0, 60.0]}));
     assert_eq!(joined.as_array().unwrap().len(), 2);
     assert!(joined[0]["climb_penalty_min"].is_null() && joined[0]["ete_min"].is_null());
@@ -629,7 +689,10 @@ fn with_no_airplane_the_fuel_plan_is_the_reserves_minutes_alone() {
             assert!(plan[none].is_null(), "{none}: {plan}");
         }
     }
-    let leg = ask("navlog_alternate_leg", json!({"dest": {"ident": "KDLH", "lat": 46.84, "lon": -92.19},
-        "alternate": {"ident": "KHIB", "lat": 47.39, "lon": -92.84}, "altitude_ft": 6000.0, "profile": null}));
+    let leg = ask(
+        "navlog_alternate_leg",
+        json!({"dest": {"ident": "KDLH", "lat": 46.84, "lon": -92.19},
+        "alternate": {"ident": "KHIB", "lat": 47.39, "lon": -92.84}, "altitude_ft": 6000.0, "profile": null}),
+    );
     assert!(f(&leg["distance_nm"]) > 40.0 && leg["ete_min"].is_null() && leg["fuel_gal"].is_null(), "{leg}");
 }

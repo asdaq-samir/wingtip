@@ -22,7 +22,8 @@ pub(crate) fn js_word(c: char) -> bool {
 pub(crate) fn js_space(c: char) -> bool {
     matches!(
         c,
-        '\t' | '\n' | '\u{b}' | '\u{c}' | '\r' | ' ' | '\u{a0}' | '\u{1680}' | '\u{2000}'..='\u{200a}' | '\u{2028}' | '\u{2029}' | '\u{202f}' | '\u{205f}' | '\u{3000}' | '\u{feff}'
+        '\t' | '\n' | '\u{b}' | '\u{c}' | '\r' | ' ' | '\u{a0}' | '\u{1680}' | '\u{2000}'
+            ..='\u{200a}' | '\u{2028}' | '\u{2029}' | '\u{202f}' | '\u{205f}' | '\u{3000}' | '\u{feff}'
     )
 }
 
@@ -37,10 +38,10 @@ pub(crate) fn js_trim(s: &str) -> &str {
 /// G-AIRMET's or SIGMET's "due to" (CIG BLW 010 VIS BLW 3SM BR FG) -- and
 /// a field's radio as its frequencies are listed.
 const CODES: [&str; 72] = [
-    "NOTAM", "TFR", "MOA", "ATC", "ATCAA", "ARTCC", "FAA", "FSS", "DOD", "US", "USA", "VFR", "IFR", "MVFR", "LIFR", "AGL", "MSL", "SFC", "UTC", "FL", "NM",
-    "SM", "AIRMET", "SIGMET", "PIREP", "METAR", "TAF", "LLWS", "ICG", "TURB", "CIG", "BLW", "VIS", "BR", "FG", "HZ", "FU", "DU", "SA", "RA", "SN", "DZ",
-    "TS", "PCPN", "MTN", "MTNS", "OBSC", "OBSCN", "CLDS", "BKN", "OVC", "SCT", "FEW", "N", "S", "E", "W", "NE", "NW", "SE", "SW", "APP", "DEP", "TWR",
-    "GND", "CTAF", "UNICOM", "ATIS", "AWOS", "ASOS", "CLNC", "DEL",
+    "NOTAM", "TFR", "MOA", "ATC", "ATCAA", "ARTCC", "FAA", "FSS", "DOD", "US", "USA", "VFR", "IFR", "MVFR", "LIFR", "AGL", "MSL", "SFC",
+    "UTC", "FL", "NM", "SM", "AIRMET", "SIGMET", "PIREP", "METAR", "TAF", "LLWS", "ICG", "TURB", "CIG", "BLW", "VIS", "BR", "FG", "HZ",
+    "FU", "DU", "SA", "RA", "SN", "DZ", "TS", "PCPN", "MTN", "MTNS", "OBSC", "OBSCN", "CLDS", "BKN", "OVC", "SCT", "FEW", "N", "S", "E",
+    "W", "NE", "NW", "SE", "SW", "APP", "DEP", "TWR", "GND", "CTAF", "UNICOM", "ATIS", "AWOS", "ASOS", "CLNC", "DEL",
 ];
 /// The rest of the radio's codes (the list ran past one array's line).
 const MORE_CODES: [&str; 2] = ["RDO", "ANG"];

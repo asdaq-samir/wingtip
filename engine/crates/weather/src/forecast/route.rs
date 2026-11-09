@@ -45,9 +45,9 @@ pub fn periods_in_window(fcsts: &[Value], start: f64, end: f64) -> Vec<&Value> {
         .filter_map(|p| num(p, "timeFrom"))
         .fold(None, |m: Option<f64>, f| Some(m.map_or(f, |m| m.min(f))))
         .unwrap_or(start);
-    let becoming = fcsts.iter().filter(|p| {
-        change(p).starts_with("BECMG") && num(p, "timeFrom").is_some_and(|f| since <= f && f <= end) && !overlaps(p)
-    });
+    let becoming = fcsts
+        .iter()
+        .filter(|p| change(p).starts_with("BECMG") && num(p, "timeFrom").is_some_and(|f| since <= f && f <= end) && !overlaps(p));
     overlapping.iter().copied().chain(becoming).collect()
 }
 
@@ -211,7 +211,9 @@ fn miles(v: f64) -> String {
 /// is said too: it could be at any height, the ground included, a
 /// condition that makes VFR flight doubtful (AIM 7-1-5), and saying
 /// nothing would pass it as no ceiling. Empty where nothing warrants it.
-pub fn vfr_not_recommended_reasons(idents: &[&str], metars: &Value, forecast: &Value, min_ceiling_ft: f64, min_visibility_sm: f64) -> Vec<String> {
+pub fn vfr_not_recommended_reasons(
+    idents: &[&str], metars: &Value, forecast: &Value, min_ceiling_ft: f64, min_visibility_sm: f64,
+) -> Vec<String> {
     let mut reasons = Vec::new();
     for ident in idents {
         let report = metars.get(ident).unwrap_or(&Value::Null);
@@ -226,7 +228,8 @@ pub fn vfr_not_recommended_reasons(idents: &[&str], metars: &Value, forecast: &V
     if let Some(c) = num(forecast, "min_ceiling_ft").filter(|c| *c < min_ceiling_ft) {
         reasons.push(format!("forecast ceiling as low as {} ft along the route", feet(c)));
     }
-    let unknown: Vec<&str> = forecast.get("ceiling_unknown_at").and_then(Value::as_array).unwrap_or(&[]).iter().filter_map(Value::as_str).collect();
+    let unknown: Vec<&str> =
+        forecast.get("ceiling_unknown_at").and_then(Value::as_array).unwrap_or(&[]).iter().filter_map(Value::as_str).collect();
     if !unknown.is_empty() {
         reasons.push(format!("forecast ceiling of unknown height at {}", unknown.join(", ")));
     }
@@ -390,8 +393,10 @@ mod tests {
 
     #[test]
     fn a_tempo_counts_in_the_worst() {
-        let f = fcsts(r#"[{"timeFrom":0,"timeTo":100,"change":"","ceiling_ft":4000,"ceiling_unknown":false,"visibility_sm":6},
-                         {"timeFrom":20,"timeTo":40,"change":"TEMPO","ceiling_ft":null,"ceiling_unknown":false,"visibility_sm":0.5}]"#);
+        let f = fcsts(
+            r#"[{"timeFrom":0,"timeTo":100,"change":"","ceiling_ft":4000,"ceiling_unknown":false,"visibility_sm":6},
+                         {"timeFrom":20,"timeTo":40,"change":"TEMPO","ceiling_ft":null,"ceiling_unknown":false,"visibility_sm":0.5}]"#,
+        );
         let w = worst_in_window(&f, 25.0, 30.0).unwrap();
         assert_eq!((w.ceiling_ft, w.visibility_sm), (Some(4000.0), Some(0.5)));
         assert_eq!(worst_in_window(&f, 200.0, 300.0), None);
@@ -399,8 +404,10 @@ mod tests {
 
     #[test]
     fn a_becmg_lasts_past_its_window() {
-        let f = fcsts(r#"[{"timeFrom":0,"timeTo":100,"change":"","ceiling_ft":4000,"visibility_sm":6},
-                         {"timeFrom":10,"timeTo":20,"change":"BECMG","ceiling_ft":800,"visibility_sm":6}]"#);
+        let f = fcsts(
+            r#"[{"timeFrom":0,"timeTo":100,"change":"","ceiling_ft":4000,"visibility_sm":6},
+                         {"timeFrom":10,"timeTo":20,"change":"BECMG","ceiling_ft":800,"visibility_sm":6}]"#,
+        );
         assert_eq!(worst_in_window(&f, 50.0, 60.0).unwrap().ceiling_ft, Some(800.0));
     }
 
@@ -411,10 +418,8 @@ mod tests {
         assert_eq!(
             vfr_not_recommended_reasons(&["KAAA", "KBBB"], &metars, &forecast, 1000.0, 3.0),
             vec![
-                "KAAA currently reporting IFR",
-                "KBBB currently reporting a ceiling of unknown height",
-                "forecast ceiling as low as 800 ft along the route",
-                "forecast ceiling of unknown height at KCCC",
+                "KAAA currently reporting IFR", "KBBB currently reporting a ceiling of unknown height",
+                "forecast ceiling as low as 800 ft along the route", "forecast ceiling of unknown height at KCCC",
                 "forecast visibility as low as 2.5 sm along the route",
             ]
         );
@@ -423,10 +428,12 @@ mod tests {
 
     #[test]
     fn pireps_are_told_in_route_order_urgent_first() {
-        let r = fcsts(r#"[{"observed":1000,"lat":0.0,"lon":0.5,"altitude_ft":5000,"urgent":false},
+        let r = fcsts(
+            r#"[{"observed":1000,"lat":0.0,"lon":0.5,"altitude_ft":5000,"urgent":false},
                          {"observed":1000,"lat":0.0,"lon":0.2,"altitude_ft":5000,"urgent":true},
                          {"observed":1000,"lat":0.0,"lon":0.3,"altitude_ft":25000,"urgent":false},
-                         {"observed":-9000,"lat":0.0,"lon":0.3,"altitude_ft":5000,"urgent":false}]"#);
+                         {"observed":-9000,"lat":0.0,"lon":0.3,"altitude_ft":5000,"urgent":false}]"#,
+        );
         let got = json::parse(&pireps_along_route(&r, &[(0.0, 0.0), (0.0, 1.0)], 30.0, 1000.0)).unwrap();
         let along: Vec<f64> = got.as_array().unwrap().iter().map(|p| num(p, "along_track_nm").unwrap()).collect();
         assert_eq!(along.len(), 2);

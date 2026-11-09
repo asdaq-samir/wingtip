@@ -46,10 +46,8 @@ pub fn icing_at_altitude(selection: &Selection, flown_ft: &[f64], pirep_icing: &
         return None;
     }
     // A report's intensity as sent: NEG (and NEGclr) is none.
-    let reports = pirep_icing
-        .iter()
-        .filter(|i| i.as_deref().is_some_and(|i| !i.is_empty() && !i.to_uppercase().starts_with("NEG")))
-        .count();
+    let reports =
+        pirep_icing.iter().filter(|i| i.as_deref().is_some_and(|i| !i.is_empty() && !i.to_uppercase().starts_with("NEG"))).count();
     Some(Icing { altitude_ft: highest, freezing_level_ft: level, at_or_below: selection.at_or_below, reports })
 }
 

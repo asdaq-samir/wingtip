@@ -137,7 +137,11 @@ pub fn read_datis(text: &str) -> Atis {
             }
         });
         out.visibility_sm = m.visibility_sm;
-        out.sky = m.layers.iter().filter_map(|l| Some(Layer { cover: cover(&l.cover)?, base_ft: l.base_ft_agl.map(|b| b.round() as i64) })).collect();
+        out.sky = m
+            .layers
+            .iter()
+            .filter_map(|l| Some(Layer { cover: cover(&l.cover)?, base_ft: l.base_ft_agl.map(|b| b.round() as i64) }))
+            .collect();
         out.temp_c = m.temp_c.map(|t| t.round() as i64);
         out.dewpoint_c = m.dewpoint_c.map(|t| t.round() as i64);
         out.altimeter_inhg = m.altimeter_inhg;

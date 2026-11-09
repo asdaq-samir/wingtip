@@ -2,11 +2,9 @@
 //! logbook's form sends them), what the track showed beside them, and a
 //! reason for each figure in words with its source.
 
-use super::{ground, trip};
 use super::holds::{self, Hold};
 use super::Field;
-
-
+use super::{ground, trip};
 
 use wingtip_core::time::civil_from_days;
 use wingtip_flight::sun::{is_night, passenger_night};
@@ -176,19 +174,32 @@ pub fn draft(points: &[Point], ask: &Ask) -> Draft {
             item: "totalHours",
             says: format!(
                 "{:.1} h from moving off ({}) to coming to rest after the last landing ({}), the time at rest between flights left out.",
-                tenth(total), zulu(from), zulu(to)
+                tenth(total),
+                zulu(from),
+                zulu(to)
             ),
             source: "14 CFR 1.1, flight time; 61.51(b)(1)(ii)",
         });
-        reasons.push(Reason { item: "airHours", says: format!("{:.1} h from the first takeoff roll to the last landing roll.", tenth(air)), source: "The track's ground speed over 40 kt" });
+        reasons.push(Reason {
+            item: "airHours",
+            says: format!("{:.1} h from the first takeoff roll to the last landing roll.", tenth(air)),
+            source: "The track's ground speed over 40 kt",
+        });
         reasons.push(Reason {
             item: "nightHours",
-            says: format!("{:.1} h of it between the end of evening and the start of morning civil twilight where the airplane was.", tenth(night)),
+            says: format!(
+                "{:.1} h of it between the end of evening and the start of morning civil twilight where the airplane was.",
+                tenth(night)
+            ),
             source: "14 CFR 1.1, night; 61.51(b)(3)(i)",
         });
     }
     if g.ends_airborne {
-        reasons.push(Reason { item: "landings", says: "The track ends in the air: its last landing is not in it.".to_owned(), source: "The track" });
+        reasons.push(Reason {
+            item: "landings",
+            says: "The track ends in the air: its last landing is not in it.".to_owned(),
+            source: "The track",
+        });
     }
 
     // Landings: 61.57(a) counts every one, (b) full stops in its period.
@@ -220,7 +231,8 @@ pub fn draft(points: &[Point], ask: &Ask) -> Draft {
     // The trip and whether it was cross-country (61.1(b)), logged by
     // (ii): more than 50 nm from the original point of departure.
     let t = trip::trip(points, &g, fields);
-    let (distance, longest, landed_elsewhere, farthest, over_50) = (t.distance_nm, t.longest_leg_nm, t.landed_elsewhere, t.farthest_nm, t.over_50_nm);
+    let (distance, longest, landed_elsewhere, farthest, over_50) =
+        (t.distance_nm, t.longest_leg_nm, t.landed_elsewhere, t.farthest_nm, t.over_50_nm);
     let route = t.route;
     let legs_flown = distance > 0.0;
     let cross_country = if over_50 { total } else { 0.0 };
@@ -249,11 +261,8 @@ pub fn draft(points: &[Point], ask: &Ask) -> Draft {
         .into_iter()
         .map(|d| Approach { airport: d.airport, id: d.id, name: d.name, faf_at: d.faf_at, outcome: d.outcome, also_fits: d.also_fits })
         .collect();
-    let hold_fixes: Vec<(String, f64, f64)> = ask
-        .drawings
-        .iter()
-        .flat_map(|d| d.fixes.iter().filter(|f| f.has("hold")).map(|f| (f.ident.clone(), f.lat, f.lon)))
-        .collect();
+    let hold_fixes: Vec<(String, f64, f64)> =
+        ask.drawings.iter().flat_map(|d| d.fixes.iter().filter(|f| f.has("hold")).map(|f| (f.ident.clone(), f.lat, f.lon))).collect();
     let held = holds::holds(points, &g.runs, fields, &hold_fixes);
     for a in &approaches {
         let also = if a.also_fits.is_empty() { String::new() } else { format!(" (the track fits {} as well)", a.also_fits.join(", ")) };
@@ -305,7 +314,11 @@ pub fn draft(points: &[Point], ask: &Ask) -> Draft {
     remarks.truncate(500);
 
     let flown_on = block_from.or_else(|| points.first().map(|p| p.t)).map(|t| local_day(t, ask.utc_offset_min)).unwrap_or_default();
-    reasons.push(Reason { item: "flownOn", says: format!("{flown_on}, the day on the pilot's clock (UTC{:+}) the airplane moved off.", ask.utc_offset_min / 60.0), source: "14 CFR 61.51(b)(1)(i)" });
+    reasons.push(Reason {
+        item: "flownOn",
+        says: format!("{flown_on}, the day on the pilot's clock (UTC{:+}) the airplane moved off.", ask.utc_offset_min / 60.0),
+        source: "14 CFR 61.51(b)(1)(i)",
+    });
 
     let entry = Entry {
         flown_on,

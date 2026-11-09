@@ -29,33 +29,71 @@ use crate::clearance::{self, direct_of, frequency_of, tokens, Clearance, Token};
 pub enum Item {
     /// An altitude assigned: climb, descend or maintain it, "at or above"
     /// and the like kept.
-    Altitude { ft: i64, verb: &'static str, limit: Option<String> },
+    Altitude {
+        ft: i64,
+        verb: &'static str,
+        limit: Option<String>,
+    },
     /// An altitude to expect, and when ("one zero minutes after
     /// departure").
-    Expect { ft: i64, min: Option<i64> },
+    Expect {
+        ft: i64,
+        min: Option<i64>,
+    },
     /// A vector: a heading to fly, which way to turn to it, or a turn by
     /// so many degrees. "Fly runway heading" has no figure.
-    Heading { deg: Option<i64>, turn: Option<&'static str>, by_deg: Option<i64> },
+    Heading {
+        deg: Option<i64>,
+        turn: Option<&'static str>,
+        by_deg: Option<i64>,
+    },
     /// Direct to a place, as words to find.
-    Direct { said: String },
+    Direct {
+        said: String,
+    },
     /// A clearance's limit and route (clearance.rs), the places as said.
-    Route { limit: Option<String>, places: Vec<String>, as_filed: bool },
+    Route {
+        limit: Option<String>,
+        places: Vec<String>,
+        as_filed: bool,
+    },
     /// Cleared into Class B airspace (14 CFR 91.131(a)(1)).
     ClassB,
     /// A hold (AIM 5-3-8's clearance items): the fix, the direction
     /// from it, the radial, course or bearing it is on, the turns where
     /// not right, as published, the expect further clearance time.
-    Hold { fix: String, direction: Option<String>, on: Option<(&'static str, i64)>, turns: Option<&'static str>, published: bool, efc: Option<String> },
-    Frequency { mhz: String, facility: Option<String> },
-    Squawk { code: String },
+    Hold {
+        fix: String,
+        direction: Option<String>,
+        on: Option<(&'static str, i64)>,
+        turns: Option<&'static str>,
+        published: bool,
+        efc: Option<String>,
+    },
+    Frequency {
+        mhz: String,
+        facility: Option<String>,
+    },
+    Squawk {
+        code: String,
+    },
     /// The altimeter setting, inches of mercury written with two places.
-    Altimeter { inhg: String },
+    Altimeter {
+        inhg: String,
+    },
     /// An approach cleared, or to expect: its kind ("ILS", "RNAV (GPS)
     /// Z", "Visual") and runway.
-    Approach { name: String, runway: Option<String>, cleared: bool },
+    Approach {
+        name: String,
+        runway: Option<String>,
+        cleared: bool,
+    },
     /// A runway assigned, and for what: "land", "takeoff", "option",
     /// "hold short", "line up and wait".
-    Runway { runway: String, what: Option<&'static str> },
+    Runway {
+        runway: String,
+        what: Option<&'static str>,
+    },
 }
 
 impl Item {
@@ -77,7 +115,6 @@ impl Item {
         }
     }
 }
-
 
 pub(super) fn word(toks: &[Token], k: usize) -> Option<&str> {
     toks.get(k).map(|t| t.word.as_str())

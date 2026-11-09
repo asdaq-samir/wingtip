@@ -116,8 +116,7 @@ pub fn guidance_of(id: &str) -> Guidance {
     let b = id.as_bytes();
     let upper = |c: u8| c.is_ascii_uppercase();
     // /^(RNV|GPS)-?[A-Z]$/: a circling RNAV or GPS approach.
-    if (id.starts_with("RNV") || id.starts_with("GPS"))
-        && ((b.len() == 4 && upper(b[3])) || (b.len() == 5 && b[3] == b'-' && upper(b[4])))
+    if (id.starts_with("RNV") || id.starts_with("GPS")) && ((b.len() == 4 && upper(b[3])) || (b.len() == 5 && b[3] == b'-' && upper(b[4])))
     {
         return Guidance::Gps;
     }
@@ -460,7 +459,11 @@ fn pass_of(path: &Path, v: usize, xy: &[Xy], from: usize, to: usize, first: bool
             near.push(Cross { i, u: 0.0, right: d });
         }
     }
-    if first { near.first().copied() } else { near.last().copied() }
+    if first {
+        near.first().copied()
+    } else {
+        near.last().copied()
+    }
 }
 
 /// Where a point is against the way in between two vertices: how far
@@ -871,7 +874,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
         // where there is a glidepath, crossed lower on it (ARINC 424-18 5.29 "I").
         if let (Some(max), Some(a)) = (fix.max_ft, alt) {
             if a - max > 0.0 && !is_map && !(pass.fix == faf && gp.is_some()) {
-                findings.push(finding(Tone::Stop, format!("At {}: {} ft above {}", fix.ident, grouped(js_round_f(a - max)), alt_ft(Some(max)))));
+                findings.push(finding(
+                    Tone::Stop,
+                    format!("At {}: {} ft above {}", fix.ident, grouped(js_round_f(a - max)), alt_ft(Some(max))),
+                ));
             }
         }
     }
@@ -910,13 +916,15 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
             i += 1;
         }
         if let (Some(high), Some(low)) = (high, low) {
-            let said = |ft: f64| format!("{} ft {}", grouped((js_round_f(ft / 10.0) * 10.0).abs()), if ft >= 0.0 { "above" } else { "below" });
+            let said =
+                |ft: f64| format!("{} ft {}", grouped((js_round_f(ft / 10.0) * 10.0).abs()), if ft >= 0.0 { "above" } else { "below" });
             findings.push(finding(Tone::Info, format!("Glidepath ({}°): from {} to {} it", to_fixed(gp.deg, 2), said(high), said(low))));
             if under_nm > 0.0 {
                 findings.push(finding(Tone::Stop, format!("Below the glide slope's full scale for {} nm", to_fixed(under_nm.max(0.1), 1))));
             }
             if over_nm > 0.0 {
-                findings.push(finding(Tone::Caution, format!("Above the glide slope's full scale for {} nm", to_fixed(over_nm.max(0.1), 1))));
+                findings
+                    .push(finding(Tone::Caution, format!("Above the glide slope's full scale for {} nm", to_fixed(over_nm.max(0.1), 1))));
             }
         }
     }
@@ -943,7 +951,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
     if let Some(landed) = landed_at {
         let s = map_t.map(|t| (points[landed].t - t) / 1000.0);
         (outcome, seconds_after_map) = (Outcome::Landed, s);
-        findings.push(finding(Tone::Info, s.map_or_else(|| "Landed".to_owned(), |s| format!("Landed {} s after the MAP", js_num(js_round_f(s))))));
+        findings.push(finding(
+            Tone::Info,
+            s.map_or_else(|| "Landed".to_owned(), |s| format!("Landed {} s after the MAP", js_num(js_round_f(s)))),
+        ));
     } else if let Some(climb) = climb_at {
         let s = map_t.map(|t| (points[climb].t - t) / 1000.0);
         (outcome, seconds_after_map) = (Outcome::Missed, s);
@@ -969,7 +980,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
     }
     let side = |r: f64| if r >= 0.0 { "right" } else { "left" };
     if stretches.is_empty() && guidance != Guidance::Other {
-        findings.push(finding(Tone::Ok, format!("Within full scale all the way, {} nm {} at most", to_fixed(worst_right.abs(), 1), side(worst_right))));
+        findings.push(finding(
+            Tone::Ok,
+            format!("Within full scale all the way, {} nm {} at most", to_fixed(worst_right.abs(), 1), side(worst_right)),
+        ));
     } else if guidance == Guidance::Other {
         findings.push(finding(Tone::Info, format!("Course: {} nm {} of it at most", to_fixed(worst_right.abs(), 1), side(worst_right))));
     }

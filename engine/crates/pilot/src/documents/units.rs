@@ -20,14 +20,20 @@ pub struct Units {
 fn known(name: &str, given: Option<&str>, units: &[&'static str]) -> Result<&'static str, String> {
     match given {
         None => Ok(units[0]),
-        Some(g) => units.iter().find(|u| **u == g).copied().ok_or_else(|| format!("handbook_read_check: \"{name}\" is not one of {}", units.join(", "))),
+        Some(g) => units
+            .iter()
+            .find(|u| **u == g)
+            .copied()
+            .ok_or_else(|| format!("handbook_read_check: \"{name}\" is not one of {}", units.join(", "))),
     }
 }
 
 impl Units {
     /// The units the read says its figures are in, each one of those the
     /// contract names; the app's where it says none.
-    pub fn read(speed: Option<&str>, distance: Option<&str>, weight: Option<&str>, arm: Option<&str>, fuel: Option<&str>, burn: Option<&str>) -> Result<Units, String> {
+    pub fn read(
+        speed: Option<&str>, distance: Option<&str>, weight: Option<&str>, arm: Option<&str>, fuel: Option<&str>, burn: Option<&str>,
+    ) -> Result<Units, String> {
         Ok(Units {
             speed: known("speed_unit", speed, &["kt", "mph", "kmh"])?,
             distance: known("distance_unit", distance, &["ft", "m"])?,
@@ -47,11 +53,19 @@ impl Units {
     }
 
     pub fn ft(&self, v: f64) -> f64 {
-        if self.distance == "m" { v / 0.3048 } else { v }
+        if self.distance == "m" {
+            v / 0.3048
+        } else {
+            v
+        }
     }
 
     pub fn lb(&self, v: f64) -> f64 {
-        if self.weight == "kg" { v / 0.45359237 } else { v }
+        if self.weight == "kg" {
+            v / 0.45359237
+        } else {
+            v
+        }
     }
 
     pub fn inch(&self, v: f64) -> f64 {
@@ -63,7 +77,11 @@ impl Units {
     }
 
     pub fn gal(&self, v: f64) -> f64 {
-        if self.fuel == "l" { v / 3.785411784 } else { v }
+        if self.fuel == "l" {
+            v / 3.785411784
+        } else {
+            v
+        }
     }
 
     /// Pounds an hour are taken as avgas at 6 lb a gallon, the weight the

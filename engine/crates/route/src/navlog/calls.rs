@@ -72,7 +72,11 @@ fn plan<'a>(name: &'a str, v: &'a Value, p: Option<&'a Profile>, air: &'a [super
     if let Some(p) = p {
         p.need(name, &["cruise_tas_kt", "fuel_burn_gph", "service_ceiling_ft"])?;
     }
-    Ok(Some(Plan { flights: Flights::new(name, fixes, p, air)?, candidates, departure_elevation_ft: opt_num(name, v, "departure_elevation_ft")? }))
+    Ok(Some(Plan {
+        flights: Flights::new(name, fixes, p, air)?,
+        candidates,
+        departure_elevation_ft: opt_num(name, v, "departure_elevation_ft")?,
+    }))
 }
 
 /// The rule `name` on `v`, its answer as JSON.
@@ -97,7 +101,11 @@ fn answer(name: &str, v: &Value) -> R<String> {
         "performance_climb" => {
             let p = profile(name, v)?;
             p.need(name, &["fuel_burn_gph", "service_ceiling_ft"])?;
-            let c = Climber::new(&p.airplane).climb(num(name, v, "from_ft")?, num(name, v, "to_ft")?, opt_num(name, v, "isa_dev_c")?.unwrap_or(0.0));
+            let c = Climber::new(&p.airplane).climb(
+                num(name, v, "from_ft")?,
+                num(name, v, "to_ft")?,
+                opt_num(name, v, "isa_dev_c")?.unwrap_or(0.0),
+            );
             format!("{{\"minutes\":{},\"gallons\":{}}}", write(&Value::Number(c.minutes)), write(&Value::Number(c.gallons)))
         }
         "navlog_leg" => {
@@ -105,7 +113,14 @@ fn answer(name: &str, v: &Value) -> R<String> {
             if let Some(p) = &p {
                 p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
             }
-            let leg = assemble_leg(place(name, v, "start")?, place(name, v, "end")?, num(name, v, "altitude_ft")?, p.as_ref(), &read_air(name, v)?, num(name, v, "variation_deg")?)?;
+            let leg = assemble_leg(
+                place(name, v, "start")?,
+                place(name, v, "end")?,
+                num(name, v, "altitude_ft")?,
+                p.as_ref(),
+                &read_air(name, v)?,
+                num(name, v, "variation_deg")?,
+            )?;
             write(&leg.value())
         }
         "navlog_legs" => {
@@ -173,7 +188,13 @@ fn answer(name: &str, v: &Value) -> R<String> {
                 Some(Value::String(s)) if s == "vfr" || s == "ifr" => s.as_str(),
                 Some(_) => return Err(format!("{name}: \"rules\" is \"vfr\" or \"ifr\"")),
             };
-            write(&fuel_plan(opt_num(name, v, "total_fuel_gal")?, p.as_ref(), night, rules, opt_num(name, v, "alternate_gal")?.unwrap_or(0.0)))
+            write(&fuel_plan(
+                opt_num(name, v, "total_fuel_gal")?,
+                p.as_ref(),
+                night,
+                rules,
+                opt_num(name, v, "alternate_gal")?.unwrap_or(0.0),
+            ))
         }
         "navlog_alternate_leg" => {
             let p = opt_profile(name, v)?;
@@ -220,7 +241,10 @@ fn answer(name: &str, v: &Value) -> R<String> {
                     _ => Err(format!("{name}: a hop's are not a list")),
                 })
                 .collect::<R<Vec<_>>>()?;
-            let lengths = list(name, v, "lengths")?.iter().map(|n| n.as_f64().ok_or_else(|| format!("{name}: a length is not a number"))).collect::<R<Vec<_>>>()?;
+            let lengths = list(name, v, "lengths")?
+                .iter()
+                .map(|n| n.as_f64().ok_or_else(|| format!("{name}: a length is not a number")))
+                .collect::<R<Vec<_>>>()?;
             if lengths.len() != by_hop.len() {
                 return Err(format!("{name}: {} hops and {} lengths", by_hop.len(), lengths.len()));
             }
@@ -243,7 +267,13 @@ fn answer(name: &str, v: &Value) -> R<String> {
                 .iter()
                 .map(|l| Ok((l.opt("distance_nm")?.unwrap_or(0.0), l.opt("fuel_gal")?)))
                 .collect::<R<Vec<_>>>()?;
-            let need = super::fuel_stop::fuel_stop_need(&totals, &legs, place(name, v, "start")?, place(name, v, "end")?, num(name, v, "depart_s")?)?;
+            let need = super::fuel_stop::fuel_stop_need(
+                &totals,
+                &legs,
+                place(name, v, "start")?,
+                place(name, v, "end")?,
+                num(name, v, "depart_s")?,
+            )?;
             need.map_or_else(|| "null".to_owned(), |n| write(&n.value()))
         }
         _ => return Err(format!("the engine has no rule called {name:?}")),

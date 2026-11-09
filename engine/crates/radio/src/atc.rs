@@ -62,7 +62,8 @@ pub fn who(text: &str, tail: Option<&str>, prior: Option<(&str, f64)>) -> Who {
     }
     let wanted = figures(&instruction::read(prior_text));
     let said = crate::clearance::tokens(text);
-    let repeats = said.iter().filter_map(|t| t.num.as_deref()).any(|n| !n.contains('.') && n.parse::<i64>().is_ok_and(|n| wanted.contains(&n)));
+    let repeats =
+        said.iter().filter_map(|t| t.num.as_deref()).any(|n| !n.contains('.') && n.parse::<i64>().is_ok_and(|n| wanted.contains(&n)));
     if repeats {
         Who::FromUs
     } else {

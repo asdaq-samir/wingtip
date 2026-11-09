@@ -9,7 +9,6 @@ use crate::json::{self, Value};
 
 type R<T> = Result<T, String>;
 
-
 fn point(i: In, v: &Value, key: &str) -> R<(f64, f64)> {
     match v.get(key).and_then(Value::as_array) {
         Some([lat, lon]) => match (lat.as_f64(), lon.as_f64()) {

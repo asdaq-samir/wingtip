@@ -18,7 +18,13 @@ pub fn track_nm(p: Point, a: Point, b: Point) -> (f64, f64) {
     let cross = (angular.sin() * offset.sin()).clamp(-1.0, 1.0).asin() * EARTH_RADIUS_NM;
     let ratio = (angular.cos() / (cross / EARTH_RADIUS_NM).cos()).clamp(-1.0, 1.0);
     let sign = offset.cos();
-    let sign = if sign > 0.0 { 1.0 } else if sign < 0.0 { -1.0 } else { 0.0 };
+    let sign = if sign > 0.0 {
+        1.0
+    } else if sign < 0.0 {
+        -1.0
+    } else {
+        0.0
+    };
     (cross, ratio.acos() * EARTH_RADIUS_NM * sign)
 }
 

@@ -71,7 +71,9 @@ pub struct Need {
 pub fn fuel_stop_need(totals: &Obj, legs: &[(f64, Option<f64>)], start: (f64, f64), end: (f64, f64), depart_s: f64) -> R<Option<Need>> {
     let (margin, usable, distance) = (totals.opt("fuel_margin_gal")?, totals.opt("usable_fuel_gal")?, totals.opt("distance_nm")?);
     let (fuel, ete) = (totals.opt("fuel_gal")?, totals.opt("ete_min")?);
-    let (Some(margin), Some(usable), Some(distance), Some(fuel), Some(ete)) = (margin, usable, distance, fuel, ete) else { return Ok(None) };
+    let (Some(margin), Some(usable), Some(distance), Some(fuel), Some(ete)) = (margin, usable, distance, fuel, ete) else {
+        return Ok(None);
+    };
     if margin >= 0.0 || usable == 0.0 || distance == 0.0 {
         return Ok(None);
     }
@@ -86,7 +88,13 @@ pub fn fuel_stop_need(totals: &Obj, legs: &[(f64, Option<f64>)], start: (f64, f6
     }
     let per_nm = fuel / distance;
     let worst = worst_burn_per_nm(legs, (usable - taxi - reserve) / per_nm).filter(|w| *w != 0.0).unwrap_or(per_nm);
-    Ok(Some(Need { fuel_per_nm: worst.max(per_nm) * detour, min_per_nm: ete / distance * detour, usable_gal: usable, taxi_gal: taxi, reserve_gal: reserve }))
+    Ok(Some(Need {
+        fuel_per_nm: worst.max(per_nm) * detour,
+        min_per_nm: ete / distance * detour,
+        usable_gal: usable,
+        taxi_gal: taxi,
+        reserve_gal: reserve,
+    }))
 }
 
 impl Need {

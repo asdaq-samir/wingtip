@@ -37,7 +37,9 @@ pub use wingtip_flight::flight::DEFAULT_TAXI_FUEL_GAL;
 /// cruise figures) null, never a stock airplane's. The owner (2026-11-09):
 /// "If no airplane is entered, only show the distance and the things you
 /// can without airplane profile, don't assume."
-pub fn assemble_leg(start: (f64, f64), end: (f64, f64), altitude_ft: f64, profile: Option<&Profile>, air: &Air, variation_deg: f64) -> R<Obj> {
+pub fn assemble_leg(
+    start: (f64, f64), end: (f64, f64), altitude_ft: f64, profile: Option<&Profile>, air: &Air, variation_deg: f64,
+) -> R<Obj> {
     let true_course_deg = bearing_deg(start.0, start.1, end.0, end.1);
     let leg_distance_nm = distance_nm(start.0, start.1, end.0, end.1);
     let Some(profile) = profile else {
@@ -142,13 +144,20 @@ pub fn leg_between(name: &str, a: &Value, b: &Value, altitude_ft: f64, profile: 
 /// each in its own air at that altitude.
 pub fn legs(name: &str, fixes: &[Value], altitude_ft: f64, profile: Option<&Profile>, air: &[LegAir]) -> R<Vec<Obj>> {
     if air.len() + 1 != fixes.len() {
-        return Err(format!("{name}: {} fixes make {} legs, and the air is given for {}", fixes.len(), fixes.len().saturating_sub(1), air.len()));
+        return Err(format!(
+            "{name}: {} fixes make {} legs, and the air is given for {}",
+            fixes.len(),
+            fixes.len().saturating_sub(1),
+            air.len()
+        ));
     }
     fixes
         .windows(2)
         .zip(air)
         .enumerate()
-        .map(|(i, (pair, leg_air))| leg_between(name, &pair[0], &pair[1], altitude_ft, profile, leg_air.at(name, i, altitude_ft)?, leg_air.variation_deg))
+        .map(|(i, (pair, leg_air))| {
+            leg_between(name, &pair[0], &pair[1], altitude_ft, profile, leg_air.at(name, i, altitude_ft)?, leg_air.variation_deg)
+        })
         .collect()
 }
 
@@ -226,7 +235,9 @@ pub fn fuel_plan(total_fuel_gal: Option<f64>, profile: Option<&Profile>, night: 
 /// (`air` None) or the leg cannot be flown in them, which it says
 /// (`still_air`). With no airplane (`profile` None), its miles and
 /// altitude, the time and fuel null.
-pub fn alternate_leg(name: &str, dest: &Value, alternate: &Value, altitude_ft: f64, profile: Option<&Profile>, air: Option<(&Air, f64)>) -> R<Value> {
+pub fn alternate_leg(
+    name: &str, dest: &Value, alternate: &Value, altitude_ft: f64, profile: Option<&Profile>, air: Option<(&Air, f64)>,
+) -> R<Value> {
     let ident = |v: &Value| -> R<String> {
         Ok(Obj::read(name, v)?.text("ident").ok_or_else(|| format!("{name}: an airport's \"ident\" is missing"))?.to_owned())
     };
@@ -278,9 +289,7 @@ pub fn tailwind_kt(legs: &[Obj]) -> R<Option<f64>> {
     if wind_nm <= 0.0 {
         return Ok(None);
     }
-    let weighed = with_wind
-        .iter()
-        .map(|l| Ok((l.num("groundspeed_kt")? - l.num("tas_kt")?) * l.num("distance_nm")?))
-        .collect::<R<Vec<f64>>>()?;
+    let weighed =
+        with_wind.iter().map(|l| Ok((l.num("groundspeed_kt")? - l.num("tas_kt")?) * l.num("distance_nm")?)).collect::<R<Vec<f64>>>()?;
     Ok(Some(py_round(py_sum(weighed) / wind_nm, 1)))
 }

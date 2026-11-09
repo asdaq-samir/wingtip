@@ -42,13 +42,7 @@ pub const REGION_DEG: f64 = 4.0;
 pub fn region_of(lat: f64, lon: f64) -> String {
     let south = ((lat / REGION_DEG).floor() * REGION_DEG) as i32;
     let west = ((lon / REGION_DEG).floor() * REGION_DEG) as i32;
-    format!(
-        "{}{:02}{}{:03}",
-        if south >= 0 { 'n' } else { 's' },
-        south.abs(),
-        if west >= 0 { 'e' } else { 'w' },
-        west.abs()
-    )
+    format!("{}{:02}{}{:03}", if south >= 0 { 'n' } else { 's' }, south.abs(), if west >= 0 { 'e' } else { 'w' }, west.abs())
 }
 
 fn u32_at(b: &[u8], o: usize) -> Option<u32> {

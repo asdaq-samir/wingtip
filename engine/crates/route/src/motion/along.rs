@@ -118,7 +118,8 @@ pub fn position_rule(v: &Value) -> Result<String, String> {
         })
         .collect();
     let Some(found) = along(at, &line) else { return Ok("null".to_owned()) };
-    let (leg, fraction) = if legs.is_empty() { (index[found.segment], found.fraction) } else { leg_at(&legs, found.along_nm).unwrap_or((0, 0.0)) };
+    let (leg, fraction) =
+        if legs.is_empty() { (index[found.segment], found.fraction) } else { leg_at(&legs, found.along_nm).unwrap_or((0, 0.0)) };
     let mut out = String::from("{\"along_nm\":");
     json::number(&mut out, found.along_nm);
     out.push_str(",\"total_nm\":");

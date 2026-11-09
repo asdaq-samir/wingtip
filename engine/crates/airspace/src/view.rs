@@ -408,7 +408,8 @@ pub fn airspace_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
             if !"BCD".contains(class) || !meets(layer.bbox(i), view) {
                 continue;
             }
-            let (Some(wkb), Some(floor), Some(ceiling), Some(name)) = (layer.wkb(i), f64_at(r, 8), f64_at(r, 16), text_at(names, r, 24)) else {
+            let (Some(wkb), Some(floor), Some(ceiling), Some(name)) = (layer.wkb(i), f64_at(r, 8), f64_at(r, 16), text_at(names, r, 24))
+            else {
                 continue;
             };
             let Some(polygons) = rings_of(wkb).map(oriented) else { continue };
@@ -612,8 +613,8 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
             if pins.iter().any(|p| p.ident == ident) {
                 continue;
             }
-            let military = (owner.is_some() && MILITARY_OWNERS.contains(&get(owner)))
-                .then(|| if get(use_) == "PU" { "joint" } else { "military" });
+            let military =
+                (owner.is_some() && MILITARY_OWNERS.contains(&get(owner))).then(|| if get(use_) == "PU" { "joint" } else { "military" });
             pins.push(Pin {
                 ident: ident.to_owned(),
                 faa_id: get(id).to_uppercase(),
@@ -645,7 +646,12 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
         json::number(&mut out, p.lon);
         out.push_str(&format!(",\"kind\":\"{}\",\"flight_category\":null,\"military\":", p.kind));
         json::opt_string(&mut out, p.military);
-        out.push_str(&format!(",\"private\":{},\"towered\":{},\"airspace_class\":\"{}\",\"primary_of\":", p.private, p.towered, surface_class(packs, p.lat, p.lon)));
+        out.push_str(&format!(
+            ",\"private\":{},\"towered\":{},\"airspace_class\":\"{}\",\"primary_of\":",
+            p.private,
+            p.towered,
+            surface_class(packs, p.lat, p.lon)
+        ));
         match primary.iter().find(|f| f.0 == p.faa_id) {
             Some((_, c)) => out.push_str(&format!("\"{c}\"")),
             None => out.push_str("null"),
@@ -713,7 +719,8 @@ pub fn navaids_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: 
             let likelier = |k: &str| NAVAID_KINDS.iter().position(|n| *n == k).unwrap();
             // One facility filed as two kinds at one place is one, the
             // likelier to fly to (wingtip.fixes' _read_navaids).
-            if let Some(at) = vors.iter().position(|v| v.ident == ident && crate::geo::distance_nm(la, lo, v.lat, v.lon) < SAME_FACILITY_NM) {
+            if let Some(at) = vors.iter().position(|v| v.ident == ident && crate::geo::distance_nm(la, lo, v.lat, v.lon) < SAME_FACILITY_NM)
+            {
                 if likelier(kind) < likelier(vors[at].kind) {
                     vors.remove(at);
                 } else {
@@ -810,7 +817,10 @@ mod tests {
 
     #[test]
     fn the_label_is_in_the_widest_section() {
-        let square = oriented(vec![vec![vec![(0.0, 0.0), (0.0, 10.0), (10.0, 10.0), (10.0, 0.0)], vec![(4.0, 4.0), (6.0, 4.0), (6.0, 6.0), (4.0, 6.0)]]]);
+        let square = oriented(vec![vec![
+            vec![(0.0, 0.0), (0.0, 10.0), (10.0, 10.0), (10.0, 0.0)],
+            vec![(4.0, 4.0), (6.0, 4.0), (6.0, 6.0), (4.0, 6.0)],
+        ]]);
         // The bisector at 5 cuts the hole: two sections of 4, the first
         // kept, as JTS keeps it.
         assert_eq!(representative(&square).unwrap(), (2.0, 5.0));

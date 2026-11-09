@@ -15,13 +15,18 @@ use crate::json;
 /// applies: its key, label and the rule's words.
 pub const ROUTES: [(&str, &str, &str); 4] = [
     ("assigned", "Assigned", "The route assigned in the last ATC clearance received."),
-    ("vectored", "Vectored", "Being radar vectored: direct from the point of radio failure to the fix, route or airway specified in the vector clearance."),
+    (
+        "vectored",
+        "Vectored",
+        "Being radar vectored: direct from the point of radio failure to the fix, route or airway specified in the vector clearance.",
+    ),
     ("expected", "Expected", "No route assigned: the route ATC has advised may be expected in a further clearance."),
     ("filed", "Filed", "Neither assigned nor expected: the route filed in the flight plan."),
 ];
 
 /// 91.185(b): what VFR conditions call for, as the page opens.
-pub const VFR_WORDS: &str = "In VFR conditions, or on meeting them after the failure: continue VFR and land as soon as practicable (91.185(b)). \
+pub const VFR_WORDS: &str =
+    "In VFR conditions, or on meeting them after the failure: continue VFR and land as soon as practicable (91.185(b)). \
                              In IFR conditions, the rest of this page.";
 
 /// Which of 91.185(c)(2)'s altitudes a segment is flown at.
@@ -78,8 +83,9 @@ pub struct Flown {
 /// 6,000 ten minutes after departure" is from where the airplane is
 /// then), before it only the assigned and the minimum count. A tie goes
 /// to the first named, as the rule lists them.
-pub fn segment_altitudes(segments: &[(String, Option<f64>)], assigned_ft: Option<f64>, expected_ft: Option<f64>,
-                         expected_from: i64) -> Vec<Flown> {
+pub fn segment_altitudes(
+    segments: &[(String, Option<f64>)], assigned_ft: Option<f64>, expected_ft: Option<f64>, expected_from: i64,
+) -> Vec<Flown> {
     segments
         .iter()
         .enumerate()
@@ -111,7 +117,8 @@ pub fn fly_words(fly: Option<(f64, Because)>) -> String {
 }
 
 /// 91.185(c)(2): the altitude rule, in words.
-pub const ALTITUDE_WORDS: &str = "On each segment, the highest of the altitude assigned in the last clearance, the minimum altitude for IFR \
+pub const ALTITUDE_WORDS: &str =
+    "On each segment, the highest of the altitude assigned in the last clearance, the minimum altitude for IFR \
                                   operations, and the altitude ATC said to expect in a further clearance.";
 
 /// 91.185(c)(3): when to leave the clearance limit, in words. `efc` and
@@ -143,12 +150,12 @@ pub fn leave_limit(approach_fix: bool, efc: &str, eta: &str) -> String {
 /// words, and when to leave the clearance limit. A segment with no name
 /// is "Segment", and the EFC and ETA are taken with their spaces trimmed,
 /// as the planner takes them.
-pub fn lost_comms_json(segments: &[(String, Option<f64>)], assigned_ft: Option<f64>, expected_ft: Option<f64>,
-                       expected_from: i64, approach_fix: bool, efc: &str, eta: &str) -> String {
-    let named: Vec<(String, Option<f64>)> = segments
-        .iter()
-        .map(|(name, min)| (if name.is_empty() { "Segment".to_owned() } else { name.clone() }, *min))
-        .collect();
+pub fn lost_comms_json(
+    segments: &[(String, Option<f64>)], assigned_ft: Option<f64>, expected_ft: Option<f64>, expected_from: i64, approach_fix: bool,
+    efc: &str, eta: &str,
+) -> String {
+    let named: Vec<(String, Option<f64>)> =
+        segments.iter().map(|(name, min)| (if name.is_empty() { "Segment".to_owned() } else { name.clone() }, *min)).collect();
     let mut out = String::from("{\"vfr\":");
     json::string(&mut out, VFR_WORDS);
     out.push_str(",\"routes\":[");

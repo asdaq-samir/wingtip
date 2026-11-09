@@ -90,5 +90,9 @@ pub fn zulu(at_s: f64) -> String {
 /// "9 min", "1 h 05 min".
 pub fn minutes_words(min: f64) -> String {
     let m = min.max(0.0).round() as i64;
-    if m < 60 { format!("{m} min") } else { format!("{} h {:02} min", m / 60, m % 60) }
+    if m < 60 {
+        format!("{m} min")
+    } else {
+        format!("{} h {:02} min", m / 60, m % 60)
+    }
 }

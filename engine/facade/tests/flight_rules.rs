@@ -27,7 +27,10 @@ fn the_wind_triangle() {
             Value::Null => assert!(got.is_none(), "{c}"),
             want => {
                 let (wca, th, gs) = got.unwrap_or_else(|| panic!("{c}"));
-                assert!((wca - f(want, "wca")).abs() < 1e-9 && (th - f(want, "th")).abs() < 1e-9 && (gs - f(want, "gs")).abs() < 1e-9, "{c}");
+                assert!(
+                    (wca - f(want, "wca")).abs() < 1e-9 && (th - f(want, "th")).abs() < 1e-9 && (gs - f(want, "gs")).abs() < 1e-9,
+                    "{c}"
+                );
             }
         }
     }
@@ -71,7 +74,8 @@ fn variation_and_weather_expiry() {
             "winds" => validity::Product::WindsAloft,
             _ => validity::Product::Advisory,
         };
-        let got = validity::in_force(product, t(c, "now").unwrap(), t(c, "observed"), t(c, "lastRoutine"), t(c, "validFrom"), t(c, "validTo"));
+        let got =
+            validity::in_force(product, t(c, "now").unwrap(), t(c, "observed"), t(c, "lastRoutine"), t(c, "validFrom"), t(c, "validTo"));
         assert_eq!(got, c["inForce"].as_bool().unwrap(), "{}", c["why"]);
     }
 }

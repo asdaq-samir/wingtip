@@ -30,8 +30,9 @@ pub use crate::runway::wind::{runway_crosswind_kt, steady_or_gust_kt, RunwayWind
 /// component, may blow across any of them, so all of it, gusts included,
 /// is taken as crosswind, with no end (`reported`, the field's METAR's
 /// speed and gust). Each runway is (closed, its wind).
-pub fn best_crosswind(runways: &[(bool, Option<RunwayWind>)], reported: Option<(Option<f64>, Option<f64>)>)
-                      -> Option<(Option<String>, f64)> {
+pub fn best_crosswind(
+    runways: &[(bool, Option<RunwayWind>)], reported: Option<(Option<f64>, Option<f64>)>,
+) -> Option<(Option<String>, f64)> {
     let open: Vec<&Option<RunwayWind>> = runways.iter().filter(|(closed, _)| !closed).map(|(_, w)| w).collect();
     let winds: Vec<&RunwayWind> = open.iter().filter_map(|w| w.as_ref()).collect();
     let Some(first) = winds.first() else {

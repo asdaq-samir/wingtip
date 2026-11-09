@@ -182,7 +182,8 @@ fn route(name: &str, v: &Value) -> R<Value> {
     let mut found: Vec<(usize, f64, u8)> = Vec::new();
     let mut unchecked = Vec::new();
     for (i, l) in legs.iter().enumerate() {
-        let altitude_ft = l.get("altitude_ft").and_then(Value::as_f64).ok_or_else(|| format!("{name}: leg {i}'s \"altitude_ft\" is missing"))?;
+        let altitude_ft =
+            l.get("altitude_ft").and_then(Value::as_f64).ok_or_else(|| format!("{name}: leg {i}'s \"altitude_ft\" is missing"))?;
         let s = section(name, l, &levels_ft)?;
         let valid = l.get("valid_s").and_then(Value::as_f64).map_or(Value::Null, Value::Number);
         let (answer, worst) = leg(i, altitude_ft, s.as_ref(), &levels_ft, valid);

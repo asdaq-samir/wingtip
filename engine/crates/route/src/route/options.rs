@@ -163,7 +163,9 @@ fn path_nm(path: &[Point]) -> f64 {
 /// off the nearest fix -- or, with none near enough, as a position
 /// (@lat,lon), which the route takes as a point of its own -- and its fuel
 /// stops in order along it, with its distance, minutes and fuel.
-fn make_way(kind: &str, grid: &mut Grid, gs: &Vec<f64>, a: &Ask, mut turns: Vec<Point>, stops: &[Stop], no_fuel_said: bool, year: f64) -> Way {
+fn make_way(
+    kind: &str, grid: &mut Grid, gs: &Vec<f64>, a: &Ask, mut turns: Vec<Point>, stops: &[Stop], no_fuel_said: bool, year: f64,
+) -> Way {
     let mut along_min = vec![0.0];
     for w in turns.windows(2) {
         along_min.push(along_min.last().unwrap() + line_minutes(grid, gs, w[0], w[1], 0.0, 0.0));
@@ -224,11 +226,12 @@ fn make_way(kind: &str, grid: &mut Grid, gs: &Vec<f64>, a: &Ask, mut turns: Vec<
 /// stop to add (the audit of 2026-10-24). Where no chain of fields
 /// reaches a hop, the route is offered as it is with that said.
 #[allow(clippy::too_many_arguments)]
-fn own(grid: &mut Grid, gs: &Vec<f64>, a: &Ask, fuel: &Fuel, path: &[Point], idents: &[String], landed: &[bool], kind: &str, title: &str) -> Way {
+fn own(
+    grid: &mut Grid, gs: &Vec<f64>, a: &Ask, fuel: &Fuel, path: &[Point], idents: &[String], landed: &[bool], kind: &str, title: &str,
+) -> Way {
     let inner_n = idents.len().min(path.len().saturating_sub(2));
-    let inner: Vec<(&String, Point, bool)> = (0..inner_n)
-        .map(|i| (&idents[i], path[i + 1], if landed.len() == idents.len() { landed[i] } else { false }))
-        .collect();
+    let inner: Vec<(&String, Point, bool)> =
+        (0..inner_n).map(|i| (&idents[i], path[i + 1], if landed.len() == idents.len() { landed[i] } else { false })).collect();
     let mut hops: Vec<Vec<Point>> = vec![vec![path[0]]];
     for &(_, p, lands) in &inner {
         hops.last_mut().unwrap().push(p);
@@ -359,7 +362,15 @@ fn read_grid(a: &Ask, unchecked: &mut Vec<String>) -> Result<(Grid, Vec<f64>), S
     if a.tafs.is_none() || (metars_wanted && a.metars.is_none()) {
         unchecked.push("forecasts and reports".into());
     }
-    read::weather(&mut grid, a.tafs.as_deref().unwrap_or(&[]), a.metars.as_deref().unwrap_or(&[]), a.depart_s, a.now_s, ceiling, visibility);
+    read::weather(
+        &mut grid,
+        a.tafs.as_deref().unwrap_or(&[]),
+        a.metars.as_deref().unwrap_or(&[]),
+        a.depart_s,
+        a.now_s,
+        ceiling,
+        visibility,
+    );
     match &a.sigmets {
         Some(s) => read::sigmets(&mut grid, s, window),
         None => unchecked.push("SIGMETs".into()),
@@ -406,7 +417,8 @@ fn options(a: &Ask) -> Result<String, String> {
     }
     // Not the route's own fields: a landing the pilot makes is not a stop
     // to add.
-    let skip: Vec<&str> = [a.dep.ident.as_str(), a.dest.ident.as_str()].into_iter().chain(a.current_idents.iter().map(String::as_str)).collect();
+    let skip: Vec<&str> =
+        [a.dep.ident.as_str(), a.dest.ident.as_str()].into_iter().chain(a.current_idents.iter().map(String::as_str)).collect();
     let table: Option<Vec<Field>> = a.fields.as_ref().map(|f| f.iter().filter(|f| !skip.contains(&f.ident.as_str())).cloned().collect());
     let fuel = Fuel {
         tas_kt: a.profile.tas_kt,

@@ -122,7 +122,9 @@ pub fn entered(start: Point, end: Point, shelves: &[Shelf], altitude_ft: f64) ->
     shelves.iter().any(|s| {
         s.floor_ft <= altitude_ft
             && s.ceiling_ft.is_none_or(|c| altitude_ft <= c)
-            && (s.area.contains(start.0, start.1) || s.area.contains(end.0, end.1) || Edges::new(std::iter::once(&s.area)).near(start, end, 0.0))
+            && (s.area.contains(start.0, start.1)
+                || s.area.contains(end.0, end.1)
+                || Edges::new(std::iter::once(&s.area)).near(start, end, 0.0))
     })
 }
 
@@ -180,7 +182,14 @@ pub fn detours(start: Point, end: Point, shelves: &[Shelf], below_ft: f64, fixes
             continue;
         }
         let rank = added + if f.vfr { 0.0 } else { DETOUR_NON_VFR_NM };
-        ranked.push((rank, Detour { ident: f.ident.clone(), kind: if f.kind.is_empty() { "Fix".into() } else { f.kind.clone() }, added_nm: super::words::r1(added) }));
+        ranked.push((
+            rank,
+            Detour {
+                ident: f.ident.clone(),
+                kind: if f.kind.is_empty() { "Fix".into() } else { f.kind.clone() },
+                added_nm: super::words::r1(added),
+            },
+        ));
     }
     ranked.sort_by(|a, b| a.0.total_cmp(&b.0).then_with(|| a.1.ident.cmp(&b.1.ident)));
     ranked.into_iter().take(DETOUR_CHOICES).map(|(_, d)| d).collect()
@@ -190,7 +199,13 @@ fn shelves(r: &Reader, v: &Value) -> Result<Vec<Shelf>, String> {
     r.opt_list(v, "shelves")?
         .unwrap_or(&[])
         .iter()
-        .map(|s| Ok(Shelf { floor_ft: r.opt_num(s, "floor_ft_msl")?.unwrap_or(0.0), ceiling_ft: r.opt_num(s, "ceiling_ft_msl")?, area: r.rings(s, "rings")? }))
+        .map(|s| {
+            Ok(Shelf {
+                floor_ft: r.opt_num(s, "floor_ft_msl")?.unwrap_or(0.0),
+                ceiling_ft: r.opt_num(s, "ceiling_ft_msl")?,
+                area: r.rings(s, "rings")?,
+            })
+        })
         .collect()
 }
 
@@ -206,7 +221,15 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         .opt_list(v, "fixes")?
         .unwrap_or(&[])
         .iter()
-        .map(|f| Ok(Fix { ident: r.text(f, "ident")?, lat: r.num(f, "lat")?, lon: r.num(f, "lon")?, vfr: r.flag(f, "vfr")?, kind: r.text(f, "kind")? }))
+        .map(|f| {
+            Ok(Fix {
+                ident: r.text(f, "ident")?,
+                lat: r.num(f, "lat")?,
+                lon: r.num(f, "lon")?,
+                vfr: r.flag(f, "vfr")?,
+                kind: r.text(f, "kind")?,
+            })
+        })
         .collect::<Result<_, String>>()?;
     let mut out = String::from("[");
     for (i, d) in detours(start, end, &shelves, r.num(v, "below_ft")?, &fixes).iter().enumerate() {
@@ -232,7 +255,11 @@ mod tests {
     // A square of Class B, a tenth of a degree across each way, on the line
     // from (0, 0) north to (1, 0): Midway to Duluth over O'Hare.
     fn core(floor: f64, ceiling: f64) -> Shelf {
-        Shelf { floor_ft: floor, ceiling_ft: Some(ceiling), area: Area { rings: vec![vec![(0.4, -0.1), (0.4, 0.1), (0.6, 0.1), (0.6, -0.1)]] } }
+        Shelf {
+            floor_ft: floor,
+            ceiling_ft: Some(ceiling),
+            area: Area { rings: vec![vec![(0.4, -0.1), (0.4, 0.1), (0.6, 0.1), (0.6, -0.1)]] },
+        }
     }
 
     fn fix(ident: &str, lat: f64, lon: f64, vfr: bool) -> Fix {

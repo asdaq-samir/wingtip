@@ -11,10 +11,10 @@
 use super::frat::{self, Currency, Inspections, Squawk, VorCheck};
 use super::icing::{self, Selection};
 use super::minimums::{self, Landing, Minimums, Report as Winds, RunwayWind};
+use super::pass_times;
 use super::runways::{self, Airplane, End, Field, Picks, Report, Runway, ShortField};
 use super::verdict::{self, Alternates, FiledAlternate, Item};
 use super::weight_balance::{self, Load, Loading, Station};
-use super::pass_times;
 use crate::json::{self, Value};
 
 type R<T> = Result<T, String>;
@@ -123,7 +123,9 @@ pub fn call(name: &str, v: &Value) -> R<String> {
     let i = In { name };
     match name {
         "gonogo_verdict_items" => verdict_input(i, v).map(|input| verdict::items_json(&verdict::verdict_items(&input))),
-        "departure_window" => super::window_calls::read(i, v).map(|input| super::window_calls::answer_json(&super::window::departure_window(&input))),
+        "departure_window" => {
+            super::window_calls::read(i, v).map(|input| super::window_calls::answer_json(&super::window::departure_window(&input)))
+        }
         "gonogo_verdict_line" => items(i, v, "items").map(|items| {
             let (finding, words) = verdict::verdict_line(&items);
             line_json(finding, &words)
@@ -179,11 +181,8 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             (|| Ok(weight_balance::load_json(&weight_balance::default_load(&loading(i, v)?, i.num(v, "fuel_gal")?))))()
         }
         "gonogo_pass_minutes" => (|| {
-            let legs = i
-                .list(v, "legs")?
-                .iter()
-                .map(|l| Ok((i.num(l, "distance_nm")?, i.opt_num(l, "ete_min")?)))
-                .collect::<R<Vec<_>>>()?;
+            let legs =
+                i.list(v, "legs")?.iter().map(|l| Ok((i.num(l, "distance_nm")?, i.opt_num(l, "ete_min")?))).collect::<R<Vec<_>>>()?;
             let mut out = String::new();
             json::opt_number(&mut out, pass_times::pass_minutes(&legs, i.num(v, "along_nm")?));
             Ok(out)
@@ -238,11 +237,7 @@ fn line_json(finding: &str, words: &str) -> String {
 pub(crate) fn verdict_input(i: In, v: &Value) -> R<verdict::Input> {
     let part = |key: &str| -> R<&Value> { i.obj(v, key)?.map_or_else(|| i.err(key, "is missing"), Ok) };
     let (w, a, t, f, r, b) = (part("weather")?, part("airspace")?, part("altitude")?, part("fuel")?, part("runways")?, part("balance")?);
-    let special_use = i
-        .list(a, "special_use")?
-        .iter()
-        .map(|s| Ok((i.str(s, "name")?, i.str(s, "when")?)))
-        .collect::<R<Vec<_>>>()?;
+    let special_use = i.list(a, "special_use")?.iter().map(|s| Ok((i.str(s, "name")?, i.str(s, "when")?))).collect::<R<Vec<_>>>()?;
     let risk = match i.obj(v, "risk")? {
         None => None,
         Some(r) => Some((i.str(r, "level")?, i.str(r, "line")?)),
@@ -454,7 +449,8 @@ fn icing_rule(i: In, v: &Value) -> R<String> {
         },
     };
     // A report's icing as sent; one that is not a string says none.
-    let reports: Vec<Option<String>> = i.list(v, "pireps")?.iter().map(|p| p.get("icing").and_then(Value::as_str).map(str::to_owned)).collect();
+    let reports: Vec<Option<String>> =
+        i.list(v, "pireps")?.iter().map(|p| p.get("icing").and_then(Value::as_str).map(str::to_owned)).collect();
     Ok(icing::icing_json(icing::icing_at_altitude(&selection, &i.nums(v, "flown_ft")?, &reports).as_ref()))
 }
 
@@ -490,7 +486,13 @@ fn inspections(i: In, v: Option<&Value>) -> R<Option<Inspections>> {
 fn squawks(i: In, v: &Value, key: &str) -> R<Vec<Squawk>> {
     i.list(v, key)?
         .iter()
-        .map(|s| Ok(Squawk { text: i.opt_str(s, "text")?.unwrap_or_default(), inoperative: truth(s, "inoperative"), deferred_for: i.opt_str(s, "deferred_for")? }))
+        .map(|s| {
+            Ok(Squawk {
+                text: i.opt_str(s, "text")?.unwrap_or_default(),
+                inoperative: truth(s, "inoperative"),
+                deferred_for: i.opt_str(s, "deferred_for")?,
+            })
+        })
         .collect()
 }
 
@@ -498,7 +500,9 @@ pub(crate) fn frat_input(i: In, v: &Value) -> R<frat::Input> {
     let vor_check = match v.get("vor_check") {
         None => VorCheck::Absent,
         Some(Value::Null) => VorCheck::None,
-        Some(c) => VorCheck::Checked { good_through: i.opt_str(c, "good_through")?.unwrap_or_default(), within_limit: truth(c, "within_limit") },
+        Some(c) => {
+            VorCheck::Checked { good_through: i.opt_str(c, "good_through")?.unwrap_or_default(), within_limit: truth(c, "within_limit") }
+        }
     };
     let currency = match i.obj(v, "currency")? {
         None => None,
@@ -548,7 +552,12 @@ pub(crate) fn table(i: In, t: &Value) -> R<ShortField> {
             .map(|w| {
                 i.list(w, key)?
                     .iter()
-                    .map(|row| row.as_array().map_or_else(|| i.err(key, "is not a grid"), |r| r.iter().map(|x| x.as_f64().map_or_else(|| i.err(key, "is not a grid of numbers"), Ok)).collect()))
+                    .map(|row| {
+                        row.as_array().map_or_else(
+                            || i.err(key, "is not a grid"),
+                            |r| r.iter().map(|x| x.as_f64().map_or_else(|| i.err(key, "is not a grid of numbers"), Ok)).collect(),
+                        )
+                    })
                     .collect()
             })
             .collect()
@@ -584,8 +593,13 @@ fn end_distance_rule(i: In, v: &Value) -> R<String> {
         None => None,
         Some(r) => Some(runway(i, r)?),
     };
-    let (d, over) = runways::end_distance(&t, r.as_ref(), (i.num(v, "pressure_alt_ft")?, i.num(v, "temp_c")?), i.opt_num(v, "weight_lb")?,
-                                          i.num(v, "headwind_kt")?);
+    let (d, over) = runways::end_distance(
+        &t,
+        r.as_ref(),
+        (i.num(v, "pressure_alt_ft")?, i.num(v, "temp_c")?),
+        i.opt_num(v, "weight_lb")?,
+        i.num(v, "headwind_kt")?,
+    );
     let mut out = distances_json(&d);
     out.pop();
     out.push_str(&format!(",\"over\":{over}}}"));
@@ -606,7 +620,10 @@ fn picks(i: In, v: Option<&Value>) -> R<Option<Picks>> {
     let pairs = |key: &str| -> R<Vec<(String, String)>> {
         match p.get(key) {
             None | Some(Value::Null) => Ok(vec![]),
-            Some(Value::Object(m)) => m.iter().map(|(f, e)| e.as_str().map(|e| (f.clone(), e.to_owned())).map_or_else(|| i.err(key, "holds a non-string end"), Ok)).collect(),
+            Some(Value::Object(m)) => m
+                .iter()
+                .map(|(f, e)| e.as_str().map(|e| (f.clone(), e.to_owned())).map_or_else(|| i.err(key, "holds a non-string end"), Ok))
+                .collect(),
             Some(Value::Array(list)) => list
                 .iter()
                 .map(|pair| match pair.as_array() {
@@ -655,8 +672,14 @@ fn runway_checks_rule(i: In, v: &Value) -> R<String> {
         })
         .collect::<R<Vec<_>>>()?;
     let p = picks(i, v.get("picks"))?;
-    Ok(runways::checks_json(&runways::runway_checks(&airplane, true, &fields, i.opt_num(v, "takeoff_lb")?, i.opt_num(v, "landing_lb")?,
-                                                    p.as_ref())))
+    Ok(runways::checks_json(&runways::runway_checks(
+        &airplane,
+        true,
+        &fields,
+        i.opt_num(v, "takeoff_lb")?,
+        i.opt_num(v, "landing_lb")?,
+        p.as_ref(),
+    )))
 }
 
 // --- weight and balance -----------------------------------------------------

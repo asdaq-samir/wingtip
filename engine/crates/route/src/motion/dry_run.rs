@@ -337,17 +337,8 @@ fn truthy(v: Option<&Value>) -> bool {
 pub fn dry_run(rows: &[Row], start_s: f64, line: Option<&[LatLon]>, missed: bool) -> DryRun {
     let Some(first) = rows.first().filter(|r| r.kind == Kind::Departure) else { return DryRun::default() };
     let plan = plan_profile(rows).0;
-    let mut anchors = vec![Anchor {
-        along: 0.0,
-        route: 0.0,
-        lat: first.lat,
-        lon: first.lon,
-        t: start_s,
-        fuel: 0.0,
-        gs: None,
-        track: None,
-        flown: None,
-    }];
+    let mut anchors =
+        vec![Anchor { along: 0.0, route: 0.0, lat: first.lat, lon: first.lon, t: start_s, fuel: 0.0, gs: None, track: None, flown: None }];
     let mut missable = false;
     let mut went_missed = false;
     let mut last_final: Option<(f64, f64)> = None;
@@ -539,11 +530,17 @@ pub fn dry_run(rows: &[Row], start_s: f64, line: Option<&[LatLon]>, missed: bool
                     None => {
                         // The plan's own bends, laid evenly over the path.
                         let k = flown.at.last().copied().unwrap_or(0.0) / js_max(1e-9, b.route - a.route);
-                        marks.extend(plan.iter().filter(|p| p.along_nm > a.route && p.along_nm < b.route).map(|p| a.along + (p.along_nm - a.route) * k));
+                        marks.extend(
+                            plan.iter()
+                                .filter(|p| p.along_nm > a.route && p.along_nm < b.route)
+                                .map(|p| a.along + (p.along_nm - a.route) * k),
+                        );
                     }
                 }
             }
-            None => marks.extend(plan.iter().filter(|p| p.along_nm > a.route && p.along_nm < b.route).map(|p| a.along + p.along_nm - a.route)),
+            None => {
+                marks.extend(plan.iter().filter(|p| p.along_nm > a.route && p.along_nm < b.route).map(|p| a.along + p.along_nm - a.route))
+            }
         }
     }
     let mut s = STEP_NM;

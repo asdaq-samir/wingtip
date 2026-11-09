@@ -98,7 +98,11 @@ pub struct Listed {
 
 /// The frequencies in the order to try them.
 pub fn channels(listed: &[Listed]) -> Vec<Channel> {
-    let mut out = vec![Channel { label: "The frequency you are on".to_owned(), mhz: None, why: "Already talking to ATC: stay with them (AIM 6-3-1)" }];
+    let mut out = vec![Channel {
+        label: "The frequency you are on".to_owned(),
+        mhz: None,
+        why: "Already talking to ATC: stay with them (AIM 6-3-1)",
+    }];
     let nearest = |kinds: &[&str]| {
         listed
             .iter()
@@ -111,7 +115,11 @@ pub fn channels(listed: &[Listed]) -> Vec<Channel> {
     if let Some(l) = nearest(&["TWR"]) {
         out.push(Channel { label: format!("{} tower", l.ident), mhz: Some(l.mhz), why: "The nearest tower the app lists" });
     }
-    out.push(Channel { label: "Guard".to_owned(), mhz: Some(GUARD_MHZ), why: "The emergency frequency, guarded by most towers and radar facilities (AIM 6-3-1)" });
+    out.push(Channel {
+        label: "Guard".to_owned(),
+        mhz: Some(GUARD_MHZ),
+        why: "The emergency frequency, guarded by most towers and radar facilities (AIM 6-3-1)",
+    });
     out
 }
 
@@ -145,7 +153,9 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         Some(Value::Array(items)) => items
             .iter()
             .map(|f| {
-                let text = |k: &str| f.get(k).and_then(Value::as_str).map(str::to_owned).ok_or(format!("{name}: a frequency's \"{k}\" is missing"));
+                let text = |k: &str| {
+                    f.get(k).and_then(Value::as_str).map(str::to_owned).ok_or(format!("{name}: a frequency's \"{k}\" is missing"))
+                };
                 let num = |k: &str| f.get(k).and_then(Value::as_f64).ok_or(format!("{name}: a frequency's \"{k}\" is missing"));
                 Ok(Listed { ident: text("ident")?, kind: text("kind")?, mhz: num("mhz")?, distance_nm: num("distance_nm")? })
             })

@@ -75,7 +75,9 @@ fn where_the_airplane_is_along_the_route() {
         }
         for (key, w) in want.as_object().unwrap() {
             match w {
-                Value::Number(n) => assert!((got[key].as_f64().unwrap() - n.as_f64().unwrap()).abs() < 0.01, "{}: {key} {}", case["name"], got[key]),
+                Value::Number(n) => {
+                    assert!((got[key].as_f64().unwrap() - n.as_f64().unwrap()).abs() < 0.01, "{}: {key} {}", case["name"], got[key])
+                }
                 _ => assert_eq!(&got[key], w, "{}: {key}", case["name"]),
             }
         }
@@ -96,7 +98,11 @@ fn what_the_records_say() {
         assert_eq!(ask("vor_check_limit_deg", json!({ "kind": case["kind"] })).as_f64(), case["limit_deg"].as_f64(), "{case}");
     }
     for case in f["workings"].as_array().unwrap() {
-        assert_eq!(ask("workings_right", json!({ "key": case["key"], "typed": case["typed"], "answer": case["answer"] })), case["right"], "{case}");
+        assert_eq!(
+            ask("workings_right", json!({ "key": case["key"], "typed": case["typed"], "answer": case["answer"] })),
+            case["right"],
+            "{case}"
+        );
     }
     for case in f["fills"].as_array().unwrap() {
         assert_same(&ask("endorsement_fill", case["input"].clone()), &case["answer"], &case["name"]);
@@ -121,7 +127,11 @@ fn the_filing_forms_items() {
         assert_eq!(ask("filed_route", json!({ "stops": c["stops"], "airways": c["airways"] })), c["item"]);
     }
     for c in f["endurance"].as_array().unwrap() {
-        assert_eq!(ask("filed_endurance", json!({ "fuel_gal": c["fuelGal"], "burn_gph": c["burnGph"] })).as_f64(), c["minutes"].as_f64(), "{c}");
+        assert_eq!(
+            ask("filed_endurance", json!({ "fuel_gal": c["fuelGal"], "burn_gph": c["burnGph"] })).as_f64(),
+            c["minutes"].as_f64(),
+            "{c}"
+        );
     }
     for c in f["dateOfFlight"].as_array().unwrap() {
         assert_eq!(ask("filed_dof", json!({ "depart": c["depart"], "today": c["today"] })), c["item"], "{c}");

@@ -49,7 +49,9 @@ pub fn lapse_warning(until: Option<&str>, until_kind: Option<&str>, signed_on: &
     }
     let on = said(until).ok_or_else(|| format!("endorsement_lapse: {until:?} is not a day"))?;
     Ok(Some(if until_kind == Some("EXP") {
-        format!("Your certificate expired on {on}: 14 CFR 61.197(e) asks for it to be reinstated (61.199) before you sign as an instructor.")
+        format!(
+            "Your certificate expired on {on}: 14 CFR 61.197(e) asks for it to be reinstated (61.199) before you sign as an instructor."
+        )
     } else {
         format!("Your recent experience ran out on {on}: 14 CFR 61.197(a) asks for recent experience in the preceding 24 calendar months before you sign as an instructor.")
     }))

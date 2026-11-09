@@ -44,7 +44,13 @@ fn check(section: &str, name: &str, input: impl Fn(&Value) -> Value, answer: imp
 
 #[test]
 fn a_taf_over_a_window() {
-    check("tafWindow", "taf_window", |c| json!({"fcsts": c["fcsts"], "start": c["start"], "end": c["end"]}), |a| a["worst"].clone(), "worst");
+    check(
+        "tafWindow",
+        "taf_window",
+        |c| json!({"fcsts": c["fcsts"], "start": c["start"], "end": c["end"]}),
+        |a| a["worst"].clone(),
+        "worst",
+    );
 }
 
 #[test]

@@ -26,8 +26,7 @@ fn bytes_of<'a>(buffer: &'a PyBuffer<u8>) -> PyResult<&'a [u8]> {
 
 #[pyfunction]
 fn shape_holds(content: PyBuffer<u8>, lon: f64, lat: f64) -> PyResult<bool> {
-    airspace::shape_holds(bytes_of(&content)?, lon, lat)
-        .ok_or_else(|| PyValueError::new_err("a shapefile record cut short"))
+    airspace::shape_holds(bytes_of(&content)?, lon, lat).ok_or_else(|| PyValueError::new_err("a shapefile record cut short"))
 }
 
 /// Tests only: an oracle for the pack's shapes in services/planner/tests_wingtip/test_native.py.
@@ -39,8 +38,7 @@ fn wkb_holds(wkb: PyBuffer<u8>, lon: f64, lat: f64) -> PyResult<bool> {
 /// A shapefile Polygon record's rings as the pack's WKB (airspace::shape_to_wkb).
 #[pyfunction]
 fn shape_to_wkb<'py>(py: Python<'py>, content: PyBuffer<u8>) -> PyResult<Bound<'py, PyBytes>> {
-    let wkb = airspace::shape_to_wkb(bytes_of(&content)?)
-        .ok_or_else(|| PyValueError::new_err("a shapefile record cut short"))?;
+    let wkb = airspace::shape_to_wkb(bytes_of(&content)?).ok_or_else(|| PyValueError::new_err("a shapefile record cut short"))?;
     Ok(PyBytes::new(py, &wkb))
 }
 
@@ -90,14 +88,15 @@ fn airspace_at_json(data: Option<PyBuffer<u8>>, lat: f64, lon: f64, ground_ft: O
     answer.ok_or_else(|| PyValueError::new_err("a shape in the pack the engine cannot read"))
 }
 
-
 /// The alerts ahead from phone packs (wingtip_engine::ahead), JSON. Tests
 /// only: services/planner/tests_wingtip/test_phone_pack.py's oracle.
 #[pyfunction]
 #[pyo3(signature = (packs, lat, lon, track_deg, gs_kt, alt_ft, vs_fpm, now, tfr_lines=None, tfrs_at=None))]
 #[allow(clippy::too_many_arguments)]
-fn ahead_json(packs: Vec<PyBuffer<u8>>, lat: f64, lon: f64, track_deg: f64, gs_kt: f64, alt_ft: Option<f64>, vs_fpm: f64,
-              now: i64, tfr_lines: Option<&str>, tfrs_at: Option<i64>) -> PyResult<String> {
+fn ahead_json(
+    packs: Vec<PyBuffer<u8>>, lat: f64, lon: f64, track_deg: f64, gs_kt: f64, alt_ft: Option<f64>, vs_fpm: f64, now: i64,
+    tfr_lines: Option<&str>, tfrs_at: Option<i64>,
+) -> PyResult<String> {
     let mut read = Vec::new();
     for b in &packs {
         read.push(read_pack(bytes_of(b)?)?);

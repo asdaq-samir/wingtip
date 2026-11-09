@@ -106,8 +106,10 @@ fn the_inbound_legs_time() {
 
 #[test]
 fn the_entries_in_words() {
-    assert_eq!(holding::entry_steps(Entry::Direct, 360.0, true, 5000.0),
-               "Fly to the fix and turn right to follow the pattern: outbound on 180°.");
+    assert_eq!(
+        holding::entry_steps(Entry::Direct, 360.0, true, 5000.0),
+        "Fly to the fix and turn right to follow the pattern: outbound on 180°."
+    );
     assert!(holding::entry_steps(Entry::Teardrop, 360.0, true, 5000.0)
         .starts_with("Fly to the fix, then turn to 150°, 30° into the holding side, for one minute"));
     assert!(holding::entry_steps(Entry::Parallel, 90.0, false, 16000.0).contains("for a minute and a half; then turn right"));
@@ -115,11 +117,14 @@ fn the_entries_in_words() {
 
 #[test]
 fn the_holding_answer() {
-    let d: Value = serde_json::from_str(&holding::holding_json(360.0, 220.0, true, Some(100.0), Some(360.0), Some(20.0), Some(5000.0))).unwrap();
+    let d: Value =
+        serde_json::from_str(&holding::holding_json(360.0, 220.0, true, Some(100.0), Some(360.0), Some(20.0), Some(5000.0))).unwrap();
     assert_eq!(d["entry"], "parallel");
     assert_eq!(d["entry_name"], "Parallel");
     assert!(d["either"].is_null());
-    assert!(d["steps"].as_str().unwrap()
+    assert!(d["steps"]
+        .as_str()
+        .unwrap()
         .starts_with("At the fix, turn to 180°, parallel to the holding course on the non-holding side, for one minute"));
     assert_eq!(d["approach_relative"], 40.0);
     assert!(near(d["wind"]["outbound_sec"].as_f64().unwrap(), 40.0, 1e-9));
@@ -128,7 +133,8 @@ fn the_holding_answer() {
     assert_eq!(near_edge["entry"], "teardrop");
     assert_eq!(near_edge["either_name"], "Direct");
     assert!(near_edge["wind"].is_null() && near_edge["wind_problem"].is_null());
-    let strong: Value = serde_json::from_str(&holding::holding_json(360.0, 0.0, true, Some(50.0), Some(90.0), Some(60.0), Some(5000.0))).unwrap();
+    let strong: Value =
+        serde_json::from_str(&holding::holding_json(360.0, 0.0, true, Some(50.0), Some(90.0), Some(60.0), Some(5000.0))).unwrap();
     assert!(strong["wind"].is_null());
     assert_eq!(strong["wind_problem"], "A wind stronger than the airplane holds no heading.");
 }
@@ -143,21 +149,30 @@ fn segs(list: &[(&str, Option<f64>)]) -> Vec<(String, Option<f64>)> {
 fn each_segment_at_the_highest_of_assigned_minimum_and_expected() {
     let flown = lost_comms::segment_altitudes(
         &segs(&[("to SWEDE", Some(2600.0)), ("SWEDE to RAYMO", Some(5000.0)), ("RAYMO to the approach", Some(3400.0))]),
-        Some(4000.0), Some(6000.0), 1,
+        Some(4000.0),
+        Some(6000.0),
+        1,
     );
     let got: Vec<_> = flown.iter().map(|f| (f.name.as_str(), f.fly)).collect();
-    assert_eq!(got, vec![
-        ("to SWEDE", Some((4000.0, Because::Assigned))),
-        ("SWEDE to RAYMO", Some((6000.0, Because::Expected))),
-        ("RAYMO to the approach", Some((6000.0, Because::Expected))),
-    ]);
+    assert_eq!(
+        got,
+        vec![
+            ("to SWEDE", Some((4000.0, Because::Assigned))),
+            ("SWEDE to RAYMO", Some((6000.0, Because::Expected))),
+            ("RAYMO to the approach", Some((6000.0, Because::Expected))),
+        ]
+    );
     // An MEA above both: the MEA.
-    assert_eq!(lost_comms::segment_altitudes(&segs(&[("x", Some(7000.0))]), Some(4000.0), Some(6000.0), 0)[0].fly,
-               Some((7000.0, Because::Minimum)));
+    assert_eq!(
+        lost_comms::segment_altitudes(&segs(&[("x", Some(7000.0))]), Some(4000.0), Some(6000.0), 0)[0].fly,
+        Some((7000.0, Because::Minimum))
+    );
     assert_eq!(lost_comms::segment_altitudes(&segs(&[("x", None)]), None, None, 0)[0].fly, None);
     // A tie goes to the first named, as the rule lists them.
-    assert_eq!(lost_comms::segment_altitudes(&segs(&[("x", Some(4000.0))]), Some(4000.0), Some(4000.0), 0)[0].fly,
-               Some((4000.0, Because::Assigned)));
+    assert_eq!(
+        lost_comms::segment_altitudes(&segs(&[("x", Some(4000.0))]), Some(4000.0), Some(4000.0), 0)[0].fly,
+        Some((4000.0, Because::Assigned))
+    );
     assert_eq!(lost_comms::fly_words(flown[1].fly), "Fly 6,000 ft: expected");
     assert_eq!(lost_comms::fly_words(Some((7000.0, Because::Minimum))), "Fly 7,000 ft: the minimum");
     assert_eq!(lost_comms::fly_words(None), "No altitude known");
@@ -176,8 +191,14 @@ fn leaving_the_clearance_limit_at_the_efc_else_the_eta() {
 fn the_lost_comms_answer() {
     let d: Value = serde_json::from_str(&lost_comms::lost_comms_json(
         &segs(&[("Departure to SWEDE", Some(2600.0)), ("SWEDE to RAYMO", Some(5000.0)), ("", None)]),
-        Some(4000.0), Some(6000.0), 1, false, "", " 1435Z ",
-    )).unwrap();
+        Some(4000.0),
+        Some(6000.0),
+        1,
+        false,
+        "",
+        " 1435Z ",
+    ))
+    .unwrap();
     let said: Vec<&str> = d["segments"].as_array().unwrap().iter().map(|s| s["words"].as_str().unwrap()).collect();
     assert_eq!(said, ["Fly 4,000 ft: assigned", "Fly 6,000 ft: expected", "Fly 6,000 ft: expected"]);
     assert_eq!(d["segments"][2]["name"], "Segment");
@@ -232,7 +253,8 @@ fn a_reasonable_estimate_headings_round_the_compass() {
 
 #[test]
 fn the_diversion_answer_in_words_with_the_estimates_checked() {
-    let d: Value = serde_json::from_str(&diversion::diversion_json(&LEG, 360.0, 18.0, "KMSN", [Some(355.0), Some(95.0), None, Some(1.4)])).unwrap();
+    let d: Value =
+        serde_json::from_str(&diversion::diversion_json(&LEG, 360.0, 18.0, "KMSN", [Some(355.0), Some(95.0), None, Some(1.4)])).unwrap();
     assert!(d["problem"].is_null());
     assert!(near(d["solved"]["mh"].as_f64().unwrap(), 352.5, 0.05));
     assert_eq!(d["steps"][0]["value"], "360°, 18.0 nm");
@@ -245,8 +267,9 @@ fn the_diversion_answer_in_words_with_the_estimates_checked() {
     assert!(checks[2]["reasonable"].is_null());
     assert_eq!(checks[2]["written"], "10 min");
     assert_eq!(checks[3]["reasonable"], true);
-    let strong: Value = serde_json::from_str(&diversion::diversion_json(
-        &Air { tas_kt: 50.0, wind_kt: 60.0, ..LEG }, 360.0, 18.0, "KMSN", [None; 4])).unwrap();
+    let strong: Value =
+        serde_json::from_str(&diversion::diversion_json(&Air { tas_kt: 50.0, wind_kt: 60.0, ..LEG }, 360.0, 18.0, "KMSN", [None; 4]))
+            .unwrap();
     assert!(strong["solved"].is_null() && strong["steps"].as_array().unwrap().is_empty());
     assert_eq!(strong["problem"], "The wind is too strong for a heading to KMSN to hold.");
 }
@@ -257,8 +280,15 @@ fn the_diversion_answer_in_words_with_the_estimates_checked() {
 /// it, 18 minutes a leg at 3,500 ft.
 fn checkpoints() -> Vec<Checkpoint> {
     let cp = |seq, name: &str, category: &str, lat, along, tc, ete, alt| Checkpoint {
-        sequence_no: seq, name: name.into(), category: category.into(), lat, lon: -88.0, along_track_nm: along,
-        true_course_deg: tc, ete_min: ete, altitude_ft: alt,
+        sequence_no: seq,
+        name: name.into(),
+        category: category.into(),
+        lat,
+        lon: -88.0,
+        along_track_nm: along,
+        true_course_deg: tc,
+        ete_min: ete,
+        altitude_ft: alt,
     };
     vec![
         cp(0, "A", "departure", 42.0, 0.0, None, None, None),
@@ -273,7 +303,8 @@ fn checkpoints() -> Vec<Checkpoint> {
 fn flown() -> Vec<Point> {
     let t0 = 1_790_953_200_000.0; // 2026-10-02 15:00 UTC
     let lon = -88.0 + 0.5 / (60.0 * (42.5 * std::f64::consts::PI / 180.0).cos());
-    let mut points: Vec<Point> = (0..120).step_by(5)
+    let mut points: Vec<Point> = (0..120)
+        .step_by(5)
         .map(|s| Point { t: t0 + s as f64 * 1000.0, lat: 42.0 - 0.002 + (s as f64 / 3600.0) * (10.0 / 60.0), lon, alt_ft: Some(700.0) })
         .collect();
     let off = t0 + 120_000.0;
@@ -290,8 +321,12 @@ fn flown() -> Vec<Point> {
         points.push(Point { t: off + s * 1000.0, lat: 42.0 + nm / 60.0, lon, alt_ft: Some(alt) });
     }
     let on = off + 36.0 * 60_000.0;
-    points.extend((5..120).step_by(5)
-        .map(|s| Point { t: on + s as f64 * 1000.0, lat: 43.0 + (s as f64 / 3600.0) * (10.0 / 60.0), lon, alt_ft: Some(700.0) }));
+    points.extend((5..120).step_by(5).map(|s| Point {
+        t: on + s as f64 * 1000.0,
+        lat: 43.0 + (s as f64 / 3600.0) * (10.0 / 60.0),
+        lon,
+        alt_ft: Some(700.0),
+    }));
     points
 }
 
@@ -373,8 +408,11 @@ fn the_debrief_answer_sorts_the_track_and_says_the_tolerances() {
     let mut points = flown();
     points.reverse();
     let a: Value = serde_json::from_str(&debrief::answer_json(&checkpoints(), &points, &[("B".into(), 1700.0)])).unwrap();
-    assert_eq!(a["tolerances"], serde_json::json!({"altitude_ft": 200.0, "course_deg": 15.0, "off_route_nm": 3.0, "eta_min": 5.0,
-                                                   "pattern_nm": 1.5, "pattern_ft": 100.0}));
+    assert_eq!(
+        a["tolerances"],
+        serde_json::json!({"altitude_ft": 200.0, "course_deg": 15.0, "off_route_nm": 3.0, "eta_min": 5.0,
+                                                   "pattern_nm": 1.5, "pattern_ft": 100.0})
+    );
     assert_eq!(a["debrief"]["passes"][0]["due_min"], 18.0);
     assert_eq!(a["debrief"]["patterns"][0]["pattern_ft"], 1700.0);
     let none: Value = serde_json::from_str(&debrief::answer_json(&checkpoints(), &flown()[..20], &[])).unwrap();
@@ -438,9 +476,12 @@ fn the_reserve_is_the_rules() {
 #[test]
 fn the_tanks_are_walked_and_filled_at_each_field_landed_at() {
     use serde_json::json;
-    let a = ask("fuel_in_tanks", json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserve_gal": 6.0, "points": [
+    let a = ask(
+        "fuel_in_tanks",
+        json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserve_gal": 6.0, "points": [
         {"departure": true}, {"fuel_gal": 10.0}, {"fuel_gal": 20.0, "refuel": true}, {"fuel_gal": 34.0},
-        {"fuel_gal": null}, {"fuel_gal": 1.0}]}));
+        {"fuel_gal": null}, {"fuel_gal": 1.0}]}),
+    );
     assert_eq!(a[0], json!({"gal": 40.0, "low": false}));
     assert_eq!(a[1]["low"], json!(false));
     assert!((a[1]["gal"].as_f64().unwrap() - 28.6).abs() < 1e-9);

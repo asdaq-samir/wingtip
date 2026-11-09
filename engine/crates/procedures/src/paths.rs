@@ -203,11 +203,15 @@ fn points_json(points: &[P]) -> String {
 ///   "distance_nm"?}`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
-        "procedure_arc" => Ok(points_json(&arc(point(name, v, "center")?, point(name, v, "start")?, point(name, v, "end")?, right(name, v)?))),
+        "procedure_arc" => {
+            Ok(points_json(&arc(point(name, v, "center")?, point(name, v, "start")?, point(name, v, "end")?, right(name, v)?)))
+        }
         "procedure_hold" => {
             Ok(points_json(&hold(point(name, v, "fix")?, num(name, v, "inbound_deg")?, right(name, v)?, num(name, v, "leg_nm")?)))
         }
-        "procedure_turn" => Ok(points_json(&procedure_turn(point(name, v, "fix")?, num(name, v, "inbound_deg")?, num(name, v, "pt_course_deg")?))),
+        "procedure_turn" => {
+            Ok(points_json(&procedure_turn(point(name, v, "fix")?, num(name, v, "inbound_deg")?, num(name, v, "pt_course_deg")?)))
+        }
         "procedure_climb_nm" => {
             let mut out = String::new();
             json::number(&mut out, climb_nm(opt_num(name, v, "altitude_ft")?, opt_num(name, v, "known_ft")?));

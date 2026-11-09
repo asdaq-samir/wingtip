@@ -75,7 +75,10 @@ fn the_route_a_clearance_gives_is_the_webs() {
         let fv = &case["found"];
         let places = FoundPlaces {
             limit: fv["limit"].as_object().map(|_| found(&fv["limit"])),
-            route: fv["route"].as_array().map(|runs| runs.iter().map(|r| r.as_array().unwrap().iter().map(found).collect()).collect()).unwrap_or_default(),
+            route: fv["route"]
+                .as_array()
+                .map(|runs| runs.iter().map(|r| r.as_array().unwrap().iter().map(found).collect()).collect())
+                .unwrap_or_default(),
             departure: procedure(&fv["departure"]),
             arrival: procedure(&fv["arrival"]),
         };

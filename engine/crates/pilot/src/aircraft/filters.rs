@@ -142,8 +142,8 @@ pub fn relation_to(plane: &Plane, lat: f64, lon: f64, elevation_ft: f64) -> Rela
     let to_field = bearing_deg(plane.lat, plane.lon, lat, lon);
     let rate = plane.vertical_fpm.unwrap_or(0.0);
     let inbound = angle_between(track, to_field) <= HEADED_DEG && (rate <= -CHANGING_FPM || nm <= AROUND_NM);
-    let departing = angle_between(track, (to_field + 180.0) % 360.0) <= HEADED_DEG
-        && (rate >= CHANGING_FPM || (nm <= AROUND_NM && above < 3000.0));
+    let departing =
+        angle_between(track, (to_field + 180.0) % 360.0) <= HEADED_DEG && (rate >= CHANGING_FPM || (nm <= AROUND_NM && above < 3000.0));
     Relation { around, inbound, departing }
 }
 

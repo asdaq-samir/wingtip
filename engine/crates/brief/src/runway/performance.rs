@@ -185,14 +185,14 @@ pub fn field_air(elevation_ft: f64, altimeter_in_hg: Option<f64>, temp_c: Option
 /// caller must tell from a fit (its length_ft is None) and never read as
 /// "within" (14 CFR 91.103(b): the runway lengths are among what a pilot
 /// must know).
-pub fn end_distance(table: &ShortField, runway: Option<&Runway>, air: (f64, f64), weight_lb: Option<f64>, headwind_kt: f64)
-                    -> (Distances, bool) {
+pub fn end_distance(
+    table: &ShortField, runway: Option<&Runway>, air: (f64, f64), weight_lb: Option<f64>, headwind_kt: f64,
+) -> (Distances, bool) {
     let heaviest = table.weights_lb.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     let d = short_field(table, air.0, air.1, weight_lb.unwrap_or(heaviest), headwind_kt, soft_surface(runway));
     let over = runway.and_then(|r| r.length_ft).is_some_and(|length| d.total_ft > length);
     (d, over)
 }
-
 
 /// "Close": a runway with less than 15 per cent to spare over the
 /// distance needed. For a landing it is the FAA's margin: "an additional
@@ -256,8 +256,10 @@ pub struct FieldReport {
 /// `table` for it (None where the profile has none) and its demonstrated
 /// crosswind, the weight (None, the table's heaviest), the field's air and
 /// the reported wind.
-pub fn end_fit(table: Option<&ShortField>, demonstrated_kt: Option<f64>, runway: &Runway, heading_true_deg: Option<f64>,
-               wind: Option<&FitWind>, field: &FieldReport, weight_lb: Option<f64>) -> EndFit {
+pub fn end_fit(
+    table: Option<&ShortField>, demonstrated_kt: Option<f64>, runway: &Runway, heading_true_deg: Option<f64>, wind: Option<&FitWind>,
+    field: &FieldReport, weight_lb: Option<f64>,
+) -> EndFit {
     // Along and across the end (wingtip.runway_wind.components_kt): none with
     // no wind. A variable one (VRB, reported with no direction, AIM 7-1-28)
     // may blow straight across, so all of it, gusts included, is

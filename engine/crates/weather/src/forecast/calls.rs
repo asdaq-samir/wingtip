@@ -234,11 +234,17 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         }
         "pireps_in_box" => {
             let b = list(name, v, "box")?;
-            let edge = |i: usize| b.get(i).and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"box\" is not [south, west, north, east]"));
+            let edge =
+                |i: usize| b.get(i).and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"box\" is not [south, west, north, east]"));
             out = route::pireps_in_box(list(name, v, "reports")?, (edge(0)?, edge(1)?, edge(2)?, edge(3)?), num(name, v, "now")?);
         }
         "gairmets_along_route" => {
-            out = route::gairmets_along_route(list(name, v, "advisories")?, &route::points(v.get("path")), num(name, v, "start")?, num(name, v, "end")?);
+            out = route::gairmets_along_route(
+                list(name, v, "advisories")?,
+                &route::points(v.get("path")),
+                num(name, v, "start")?,
+                num(name, v, "end")?,
+            );
         }
         "freezing_level" => match winds::freezing_level(&profile(name, v)?) {
             Some((ft, at_or_below)) => {
@@ -249,7 +255,9 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             None => out.push_str("null"),
         },
         "temperature_at" => json::opt_number(&mut out, winds::temperature_at(&profile(name, v)?, num(name, v, "altitude_ft")?)),
-        "service_ceiling_on_the_day" => json::number(&mut out, winds::service_ceiling_on_the_day(num(name, v, "book_ft")?, &profile(name, v)?)),
+        "service_ceiling_on_the_day" => {
+            json::number(&mut out, winds::service_ceiling_on_the_day(num(name, v, "book_ft")?, &profile(name, v)?))
+        }
         "wind_at_altitude" => {
             let lv = levels(name, v)?;
             match v.get("altitudes") {
@@ -277,7 +285,8 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             let stations = list(name, v, "stations")?
                 .iter()
                 .map(|s| {
-                    let icao_id = s.get("icao_id").and_then(Value::as_str).ok_or_else(|| format!("{name}: a station has no \"icao_id\""))?;
+                    let icao_id =
+                        s.get("icao_id").and_then(Value::as_str).ok_or_else(|| format!("{name}: a station has no \"icao_id\""))?;
                     let at = match (opt_num(name, s, "lat")?, opt_num(name, s, "lon")?) {
                         (Some(lat), Some(lon)) => Some((lat, lon)),
                         _ => None,

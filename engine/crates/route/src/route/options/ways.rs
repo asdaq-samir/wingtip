@@ -55,8 +55,9 @@ impl PartialOrd for Spent {
 /// dearer. Dijkstra over the grid's eight ways out of each cell, a step's
 /// minutes its miles at the cell's groundspeed that way, weighted by the
 /// cell it enters.
-pub fn way(grid: &Grid, gs: &[f64], start: Point, end: Point, marginal_cost: f64, closed_cost: Option<f64>,
-           water_cost: f64) -> Option<Vec<Cell>> {
+pub fn way(
+    grid: &Grid, gs: &[f64], start: Point, end: Point, marginal_cost: f64, closed_cost: Option<f64>, water_cost: f64,
+) -> Option<Vec<Cell>> {
     let (rows, cols) = (grid.rows, grid.cols);
     let (s, e) = (grid.cell(start), grid.cell(end));
     // A step's miles hang on its row and its way alone: worked out once.
@@ -136,9 +137,8 @@ pub fn way(grid: &Grid, gs: &[f64], start: Point, end: Point, marginal_cost: f64
 /// itself crossed, where it had to -- no more than `slower_min` slower.
 pub fn straightened(grid: &Grid, gs: &Vec<f64>, points: &[Point], marginal_cost: f64, slower_min: f64, water_cost: f64) -> Vec<Point> {
     let leg_nm: Vec<f64> = points.windows(2).map(|w| geo::distance_nm(w[0].0, w[0].1, w[1].0, w[1].1)).collect();
-    let from = |i: usize| -> Result<Vec<f64>, ()> {
-        Ok(points.iter().map(|p| geo::distance_nm(points[i].0, points[i].1, p.0, p.1)).collect())
-    };
+    let from =
+        |i: usize| -> Result<Vec<f64>, ()> { Ok(points.iter().map(|p| geo::distance_nm(points[i].0, points[i].1, p.0, p.1)).collect()) };
     let how = Straighten { marginal_cost, slower_min, water_cost };
     match straighten_turns(grid.geom, &costs(grid, gs), points, &leg_nm, from, &how) {
         Ok(turns) => turns.into_iter().map(|k| points[k]).collect(),

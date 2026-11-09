@@ -206,7 +206,9 @@ pub fn tafs(text: &str) -> Result<String, String> {
             json::opt_number(&mut p, num(f.text_at(&["probability"])));
             // The wind from true north, as a TAF gives it (AC 00-45H, the
             // TAF), for the runway a flight finds in use; VRB has no direction.
-            for (key, tag) in [("wind_dir_true_deg", "wind_dir_degrees"), ("wind_speed_kt", "wind_speed_kt"), ("wind_gust_kt", "wind_gust_kt")] {
+            for (key, tag) in
+                [("wind_dir_true_deg", "wind_dir_degrees"), ("wind_speed_kt", "wind_speed_kt"), ("wind_gust_kt", "wind_gust_kt")]
+            {
                 p.push_str(&format!(",\"{key}\":"));
                 json::opt_number(&mut p, num(f.text_at(&[tag])));
             }
@@ -392,7 +394,11 @@ pub fn gairmets(text: &str) -> Result<String, String> {
     let mut items = Vec::new();
     for el in doc.iter_named("GAIRMET") {
         let hazard = el.child("hazard");
-        let Some(words) = hazard.and_then(|h| h.attribute("type")).and_then(|k| GAIRMET_HAZARDS.iter().find(|(c, _)| *c == k)).map(|(_, w)| *w) else { continue };
+        let Some(words) =
+            hazard.and_then(|h| h.attribute("type")).and_then(|k| GAIRMET_HAZARDS.iter().find(|(c, _)| *c == k)).map(|(_, w)| *w)
+        else {
+            continue;
+        };
         if el.text_at(&["geometry_type"]) != Some("AREA") {
             continue;
         }

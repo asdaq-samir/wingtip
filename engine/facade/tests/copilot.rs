@@ -66,10 +66,13 @@ fn the_alternative_is_best_fields_diversion_pick() {
     let f = fixture();
     let ifr = json!({ "KOSH": { "raw": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992", "flight_category": "IFR" } });
     let input = common::copilot_input(&f["base"], &json!({ "metars": ifr }));
-    let ranked = ask("best_fields", &json!({
-        "mode": "diversion", "at": input["own"], "speed_kt": input["own"]["gs_kt"],
-        "airplane": { "cruise_tas_kt": input["own"]["gs_kt"] }, "fields": input["fields"],
-    }));
+    let ranked = ask(
+        "best_fields",
+        &json!({
+            "mode": "diversion", "at": input["own"], "speed_kt": input["own"]["gs_kt"],
+            "airplane": { "cruise_tas_kt": input["own"]["gs_kt"] }, "fields": input["fields"],
+        }),
+    );
     let first = ranked["fields"].as_array().unwrap().iter().find(|r| r["ident"] != "KOSH").unwrap();
     let said = ask("copilot_watch", &input);
     assert_eq!(said["messages"][0]["alternative"]["ident"], first["ident"], "{said}");

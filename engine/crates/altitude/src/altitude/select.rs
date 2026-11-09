@@ -66,14 +66,18 @@ fn lowest(values: impl IntoIterator<Item = Option<f64>>) -> Option<f64> {
 /// IFR altitudes from the floor to the service ceiling alone: an IFR
 /// clearance takes the flight into Class B, the clouds and Class A.
 #[allow(clippy::too_many_arguments)]
-fn band(rules: &Rules, floor: f64, airspace: Option<f64>, service: Option<f64>, cloud_base: Option<f64>, course: f64, areas: &[&Area], rule_from: f64) -> Band {
+fn band(
+    rules: &Rules, floor: f64, airspace: Option<f64>, service: Option<f64>, cloud_base: Option<f64>, course: f64, areas: &[&Area],
+    rule_from: f64,
+) -> Band {
     if rules.ifr {
         let top = lowest([service, rules.maa_ft]);
         let altitudes = cruising::legal_ifr(floor, top, course).into_iter().filter(|&a| !blocked(a, areas)).collect();
         return Band { ceiling: top, altitudes, cloud_kept: true, tight: false };
     }
     let legal = |ceiling: Option<f64>| -> (Vec<f64>, bool) {
-        let found: Vec<f64> = cruising::legal_vfr(floor, ceiling, course, Some(rule_from)).into_iter().filter(|&a| !blocked(a, areas)).collect();
+        let found: Vec<f64> =
+            cruising::legal_vfr(floor, ceiling, course, Some(rule_from)).into_iter().filter(|&a| !blocked(a, areas)).collect();
         if !found.is_empty() {
             return (found, false);
         }
@@ -110,7 +114,10 @@ fn obj(members: Vec<(&str, Value)>) -> Value {
 
 fn point(name: &str, v: Option<&Value>) -> R<Point> {
     match v.and_then(Value::as_array) {
-        Some([lat, lon]) => Ok((lat.as_f64().ok_or(format!("{name}: a point's lat is not a number"))?, lon.as_f64().ok_or(format!("{name}: a point's lon is not a number"))?)),
+        Some([lat, lon]) => Ok((
+            lat.as_f64().ok_or(format!("{name}: a point's lat is not a number"))?,
+            lon.as_f64().ok_or(format!("{name}: a point's lon is not a number"))?,
+        )),
         _ => Err(format!("{name}: a point is not [lat, lon]")),
     }
 }
@@ -147,7 +154,8 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
     // Under IFR along an airway its published altitudes are the floor
     // (14 CFR 91.177(a)(1), the MEA) and a ceiling (the MAA).
     let airway = v.get("airway").filter(|a| !matches!(a, Value::Null));
-    let published = airway.and_then(|a| floor::published(opt_num(name, a, "mea_ft").ok().flatten(), opt_num(name, a, "gnss_mea_ft").ok().flatten()));
+    let published =
+        airway.and_then(|a| floor::published(opt_num(name, a, "mea_ft").ok().flatten(), opt_num(name, a, "gnss_mea_ft").ok().flatten()));
     let on_airway = ifr && published.is_some();
     let floors: Vec<Value> = if on_airway {
         vec![obj(vec![("floor_ft", opt(published)), ("airway", airway.cloned().unwrap_or(Value::Null))]); count]

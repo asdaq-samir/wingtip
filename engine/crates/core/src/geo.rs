@@ -80,7 +80,13 @@ pub fn track_nm(lat: f64, lon: f64, a: (f64, f64), b: (f64, f64)) -> (f64, f64) 
     let cross = (angular.sin() * offset.sin()).clamp(-1.0, 1.0).asin() * EARTH_RADIUS_NM;
     let ratio = (angular.cos() / (cross / EARTH_RADIUS_NM).cos()).clamp(-1.0, 1.0);
     let c = offset.cos();
-    let sign = if c < 0.0 { -1.0 } else if c > 0.0 { 1.0 } else { 0.0 };
+    let sign = if c < 0.0 {
+        -1.0
+    } else if c > 0.0 {
+        1.0
+    } else {
+        0.0
+    };
     (cross, ratio.acos() * EARTH_RADIUS_NM * sign)
 }
 
@@ -131,8 +137,10 @@ pub fn path_meets_polygon(path: &[(f64, f64)], ring: &[(f64, f64)]) -> bool {
         if d1 * d2 < 0.0 && d3 * d4 < 0.0 {
             return true;
         }
-        (d1 == 0.0 && within(q1, q2, p1)) || (d2 == 0.0 && within(q1, q2, p2))
-            || (d3 == 0.0 && within(p1, p2, q1)) || (d4 == 0.0 && within(p1, p2, q2))
+        (d1 == 0.0 && within(q1, q2, p1))
+            || (d2 == 0.0 && within(q1, q2, p2))
+            || (d3 == 0.0 && within(p1, p2, q1))
+            || (d4 == 0.0 && within(p1, p2, q2))
     };
     path.windows(2).any(|s| (0..n).any(|i| meet(s[0], s[1], ring[i], ring[(i + 1) % n])))
 }

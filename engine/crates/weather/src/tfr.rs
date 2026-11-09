@@ -106,9 +106,8 @@ pub fn parse_detail(text: &str) -> Option<Detail> {
         Some(b) if b.0 >= h.0 => Some(b),
         _ => Some(h),
     });
-    let rule = (!rule_code.is_empty()).then(|| {
-        RULES.iter().find(|(k, _)| *k == rule_code).map(|(_, v)| v.to_string()).unwrap_or(rule_code.clone())
-    });
+    let rule = (!rule_code.is_empty())
+        .then(|| RULES.iter().find(|(k, _)| *k == rule_code).map(|(_, v)| v.to_string()).unwrap_or(rule_code.clone()));
     Some(Detail {
         effective: notam.text_at(&["dateEffective"]).and_then(utc),
         expires: notam.text_at(&["dateExpire"]).and_then(utc),

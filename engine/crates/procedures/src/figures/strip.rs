@@ -32,11 +32,7 @@ pub struct Short {
 /// the flights the tanks fall short on, a fuel margin under nothing being
 /// the fuel and its reserve (14 CFR 91.151, 91.167) more than they hold.
 pub fn fuel_figure(
-    required_gal: Option<f64>,
-    margin_gal: Option<f64>,
-    hops: &[Hop],
-    hop: usize,
-    burnt_gal: Option<f64>,
+    required_gal: Option<f64>, margin_gal: Option<f64>, hops: &[Hop], hop: usize, burnt_gal: Option<f64>,
 ) -> (Option<f64>, Vec<Short>) {
     let planned = match hops.get(hop.min(hops.len().saturating_sub(1))) {
         Some(h) => h.fuel_required_gal,
@@ -51,10 +47,7 @@ pub fn fuel_figure(
     } else {
         hops.iter().map(|h| (format!("{} → {}", h.departure, h.destination), h.fuel_margin_gal)).collect()
     };
-    let short = flights
-        .into_iter()
-        .filter_map(|(name, m)| m.filter(|m| *m < 0.0).map(|m| Short { name, short_gal: -m }))
-        .collect();
+    let short = flights.into_iter().filter_map(|(name, m)| m.filter(|m| *m < 0.0).map(|m| Short { name, short_gal: -m })).collect();
     (required, short)
 }
 

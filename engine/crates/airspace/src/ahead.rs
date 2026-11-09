@@ -141,9 +141,8 @@ impl Track {
             None => (lateral[0], lateral.iter().position(|&l| l)),
             Some(alts) => {
                 let inside = lateral[0] && floor <= alts[0] && alts[0] <= ceiling;
-                let first = (0..alts.len()).find(|&i| {
-                    lateral[i] && alts[i] >= floor - ALTITUDE_BUFFER_FT && alts[i] <= ceiling + ALTITUDE_BUFFER_FT
-                });
+                let first = (0..alts.len())
+                    .find(|&i| lateral[i] && alts[i] >= floor - ALTITUDE_BUFFER_FT && alts[i] <= ceiling + ALTITUDE_BUFFER_FT);
                 (inside, first)
             }
         }
@@ -252,17 +251,20 @@ fn class_alerts(track: &Track, volumes: Vec<Volume>) -> Vec<Alert> {
             continue;
         }
         found.retain(|(k, _)| *k != key);
-        found.push((key, Alert {
-            id: format!("airspace:{}:{}", v.class, v.name),
-            kind: "airspace",
-            level,
-            name: v.name.clone(),
-            need: need.to_string(),
-            class: Some(v.class.to_string()),
-            floor_ft: Some(v.floor),
-            ceiling_ft: v.ceiling,
-            ..at(track, index)
-        }));
+        found.push((
+            key,
+            Alert {
+                id: format!("airspace:{}:{}", v.class, v.name),
+                kind: "airspace",
+                level,
+                name: v.name.clone(),
+                need: need.to_string(),
+                class: Some(v.class.to_string()),
+                floor_ft: Some(v.floor),
+                ceiling_ft: v.ceiling,
+                ..at(track, index)
+            },
+        ));
     }
     found.into_iter().filter(|(k, _)| !inside_of.contains(k)).map(|(_, a)| a).collect()
 }
@@ -271,14 +273,19 @@ fn classes(packs: &[Pack], track: &Track) -> Vec<Alert> {
     let box_ = track.bbox(1.0);
     let mut volumes = Vec::new();
     for p in packs {
-        let (Some(layer), Some(vols), Some(names)) = (p.layer("airspace"), p.section("airspace.vol"), p.section("airspace.names")) else { continue };
+        let (Some(layer), Some(vols), Some(names)) = (p.layer("airspace"), p.section("airspace.vol"), p.section("airspace.names")) else {
+            continue;
+        };
         for i in 0..layer.count {
             let Some(r) = vols.get(32 * i..32 * i + 32) else { continue };
             let class = r[0] as char;
             if class_need(class).is_none() || !meets(layer.bbox(i), box_) {
                 continue;
             }
-            let (Some(wkb), Some(floor), Some(ceiling), Some(name)) = (layer.wkb(i), f64_at(r, 8), f64_at(r, 16), text(names, r, 24)) else { continue };
+            let (Some(wkb), Some(floor), Some(ceiling), Some(name)) = (layer.wkb(i), f64_at(r, 8), f64_at(r, 16), text(names, r, 24))
+            else {
+                continue;
+            };
             volumes.push(Volume {
                 class,
                 name: name.to_string(),
@@ -665,7 +672,11 @@ fn near_field(packs: &[Pack], lat: f64, lon: f64, alt: f64) -> bool {
     let mut best: Option<(f64, Option<f64>)> = None;
     for p in packs {
         let Some(t) = p.section("airports").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else { continue };
-        let (Some(la), Some(lo), Some(el), Some(kind)) = (t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"), t.col("ELEV"), t.col("SITE_TYPE_CODE")) else { continue };
+        let (Some(la), Some(lo), Some(el), Some(kind)) =
+            (t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"), t.col("ELEV"), t.col("SITE_TYPE_CODE"))
+        else {
+            continue;
+        };
         for row in &t.rows {
             if !matches!(row[kind].as_str(), "A" | "C" | "G" | "U") {
                 continue;
@@ -693,8 +704,10 @@ fn sorted(mut alerts: Vec<Alert>) -> Vec<Alert> {
 /// phone's kept TFRs (one a line, as `tfrs_of` reads them) and when it downloaded
 /// them; None where it has none.
 #[allow(clippy::too_many_arguments)]
-pub fn ahead(packs: &[Pack], lat: f64, lon: f64, track_deg: f64, gs_kt: f64, alt_ft: Option<f64>, vs_fpm: f64, now: i64,
-             tfr_lines: Option<&str>, tfrs_at: Option<i64>) -> String {
+pub fn ahead(
+    packs: &[Pack], lat: f64, lon: f64, track_deg: f64, gs_kt: f64, alt_ft: Option<f64>, vs_fpm: f64, now: i64, tfr_lines: Option<&str>,
+    tfrs_at: Option<i64>,
+) -> String {
     let mut alerts: Vec<Alert> = Vec::new();
     let mut unavailable: Vec<&str> = Vec::new();
     let under = ground_ft(packs, lat, lon);
@@ -740,8 +753,15 @@ fn to_json(alerts: &[Alert], unavailable: &[&str], tfrs_at: Option<i64>, ground:
         json::string(&mut out, &a.need);
         out.push_str(&format!(",\"inside\":{},\"seconds\":", a.inside));
         json::number(&mut out, a.seconds);
-        for (name, v) in [("distance_nm", Some(a.distance_nm)), ("lat", Some(a.lat)), ("lon", Some(a.lon)), ("floor_ft", a.floor_ft),
-                          ("ceiling_ft", a.ceiling_ft), ("top_ft", a.top_ft), ("clearance_ft", a.clearance_ft)] {
+        for (name, v) in [
+            ("distance_nm", Some(a.distance_nm)),
+            ("lat", Some(a.lat)),
+            ("lon", Some(a.lon)),
+            ("floor_ft", a.floor_ft),
+            ("ceiling_ft", a.ceiling_ft),
+            ("top_ft", a.top_ft),
+            ("clearance_ft", a.clearance_ft),
+        ] {
             out.push_str(&format!(",\"{name}\":"));
             json::opt_number(&mut out, v);
         }
@@ -809,9 +829,14 @@ fn polygons_of(name: &str, v: &Value) -> R<Polygons> {
     let list = v.get("polygons").and_then(Value::as_array).ok_or_else(bad)?;
     list.iter()
         .map(|rings| {
-            rings.as_array().ok_or_else(bad)?.iter()
+            rings
+                .as_array()
+                .ok_or_else(bad)?
+                .iter()
                 .map(|ring| {
-                    ring.as_array().ok_or_else(bad)?.iter()
+                    ring.as_array()
+                        .ok_or_else(bad)?
+                        .iter()
                         .map(|p| match p.as_array() {
                             Some([x, y]) => Ok((x.as_f64().ok_or_else(bad)?, y.as_f64().ok_or_else(bad)?)),
                             _ => Err(bad()),

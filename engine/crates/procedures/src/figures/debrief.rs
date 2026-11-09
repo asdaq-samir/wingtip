@@ -147,7 +147,11 @@ pub fn ground_speeds(points: &[Point]) -> Vec<f64> {
                 }
             }
             let hours = (points[k].t - points[j].t) / 3_600_000.0;
-            if hours > 0.0 { nm(at(&points[j]), at(&points[k])) / hours } else { 0.0 }
+            if hours > 0.0 {
+                nm(at(&points[j]), at(&points[k])) / hours
+            } else {
+                0.0
+            }
         })
         .collect()
 }
@@ -498,8 +502,14 @@ pub fn to_json(d: &Debrief, marked: bool) -> String {
         json::string(out, &l.from);
         field(out, false, "to");
         json::string(out, &l.to);
-        for (key, v) in [("planned_alt_ft", l.planned_alt_ft), ("altitude_within", l.altitude_within), ("worst_alt_ft", l.worst_alt_ft),
-                         ("course_deg", l.course_deg), ("course_within", l.course_within), ("worst_off_nm", l.worst_off_nm)] {
+        for (key, v) in [
+            ("planned_alt_ft", l.planned_alt_ft),
+            ("altitude_within", l.altitude_within),
+            ("worst_alt_ft", l.worst_alt_ft),
+            ("course_deg", l.course_deg),
+            ("course_within", l.course_within),
+            ("worst_off_nm", l.worst_off_nm),
+        ] {
             field(out, false, key);
             json::opt_number(out, v);
         }
@@ -589,8 +599,17 @@ pub fn to_json(d: &Debrief, marked: bool) -> String {
 /// The tolerances the debrief holds the flight to, for the page's headings.
 pub fn tolerances_json() -> String {
     let mut out = String::new();
-    for (i, (key, v)) in [("altitude_ft", ALTITUDE_FT), ("course_deg", COURSE_DEG), ("off_route_nm", OFF_ROUTE_NM),
-                          ("eta_min", ETA_MIN), ("pattern_nm", PATTERN_NM), ("pattern_ft", PATTERN_FT)].iter().enumerate() {
+    for (i, (key, v)) in [
+        ("altitude_ft", ALTITUDE_FT),
+        ("course_deg", COURSE_DEG),
+        ("off_route_nm", OFF_ROUTE_NM),
+        ("eta_min", ETA_MIN),
+        ("pattern_nm", PATTERN_NM),
+        ("pattern_ft", PATTERN_FT),
+    ]
+    .iter()
+    .enumerate()
+    {
         field(&mut out, i == 0, key);
         json::number(&mut out, *v);
     }

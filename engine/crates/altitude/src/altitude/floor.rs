@@ -103,9 +103,8 @@ pub fn vfr(start: Point, end: Point, breaks_nm: &[f64], ground: &Ground, obstacl
     let mut floors = Vec::new();
     for w in breaks_nm.windows(2) {
         let (a, b) = (w[0], w[1]);
-        let here: Vec<usize> = (0..ground.along_nm.len())
-            .filter(|&i| ground.along_nm[i] >= a - spacing && ground.along_nm[i] <= b + spacing)
-            .collect();
+        let here: Vec<usize> =
+            (0..ground.along_nm.len()).filter(|&i| ground.along_nm[i] >= a - spacing && ground.along_nm[i] <= b + spacing).collect();
         if here.is_empty() {
             return Err(format!("no ground between {a} and {b} nm"));
         }

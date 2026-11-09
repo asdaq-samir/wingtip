@@ -75,7 +75,12 @@ pub fn way_json(out: &mut String, w: &Way, airplane: bool) {
     strings(out, &w.food);
     out.push_str(",\"path\":");
     path_json(out, &w.path);
-    for (key, v) in [("distance_nm", Some(w.distance_nm)), ("air_min", airplane.then_some(w.air_min)), ("ground_min", Some(w.ground_min)), ("fuel_gal", airplane.then_some(w.fuel_gal))] {
+    for (key, v) in [
+        ("distance_nm", Some(w.distance_nm)),
+        ("air_min", airplane.then_some(w.air_min)),
+        ("ground_min", Some(w.ground_min)),
+        ("fuel_gal", airplane.then_some(w.fuel_gal)),
+    ] {
         out.push_str(&format!(",\"{key}\":"));
         match v {
             Some(v) => json::number(out, v),

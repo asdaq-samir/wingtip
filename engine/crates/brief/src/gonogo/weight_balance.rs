@@ -127,12 +127,18 @@ pub fn balance(loading: &Loading, load: &Load, trip_fuel_gal: Option<f64>) -> Ba
         problems.push(format!("The ramp weight, {}, is over its most, {}", pounds(weight), pounds(loading.max_ramp_lb)));
     }
     if takeoff.weight_lb > loading.max_takeoff_lb {
-        problems.push(format!("The takeoff weight, {}, is {} over its most", pounds(takeoff.weight_lb),
-                              pounds(takeoff.weight_lb - loading.max_takeoff_lb)));
+        problems.push(format!(
+            "The takeoff weight, {}, is {} over its most",
+            pounds(takeoff.weight_lb),
+            pounds(takeoff.weight_lb - loading.max_takeoff_lb)
+        ));
     }
     if landing.weight_lb > loading.max_landing_lb {
-        problems.push(format!("The landing weight, {}, is {} over its most", pounds(landing.weight_lb),
-                              pounds(landing.weight_lb - loading.max_landing_lb)));
+        problems.push(format!(
+            "The landing weight, {}, is {} over its most",
+            pounds(landing.weight_lb),
+            pounds(landing.weight_lb - loading.max_landing_lb)
+        ));
     }
     let heaviest = envelope.iter().map(|p| p.1).fold(f64::NEG_INFINITY, f64::max);
     for (name, c) in [("takeoff", takeoff), ("landing", landing)] {

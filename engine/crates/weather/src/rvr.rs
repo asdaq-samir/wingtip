@@ -38,15 +38,8 @@
 use crate::json::{self, Value};
 
 /// The table, as (RVR ft, visibility SM).
-pub const COMPARABLE: [(f64, f64); 7] = [
-    (1600.0, 0.25),
-    (2400.0, 0.5),
-    (3200.0, 0.625),
-    (4000.0, 0.75),
-    (4500.0, 0.875),
-    (5000.0, 1.0),
-    (6000.0, 1.25),
-];
+pub const COMPARABLE: [(f64, f64); 7] =
+    [(1600.0, 0.25), (2400.0, 0.5), (3200.0, 0.625), (4000.0, 0.75), (4500.0, 0.875), (5000.0, 1.0), (6000.0, 1.25)];
 /// The most an RVR system reports, ft (AIM 7-1-13).
 pub const MOST_FT: f64 = 6000.0;
 

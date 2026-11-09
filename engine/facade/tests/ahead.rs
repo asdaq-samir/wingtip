@@ -78,7 +78,11 @@ fn input(own: &Value, case: &Value) -> Value {
                         .iter()
                         .map(|lon| {
                             let high = step.is_some_and(|s| lon.as_f64().unwrap() > s);
-                            if high { ground["high_ft"].clone() } else { ground["low_ft"].clone() }
+                            if high {
+                                ground["high_ft"].clone()
+                            } else {
+                                ground["low_ft"].clone()
+                            }
                         })
                         .collect(),
                 )

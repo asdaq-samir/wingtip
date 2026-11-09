@@ -31,7 +31,10 @@ pub(super) fn approach_kind(w: &str) -> Option<&'static str> {
 pub(super) const DIRECTIONS: &[&str] = &["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
 
 /// Words that end a hold's fix.
-pub(super) const AFTER_FIX: &[&str] = &["on", "as", "left", "right", "expect", "maintain", "minute", "minutes", "mile", "miles", "legs", "then", "and", "climb", "descend", "contact", "squawk"];
+pub(super) const AFTER_FIX: &[&str] = &[
+    "on", "as", "left", "right", "expect", "maintain", "minute", "minutes", "mile", "miles", "legs", "then", "and", "climb", "descend",
+    "contact", "squawk",
+];
 
 /// A runway's number and side at `k` ("two seven left" is "27L"), the
 /// tokens it took. "The runway number is the whole number nearest
@@ -118,7 +121,8 @@ pub(super) fn hold_at(toks: &[Token], i: usize) -> Option<(Item, usize)> {
                 // The time, four figures in UTC (AIM 4-2-12: "FAA uses
                 // Coordinated Universal Time (UTC) for all operations"),
                 // after "at" or straight on.
-                efc = (j + 2..(j + 5).min(toks.len())).find_map(|m| toks[m].num.as_deref().filter(|n| n.len() == 4 && !n.contains('.')).map(str::to_owned));
+                efc = (j + 2..(j + 5).min(toks.len()))
+                    .find_map(|m| toks[m].num.as_deref().filter(|n| n.len() == 4 && !n.contains('.')).map(str::to_owned));
             }
             _ => {}
         }

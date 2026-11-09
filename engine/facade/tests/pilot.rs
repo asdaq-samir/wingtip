@@ -23,15 +23,8 @@ fn ask(name: &str, input: Value) -> Value {
 #[test]
 fn a_checklist_reads_sections_and_items_each_split_as_printed() {
     let text = [
-        "Preflight inspection -- Complete",
-        "",
-        "# Before takeoff",
-        "Fuel selector -- Both",
-        "Mixture ..... Rich",
-        "Flight controls\tFree and correct",
-        "Doors – Closed and latched",
-        "Seat belts",
-        "#   Empty section",
+        "Preflight inspection -- Complete", "", "# Before takeoff", "Fuel selector -- Both", "Mixture ..... Rich",
+        "Flight controls\tFree and correct", "Doors – Closed and latched", "Seat belts", "#   Empty section",
     ]
     .join("\n");
     let checklist = ask("checklist_read", json!({ "text": text }));
@@ -104,7 +97,10 @@ const FOREFLIGHT: &str = concat!(
 
 #[test]
 fn csv_reads_quoted_fields_their_doubled_quotes_and_line_breaks() {
-    assert_eq!(ask("csv_rows", json!({ "text": "a,\"b, c\",\"d \"\"e\"\"\",\r\n\"f\ng\",h" })), json!([["a", "b, c", "d \"e\"", ""], ["f\ng", "h"]]));
+    assert_eq!(
+        ask("csv_rows", json!({ "text": "a,\"b, c\",\"d \"\"e\"\"\",\r\n\"f\ng\",h" })),
+        json!([["a", "b, c", "d \"e\"", ""], ["f\ng", "h"]])
+    );
 }
 
 /// The members of `want` as `got` has them.
@@ -130,7 +126,10 @@ fn reads_foreflights_export_its_types_approaches_holds_and_landings_ours() {
             "remarks": "Night XC, \"hood\" back",
         }),
     );
-    matches(&entries[1], json!({ "aircraftType": "PA28", "route": "C81 C81", "dualHours": 1.1, "dayLandings": 3.0, "approaches": 0.0, "holding": false }));
+    matches(
+        &entries[1],
+        json!({ "aircraftType": "PA28", "route": "C81 C81", "dualHours": 1.1, "dayLandings": 3.0, "approaches": 0.0, "holding": false }),
+    );
     assert_eq!(
         read["skipped"],
         json!([
@@ -215,7 +214,10 @@ fn a_pipers_page_in_knots_where_it_prints_mph() {
     // The Cherokee 140 "D" handbook's page 1, the owner's photo of it as
     // Tesseract read it: its misreads ("sca", "{flaps", "(142%)") kept.
     let page = "CHEROKEE 140 “D\" SECTION |\nSECTION |\nSPECIFICATIONS\nPERFORMANCE\n\nThe gross weight of 2150 pounds in the following performance\ncharts applies to Serial Nos. 28-25001 and up.\n\nGROSS WEIGHT 2150\n\nTake-off Run (ft) (flaps up) 800\n\nTake-off Distance Over 50-ft\n\nObstacle (ft) {flaps up) 1700\n\nBest Rate of Climb Speed (mph) 85\n\nRate of Climb (ft per min) 660\n\nService Ceiling (ft) 14,300\n\nAbsolute Ceiling 16,800\n\nTop Speed (mph) 139 (142%)\n\nCruising Speed (75% power, sca\n\nlevel) (mph) 121 (124%)\n\nOptimum Cruising Speed (75%\n\npower, 7000 ft, mph) 132 (135)\nInstructional Power Cruise Speed\n(50% power, sea level) 100 (102%)\n\nFuel Consumption (gal per hr 75%) 8.4\n\nFuel Consumption (gal per hr 50%) 5.6\n*WITH FENDERS INSTALLED";
-    assert!(same(&values(page), &json!({ "serviceCeilingFt": 14300, "climbTasKt": 74, "cruiseTasKt": 115, "cruisePowerPct": 75, "fuelBurnGph": 8.4 })));
+    assert!(same(
+        &values(page),
+        &json!({ "serviceCeilingFt": 14300, "climbTasKt": 74, "cruiseTasKt": 115, "cruisePowerPct": 75, "fuelBurnGph": 8.4 })
+    ));
     assert_eq!(ask("handbook_figures", json!({ "text": page }))["serviceCeilingFt"]["words"], json!("Service Ceiling (ft) 14,300"));
 }
 

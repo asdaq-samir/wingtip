@@ -27,7 +27,12 @@ pub enum Item {
     Heading(i64),
     Airway(String),
     /// A SID ("departure") or a STAR ("arrival") by its name and number.
-    Procedure { kind: &'static str, name: String, number: String, transition: Option<String> },
+    Procedure {
+        kind: &'static str,
+        name: String,
+        number: String,
+        transition: Option<String>,
+    },
     /// Words naming one place or more, to be found.
     Places(String),
 }
@@ -336,7 +341,11 @@ pub fn tokens(text: &str) -> Vec<Token> {
 pub fn frequency_of(num: &str) -> Option<String> {
     let (value, places) = if let Some((_, fraction)) = num.split_once('.') {
         (num.parse::<f64>().ok()?, fraction.len().max(1))
-    } else if (5..=7).contains(&num.len()) && num.starts_with('1') && matches!(num.as_bytes()[1], b'1' | b'2' | b'3') && is_ascii_digits(num) {
+    } else if (5..=7).contains(&num.len())
+        && num.starts_with('1')
+        && matches!(num.as_bytes()[1], b'1' | b'2' | b'3')
+        && is_ascii_digits(num)
+    {
         (format!("{}.{}", &num[..3], &num[3..]).parse::<f64>().ok()?, (num.len() - 3).max(1))
     } else {
         return None;
@@ -358,7 +367,8 @@ const BETWEEN: &[&str] = &["then", "direct", "to", "and", "thence", "via", "the"
 /// "Cleared ILS approach", "cleared visual": an approach, not a route.
 const APPROACH_WORDS: &[&str] = &["ils", "rnp", "rnav", "gps", "loc", "visual", "approach", "vor", "ndb"];
 /// Whose a frequency is, said before it.
-const FACILITIES: &[&str] = &["departure", "center", "approach", "tower", "ground", "clearance", "information", "apron", "radio", "unicom", "director"];
+const FACILITIES: &[&str] =
+    &["departure", "center", "approach", "tower", "ground", "clearance", "information", "apron", "radio", "unicom", "director"];
 
 fn after_route(w: &str) -> bool {
     ALTITUDE_WORDS.contains(&w) || AFTER_ROUTE_MORE.contains(&w)
@@ -513,7 +523,9 @@ pub fn read(text: &str) -> Clearance {
                 Some(k) => k + 1,
                 None => i + 4,
             };
-        } else if word(i).is_some_and(|w| w == "for" || w == "on" || APPROACH_WORDS.contains(&w)) || (word(i) == Some("to") && word(i + 1) == Some("land")) {
+        } else if word(i).is_some_and(|w| w == "for" || w == "on" || APPROACH_WORDS.contains(&w))
+            || (word(i) == Some("to") && word(i + 1) == Some("land"))
+        {
             // No route in it, the altitudes after it still read.
         } else {
             if word(i) == Some("to") || toks.get(i).and_then(|t| t.num.as_deref()) == Some("2") {
@@ -759,7 +771,11 @@ pub fn cleared_route(c: &Clearance, found: &FoundPlaces, planned: &Route) -> (Ro
             Item::Airway(a) => said.push(a.clone()),
             Item::Procedure { kind: "departure", .. } => {
                 if let Some(d) = &found.departure {
-                    typed.push(Typed { name: d.id.clone(), before: (!planned.dep.is_empty()).then(|| planned.dep.clone()), after: d.transition.clone() });
+                    typed.push(Typed {
+                        name: d.id.clone(),
+                        before: (!planned.dep.is_empty()).then(|| planned.dep.clone()),
+                        after: d.transition.clone(),
+                    });
                     if let Some(t) = &d.transition {
                         said.push(t.clone());
                     }
@@ -813,13 +829,42 @@ const AFTER_DIRECT: &[&str] = &[
 /// 4-2-7, TBL 4-2-7; "tree", "fife", "niner"), for the call sign's
 /// pattern below: the inverse of `letter` and `digit`.
 const SAID: &[(char, &[&str])] = &[
-    ('A', &["alpha", "alfa"]), ('B', &["bravo"]), ('C', &["charlie"]), ('D', &["delta"]), ('E', &["echo"]),
-    ('F', &["foxtrot"]), ('G', &["golf"]), ('H', &["hotel"]), ('I', &["india"]), ('J', &["juliet", "juliett"]),
-    ('K', &["kilo"]), ('L', &["lima"]), ('M', &["mike"]), ('N', &["november"]), ('O', &["oscar"]), ('P', &["papa"]),
-    ('Q', &["quebec"]), ('R', &["romeo"]), ('S', &["sierra"]), ('T', &["tango"]), ('U', &["uniform"]),
-    ('V', &["victor"]), ('W', &["whiskey", "whisky"]), ('X', &["xray"]), ('Y', &["yankee"]), ('Z', &["zulu"]),
-    ('0', &["zero"]), ('1', &["one"]), ('2', &["two"]), ('3', &["three", "tree"]), ('4', &["four", "fower"]),
-    ('5', &["five", "fife"]), ('6', &["six"]), ('7', &["seven"]), ('8', &["eight", "ait"]), ('9', &["nine", "niner"]),
+    ('A', &["alpha", "alfa"]),
+    ('B', &["bravo"]),
+    ('C', &["charlie"]),
+    ('D', &["delta"]),
+    ('E', &["echo"]),
+    ('F', &["foxtrot"]),
+    ('G', &["golf"]),
+    ('H', &["hotel"]),
+    ('I', &["india"]),
+    ('J', &["juliet", "juliett"]),
+    ('K', &["kilo"]),
+    ('L', &["lima"]),
+    ('M', &["mike"]),
+    ('N', &["november"]),
+    ('O', &["oscar"]),
+    ('P', &["papa"]),
+    ('Q', &["quebec"]),
+    ('R', &["romeo"]),
+    ('S', &["sierra"]),
+    ('T', &["tango"]),
+    ('U', &["uniform"]),
+    ('V', &["victor"]),
+    ('W', &["whiskey", "whisky"]),
+    ('X', &["xray"]),
+    ('Y', &["yankee"]),
+    ('Z', &["zulu"]),
+    ('0', &["zero"]),
+    ('1', &["one"]),
+    ('2', &["two"]),
+    ('3', &["three", "tree"]),
+    ('4', &["four", "fower"]),
+    ('5', &["five", "fife"]),
+    ('6', &["six"]),
+    ('7', &["seven"]),
+    ('8', &["eight", "ait"]),
+    ('9', &["nine", "niner"]),
 ];
 
 /// Our call sign as a regular expression over a recognizer's words, for

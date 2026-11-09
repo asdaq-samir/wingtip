@@ -8,8 +8,6 @@
 //! holds the decoder to the AWC's own decoding of every report in its
 //! current cache and lists where they differ.
 
-
-
 /// A wind group: "27015G25KT", "VRB03KT", "00000KT", "27015MPS".
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Wind {
@@ -138,9 +136,8 @@ fn layer(group: &str) -> Option<Option<Layer>> {
 }
 
 const DESCRIPTORS: [&str; 8] = ["MI", "PR", "BC", "DR", "BL", "SH", "TS", "FZ"];
-const PHENOMENA: [&str; 22] = [
-    "DZ", "RA", "SN", "SG", "IC", "PL", "GR", "GS", "UP", "BR", "FG", "FU", "VA", "DU", "SA", "HZ", "PY", "PO", "SQ", "FC", "SS", "DS",
-];
+const PHENOMENA: [&str; 22] =
+    ["DZ", "RA", "SN", "SG", "IC", "PL", "GR", "GS", "UP", "BR", "FG", "FU", "VA", "DU", "SA", "HZ", "PY", "PO", "SQ", "FC", "SS", "DS"];
 
 /// A present-weather group (FMH-1 ch. 12, present weather): an intensity or VC, then
 /// descriptors and phenomena two letters at a time.
@@ -187,7 +184,11 @@ fn tenths(group: &str) -> Option<(f64, Option<f64>)> {
     }
     let read = |s: &str| {
         let v = s[1..].parse::<f64>().unwrap() / 10.0;
-        if &s[..1] == "1" { -v } else { v }
+        if &s[..1] == "1" {
+            -v
+        } else {
+            v
+        }
     };
     Some((read(&g[..4]), (g.len() == 8).then(|| read(&g[4..]))))
 }
@@ -230,15 +231,15 @@ fn category_bounds(ceiling_ft: Option<f64>, visibility_sm: f64) -> &'static str 
 /// a measured ceiling leaves it known. A vertical visibility given apart
 /// is the obscuration from the surface, under every layer, so it settles
 /// the ceiling.
-pub fn sky_ceiling_of<'a>(layers: impl IntoIterator<Item = (&'a str, Option<f64>)>, vertical_visibility_ft: Option<f64>) -> (Option<f64>, bool) {
+pub fn sky_ceiling_of<'a>(
+    layers: impl IntoIterator<Item = (&'a str, Option<f64>)>, vertical_visibility_ft: Option<f64>,
+) -> (Option<f64>, bool) {
     let mut ceilings = layers.into_iter().filter(|(cover, _)| matches!(*cover, "BKN" | "OVC" | "OVX" | "VV")).peekable();
     if vertical_visibility_ft.is_none() && ceilings.peek().is_some_and(|(_, base)| base.is_none()) {
         return (None, true);
     }
-    let lowest = ceilings
-        .filter_map(|(_, base)| base)
-        .chain(vertical_visibility_ft)
-        .fold(None, |m: Option<f64>, b| Some(m.map_or(b, |m| m.min(b))));
+    let lowest =
+        ceilings.filter_map(|(_, base)| base).chain(vertical_visibility_ft).fold(None, |m: Option<f64>, b| Some(m.map_or(b, |m| m.min(b))));
     (lowest, false)
 }
 
@@ -371,7 +372,9 @@ pub fn parse(raw: &str) -> Option<Metar> {
             _ if m.wind.is_none() && m.visibility_sm.is_none() && wind(w).is_some() => m.wind = wind(w),
             // A variable direction "250V310" says nothing the figures carry.
             _ if w.len() == 7 && w.as_bytes()[3] == b'V' && w.bytes().filter(u8::is_ascii_digit).count() == 6 => {}
-            _ if m.visibility_sm.is_none() && w.len() == 1 && w.as_bytes()[0].is_ascii_digit()
+            _ if m.visibility_sm.is_none()
+                && w.len() == 1
+                && w.as_bytes()[0].is_ascii_digit()
                 && words.get(i).is_some_and(|n| n.contains('/') && n.ends_with("SM")) =>
             {
                 let whole = w.parse::<f64>().ok();

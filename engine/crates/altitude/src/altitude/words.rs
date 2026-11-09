@@ -89,10 +89,8 @@ pub struct Via {
 /// middle; "Class B airspace" where none is named.
 fn class_b_over(selection: &Value, segment: &Value) -> String {
     let middle = (num(segment, "from_nm").unwrap_or(0.0) + num(segment, "to_nm").unwrap_or(0.0)) / 2.0;
-    let near = list(selection, "airspace_transits")
-        .iter()
-        .filter(|t| t.get("class").and_then(Value::as_str) == Some("B"))
-        .min_by(|a, b| {
+    let near =
+        list(selection, "airspace_transits").iter().filter(|t| t.get("class").and_then(Value::as_str) == Some("B")).min_by(|a, b| {
             let off = |t: &Value| (num(t, "along_track_nm").unwrap_or(0.0) - middle).abs();
             off(a).total_cmp(&off(b))
         });
@@ -207,7 +205,8 @@ pub fn no_altitude(selection: &Value, between: Option<(&str, &str)>, via: Option
     // any 500 ft under 3,000 ft above the ground, the course's own
     // thousands plus 500 over it.
     let rule_from = num(stuck, "hemispheric_rule_from_ft");
-    let first = cruising::legal_vfr(floor, None, course, rule_from).first().copied().unwrap_or_else(|| lowest_vfr_cruising_altitude(floor, course));
+    let first =
+        cruising::legal_vfr(floor, None, course, rule_from).first().copied().unwrap_or_else(|| lowest_vfr_cruising_altitude(floor, course));
     let under_rule = rule_from.is_some_and(|r| first < r);
     let first_line = if under_rule {
         format!("The lowest altitude above that is {} ft.", grouped(first))

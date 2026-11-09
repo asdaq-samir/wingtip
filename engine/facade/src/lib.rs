@@ -79,14 +79,14 @@ pub use wingtip_brief::{alternates, fields, gonogo, passengers, runway};
 pub use wingtip_brief::icing_forecast;
 pub use wingtip_procedures::figures;
 // A procedure's legs drawn: arcs, holds, procedure turns (#482 phase 4b).
-pub use wingtip_procedures::paths;
 pub use wingtip_core::{base64, geo, grid, sums, time, wmm, xml};
 pub use wingtip_flight::{filing, flight, limits, performance, sun};
+pub use wingtip_procedures::paths;
 // The in-flight copilot (copilot_watch).
 pub use wingtip_inflight as inflight;
 pub use wingtip_pilot::{aircraft, autolog, documents, pilot};
-pub use wingtip_receiver as receiver;
 pub use wingtip_radio::{atc, atis, callsign, clearance, datis, instruction, mayday, readback};
+pub use wingtip_receiver as receiver;
 pub use wingtip_route::{approach, motion, navlog, route};
 pub use wingtip_weather::{cycles, forecast, metar, notam, rvr, taf, tfr, validity, winds};
 pub use wingtip_wording::wording;

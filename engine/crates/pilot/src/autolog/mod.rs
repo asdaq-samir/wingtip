@@ -91,7 +91,9 @@ fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
 fn points(name: &str, v: &Value) -> R<Vec<Point>> {
     let mut out = list(name, v, "points")?
         .iter()
-        .map(|p| Ok(Point { t: num(name, p, "t")?, lat: num(name, p, "lat")?, lon: num(name, p, "lon")?, alt_ft: opt_num(name, p, "alt_ft")? }))
+        .map(|p| {
+            Ok(Point { t: num(name, p, "t")?, lat: num(name, p, "lat")?, lon: num(name, p, "lon")?, alt_ft: opt_num(name, p, "alt_ft")? })
+        })
         .collect::<R<Vec<_>>>()?;
     out.sort_by(|a, b| a.t.total_cmp(&b.t));
     Ok(out)
@@ -130,7 +132,9 @@ pub fn places(points: &[Point]) -> Vec<(usize, &'static str)> {
         for i in a..=b {
             let dip = points[i].alt_ft.is_some_and(|alt| {
                 let side = |range: &mut dyn Iterator<Item = usize>| {
-                    range.take_while(|&j| (points[j].t - points[i].t).abs() <= LOW_WINDOW_MS).any(|j| points[j].alt_ft.is_some_and(|h| h >= alt + LOW_DIP_FT))
+                    range
+                        .take_while(|&j| (points[j].t - points[i].t).abs() <= LOW_WINDOW_MS)
+                        .any(|j| points[j].alt_ft.is_some_and(|h| h >= alt + LOW_DIP_FT))
                 };
                 let lowest = (a..=b)
                     .filter(|&j| (points[j].t - points[i].t).abs() <= LOW_WINDOW_MS)
@@ -145,9 +149,9 @@ pub fn places(points: &[Point]) -> Vec<(usize, &'static str)> {
     }
     let mut kept: Vec<(usize, &'static str)> = Vec::new();
     for (i, kind) in out {
-        let near = kept.last().is_some_and(|&(k, _)| {
-            wingtip_core::geo::distance_nm(points[k].lat, points[k].lon, points[i].lat, points[i].lon) < 1.0
-        });
+        let near = kept
+            .last()
+            .is_some_and(|&(k, _)| wingtip_core::geo::distance_nm(points[k].lat, points[k].lon, points[i].lat, points[i].lon) < 1.0);
         if !near || kind != "low" {
             kept.push((i, kind));
         }

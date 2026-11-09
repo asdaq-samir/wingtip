@@ -199,7 +199,14 @@ impl Reader<'_> {
     pub fn profile(&self, v: &Value) -> Result<Profile, String> {
         let p = match v.get("profile") {
             None | Some(Value::Null) => {
-                return Ok(Profile { airplane: false, tas_kt: REFERENCE_TAS_KT, burn_gph: 0.0, usable_gal: 0.0, taxi_gal: 0.0, ceiling_ft: 12000.0 });
+                return Ok(Profile {
+                    airplane: false,
+                    tas_kt: REFERENCE_TAS_KT,
+                    burn_gph: 0.0,
+                    usable_gal: 0.0,
+                    taxi_gal: 0.0,
+                    ceiling_ft: 12000.0,
+                });
             }
             Some(p) => p,
         };
@@ -220,7 +227,9 @@ impl Reader<'_> {
         Ok(Area {
             rings: rings
                 .iter()
-                .map(|ring| ring.as_array().ok_or_else(|| self.bad("a ring is not a list")).and_then(|r| r.iter().map(|p| self.point(p)).collect()))
+                .map(|ring| {
+                    ring.as_array().ok_or_else(|| self.bad("a ring is not a list")).and_then(|r| r.iter().map(|p| self.point(p)).collect())
+                })
                 .collect::<Result<_, _>>()?,
         })
     }
@@ -332,9 +341,7 @@ impl Reader<'_> {
             Some(f) => Some((self.points(f, "points")?.unwrap_or_default(), self.strings(f, "idents")?)),
         };
         let numbers = |key: &str| -> Result<Option<Vec<f64>>, String> {
-            self.opt_list(v, key)?
-                .map(|items| items.iter().map(|x| Ok(x.as_f64().unwrap_or(0.0))).collect())
-                .transpose()
+            self.opt_list(v, key)?.map(|items| items.iter().map(|x| Ok(x.as_f64().unwrap_or(0.0))).collect()).transpose()
         };
         let water_far = match v.get("water_far") {
             None | Some(Value::Null) => None,
@@ -371,12 +378,7 @@ impl Reader<'_> {
             min_visibility_sm: self.opt_num(v, "min_visibility_sm")?,
             current: self.points(v, "current")?.filter(|c| c.len() >= 2),
             current_idents: self.strings(v, "current_idents")?,
-            current_landed: self
-                .opt_list(v, "current_landed")?
-                .unwrap_or(&[])
-                .iter()
-                .map(|b| matches!(b, Value::Bool(true)))
-                .collect(),
+            current_landed: self.opt_list(v, "current_landed")?.unwrap_or(&[]).iter().map(|b| matches!(b, Value::Bool(true))).collect(),
             filed,
             night: match v.get("night") {
                 None | Some(Value::Null) => None,

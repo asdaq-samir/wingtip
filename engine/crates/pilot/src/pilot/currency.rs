@@ -360,7 +360,8 @@ pub fn experience(entries: &[Entry], today: (i64, u32, u32)) -> Vec<Item> {
     // The first of the month two months before this one.
     let back = month_index(today.0, today.1) - 2;
     let two_months = days_from_civil(back.div_euclid(12), (back.rem_euclid(12) + 1) as u32, 1);
-    let sum = |which: &dyn Fn(&&Entry) -> bool, hours: &dyn Fn(&Entry) -> f64| tenth(entries.iter().filter(|e| which(e)).map(|e| hours(e)).sum());
+    let sum =
+        |which: &dyn Fn(&&Entry) -> bool, hours: &dyn Fn(&Entry) -> f64| tenth(entries.iter().filter(|e| which(e)).map(|e| hours(e)).sum());
     let all = |_: &&Entry| true;
     let hours = |key, rule, label, have, need| Item { key, rule, label, have, need, unit: "h" };
     let count = |key, rule, label, have, need, unit| Item { key, rule, label, have, need, unit };

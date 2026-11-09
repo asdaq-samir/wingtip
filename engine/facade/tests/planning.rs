@@ -29,7 +29,9 @@ fn night_and_night_on_the_way() {
         assert_eq!(ask("night_on_the_way", input), case["night"], "{}", case["why"]);
     }
     // Either end: by day at Chicago, at night when it lands at 03:00 CDT.
-    let either = |arrive: i64| ask("night_at_either_end", json!({ "start": [41.88, -87.63], "depart_s": 1790096400, "end": [41.88, -87.63], "arrive_s": arrive }));
+    let either = |arrive: i64| {
+        ask("night_at_either_end", json!({ "start": [41.88, -87.63], "depart_s": 1790096400, "end": [41.88, -87.63], "arrive_s": arrive }))
+    };
     assert_eq!(either(1790096400 + 3600), json!(false));
     assert_eq!(either(1790064000 + 86400), json!(true));
 }
@@ -59,12 +61,8 @@ fn the_61_57_b_period_is_its_own_window() {
 #[test]
 fn the_checkpoints_picked() {
     for case in fixture()["checkpoints"].as_array().unwrap() {
-        let candidates: Vec<Value> = case["candidates"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|c| json!({ "along_track_nm": c[0], "predicted_score": c[1] }))
-            .collect();
+        let candidates: Vec<Value> =
+            case["candidates"].as_array().unwrap().iter().map(|c| json!({ "along_track_nm": c[0], "predicted_score": c[1] })).collect();
         let mut input = json!({ "candidates": candidates });
         for key in ["min_spacing_nm", "max_count", "min_score", "length_nm"] {
             if let Some(v) = case.get(key) {

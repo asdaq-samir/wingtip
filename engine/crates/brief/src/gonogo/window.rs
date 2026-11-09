@@ -120,7 +120,9 @@ pub struct Answer {
 /// to MARGIN_CAP. No ceiling forecast is sky clear or scattered: no
 /// ceiling to count (14 CFR 1.1, "ceiling"), so the visibility's ratio
 /// alone. None where the forecast gives neither.
-pub fn margin(ceiling_ft: Option<f64>, visibility_sm: Option<f64>, own_ceiling_ft: Option<f64>, own_visibility_sm: Option<f64>) -> Option<f64> {
+pub fn margin(
+    ceiling_ft: Option<f64>, visibility_sm: Option<f64>, own_ceiling_ft: Option<f64>, own_visibility_sm: Option<f64>,
+) -> Option<f64> {
     if ceiling_ft.is_none() && visibility_sm.is_none() {
         return None;
     }
@@ -179,7 +181,8 @@ pub fn judge(input: &Input, hour: &Hour) -> Judged {
     } else if has("stop") {
         ("no-go", items.iter().filter(|i| i.finding == "stop").take(2).cloned().collect())
     } else if hourly_unknown {
-        let not_known = items.iter().filter(|i| HOURLY_ITEMS.contains(&i.key.as_str()) && (i.finding == "unknown" || i.finding == "pending"));
+        let not_known =
+            items.iter().filter(|i| HOURLY_ITEMS.contains(&i.key.as_str()) && (i.finding == "unknown" || i.finding == "pending"));
         ("unknown", not_known.take(2).cloned().collect())
     } else if has("caution") {
         ("caution", items.iter().filter(|i| i.finding == "caution").take(2).cloned().collect())
@@ -219,7 +222,14 @@ pub fn windows(hours: &[Judged]) -> Vec<Window> {
                     w.quickest_s = h.depart_s;
                 }
             }
-            _ => out.push(Window { from_s: h.depart_s, last_s: h.depart_s, hours: 1, margin: h.margin, ete_min: h.ete_min, quickest_s: h.depart_s }),
+            _ => out.push(Window {
+                from_s: h.depart_s,
+                last_s: h.depart_s,
+                hours: 1,
+                margin: h.margin,
+                ete_min: h.ete_min,
+                quickest_s: h.depart_s,
+            }),
         }
         last = Some(h.depart_s);
     }
