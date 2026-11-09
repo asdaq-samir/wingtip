@@ -4484,6 +4484,10 @@ export interface CopilotField {
   elevation_ft?: number | null;
   runways: Runway[];
   metar?: {
+    /**
+     * The report as sent, which copilot_watch reads its category and ceiling from (metar::parse); without it the field has no weather.
+     */
+    raw?: string | null;
     dir_true_deg?: number | null;
     speed_kt?: number | null;
     gust_kt?: number | null;

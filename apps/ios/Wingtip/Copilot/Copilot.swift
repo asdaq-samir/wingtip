@@ -105,7 +105,7 @@ final class Copilot {
         }
         guard let around, let input = try? Self.input(fix: fix, flight: flight, around: around, ahead: ahead, minimums: minimums,
                                                      remainingNm: position?.leftNm, startedAt: startedAt, firstSeen: firstSeen) else { return }
-        guard let answer = try? Self.watch(input, around: around, firstSeen: firstSeen) else { return }
+        guard let answer = try? Self.watch(input) else { return }
         let first = answer.messages.first { !dismissed.contains($0.id) }
         if first?.id != message?.id || first?.title != message?.title { message = first }
         // Said once a message, and only the copilot's own: the alerts
@@ -143,21 +143,11 @@ final class Copilot {
             ahead: ahead.map { .init(id: $0.id, kind: $0.kind, level: $0.level, name: $0.name) })
     }
 
-    /// The engine's answer. The fields go as the planner sent them, in its
-    /// snake case, with the category each was first seen in: the engine
-    /// reads a METAR's report as sent (`raw`, the copilot's IFR and
-    /// ceiling checks), which the contract's CopilotFieldMetar leaves out,
-    /// so a typed field would lose it and the copilot would say nothing.
-    static func watch(_ input: Input, around: APICopilotAround, firstSeen: [String: String?]) throws -> EngineContract.CopilotWatchAnswer {
-        guard var json = try JSONSerialization.jsonObject(with: Engine.encoder.encode(input)) as? [String: Any] else {
-            throw Engine.Refused(message: "The copilot's question is not an object")
-        }
-        json["fields"] = try around.fields.map { field -> [String: Any] in
-            var sent = try JSONSerialization.jsonObject(with: Planner.snakeEncoder.encode(field)) as? [String: Any] ?? [:]
-            if let seen = firstSeen[field.ident] ?? nil { sent["planned_category"] = seen } else { sent["planned_category"] = NSNull() }
-            return sent
-        }
-        return try Engine.call("copilot_watch", json: json)
+    /// The engine's answer to the typed question: each field's METAR
+    /// carries its report as sent (`raw`), which the copilot's IFR and
+    /// ceiling checks read.
+    static func watch(_ input: Input) throws -> EngineContract.CopilotWatchAnswer {
+        try Engine.rule("copilot_watch", input)
     }
 
     /// The message put away; the next comes in its place.

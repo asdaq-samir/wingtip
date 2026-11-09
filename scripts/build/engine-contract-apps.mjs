@@ -22,7 +22,9 @@
 //   to must not fail to decode on a phone built before it.
 // - Tuples are arrays of their one type.
 // - A member left untyped ({}), or a union of two shapes, is JSONValue
-//   (API/JSONValue.swift) on the iPhone and kotlinx's JsonElement on Android.
+//   (API/JSONValue.swift) on the iPhone and kotlinx's JsonElement on Android;
+//   a union of objects told apart by a const member ("kind") is one struct
+//   of every shape's members (taggedUnion).
 // - Keys are written as the rule names them (snake case mostly, camel
 //   case where the gateway's are): Swift's CodingKeys and Kotlin's
 //   @SerialName carry them, and Engine's coders apply no strategy.
@@ -110,6 +112,8 @@ function typeOf(s, name) {
     const nulls = union.filter((u) => u.type === "null");
     const rest = union.filter((u) => u.type !== "null");
     if (rest.length === 1) return { ...typeOf(rest[0], name), optional: nulls.length > 0 || undefined };
+    const tagged = taggedUnion(rest, name);
+    if (tagged) return { kind: "struct", name: tagged, optional: nulls.length > 0 || undefined };
     return { kind: "any", optional: nulls.length > 0 || undefined };
   }
   if (s.allOf && s.allOf.length === 1) return typeOf(s.allOf[0], name);
@@ -154,6 +158,37 @@ function objectStruct(s, name, description) {
     used.add(field);
     const type = typeOf(p, name + pascal(key));
     entry.fields.push({ key, name: field, type, required: required.has(key) && !type.optional, description: p.description });
+  }
+  return name;
+}
+
+// A union of objects told apart by one member each gives as a const (an
+// ATC item's "kind": "altitude", "heading"...) is one struct: that member,
+// a string, and every shape's other members, each optional, as the shape
+// it came in has it. Neither phone has Swift's or Kotlin's sum types from
+// a schema, and this reads every shape without a hand-written decoder; a
+// member two shapes type differently is JSONValue / JsonElement. None for
+// a union that is not so told apart.
+function taggedUnion(shapes, name) {
+  const objects = shapes.map((u) => (u.$ref ? defs[refName(u.$ref)] : u));
+  if (!objects.every((o) => o && o.type === "object" && o.properties)) return null;
+  const tag = Object.keys(objects[0].properties).find((k) => objects.every((o) => o.properties[k] && "const" in o.properties[k]));
+  if (!tag) return null;
+  if (structs.has(name)) return name;
+  const entry = {
+    name,
+    description: shapes.description,
+    fields: [{ key: tag, name: camel(tag), type: { kind: "prim", ...PRIMS.string }, required: true, description: `One of: ${objects.map((o) => o.properties[tag].const).join(", ")}.` }],
+  };
+  structs.set(name, entry);
+  for (const o of objects) {
+    for (const [key, p] of Object.entries(o.properties)) {
+      if (key === tag) continue;
+      const type = typeOf(p, name + pascal(key));
+      const known = entry.fields.find((f) => f.key === key);
+      if (!known) entry.fields.push({ key, name: camel(key), type, required: false, description: p.description });
+      else if (JSON.stringify({ ...known.type, optional: undefined }) !== JSON.stringify({ ...type, optional: undefined })) known.type = { kind: "any" };
+    }
   }
   return name;
 }

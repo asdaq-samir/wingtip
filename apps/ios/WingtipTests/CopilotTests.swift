@@ -44,7 +44,9 @@ struct CopilotTests {
         var asked = input
         asked.passengers = false
         asked.nightCurrent = true
-        let answer = try Copilot.watch(asked, around: around, firstSeen: firstSeen)
+        // The typed field keeps the SPECI as sent, which the engine reads.
+        #expect(input.fields.first { $0.ident == "KOSH" }?.metar?.raw?.hasPrefix("SPECI KOSH") == true)
+        let answer = try Copilot.watch(asked)
         let first = try #require(answer.messages.first)
         #expect(first.kind == "weather" && first.level == "caution")
         #expect(first.title.contains("KOSH just went IFR"))

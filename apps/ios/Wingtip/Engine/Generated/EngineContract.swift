@@ -1052,7 +1052,7 @@ enum EngineContract {
 
     struct AtcCallAnswer: Codable, Equatable, Sendable {
         var who: String
-        var items: [JSONValue]
+        var items: [EngineContract.AtcItem]
     }
 
     struct AtcCallInput: Codable, Equatable, Sendable {
@@ -1068,6 +1068,65 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case text
             case agoS = "ago_s"
+        }
+    }
+
+    struct AtcItem: Codable, Equatable, Sendable {
+        /// One of: altitude, expect, heading, direct, route, class_b, hold, frequency, squawk, altimeter, approach, runway.
+        var kind: String
+        var ft: Int?
+        var verb: String?
+        var limit: String?
+        var min: Int?
+        var deg: Int?
+        var turn: String?
+        var byDeg: Int?
+        var said: String?
+        var places: [String]?
+        var asFiled: Bool?
+        var fix: String?
+        var direction: String?
+        var on: String?
+        var onDeg: Int?
+        var turns: String?
+        var published: Bool?
+        var efc: String?
+        var mhz: String?
+        var facility: String?
+        var code: String?
+        var inhg: String?
+        var name: String?
+        var runway: String?
+        var cleared: Bool?
+        var what: String?
+
+        enum CodingKeys: String, CodingKey {
+            case kind
+            case ft
+            case verb
+            case limit
+            case min
+            case deg
+            case turn
+            case byDeg = "by_deg"
+            case said
+            case places
+            case asFiled = "as_filed"
+            case fix
+            case direction
+            case on
+            case onDeg = "on_deg"
+            case turns
+            case published
+            case efc
+            case mhz
+            case facility
+            case code
+            case inhg
+            case name
+            case runway
+            case cleared
+            case what
         }
     }
 
@@ -1775,6 +1834,8 @@ enum EngineContract {
     }
 
     struct CopilotFieldMetar: Codable, Equatable, Sendable {
+        /// The report as sent, which copilot_watch reads its category and ceiling from (metar::parse); without it the field has no weather.
+        var raw: String?
         var dirTrueDeg: Double?
         var speedKt: Double?
         var gustKt: Double?
@@ -1783,6 +1844,7 @@ enum EngineContract {
         var flightCategory: String?
 
         enum CodingKeys: String, CodingKey {
+            case raw
             case dirTrueDeg = "dir_true_deg"
             case speedKt = "speed_kt"
             case gustKt = "gust_kt"

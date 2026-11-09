@@ -34,8 +34,9 @@ struct AtcCopilotTests {
 
     @Test func itemsInWords() throws {
         let json = #"[{"kind":"squawk","code":"4512"},{"kind":"frequency","mhz":"125.35","facility":"approach"},{"kind":"direct","said":"gopher"},{"kind":"hold","fix":"gopher","direction":"northeast","on":"radial","on_deg":45,"turns":"left","published":false,"efc":"1430"},{"kind":"runway","runway":"27","what":"land"},{"kind":"class_b"}]"#
-        let values = try JSONDecoder().decode([JSONValue].self, from: Data(json.utf8))
-        #expect(AtcItem.items(values).map(\.words) == [
+        // The contract's items, decoded by its generated type.
+        let items = try JSONDecoder().decode([AtcItem].self, from: Data(json.utf8))
+        #expect(items.map(\.words) == [
             "Squawk 4512", "Approach 125.35", "Direct GOPHER", "Hold NE of GOPHER, 045 radial, left turns, EFC 1430Z",
             "Runway 27, cleared to land", "Cleared into Class B",
         ])

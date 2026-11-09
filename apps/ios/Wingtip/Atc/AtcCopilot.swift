@@ -83,7 +83,7 @@ final class AtcCopilot {
         let open = latest.flatMap { $0.readback == nil && at.timeIntervalSince($0.at) <= readbackWindowS ? $0 : nil }
         let answer = try Engine.atcCall(text: text, tail: tail, prior: open.map { .init(text: $0.text, agoS: at.timeIntervalSince($0.at)) })
         if answer.who == "to_us" {
-            return Array(([Card(id: id, text: text, at: at, items: AtcItem.items(answer.items))] + cards).prefix(kept))
+            return Array(([Card(id: id, text: text, at: at, items: answer.items)] + cards).prefix(kept))
         }
         if var open, answer.who == "from_us" || open.awaiting {
             open.readback = (text, try Engine.readbackCheck(cleared: open.text, said: text, tail: tail))

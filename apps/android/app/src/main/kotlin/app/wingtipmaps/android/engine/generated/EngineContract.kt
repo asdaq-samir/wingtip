@@ -986,7 +986,7 @@ object EngineContract {
     @Serializable
     data class AtcCallAnswer(
         val who: String,
-        val items: List<JsonElement>,
+        val items: List<EngineContract.AtcItem>,
     )
 
     @Serializable
@@ -1001,6 +1001,42 @@ object EngineContract {
         val text: String,
         @SerialName("ago_s")
         val agoS: Double,
+    )
+
+    @Serializable
+    data class AtcItem(
+        /**
+         * One of: altitude, expect, heading, direct, route, class_b, hold, frequency, squawk, altimeter, approach, runway.
+         */
+        val kind: String,
+        val ft: Int? = null,
+        val verb: String? = null,
+        val limit: String? = null,
+        val min: Int? = null,
+        val deg: Int? = null,
+        val turn: String? = null,
+        @SerialName("by_deg")
+        val byDeg: Int? = null,
+        val said: String? = null,
+        val places: List<String>? = null,
+        @SerialName("as_filed")
+        val asFiled: Boolean? = null,
+        val fix: String? = null,
+        val direction: String? = null,
+        val on: String? = null,
+        @SerialName("on_deg")
+        val onDeg: Int? = null,
+        val turns: String? = null,
+        val published: Boolean? = null,
+        val efc: String? = null,
+        val mhz: String? = null,
+        val facility: String? = null,
+        val code: String? = null,
+        val inhg: String? = null,
+        val name: String? = null,
+        val runway: String? = null,
+        val cleared: Boolean? = null,
+        val what: String? = null,
     )
 
     @Serializable
@@ -1673,6 +1709,10 @@ object EngineContract {
 
     @Serializable
     data class CopilotFieldMetar(
+        /**
+         * The report as sent, which copilot_watch reads its category and ceiling from (metar::parse); without it the field has no weather.
+         */
+        val raw: String? = null,
         @SerialName("dir_true_deg")
         val dirTrueDeg: Double? = null,
         @SerialName("speed_kt")

@@ -1,48 +1,12 @@
 import Foundation
 
 /// One thing a call to us asks, as the engine's atc_call reads it
-/// (engine/crates/radio's atc; held to the shared fixture atcCalls.json).
-/// The contract leaves an item untyped (a tagged union by `kind`), so its
-/// members are read here, each optional, from the engine's own keys.
-struct AtcItem: Decodable, Equatable, Sendable {
-    let kind: String
-    var verb: String?
-    var limit: String?
-    var ft: Double?
-    var min: Double?
-    var turn: String?
-    var byDeg: Double?
-    var deg: Double?
-    var said: String?
-    var places: [String]?
-    var asFiled: Bool?
-    var direction: String?
-    var fix: String?
-    var on: String?
-    var onDeg: Double?
-    var turns: String?
-    var efc: String?
-    var published: Bool?
-    var facility: String?
-    /// As said, "125.35".
-    var mhz: String?
-    var code: String?
-    /// As said, "29.92".
-    var inhg: String?
-    var name: String?
-    var cleared: Bool?
-    var runway: String?
-    var what: String?
+/// (engine/crates/radio's atc; held to the shared fixture atcCalls.json):
+/// the contract's AtcItem, a union told apart by `kind`, generated as one
+/// struct of every kind's members.
+typealias AtcItem = EngineContract.AtcItem
 
-    enum CodingKeys: String, CodingKey {
-        case kind, verb, limit, ft, min, turn, deg, said, places, direction, fix, on, turns, efc, published, facility, mhz, code, inhg, name, cleared, runway, what
-        case byDeg = "by_deg", asFiled = "as_filed", onDeg = "on_deg"
-    }
-
-    /// The items of an atc_call answer.
-    static func items(_ values: [JSONValue]) -> [AtcItem] {
-        values.compactMap { try? JSONDecoder().decode(AtcItem.self, from: $0.data) }
-    }
+extension EngineContract.AtcItem {
 
     /// The item in words, as the card writes it (the web's itemWords):
     /// altitudes as ATC says them (the engine's altitude_said, AIM 4-2-9),
@@ -50,8 +14,8 @@ struct AtcItem: Decodable, Equatable, Sendable {
     /// (AIM 4-2-12).
     var words: String {
         func capital(_ s: String) -> String { s.prefix(1).uppercased() + s.dropFirst() }
-        func three(_ d: Double) -> String { String(Int(d.rounded())).leftPadded(to: 3) }
-        func altitude(_ ft: Double?) -> String { ft.map { (try? Engine.altitudeSaid(ft: $0)) ?? Format.altitude($0) } ?? "" }
+        func three(_ d: Int) -> String { String(d).leftPadded(to: 3) }
+        func altitude(_ ft: Int?) -> String { ft.map { (try? Engine.altitudeSaid(ft: Double($0))) ?? Format.altitude(Double($0)) } ?? "" }
         let points = ["north": "N", "northeast": "NE", "east": "E", "southeast": "SE", "south": "S", "southwest": "SW", "west": "W", "northwest": "NW"]
         switch kind {
         case "altitude":

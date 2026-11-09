@@ -34,6 +34,13 @@
         "null"
       ],
       "properties": {
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The report as sent, which copilot_watch reads its category and ceiling from (metar::parse); without it the field has no weather."
+        },
         "dir_true_deg": {
           "type": [
             "number",
