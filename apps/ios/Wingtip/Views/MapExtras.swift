@@ -167,6 +167,16 @@ final class MapExtrasState: NSObject {
         map.addGestureRecognizer(hold)
         // The airports, checkpoints and traffic in view in VoiceOver's rotor.
         map.accessibilityCustomRotors = MapRotors.rotors(for: map)
+        // The held finger for VoiceOver, which cannot hold a point: the
+        // same ask, of the map's centre (Apple's HIG: every gesture has an
+        // accessible way to do the same).
+        map.accessibilityCustomActions = [
+            UIAccessibilityCustomAction(name: "What's Here") { [weak self, weak map] _ in
+                guard let self, let map, let onHold = self.onHold else { return false }
+                onHold(map.centerCoordinate)
+                return true
+            },
+        ]
     }
 
     @objc private func held(_ gesture: UILongPressGestureRecognizer) {
