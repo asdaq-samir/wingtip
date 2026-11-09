@@ -9,6 +9,7 @@ import android.os.Looper
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -16,10 +17,13 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.offline.OfflineLayers
+import app.wingtipmaps.android.offline.OfflineStore
 import app.wingtipmaps.android.route.RouteLegs
 import app.wingtipmaps.android.route.RoutePoint
 import app.wingtipmaps.android.tiles.TileTemplate
@@ -150,7 +154,8 @@ fun ChartMap(
         }
     }
 
-    LaunchedEffect(holder, template, minZoom, maxZoom, overlays) { holder.style(template, minZoom, maxZoom, overlays, line) }
+    val downloaded by remember(context) { OfflineStore.of(context) }.kept.collectAsStateWithLifecycle()
+    LaunchedEffect(holder, template, minZoom, maxZoom, overlays, downloaded.map { it.done }) { holder.style(template, minZoom, maxZoom, overlays, line) }
     LaunchedEffect(holder, night) { holder.paint(night) }
     LaunchedEffect(holder, bottomInset) { holder.inset(bottomInset) }
     LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints) }
@@ -255,7 +260,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
             if (template == null) return@getMapAsync
             chartMaxZoom = MapStyle.maxZoom(maxZoom)
             map.setMaxZoomPreference(if (lastClose != null) maxOf(chartMaxZoom, MapStyle.CLOSE_MAX_ZOOM) else chartMaxZoom)
-            val json = MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather)
+            // The regions downloaded for the air drawn over the network's chart (Setup → Downloads).
+            val kept = OfflineLayers.archives(OfflineStore.of(view.context), template.cycle, template.kind, template.scale, lastLayers.tac)
+            val json = OfflineLayers.withDownloads(MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather), kept)
             val builder = Style.Builder().fromJson(json)
             OverlayPictures.addTo(builder, density)
             // At the latest this long after the style is set the map is

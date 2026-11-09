@@ -385,6 +385,14 @@ its update is whole, then removed (`OfflineStore.sweep`; warn, never
 limit). `WingtipTests/OfflineChartsTests` reads an archive the planner's
 writer made, leaf directories and all.
 
+The web app has no Downloads: a browser cannot be relied on to keep
+gigabytes (Safari may clear a site's storage after seven days without a
+visit, and every browser caps it and may evict it under pressure). The service worker keeps the tiles looked at and a route's corridor
+(KeepRoute). A later path for an installed web app would be the same
+archives in the Origin Private File System, with
+`navigator.storage.persist()` asked first, read by the `pmtiles`
+library the overlays already use.
+
 ## Building
 
 The owner's Mac cannot run a current Xcode, so everything happens in
