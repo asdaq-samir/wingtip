@@ -156,6 +156,30 @@
     <string name="passengers_briefed">Briefed: %1$d of %2$d</string>
     <string name="the_flight">The Flight</string>
     <string name="server">Server</string>
+    <string name="cancel">Cancel</string>
+    <!-- The account's own data (account/): given back as a file, or deleted. -->
+    <string name="export_my_data">Export My Data</string>
+    <string name="export_my_data_line">Everything kept for your account, as one JSON file</string>
+    <string name="export_saved">Saved.</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_title">Delete your account?</string>
+    <string name="delete_account_text">Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This can\'t be undone.</string>
+    <!-- About (about/), from the foot of Setup; the planning aid in the
+         words every app says (docs/legal/credits.md). -->
+    <string name="about">About</string>
+    <string name="about_line">Version, credits, privacy and terms</string>
+    <string name="about_version">Version</string>
+    <string name="about_build">Build</string>
+    <string name="about_chart_edition">Chart Edition</string>
+    <string name="about_cycle_packs">Cycle Packs</string>
+    <string name="about_planning_aid">A Planning Aid</string>
+    <string name="about_planning_aid_text">Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1-800-WX-BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).</string>
+    <string name="about_credits">Credits</string>
+    <string name="about_legal">Legal</string>
+    <string name="about_privacy">Privacy Policy</string>
+    <string name="about_terms">Terms of Use</string>
+    <string name="about_support">Support</string>
+    <string name="about_demo_flight">Demo Flight</string>
     <string name="pilot_menu">The pilot\'s menu</string>
 
     <!-- Live reports from SWIM on the airport and airspace cards (live/). -->
